@@ -1,3 +1,4 @@
+import { basicApiPermissionRules } from './basic-api-catalog'
 import {
   createAiAgentRuntime,
   type AiAgentRuntime,
@@ -45,6 +46,17 @@ export const createAiStartup = (
     runtime = createAiAgentRuntime(
       createAiRuntimeInput({
         permissionRules: {
+          ...basicApiPermissionRules,
+          [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
+          [AiActionNames.ORGANIZE_DESIGN]: 'allow',
+          [AiActionNames.ARRANGE_DESIGN]: 'allow',
+          [AiActionNames.REVIEW_DESIGN]: 'allow',
+          [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'allow',
+          [AiActionNames.READ_DESIGN_CONTEXT]: 'allow',
+          [AiActionNames.INSPECT_DRAWING]: 'allow',
+          [AiActionNames.REPORT_OUTCOME]: 'allow',
+          [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'confirm',
+          [AiActionNames.REQUEST_CLARIFICATION]: 'allow',
           [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'allow',
           [AiActionNames.REMOVE_AI_COMPOSITION]: 'confirm',
           [AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE]: 'allow',

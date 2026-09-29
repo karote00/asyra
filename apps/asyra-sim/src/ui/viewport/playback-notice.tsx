@@ -53,15 +53,7 @@ export function PlaybackNotice() {
       {feedback.checkedTime !== null && (
         <p className="mt-1 text-[11px] tabular-nums">
           Checked {feedback.checkedTime.toFixed(4)} s
-          {!matches && ' - earlier pose'}
-        </p>
-      )}
-
-      {pendingTime !== undefined && (
-        <p className="mt-1 text-[11px] tabular-nums">
-          Checking target {pendingTime.toFixed(4)} s
-          {feedback.checkedTime !== null &&
-            (matches ? ' - showing checked pose' : ' - showing previous frame')}
+          {!matches && ' - last checked pose'}
         </p>
       )}
 

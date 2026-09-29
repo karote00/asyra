@@ -43,17 +43,18 @@ Completed plan:
 - `createServerActionBatchProvider(...)` is the single production
   provider composition. Its only request method is
   `requestActionBatch(input, { signal })`, which performs one same-origin HTTP
-  request after Actor A presses Send and returns one server-prepared
-  `AiActionBatch`
+  request after Actor A presses Send. Local operation mode can stream acknowledged
+  intermediate batches before its final server-prepared `AiActionBatch`
 - that request carries the submitted intent, exact image attachment, App
   context, registered backend-facing action descriptions, attempt number, and
   abort ownership. The browser context never contains the Asyra Design domain
   prompt, image-tool catalog, provider endpoint, model setting, or API key; no
   fileId, URL parameter, startup branch, resident batch, or IndexedDB response
   inbox selects its payload
-- ordinary requests require complete server-only
+- HTTP-provider requests require complete server-only
   `AI_PROVIDER_ENDPOINT`, `AI_PROVIDER_MODEL`, and `AI_PROVIDER_API_KEY`
-  settings. The server adds the App domain prompt
+  settings. Local mode uses `AI_PROVIDER_BACKEND=local-codex`, a configured model
+  and the user's local subscription; see `specs/local-ai-provider.md`. The server adds the App domain prompt
   and registered image-tool catalog, then uses Node.js native `fetch` to call
   the configured action-batch endpoint. The API key is sent only as a Bearer
   authorization header and never enters the browser or upstream JSON body
@@ -77,7 +78,7 @@ Completed plan:
 - `createAiRuntimeInput(...)` composes the app-owned context,
   bounded action catalog, permission map, confirmation adapter, and common
   transaction adapter around the formal provider
-- `runtime.run()` requests one `AiActionBatch`, and
+- `runtime.run()` owns one invocation and its acknowledged action batches, and
   `runtime.resolveAiActionBatch(batch, { signal })` is the only Runtime
   resolution entry
 - `AiActionBatch` contains one `batchId`, optional explanation, and ordered
@@ -125,10 +126,12 @@ Completed plan:
   formal server contract and available machine resources
 - `request_drawing_detail_choice` accepts no provider-selected labels, counts,
   warning copy, attachment data, or canonical ids. It resolves with registered
-  App option ids and no canonical mutation; the App projects Balanced
-  (7,111 elements, at least 115,000 points) and Maximum (27,471 elements,
-  295,794 points) guidance and retains the original in-memory attachment for
-  the selected follow-up turn
+  App option ids and no canonical mutation. Balanced and Maximum express detail
+  preferences without claiming fixture-specific element or point counts. The
+  newest question provides clickable options for text and image requests, shows
+  a waiting state, and submits the selection once with the retained attachments
+  and `metadata.replyTo` containing the original intent and turn id. Stale reply
+  targets are rejected before provider work; past questions are inactive.
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation
@@ -803,3 +806,99 @@ Feature registry (`src/features/index.ts`):
 - Feature files should use `FeatureNames` constants, not ad-hoc string literals.
 - UI should read via providers/hooks and write via controller/common API paths.
 - If API contract changes, update this file and the matching `features/*` doc in the same change.
+
+## Editable design Agent operations
+
+The App's registered capabilities remain authoritative. The local provider exposes
+`prepare_design` for a bounded semantic draft only when `apply_prepared_design` is
+available, returning an opaque request-local artifact ID. Backend layout uses
+absolute, row, column or grid constraints and native frame/rect/oval/text/vector
+nodes; it does not invent content. Prepared data is admitted in full before writes.
+See `specs/design-preparation.md` and `specs/editable-text.md`.
+
+- `read_design_context`: selection or paginated current hierarchy, bounded summaries
+  and explicit truncation; no canonical mutation or geometry-payload copy.
+- `update_design_element`: targeted current-ID name, geometry, typography or primary
+  color edits through canonical APIs. Omitted values and unrelated objects stay unchanged.
+- `organize_design`: group, ungroup or reorder admitted current objects; a Group
+  does not establish a reusable component/instance system.
+- `arrange_design`: parent-local alignment or equal-gap distribution for admitted
+  siblings, preserving size, style and stack order.
+- `review_design`: bounded current structure/content observations, including native
+  text overflow. Incomplete evidence is explicit; complete is not a visual approval.
+
+Ordinary drawing mutations return measurements before rendered captures. Concrete
+text overflow can be corrected before another image is captured; read-only review
+remains available without a cumulative review quota. The model reviews the actual image
+and explains unresolved constraints rather than reporting unconditional success.
+
+The local-only `record_design_review` tool records a pre-mutation plan and a
+post-render assessment. Its published schema requires method, references (an empty
+array is valid), criteria and detailRequired for the plan; structure/visual phases
+require inspectionIds and checks. It never mutates the canvas. Criteria express user intent,
+including intentionally rough or minimal results; detailed inspection is conditional.
+Inspection receipts carry opaque IDs and a mutation revision. The backend checks
+current evidence IDs, criterion coverage and pass/fail/unverified judgments before
+admitting a completed report; the model owns semantic assessment. A later mutation
+invalidates the old verdict. Tool/research/review diagnostics share request IDs with
+usage logs; bounded summaries exclude image bytes, geometry, credentials and reasoning.
+
+Conversation `newConversation()` / `selectConversation(id)` retain document-session
+messages, target hints and turn identities without canvas writes. Active execution
+blocks navigation. `subscribeNavigation` / `getNavigationSnapshot` project only
+identity, title and busy state; progress does not rebuild this navigation projection.
+The panel preserves unsent drafts on switches while mounted. Reloading the document
+starts a new conversation runtime.
+
+### Basic API action catalogue
+
+`src/ai/basic-api-catalog.ts` combines data-only contracts for public Core and App
+common APIs. Names are `api_<owner>_<method>`; inputs use the actual method's named
+parameters in signature order. Executors call the existing owner without copying
+geometry or accepting event/history suppression flags. Results retain the owner's
+return value under `value` (including null/false); null is not proof of a successful
+mutation. Existing Runtime permission, confirmation and transaction boundaries apply.
+Deletion contracts require confirmation by default.
+
+Each Core, Design and Vector API contract has its own named `const`, declared with
+`defineBasicApi({ owner, method, effect, parameters, description })`. The exported
+catalogue in each file explicitly lists those constants; do not generate individual
+API declarations through array spreads or `.map()`. Shared schemas keep descriptive
+names and schema helpers retain their original imports rather than aliases like `id`.
+`parameters` is an ordered array of `{ name, schema, optional? }`; declaration order
+matches the public method signature, and omitted `optional` means required.
+
+```ts
+const getElementComputedDataApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementComputedData',
+  effect: 'read',
+  parameters: [
+    { name: 'elementId', schema: apiString },
+    { name: 'fields', schema: apiIds, optional: true }
+  ],
+  description: 'Read selected computed fields.'
+})
+```
+
+The local backend exposes `describe_design_apis` for a compact index or requested
+schemas. Execute discovered operations through `execute_design_batch`; do not send
+hundreds of individual schemas on every model request. High-level design tools remain
+compositions/conveniences and do not define the entire capability surface.
+
+`basic-api-dispositions.ts` explicitly classifies registration, live host resources,
+subscriptions, replay and transient-session entry points. These are not executable
+model paths. Existing equivalents (parent-ID creation, rendered inspection) are named.
+The permanent coverage test reads actual TypeScript public members and checks every
+entry, method existence and positional parameter contract.
+
+The browser contract exercises sequential workspace-valued node/handle reflection,
+including translated containers, through both AI batches and ordinary common APIs.
+Object and point identities survive, with one Undo/Redo entry for the operation.
+Accepted canonical batches update local computed projections synchronously so the
+next action reads current coordinates; commit observers remain transaction-buffered.
+
+Basic action receipts preserve the owner return value and include the conversation
+status contract: successful write/delete execution reports `complete`; reads, view
+and selection operations, or writes returning `false`/`null`, report `no-change`.
+Thrown owner errors remain failures; completion is not a visual-quality verdict.

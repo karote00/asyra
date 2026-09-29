@@ -118,9 +118,17 @@ const isViewportZoomModifierChange = (event: Event): boolean => {
 const isAllowedInteraction = (event: Event): boolean => {
   const interactionTarget = getInteractionTarget(event)
   return (
+    interactionTarget === AiDocumentInteractionTargets.AGENT_INTERFACE ||
     isViewportZoomModifierChange(event) ||
+    ((event.type === 'keydown' || event.type === 'keyup') &&
+      event instanceof KeyboardEvent &&
+      event.code === 'Digit1' &&
+      (event.metaKey || event.ctrlKey) &&
+      !event.altKey &&
+      !event.shiftKey) ||
     (isAgentCancelActivation(event) &&
-      interactionTarget === AiDocumentInteractionTargets.AGENT_CANCEL) ||
+      (interactionTarget === AiDocumentInteractionTargets.AGENT_CANCEL ||
+        interactionTarget === AiDocumentInteractionTargets.AGENT_CONTROL)) ||
     (event.type === 'wheel' &&
       interactionTarget === AiDocumentInteractionTargets.VIEWPORT_NAVIGATION)
   )
@@ -140,6 +148,20 @@ export const createDocumentInteractionLock = (
       return
     }
 
+    // The blocked pointer event cannot perform the browser's normal focus transfer.
+    // Release the editor without forwarding a document-editing pointer event.
+    if (event.type === 'pointerdown' || event.type === 'mousedown') {
+      const activeElement = document.activeElement
+      if (
+        activeElement instanceof HTMLElement &&
+        activeElement
+          .closest(`[${AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE}]`)
+          ?.getAttribute(AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE) ===
+          AiDocumentInteractionTargets.AGENT_INTERFACE
+      ) {
+        activeElement.blur()
+      }
+    }
     if (event.cancelable) {
       event.preventDefault()
     }

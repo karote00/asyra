@@ -16,6 +16,7 @@ describe('Asyra Design Agent runtime input', () => {
       provider
     })
 
+    expect(input.options?.failurePolicy).toBe('preserve-progress')
     expect(input.provider).toBe(provider)
     expect(input.actionDefinitions).toEqual(
       expect.arrayContaining([
@@ -26,4 +27,17 @@ describe('Asyra Design Agent runtime input', () => {
     )
     expect(input).not.toHaveProperty('deliveryMode')
   })
+})
+
+it('exposes the existing vector read, anchor and handle APIs without a dedicated flip action', () => {
+  const input = createAiRuntimeInput({
+    permissionRules: {},
+    provider: {
+      requestActionBatch: async () => ({ batchId: 'empty', actions: [] })
+    }
+  })
+  const names = input.actionDefinitions.map((action) => action.name)
+  expect(names).toContain('api_element_getVectorAnchorPoints')
+  expect(names).toContain('api_element_updateVectorAnchorPointPosition')
+  expect(names).toContain('api_element_updateVectorAnchorPointHandlePosition')
 })

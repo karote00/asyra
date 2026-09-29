@@ -253,6 +253,11 @@ infrastructure.
   transaction-end source boundaries. Its exact transport hierarchy is publication
   identity/origin/mode → ordered slices → channel batches → ordered payload
   deliveries
+- publication IDs are opaque correlation strings. Each publishing DataTransact
+  lifetime owns a lazy random 128-bit namespace, shared by its publication windows;
+  transaction and window suffixes keep local ordering. Fresh runtimes must not
+  collide after reload. Compensation links retain their actual forward ID. Existing
+  saved IDs are accepted unchanged; consumers must not parse their string format.
 - the transport publication contains no inverse events, local history or
   rollback evidence, duplicated top-level delivery list, record/change alias,
   or nested record wrapper. Reversible evidence remains only in the existing

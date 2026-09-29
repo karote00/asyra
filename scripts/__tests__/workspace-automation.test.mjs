@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { createWorkspaceDevAllPlan } from '../dev-all-plan.js'
 import {
@@ -501,7 +501,7 @@ test('E2E automation cancels superseded runs and installs only Chromium', () => 
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.equal(chromiumInstallCount, 2)
+  assert.equal(chromiumInstallCount, 4)
   assert.doesNotMatch(e2e, /playwright install --with-deps\s*$/m)
 })
 
@@ -542,12 +542,56 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   assert.match(runner, /kill "\$E2E_COLLABORATION_SERVER_PID"/)
 })
 
-test('CI isolates the render performance budget before parallel functional E2E', () => {
+test('render timing limits are observations while deterministic work stays blocking', () => {
+  const render = readText(
+    'apps/asyra-design/e2e/render-delta-performance.spec.ts'
+  )
+  const contracts = readText('apps/asyra-design/e2e/render-contracts.mjs')
+  const mechanical = readText(
+    'apps/asyra-sim/e2e/__tests__/mechanical-review.spec.ts'
+  )
+
+  assert.ok(
+    !/PHASE_BUDGETS|CRITICAL_PATH_P95_BUDGET_MS|expectPhaseWithinBudget\(/.test(
+      render
+    ),
+    'render timings must not use absolute phase budgets as blockers'
+  )
+  assert.ok(
+    !/strategyGeometryFirstSampleMs\)[\s\S]{0,100}toBeLessThanOrEqual/.test(
+      render
+    ),
+    'first sample timing must remain observational'
+  )
+  assert.match(render, /RENDER_DELTA_TIMING_OBSERVATION/)
+  assert.match(render, /assertRenderDeltaContracts\(summary, SAMPLE_FRAMES\)/)
+  assert.match(contracts, /summary\.fullRehydrateCallsDuringDelta, 0/)
+  assert.match(contracts, /summary\.renderSnapshotDeltaApplies, sampleFrames/)
+  assert.match(
+    contracts,
+    /summary\.elementSaveCallsDuringDelta <= sampleFrames/
+  )
+  assert.match(
+    contracts,
+    /summary\.computedSnapshotCallsDuringDelta <= sampleFrames \+ 1/
+  )
+  assert.match(contracts, /summary\.strategyGeometrySteadyState\.count/)
+  assert.match(render, /geometryStrategyCount\)\.toBe\(0\)/)
+  assert.doesNotMatch(mechanical, /metrics\.p95Ms\)\.toBeLessThan\(100\)/)
+  assert.match(mechanical, /frame-timing\.json/)
+})
+
+test('render contract E2E keeps CI Chromium isolated and local Chrome available', () => {
   const runner = readText('scripts/run-e2e.sh')
 
   assert.match(
     runner,
-    /E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1/
+    /if \[ "\$\{CI:-\}" = "true" \]; then[\s\S]*E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*else[\s\S]*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*fi/
+  )
+  assert.match(runner, /render-contracts/)
+  assert.match(
+    runner,
+    /Running render contracts and collecting timing observations/
   )
   assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e/)
 })
@@ -761,3 +805,190 @@ test('workspace version planning materializes release ranges without changing fi
     factoryManifest.version
   )
 })
+
+test('Board, render contracts and functional E2E have independent required jobs', () => {
+  const workflow = readText('.github/workflows/e2e.yml')
+  const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+  const board = jobs.find((job) => job.startsWith('  flow-inspector-board:'))
+  const renderContracts = jobs.find((job) =>
+    job.startsWith('  render-contracts:')
+  )
+  const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
+  assert.ok(board, 'Board must report its own result')
+  assert.ok(
+    renderContracts,
+    'render correctness/work contracts must report their own result'
+  )
+  assert.match(board, /node --test --test-concurrency=1 .*board\*\.test\.cjs/)
+  assert.match(renderContracts, /E2E_SUITE: render-contracts/)
+  assert.match(
+    renderContracts,
+    /Run render contracts and collect timing observations/
+  )
+  assert.match(functional, /E2E_SUITE: functional/)
+  assert.doesNotMatch(functional, /Verify Flow Inspector board/)
+  for (const job of [board, renderContracts, functional]) {
+    assert.doesNotMatch(job, /continue-on-error: true/)
+    assert.doesNotMatch(job, /^ {4}needs:/m)
+  }
+  const main = readText('.github/workflows/main.yml')
+  assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
+})
+
+const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>
+  new Promise((resolve, reject) => {
+    const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
+    if (githubActions) env.GITHUB_ACTIONS = 'true'
+    else delete env.GITHUB_ACTIONS
+    const child = spawn(command, args, {
+      cwd: repositoryRoot,
+      env,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let output = ''
+    let timedOut = false
+    let oversized = false
+    const killGroup = () => {
+      if (!child.pid) return
+      try {
+        process.kill(-child.pid, 'SIGKILL')
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error
+      }
+    }
+    const timer = setTimeout(() => {
+      timedOut = true
+      killGroup()
+    }, timeoutMs)
+    const append = (data) => {
+      output += data.toString()
+      if (output.length > 8 * 1024 * 1024) {
+        oversized = true
+        killGroup()
+      }
+    }
+    child.stdout.on('data', append)
+    child.stderr.on('data', append)
+    child.once('error', (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
+    child.once('close', (code) => {
+      clearTimeout(timer)
+      if (timedOut || oversized) {
+        const error = new Error(
+          timedOut ? `${command} timed out` : `${command} output exceeded limit`
+        )
+        error.output = output
+        reject(error)
+      } else resolve({ code, output })
+    })
+  })
+
+const countUtilsBuildExecutions = (output) =>
+  output.split(/\r?\n/u).filter((line) =>
+    // Turbo emits task starts as stream lines locally and group headers in CI.
+    /@asyra\/utils:build:utils: cache bypass, force executing|::group::@asyra\/utils:build:utils/u.test(
+      line
+    )
+  ).length
+
+test('build execution counter includes nested local and CI task starts', () => {
+  const outer =
+    '@asyra/utils:build:utils: cache bypass, force executing a6eb2e98342a9a8d'
+  const nestedLocal = `@asyra/starter-app:react:build: ${outer}`
+  const nestedCi =
+    '@asyra/starter-app:react:build: ::group::@asyra/utils:build:utils'
+  assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedLocal}`), 2)
+  assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedCi}`), 2)
+  assert.equal(countUtilsBuildExecutions(outer), 1)
+})
+
+test('a timed-out build command terminates its descendant process', async () => {
+  let failure
+  try {
+    await runOwnedBuildCommand(
+      'sh',
+      ['-c', 'sleep 30 & echo "descendant=$!"; wait'],
+      { githubActions: false, timeoutMs: 100 }
+    )
+  } catch (error) {
+    failure = error
+  }
+  assert.match(failure?.message ?? '', /timed out/u)
+  const descendantPid = Number(failure.output.match(/descendant=(\d+)/u)?.[1])
+  assert.ok(Number.isInteger(descendantPid) && descendantPid > 0)
+  let status = ''
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    status = spawnSync('ps', ['-o', 'stat=', '-p', String(descendantPid)], {
+      encoding: 'utf8'
+    }).stdout.trim()
+    if (status === '' || status.startsWith('Z')) break
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  assert.ok(status === '' || status.startsWith('Z'), status)
+})
+
+test(
+  'Starter build entries execute each Framework dependency once with valid artifacts',
+  { timeout: 300_000 },
+  async () => {
+    const runBuild = async (args, githubActions) => {
+      const result = await runOwnedBuildCommand('yarn', args, {
+        githubActions,
+        timeoutMs: 120_000
+      })
+      assert.equal(result.code, 0, result.output.slice(-4000))
+      return result.output
+    }
+    const assertOneUtilsBuild = (output, entry) => {
+      const count = countUtilsBuildExecutions(output)
+      assert.equal(count, 1, `${entry} rebuilt @asyra/utils ${count} times`)
+    }
+
+    for (const githubActions of [false, true]) {
+      const environment = githubActions ? 'GitHub Actions' : 'local'
+      const orchestrated = await runBuild(
+        [
+          'turbo',
+          'run',
+          'react:build',
+          '--filter',
+          '@asyra/starter-app',
+          '--concurrency=1',
+          '--log-order=stream',
+          '--log-prefix=task'
+        ],
+        githubActions
+      )
+      assertOneUtilsBuild(orchestrated, `${environment} Turbo react:build`)
+
+      const standalone = await runBuild(
+        ['workspace', '@asyra/starter-app', 'build'],
+        githubActions
+      )
+      assertOneUtilsBuild(standalone, `${environment} direct Starter build`)
+    }
+
+    assert.equal(
+      fs.existsSync(
+        path.join(repositoryRoot, 'apps/starter-app/dist/frontend/index.html')
+      ),
+      true
+    )
+    const utils = await import(
+      pathToFileURL(path.join(repositoryRoot, 'packages/utils/dist/index.js'))
+    )
+    const props = await import(
+      pathToFileURL(
+        path.join(
+          repositoryRoot,
+          'packages/props-manager/dist/components/base.js'
+        )
+      )
+    )
+    assert.equal(typeof utils.Setter, 'function')
+    assert.equal(typeof props.default, 'function')
+  }
+)

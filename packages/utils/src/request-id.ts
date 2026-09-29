@@ -12,7 +12,7 @@ let requestIdCounter = 0
  * console.log(requestId); // e.g. "1683054932143-1"
  */
 export function generateRequestId(): string {
-  // 防止 counter 超過上限，簡單重置
+  // Reset simply before the counter exceeds the safe integer limit.
   if (requestIdCounter >= 10000) {
     requestIdCounter = 0
   }

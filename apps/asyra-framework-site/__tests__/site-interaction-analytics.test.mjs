@@ -259,7 +259,7 @@ test('IME composition is not a search and native dialog close cancels pending in
     '<dialog open aria-labelledby="search-title" data-site-search data-site-result-count="1"><input type="search"></dialog>'
   )
   const input = s.window.document.querySelector('input')
-  input.value = '測試'
+  input.value = 'test'
   input.dispatchEvent(
     new s.window.InputEvent('input', { bubbles: true, isComposing: true })
   )

@@ -1,3 +1,4 @@
+import type { AllEvent } from '../constants.js'
 import { UNDO } from '@asyra/utils'
 import type {
   RenderPointerPayload,
@@ -8,7 +9,12 @@ import type {
   TransactionFailureKind,
   TransactionStatusPayload
 } from '@asyra/utils'
-import { publishEvent, publishEventsToObservers } from '../event-bus.js'
+import {
+  publishEvent,
+  publishEventsToObservers,
+  publishAppliedEventBatch,
+  publishCommittedEventsToObservers
+} from '../event-bus.js'
 import { EventTypes } from '../types.js'
 import {
   getTransactionOwner,
@@ -41,7 +47,7 @@ interface TransactionBoundaryState {
   depth: number
   rollbackOnly: boolean
   rollbackOnlyFailure?: TransactionFailure
-  pendingObserverEvents: UpdateTransactionEvent[]
+  pendingObserverEvents: AllEvent[]
 }
 
 const createTransactionBoundaryState = (): TransactionBoundaryState => ({
@@ -248,10 +254,24 @@ export const updateTransactionBatch = (
   owner?.updateTransactionBatch(detachedEvents)
   const state = getTransactionBoundaryState(owner)
   if (state.depth > 0) {
+    publishAppliedEventBatch(detachedEvents)
     state.pendingObserverEvents.push(...detachedEvents)
     return
   }
   publishEventsToObservers(detachedEvents)
+}
+
+/** Local derived values are already applied; UI observers wait for the outer commit. */
+export const publishLocalProjectionEvents = (
+  events: readonly AllEvent[]
+): void => {
+  const state = getTransactionBoundaryState(getTransactionOwner())
+  if (state.depth > 0) {
+    publishAppliedEventBatch(events)
+    state.pendingObserverEvents.push(...events)
+  } else {
+    publishEventsToObservers(events)
+  }
 }
 
 export const updateTransaction = (event: UpdateTransactionEvent) => {
@@ -297,7 +317,7 @@ export const endTransaction = (options: EndTransactionOptions = {}) => {
         outcome === 'commit' &&
         pendingObserverEvents.length > 0
       ) {
-        publishEventsToObservers(pendingObserverEvents)
+        publishCommittedEventsToObservers(pendingObserverEvents)
       }
       publishEvent({
         type: EventTypes.END_TRANSACTION,

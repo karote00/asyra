@@ -98,6 +98,20 @@ const setup = () => {
 }
 
 describe('CUSTOM Three engine', () => {
+  it('does not advertise or simulate unsupported subtree snapshots', () => {
+    const { engine, driver, root } = setup()
+    expect(engine.capabilities.has('snapshot')).toBe(false)
+    expect(engine.capabilities.has('local-content-bounds')).toBe(false)
+    expect(() =>
+      engine.query({ type: 'get-local-content-bounds', object: root })
+    ).toThrow(/does not support required capabilities: local-content-bounds/)
+    expect(() =>
+      engine.query({ type: 'snapshot', object: root, maxDimension: 1024 })
+    ).toThrow(/does not support required capabilities: snapshot/)
+    expect(driver.render).not.toHaveBeenCalled()
+    engine.destroy()
+  })
+
   it('bounds studio shadows, limits casters to solid selectable geometry and releases the light', () => {
     const { engine, driver, add } = setup()
     add(camera)

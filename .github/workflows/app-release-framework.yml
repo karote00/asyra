@@ -1,0 +1,29 @@
+name: Manual App Release - Asyra Website
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: Rebuild this App for an out-of-Git configuration change
+        type: boolean
+        default: false
+      reason:
+        description: Required reason when forcing a rebuild
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.repository_id == '893098287' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/app-release-pipeline.yml
+    secrets: inherit
+    with:
+      target_app: 'asyra-framework'
+      force_app: ${{ inputs.force_rebuild && 'asyra-framework' || '' }}
+      reason: ${{ inputs.reason }}

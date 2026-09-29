@@ -1,20 +1,22 @@
 # Sim candidate maintenance proposal
 
-Status: proposal only. This does not change repository policy, open an issue
-channel, promise support, or authorize M6 outreach/publication.
+Status: proposal only. This does not open a Sim reporting channel, promise
+support, or authorize M6 outreach/publication. The repository's intended
+general-help channel is GitHub Discussions, which is not enabled yet; general
+Issues and external PRs are not the default routes.
 
 For controlled pilots, propose one explicitly named coordinator and a privately
 agreed reporting channel. Users share only the reviewed minimal synthetic
 reproduction described in [the sharing preview](PILOT_REVIEW.md#diagnostic-sharing-preview).
 Do not guess an email address or send confidential/security details to public
-issues. The existing repository contribution and security policies remain in
-force until an authorized decision changes them.
+issues. Follow [SECURITY.md](../../../../../SECURITY.md) for suspected
+vulnerabilities; pilot coordination and security reporting remain separate.
 
 Before any pilot invitation, record the coordinator and actual channel with the
 participants. Before R0, approve a maintenance owner, public reporting scope,
-private vulnerability channel, and the relationship to the Framework policy of
-not accepting external issues/PRs. A Sim-specific public channel is a proposed
-exception requiring approval, not an implicit repository-wide change.
+private vulnerability channel, and how Sim reports use the repository's
+[support policy](../../../../../SUPPORT.md). A future Discussions entry alone
+does not name an owner or approve Sim's reporting and correction obligations.
 
 Proposed support covers reproduction within the documented platform/method
 limits, candidate integrity and data recovery. It excludes equipment operation,

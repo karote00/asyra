@@ -1,4 +1,5 @@
 import { applyPreset } from '@asyra/preset'
+import { initText } from './capabilities/init-text'
 import core from '../contexts'
 import { initAreaSelection } from './capabilities/init-area-selection'
 import { initAiDrawingProgress } from './capabilities/init-ai-drawing-progress'
@@ -56,6 +57,7 @@ export interface AppInitialization {
  */
 export const initApp = (): AppInitialization => {
   applyPreset(core)
+  initText(core)
 
   // DEV runtime diagnostics are loaded from an optional package subpath.
   void initCanvasPipelineDebugger()

@@ -15,11 +15,11 @@ const googleServices = resolveGoogleSiteServices()
 const description =
   'Build canvas-based editors, visual tools, BIM workspaces, simulations, and other domain products from composable application building blocks.'
 const socialImage = {
-  url: '/product-evidence/asyra-design-7076-product-evidence.jpg',
-  width: 1280,
-  height: 720,
-  type: 'image/jpeg',
-  alt: 'Asyra Design displaying the editable 7,076-element vector cat drawing'
+  url: '/brand/asyra-foundation-green-v1.png',
+  width: 1733,
+  height: 907,
+  type: 'image/png',
+  alt: 'ASYRA - The foundation behind your software. Connected green modules support an illustrated house.'
 }
 
 export const metadata: Metadata = {

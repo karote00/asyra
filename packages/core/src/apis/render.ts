@@ -16,6 +16,17 @@ import type {
 } from '../types/render.js'
 
 export interface RenderRequests {
+  measureElementContentBounds: (
+    elementIds: readonly string[]
+  ) => import('@asyra/render').RenderContentMeasurement[]
+  captureElementSnapshot: (
+    elementId: string,
+    maxDimension?: number,
+    options?: Pick<
+      import('@asyra/render-engine').RenderEngineSnapshotQuery,
+      'nativeResolution' | 'region'
+    >
+  ) => import('@asyra/render-engine').RenderEngineSnapshotResult
   initRender: (width: number, height: number, color: number) => Promise<unknown>
   getViewportPosition: () => PositionData
   getViewportScale: () => number
@@ -55,6 +66,19 @@ export interface RenderRequests {
 
 export const createRenderAPIs = (requests: RenderRequests) => {
   return {
+    measureElementContentBounds(elementIds: readonly string[]) {
+      return requests.measureElementContentBounds(elementIds)
+    },
+    captureElementSnapshot(
+      elementId: string,
+      maxDimension?: number,
+      options?: Pick<
+        import('@asyra/render-engine').RenderEngineSnapshotQuery,
+        'nativeResolution' | 'region'
+      >
+    ) {
+      return requests.captureElementSnapshot(elementId, maxDimension, options)
+    },
     renderIsReady() {
       renderIsReady()
     },

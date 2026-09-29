@@ -7,6 +7,8 @@ editable, reversible, inspectable, persistable, and extensible. Use it to build
 canvas-based editors, whiteboards, BIM workspaces, industrial tools,
 simulations, and other domain products without coupling domain rules to one
 renderer or UI framework.
+It provides the ownership and transaction infrastructure for editable 2D and
+3D tools; the App supplies each domain model and concrete 3D engine.
 
 Your App owns its product schemas, rules, workflows, services, and UI. Asyra
 coordinates the shared infrastructure around them: intent routing,
@@ -15,9 +17,10 @@ boundaries, and downstream projections.
 
 - <a href="https://asyra-framework.vercel.app" target="_blank" rel="noopener noreferrer">Visit the Asyra website</a>
 - <a href="https://asyra-design.vercel.app/?fileId=demo" target="_blank" rel="noopener noreferrer">Try Asyra Design</a>
+- [Explore the Generic Starter source](#generic-starter)
 - [Read the documentation](docs/public/index.md)
-- [Install `@asyra/core`](#package-first-composition)
 - [Create an Asyra Design app](#complete-design-product)
+- [Install `@asyra/core`](#advanced-composition)
 
 ## Try the demo
 
@@ -27,7 +30,7 @@ Features, editable information, the official `2D` Preset, rendering, Undo/Redo,
 persistence, and explicit optional AI and collaboration composition on the
 current browser/Core runtime.
 
-![Asyra Design showing the complete 7,076-element editable cat drawing](docs/public/assets/asyra-design-7076-product-evidence.jpg)
+![Asyra Design showing the complete 7,076-element editable cat drawing](apps/asyra-design/brand/asyra-design-7076-product-evidence.jpg)
 
 _The maintained 7,076-element sample rendered in Asyra Design without any
 subsequent selection or geometry edit: one App-owned
@@ -135,30 +138,29 @@ contract, follow [Build a transaction-safe Feature](docs/public/build/feature-se
 
 ## Choose your starting point
 
-### Package-first composition
+### Generic Starter
 
-Choose this path when you want to model your own product deliberately or are
-building something other than a design tool. `@asyra/core` is the public
-composition facade for the current browser/Core runtime and does not impose a
-UI framework or predefined product behavior.
+Choose the small Item App when you want to learn one editable 2D path before
+choosing a product domain. Its default screen edits a title and status with
+Undo/Redo and explicit Save/Reload. The [Starter source](apps/starter-app/README.md)
+and [onboarding guide](apps/starter-app/docs/ONBOARDING.md) are available in this
+repository. The [opt-in priority exercise](apps/starter-app/docs/PRIORITY_EXERCISE.md)
+shows how a coding agent can extend App-owned source through the same Feature,
+API, transaction, projection, and persistence path. This is source-editing
+guidance, not an AI service or agent running inside the App.
+
+Create a fresh project with the published
+<a href="https://www.npmjs.com/package/create-asyra-app" target="_blank" rel="noopener noreferrer">create-asyra-app package</a>
+using Node.js 24 and npm or Yarn:
 
 ```bash
-npm install @asyra/core
+npx create-asyra-app@0.1.0 my-app --package-manager=npm
+cd my-app
+npm run start
 ```
 
-Asyra is published as 19 public `@asyra/*` ESM packages. Required package
-dependencies install automatically; Preset, Collaboration, AI, Design System,
-and concrete rendering providers remain optional composition choices.
-
-Continue with:
-
-- **[Build a Core App correctly](docs/public/start/custom-composition.md#build-one-complete-data-path)** - transaction publications, incremental persistence,
-  scoped UI subscriptions, reusable computation and runtime lifecycle, extracted
-  from Asyra Design into one implementation guide.
-- [Custom composition](docs/public/start/custom-composition.md)
-- [Model product information first](docs/public/learn/information-models.md)
-- [Define an App-owned component and schema](docs/public/build/custom-schema.md)
-- [Build a transaction-safe Feature](docs/public/build/feature-session.md)
+The CLI installs the generated project's dependencies. It also supports Yarn;
+see the [CLI package guide](create-app/starter-app/README.md) for its options.
 
 ### Complete design product
 
@@ -175,6 +177,24 @@ The CLI supports Yarn, npm, or pnpm. It installs the project dependencies and
 prints the exact start command for the selected package manager. The generated
 project is ordinary source code with bounded extension guidance for humans and
 AI coding agents. See [`create-asyra-design-app`](create-app/asyra-design/README.md).
+
+### Advanced composition
+
+Choose this path when you need to assemble a different product deliberately or
+replace a Framework composition boundary. `@asyra/core` is the public browser
+composition facade; it does not impose a UI framework or product domain.
+
+```bash
+npm install @asyra/core
+```
+
+Asyra is published as 19 public `@asyra/*` ESM packages. Required package
+dependencies install automatically; Preset, Collaboration, AI, Design System,
+and concrete rendering providers remain optional composition choices. Continue
+with [Build a Core App correctly](docs/public/start/custom-composition.md#build-one-complete-data-path),
+[model product information](docs/public/learn/information-models.md),
+[define an App-owned schema](docs/public/build/custom-schema.md), and
+[build a transaction-safe Feature](docs/public/build/feature-session.md).
 
 ## How Asyra works
 
@@ -214,6 +234,21 @@ composition, official `2D` Preset, engine-neutral `CUSTOM` extension boundary,
 editable canonical information, App-owned Features, rendering, Undo/Redo,
 persistence contracts, and explicit optional collaboration and AI paths.
 
+Other Apps show how different domains remain App-owned:
+
+- **FieldScope** models a greenhouse with cucumber and tomato crops in an
+  App-owned Three.js scene. Its [crop layout source](apps/fieldscope/src/domain/crop-layout.ts)
+  and [formal crop tests](apps/fieldscope/src/domain/__tests__/crop-layout.test.ts)
+  cover the planted scene. This is FieldScope behavior, not an official 3D
+  Preset or a built-in agricultural model.
+- **Asyra Sim** is a local robot-workcell experiment workbench and a
+  development checkpoint, not an R0 release or industrial safety approval.
+  Its [current App guide](apps/asyra-sim/README.md),
+  [analysis Feature tests](apps/asyra-sim/src/features/__tests__/analysis.test.ts),
+  and [project-session tests](apps/asyra-sim/src/storage/__tests__/project-session.test.ts)
+  document the implementation and its limits. Geometry and analysis are
+  App-owned, not built-in Framework physics.
+
 ### Compose your domain
 
 An App can bring the information, rules, engines, services, and workflows for a
@@ -252,13 +287,14 @@ Node does not establish a supported Headless Core or server/worker lifecycle.
 
 Asyra is publicly available for use, learning, inspection, and forking.
 
-**This repository does not accept external issues or contributions, including
-pull requests.**
+GitHub Discussions is the intended public channel for community conversation and
+general help. Discussions is not enabled for this repository yet, so there is
+currently no public community support destination. GitHub Issues are not a
+general public support channel. External pull requests are not accepted by
+default. Community participation creates no SLA or response deadline.
 
-The codebase is intentionally curated as one cohesive reference implementation
-for Communication-Driven Development and AI-assisted workflows.
-
-For security-sensitive reports, follow [SECURITY.md](SECURITY.md).
+Read [SUPPORT.md](SUPPORT.md) for the current policy. For suspected
+vulnerabilities, follow [SECURITY.md](SECURITY.md) and report privately.
 
 ## License
 

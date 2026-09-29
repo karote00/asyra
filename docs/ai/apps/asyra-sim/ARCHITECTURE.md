@@ -221,6 +221,14 @@ remain explicitly unknown. These sampled observations are visible in the
 experiment panel but never become continuous coverage, an acceptance verdict,
 an immutable formal run, or an Undo entry.
 
+The live owner also retains up to 16 compact sample diagnostics for its current
+input lifetime. Playback observations expose the request/snapshot/method
+identity, settings and budgets, elapsed worker and parent time, stop checkpoint,
+completed/partial/missing pair IDs, runner acceptance, and the first Preview
+publication. Pair ID lists are capped at 256 entries with truncation counts;
+mesh and full snapshot data are excluded. These diagnostics are transient,
+cleared on input replacement, and do not change evidence or rendering decisions.
+
 An owner-issued input identity allows reuse across Play lifetimes; caller-owned
 objects with matching IDs cannot claim that identity. Experiment, candidate,
 revision, and warning-acknowledgement changes fence reuse. Committed or rolled

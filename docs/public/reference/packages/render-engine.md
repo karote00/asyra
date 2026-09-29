@@ -62,9 +62,19 @@ the abstract package creates no surface.
 ## Support, migration, and deprecation
 
 Current formal capabilities are `objects`, `graphics`, `interaction`, and
-`resources`. New capabilities require real implementations and contract tests.
+`resources`, plus optional `snapshot`. New capabilities require real implementations and contract tests.
 Migration must preserve synchronous command/query/destroy semantics, one-shot
 frames, handle isolation, and normalized interaction.
+
+## Rendered subtree inspection
+
+The optional `snapshot` capability admits the synchronous
+`{ type: 'snapshot', object, maxDimension }` query. Its result contains `dataUrl`,
+`width`, `height` and local `bounds`. Providers capture actual subtree content
+without editor overlays or camera framing, on a white background, with sides at
+most `maxDimension` (an integer from 1 through 1024) and a PNG data URL at most
+8 MiB. Invalid/empty targets and unsupported capture fail explicitly. Recording
+engines do not advertise this capability or manufacture image evidence.
 
 ## Canonical sources and release inventory
 

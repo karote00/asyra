@@ -9,7 +9,13 @@ export type AiConfirmationRequest = (
 ) => Promise<boolean>
 
 export type AiConfirmationActionKind =
-  'create' | 'delete' | 'mixed' | 'modify' | 'selection' | 'visibility'
+  | 'replace'
+  | 'create'
+  | 'delete'
+  | 'mixed'
+  | 'modify'
+  | 'selection'
+  | 'visibility'
 
 export interface AiConfirmationSummary {
   readonly actionKind: AiConfirmationActionKind
@@ -28,6 +34,9 @@ export interface AiPendingConfirmation {
 }
 
 export interface AiConfirmationSnapshot {
+  readonly decisions?: readonly (AiPendingConfirmation & {
+    readonly accepted: boolean
+  })[]
   readonly activeTurnId: string | null
   readonly disposed: boolean
   readonly pending: AiPendingConfirmation | null
@@ -84,6 +93,8 @@ const kindForAction = (
   actionName: string
 ): Exclude<AiConfirmationActionKind, 'mixed'> => {
   switch (actionName) {
+    case 'replace_vector_composition':
+      return 'replace'
     case 'insert_vector_composition':
       return 'create'
     case 'remove_ai_composition':
@@ -104,6 +115,8 @@ const messageForSummary = (
 ): string => {
   const count = affectedCount ?? 'the selected'
   switch (actionKind) {
+    case 'replace':
+      return 'Replace the current drawing on the canvas. This request creates one Undo step. Previous steps remain available through Undo.'
     case 'create':
       return `Create ${count} editable elements.`
     case 'delete':
@@ -139,7 +152,7 @@ export const createAiConfirmationSummary = (
   return Object.freeze({
     actionKind,
     affectedCount,
-    destructive: kinds.has('delete'),
+    destructive: kinds.has('delete') || kinds.has('replace'),
     externalImpact: false,
     message: messageForSummary(actionKind, affectedCount),
     undoable: true
@@ -151,10 +164,13 @@ export const createAiConfirmationBroker = () => {
   let activeTurnId: string | null = null
   let disposed = false
   let pending: PendingConfirmation | null = null
+  const decisions: (AiPendingConfirmation & { readonly accepted: boolean })[] =
+    []
 
   const getSnapshot = (): AiConfirmationSnapshot =>
     Object.freeze({
       activeTurnId,
+      decisions: Object.freeze([...decisions]),
       disposed,
       pending: pending?.publicValue ?? null
     })
@@ -183,6 +199,7 @@ export const createAiConfirmationBroker = () => {
       return false
     }
     pending = null
+    decisions.push(Object.freeze({ ...current.publicValue, accepted }))
     current.signal.removeEventListener('abort', current.abort)
     current.resolve(accepted)
     notify()
@@ -209,12 +226,7 @@ export const createAiConfirmationBroker = () => {
       preview: AiActionBatchPreview,
       options: { signal: AbortSignal }
     ): Promise<boolean> => {
-      if (
-        disposed ||
-        options.signal.aborted ||
-        activeTurnId === null ||
-        observers.size === 0
-      ) {
+      if (disposed || options.signal.aborted || activeTurnId === null) {
         return Promise.resolve(false)
       }
       settle(false)
@@ -248,9 +260,6 @@ export const createAiConfirmationBroker = () => {
       observeSafely(observer, getSnapshot())
       return () => {
         observers.delete(observer)
-        if (observers.size === 0) {
-          settle(false)
-        }
       }
     },
     dispose: async (): Promise<void> => {
@@ -260,6 +269,7 @@ export const createAiConfirmationBroker = () => {
       disposed = true
       settle(false)
       activeTurnId = null
+      decisions.length = 0
       observers.clear()
     }
   }

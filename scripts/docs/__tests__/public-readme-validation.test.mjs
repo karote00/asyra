@@ -9,7 +9,8 @@ import {
   validateReadmeLinks,
   validateReadmeLearningSurface,
   validateReadmeNamedImports,
-  validateReadmePolicy
+  validateReadmePolicy,
+  validateStarterPublicationState
 } from '../public-readme-validation.mjs'
 
 const repositoryRoot = path.resolve(
@@ -29,6 +30,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source: 'Use and fork this package.',
         sourcePath: 'README.md'
       }),
@@ -37,6 +39,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source:
           'This repository does not accept external issues or contributions. Pull requests are welcome.',
         sourcePath: 'README.md'
@@ -58,6 +61,31 @@ test('README learning surfaces reject retired example runners and source links',
           sourcePath: 'README.md'
         }),
       /removed executable-example surface/
+    )
+  }
+})
+
+test('published Starter entry requires the tested CLI version, Node runtime, and package managers', () => {
+  const source =
+    'npx create-asyra-app@0.1.0 my-app --package-manager=npm; Node.js 24; npm or Yarn'
+  assert.doesNotThrow(() =>
+    validateStarterPublicationState({ source, sourcePath: 'README.md' })
+  )
+  for (const invalidSource of [
+    source.replace('@0.1.0', ''),
+    source.replace('Node.js 24', 'Node.js 22'),
+    source.replace('npm or Yarn', 'pnpm'),
+    `${source}; npx create-asyra-app my-app`,
+    `${source}; npx create-asyra-app@0.2.0 my-app --package-manager=npm`,
+    `${source}; pnpm dlx create-asyra-app my-app`
+  ]) {
+    assert.throws(
+      () =>
+        validateStarterPublicationState({
+          source: invalidSource,
+          sourcePath: 'README.md'
+        }),
+      /published Starter command|runtime and package managers|unsupported Starter command/u
     )
   }
 })

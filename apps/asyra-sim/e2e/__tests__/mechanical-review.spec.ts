@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('mechanical main bodies remain articulated during playback with bounded frame stalls', async ({
+test('mechanical main bodies remain articulated during playback and report frame timing', async ({
   page
 }, info) => {
   await page.setViewportSize({ width: 1600, height: 1000 })
@@ -51,10 +51,9 @@ test('mechanical main bodies remain articulated during playback with bounded fra
       state:
         'complete original mechanical parts, wireframe off, saved trajectory playback',
       limitations:
-        'Browser scheduling evidence on this host, not a universal FPS guarantee.'
+        'Observation only; browser scheduling on this host, with no controlled reference host or cross-version baseline.'
     })
   })
-  expect(metrics.p95Ms).toBeLessThan(100)
   const slider = page.getByLabel('Sampled trajectory preview time')
   for (const [time, key] of [
     [0, 'Home'],

@@ -5,7 +5,7 @@ import { runOfficialClearanceMethod } from '../../methods/official-method'
 import { sampleSnapshot } from '../sample'
 import { INSTALLED_METHOD_CATALOG } from '../../../extensions/installed-methods'
 import { LiveWorkerHost } from '../worker-host'
-import { LiveMessages, type LiveResponse } from '../protocol'
+import { LIVE_LIMITS, LiveMessages, type LiveResponse } from '../protocol'
 import { liveFixture } from './fixtures'
 
 it('publishes an admitted collision before the remaining method work finishes', async () => {
@@ -79,6 +79,43 @@ it('creates one installed executor per admitted Worker input, with fresh per-sam
   expect(() => execute.mock.calls[0][1].checkpoint()).toThrow()
 })
 
+it('reuses complete same-pose pairs and checks only pairs still missing evidence', async () => {
+  const input = liveFixture()
+  const original = INSTALLED_METHOD_CATALOG.resolve(
+    input.method.id,
+    input.method.version
+  )
+  const fullEvidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = fullEvidence.pairs[0]
+  if (!acceptedPair) throw new Error('Missing retained pair fixture')
+  const execute = vi.fn<MethodRegistration['execute']>((snapshot, context) =>
+    runOfficialClearanceMethod(snapshot, context.checkpoint, context.emitPair)
+  )
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(
+    createMethodCatalog([{ ...original, execute }]),
+    (message) => messages.push(message)
+  )
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({
+    type: LiveMessages.SAMPLE,
+    id: 1,
+    time: 4,
+    acceptedPairs: [acceptedPair]
+  })
+
+  expect(execute.mock.calls[0]?.[0].pairs.map((pair) => pair.id)).toEqual(
+    input.pairs.slice(1).map((pair) => pair.id)
+  )
+  const result = messages.at(-1)
+  expect(result?.type).toBe(LiveMessages.RESULT)
+  if (result?.type !== LiveMessages.RESULT)
+    throw new Error('Missing merged sample result')
+  expect(result.evidence.pairs).toHaveLength(input.pairs.length)
+  expect(result.evidence.pairs[0]).toEqual(acceptedPair)
+})
+
 it('admits one input lifetime and executes static samples without a report or canonical mutation', async () => {
   const messages: LiveResponse[] = []
   const input = liveFixture()
@@ -98,6 +135,23 @@ it('admits one input lifetime and executes static samples without a report or ca
   ])
   expect(messages[1]).toMatchObject({ id: 1, time: 4 })
   expect(messages[1]).not.toHaveProperty('runId')
+  expect(messages[1]).toMatchObject({
+    diagnostic: {
+      snapshotId: input.snapshotId,
+      experimentRevision: input.source.experimentRevision,
+      methodId: input.method.id,
+      methodVersion: input.method.version,
+      sampleTime: 4,
+      minimumClearance: input.rule.minimumClearance,
+      distanceTolerance: input.method.settings.distanceTolerance,
+      timeTolerance: input.method.settings.timeTolerance,
+      maxIntervals: input.budget.maxIntervals,
+      stopCause: 'completed',
+      completedPairCount: input.pairs.length,
+      partialPairCount: 0,
+      missingPairCount: 0
+    }
+  })
   expect(input).toEqual(before)
 
   await expect(
@@ -106,6 +160,43 @@ it('admits one input lifetime and executes static samples without a report or ca
   await expect(
     host.handle({ type: LiveMessages.SAMPLE, id: 3, time: 9 })
   ).rejects.toThrow()
+})
+
+it('runs one bounded continuous interval query through the installed method and returns admitted leaves', async () => {
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(INSTALLED_METHOD_CATALOG, (message) =>
+    messages.push(message)
+  )
+  const input = liveFixture(true)
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({
+    type: LiveMessages.INTERVAL,
+    id: 1,
+    interval: [0, 4],
+    maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  })
+
+  const response = messages.at(-1)
+  expect(response).toMatchObject({
+    type: LiveMessages.INTERVAL_RESULT,
+    id: 1,
+    interval: [0, 4]
+  })
+  if (response?.type !== LiveMessages.INTERVAL_RESULT)
+    throw new Error('Missing interval evidence')
+  expect(response.evidence.pairs).toHaveLength(input.pairs.length)
+  expect(response.evidence.evaluations).toBeLessThanOrEqual(
+    LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  )
+  await expect(
+    host.handle({
+      type: LiveMessages.INTERVAL,
+      id: 2,
+      interval: [4, 8],
+      maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations + 1
+    })
+  ).rejects.toThrow('Invalid live interval request')
 })
 
 it('bounds each sample deadline independently and leaves exhaustion explicitly incomplete', async () => {
@@ -124,6 +215,61 @@ it('bounds each sample deadline independently and leaves exhaustion explicitly i
     type: LiveMessages.ERROR,
     id: 1,
     time: 4,
-    pairs: []
+    pairs: [],
+    diagnostic: {
+      stopCause: 'deadline',
+      checkpoint: 'method-execution',
+      errorMessage: 'Live sample deadline exceeded',
+      missingPairCount: liveFixture().pairs.length
+    }
+  })
+})
+
+it('returns a compact trace when a sample stops before all pair proofs arrive', async () => {
+  const input = liveFixture()
+  const original = INSTALLED_METHOD_CATALOG.resolve(
+    input.method.id,
+    input.method.version
+  )
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const completedPair = evidence.pairs[0]
+  if (!completedPair) throw new Error('Missing completed pair fixture')
+  const execute: MethodRegistration['execute'] = async (_snapshot, context) => {
+    context.emitPair(completedPair)
+    throw new Error('sample executor failed')
+  }
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(
+    createMethodCatalog([{ ...original, execute }]),
+    (message) => messages.push(message),
+    () => 10
+  )
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({ type: LiveMessages.SAMPLE, id: 17, time: 4 })
+
+  const response = messages.at(-1)
+  expect(response).toMatchObject({
+    type: LiveMessages.ERROR,
+    id: 17,
+    time: 4,
+    diagnostic: {
+      requestId: 17,
+      snapshotId: input.snapshotId,
+      experimentRevision: input.source.experimentRevision,
+      methodId: input.method.id,
+      methodVersion: input.method.version,
+      sampleTime: 4,
+      effectiveDurationMs: Math.min(
+        input.budget.maxDurationMs,
+        LIVE_LIMITS.sampleDurationMs
+      ),
+      configuredDurationMs: input.budget.maxDurationMs,
+      elapsedMs: 0,
+      stopCause: 'executor-error',
+      errorMessage: 'sample executor failed',
+      completedPairIds: [completedPair.pairId],
+      missingPairIds: input.pairs.slice(1).map((pair) => pair.id)
+    }
   })
 })

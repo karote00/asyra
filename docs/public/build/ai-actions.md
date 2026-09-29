@@ -158,3 +158,14 @@ transaction boundary; provider output alone is not success evidence.
 
 - [Build app-owned retrieval and action](app-retrieval-action.md)
 - [Read the AI Agent Runtime guide](../reference/packages/ai-agent-runtime.md)
+
+## Sequential backend operations
+
+A provider can await the optional `executeBatch(batch)` callback supplied to
+`requestActionBatch`. Each complete prepared batch passes the ordinary registry,
+permission and confirmation path. The receipt contains redacted executor results
+and refreshed App context, allowing the provider to choose a dependent next step.
+One invocation uses one App transaction runner: normal completion commits once,
+and cancellation or fatal failure rolls back all intermediate writes. A receipt
+is provisional execution, not a commit or durable acknowledgement. Providers must
+not repeat a completed batch or retry after execution has started.

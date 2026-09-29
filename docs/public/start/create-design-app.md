@@ -141,6 +141,16 @@ If the service is unavailable, the app enters its declared disconnected state;
 local editing uses the provisional document and app-owned recovery outbox. This
 is Asyra Design policy, not Collaboration package fallback behavior.
 
+## Optional local AI subscription
+
+The generated App includes a server adapter for a locally installed Codex CLI.
+After signing in to Codex with your own ChatGPT account, set
+`AI_PROVIDER_BACKEND=local-codex` and `AI_PROVIDER_MODEL` in the App's private
+`.env`. Start the App on a loopback URL and submit an Agent request. The generated
+README documents compatible protocol versions and an optional native executable
+path. Each developer supplies their own login; no account or credential is
+included in the template. The existing HTTP adapter remains available.
+
 ## Validate before extending further
 
 ```shell

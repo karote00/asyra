@@ -287,7 +287,7 @@ describe('server-prepared AiActionBatch resolution boundary', () => {
     })
     expect(poisonTrap).not.toHaveBeenCalled()
     expect(permission).not.toHaveBeenCalled()
-    expect(transaction.run).not.toHaveBeenCalled()
+    expect(transaction.run).toHaveBeenCalledOnce()
     expect(execute).not.toHaveBeenCalled()
 
     await runtime.dispose()

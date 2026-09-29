@@ -7,6 +7,7 @@ import ts from 'typescript'
 
 import { readPublicContentContract } from './public-content-contract.mjs'
 import { checkPublicDocumentation } from './public-documentation.mjs'
+import { validateCommunityPolicy } from './support-policy-validation.mjs'
 
 const BUILD_HEADINGS = Object.freeze([
   '## Prerequisites',
@@ -118,6 +119,31 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
     localLinkCount += 1
   }
   return localLinkCount
+}
+
+export const validateStarterEntry = ({ source }) => {
+  if (
+    !source.includes('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
+  ) {
+    throw new Error(
+      'Public overview must provide the published Starter command'
+    )
+  }
+  if (!source.includes('Node.js 24') || !source.includes('npm or Yarn')) {
+    throw new Error(
+      'Public overview must state the Starter runtime and package managers'
+    )
+  }
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app|pnpm\s+(?:create|dlx)\s+create-asyra-app)\b/iu.test(
+      source.replaceAll(
+        'npx create-asyra-app@0.1.0 my-app --package-manager=npm',
+        ''
+      )
+    )
+  ) {
+    throw new Error('Public overview contains an unsupported Starter command')
+  }
 }
 
 export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
@@ -364,6 +390,14 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   for (const page of content.pages) {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
+    if (page.id === 'overview') validateStarterEntry({ source })
+    if (page.id === 'reference/support-release') {
+      validateCommunityPolicy({
+        discussionsEnabled: false,
+        source,
+        sourcePath: `docs/public/${page.path}`
+      })
+    }
     const removedPattern = REMOVED_EXAMPLE_PATTERNS.find((pattern) =>
       pattern.test(source)
     )

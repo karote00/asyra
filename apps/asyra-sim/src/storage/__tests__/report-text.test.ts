@@ -2,8 +2,8 @@ import { expect, it } from 'vitest'
 import { collectReportText } from '../report-text'
 
 it('counts UTF-8 bytes, including separators, and accepts the exact boundary', () => {
-  expect(collectReportText(['é', '\r\n', '界'], 7)).toBe('é\r\n界')
-  expect(() => collectReportText(['é', '\r\n', '界'], 6)).toThrow(
+  expect(collectReportText(['é', '\r\n', '€'], 7)).toBe('é\r\n€')
+  expect(() => collectReportText(['é', '\r\n', '€'], 6)).toThrow(
     'Report exceeds'
   )
   expect(collectReportText([], 1)).toBe('')

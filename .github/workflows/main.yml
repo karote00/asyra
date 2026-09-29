@@ -2,6 +2,10 @@ name: CI
 
 on:
   workflow_call:
+    inputs:
+      run_balanced_ai_correctness:
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -109,6 +113,8 @@ jobs:
   design-e2e:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/e2e.yml
+    with:
+      run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
 
   e2e-tests:
     needs: design-e2e

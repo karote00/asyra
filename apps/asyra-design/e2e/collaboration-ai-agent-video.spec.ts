@@ -2230,7 +2230,10 @@ const submitTurn = async (
   await input.fill(intent)
   onBeforeSubmit?.()
   await page.getByRole('button', { name: 'Send' }).click()
-  await expect(page.getByText('Working on your request')).toBeVisible()
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'active'
+  )
 
   const settledTurns = page
     .getByTestId('ai-agent-panel')
@@ -2239,8 +2242,10 @@ const submitTurn = async (
     timeout: settledTimeoutMs
   })
   const turn = settledTurns.last()
-  await expect(turn).toHaveAttribute('data-outcome', 'success')
-  await expect(turn.getByText('Drawing updated successfully.')).toBeVisible()
+  await expect(turn).toHaveAttribute('data-outcome', 'success', {
+    timeout: settledTimeoutMs
+  })
+  await expect(turn.getByText(/Updated \d+ editable elements?\./)).toBeVisible()
   await expect(turn.getByText(/^Elapsed \d/)).toBeVisible()
   return turn
 }

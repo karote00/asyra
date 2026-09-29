@@ -21,11 +21,29 @@ interface ObserverEventBatchRegistration {
 const observerEventBatchRegistrations =
   new Set<ObserverEventBatchRegistration>()
 
+const appliedEventBatchRegistrations = new Set<ObserverEventBatchRegistration>()
+
+/** Local derived-state delivery after canonical apply, before the next API read. */
+export const publishAppliedEventBatch = (events: readonly AllEvent[]): void => {
+  for (const registration of [...appliedEventBatchRegistrations]) {
+    if (!registration.active) continue
+    try {
+      registration.handler(events)
+    } catch {
+      // A derived observer cannot invalidate already-applied canonical data.
+    }
+  }
+}
+
 const disposeObserverEventBatchRegistrations = (): void => {
   observerEventBatchRegistrations.forEach((registration) => {
     registration.active = false
   })
   observerEventBatchRegistrations.clear()
+  appliedEventBatchRegistrations.forEach((registration) => {
+    registration.active = false
+  })
+  appliedEventBatchRegistrations.clear()
 }
 
 const notifyObserverEventBatch = (events: readonly AllEvent[]): void => {
@@ -49,7 +67,7 @@ class OrderedBatchReplaySubject extends ReplaySubject<AllEvent> {
     this.nextBatch([event])
   }
 
-  nextBatch(sourceEvents: readonly AllEvent[]): void {
+  nextBatch(sourceEvents: readonly AllEvent[], projectApplied = true): void {
     if (sourceEvents.length === 0) return
     if (this.closed) {
       super.next(sourceEvents[0] as AllEvent)
@@ -60,6 +78,7 @@ class OrderedBatchReplaySubject extends ReplaySubject<AllEvent> {
     const events = Object.isFrozen(sourceEvents)
       ? sourceEvents
       : Object.freeze([...sourceEvents])
+    if (projectApplied) publishAppliedEventBatch(events)
     const observerSnapshot = [...this.observers]
     // RxJS 7 caches this snapshot internally for one next(). Resetting the
     // same snapshot before each source event keeps one batch registry boundary
@@ -109,6 +128,13 @@ const synchronousEventBatchHandlers = new Map<
 
 export const publishEventsToObservers = (events: readonly AllEvent[]): void => {
   eventBus.nextBatch(events)
+}
+
+/** Deliver committed evidence whose local projection already ran at owner acceptance. */
+export const publishCommittedEventsToObservers = (
+  events: readonly AllEvent[]
+): void => {
+  eventBus.nextBatch(events, false)
 }
 
 export const publishEventToObservers = (event: AllEvent): void =>
@@ -246,6 +272,22 @@ export const subscribeToEventBatches = (
   return new Subscription(() => {
     registration.active = false
     observerEventBatchRegistrations.delete(registration)
+  })
+}
+
+/** For local derived state only; committed UI/effect observers use subscribeToEventBatches. */
+export const subscribeToAppliedEventBatches = (
+  subscriber: ObserverEventBatchHandler
+): Subscription => {
+  if (eventBus.closed || eventBus.isStopped) return new Subscription()
+  const registration: ObserverEventBatchRegistration = {
+    handler: subscriber,
+    active: true
+  }
+  appliedEventBatchRegistrations.add(registration)
+  return new Subscription(() => {
+    registration.active = false
+    appliedEventBatchRegistrations.delete(registration)
   })
 }
 

@@ -31,3 +31,20 @@ export interface AiProviderInput<TContext = unknown> {
   readonly attempt: number
   readonly metadata?: AiJsonValue
 }
+
+export interface AiToolProgress {
+  readonly tool: string
+  readonly status: 'running' | 'completed'
+  readonly message?: string
+}
+
+export interface AiBatchReceipt {
+  readonly actionResults: readonly {
+    readonly actionId: string
+    readonly actionName: string
+    readonly result: AiJsonValue
+  }[]
+  readonly context: AiJsonValue
+}
+
+export type ExecuteAiBatch = (batch: AiActionBatch) => Promise<AiBatchReceipt>

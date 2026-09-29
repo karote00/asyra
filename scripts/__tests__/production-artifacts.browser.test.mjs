@@ -92,6 +92,16 @@ test(
     await page.getByLabel('Start time (s)').press('Enter')
     await page.getByLabel('End time (s)').fill('4.2')
     await page.getByLabel('End time (s)').press('Enter')
+    await page
+      .locator('summary')
+      .filter({ hasText: 'Advanced settings' })
+      .click()
+    const releaseAnalysisBudgetMs = 60_000
+    const analysisBudget = page.getByLabel('Wall-time budget (ms)')
+    await expect(analysisBudget).toHaveValue('30000')
+    await analysisBudget.fill(String(releaseAnalysisBudgetMs))
+    await analysisBudget.press('Enter')
+    await expect(analysisBudget).toHaveValue(String(releaseAnalysisBudgetMs))
     await runWithArtifactResourceEvidence({
       capture: () => collectArtifactResourceSnapshot({ repositoryRoot: root }),
       report: (value) => t.diagnostic(value),
@@ -105,9 +115,20 @@ test(
           .getByRole('button', { name: 'View results', exact: true })
           .click({ timeout: 90_000 })
         observeTerminalInactive('result-button-observed-actionable-ui')
-        const result = page.getByTestId('analysis-result')
         mark('result-assertion-started')
-        await expect(result).toContainText('Issue found')
+        const result = page.getByTestId('analysis-result')
+        await expect(
+          result.getByRole('heading', { name: 'Issue found', exact: true })
+        ).toBeVisible()
+        const field = (label) =>
+          result
+            .locator('.result-grid > div')
+            .filter({ has: page.getByText(label, { exact: true }) })
+            .locator('dd')
+        await expect(field('Execution')).toHaveText('completed')
+        await expect(field('Coverage')).toHaveText('complete')
+        await expect(field('Finding / unresolved pairs')).toHaveText('2 / 0')
+        await expect(field('Pairs with evidence')).toHaveText('46/46')
         mark('result-assertion-completed')
       }
     })

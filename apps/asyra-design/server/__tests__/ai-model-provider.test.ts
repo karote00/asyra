@@ -90,9 +90,29 @@ describe('Asyra Design configured AI model backend', () => {
     expect(body.systemPrompt).toMatch(/registered App actions and image tools/i)
     expect(body.imageTools).toEqual([
       {
+        capabilities: ['explicit-solid-background-decomposition'],
+        id: 'vectorize_image_layers',
+        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+      },
+      {
         capabilities: ['whole-image-raster-vectorization'],
         id: 'vtracer',
         inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+      },
+      {
+        capabilities: ['bounded-contour-quality-review'],
+        id: 'review_vector_contours',
+        inputMediaTypes: []
+      },
+      {
+        capabilities: ['receipted-local-contour-refinement'],
+        id: 'apply_contour_refinements',
+        inputMediaTypes: []
+      },
+      {
+        capabilities: ['read-only-vector-component-analysis'],
+        id: 'analyze_vector_components',
+        inputMediaTypes: []
       }
     ])
     expect(JSON.stringify(body)).not.toContain('backend-only-secret')

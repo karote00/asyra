@@ -58,6 +58,12 @@ const createCoreForTest = () => {
   }))
   const projectLocalComputedDataFromPropertyIds = vi.fn()
   const getAllElements = vi.fn(() => new Map([['element-1', sceneElement]]))
+  const measureElementContentBounds = vi.fn((ids: readonly string[]) =>
+    ids.map((elementId) => ({
+      elementId,
+      bounds: { x: 0, y: 0, width: 30, height: 45 }
+    }))
+  )
   const core = new Core({
     inputSystem: { registry: inputRegistry } as never,
     factory: {
@@ -72,6 +78,7 @@ const createCoreForTest = () => {
     } as never,
     props: { save: vi.fn(() => ({ property: {} })) } as never,
     render: {
+      measureElementContentBounds,
       setEngineProvider: vi.fn(() => vi.fn()),
       requestRender: vi.fn(),
       getViewportPosition: vi.fn(() => ({ x: 1, y: 2 })),
@@ -113,6 +120,7 @@ const createCoreForTest = () => {
   core.applyCanonicalChanges = vi.fn()
   return {
     core,
+    measureElementContentBounds,
     getAllElements,
     sceneElement,
     inputRegistry,
@@ -128,6 +136,18 @@ const createCoreForTest = () => {
 }
 
 describe('Core app runtime facade', () => {
+  it('forwards bounded content measurement to the render owner without document scans', () => {
+    const { core, measureElementContentBounds, getAllElements } =
+      createCoreForTest()
+    expect(core.measureElementContentBounds(['element-1'])).toEqual([
+      { elementId: 'element-1', bounds: { x: 0, y: 0, width: 30, height: 45 } }
+    ])
+    expect(measureElementContentBounds).toHaveBeenCalledExactlyOnceWith([
+      'element-1'
+    ])
+    expect(getAllElements).not.toHaveBeenCalled()
+  })
+
   it('owns app key-combination registration and exact cleanup', () => {
     const { core, inputRegistry } = createCoreForTest()
     const combinations = {

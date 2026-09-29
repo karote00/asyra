@@ -14,10 +14,32 @@ vi.mock('../zoom', () => ({
 }))
 
 import ToolBar from '..'
+import { documentInteractionLock } from '../../ai/document-interaction-lock'
 
 describe('AI Agent toolbar activation', () => {
   afterEach(() => {
     cleanup()
+  })
+
+  it('keeps toggle activation available while locked and restores ordinary shortcuts when unlocked', () => {
+    const toggle = vi.fn()
+    render(<ToolBar aiOpen={false} onAiToggle={toggle} />)
+    const button = screen.getByRole('button', { name: 'Open Agent' })
+    const shortcut = vi.fn()
+    document.addEventListener('keydown', shortcut)
+    const release = documentInteractionLock.acquire()
+    try {
+      fireEvent.click(button)
+      expect(toggle).toHaveBeenCalledOnce()
+      fireEvent.keyDown(button, { key: 'r', code: 'KeyR' })
+      expect(shortcut).not.toHaveBeenCalled()
+      release()
+      fireEvent.keyDown(button, { key: 'r', code: 'KeyR' })
+      expect(shortcut).toHaveBeenCalledOnce()
+    } finally {
+      release()
+      document.removeEventListener('keydown', shortcut)
+    }
   })
 
   it('always exposes the labelled toggle for the App-owned Agent', () => {

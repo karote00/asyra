@@ -13,7 +13,7 @@ const AUTHORITY = {
     'docs/ai/framework/',
     'packages/'
   ],
-  allowedRootFiles: ['LICENSE', 'SECURITY.md', 'package.json'],
+  allowedRootFiles: ['LICENSE', 'SECURITY.md', 'SUPPORT.md', 'package.json'],
   allowedPlanFiles: [
     'docs/ai/framework/plans/headless-core-and-core-kernel-future-plan.md'
   ],

@@ -23,6 +23,7 @@ const ignoredDirectoryNames = new Set([
 const dedicatedE2ERoots = [
   'apps/asyra-design/e2e/',
   'apps/fieldscope/e2e/',
+  'apps/starter-app/e2e/',
   'create-app/asyra-design/template/e2e/'
 ]
 

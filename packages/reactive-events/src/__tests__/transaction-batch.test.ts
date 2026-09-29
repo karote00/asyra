@@ -5,6 +5,8 @@ import {
   issueDetachedTransactionOwnerBatch,
   runTransaction,
   subscribeToEventBatches,
+  subscribeToAppliedEventBatches,
+  publishEventsToObservers,
   subscribeToEvents,
   updateTransaction,
   updateTransactionBatch,
@@ -402,6 +404,48 @@ describe('transaction batch publishing', () => {
     } finally {
       subscription.unsubscribe()
       batchSubscription.unsubscribe()
+      disposeOwner()
+    }
+  })
+
+  it('projects accepted batches before subsequent reads, once each, while committed observers wait', () => {
+    const owner = createOwner()
+    const disposeOwner = registerTransactionOwner(owner)
+    const applied = vi.fn()
+    const committed = vi.fn()
+    const projection = subscribeToAppliedEventBatches((events) => {
+      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+        applied(events)
+    })
+    const observer = subscribeToEventBatches((events) => {
+      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+        committed(events)
+    })
+    const first = createTransactionEvent('property.first', { value: 1 })
+    const second = createTransactionEvent('property.second', { value: 2 })
+    try {
+      runTransaction(() => {
+        updateTransactionBatch([first])
+        expect(applied).toHaveBeenCalledTimes(1)
+        runTransaction(() => updateTransactionBatch([second]))
+        expect(applied).toHaveBeenCalledTimes(2)
+        expect(committed).not.toHaveBeenCalled()
+      })
+      expect(applied).toHaveBeenCalledTimes(2)
+      expect(committed).toHaveBeenCalledExactlyOnceWith([first, second])
+      // Replay/rollback has already applied its canonical inverse before publishing.
+      publishEventsToObservers([first])
+      expect(applied).toHaveBeenCalledTimes(3)
+      vi.spyOn(owner, 'updateTransactionBatch').mockImplementation(() => {
+        throw new Error('rejected')
+      })
+      expect(() =>
+        runTransaction(() => updateTransactionBatch([second]))
+      ).toThrow('rejected')
+      expect(applied).toHaveBeenCalledTimes(3)
+    } finally {
+      projection.unsubscribe()
+      observer.unsubscribe()
       disposeOwner()
     }
   })

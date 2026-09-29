@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AiActionBatchPreview } from '@asyra/ai-agent-runtime'
-import { createAiConfirmationHandler } from '../confirmation'
+import {
+  createAiConfirmationHandler,
+  createAiConfirmationSummary
+} from '../confirmation'
 
 const preview: AiActionBatchPreview = Object.freeze({
   batchId: 'batch-1',
@@ -34,4 +37,17 @@ describe('Asyra Design AI confirmation adapter', () => {
       signal
     })
   })
+})
+
+it('distinguishes replacing canvas objects from overwriting earlier Undo history', () => {
+  const summary = createAiConfirmationSummary({
+    batchId: 'replace',
+    actions: [
+      { id: 'replace', name: 'replace_vector_composition', summary: 'Replace' }
+    ]
+  } as AiActionBatchPreview)
+  expect(summary.message).toContain(
+    'Previous steps remain available through Undo.'
+  )
+  expect(summary.destructive).toBe(true)
 })

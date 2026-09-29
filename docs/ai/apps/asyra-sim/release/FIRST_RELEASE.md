@@ -165,10 +165,12 @@ industrial real-world accuracy.
   backups.
 - Free software does not promise unlimited immediate support or an SLA.
   Publish support scope and response expectations.
-- Explicitly resolve how Sim reporting/support relates to the existing
-  Framework policy of not accepting external issues/PRs. This document does not
-  silently change repository-wide policy; necessary changes require separate
-  authorization.
+- The repository's [support policy](../../../../../SUPPORT.md) names GitHub
+  Discussions as the intended general-help channel, but it is not enabled yet.
+  External PRs are not accepted by default and general Issues are not the
+  reporting route. Sim still needs an approved maintenance owner, reporting
+  scope, serious-finding notification and withdrawal/correction procedures;
+  a community channel alone does not complete this gate.
 - Passing gates and obtaining publication authorization are separate. Actual
   external operations require explicit user approval.
 

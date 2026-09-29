@@ -30,3 +30,5 @@ export { historyApis } from './history'
 export { hierarchyApis } from './hierarchy'
 export { renderLayerApis } from './render-layer'
 export { cursorApis } from './cursor'
+
+export { inspectionApis } from './inspection'

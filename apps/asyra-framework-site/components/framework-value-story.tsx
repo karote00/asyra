@@ -30,9 +30,8 @@ export function FrameworkValueStory() {
             </h2>
           </div>
           <p>
-            A small behavior change should not become five separate
-            implementation tasks. With Asyra, the change stays inside the
-            Feature that owns it.
+            Products keep changing. With Asyra, a behavior change stays inside
+            the Feature that owns it, wherever that behavior is used.
           </p>
         </header>
 

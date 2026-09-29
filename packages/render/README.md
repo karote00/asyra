@@ -42,8 +42,12 @@ Initialization validates and activates the selected provider. Dirty work request
 
 ## Support and policy
 
-This repository does not accept external issues or contributions. You may use,
-inspect, and fork the package under the [MIT License](https://github.com/karote00/asyra/blob/main/LICENSE).
-Follow the [security policy](https://github.com/karote00/asyra/blob/main/SECURITY.md) for
-security-sensitive reports and the [root policy](https://github.com/karote00/asyra) for the
-current support boundary.
+GitHub Discussions is the intended public channel for community conversation and
+general help. Discussions is not enabled for this repository yet, so there is
+currently no public community support destination. GitHub Issues are not a
+general public support channel. External pull requests are not accepted by
+default. Community participation creates no SLA or response deadline.
+
+You may use, inspect, and fork the package under the [MIT License](https://github.com/karote00/asyra/blob/main/LICENSE).
+Read the <a href="https://github.com/karote00/asyra/blob/main/SUPPORT.md" target="_blank" rel="noopener noreferrer">support policy</a>.
+For suspected vulnerabilities, follow the <a href="https://github.com/karote00/asyra/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">security policy</a> and report privately.

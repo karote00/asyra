@@ -1,3 +1,4 @@
+import { deriveGroupBounds, type GroupBounds } from '../group-bounds.js'
 import {
   runTransaction,
   type ComponentDefinition,
@@ -107,12 +108,7 @@ export interface PreparedUngroupOperation {
   readonly elementIds: readonly string[]
 }
 
-export interface GroupBounds {
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
-}
+export type { GroupBounds } from '../group-bounds.js'
 
 export interface GroupOperationResult {
   readonly groupId: string
@@ -520,36 +516,7 @@ export const projectGroupGeometryPropertyUpdates = (
   return getProjectedPropertyUpdates(projection)
 }
 
-export const deriveGroupBounds = (
-  rectangles: readonly Pick<ElementRectangle, 'x' | 'y' | 'width' | 'height'>[]
-): GroupBounds => {
-  if (rectangles.length === 0) {
-    return Object.freeze({ x: 0, y: 0, width: 0, height: 0 })
-  }
-
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-
-  rectangles.forEach(({ x, y, width, height }) => {
-    const values = [x, y, width, height]
-    if (values.some((value) => !Number.isFinite(value))) {
-      return failGroupGeometry('direct-child rectangle is invalid')
-    }
-    minX = Math.min(minX, x, x + width)
-    minY = Math.min(minY, y, y + height)
-    maxX = Math.max(maxX, x, x + width)
-    maxY = Math.max(maxY, y, y + height)
-  })
-
-  return Object.freeze({
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY
-  })
-}
+export { deriveGroupBounds } from '../group-bounds.js'
 
 export const prepareGroupOperation = (
   core: GroupHierarchyReadCore,

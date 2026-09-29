@@ -1,3 +1,5 @@
+import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
+import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
   AiActionDefinition,
   AiExecutionContext
@@ -194,14 +196,15 @@ export class AiActionError extends Error {
   }
 }
 
-export class AiCompositionError extends Error {
-  readonly code = 'AI_APP_COMPOSITION_INCONSISTENT' as const
-
+export class AiCompositionError extends AiActionExecutionError {
   constructor(message: string) {
     super(message)
     this.name = 'AiCompositionError'
   }
 }
+
+const isCompositionType = (type: string | undefined): boolean =>
+  type === 'group' || type === 'frame'
 
 const createCompositionElements = (
   descriptors: readonly PreparedElementDescriptor[],
@@ -387,40 +390,7 @@ const createCompositionActions = (
       }
     },
     name: AiActionNames.INSERT_VECTOR_COMPOSITION,
-    inputSchema: Object.freeze({
-      additionalProperties: false,
-      properties: Object.freeze({
-        artifactVersion: Object.freeze({ const: 1, type: 'number' }),
-        compositionRole: Object.freeze({ type: 'string' }),
-        elementCount: Object.freeze({ minimum: 1, type: 'number' }),
-        groupBounds: Object.freeze({ type: 'object' }),
-        groupDescriptor: Object.freeze({ type: 'object' }),
-        parent: Object.freeze({
-          const: 'workspace',
-          type: 'string'
-        }),
-        pointCount: Object.freeze({ minimum: 0, type: 'number' }),
-        roleToElementIds: Object.freeze({ type: 'object' }),
-        skipped: Object.freeze({ type: 'array' }),
-        slices: Object.freeze({
-          minItems: 1,
-          type: 'array'
-        })
-      }),
-      required: Object.freeze([
-        'artifactVersion',
-        'compositionRole',
-        'elementCount',
-        'groupBounds',
-        'groupDescriptor',
-        'parent',
-        'pointCount',
-        'roleToElementIds',
-        'skipped',
-        'slices'
-      ]),
-      type: 'object'
-    })
+    inputSchema: PREPARED_DRAWING_INPUT_SCHEMA
   })
 
   const update: AiActionDefinition<UpdateCompositionElementsArgs> =
@@ -716,7 +686,37 @@ const createCompositionActions = (
         properties: Object.freeze({
           updates: Object.freeze({
             minItems: 1,
-            type: 'array'
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['elementId'],
+              properties: {
+                elementId: { type: 'string', minLength: 1 },
+                geometry: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['scaleX', 'scaleY'],
+                  properties: {
+                    scaleX: { type: 'number', exclusiveMinimum: 0 },
+                    scaleY: { type: 'number', exclusiveMinimum: 0 }
+                  }
+                },
+                style: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    fillColor: { type: 'string' },
+                    strokeColor: { type: 'string' }
+                  },
+                  oneOf: [
+                    { required: ['fillColor'] },
+                    { required: ['strokeColor'] }
+                  ]
+                }
+              },
+              oneOf: [{ required: ['geometry'] }, { required: ['style'] }]
+            }
           })
         }),
         required: Object.freeze(['updates']),
@@ -726,14 +726,14 @@ const createCompositionActions = (
 
   const remove: AiActionDefinition<RemoveAiCompositionArgs> = Object.freeze({
     description:
-      'Remove the current AI composition Group through the ordinary subtree boundary.',
+      'Remove the referenced AI composition Group or Frame through the ordinary subtree boundary.',
     execute: async (
       args: RemoveAiCompositionArgs,
       context: AiExecutionContext
     ) => {
       assertNotAborted(context)
       const targetType = apis.getElementType(args.compositionId)
-      if (targetType !== 'group') {
+      if (!isCompositionType(targetType)) {
         return Object.freeze({
           action: AiActionNames.REMOVE_AI_COMPOSITION,
           appliedElementIds: Object.freeze([]),
@@ -747,7 +747,7 @@ const createCompositionActions = (
         })
       }
       assertNotAborted(context)
-      if (apis.getElementType(args.compositionId) !== 'group') {
+      if (apis.getElementType(args.compositionId) !== targetType) {
         return Object.freeze({
           action: AiActionNames.REMOVE_AI_COMPOSITION,
           appliedElementIds: Object.freeze([]),
@@ -785,7 +785,66 @@ const createCompositionActions = (
     })
   })
 
-  return Object.freeze([insert, update, remove])
+  const replace: AiActionDefinition<{
+    readonly compositionId: string
+    readonly drawing: PreparedDrawingArtifact
+  }> = Object.freeze({
+    name: AiActionNames.REPLACE_VECTOR_COMPOSITION,
+    description:
+      'Replace the referenced existing AI composition with a fully prepared drawing in one transaction. Use this instead of separate remove and insert actions. If insertion is incomplete, the old drawing is preserved.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['compositionId', 'drawing'],
+      properties: {
+        compositionId: { type: 'string', minLength: 1 },
+        drawing: PREPARED_DRAWING_INPUT_SCHEMA
+      }
+    },
+    execute: async (
+      args: {
+        readonly compositionId: string
+        readonly drawing: PreparedDrawingArtifact
+      },
+      context: AiExecutionContext
+    ) => {
+      assertNotAborted(context)
+      const targetType = apis.getElementType(args.compositionId)
+      if (
+        !isCompositionType(targetType) ||
+        args.compositionId === args.drawing.groupDescriptor.id
+      )
+        throw new AiCompositionError(
+          'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
+        )
+      const result = (await insert.execute(args.drawing, context)) as {
+        status: string
+        compositionId: string
+      }
+      if (result.status !== 'complete')
+        throw new AiCompositionError(
+          'The new drawing was only partly created. The original drawing is still on the canvas; review both before continuing.'
+        )
+      assertNotAborted(context)
+      if (apis.getElementType(args.compositionId) !== targetType)
+        throw new AiCompositionError(
+          'The original drawing changed during this revision. Review the canvas and select the drawing again.'
+        )
+      const removal = (await remove.execute(
+        { compositionId: args.compositionId },
+        context
+      )) as { status: string }
+      if (removal.status !== 'complete')
+        throw new AiCompositionError(
+          'The new drawing was created, but the original could not be removed. Review the two drawings before continuing.'
+        )
+      return Object.freeze({
+        ...result,
+        action: AiActionNames.REPLACE_VECTOR_COMPOSITION
+      })
+    }
+  })
+  return Object.freeze([insert, update, remove, replace])
 }
 
 export const createAiActions = (
@@ -890,7 +949,74 @@ export const createAiActions = (
     }
   })
 
+  const clarification: AiActionDefinition<{ readonly question: string }> =
+    Object.freeze({
+      name: AiActionNames.REQUEST_CLARIFICATION,
+      description:
+        'Ask one concise question when the drawing target or required capability is ambiguous. Return this action alone without mutations.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['question'],
+        properties: {
+          question: { type: 'string', minLength: 1, maxLength: 1000 }
+        }
+      },
+      execute: async (
+        args: { readonly question: string },
+        context: AiExecutionContext
+      ) => {
+        assertNotAborted(context)
+        if (
+          typeof args.question !== 'string' ||
+          !args.question.trim() ||
+          args.question.length > 1000
+        )
+          throw new AiActionError()
+        return Object.freeze({
+          action: AiActionNames.REQUEST_CLARIFICATION,
+          status: 'no-change',
+          clarification: { kind: 'question', question: args.question.trim() }
+        })
+      }
+    })
+  const reportOutcome: AiActionDefinition<{
+    readonly outcome: 'completed' | 'unsupported'
+    readonly message: string
+  }> = {
+    name: AiActionNames.REPORT_OUTCOME,
+    description:
+      'End this request with a specific user-facing result or capability limitation. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['outcome', 'message'],
+      properties: {
+        outcome: { type: 'string', enum: ['completed', 'unsupported'] },
+        message: { type: 'string', minLength: 1, maxLength: 1000 }
+      }
+    },
+    execute: async (args, context) => {
+      assertNotAborted(context)
+      if (
+        !args ||
+        !['completed', 'unsupported'].includes(args.outcome) ||
+        typeof args.message !== 'string' ||
+        !args.message.trim() ||
+        args.message.length > 1000
+      )
+        throw new AiActionError()
+      return Object.freeze({
+        action: AiActionNames.REPORT_OUTCOME,
+        status: 'no-change',
+        outcome: args.outcome,
+        message: args.message.trim()
+      })
+    }
+  }
   return Object.freeze([
+    Object.freeze(reportOutcome),
+    clarification,
     drawingDetailChoice,
     ...createCompositionActions(apis, mutationOptions, hostYield, paintYield),
     visibility,

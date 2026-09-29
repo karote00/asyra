@@ -269,6 +269,17 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/starter-app#react:build": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/core#build:core",
+        "@asyra/preset#build:preset",
+        "@asyra/utils#build:utils"
+      ]
+    },
     "@asyra/system-context#build:system-context": {
       "cache": false,
       "outputs": [

@@ -102,6 +102,14 @@ safe contract-only subpath. The future Core Kernel is unscheduled. Migration
 must not bypass public facades or assume multiple isolated runtimes without
 formal proof.
 
+## Rendered subtree inspection
+
+`core.captureElementSnapshot(elementId, maxDimension = 1024)` returns a fresh
+PNG of a canonical element subtree through Render and the configured engine.
+It flushes pending projection, excludes editor overlays and camera framing, and
+does not change the document, selection or Undo history. Missing targets or
+unsupported capture throw; callers must explain unavailable review.
+
 ## Canonical sources and release inventory
 
 - [Package contract](../../../ai/framework/packages/core.md)

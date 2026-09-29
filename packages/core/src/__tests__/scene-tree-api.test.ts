@@ -313,6 +313,57 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     expect(snapshot?.fills).not.toBe(source.fills)
   })
 
+  it('selects detached fields without traversing omitted nested geometry', () => {
+    const geometryRead = vi.fn(() => {
+      throw new Error('Omitted geometry was traversed')
+    })
+    const source = { x: 10, fills: [{ color: '#ffffff' }], points: {} }
+    Object.defineProperty(source.points, 'largeNetwork', {
+      enumerable: true,
+      get: geometryRead
+    })
+    const requests = createRequests()
+    vi.mocked(requests.getElementComputedData).mockReturnValue(source)
+    const apis = createSceneTreeAPIs(requests)
+    const first = apis.getElementComputedData('element-1', ['x', 'fills', 'x'])
+    expect(first).toEqual({ x: 10, fills: [{ color: '#ffffff' }] })
+    expect(first?.fills).not.toBe(source.fills)
+    source.x = 25
+    source.fills[0].color = '#000000'
+    expect(apis.getElementComputedData('element-1', ['x', 'fills'])).toEqual({
+      x: 25,
+      fills: [{ color: '#000000' }]
+    })
+    expect(first).toEqual({ x: 10, fills: [{ color: '#ffffff' }] })
+    expect(geometryRead).not.toHaveBeenCalled()
+    expect(requests.getElementComputedData).toHaveBeenCalledTimes(2)
+  })
+
+  it('preserves missing objects and selects own fields only', () => {
+    const requests = createRequests(),
+      apis = createSceneTreeAPIs(requests)
+    expect(apis.getElementComputedData('missing', [])).toBeUndefined()
+    vi.mocked(requests.getElementComputedData).mockReturnValue(
+      Object.create({ inherited: 42 })
+    )
+    expect(
+      apis.getElementComputedData('present', ['inherited', 'missing'])
+    ).toEqual({})
+    expect(apis.getElementComputedData('present', [])).toEqual({})
+  })
+
+  it.each([null, 'x', [''], [123], ['x'.repeat(129)], Array(65).fill('x')])(
+    'rejects invalid field selection before reading: %j',
+    (fields) => {
+      const requests = createRequests(),
+        apis = createSceneTreeAPIs(requests)
+      expect(() =>
+        apis.getElementComputedData('element-1', fields as never)
+      ).toThrow()
+      expect(requests.getElementComputedData).not.toHaveBeenCalled()
+    }
+  )
+
   it('reprojects one ordered property-id batch and keeps empty input inert', () => {
     const requests = createRequests()
     const apis = createSceneTreeAPIs(requests)

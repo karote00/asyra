@@ -75,11 +75,21 @@ it('reports installed original-method deadline exhaustion and gives the next sam
   await host.handle({ type: LiveMessages.OPEN, snapshot })
   await host.handle({ type: LiveMessages.SAMPLE, id: 1, time: 4 })
 
-  expect(messages.at(-1)).toEqual({
+  expect(messages.at(-1)).toMatchObject({
     type: LiveMessages.ERROR,
     id: 1,
     time: 4,
-    pairs: []
+    pairs: [],
+    diagnostic: {
+      snapshotId: snapshot.snapshotId,
+      methodId: snapshot.method.id,
+      methodVersion: snapshot.method.version,
+      sampleTime: 4,
+      stopCause: 'deadline',
+      errorMessage: 'Live sample deadline exceeded',
+      completedPairCount: 0,
+      missingPairCount: snapshot.pairs.length
+    }
   })
   expect(messages.some((message) => message.type === LiveMessages.RESULT)).toBe(
     false
@@ -88,10 +98,17 @@ it('reports installed original-method deadline exhaustion and gives the next sam
   now.mockReturnValue(ticks * (LIVE_LIMITS.sampleDurationMs + 1))
   await host.handle({ type: LiveMessages.SAMPLE, id: 2, time: 4 })
 
-  expect(messages.at(-1)).toEqual({
+  expect(messages.at(-1)).toMatchObject({
     type: LiveMessages.RESULT,
     id: 2,
     time: 4,
-    evidence: runOriginalPartMethod(sampleSnapshot(snapshot, 4))
+    evidence: runOriginalPartMethod(sampleSnapshot(snapshot, 4)),
+    diagnostic: {
+      snapshotId: snapshot.snapshotId,
+      sampleTime: 4,
+      stopCause: 'completed',
+      completedPairCount: snapshot.pairs.length,
+      missingPairCount: 0
+    }
   })
 }, 20000)

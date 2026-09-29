@@ -38,6 +38,7 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
 })
 
 let inputSource: ViewSource<ExperimentInputs> | undefined
+let liveDiagnostics: readonly unknown[]
 let registered:
   | ViewSource<{ experiments: ReturnType<SimRuntime['getExperiments']> }>
   | undefined
@@ -66,6 +67,7 @@ beforeEach(() => {
 
   inputSource = undefined
   registered = undefined
+  liveDiagnostics = emptyRecords
 
   host = document.createElement('div')
 
@@ -96,7 +98,12 @@ const experiment = {
 const runtime = {
   experimentInputs: new ExperimentInputReader(),
   features: {
-    live: { subscribe: () => () => undefined, getRecords: () => emptyRecords }
+    live: {
+      subscribe: () => () => undefined,
+      subscribeRecords: () => () => undefined,
+      getDiagnostics: () => liveDiagnostics,
+      getRecords: () => emptyRecords
+    }
   },
   getExperiments: vi.fn(() => [structuredClone(experiment)]),
   getMethodDescriptors: () => [
@@ -1122,4 +1129,42 @@ it('shows creation progress until the authoritative write completes', async () =
   expect(button('Creating experiment…')?.getAttribute('aria-busy')).toBe('true')
   await act(() => finish())
   expect(button('Create experiment')?.disabled).toBe(false)
+})
+
+it('exposes the bounded live diagnostic trace in playback observations', async () => {
+  liveDiagnostics = [
+    {
+      diagnosticId: 3,
+      worker: {
+        requestId: 17,
+        snapshotId: 'snapshot-17',
+        stopCause: 'executor-error',
+        completedPairIds: ['robot-arm::fixture-table'],
+        missingPairIds: ['wrist::fixture-table']
+      }
+    }
+  ]
+  await act(() =>
+    renderExperiment({
+      runtime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform: vi.fn(),
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+
+  const observations = host.querySelector('[data-testid="live-observations"]')
+  expect(observations?.textContent).toContain('Playback diagnostics')
+  expect(observations?.textContent).toContain('snapshot-17')
+  expect(observations?.textContent).toContain('robot-arm::fixture-table')
+  expect(observations?.textContent).toContain('wrist::fixture-table')
 })
