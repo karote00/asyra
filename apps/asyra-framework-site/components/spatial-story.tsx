@@ -629,7 +629,7 @@ export function SpatialStory({
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-4 text-[14px]">
+        <div className="flex items-center gap-3 text-[14px]">
           <nav
             aria-label="Primary navigation"
             className="hidden items-center gap-5 lg:flex"
@@ -650,7 +650,7 @@ export function SpatialStory({
             </a>
           </nav>
           <a
-            className="inline-flex min-h-11 items-center font-medium"
+            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap font-medium"
             data-site-cta=""
             href="/docs#generic-starter-source"
           >
