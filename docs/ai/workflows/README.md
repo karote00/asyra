@@ -2,6 +2,10 @@
 
 This folder defines command entrypoints. These files should stay lightweight and reference-driven.
 
+Ordinary implementation and documentation requests enter through
+[`agent-task.md`](agent-task.md); the agent selects the applicable command and
+skills without requiring the user to supply the workflow name.
+
 ## Commands
 
 - `/feature <description>`
@@ -79,6 +83,13 @@ All workflows should return:
 4. Validation run and outcomes
 5. Docs updated
 6. Open risks/follow-ups
+
+## Agentic Engineering System
+
+[`agentic-engineering-system.md`](agentic-engineering-system.md) maps Skills,
+Architecture, Verification, and Evals to their executable owners. The
+[agent eval tool](../tools/agent-evals/README.md) prepares repeatable tasks,
+checks source and test evidence, and aggregates reviewed failure patterns.
 
 ## Visual Review Contract
 

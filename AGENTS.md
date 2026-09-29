@@ -8,6 +8,11 @@ Start every task with a brief triage based on the user's request and the files
 being touched. Load only the rules needed for that scope, then expand context if
 the task proves riskier than it first appeared.
 
+For implementation, bug-fix, refactor, and documentation requests, use
+`docs/ai/workflows/agent-task.md` to select the existing workflow and applicable
+skills from the requested outcome. The user does not need to name a slash
+command. Read-only questions keep the Level 0 path below.
+
 ### Always-On Rules
 
 These rules apply to every task without requiring additional document reads:
