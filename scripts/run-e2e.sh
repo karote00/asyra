@@ -78,7 +78,7 @@ DOCUMENT_BACKEND_DATA_DIR=test-results/document-backend \
 E2E_DOCUMENT_BACKEND_PID=$!
 
 echo "Step 4: Waiting for Document backend to be ready..."
-npx wait-on "http-get://127.0.0.1:4201/health" --timeout 60000
+node scripts/wait-for-http.mjs "http://127.0.0.1:4201/health" GET 60000
 
 # 5. Build and start the Collaboration server as a dedicated CI dependency.
 echo "Step 5: Building Collaboration server..."
@@ -90,7 +90,7 @@ DOCUMENT_PERSISTENCE_BACKEND_URL="$E2E_DOCUMENT_BACKEND_URL" \
 E2E_COLLABORATION_SERVER_PID=$!
 
 echo "Step 7: Waiting for Collaboration server to be ready..."
-npx wait-on "http-get://${E2E_COLLABORATION_HEALTH_URL#http://}" --timeout 60000
+node scripts/wait-for-http.mjs "$E2E_COLLABORATION_HEALTH_URL" GET 60000
 
 # 8. Start the diagnostic-enabled app runtime used by the ordinary E2E suite.
 # Production bundle/exclusion behavior is covered by the build and package gates.
@@ -106,8 +106,7 @@ E2E_APP_SERVER_PID=$!
 
 # 9. Wait for App server ready
 echo "Step 9: Waiting for App server to be ready..."
-# Using wait-on to ensure port is listening
-npx wait-on "$E2E_APP_URL" --timeout 60000
+node scripts/wait-for-http.mjs "$E2E_APP_URL" HEAD 60000
 
 # Independent CI jobs use the same PID-owned services and cleanup guards.
 if [ "$E2E_SUITE" = "render-contracts" ] || { [ "$E2E_SUITE" = "all" ] && [ "${CI:-}" = "true" ]; }; then

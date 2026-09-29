@@ -657,7 +657,7 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   const collaborationBuild = runner.indexOf('build:collaboration-server')
   const collaborationStart = runner.indexOf('collaboration:server:start')
   const collaborationReady = runner.indexOf(
-    'npx wait-on "http-get://${E2E_COLLABORATION_HEALTH_URL#http://}"'
+    'node scripts/wait-for-http.mjs "$E2E_COLLABORATION_HEALTH_URL" GET 60000'
   )
   const appStart = runner.indexOf('yarn workspace @asyra/asyra-design start')
 
@@ -678,9 +678,14 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   )
   assert.match(
     runner,
-    /npx wait-on "http-get:\/\/\$\{E2E_COLLABORATION_HEALTH_URL#http:\/\/\}"/,
+    /node scripts\/wait-for-http\.mjs "\$E2E_COLLABORATION_HEALTH_URL" GET 60000/,
     'Collaboration readiness must use the server GET-only health contract'
   )
+  assert.equal(
+    (runner.match(/node scripts\/wait-for-http\.mjs/g) ?? []).length,
+    3
+  )
+  assert.doesNotMatch(runner, /wait-on/)
   assert.ok(
     appStart > collaborationReady,
     'ordinary E2E must start the App only after collaboration is ready'
