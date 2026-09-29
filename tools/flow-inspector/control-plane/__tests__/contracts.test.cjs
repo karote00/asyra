@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
+const { createHash } = require('node:crypto')
 const test = require('node:test')
 const { admitContract, mappingDiff } = require('../contracts.cjs')
 const manifest = require('../../../../packages/factory/flow-contracts.json')
@@ -10,6 +11,51 @@ const admit = (change) => {
   change?.(input)
   return admitContract(input.manifest, input.architecture)
 }
+
+test('runtime authority retains each selected architecture step once without changing contract identity', () => {
+  const input = structuredClone({ manifest, architecture })
+  const contract = admitContract(input.manifest, input.architecture)
+  const selected = new Set(manifest.flows.flatMap((flow) => flow.stepIds))
+  const entries = architecture.steps
+    .filter((step) => selected.has(step.id))
+    .map((step) => ({
+      stepId: step.id,
+      ownerPackage: step.ownerPackage,
+      implementationBoundary: [...step.implementationBoundary]
+    }))
+  const hash = (value) =>
+    createHash('sha256').update(JSON.stringify(value)).digest('hex')
+  assert.deepEqual(contract.runtimeScope, {
+    format: 1,
+    steps: entries,
+    digest: hash({ format: 1, steps: entries })
+  })
+  assert.equal(contract.digest, hash({ manifest, architecture }))
+  assert.equal(contract.version, 2)
+  assert.ok(
+    Object.isFrozen(contract.runtimeScope.steps[0].implementationBoundary)
+  )
+  input.architecture.steps
+    .find((step) => selected.has(step.id))
+    .implementationBoundary.push('caller-authored-path')
+  assert.deepEqual(contract.runtimeScope.steps, entries)
+})
+
+test('runtime authority follows architecture order and binds every selected owner boundary', () => {
+  const original = admit()
+  const reordered = admit(({ architecture }) => architecture.steps.reverse())
+  assert.deepEqual(
+    reordered.runtimeScope.steps.map((step) => step.stepId),
+    original.runtimeScope.steps.map((step) => step.stepId).reverse()
+  )
+  const changed = admit(({ architecture }) => {
+    architecture.steps
+      .find((step) => step.id === manifest.flows[0].stepIds[0])
+      .implementationBoundary.push('packages/factory/src/new-owner.ts')
+  })
+  assert.notEqual(changed.runtimeScope.digest, original.runtimeScope.digest)
+  assert.notEqual(reordered.runtimeScope.digest, original.runtimeScope.digest)
+})
 
 test('mapping review prepares exact test-name changes while preserving every obligation and its owner', () => {
   const accepted = admit()

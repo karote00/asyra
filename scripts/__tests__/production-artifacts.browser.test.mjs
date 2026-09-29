@@ -7,6 +7,10 @@ import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { serveArtifact } from '../production-artifact-server.mjs'
+import {
+  collectArtifactResourceSnapshot,
+  runWithArtifactResourceEvidence
+} from '../production-artifact-resource-evidence.mjs'
 
 const require = createRequire(
   new URL('../../apps/asyra-design/package.json', import.meta.url)
@@ -98,25 +102,36 @@ test(
     await analysisBudget.fill(String(releaseAnalysisBudgetMs))
     await analysisBudget.press('Enter')
     await expect(analysisBudget).toHaveValue(String(releaseAnalysisBudgetMs))
-    await page
-      .getByRole('button', { name: 'Run analysis', exact: true })
-      .click()
-    await page
-      .getByRole('button', { name: 'View results', exact: true })
-      .click({ timeout: 90_000 })
-    const result = page.getByTestId('analysis-result')
-    await expect(
-      result.getByRole('heading', { name: 'Issue found', exact: true })
-    ).toBeVisible()
-    const field = (label) =>
-      result
-        .locator('.result-grid > div')
-        .filter({ has: page.getByText(label, { exact: true }) })
-        .locator('dd')
-    await expect(field('Execution')).toHaveText('completed')
-    await expect(field('Coverage')).toHaveText('complete')
-    await expect(field('Finding / unresolved pairs')).toHaveText('2 / 0')
-    await expect(field('Pairs with evidence')).toHaveText('46/46')
+    await runWithArtifactResourceEvidence({
+      capture: () => collectArtifactResourceSnapshot({ repositoryRoot: root }),
+      report: (value) => t.diagnostic(value),
+      operation: async ({ mark, observeTerminalInactive }) => {
+        mark('run-click-requested-ui')
+        await page
+          .getByRole('button', { name: 'Run analysis', exact: true })
+          .click()
+        mark('run-click-completed-ui')
+        await page
+          .getByRole('button', { name: 'View results', exact: true })
+          .click({ timeout: 90_000 })
+        observeTerminalInactive('result-button-observed-actionable-ui')
+        mark('result-assertion-started')
+        const result = page.getByTestId('analysis-result')
+        await expect(
+          result.getByRole('heading', { name: 'Issue found', exact: true })
+        ).toBeVisible()
+        const field = (label) =>
+          result
+            .locator('.result-grid > div')
+            .filter({ has: page.getByText(label, { exact: true }) })
+            .locator('dd')
+        await expect(field('Execution')).toHaveText('completed')
+        await expect(field('Coverage')).toHaveText('complete')
+        await expect(field('Finding / unresolved pairs')).toHaveText('2 / 0')
+        await expect(field('Pairs with evidence')).toHaveText('46/46')
+        mark('result-assertion-completed')
+      }
+    })
     await page.reload()
     await expect(page.getByTestId('persistence-status')).toHaveText(
       'Saved locally - Production artifact project'
