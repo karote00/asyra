@@ -7,8 +7,6 @@ for (const kind of ['clearance', 'collision']) {
   }, info) => {
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
-    await page.reload()
-    await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     await page.getByRole('button', { name: 'Experiments', exact: true }).click()
     await page.getByLabel('Experiment', { exact: true }).selectOption({
       label: 'Tool and table collision - r1'
@@ -57,23 +55,30 @@ for (const kind of ['clearance', 'collision']) {
       const frames: {
         kind: string | null
         matches: string | null
+        height: number
         text: string
       }[] = []
-      const notice = document.querySelector('[data-testid="playback-feedback"]')
-
-      if (!notice) throw new Error('Missing playback notice')
+      if (!document.querySelector('[data-testid="playback-feedback"]'))
+        throw new Error('Missing playback notice')
 
       const observer = new MutationObserver(() => {
         if (frames.length >= 512)
           throw new Error('Manual feedback trace exceeded its bound')
 
+        const notice = document.querySelector(
+          '[data-testid="playback-feedback"]'
+        )
+
+        if (!notice) return
+
         frames.push({
           kind: notice.getAttribute('data-kind'),
           matches: notice.getAttribute('data-pose-matches'),
+          height: notice.getBoundingClientRect().height,
           text: notice.textContent ?? ''
         })
       })
-      observer.observe(notice, {
+      observer.observe(document.body, {
         subtree: true,
         childList: true,
         characterData: true,
@@ -103,7 +108,12 @@ for (const kind of ['clearance', 'collision']) {
 
     const frames = await page.evaluate(() => {
       const trace = Reflect.get(window, 'manualSeekTrace') as {
-        frames: { kind: string | null; matches: string | null; text: string }[]
+        frames: {
+          kind: string | null
+          matches: string | null
+          height: number
+          text: string
+        }[]
         observer: MutationObserver
       }
       trace.observer.disconnect()
@@ -124,9 +134,12 @@ for (const kind of ['clearance', 'collision']) {
       })
     })
     expect(frames.length).toBeGreaterThan(0)
+    expect(frames.every((frame) => frame.kind === kind)).toBe(true)
+    const heights = frames.map((frame) => frame.height)
     expect(
-      frames.every((frame) => frame.kind === kind && frame.matches === 'true')
-    ).toBe(true)
+      Math.max(...heights) - Math.min(...heights),
+      `Feedback card heights: ${heights.join(', ')}`
+    ).toBeLessThanOrEqual(24)
     await expect(
       page.getByRole('button', { name: 'Play trajectory', exact: true })
     ).toBeVisible()

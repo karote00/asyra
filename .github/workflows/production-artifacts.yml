@@ -36,5 +36,7 @@ jobs:
         run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
       - name: Build production artifacts
         run: node scripts/app-release-verification.mjs build
+      - name: Verify bounded production artifact resource evidence
+        run: node --test scripts/__tests__/production-artifact-resource-evidence.test.mjs
       - name: Test production artifacts without dev servers
         run: node scripts/app-release-verification.mjs test

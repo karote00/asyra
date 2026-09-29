@@ -3,8 +3,9 @@
 Date: 2026-09-12. Implementation delivered for review in
 <a href="https://github.com/karote00/asyra/pull/193" target="_blank" rel="noopener noreferrer">PR 193</a>.
 This closes the first target/work admission slice only. Merge is not authorized.
-The [multi-PR plan](../flow-inspector-multi-pr-development-and-integration-plan.md)
-remains active for integration verification and explicit acceptance.
+The [multi-PR plan](flow-inspector-multi-pr-development-and-integration-plan.md)
+was still active at this checkpoint for integration verification and explicit
+acceptance.
 
 ## Delivered behavior
 
@@ -52,8 +53,9 @@ remain under the worktree's `tmp/flow-inspector/` and are not published artifact
 
 ## Remaining work and release boundary
 
-Source-bound prerequisite handoff verification, broader scoped verification,
-complete multi-PR integration assessment and target acceptance remain open.
+At this checkpoint, source-bound prerequisite handoff verification, broader
+scoped verification, complete multi-PR integration assessment and target
+acceptance remained open.
 Required-check protection, independent verifier/issuer, provider reconciliation,
 team/tenant/parallel scheduling and hosting remain deferred. A passed work item,
 PR creation, passed checks or merge never accepts the baseline.

@@ -513,7 +513,7 @@ reconciliation, ticket/team/hosting and standalone dynamic service remain deferr
 
 ## Multi-PR flow development direction - 2026-09-10
 
-The user approved recording [multi-PR development and integration acceptance](flow-inspector-multi-pr-development-and-integration-plan.md)
+The user approved recording [multi-PR development and integration acceptance](completed/flow-inspector-multi-pr-development-and-integration-plan.md)
 as a separate planned architecture change. A flow is a lasting product contract,
 while tasks and PRs divide its implementation. Both accepted behavior and
 in-development promises participate in CI; their assessments and full-flow
@@ -524,5 +524,7 @@ single-candidate trial as a permanent one-flow/one-PR product constraint, not it
 implemented per-attempt delivery identity. The first local target/work slice and
 its Board/API/CLI projections are implemented under the
 [living contract](../CORE_PROOF.md#flow-targets-and-work-decomposition). Full source-bound
-integration assessment and target acceptance remain unimplemented; existing
-strict verification, completed records and deferred enforcement remain unchanged.
+integration assessment, explicit target acceptance and captured full-runtime
+product evidence are complete for one local owner and repository. Existing
+strict verification and completed records remain unchanged; multi-repository,
+team and protected external enforcement stay deferred.
