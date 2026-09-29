@@ -11,6 +11,7 @@ import {
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { formatVersion, getCase, reviewCriteria } from './catalog.mjs'
+import { createExperiments } from './experiments.mjs'
 
 export const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -89,6 +90,7 @@ function captureSuite(entry, contents = new Map()) {
     'docs/ai/workflows/agent-task.md',
     'scripts/agent-evals/catalog.mjs',
     'scripts/agent-evals/engine.mjs',
+    'scripts/agent-evals/experiments.mjs',
     'scripts/agent-evals/cli.mjs',
     'scripts/agent-evals/__tests__/behavior-oracle.mjs',
     ...entry.references
@@ -468,7 +470,7 @@ export function createRunner(
       evaluation.snapshot.digest !== snapshot(workspace).digest
     )
       throw new Error('Evaluation is stale; evaluate the current candidate')
-    return { run, state, evaluation, currentSuite }
+    return { run, state, evaluation, currentSuite, attempts: names.length }
   }
   function review(id, input) {
     const { run, state, evaluation, currentSuite } = latest(id)
@@ -505,7 +507,7 @@ export function createRunner(
     return report(id)
   }
   function report(id, contents = new Map()) {
-    const { run, evaluation, currentSuite } = latest(id, contents)
+    const { run, evaluation, currentSuite, attempts } = latest(id, contents)
     const reviewPath = insideRepository(
       path.join(run, 'reviews', `${evaluation.evaluationId}.json`)
     )
@@ -534,6 +536,9 @@ export function createRunner(
       actor: evaluation.actor,
       evaluationId: evaluation.evaluationId,
       suite: evaluation.suite,
+      sourceCommit: evaluation.sourceCommit,
+      node: evaluation.node,
+      attempts,
       currentSuite,
       snapshot: evaluation.snapshot.digest,
       status,
@@ -573,7 +578,43 @@ export function createRunner(
     }
     return { groups: [...groups.values()], reports }
   }
+  function observe(ids) {
+    const contents = new Map()
+    return ids.map((id) => {
+      const run = directory(id)
+      if (
+        readdirSync(path.join(run, 'evaluations')).some((name) =>
+          /^[0-9]+-[a-f0-9-]+\.json$/.test(name)
+        )
+      )
+        return report(id, contents)
+      const { state, currentSuite } = load(id, false, contents)
+      return {
+        run: id,
+        caseId: state.caseId,
+        mode: state.mode,
+        suite: state.suite,
+        actor: state.actor,
+        sourceCommit: state.sourceCommit,
+        node: state.node,
+        currentSuite,
+        status: 'not-evaluated',
+        attempts: 0
+      }
+    })
+  }
+  const experiments = createExperiments({
+    root,
+    directory,
+    read: json,
+    save,
+    safePath: insideRepository,
+    capture: captureSuite,
+    prepare,
+    observe
+  })
   return {
+    ...experiments,
     prepare,
     admit,
     regression,

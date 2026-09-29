@@ -62,3 +62,11 @@ ownership. The tool captures real source and test evidence. A named independent
 reviewer owns semantic acceptance; the tool does not silently treat an agent's
 self-report as success. Ordinary tasks do not need to run this suite unless
 they change this workflow or the evaluation machinery.
+
+For an authorized improvement experiment, freeze the failure evidence,
+hypothesis, baseline/candidate configurations, development/holdout cases and
+sample count with the tool's `experiment` command. Prepare fresh runs with
+`trial`, then use the existing evidence/review flow and `compare`. Keep held-out
+feedback out of tuning, preserve failed attempts, and report inconclusive or
+regressed results honestly. The tool records comparisons; it does not dispatch
+agents, change rules or retry tasks automatically.

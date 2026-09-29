@@ -505,3 +505,438 @@ test('historical reviews are interpreted using the rubric retained by their eval
     }
   ])
 })
+
+function experimentDefinition() {
+  return {
+    formatVersion: 1,
+    hypothesis: 'Explicit owner lookup reduces ownership mistakes.',
+    failureEvidence:
+      'Synthetic replay for evaluator tests; not a real task incident.',
+    change: {
+      layer: 'skills',
+      description:
+        'Compare the existing instructions with an owner lookup reminder.',
+      files: ['docs/ai/workflows/agent-task.md']
+    },
+    configurations: {
+      baseline: 'Replay - existing instructions',
+      candidate: 'Replay - owner lookup reminder'
+    },
+    mode: 'replay',
+    samplesPerCase: 1,
+    development: ['docs-routing'],
+    holdout: ['feature-ownership']
+  }
+}
+
+function experimentTrial(
+  runner,
+  variant,
+  caseId,
+  outcome = 'passed',
+  suffix = ''
+) {
+  const id = `${variant}-${caseId}${suffix}`
+  const prepared = runner.trial(
+    'experiment',
+    variant,
+    caseId,
+    id,
+    'replay-actor'
+  )
+  plan(runner, prepared, id)
+  if (outcome !== 'failed') correctCandidate(runner, prepared, id)
+  const evaluation = runner.evaluate(id)
+  if (outcome === 'passed') runner.review(id, reviewInput(evaluation))
+  return { prepared, evaluation, id }
+}
+
+test('a rejected first trial does not freeze a candidate configuration', (t) => {
+  const { root, runner } = setup(t)
+  runner.experiment('experiment', experimentDefinition())
+  const candidate = path.join(root, '.experiments/experiment/candidate.json')
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'candidate',
+        'feature-ownership',
+        'early',
+        'actor'
+      ),
+    /Complete all development/
+  )
+  assert.equal(fs.existsSync(candidate), false)
+  assert.throws(
+    () =>
+      runner.trial('experiment', 'candidate', 'docs-routing', 'invalid', ''),
+    /Actor is required/
+  )
+  assert.equal(fs.existsSync(candidate), false)
+})
+
+test('experiment freezes configuration, keeps failures, separates holdout, and reports regressions despite development gains', (t) => {
+  const { root, runner } = setup(t)
+  const definition = experimentDefinition()
+  runner.experiment('experiment', definition)
+  definition.hypothesis = 'Caller mutation must not rewrite the record'
+  assert.throws(() => runner.experiment('experiment', definition), /EEXIST/)
+  assert.equal(runner.compare('experiment').outcome, 'incomplete')
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'baseline',
+        'feature-ownership',
+        'early',
+        'actor'
+      ),
+    /Complete all development/
+  )
+  experimentTrial(runner, 'baseline', 'docs-routing', 'failed')
+  experimentTrial(runner, 'candidate', 'docs-routing')
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'baseline',
+        'docs-routing',
+        'replacement',
+        'actor'
+      ),
+    /budget is full/
+  )
+  experimentTrial(runner, 'baseline', 'feature-ownership')
+  experimentTrial(runner, 'candidate', 'feature-ownership', 'failed')
+  const result = runner.compare('experiment')
+  assert.equal(result.outcome, 'regressed')
+  assert.equal(result.groups[0].outcome, 'improved')
+  assert.equal(result.groups[0].passRateDelta, 1)
+  assert.equal(result.groups[1].outcome, 'regressed')
+  assert.equal(result.groups[1].passRateDelta, -1)
+  assert.equal(result.groups[1].candidate.failed, 1)
+  assert.match(result.definition.failureEvidence, /Synthetic replay/)
+  assert.match(result.interpretation, /not observed agent quality/)
+  assert.notEqual(result.definition.hypothesis, definition.hypothesis)
+  assert.equal(
+    JSON.parse(readFileSync(result.artifact, 'utf8')).outcome,
+    'regressed'
+  )
+  assert.ok(result.artifact.startsWith(root))
+  assert.notEqual(runner.compare('experiment').artifact, result.artifact)
+})
+
+test('experiment reports missing, unevaluated and unreviewed samples without a success delta', (t) => {
+  const { runner } = setup(t)
+  runner.experiment('experiment', experimentDefinition())
+  let result = runner.compare('experiment')
+  assert.equal(result.groups[0].baseline.missing, 1)
+  runner.trial(
+    'experiment',
+    'baseline',
+    'docs-routing',
+    'baseline-docs-routing',
+    'actor'
+  )
+  experimentTrial(runner, 'candidate', 'docs-routing', 'needs-review')
+  result = runner.compare('experiment')
+  assert.equal(result.groups[0].baseline.pending, 1)
+  assert.equal(result.groups[0].baseline.attempts, 0)
+  assert.equal(result.groups[0].candidate.pending, 1)
+  assert.equal(result.groups[0].candidate.passed, 0)
+  assert.equal(result.groups[0].passRateDelta, null)
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'candidate',
+        'feature-ownership',
+        'holdout',
+        'actor'
+      ),
+    /evidence or semantic review is pending/
+  )
+})
+
+test('balanced samples count distinct runs once and expose descriptive improvement', (t) => {
+  const { runner } = setup(t)
+  runner.experiment('experiment', {
+    ...experimentDefinition(),
+    samplesPerCase: 2
+  })
+  for (const suffix of ['-1', '-2']) {
+    experimentTrial(runner, 'baseline', 'docs-routing', 'failed', suffix)
+    experimentTrial(runner, 'candidate', 'docs-routing', 'passed', suffix)
+  }
+  for (const suffix of ['-1', '-2']) {
+    experimentTrial(runner, 'baseline', 'feature-ownership', 'passed', suffix)
+    experimentTrial(runner, 'candidate', 'feature-ownership', 'passed', suffix)
+  }
+  const result = runner.compare('experiment')
+  assert.equal(result.outcome, 'improved')
+  assert.equal(result.reports.length, 8)
+  assert.equal(new Set(result.reports.map((report) => report.run)).size, 8)
+  assert.deepEqual(result.groups[0].baseline, {
+    planned: 2,
+    passed: 0,
+    failed: 2,
+    pending: 0,
+    missing: 0,
+    attempts: 2
+  })
+  assert.equal(result.groups[0].candidate.passed, 2)
+  assert.equal(result.groups[0].passRateDelta, 1)
+  assert.equal(result.groups[1].passRateDelta, 0)
+})
+
+test('experiment rejects invalid versions, missing hypotheses, mixed partitions and non-instruction changes', (t) => {
+  const { runner } = setup(t)
+  const invalid = (patch, pattern) =>
+    assert.throws(
+      () =>
+        runner.experiment('invalid', { ...experimentDefinition(), ...patch }),
+      pattern
+    )
+  invalid({ formatVersion: 999 }, /Unsupported experiment/)
+  invalid({ hypothesis: '' }, /hypothesis/)
+  invalid({ failureEvidence: '' }, /failureEvidence/)
+  invalid({ configurations: {} }, /configuration/)
+  invalid({ mode: 'automatic' }, /Mode/)
+  invalid({ samplesPerCase: 0 }, /Samples/)
+  invalid({ samplesPerCase: 1.5 }, /Samples/)
+  invalid({ samplesPerCase: 21 }, /Samples/)
+  invalid({ holdout: [] }, /holdout/)
+  invalid({ holdout: ['docs-routing'] }, /distinct/)
+  invalid({ holdout: ['unknown'] }, /Unknown case/)
+  invalid(
+    { change: { layer: 'unknown', description: 'x', files: [] } },
+    /layer/
+  )
+  invalid(
+    {
+      change: {
+        layer: 'evals',
+        description: 'x',
+        files: ['scripts/agent-evals/catalog.mjs']
+      }
+    },
+    /new benchmark/
+  )
+  runner.experiment('experiment', experimentDefinition())
+  assert.throws(
+    () => runner.trial('experiment', 'unknown', 'docs-routing', 'x', 'actor'),
+    /Variant/
+  )
+  assert.throws(
+    () => runner.trial('experiment', 'baseline', 'bugfix-range', 'x', 'actor'),
+    /outside/
+  )
+  runner.prepare('docs-routing', 'existing', 'actor', 'replay')
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'baseline',
+        'docs-routing',
+        'existing',
+        'actor'
+      ),
+    /EEXIST/
+  )
+})
+
+test('experiment compares declared instruction changes, freezes candidate content, and rejects changed evaluators', (t) => {
+  const { runner } = setup(t)
+  runner.experiment('experiment', experimentDefinition())
+  experimentTrial(runner, 'baseline', 'docs-routing')
+  const source = 'docs/ai/workflows/agent-task.md'
+  let changed = source
+  let suffix = '\nCandidate instruction reminder.\n'
+  const original = fs.readFileSync
+  const spy = t.mock.method(fs, 'readFileSync', (file, ...args) => {
+    const value = original(file, ...args)
+    if (file === path.join(repositoryRoot, changed)) return value + suffix
+    return value
+  })
+  syncBuiltinESMExports()
+  try {
+    experimentTrial(runner, 'candidate', 'docs-routing')
+    const result = runner.compare('experiment')
+    assert.deepEqual(result.changedFiles, [source])
+    assert.equal(
+      result.reports.find((report) => report.variant === 'baseline')
+        .currentSuite,
+      false
+    )
+    assert.equal(result.groups[0].outcome, 'unchanged')
+    assert.throws(
+      () =>
+        runner.trial(
+          'experiment',
+          'baseline',
+          'feature-ownership',
+          'wrong-baseline',
+          'actor'
+        ),
+      /Undeclared suite/
+    )
+    suffix = '\nSecond candidate instruction revision.\n'
+    assert.throws(
+      () =>
+        runner.trial(
+          'experiment',
+          'candidate',
+          'feature-ownership',
+          'retuned',
+          'actor'
+        ),
+      /Undeclared suite/
+    )
+    changed = 'scripts/agent-evals/__tests__/behavior-oracle.mjs'
+    assert.throws(
+      () =>
+        runner.trial(
+          'experiment',
+          'candidate',
+          'feature-ownership',
+          'weakened-oracle',
+          'actor'
+        ),
+      /Undeclared suite/
+    )
+  } finally {
+    spy.mock.restore()
+    syncBuiltinESMExports()
+  }
+})
+
+test('comparison validates each candidate snapshot once, shares source reads, and refreshes evidence on the next call', (t) => {
+  const { runner } = setup(t)
+  runner.experiment('experiment', experimentDefinition())
+  experimentTrial(runner, 'baseline', 'docs-routing')
+  experimentTrial(runner, 'candidate', 'docs-routing')
+  experimentTrial(runner, 'baseline', 'feature-ownership')
+  const candidate = experimentTrial(runner, 'candidate', 'feature-ownership')
+  const original = fs.readFileSync
+  let sharedReads = 0
+  let candidateReads = 0
+  const spy = t.mock.method(fs, 'readFileSync', (file, ...args) => {
+    if (file === path.join(repositoryRoot, 'AGENTS.md')) sharedReads += 1
+    if (file === path.join(candidate.prepared.workspace, 'src/view.mjs'))
+      candidateReads += 1
+    return original(file, ...args)
+  })
+  syncBuiltinESMExports()
+  try {
+    assert.equal(runner.compare('experiment').outcome, 'unchanged')
+    assert.equal(sharedReads, 1)
+    assert.equal(candidateReads, 1)
+    runner.compare('experiment')
+    assert.equal(sharedReads, 2)
+    assert.equal(candidateReads, 2)
+    write(candidate.prepared.workspace, 'HANDOFF.md', 'Unverified later edit')
+    assert.throws(() => runner.compare('experiment'), /stale/)
+    runner.evaluate(candidate.id)
+    const refreshed = runner.compare('experiment')
+    assert.equal(refreshed.outcome, 'incomplete')
+    assert.equal(refreshed.groups[1].candidate.pending, 1)
+    assert.equal(refreshed.groups[1].candidate.attempts, 2)
+  } finally {
+    spy.mock.restore()
+    syncBuiltinESMExports()
+  }
+})
+
+test('development results cannot be revised after holdout release', (t) => {
+  const { runner } = setup(t)
+  runner.experiment('experiment', experimentDefinition())
+  const baseline = experimentTrial(runner, 'baseline', 'docs-routing')
+  experimentTrial(runner, 'candidate', 'docs-routing')
+  experimentTrial(runner, 'baseline', 'feature-ownership')
+  const reevaluated = runner.evaluate(baseline.id)
+  runner.review(baseline.id, reviewInput(reevaluated))
+  assert.throws(() => runner.compare('experiment'), /changed after holdout/)
+  assert.throws(
+    () =>
+      runner.trial(
+        'experiment',
+        'candidate',
+        'feature-ownership',
+        'late',
+        'actor'
+      ),
+    /changed after holdout/
+  )
+})
+
+test('CLI creates frozen experiments and reports incomplete comparisons without dispatch or retries', (t) => {
+  const id = `experiment-cli-${Date.now()}`
+  const cli = path.join(repositoryRoot, 'scripts/agent-evals/cli.mjs')
+  const { root } = setup(t)
+  const definition = path.join(root, 'definition.json')
+  writeFileSync(definition, JSON.stringify(experimentDefinition()))
+  const invoke = (...args) =>
+    spawnSync(process.execPath, [cli, ...args], {
+      cwd: repositoryRoot,
+      encoding: 'utf8'
+    })
+  t.after(() =>
+    rmSync(path.join(repositoryRoot, 'tmp/agent-evals/.experiments', id), {
+      recursive: true,
+      force: true
+    })
+  )
+  t.after(() =>
+    rmSync(path.join(repositoryRoot, 'tmp/agent-evals', id), {
+      recursive: true,
+      force: true
+    })
+  )
+  assert.equal(invoke('experiment', id, definition).status, 0)
+  const compared = invoke('compare', id)
+  assert.equal(compared.status, 2, compared.stderr)
+  assert.equal(JSON.parse(compared.stdout).outcome, 'incomplete')
+  const prepared = invoke(
+    'trial',
+    id,
+    'baseline',
+    'docs-routing',
+    id,
+    'replay-actor'
+  )
+  assert.equal(prepared.status, 0, prepared.stderr)
+  assert.equal(JSON.parse(prepared.stdout).state.mode, 'replay')
+  assert.equal(invoke('trial', id).status, 1)
+  const runner = createRunner()
+  runner.evaluate(id) // This failed baseline remains in the comparison.
+  for (const [variant, caseId, outcome] of [
+    ['candidate', 'docs-routing', 'passed'],
+    ['baseline', 'feature-ownership', 'passed'],
+    ['candidate', 'feature-ownership', 'failed']
+  ]) {
+    const runId = `${id}-${variant}-${caseId}`
+    t.after(() =>
+      rmSync(path.join(repositoryRoot, 'tmp/agent-evals', runId), {
+        recursive: true,
+        force: true
+      })
+    )
+    const trialResult = invoke(
+      'trial',
+      id,
+      variant,
+      caseId,
+      runId,
+      'replay-actor'
+    )
+    assert.equal(trialResult.status, 0, trialResult.stderr)
+    const trial = JSON.parse(trialResult.stdout)
+    plan(runner, trial, runId)
+    if (outcome === 'passed') correctCandidate(runner, trial, runId)
+    const evaluation = runner.evaluate(runId)
+    if (outcome === 'passed') runner.review(runId, reviewInput(evaluation))
+  }
+  const regressed = invoke('compare', id)
+  assert.equal(regressed.status, 1, regressed.stderr)
+  assert.equal(JSON.parse(regressed.stdout).outcome, 'regressed')
+})

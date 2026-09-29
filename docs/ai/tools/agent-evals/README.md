@@ -90,9 +90,109 @@ groups by case, suite fingerprint, and mode, with passed, failed, and pending
 counts plus failures by layer and criterion. It does not pool unlike cases or
 mix replay and agent results. Pending reviews remain in the denominator and are
 never passes. Repeated attempts within one run are not independent samples.
-Comparative experiments use fresh runs with the same cases and suite revision,
-record the changed instruction/model configuration externally, and report the
-sample counts. Small pilot samples are descriptive, not statistical proof.
+For a planned before/after comparison, use the experiment commands below. They
+retain the hypothesis and declared configurations before admitting fresh runs.
+Small pilot samples are descriptive, not statistical proof.
+
+## Run an Improvement Experiment
+
+Use one experiment for one improvement hypothesis. Write a definition inside the
+project, for example `tmp/agent-evals/owner-comparison.json`:
+
+```json
+{
+  "formatVersion": 1,
+  "hypothesis": "An explicit owner lookup reminder reduces incorrect-owner edits.",
+  "failureEvidence": "Illustrative pilot only. Replace with a sanitized real failure and evidence reference before drawing conclusions.",
+  "change": {
+    "layer": "skills",
+    "description": "Add an owner lookup reminder to the task workflow.",
+    "files": ["docs/ai/workflows/agent-task.md"]
+  },
+  "configurations": {
+    "baseline": "Record exact model, settings and original instruction configuration here.",
+    "candidate": "Record the same model/settings and the proposed instruction change here."
+  },
+  "mode": "agent",
+  "samplesPerCase": 2,
+  "development": ["docs-routing", "bugfix-range"],
+  "holdout": ["feature-ownership"]
+}
+```
+
+These three existing cases illustrate the mechanism; this split is not evidence
+that the cases represent a particular real-world failure. Choose representative
+cases and the sample count before observing results. Configurations are operator
+attestations: record model/settings/context and apply them to the executing
+session yourself. The CLI neither configures nor invokes a model. Answer-informed
+or scripted executions must use `replay`, including demonstrations of this guide.
+
+```sh
+yarn agent:eval experiment owner-comparison tmp/agent-evals/owner-comparison.json
+yarn agent:eval trial owner-comparison baseline docs-routing owner-before-1 coder-1
+```
+
+The trial command prepares a fresh run and returns its prompt, workspace,
+configuration, partition and sample number. Use the existing `admit`,
+`regression` where applicable, `evaluate` and `review` commands for that run.
+Repeat for the declared development cases and sample count in both variants.
+Use a fresh execution context per independent sample. Retries within a run stay
+one sample; reports disclose the number of evaluation attempts.
+
+The baseline instruction sources are frozen at experiment creation. Only the
+listed captured instruction files may differ in the candidate. The candidate's
+complete source set is frozen at its first trial. Run each variant with its exact
+source configuration; switching variants may require explicitly restoring that
+variant's instruction files in the isolated project worktree. The tool never
+rewrites those files. Complete semantic reviews while the run's suite is current.
+Historical reviewed baseline results can then be compared with the candidate.
+Use `change.files: []` for a configuration-only experiment with unchanged files.
+
+After every planned development sample has a terminal result, holdout trials
+become available. An automatic failure or a rejected semantic review is terminal;
+a missing evaluation or pending review is not. The first holdout release freezes
+the development evaluation IDs and snapshots. Revising that evidence, tuning the
+candidate again, or exceeding the planned sample count requires a new experiment.
+
+```sh
+yarn agent:eval trial owner-comparison candidate feature-ownership owner-holdout-1 coder-1
+yarn agent:eval compare owner-comparison
+```
+
+Holdout is a procedural partition, not a secret test store: the repository's
+cases are readable, and the CLI cannot enforce an agent's memory or prevent
+someone using `prepare` outside an experiment. Do not use holdout feedback to
+retune the same experiment. Record prior exposure and retire exposed cases from
+claims of unseen generalization; future improvement needs fresh reserved cases.
+
+`compare` saves an immutable result under
+`tmp/agent-evals/.experiments/<id>/comparisons/`. It includes the frozen hypothesis,
+configurations, changed instruction paths, exact run/evaluation references,
+source revisions, and per-case/per-partition counts:
+
+- passed, failed, pending, missing, planned samples and evaluation attempts;
+- candidate minus baseline pass rate only when both groups are complete;
+- improved, regressed, unchanged or incomplete outcomes for each case.
+
+No aggregate rate pools unlike cases. The overall outcome is incomplete while
+any group is incomplete; otherwise any regression takes precedence over gains
+elsewhere. Inspect all groups even when the overall outcome is incomplete.
+Failed runs cannot be replaced with fresh runs in a filled slot. Existing runs
+cannot be imported retroactively. All runs inherit the experiment's one mode,
+so replay and observed-agent results cannot mix. Local actor labels and evidence
+remain unauthenticated, as with individual runs.
+
+Comparison exit status is `2` for incomplete, `1` for a complete comparison with
+regressions or an invalid operation, and `0` for a complete improved/unchanged
+comparison. Zero does not mean all tasks passed or prove the hypothesis: equal
+failure rates are unchanged, and a small observed gain is descriptive. Review
+failures, exposure, configuration fidelity, attempt counts and confounders before
+deciding whether to retain a proposed change.
+
+Fixtures, evaluation code, oracles and rubrics must stay fixed within an
+experiment. Improvements to those owners create a new benchmark; they cannot
+be presented as an agent gain against the old benchmark. Historical reports
+remain readable. Add representative cases using [case authoring](case-authoring.md).
 
 ## Architecture and Evidence Ownership
 
@@ -115,6 +215,12 @@ versioned case + repository contracts
   review admission and aggregation. Each evaluation captures source before and
   after its checks and rejects concurrent mutation. It does not cache mutable
   candidate output. Summary validates each run once, then aggregates that result.
+- `experiments.mjs` owns version-1 experiment definitions, fresh trial assignment,
+  frozen variant sources, holdout release and comparison artifacts. It consumes
+  the engine's reports instead of rerunning tests or interpreting raw test output.
+  Each comparison snapshots each evaluated run once and reads shared current
+  contract sources once per invocation; a later comparison refreshes evidence.
+  Experiment versioning is separate from existing version-1 run records.
 - `__tests__/behavior-oracle.mjs` owns independent behavior assertions. Candidate
   test success and the agent's prose cannot replace these assertions.
 - `cli.mjs` exposes these operations and exit states. It never dispatches a model,
@@ -152,6 +258,27 @@ owning layer, run the same case set again. A changed suite fingerprint begins a
 new group; compare the actual changed contract before interpreting the outcome.
 No automatic rule editing or unbounded retry loop is part of this tool.
 
+### Automation Assessment - Not Implemented
+
+Automatic rule changes could be useful for producing a bounded candidate patch
+from repeated failure evidence. A future implementation would need an explicit
+instruction-file allowlist, fixed expectations, comparison against untouched
+holdout cases, and review before adoption. It must not change its own grading
+rules, authorization boundaries or acceptance criteria to obtain a pass. For
+now, an agent may propose or implement an improvement only within the user's
+authorized task scope; experiment results never authorize a global rule change.
+
+Unattended retries could be useful for transient infrastructure failures or a
+bounded correction within one already-authorized task. A future implementation
+would need explicit attempt/time/cost limits, a fixed task scope, owned process
+cleanup, an interruption path, preserved failed attempts and a stop on repeated
+nonprogress or required input. Semantic rejection must not silently turn into
+infinite retries. The current tool records attempts but does not schedule,
+retry, dispatch agents, merge changes or continue work in the background.
+
+Both capabilities remain assessment-only. Agent dispatch is excluded from this
+eval improvement scope.
+
 ## Permanent Verification
 
 ```sh
@@ -165,7 +292,10 @@ wrong owners, edits before admission, scope violations despite correct output,
 weak tests hiding the bug, broken or weakened regressions, stale/self reviews,
 invalid identities/versions, retained historical suites, separate replay/agent
 counts, shared contract-read counts, CLI exit states, symlinks, write denial,
-and timeout cleanup. It is
+and timeout cleanup. Experiment coverage includes frozen definitions and
+variants, pending and missing samples, sample-budget enforcement, holdout
+release, regression detection, stale evidence, immutable comparisons, CLI exit
+states and shared-read/snapshot work counts. It is
 included in `test:scripts` and therefore the existing CI test job. These are
 tests of the evaluation machinery; observed model quality requires actual agent
 runs and an independent review.

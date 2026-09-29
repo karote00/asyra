@@ -43,8 +43,11 @@ regression-first boundary repair, and display/model ownership. The
    assertions against the same source snapshot.
 5. Have a distinct reviewer judge intent, reasoning and handoff quality. Missing
    semantic review remains pending, even when all automated checks pass.
-6. Summarize comparable runs, correct the responsible layer, and repeat the same
-   cases. Scripted replays and observed agent runs remain separate populations.
+6. For an authorized improvement, freeze an experiment's hypothesis,
+   baseline/candidate configurations, case partitions and sample count. Compare
+   fresh runs using fixed expectations. Complete development evidence before
+   releasing holdout cases and keep those results out of tuning. Scripted
+   replays and observed agent runs remain separate populations.
 
 The evaluator deliberately does not grade documentation semantics by keyword
 presence or claim that a declared reference proves it was understood. Its
@@ -77,3 +80,10 @@ fixtures and rejects known failure modes. They do not establish an agent success
 rate or prove that the entire repository workflow has improved. That conclusion
 requires real comparable agent runs and independent review, using the same
 retained cases and expectations.
+
+The eval tool now retains explicit before/after experiments, including missing
+samples, semantic-review state, failed attempts and case-level regressions. It
+does not infer causality from a small pass-rate difference. The tool guide also
+contains the assessment of bounded automatic rule proposals and unattended
+retries; neither capability is implemented or activated. Agent dispatch is
+outside this eval scope.
