@@ -96,6 +96,12 @@ Small pilot samples are descriptive, not statistical proof.
 
 ## Run an Improvement Experiment
 
+The [agent-improvement-eval skill](../../skills/agent-improvement-eval/SKILL.md)
+guides failure analysis, case selection, experiments and interpretation. Invoke
+it with `$agent-improvement-eval` or an improvement-assessment request. Install
+repository skills with `./scripts/install-skills.sh`; this does not start an
+experiment or enable automatic rule changes or retries.
+
 Use one experiment for one improvement hypothesis. Write a definition inside the
 project, for example `tmp/agent-evals/owner-comparison.json`:
 

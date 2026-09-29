@@ -55,6 +55,11 @@ mistake or expand the current task into a repository audit.
 
 ## Evaluate the Workflow
 
+For improvement assessments and before/after comparisons, use the
+[`agent-improvement-eval` skill](../skills/agent-improvement-eval/SKILL.md).
+Its trigger includes natural-language requests to evaluate recurring failures;
+explicit invocation is `$agent-improvement-eval`.
+
 Use the [agent eval tool](../tools/agent-evals/README.md) when changing these
 procedures or measuring repeated failures. Its three permanent fixture cases
 exercise documentation authority, regression-first bug repair, and display/model
