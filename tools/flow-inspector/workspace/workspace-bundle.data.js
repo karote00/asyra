@@ -35401,12 +35401,23 @@
               "Plan to two-storey house to eight-storey tower preserves the footprint and infrastructure planes.",
               "Mobile, reduced motion and no JavaScript retain complete snapshots and native navigation.",
               "Resource content is server-owned and does not subscribe to scroll updates.",
+              "FieldScope product evidence uses one fixed responsive slider area with three App screenshots; center and side image frames bottom-align, and side images use the shared stack position and 0.9 scale used by the full-screen preview.",
+              "The slider shows at most one side image on each side. Clicking either image changes the active slide through horizontal movement and scale only; the bottom button and dot row is absent.",
+              "FieldScope and Asyra Sim use equal responsive stage and image-frame dimensions. Screenshots preserve source aspect ratio with object containment and may leave blank space; image shadows follow the rendered image bounds instead of the shared frame. The top and bottom inset is 12px on desktop and 8px at tablet and smaller widths.",
+              "Inline slides and full-screen preview share one horizontal stack-position and scale model. Inline mode shows at most three images and has no thumbnail strip; at 1025px and wider, clicking the center image opens a full-screen preview with blurred backdrop, locked page scrolling, close button, and thumbnails that select a slide. Preview mode shows at most five distinct images: center, up to two on either side; adjacent images are 90% height, outer images 81%, with each front image covering 75% of the image behind it.",
+              "Selecting an inline side image or preview thumbnail animates the existing image layers to their new horizontal positions and scales; reduced motion disables the animation.",
+              "At 1024px and narrower, the full-screen preview is unavailable and the inline slider remains usable; resizing into that range while the preview is open closes it and restores page scrolling.",
+              "Arrow keys and touch swipes remain available, reduced motion disables transitions, and the server-rendered initial image remains available without JavaScript; autoplay is off.",
+              "Asyra Sim uses the same slider with its single image and no side previews or slide controls; a single-image case is valid without duplicating the image.",
+              "Side-by-side FieldScope and Asyra Sim cards align their summary areas and slider frames, share equal row height, and let summary copy use the full card width.",
               "External links open in a new tab with noopener noreferrer.",
               "The old film and duplicate homepage stories are not mounted."
             ],
             "allowedContributors": [
               "SpatialStory presentation owner",
               "server-owned HomeResources",
+              "client-owned product evidence slider presentation",
+              "focused product evidence E2E regression",
               "shared SiteFooter",
               "existing site metadata policy"
             ],
@@ -35415,10 +35426,13 @@
               "apps/asyra-framework-site/app/styles/spatial-story.css",
               "apps/asyra-framework-site/components/spatial-story.tsx",
               "apps/asyra-framework-site/components/home-resources.tsx",
+              "apps/asyra-framework-site/components/product-evidence-slider.tsx",
+              "apps/asyra-framework-site/__tests__/e2e/product-evidence.spec.ts",
               "apps/asyra-framework-site/lib/spatial-story.mjs",
               "apps/asyra-framework-site/lib/spatial-story.d.mts",
               "apps/asyra-framework-site/lib/story-building.mjs",
               "apps/asyra-framework-site/lib/story-building.d.mts",
+              "apps/asyra-framework-site/public/product-evidence",
               "apps/asyra-framework-site/public/illustrations/spatial-story"
             ],
             "failureOwnerStepId": "render-result-first-page"
