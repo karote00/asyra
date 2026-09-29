@@ -65,6 +65,16 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
   }
 })
 
+test('Fieldscope E2E CI command supplies its portable local app URL', () => {
+  const manifest = readJSON('apps/fieldscope/package.json')
+  const example = readText('apps/fieldscope/.env.example')
+  assert.match(
+    manifest.scripts['test:e2e:ci'],
+    /^APP_URL=http:\/\/127\.0\.0\.1:5178 playwright test/u
+  )
+  assert.match(example, /^APP_URL=http:\/\/127\.0\.0\.1:5178$/m)
+})
+
 test('root lint ignores App consumer artifacts without excluding maintained source or tests', async () => {
   const { ESLint } = await import('eslint')
   const eslint = new ESLint({ cwd: repositoryRoot })
