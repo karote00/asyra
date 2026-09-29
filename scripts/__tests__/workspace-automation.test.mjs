@@ -960,6 +960,7 @@ test('Board, render contracts and functional E2E have independent required jobs'
   )
   const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
   assert.ok(board, 'Board must report its own result')
+  assert.match(board, /FLOW_PROOF_BROWSER_CHANNEL: chrome/)
   assert.ok(
     renderContracts,
     'render correctness/work contracts must report their own result'

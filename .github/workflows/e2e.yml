@@ -71,6 +71,7 @@ jobs:
       - name: Verify Flow Inspector board
         env:
           FLOW_PROOF_URL: http://127.0.0.1:4318
+          FLOW_PROOF_BROWSER_CHANNEL: chrome
         run: node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 
   render-contracts:
