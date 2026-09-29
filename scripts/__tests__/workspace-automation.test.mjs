@@ -299,6 +299,7 @@ test('Sim CI browser owner uses the bounded documented group runner', () => {
   assert.match(groups, /mergePlaywrightReports/)
   assert.match(runner, /CI_E2E_GROUPS/)
   assert.match(runner, /PLAYWRIGHT_JSON_OUTPUT_FILE/)
+  assert.match(runner, /process\.env\.RUNNER_TEMP/)
   assert.match(runner, /for \(const group of CI_E2E_GROUPS\)/)
   assert.match(runner, /groupFailures\.push/)
   assert.doesNotMatch(runner, /if \(groupFailures\.length\) break/)
