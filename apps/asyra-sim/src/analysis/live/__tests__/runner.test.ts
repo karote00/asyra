@@ -487,7 +487,7 @@ it('continues an incomplete latest exact sample without another playback request
   await task
 })
 
-it('bounds automatic incomplete sample continuations', async () => {
+it('stops automatic continuations when a retry adds no accepted evidence', async () => {
   vi.useFakeTimers()
   const input = liveFixture()
   const worker = new WorkerStub()
@@ -503,12 +503,56 @@ it('bounds automatic incomplete sample continuations', async () => {
   const acceptedPair = evidence.pairs[0]
   if (!acceptedPair) throw new Error('Missing accepted pair fixture')
 
-  for (const id of [1, 2, 3]) {
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: [acceptedPair]
+  })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 2,
+    time: 4,
+    pairs: [acceptedPair]
+  })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(2)
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { complete: false, time: 4 }
+  })
+
+  abort.abort()
+  await task
+})
+
+it('continues through more than three slices while each slice admits new pair evidence', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  expect(evidence.pairs.length).toBeGreaterThan(4)
+  for (const [index, pair] of evidence.pairs.slice(0, 4).entries()) {
     worker.emit({
       type: LiveMessages.ERROR,
-      id,
+      id: index + 1,
       time: 4,
-      pairs: [acceptedPair]
+      pairs: [pair]
     })
     await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
   }
@@ -517,7 +561,46 @@ it('bounds automatic incomplete sample continuations', async () => {
     worker.postMessage.mock.calls.filter(
       ([message]) => message.type === LiveMessages.SAMPLE
     )
-  ).toHaveLength(LIVE_LIMITS.maxIncompleteSampleContinuations + 1)
+  ).toHaveLength(5)
+  worker.emit({ type: LiveMessages.RESULT, id: 5, time: 4, evidence })
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { complete: true, time: 4 }
+  })
+
+  abort.abort()
+  await task
+})
+
+it('stops automatic continuations when the aggregate evaluation budget is exhausted', async () => {
+  vi.useFakeTimers()
+  const base = liveFixture()
+  const input = {
+    ...base,
+    budget: { ...base.budget, maxIntervals: 1 }
+  }
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+  const abort = new AbortController()
+  const task = runner.open(input, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = evidence.pairs[0]
+  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: [acceptedPair]
+  })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(1)
   expect(runner.getState()).toMatchObject({
     status: 'ready',
     sample: { complete: false, time: 4 }

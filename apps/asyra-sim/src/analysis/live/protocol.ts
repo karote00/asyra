@@ -19,7 +19,6 @@ export const LiveMessages = {
 export const LIVE_LIMITS = Object.freeze({
   samplePeriodMs: 50,
   sampleDurationMs: 500,
-  maxIncompleteSampleContinuations: 2,
   startupDurationMs: 10_000,
   responseGraceMs: 250,
   maxRecordedSamples: 256,

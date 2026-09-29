@@ -350,7 +350,6 @@ export class LivePlaybackRunner {
     let pendingInterval: readonly [number, number] | null = null
     let latestTime = initialTime
     let continuationTime = initialTime
-    let incompleteContinuations = 0
     let inFlight:
       | { kind: 'sample'; id: number; time: number; startedAt: number }
       | { kind: 'interval'; id: number; interval: readonly [number, number] }
@@ -586,10 +585,7 @@ export class LivePlaybackRunner {
 
       pending = time
       latestTime = time
-      if (time !== continuationTime || discontinuity) {
-        continuationTime = time
-        incompleteContinuations = 0
-      }
+      if (time !== continuationTime || discontinuity) continuationTime = time
 
       if (discontinuity) {
         minimumId = nextId + 1
@@ -779,7 +775,8 @@ export class LivePlaybackRunner {
         inFlight = null
         progress = null
 
-        if (this.records.record(snapshot, sample)) this.publishRecordsRevision()
+        const evidenceChanged = this.records.record(snapshot, sample)
+        if (evidenceChanged) this.publishRecordsRevision()
         if (workerDiagnostic && diagnosticId !== undefined)
           this.recordDiagnostic(
             diagnosticId,
@@ -789,18 +786,28 @@ export class LivePlaybackRunner {
             null
           )
         const accepted = this.records.get(sample.time) ?? sample
+        const acceptedEvaluations = accepted.pairs.reduce(
+          (total, pair) =>
+            pair.evidence.coverage === 'complete'
+              ? total + pair.evidence.evaluations
+              : total,
+          0
+        )
+        const availableEvaluations = Math.max(
+          0,
+          snapshot.budget.maxIntervals - acceptedEvaluations
+        )
         if (
           !sample.complete &&
+          evidenceChanged &&
           pending === null &&
           response.id >= minimumId &&
           response.time === latestTime &&
           continuationTime === sample.time &&
-          incompleteContinuations < LIVE_LIMITS.maxIncompleteSampleContinuations
+          availableEvaluations > 0
         ) {
-          incompleteContinuations++
           pending = sample.time
         } else if (sample.complete && pending === null) {
-          incompleteContinuations = 0
           queueAdjacentGap(sample.time)
         }
 

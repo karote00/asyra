@@ -262,3 +262,38 @@ test('200 mm live playback resolves the first table collision with traceable sam
     .toBe(true)
   expect.soft(liveWorkers).toHaveLength(1)
 })
+
+test('cold 200 mm live preview resolves a direct first seek to the table collision', async ({
+  page
+}) => {
+  test.setTimeout(60_000)
+  await page.goto('/')
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page
+    .getByLabel('Experiment', { exact: true })
+    .selectOption({ label: 'Tool and table collision - r1' })
+  await showSetup(page)
+  await page.getByLabel('Minimum clearance (mm)').fill('200')
+  await page.keyboard.press('Tab')
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
+
+  const slider = page.getByLabel('Sampled trajectory preview time')
+  const feedback = page.getByTestId('playback-feedback')
+  await slider.fill('4')
+  await expect
+    .poll(
+      async () => ({
+        kind: await feedback.getAttribute('data-kind'),
+        poseMatches: await feedback.getAttribute('data-pose-matches')
+      }),
+      { timeout: 30_000 }
+    )
+    .toEqual({ kind: 'collision', poseMatches: 'true' })
+  await expect(feedback).toContainText('Checked 4.0000 s')
+  await expect(
+    feedback
+      .locator('[data-pair-id*="workpiece"][data-pair-id*="fixture-table"]')
+      .first()
+  ).toHaveAttribute('data-pair-kind', 'collision')
+})

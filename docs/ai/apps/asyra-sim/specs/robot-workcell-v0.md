@@ -323,10 +323,12 @@ input if they validate for their own exact time.
 
 When the latest exact foreground sample is incomplete because its bounded
 500 ms attempt expired, continue checking only its missing pairs at that same
-time, reusing validated complete pair evidence. Allow at most two additional
-continuation attempts for one unchanged exact target. Each attempt keeps the
-same 500 ms limit; if coverage is still incomplete, preserve unknown and wait
-for another foreground request. A newer target supersedes the continuation.
+time, reusing validated complete pair evidence. Continue an unchanged exact
+target only when the accepted sample materially gains validated evidence and
+the original aggregate evaluation budget still has capacity. Each attempt keeps
+the same 500 ms limit. Stop when accepted evidence does not change or the
+aggregate evaluation budget is exhausted; preserve unknown coverage in either
+case. A newer target supersedes the continuation.
 
 Reuse only evidence that exactly covers the requested time: an exact sampled
 point or a certified interval containing that time. A point witness says
