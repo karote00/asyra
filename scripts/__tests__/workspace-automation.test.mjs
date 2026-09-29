@@ -215,9 +215,9 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /max-parallel: 4/)
   assert.match(workspaceJob, /actions\/upload-artifact@/)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
-  assert.match(
+  assert.doesNotMatch(
     workspaceJob,
-    /Install Chromium for selected workspace E2E[\s\S]*?if: \$\{\{ matrix\.workspace\.e2eSelection\.mode != 'not-selected' \}\}[\s\S]*?playwright install --with-deps chromium/
+    /Install Chromium for selected workspace E2E/
   )
   assert.match(workspaceJob, /name: Build then test the selected workspace/)
   assert.match(
@@ -252,16 +252,9 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   )
 })
 
-test('standard manifest E2E owners use installed Chromium in CI and keep local Chrome', () => {
+test('standard manifest E2E owners use the runner Chrome in CI and locally', () => {
   const workflow = readText('.github/workflows/main.yml')
-  assert.match(
-    workflow,
-    /run: \.\/node_modules\/\.bin\/playwright install --with-deps chromium/
-  )
-  assert.doesNotMatch(
-    workflow,
-    /yarn workspace "\$\{\{ matrix\.workspace\.name \}\}" playwright install/
-  )
+  assert.doesNotMatch(workflow, /playwright install --with-deps chromium/)
   const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
   assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
   assert.match(workspaceRunner, /reportReadSuccessfully = false/)
@@ -281,7 +274,7 @@ test('standard manifest E2E owners use installed Chromium in CI and keep local C
     const manifest = readJSON(`${directory}/package.json`)
     const config = readText(`${directory}/playwright.config.ts`)
     assert.ok(manifest.scripts[task], `${directory} must expose ${task}`)
-    assert.match(config, /process\.env\.CI \? undefined : 'chrome'/, directory)
+    assert.match(config, /channel:\s*'chrome'/, directory)
   }
 })
 
@@ -634,7 +627,7 @@ test('CI validates the active Framework package release from packed artifacts on
   )
 })
 
-test('E2E automation cancels superseded runs and installs only Chromium', () => {
+test('E2E automation cancels superseded runs and installs its required browser', () => {
   const e2e = readText('.github/workflows/e2e.yml')
   const chromiumInstallCount = (
     e2e.match(/playwright install --with-deps chromium/g) ?? []

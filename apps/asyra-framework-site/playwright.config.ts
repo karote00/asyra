@@ -28,7 +28,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        channel: process.env.CI ? undefined : 'chrome'
+        channel: 'chrome'
       }
     }
   ]

@@ -13,7 +13,7 @@ export default defineConfig({
     baseURL: environment.url,
     viewport: { width: 1440, height: 1100 },
     deviceScaleFactor: 1,
-    channel: process.env.CI ? undefined : 'chrome',
+    channel: 'chrome',
     launchOptions: {
       // Match the desktop GPU on macOS; software rendering remains explicitly selectable.
       args: [

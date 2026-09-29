@@ -11,7 +11,7 @@ const e2eRoot = path.join(siteRoot, '__tests__', 'e2e')
 const expectedOutputRoot = path.join(siteRoot, 'test-results', 'platform')
 const recursiveSiteRoot = path.join(siteRoot, 'apps', 'asyra-framework-site')
 
-test('ordinary visual review uses the developer machine Chrome outside CI', async () => {
+test('ordinary visual review uses the installed Chrome in and outside CI', async () => {
   const previousCI = process.env.CI
   try {
     delete process.env.CI
@@ -27,7 +27,7 @@ test('ordinary visual review uses the developer machine Chrome outside CI', asyn
     const ciChromium = ciConfig.default.projects?.find(
       (project) => project.name === 'chromium'
     )
-    assert.equal(ciChromium?.use?.channel, undefined)
+    assert.equal(ciChromium?.use?.channel, 'chrome')
   } finally {
     if (previousCI === undefined) delete process.env.CI
     else process.env.CI = previousCI

@@ -25,7 +25,7 @@ export default defineConfig({
       name: 'desktop',
       use: {
         ...devices['Desktop Chrome'],
-        channel: process.env.CI ? undefined : 'chrome',
+        channel: 'chrome',
         viewport: { width: 1280, height: 780 }
       }
     },
@@ -33,7 +33,7 @@ export default defineConfig({
       name: 'narrow',
       use: {
         ...devices['Desktop Chrome'],
-        channel: process.env.CI ? undefined : 'chrome',
+        channel: 'chrome',
         viewport: { width: 390, height: 840 },
         isMobile: true
       }

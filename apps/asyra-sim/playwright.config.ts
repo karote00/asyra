@@ -34,7 +34,7 @@ export default defineConfig({
     baseURL: environment.url,
     viewport: { width: 1440, height: 960 },
     deviceScaleFactor: 1,
-    channel: process.env.CI ? undefined : 'chrome',
+    channel: 'chrome',
     launchOptions: {
       args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     },
