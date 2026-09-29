@@ -4,17 +4,82 @@
 
 The accepted six-chapter green story is the only homepage at `/`. Remove the
 `/story` route entirely; it returns 404. Keep the story choreography and building
-example intact. Follow it with the real Asyra Design product evidence, three
-practical documentation/Atlas entry points, the closing invitation, and the
-shared navigation footer. The primary menu is native HTML and remains usable
-without JavaScript. Do not repeat the retired film, five-chapter narrative,
-PoC comic or separate architecture explainer on the homepage.
+example intact. Follow it with real product evidence for Asyra Design,
+FieldScope, and Asyra Sim, three practical documentation/Atlas entry points,
+the closing invitation, and the shared navigation footer. The primary menu is
+native HTML and remains usable without JavaScript. Do not repeat the retired
+film, five-chapter narrative, PoC comic or separate architecture explainer on
+the homepage.
+
+The product cases must describe current App-owned work only. Asyra Design keeps
+its editable 2D product proof. FieldScope may show its cucumber and tomato
+greenhouse models and conservative robot lane/energy assessments; it does not
+simulate robot patrol or harvesting, physical dynamics, or live equipment.
+FieldScope's homepage presents three actual App screenshots of the same
+four-bay greenhouse in one image slider: an oblique overview, an end elevation,
+and an aisle view with tomato fruit and support structure. The active image is
+centered. Its two neighbors use the same horizontal stack positions and scale
+rules as the full-screen preview: 90% size on either side, overlapping the
+center by 75% of their width, with all three image frames bottom-aligned. The
+inline view shows at most three images. Clicking either side image switches to
+it; slides move horizontally and scale without a curved route. There is no
+bottom control row. Arrow keys and touch swipes remain available, autoplay is
+off, and reduced motion disables the transition. With JavaScript unavailable,
+the first image and explanatory content remain available. These images were captured from PR #196 head
+`e6960e657ab2031e4417731383a45ba99052f702` at 1440 x 1174. They are preserved
+at their original proportions and dimensions as
+`fieldscope-greenhouse-overview.webp`,
+`fieldscope-greenhouse-end-elevation.webp`, and
+`fieldscope-greenhouse-internal-detail.webp`.
+
+Asyra Sim may show its synthetic robot-workcell editing and trajectory analysis
+workbench; label it as a development checkpoint, not an R0 release or a basis
+for production or safety approval. Its homepage image shows the default
+synthetic six-axis workcell, hierarchy, and inspector, with the grid on and no
+selected part. It was captured on 2026-09-29 from the running local service at
+`http://127.0.0.1:3020/`. The service source was clean at
+`codex/asyra-sim-timeline-analysis` HEAD
+`59ac38b0124cba5ec93482c94b3fffa09dcca6a2`; PR #197 head
+`83572751021cf508752a4de777617de88e4711a6` is not its source revision. The
+1440 x 960 capture uses an isolated browser context and does not open or modify
+an existing App tab or workcell. The image is kept at its original proportions
+and dimensions as `asyra-sim-workcell.webp`. Its presentation area matches the
+FieldScope slider. It uses the same one-image slider component; with only one
+image there are no side previews or slide controls.
+
+Product images have a 12px inset above and below on desktop and an 8px inset at
+tablet widths and below. FieldScope and Asyra Sim use the same responsive stage
+and image-frame dimensions. Screenshots keep their original aspect ratio inside
+the shared frames and may leave blank space; image shadows follow the actual
+image bounds, not the shared frame. Inline slides and full-screen preview use
+the same horizontal stacking positions and scale rules. The inline slider shows
+at most three images; desktop preview shows at most five. The preview adds its
+full-screen UI and selectable thumbnail strip. On desktop wider than tablet
+(1025px and above), clicking the centered image opens a full-screen modal preview
+with a close button, a selectable thumbnail strip, blurred backdrop, and locked
+page scrolling. The preview shows up to five distinct slides around the selected
+image: the center at full size, the adjacent slides at 90% height, and the outer
+slides at 81% height. Each centered slide covers 75% of the width of the image
+behind it. If the viewport shrinks to tablet width, the modal closes and page
+scrolling is restored. Tablet and smaller widths keep the inline slider without
+the modal. Selecting another thumbnail animates the existing image layers to
+their new horizontal positions and scales; reduced motion disables the animation.
+
+These screens show current modeled scenes, not connected or calibrated
+equipment. Each case also links to direct source/test evidence. Preserve
+product maturity limits, open external links in a new tab, and keep the three
+existing Starter, Design, and advanced composition destinations unchanged.
+When FieldScope and Asyra Sim appear side by side, their summary areas and
+slider frames align, and both cards fill the same row height. Summary copy uses
+the full card width and wraps only when the available width requires it.
 
 The scope is the website route composition, story shell, resource sections,
-direct tests, current landing contract and its existing Inspector. Framework
-and Design behavior, supporting pages and dependencies are unchanged. Reuse the
-existing feature worktree and PR; remote CI must pass before requesting review.
-Never merge. No additional artwork is needed for this integration.
+product-evidence images, direct tests, current landing contract and its
+existing Inspector. Framework and Design behavior, supporting pages and
+dependencies are unchanged. Reuse the existing feature worktree and PR; remote
+CI must pass before requesting review. Never merge. Product images remain
+direct, proportion-preserving screenshots of the Apps, without composite or
+generated content.
 
 The owner gap is the narrative timeline: chapter boundaries previously reset
 object identity, camera and composition. One persistent desktop scene now owns
