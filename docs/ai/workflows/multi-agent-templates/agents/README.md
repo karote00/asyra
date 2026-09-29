@@ -42,6 +42,13 @@ plan and whole-plan closeout owner are preserved. The worker checks that context
 in its own checkout and reads the selected task before editing. Put the same
 context in the resulting PR; a child task's completion does not close the plan.
 
+Apply the Inspector applicability and synchronization section of that workflow
+to each assignment. For governed work, the handoff references the specification,
+Inspector owner step/route, affected cases and gates in the existing contract.
+Workers preserve these references, synchronize affected contracts with their
+implementation, and return current evidence. The integrating owner checks the
+actual diff against that scope; a green unrelated gate is not completion proof.
+
 External applications have separate tool-specific roles. The current catalog
 contains only a Blender operator; do not expand it into a general external-tool
 operator. Add a separately scoped role when another application is actually needed.

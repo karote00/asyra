@@ -108,6 +108,11 @@ These rules apply to every task without requiring additional document reads:
   handoffs and PRs. Workers verify the selected plan/task before editing;
   missing context is not an implicit standalone task. Follow
   `docs/ai/workflows/task-context.md`.
+- Determine Inspector applicability for each task, including standalone work.
+  Carry applicable spec/step/route/case references through handoffs and PRs,
+  synchronize changed contracts in the same PR, and report current scoped
+  evidence. Follow `docs/ai/workflows/task-context.md`; unrelated edits do not
+  require changing an Inspector.
 - For every bug fix, first verify whether existing formal tests detect the bug; if not, add or strengthen the formal regression test before implementation.
 - Follow the Critical Rules section in this file.
 

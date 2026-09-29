@@ -78,6 +78,60 @@ HEAD, prerequisites integrated in that base, and the plan/task in both the base
 and checkout. Do not copy an unmerged plan into another branch to satisfy the
 check. The assigning owner must first resolve the intended base.
 
+## Inspector Applicability and Contract Synchronization
+
+Every task determines Inspector applicability before implementation, using
+`docs/ai/framework/rules/bounded-task-scope-and-closure.md`. Record the result
+in the existing task contract, handoff or PR; do not create a separate registry
+or readiness ledger. `standalone` means no plan association, not exemption from
+an applicable Inspector contract.
+
+When the task changes or proves governed behavior, the assigning owner provides
+the authoritative specification and Inspector paths, selected owner step/route,
+affected product cases and required gates. Reference an adequate existing plan
+section instead of duplicating its contents. Child handoffs preserve these
+references along with the plan association. The executing worker reads and
+checks them in its own selected checkout before editing, before advancing each
+owner segment, and before reporting completion.
+
+Follow `docs/ai/framework/rules/inspector-contract-readiness.md` and
+`docs/ai/framework/rules/inspector-step-execution.md` for applicable work:
+
+- Work within the selected owner boundary and inspect its declared upstream
+  inputs and downstream consumers. Follow the existing Step Execution Card and
+  test-first requirements; do not open a repository-wide audit.
+- When behavior, ownership, inputs/outputs, routes, conditions, implementation
+  boundaries or acceptance criteria change, synchronize their authoritative
+  specification, Inspector data, affected formal cases and any existing proof
+  mapping in the same PR. Update generated viewer artifacts when their source
+  changes, following the target's established generation contract.
+- An implementation fix that restores an unchanged contract need not rewrite
+  the Inspector. It still requires the affected formal evidence. Do not widen
+  boundaries, remove obligations or weaken checks merely to make a change pass.
+- Run the selected target's applicable structural, semantic and integration
+  gates. Report the actual source/contract identity and results; evidence from
+  before a relevant edit cannot close the updated work. Follow the existing
+  pre-push validation policy for the final source.
+- Missing or contradictory contracts, unmapped required cases, failed gates or
+  stale evidence block an applicable completion claim. Repair only within the
+  authorized scope; otherwise return the gap to the assigning owner.
+
+When no governed semantics or contract is changed or proved, give a brief
+reason in the handoff/PR. A filename mentioned by an Inspector does not alone
+make the task applicable, and must not cause unrelated edits to its boundaries.
+
+The PR and worker result identify applicability, affected contract references,
+necessary synchronized changes (or why none were needed), and current evidence.
+The integrating owner checks these against the actual diff before declaring
+the task complete. A green generic CI job does not establish coverage for an
+unregistered product flow or prove that no other behavior can be affected.
+
+Flow Inspector's current support and evidence boundaries remain owned by
+`docs/ai/tools/flow-inspector/README.md`, `FLOW_INSPECTOR.md`, `CORE_PROOF.md`
+and `PR_REVIEW.md` in that directory. Its source-bound verification, GitHub
+check observations, review acceptance and accepted local baseline are distinct
+states. None automatically supplies the review approval required for closeout.
+
 ## Closeout Verification Contract
 
 Partial plan tasks keep the active plan. A final task selects `plan-closeout`
