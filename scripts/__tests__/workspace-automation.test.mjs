@@ -253,6 +253,15 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
 })
 
 test('standard manifest E2E owners use installed Chromium in CI and keep local Chrome', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  assert.match(
+    workflow,
+    /run: \.\/node_modules\/\.bin\/playwright install --with-deps chromium/
+  )
+  assert.doesNotMatch(
+    workflow,
+    /yarn workspace "\$\{\{ matrix\.workspace\.name \}\}" playwright install/
+  )
   const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
   assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
   assert.match(workspaceRunner, /reportReadSuccessfully = false/)
