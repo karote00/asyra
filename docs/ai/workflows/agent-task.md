@@ -29,14 +29,19 @@ other agents or authorize additional tasks.
    checks, exclusions, and stop conditions before editing. Follow the existing
    [bounded task rule](../framework/rules/bounded-task-scope-and-closure.md).
    A concise task statement is enough; do not create another governance record.
-2. Select gates from the changed behavior and its direct consumers. Apply the
-   naming, test-first, Inspector, computation, and visual rules only where their
+2. Establish the plan association and preserve it through handoff and PR using
+   [task context](task-context.md). For plan-driven development, complete the
+   plan-to-flow design and review of steps, handoffs, whole-flow feasibility and
+   accepted-behavior preservation before production implementation. Hand off the
+   reviewed contract and use Flow Inspector's supported admission/evidence paths.
+3. Select gates from the changed behavior and its direct consumers. Apply the
+   naming, test-first, computation, and visual rules only where their
    applicability conditions hold. Record necessary unavailable checks accurately.
-3. Implement at the canonical owner, run the selected checks, and resolve
+4. Implement at the canonical owner, run the selected checks, and resolve
    in-scope failures. Existing safety hooks and architecture/type/lint/test gates
    retain their own enforcement boundaries; reading a rule does not prove a
    hook intercepted an operation.
-4. Review the bounded diff and report changed behavior, exact validation results,
+5. Review the bounded diff and report changed behavior, exact validation results,
    and remaining limits. Commit/push/PR actions follow the existing
    [Git policy](git-commit-push-policy.md). Never turn pending CI into a completion
    claim.
