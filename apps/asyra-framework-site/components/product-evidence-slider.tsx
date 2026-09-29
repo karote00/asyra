@@ -94,7 +94,10 @@ export function ProductEvidenceSlider({
   }, [desktopPreview, previewOpen])
 
   const previewSlots = useMemo(() => {
-    return createStackSlots(slides, activeIndex, 5)
+    // Moving an existing DOM node can cancel its in-flight CSS transition.
+    return createStackSlots(slides, activeIndex, 5).sort(
+      (left, right) => left.slideIndex - right.slideIndex
+    )
   }, [activeIndex, slides])
   const inlineSlots = useMemo(
     () =>
