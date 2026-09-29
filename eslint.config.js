@@ -104,12 +104,6 @@ export default tseslint.config(
     }
   },
   {
-    files: ['scripts/agent-coordination/**/*.cjs'],
-    rules: {
-      '@typescript-eslint/no-require-imports': 'off'
-    }
-  },
-  {
     files: ['tools/flow-inspector/inspectors/**/*.cjs'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',

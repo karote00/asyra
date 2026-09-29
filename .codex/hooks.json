@@ -1,5 +1,5 @@
 {
-  "description": "Project coordination checks for scoped writes and bounded handoffs. Review and trust this definition before activation.",
+  "description": "Stateless project checks for worktree boundaries, protected branches, and destructive Git commands.",
   "hooks": {
     "PreToolUse": [
       {
@@ -7,44 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-hook-adapter.mjs\"",
-            "timeout": 5,
-            "additionalContextLimit": 500
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "^(apply_patch|Edit|Write)$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-hook-adapter.mjs\"",
-            "timeout": 5,
-            "additionalContextLimit": 500
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-hook-adapter.mjs\"",
-            "timeout": 5,
-            "additionalContextLimit": 500
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-hook-adapter.mjs\"",
+            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-safety-hook.mjs\"",
             "timeout": 5,
             "additionalContextLimit": 500
           }
