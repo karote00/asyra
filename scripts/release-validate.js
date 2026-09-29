@@ -59,8 +59,8 @@ const commands = [
   'yarn gen:turbo:check',
   'yarn clean',
   'yarn react:build',
-  'yarn lint:ci',
-  'yarn test:ci',
+  'yarn lint:workspaces:ci',
+  'yarn test:workspaces:ci',
   'yarn deps:validate',
   ...(!frameworkOnly
     ? [

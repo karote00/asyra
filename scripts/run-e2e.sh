@@ -121,13 +121,13 @@ fi
 if [ "$E2E_SUITE" = "functional" ] || [ "${CI:-}" = "true" ]; then
   echo "Running functional Playwright tests..."
   if [ -n "${FLOW_CI_REPORT:-}" ]; then
-    E2E_SKIP_PERFORMANCE=true PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn test:e2e --reporter=line,json
+    E2E_SKIP_PERFORMANCE=true PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn test:e2e:asyra-design --reporter=line,json
   else
-    E2E_SKIP_PERFORMANCE=true yarn test:e2e
+    E2E_SKIP_PERFORMANCE=true yarn test:e2e:asyra-design
   fi
 else
   echo "Running Playwright tests..."
-  yarn test:e2e
+  yarn test:e2e:asyra-design
 fi
 
 echo "Final step: Running isolated unavailable-service status toast test..."

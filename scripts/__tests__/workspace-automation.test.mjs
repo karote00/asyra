@@ -5,7 +5,6 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { createWorkspaceDevAllPlan } from '../dev-all-plan.js'
 import {
   createWorkspaceVersionPlan,
   resolveWorkspaceDependencyRange
@@ -214,7 +213,10 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
   assert.match(workspaceJob, /max-parallel: 4/)
   assert.match(workspaceJob, /actions\/upload-artifact@/)
-  assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+  assert.equal(
+    scripts['test:workspaces:ci'],
+    'yarn test:scripts && turbo run test:ci'
+  )
   assert.doesNotMatch(
     workspaceJob,
     /Install Chromium for selected workspace E2E/
@@ -431,8 +433,8 @@ test('root commands validate the committed Turbo graph without rewriting it', ()
     rootManifest.scripts['gen:turbo:check'],
     'node scripts/gen-turbo.js --check'
   )
-  assert.match(rootManifest.scripts['test:local'], /test:scripts/)
-  assert.match(rootManifest.scripts['test:ci'], /test:scripts/)
+  assert.match(rootManifest.scripts['test:workspaces:local'], /test:scripts/)
+  assert.match(rootManifest.scripts['test:workspaces:ci'], /test:scripts/)
   for (const scriptName of [
     'examples:run',
     'examples:inventory',
@@ -455,12 +457,12 @@ test('Asyra Design keeps frontend startup, live transport, and local persistence
   const collaborationReference = readText(
     'docs/ai/apps/asyra-design/modules/collaboration-reference.md'
   )
-  const devAllRunner = readText('scripts/dev-all.js')
-
-  assert.equal(rootManifest.scripts['dev:all'], 'node scripts/dev-all.js')
-  assert.doesNotMatch(rootManifest.scripts['dev:all'], /gen:turbo/)
-  assert.doesNotMatch(devAllRunner, /initialBuilds/)
-  assert.match(developmentGuide, /yarn dev:all/)
+  assert.equal(
+    rootManifest.scripts['start:asyra-design'],
+    'yarn workspace @asyra/asyra-design start'
+  )
+  assert.equal(rootManifest.scripts['dev:all'], undefined)
+  assert.match(developmentGuide, /yarn start:asyra-design/)
   assert.match(developmentGuide, /In a generated project:[\s\S]*yarn start/)
   assert.match(developmentGuide, /fileId.*must be non-empty/i)
   assert.match(developmentGuide, /yarn document:backend/)
@@ -738,7 +740,7 @@ test('render contract E2E uses runner Chrome in CI and locally', () => {
     runner,
     /Running render contracts and collecting timing observations/
   )
-  assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e/)
+  assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e:asyra-design/)
 })
 
 test('CI runs balanced AI correctness only for related changes or explicit dispatch', async () => {
@@ -875,26 +877,72 @@ test('AI agent runtime is an optional zero-runtime-dependency workspace package'
   )
 })
 
-test('dev:all discovers all package watchers without scheduling builds', async () => {
-  const plan = await createWorkspaceDevAllPlan(repositoryRoot)
-  const devDirectories = plan.devProcesses.map(({ dir }) => dir)
-  const expectedDirectories = fs
-    .readdirSync(path.join(repositoryRoot, 'packages'), {
-      withFileTypes: true
-    })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join('packages', entry.name))
-    .sort()
-
-  assert.deepEqual(devDirectories, expectedDirectories)
-  assert.ok(plan.devProcesses.every(({ cmd }) => cmd === 'yarn dev'))
-  assert.equal('initialBuilds' in plan, false)
-  assert.equal('serviceBuilds' in plan, false)
-  assert.equal('services' in plan, false)
-  assert.deepEqual(plan.app, {
-    dir: 'apps/asyra-design',
-    cmd: 'yarn start'
-  })
+test('root app commands are scoped by app and purpose', () => {
+  const rootScripts = readJSON('package.json').scripts
+  const appCommands = {
+    'asyra-design': ['@asyra/asyra-design', 'start', 'test:local', 'test:ci'],
+    'asyra-framework-site': [
+      '@asyra/asyra-framework-site',
+      'dev',
+      'test:local',
+      'test:ci'
+    ],
+    'asyra-sim': ['@asyra/asyra-sim', 'dev', 'test:local', 'test:ci'],
+    fieldscope: ['@asyra/fieldscope', 'dev', 'test:local', 'test:ci'],
+    'starter-app': ['@asyra/starter-app', 'dev', 'test:local', 'test:ci']
+  }
+  for (const [
+    app,
+    [workspace, startTask, localTestTask, ciTestTask]
+  ] of Object.entries(appCommands)) {
+    assert.ok(rootScripts[`start:${app}`], `missing start:${app}`)
+    assert.ok(rootScripts[`test:${app}`], `missing test:${app}`)
+    assert.ok(rootScripts[`test:${app}:ci`], `missing test:${app}:ci`)
+    assert.ok(rootScripts[`lint:${app}`], `missing lint:${app}`)
+    assert.ok(rootScripts[`test:e2e:${app}`], `missing test:e2e:${app}`)
+    assert.equal(
+      rootScripts[`start:${app}`],
+      `yarn workspace ${workspace} ${startTask}`
+    )
+    assert.equal(
+      rootScripts[`test:${app}`],
+      `yarn workspace ${workspace} ${localTestTask}`
+    )
+    assert.equal(
+      rootScripts[`test:${app}:ci`],
+      `yarn workspace ${workspace} ${ciTestTask}`
+    )
+    if (app === 'asyra-design') {
+      assert.equal(rootScripts[`lint:${app}`], 'yarn eslint apps/asyra-design')
+      assert.equal(
+        rootScripts[`test:e2e:${app}`],
+        'yarn workspace @asyra/asyra-design test:e2e'
+      )
+    } else {
+      assert.equal(
+        rootScripts[`lint:${app}`],
+        `yarn workspace ${workspace} lint`
+      )
+      assert.equal(
+        rootScripts[`test:e2e:${app}`],
+        `yarn workspace ${workspace} test:e2e:ci`
+      )
+    }
+  }
+  for (const script of [
+    'test',
+    'test:local',
+    'test:ci',
+    'test:e2e',
+    'lint',
+    'lint:ci',
+    'dev:all'
+  ])
+    assert.equal(
+      rootScripts[script],
+      undefined,
+      `ambiguous root script remains: ${script}`
+    )
 })
 
 test('workspace version planning materializes release ranges without changing files', () => {

@@ -6,7 +6,7 @@
 - Yarn 4.3.1, or the package manager selected by the generator
 
 In the monorepo, install and build from the repository root, then run
-`yarn dev:all`. In a generated project:
+`yarn start:asyra-design`. In a generated project:
 
 ```bash
 yarn start
@@ -62,7 +62,7 @@ Run the focused owner test first. Before handing off a general App change, run:
 ```bash
 yarn typecheck
 yarn react:build
-yarn test
+yarn test:asyra-design
 ```
 
 Browser changes also require the relevant Playwright suite. Collaboration

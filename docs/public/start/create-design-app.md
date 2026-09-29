@@ -156,7 +156,7 @@ included in the template. The existing HTTP adapter remains available.
 ```shell
 yarn typecheck
 yarn react:build
-yarn test
+yarn test:asyra-design
 ```
 
 Do not edit generated Framework packages, import package-private files, or move

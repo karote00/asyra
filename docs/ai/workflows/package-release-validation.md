@@ -77,28 +77,37 @@ Commands:
 yarn gen:turbo        # intentionally rewrite turbo.json
 yarn gen:turbo:check  # verify the committed graph without changing files
 yarn react:build      # check the graph, then build the app dependency closure
+yarn start:asyra-design # start only the Asyra Design app
+yarn test:asyra-design # run its local formal tests
+yarn test:asyra-design:ci # run its CI test task
+yarn lint:asyra-design # lint only its maintained app files
+yarn test:workspaces:ci # run script tests and all workspace CI tests
+yarn lint:workspaces:ci # lint the repository
 ```
+
+The same `start:<app>`, `test:<app>`, `test:<app>:ci`, `lint:<app>`, and
+`test:e2e:<app>` commands are available for `asyra-framework-site`,
+`asyra-sim`, `fieldscope`, and `starter-app`.
 
 Any root, app, CI, E2E, or deployment command that directly depends on a
 package-specific Turbo task must first pass `gen:turbo:check` or call a root
 command that does.
 
-`dev:all` discovers `packages/*` from their manifests and starts every package
-`dev` command plus the Asyra Design dev server in parallel. It does not validate
-the Turbo graph or build workspace packages; existing `dist` outputs are a
-precondition. A fresh clone must use this sequence from the repository root:
+Each app has a dedicated root start command. For example, Asyra Design starts
+without launching unrelated package watchers. Build workspace packages first
+from a fresh clone:
 
 ```bash
 yarn install
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 After `yarn clean`, recreate the outputs before restarting the watchers:
 
 ```bash
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 `clean` remains a Turbo workspace command; every package that emits `dist` must
@@ -252,7 +261,7 @@ The full validation runs, in order:
 11. remove the isolated workspace whether validation passes or fails.
 
 Release validation never cleans or builds the developer's active workspace, so
-an active `dev:all`, app server, or package watcher is not interrupted and
+an active app server or package watcher is not interrupted and
 cannot rewrite artifacts during validation.
 
 `release:framework` validates Framework packages without entering an App or

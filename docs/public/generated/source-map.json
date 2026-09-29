@@ -16,7 +16,7 @@
     },
     {
       "id": "start/create-design-app",
-      "pageSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
+      "pageSha256": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
       "sources": [
         {
           "path": "create-app/asyra-design/package.json",
@@ -248,7 +248,7 @@
     },
     {
       "id": "build/hierarchy-groups",
-      "pageSha256": "20e06e66ff1b9425be2453b819f7591c8e2ba80ed6b2f377dd265922a9224b95",
+      "pageSha256": "a4ca491e53c161d6bf08c01c137aaa43d33b28f2ab52359e3cc725f7bb236016",
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
@@ -608,7 +608,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "b8e648fd7a9d720282a5b3c75a94cc0d9644846feb153de475006ad452693d1f"
+          "sha256": "e5d2a8d32a3ef00c236313e1715e813e71c4ee776fd4bbe3e530d33a6e41dfe7"
         }
       ]
     },
