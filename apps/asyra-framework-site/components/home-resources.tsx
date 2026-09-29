@@ -1,3 +1,39 @@
+import { ProductEvidenceSlider } from '@/components/product-evidence-slider'
+
+const fieldScopeSlides = [
+  {
+    src: '/product-evidence/fieldscope-greenhouse-overview.webp',
+    alt: 'FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame',
+    label: 'Greenhouse overview',
+    width: 1440,
+    height: 1174
+  },
+  {
+    src: '/product-evidence/fieldscope-greenhouse-end-elevation.webp',
+    alt: 'FieldScope end elevation of the four connected greenhouse bays and planted rows',
+    label: 'Four-bay end elevation',
+    width: 1440,
+    height: 1174
+  },
+  {
+    src: '/product-evidence/fieldscope-greenhouse-internal-detail.webp',
+    alt: 'FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure',
+    label: 'Inside the tomato crop rows',
+    width: 1440,
+    height: 1174
+  }
+] as const
+
+const simSlides = [
+  {
+    src: '/product-evidence/asyra-sim-workcell.webp',
+    alt: 'Asyra Sim synthetic six-axis robot workcell with fixture post and table',
+    label: 'Synthetic example workcell - not production equipment',
+    width: 1440,
+    height: 960
+  }
+] as const
+
 export function HomeResources() {
   return (
     <>
@@ -58,28 +94,28 @@ export function HomeResources() {
               </figcaption>
             </figure>
           </div>
-          <div className="mt-12 grid gap-x-12 gap-y-10 border-t border-[#183f35]/20 pt-8 md:grid-cols-2">
-            <article className="flex flex-col items-start">
+          <div className="mt-12 grid items-stretch gap-x-12 gap-y-10 border-t border-[#183f35]/20 pt-8 md:grid-cols-2">
+            <article className="flex h-full flex-col items-start">
               <p className="text-[12px] uppercase tracking-[.18em] opacity-70">
                 Greenhouse modeling
               </p>
               <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
                 FieldScope
               </h3>
-              <figure className="m-0 mt-4 w-full overflow-hidden rounded-lg border border-[#183f35]/15 bg-white">
-                <img
-                  src="/product-evidence/fieldscope-greenhouse.webp"
-                  alt="FieldScope greenhouse aisle with modeled cucumber and tomato crop rows"
-                  width={1280}
-                  height={853}
-                  loading="lazy"
-                  decoding="async"
-                  className="block aspect-[3/2] w-full object-contain"
+              <p
+                className="w-full pt-3 text-sm leading-relaxed opacity-70 md:min-h-[5.5rem] xl:min-h-16"
+                data-testid="product-case-summary"
+              >
+                The same greenhouse model, shown in overview, end elevation, and
+                crop-aisle views.
+              </p>
+              <div className="mt-4 w-full">
+                <ProductEvidenceSlider
+                  label="FieldScope"
+                  slides={fieldScopeSlides}
+                  testId="fieldscope-carousel"
                 />
-                <figcaption className="px-3 py-2 text-xs leading-relaxed opacity-70">
-                  Current four-bay greenhouse scene with planted crop rows.
-                </figcaption>
-              </figure>
+              </div>
               <p className="pt-4 text-base leading-relaxed opacity-80">
                 Model cucumber and tomato crops in a greenhouse, with a parked
                 robot concept and conservative lane and energy assessments.
@@ -107,27 +143,27 @@ export function HomeResources() {
                 </a>
               </div>
             </article>
-            <article className="flex flex-col items-start">
+            <article className="flex h-full flex-col items-start">
               <p className="text-[12px] uppercase tracking-[.18em] opacity-70">
                 Development checkpoint - not R0
               </p>
               <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
                 Asyra Sim
               </h3>
-              <figure className="m-0 mt-4 w-full overflow-hidden rounded-lg border border-[#183f35]/15 bg-white">
-                <img
-                  src="/product-evidence/asyra-sim-workcell.webp"
-                  alt="Asyra Sim synthetic six-axis robot workcell with fixture post and table"
-                  width={1280}
-                  height={853}
-                  loading="lazy"
-                  decoding="async"
-                  className="block aspect-[3/2] w-full object-contain"
+              <p
+                className="w-full pt-3 text-sm leading-relaxed opacity-70 md:min-h-[5.5rem] xl:min-h-16"
+                data-testid="product-case-summary"
+              >
+                A synthetic six-axis workcell with its hierarchy and inspector -
+                not production equipment.
+              </p>
+              <div className="mt-4 w-full">
+                <ProductEvidenceSlider
+                  label="Asyra Sim"
+                  slides={simSlides}
+                  testId="asyra-sim-showcase"
                 />
-                <figcaption className="px-3 py-2 text-xs leading-relaxed opacity-70">
-                  Synthetic example workcell - not production equipment.
-                </figcaption>
-              </figure>
+              </div>
               <p className="pt-4 text-base leading-relaxed opacity-80">
                 Edit synthetic six-axis workcells, review robot trajectories,
                 and compare geometry-analysis runs in a browser-local workbench.

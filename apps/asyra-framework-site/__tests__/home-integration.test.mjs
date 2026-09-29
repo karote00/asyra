@@ -83,11 +83,22 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
 })
 test('homepage FieldScope and Sim cases include real product screenshots', async () => {
   const content = await read('components/home-resources.tsx')
+  const slider = await read('components/product-evidence-slider.tsx')
   for (const [name, file, alt] of [
     [
-      'FieldScope',
-      'public/product-evidence/fieldscope-greenhouse.webp',
-      'FieldScope greenhouse aisle with modeled cucumber and tomato crop rows'
+      'FieldScope overview',
+      'public/product-evidence/fieldscope-greenhouse-overview.webp',
+      'FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame'
+    ],
+    [
+      'FieldScope end elevation',
+      'public/product-evidence/fieldscope-greenhouse-end-elevation.webp',
+      'FieldScope end elevation of the four connected greenhouse bays and planted rows'
+    ],
+    [
+      'FieldScope aisle detail',
+      'public/product-evidence/fieldscope-greenhouse-internal-detail.webp',
+      'FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure'
     ],
     [
       'Asyra Sim',
@@ -95,16 +106,29 @@ test('homepage FieldScope and Sim cases include real product screenshots', async
       'Asyra Sim synthetic six-axis robot workcell with fixture post and table'
     ]
   ]) {
+    const imageOwner = content
     assert.ok(
-      content.includes(file.replace('public', '')),
+      imageOwner.includes(file.replace('public', '')),
       `${name} image is missing`
     )
-    assert.ok(
-      content.includes(`alt="${alt}"`),
-      `${name} image needs a descriptive alt`
-    )
+    assert.ok(imageOwner.includes(alt), `${name} image needs a descriptive alt`)
     await access(new URL(`../${file}`, import.meta.url))
   }
+  assert.match(content, /same greenhouse model, shown in overview/u)
+  assert.ok(content.includes('label="FieldScope"'))
+  assert.ok(content.includes('slides={fieldScopeSlides}'))
+  assert.ok(content.includes('label="Asyra Sim"'))
+  assert.ok(content.includes('slides={simSlides}'))
+  assert.match(slider, /depth === 1 \? 0\.9 : 0\.81/u)
+  assert.match(slider, /translateX\(/u)
+  assert.ok(slider.includes('setActiveIndex(slideIndex)'))
+  assert.match(slider, /createStackSlots\(slides, activeIndex, 3\)/u)
+  assert.match(slider, /createStackSlots\(slides, activeIndex, 5\)/u)
+  assert.match(slider, /object-contain shadow-lg/u)
+  assert.doesNotMatch(
+    slider,
+    /translateY|translate3d|Previous FieldScope image|Next FieldScope image/u
+  )
 })
 test('homepage routes the published Starter before Design and advanced composition', async () => {
   const content = await read('components/home-resources.tsx')
