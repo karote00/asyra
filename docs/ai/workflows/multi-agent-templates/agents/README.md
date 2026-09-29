@@ -36,6 +36,23 @@ file, then provide the task objective, exact worktree/branch/source, necessary
 current contract paths, trusted prior evidence, completion conditions and
 exclusions. Do not inject the full conversation or every role definition.
 
+Carry the shared task context from `docs/ai/workflows/task-context.md` in every
+authorized handoff. Generate a child selection from its parent context so the
+plan and whole-plan closeout owner are preserved. The worker checks that context
+in its own checkout and reads the selected task before editing. Put the same
+context in the resulting PR; a child task's completion does not close the plan.
+
+Before dispatching production implementation from a plan, the coordinating owner
+completes the plan-to-flow design and pre-implementation review in that workflow:
+each step, inter-step handoffs, whole-flow feasibility and preservation of accepted
+behavior. Resolve blocking design findings before work starts; do not leave
+whole-flow design to individual workers. Use Flow Inspector's supported admission
+paths and hand off the reviewed contract, selected owner step, prerequisites,
+required cases and source-bound evidence references. Workers implement that
+contract and return current evidence. The integrating owner requires passing
+work, prerequisites, whole-target integration and accepted-behavior preservation
+on the same source. Contract changes require review before affected work resumes.
+
 External applications have separate tool-specific roles. The current catalog
 contains only a Blender operator; do not expand it into a general external-tool
 operator. Add a separately scoped role when another application is actually needed.

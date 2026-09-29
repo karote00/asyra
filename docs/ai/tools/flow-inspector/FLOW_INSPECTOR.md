@@ -1,9 +1,17 @@
 # Flow Inspector Contract
 
+## Document Scope
+
+This document specifies Flow Inspector's static architecture representation and
+viewer. The tool's plan-to-flow development sequence, including design review
+before implementation, is described in the [tool entry](README.md#role-in-plan-driven-development).
+[Core Proof](CORE_PROOF.md) owns the implemented admission and verification
+contracts; execution and review state must not be added to the static schema.
+
 ## Purpose
 
-The Flow Inspector is a project-owned, product-runtime-independent viewer for
-feature and system contracts. It renders target-owned semantic data without
+The static Flow Inspector viewer presents feature and system contracts
+independently of the product runtime. It renders target-owned semantic data without
 owning or modifying that data. Stroke Engine is the first target; neither the
 schema nor the renderer may contain Stroke-specific fields, rules, paths, or
 execution state.

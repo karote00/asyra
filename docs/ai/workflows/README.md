@@ -24,6 +24,8 @@ skills without requiring the user to supply the workflow name.
 
 Repository automation contracts:
 
+- task/plan association, worker preflight and closeout evidence:
+  `task-context.md`
 - workspace build, generated-template, and release validation:
   `package-release-validation.md`
 - manual App deployment and recovery: `manual-app-release.md`
