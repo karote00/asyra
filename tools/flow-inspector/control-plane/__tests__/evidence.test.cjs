@@ -1305,21 +1305,21 @@ test(
     }
     const appConfig = path.join(directory, 'app.config.mjs')
     const appRoot = path.join(repository, 'apps/asyra-design')
-    fs.writeFileSync(
-      appConfig,
-      'export default ' +
-        JSON.stringify({
-          root: appRoot,
-          cacheDir: path.join(directory, 'vite-cache'),
-          test: {
-            environment: 'jsdom',
-            include: ['src/features/undo-redo/__tests__/feature.test.ts'],
-            maxWorkers: 1,
-            fileParallelism: false
-          }
-        })
-    )
     const appProof = async (label, expectedFailed) => {
+      fs.writeFileSync(
+        appConfig,
+        'export default ' +
+          JSON.stringify({
+            root: appRoot,
+            cacheDir: path.join(directory, `vite-cache-${label}`),
+            test: {
+              environment: 'jsdom',
+              include: ['src/features/undo-redo/__tests__/feature.test.ts'],
+              maxWorkers: 1,
+              fileParallelism: false
+            }
+          })
+      )
       const reportPath = path.join(directory, label + '.json')
       const sourcePath = path.join(directory, label + '.ts')
       const sourceBytes = fs.readFileSync(path.join(repository, appFile))
