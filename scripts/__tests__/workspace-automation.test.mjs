@@ -627,11 +627,14 @@ test('CI validates the active Framework package release from packed artifacts on
   )
 })
 
-test('E2E automation cancels superseded runs and installs its required browser', () => {
+test('E2E automation cancels superseded runs and uses runner Chrome', () => {
   const e2e = readText('.github/workflows/e2e.yml')
-  const chromiumInstallCount = (
-    e2e.match(/playwright install --with-deps chromium/g) ?? []
-  ).length
+  const workflowDirectory = path.join(repositoryRoot, '.github', 'workflows')
+  const allWorkflows = fs
+    .readdirSync(workflowDirectory)
+    .filter((file) => /\.ya?ml$/u.test(file))
+    .map((file) => readText(`.github/workflows/${file}`))
+    .join('\n')
 
   assert.match(e2e, /concurrency:/)
   assert.match(
@@ -639,8 +642,11 @@ test('E2E automation cancels superseded runs and installs its required browser',
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.equal(chromiumInstallCount, 4)
-  assert.doesNotMatch(e2e, /playwright install --with-deps\s*$/m)
+  assert.doesNotMatch(allWorkflows, /playwright install/)
+  assert.doesNotMatch(
+    readText('scripts/run-e2e.sh'),
+    /E2E_RENDER_PERFORMANCE_BROWSER/
+  )
 })
 
 test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace build', () => {
@@ -719,12 +725,13 @@ test('render timing limits are observations while deterministic work stays block
   assert.match(mechanical, /frame-timing\.json/)
 })
 
-test('render contract E2E keeps CI Chromium isolated and local Chrome available', () => {
+test('render contract E2E uses runner Chrome in CI and locally', () => {
   const runner = readText('scripts/run-e2e.sh')
 
+  assert.doesNotMatch(runner, /E2E_RENDER_PERFORMANCE_BROWSER/)
   assert.match(
     runner,
-    /if \[ "\$\{CI:-\}" = "true" \]; then[\s\S]*E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*else[\s\S]*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*fi/
+    /yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1/
   )
   assert.match(runner, /render-contracts/)
   assert.match(

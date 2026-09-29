@@ -68,9 +68,6 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Install Playwright browsers
-        run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
-
       - name: Verify Flow Inspector board
         env:
           FLOW_PROOF_URL: http://127.0.0.1:4318
@@ -98,9 +95,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Install Playwright browsers
-        run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
 
       - name: Run render contracts and collect timing observations
         env:
@@ -139,9 +133,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Install Playwright browsers
-        run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
 
       - name: Resolve balanced AI correctness scope
         id: balanced_ai_scope
@@ -194,9 +185,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Install Playwright browsers
-        run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
 
       - name: Build workspace
         run: yarn react:build
