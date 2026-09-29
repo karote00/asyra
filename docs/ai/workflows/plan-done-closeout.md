@@ -4,6 +4,11 @@
 
 Finalize a DONE plan with deterministic closeout records.
 
+Follow `task-context.md` for plan association, the named closeout owner and
+review of the exact source commit before closeout. Partial plan tasks retain
+their active plan. A final closeout preserves the reviewed plan in the
+completed record and appends the outcome fields defined by that workflow.
+
 ## Required Inputs
 
 1. plan path/name

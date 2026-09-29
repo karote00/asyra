@@ -36,6 +36,12 @@ file, then provide the task objective, exact worktree/branch/source, necessary
 current contract paths, trusted prior evidence, completion conditions and
 exclusions. Do not inject the full conversation or every role definition.
 
+Carry the shared task context from `docs/ai/workflows/task-context.md` in every
+authorized handoff. Generate a child selection from its parent context so the
+plan and whole-plan closeout owner are preserved. The worker checks that context
+in its own checkout and reads the selected task before editing. Put the same
+context in the resulting PR; a child task's completion does not close the plan.
+
 External applications have separate tool-specific roles. The current catalog
 contains only a Blender operator; do not expand it into a general external-tool
 operator. Add a separately scoped role when another application is actually needed.

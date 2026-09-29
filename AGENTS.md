@@ -104,6 +104,10 @@ These rules apply to every task without requiring additional document reads:
   Task prompts may reference an existing plan's explicit task contract instead
   of repeating project rules; verify that contract exists in the chosen base.
   Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.
+- Establish explicit task/plan association at task entry and preserve it in
+  handoffs and PRs. Workers verify the selected plan/task before editing;
+  missing context is not an implicit standalone task. Follow
+  `docs/ai/workflows/task-context.md`.
 - For every bug fix, first verify whether existing formal tests detect the bug; if not, add or strengthen the formal regression test before implementation.
 - Follow the Critical Rules section in this file.
 
