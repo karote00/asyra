@@ -601,6 +601,7 @@ test('selected CI checks run only planned owners and record declared skips', asy
 
 test('shared build and workflow inputs select every discovered workspace', () => {
   for (const input of [
+    '.gitignore',
     'turbo.base.json',
     '.github/workflows/main.yml',
     'scripts/run-ci-checks.mjs'

@@ -10,6 +10,7 @@
     ".yarnrc.yml",
     "turbo.base.json",
     "turbo.json",
+    ".gitignore",
     "eslint.config.js",
     "eslint.config.mjs",
     "tsconfig.json",
