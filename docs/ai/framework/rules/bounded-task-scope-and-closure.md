@@ -76,6 +76,11 @@ guess them, import an unmerged plan into another branch, or expand scope merely
 to make a short prompt executable. Plans need no new matrices or governance
 documents to meet this requirement.
 
+Use the shared context and preflight at `docs/ai/workflows/task-context.md` to
+carry this selection into the worker and PR. Preserve the plan path and
+whole-plan closeout owner when generating a child task. A missing association
+is unresolved, not automatically standalone.
+
 For a task with an adequate existing contract, a short handoff can be:
 
 ```text

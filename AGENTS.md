@@ -8,6 +8,11 @@ Start every task with a brief triage based on the user's request and the files
 being touched. Load only the rules needed for that scope, then expand context if
 the task proves riskier than it first appeared.
 
+For implementation, bug-fix, refactor, and documentation requests, use
+`docs/ai/workflows/agent-task.md` to select the existing workflow and applicable
+skills from the requested outcome. The user does not need to name a slash
+command. Read-only questions keep the Level 0 path below.
+
 ### Always-On Rules
 
 These rules apply to every task without requiring additional document reads:
@@ -104,6 +109,16 @@ These rules apply to every task without requiring additional document reads:
   Task prompts may reference an existing plan's explicit task contract instead
   of repeating project rules; verify that contract exists in the chosen base.
   Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.
+- Establish explicit task/plan association at task entry and preserve it in
+  handoffs and PRs. Workers verify the selected plan/task before editing;
+  missing context is not an implicit standalone task. Follow
+  `docs/ai/workflows/task-context.md`.
+- For plan-driven development, design the complete flow and review every step,
+  its handoffs, whole-flow feasibility and accepted-behavior preservation before
+  production implementation. Use Flow Inspector's supported admission and
+  evidence paths, preserve the reviewed contract in worker handoffs, and verify
+  both new work and existing behavior on the same source. Follow
+  `docs/ai/workflows/task-context.md`.
 - For every bug fix, first verify whether existing formal tests detect the bug; if not, add or strengthen the formal regression test before implementation.
 - Follow the Critical Rules section in this file.
 

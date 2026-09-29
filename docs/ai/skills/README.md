@@ -20,6 +20,7 @@ Skills should be strict enough that two agents produce nearly the same process/o
 
 ## Available Skills
 
+- `agent-improvement-eval/SKILL.md`
 - `framework-import-boundary-auditor/SKILL.md`
 - `feature-authoring-guard/SKILL.md`
 - `transaction-boundary-checker/SKILL.md`

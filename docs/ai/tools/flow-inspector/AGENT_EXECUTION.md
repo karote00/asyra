@@ -1,5 +1,17 @@
 # Flow Inspector Local Agent Execution
 
+## Position in the Development Workflow
+
+For plan-driven work, complete the flow design and pre-implementation review in
+the [tool entry](README.md#role-in-plan-driven-development) before handing an
+owner segment to an agent. The handoff carries the reviewed flow, work boundary,
+prerequisites, acceptance cases and accepted behavior to preserve. Individual
+agent success must still be assessed alongside prerequisites, whole-target
+integration and accepted-behavior preservation on the same source. The sections
+below define the actual local execution capabilities and authorization limits;
+the development workflow does not enable additional providers or automatic
+dispatch.
+
 ## Activation and bounded completion
 
 On 2026-09-08 the user activates Phase 5 local, isolated execution independently

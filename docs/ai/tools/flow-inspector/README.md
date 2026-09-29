@@ -3,13 +3,58 @@
 This folder owns documentation for the project-owned Flow Inspector tool
 family.
 
+## Role in Plan-Driven Development
+
+Flow Inspector supports developing a plan through an explicit flow contract:
+design and review the complete flow before production implementation, then
+verify each work item, its handoffs, the integrated result and preservation of
+accepted behavior. The static viewer, execution service and evidence assessment
+are different parts of that workflow.
+
+The development sequence is:
+
+1. **Plan to flow.** Translate the intended outcomes into owners, steps,
+   inputs/outputs, routes, prerequisites, failure behavior and acceptance cases.
+   Keep product semantics in the authoritative specification and architecture
+   in the Inspector contract.
+2. **Review before implementation.** Check each step against actual code and
+   constraints, check producer/consumer compatibility, and review whole-flow
+   feasibility. Establish the accepted behavior and regression obligations that
+   must remain intact. Resolve blocking design findings and material uncertainty
+   before handing off production work.
+3. **Prepare bounded work.** Use the supported contract, target and work admission
+   paths described in [Core Proof](CORE_PROOF.md#flow-targets-and-work-decomposition).
+   Preserve the reviewed revision, accepted baseline, complete obligations,
+   prerequisites and selected owner boundary in the handoff.
+4. **Implement and verify.** Implement the reviewed owner segments and retain
+   current source-bound evidence. Assess the selected work, its prerequisites,
+   whole-target integration and accepted-behavior preservation separately on the
+   same source. Passing one work item cannot stand for a passing whole flow.
+5. **Review necessary design changes.** When implementation evidence invalidates
+   an assumption, stop the affected segment and review the revised contract,
+   connected steps, integration and preservation obligations before resuming.
+   Synchronize the affected specification, Inspector, cases and proof mapping.
+6. **Complete the target.** Require all target obligations and handoffs to pass,
+   with accepted behavior preserved. Baseline acceptance remains a separate,
+   explicit action under the existing service contract.
+
+The collaboration entry, worker handoff and PR responsibilities are defined in
+[Task Context and Plan Closeout](../../workflows/task-context.md#plan-to-flow-development-and-review-before-implementation).
+Design review establishes justified implementation readiness; structural
+admission alone cannot establish runtime correctness. Formal evidence must
+prove the resulting behavior. The scope below identifies the tool's implemented
+coverage: this development sequence does not imply automatic review of arbitrary
+plans, automatic dispatch, or verification of unregistered flows.
+
 ## Read Order
 
-1. `FLOW_INSPECTOR.md`
-2. `PLANS.md`
-3. relevant files under `plans/`
-4. future tool-specific architecture, workflow, rules, and decision history as
-   those contracts are activated
+1. The development sequence and implemented scope in this README.
+2. `FLOW_INSPECTOR.md` for the static architecture representation.
+3. `CORE_PROOF.md` for supported admission, work decomposition, verification,
+   whole-target assessment and baseline acceptance.
+4. `AGENT_EXECUTION.md` when using authorized local execution, and `PR_REVIEW.md`
+   when using the supported PR delivery/review path.
+5. `PLANS.md` and relevant files under `plans/` for unfinished capability work.
 
 ## Scope
 
