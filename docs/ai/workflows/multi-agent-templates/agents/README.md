@@ -42,12 +42,16 @@ plan and whole-plan closeout owner are preserved. The worker checks that context
 in its own checkout and reads the selected task before editing. Put the same
 context in the resulting PR; a child task's completion does not close the plan.
 
-Apply the Inspector applicability and synchronization section of that workflow
-to each assignment. For governed work, the handoff references the specification,
-Inspector owner step/route, affected cases and gates in the existing contract.
-Workers preserve these references, synchronize affected contracts with their
-implementation, and return current evidence. The integrating owner checks the
-actual diff against that scope; a green unrelated gate is not completion proof.
+Before dispatching production implementation from a plan, the coordinating owner
+completes the plan-to-flow design and pre-implementation review in that workflow:
+each step, inter-step handoffs, whole-flow feasibility and preservation of accepted
+behavior. Resolve blocking design findings before work starts; do not leave
+whole-flow design to individual workers. Use Flow Inspector's supported admission
+paths and hand off the reviewed contract, selected owner step, prerequisites,
+required cases and source-bound evidence references. Workers implement that
+contract and return current evidence. The integrating owner requires passing
+work, prerequisites, whole-target integration and accepted-behavior preservation
+on the same source. Contract changes require review before affected work resumes.
 
 External applications have separate tool-specific roles. The current catalog
 contains only a Blender operator; do not expand it into a general external-tool

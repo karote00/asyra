@@ -78,59 +78,106 @@ HEAD, prerequisites integrated in that base, and the plan/task in both the base
 and checkout. Do not copy an unmerged plan into another branch to satisfy the
 check. The assigning owner must first resolve the intended base.
 
-## Inspector Applicability and Contract Synchronization
+## Plan-to-Flow Development and Review Before Implementation
 
-Every task determines Inspector applicability before implementation, using
-`docs/ai/framework/rules/bounded-task-scope-and-closure.md`. Record the result
-in the existing task contract, handoff or PR; do not create a separate registry
-or readiness ledger. `standalone` means no plan association, not exemption from
-an applicable Inspector contract.
+For plan-driven development, Flow Inspector is the development workflow tool.
+Start from the plan's intended outcomes, design the complete flow, and give that
+flow to Flow Inspector before implementing its production steps. This is a
+required design and review stage, not a per-task choice about whether an
+Inspector applies or a documentation check added after coding.
 
-When the task changes or proves governed behavior, the assigning owner provides
-the authoritative specification and Inspector paths, selected owner step/route,
-affected product cases and required gates. Reference an adequate existing plan
-section instead of duplicating its contents. Child handoffs preserve these
-references along with the plan association. The executing worker reads and
-checks them in its own selected checkout before editing, before advancing each
-owner segment, and before reporting completion.
+### Design and review the complete flow
 
-Follow `docs/ai/framework/rules/inspector-contract-readiness.md` and
-`docs/ai/framework/rules/inspector-step-execution.md` for applicable work:
+The coordinating owner establishes the following in the existing plan, product
+contract and Inspector, using their existing ownership rather than creating
+another readiness registry:
 
-- Work within the selected owner boundary and inspect its declared upstream
-  inputs and downstream consumers. Follow the existing Step Execution Card and
-  test-first requirements; do not open a repository-wide audit.
-- When behavior, ownership, inputs/outputs, routes, conditions, implementation
-  boundaries or acceptance criteria change, synchronize their authoritative
-  specification, Inspector data, affected formal cases and any existing proof
-  mapping in the same PR. Update generated viewer artifacts when their source
-  changes, following the target's established generation contract.
-- An implementation fix that restores an unchanged contract need not rewrite
-  the Inspector. It still requires the affected formal evidence. Do not widen
-  boundaries, remove obligations or weaken checks merely to make a change pass.
-- Run the selected target's applicable structural, semantic and integration
-  gates. Report the actual source/contract identity and results; evidence from
-  before a relevant edit cannot close the updated work. Follow the existing
-  pre-push validation policy for the final source.
-- Missing or contradictory contracts, unmapped required cases, failed gates or
-  stale evidence block an applicable completion claim. Repair only within the
-  authorized scope; otherwise return the gap to the assigning owner.
+- Translate all intended outcomes into a complete flow with explicit owners,
+  inputs/outputs, routes, conditions, failure handling and implementation
+  boundaries. Every required outcome must have an owner and acceptance cases.
+- Review each step against actual current code, public APIs and constraints.
+  Explain how it can be implemented and tested. Resolve missing capabilities,
+  conflicting assumptions and material technical uncertainty before production
+  implementation. Where needed, use a bounded design experiment with retained
+  evidence; an unresolved assumption is not a passing feasibility review.
+- Review the connections: each producer must supply what its consumer needs,
+  under compatible conditions and lifecycle rules. Resolve prerequisites,
+  invalid cycles, missing or duplicate ownership, cancellation/failure paths
+  and composition constraints before work is handed off.
+- Review the entire flow against the plan, including representative success,
+  boundary and failure cases, whole-flow integration checks, and relevant
+  performance or resource constraints. Individually plausible steps are not
+  proof of a feasible end-to-end design.
+- Establish the accepted behavior to preserve before implementation. Inspect
+  affected existing consumers and shared contracts; identify existing regression
+  gates and any missing coverage needed for the change. Within the registered
+  verification scope, unknown impact retains the full accepted obligations;
+  it must not become an empty exemption.
 
-When no governed semantics or contract is changed or proved, give a brief
-reason in the handoff/PR. A filename mentioned by an Inspector does not alone
-make the task applicable, and must not cause unrelated edits to its boundaries.
+Review must return the concrete findings for that bounded design. Resolve
+blocking findings and recheck the affected design before starting production
+implementation. Follow `docs/ai/framework/rules/inspector-contract-readiness.md`
+for the product contract, exact architecture flow, executable cases and bounded
+DoD. Structural admission checks consistency; design review establishes justified
+readiness. Runtime correctness still needs evidence from the implementation.
 
-The PR and worker result identify applicability, affected contract references,
-necessary synchronized changes (or why none were needed), and current evidence.
-The integrating owner checks these against the actual diff before declaring
-the task complete. A green generic CI job does not establish coverage for an
-unregistered product flow or prove that no other behavior can be affected.
+### Admit the flow and hand off bounded work
 
-Flow Inspector's current support and evidence boundaries remain owned by
+Use Flow Inspector's existing supported contract/target/work admission paths.
+Keep the reviewed flow revision, accepted baseline, complete obligation inventory,
+work allocation, prerequisites and acceptance cases explicit. A tool support gap
+or missing proof mapping is a blocker to resolve during preparation, not
+permission to report an unregistered flow as verified. Resolve necessary gaps
+within the authorized scope or return them to the coordinating owner.
+
+The handoff selects the plan section, reviewed specification and Inspector
+step/route, allowed implementation boundary, required cases and gates, and the
+existing Flow Inspector identities/evidence for that work when admitted. Preserve
+these references in child handoffs and the PR. Do not fabricate tool identities
+or duplicate the tool's retained state in a new task registry.
+
+The worker verifies that the reviewed contract and prerequisites exist in its
+selected checkout and reads them before editing. Follow
+`docs/ai/framework/rules/inspector-step-execution.md`: implement one owner segment
+at a time, use its Step Execution Card and test-first requirements, then recheck
+the contract and focused evidence before advancing. Worker entry confirms the
+reviewed design; it does not defer whole-flow design until implementation.
+
+### Preserve the design and prove the integrated result
+
+Track these distinct results throughout implementation:
+
+1. The selected work fulfills its own promised behavior.
+2. Required upstream behavior and handoffs work on that same source.
+3. The complete target fulfills the plan's outcomes without pending obligations.
+4. Accepted existing behavior remains preserved on that same source.
+
+Passing one work item or merging its PR cannot substitute for whole-target
+integration or accepted-behavior preservation. Use current source/contract-bound
+formal evidence. Missing, stale, skipped or failed required evidence blocks the
+corresponding completion claim. A generic green CI job does not establish
+coverage for an unregistered flow.
+
+Design changes remain possible. If implementation evidence invalidates an
+assumption, stop the affected segment, identify the cause, and revise the plan,
+flow contract, affected cases and proof mapping together within the authorized
+scope. Review the changed step, its connected consumers, whole-flow implications
+and preservation obligations before resuming. Keep prior evidence historical;
+rerun the checks affected by the change. Do not weaken obligations, widen
+boundaries or silently redesign a step just to make a local implementation pass.
+
+Synchronize changed product/architecture contracts and their generated artifacts
+in the same PR as the implementation. A fix restoring an unchanged reviewed
+contract needs fresh evidence, not an artificial contract rewrite. The
+integrating owner checks the actual diff, design changes and all four results
+before declaring the development target complete.
+
+Flow Inspector's implemented support and evidence boundaries remain owned by
 `docs/ai/tools/flow-inspector/README.md`, `FLOW_INSPECTOR.md`, `CORE_PROOF.md`
-and `PR_REVIEW.md` in that directory. Its source-bound verification, GitHub
-check observations, review acceptance and accepted local baseline are distinct
-states. None automatically supplies the review approval required for closeout.
+and `PR_REVIEW.md` in that directory. This workflow does not expand its runtime
+coverage. Design review, runtime verification, GitHub review approval and explicit
+accepted-baseline mutation are distinct decisions; none implicitly grants the
+others or authorizes remote operations.
 
 ## Closeout Verification Contract
 

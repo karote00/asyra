@@ -11,11 +11,12 @@ handoff. Follow `docs/ai/workflows/task-context.md`. Explicitly select
 standalone. Keep the plan path, exact task heading and closeout owner for
 plan-related work. Do not mark a partial task as whole-plan completion.
 
-## Inspector applicability
+## Flow design and verification
 
-State whether the change affects or proves an Inspector-governed contract.
-For applicable changes, reference the specification, Inspector owner step/route,
-affected cases, synchronized contract changes and gates run against the current
-source. Explain why no Inspector edit was needed when restoring an unchanged
-contract. For non-applicable changes, give a brief reason. Follow the existing
-contract references in the task; do not create another readiness ledger.
+For plan-driven development, reference the flow design reviewed before
+implementation: plan/specification, Inspector revision, selected owner step/route,
+prerequisites, acceptance cases and accepted behavior to preserve. Summarize any
+design changes and their review. Report current source-bound evidence separately
+for this work, its prerequisites, whole-target integration and preservation of
+existing behavior; keep pending target work visible. Reference the existing
+contract and Flow Inspector records rather than creating another readiness ledger.
