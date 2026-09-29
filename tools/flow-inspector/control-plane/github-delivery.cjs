@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const { execFile, execFileSync } = require('node:child_process')
 const { safePath, sha256 } = require('./snapshot.cjs')
 const { canonicalFile } = require('./agent-contract.cjs')
-const { validateMetadata, METADATA_POLICY } = require('./pr-review.cjs')
+const { validateMetadata } = require('./pr-review.cjs')
 const hex = (value) => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const need = (value, message) => {
   if (!value) throw new Error('GitHub delivery: ' + message)
@@ -142,6 +142,11 @@ function createGitHubDelivery(
     return ref.object.sha
   }
   const validatePreview = (p) => {
+    const sourcePrefix =
+      typeof p.packageOwnership?.path === 'string' &&
+      p.packageOwnership.path.endsWith('/package.json')
+        ? p.packageOwnership.path.slice(0, -'package.json'.length) + 'src/'
+        : null
     need(
       p.repository === repository &&
         p.base === base &&
@@ -163,7 +168,9 @@ function createGitHubDelivery(
     for (const c of p.changes)
       need(
         canonicalFile(c.path) &&
-          /^packages\/factory\/src\/.+\.ts$/.test(c.path) &&
+          sourcePrefix &&
+          c.path.startsWith(sourcePrefix) &&
+          c.path.endsWith('.ts') &&
           !c.path.includes('/__tests__/') &&
           sha256(c.after) === c.afterDigest,
         'invalid source difference'
@@ -256,7 +263,7 @@ function createGitHubDelivery(
               change.path.startsWith(name.slice(0, -'package.json'.length))
           )
           need(
-            owners.every((name) => name === METADATA_POLICY.manifestPath),
+            owners.every((name) => name === input.packageOwnership.path),
             'ambiguous package ownership'
           )
         }

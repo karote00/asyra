@@ -63,6 +63,19 @@ test('production proof is included in PR CI and never starts Vite dev or preview
     /run: node scripts\/app-release-verification.mjs build/
   )
   assert.match(workflow, /run: node scripts\/app-release-verification.mjs test/)
+  const evidenceGate =
+    'node --test scripts/__tests__/production-artifact-resource-evidence.test.mjs'
+  assert.ok(workflow.includes('run: ' + evidenceGate))
+  assert.ok(
+    workflow.indexOf('run: node scripts/app-release-verification.mjs build') <
+      workflow.indexOf('run: ' + evidenceGate),
+    'Build the selected Apps before checking resource evidence'
+  )
+  assert.ok(
+    workflow.indexOf('run: ' + evidenceGate) <
+      workflow.indexOf('run: node scripts/app-release-verification.mjs test'),
+    'Verify bounded resource evidence before running the artifact journey'
+  )
   assert.ok(workflow.includes('RELEASE_APPS: ${{ inputs.apps }}'))
   assert.doesNotMatch(
     read('scripts/production-artifact-server.mjs'),

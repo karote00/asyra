@@ -283,14 +283,27 @@ formal evidence that the entire trajectory is clear.
 ### Live playback feedback
 
 The analysis owner retains the current admitted experiment input and bounded
-sample records for reuse by Play and the analysis panel. Replaying an already
-checked time does not invoke a method or allocate a Worker. Input, method,
+sample records for reuse by Play and the analysis panel. Replaying a complete
+checked time does not invoke a method or allocate a Worker. An incomplete exact
+sample retains complete pair proofs and rechecks only pairs still missing
+proof; it remains incomplete until every required pair has proof. Input, method,
 trajectory, scope, threshold or numerical-setting changes invalidate current
 records; committed document changes conservatively retire this input lifetime.
 No same-name or same-ID match grants reuse. Immutable saved reports are kept as
 historical evidence, never silently applied to changed inputs. Live observations
 are labelled as sampled records, not full-path reports, and do not replace the
 continuous-coverage gate for a formal report.
+
+The analysis owner stores accepted exact-time samples and certified background
+interval leaves in its bounded `LiveEvidenceRecords` input lifetime. It publishes transient state and evidence changes
+through separate scalar Core UI property revisions; evidence stays
+analysis-owned and is never copied into a UI property for notification. Worker
+progress and playback target changes advance the state revision only when its
+published status, error or sample values change. Only materially changed
+accepted evidence or clearing existing evidence advances the records revision.
+Re-recording an equivalent sample leaves the stable records array and revision
+unchanged. Core's deep `isEqual` check therefore sees scalar revision values
+instead of full sample or report data.
 
 The App owns one non-mutating, cancellable Feature task and at most one bounded Worker
 for the current playback inputs. Admit and send detached inputs once per
@@ -299,19 +312,90 @@ check and at most one latest pending time. Forward playback protects crossed
 canonical keyframes until checked before catching up to the latest playhead;
 optional intermediate samples may be coalesced. An explicit seek resets this
 progress and checks its exact target, not the skipped interval. Continuous Play
-never waits for a solve. Manual seeking keeps the slider responsive while an
-existing displayed pose and its feedback remain paired until the latest target's
-calculation or recorded-evidence lookup completes. The notice names the pending
-target separately. Manual seeking does not clear existing feedback or present
-intermediate pair-progress states; compute the next state, then replace it.
-New target geometry and its accepted feedback are presented atomically, also
-when the target is earlier than the displayed pose. No prior evidence is applied
-to the target pose. Before any accepted feedback, preview the target with an
-explicit checking state; failure displays that target with an explicit error.
+never waits for a solve. Each slider drag/click synchronously submits its exact
+target time and updates the preview pose from the canonical trajectory. Rendering
+observes that updated preview state; it never waits for analysis. While a new
+target is unchecked, retain the last valid feedback and identify its checked
+time; do not present it as evidence for the target pose. With no accepted
+evidence, show checking/unknown. The latest target is authoritative for
+replacement, while late results may be retained under the unchanged admitted
+input if they validate for their own exact time.
+
+When the latest exact foreground sample is incomplete because its bounded
+500 ms attempt expired, continue checking only its missing pairs at that same
+time, reusing validated complete pair evidence. Continue an unchanged exact
+target only when the accepted sample materially gains validated evidence and
+the original aggregate evaluation budget still has capacity. Each attempt keeps
+the same 500 ms limit. Stop when accepted evidence does not change or the
+aggregate evaluation budget is exhausted; preserve unknown coverage in either
+case. A newer target supersedes the continuation.
+
+Reuse only evidence that exactly covers the requested time: an exact sampled
+point or a certified interval containing that time. A point witness says
+nothing about neighboring times, and an unresolved interval remains unknown.
+The live analysis owner retains bounded exact-time samples and validated
+interval leaves for its admitted input. A partial interval projection may show
+its proven pairs while the owner continues an exact foreground check for missing
+pairs. The Preview UI derives a query index from the selected immutable
+run's per-pair evidence; that index adds no evidence authority and is retired
+with its run/input selection. A finding leaf is usable only at its exact
+witness time, a clear query requires certificates for every required pair, and
+missing pairs or gaps remain unknown. Input, method, trajectory, scope,
+threshold, numerical-setting or geometry changes retire affected evidence.
+Identical in-flight queries may share work, but cancellation and stale-delivery
+fencing remain in force. A cache hit is served without waiting behind unrelated
+analysis work.
+
+The playback pose and selected time are a separate transient Preview
+projection. Changing `t` immediately updates that pose and never changes the
+records revision. `LiveObservations` subscribes only to records revision, so
+worker progress and slider movement do not rebuild its sample list. A selected
+saved Run's immutable interval evidence is indexed once for the playback
+lifetime; each time query binary-searches its ordered per-pair leaves. Do not
+rebuild or deep-compare the interval report on each target change. Reuse an
+exact live point, live interval leaves certified at that time, or saved evidence
+certified at that time. Clear feedback requires evidence for every required
+pair; a finding is usable only at its exact witness, and other gaps go to the
+live analysis owner for an exact query and remain unknown until validated
+evidence arrives.
+
+After a foreground target is served, the owner attempts one background continuous
+interval query between it and the nearest accepted exact-time sample. Keep at
+most one pending gap, admit background work only after foreground work, and cap
+each input lifetime at 16 attempts and each query at 64 interval evaluations
+(or the smaller configured interval budget). Foreground requests remain
+latest-only; the UI pose never waits for analysis. When a foreground request
+arrives during a background query, retain only that latest request and dispatch
+it as soon as the bounded query settles. Do not create an accumulating queue.
+
+The Analysis owner joins validated per-pair interval leaves only when their
+coverage does not conflict with retained evidence. A query may use a clear leaf
+throughout its certified bounds, or a finding only at its exact witness time.
+An unresolved interval leaf does not block a later overlapping query from
+refining that coverage. Compare proven claims throughout the overlap: compatible
+claims may coexist, while a conflict between clear coverage and an exact finding
+witness is rejected and never converted into a valid result.
+Point witnesses remain points; a finding leaf does not establish finding status
+throughout its interval. Missing pairs, gaps, overlap conflicts, and unresolved
+leaves remain unknown. If the interval method cannot prove coverage within its
+bounded work, preserve unknown. Adaptive subdivision uses motion and returned
+certificates to decide where to spend work; declared time tolerance is a
+subdivision stopping precision, never permission to treat an unchecked gap as
+known. Overall feedback remains incomplete while any required pair or queried
+time lacks evidence.
+
 The selected method must support static queries; missing or incompatible
-methods fail explicitly without substitution. Worker creation is lazy on a
-cache miss. Each sample has bounded work,
-wall time and evidence, and malformed output fails closed.
+methods fail explicitly without substitution. Worker creation is lazy on an
+evidence miss. Each foreground sample and background interval attempt has
+bounded work, wall time and evidence, and malformed output fails closed.
+An optional background interval timeout, explicit incomplete/error result, or
+Worker failure leaves that coverage unknown and keeps the live lifetime
+available for later exact samples. A foreground target arriving during an
+optional interval query supersedes earlier pending targets and is dispatched as
+soon as that bounded query settles; do not retire a usable Worker solely because
+the foreground target changed. Retire an unusable Worker after failure, and
+ignore late output from any retired Worker. Invalid response identity/schema or
+contradictory accepted proof still fails closed.
 
 Publish validated collision or clearance evidence while other pair checks are
 still running; do not wait for terminal sample storage or report construction.
@@ -321,6 +405,12 @@ The same cancellation, deadline, input-lifetime and stale-response rules apply
 to partial delivery. Complete immutable geometry preparation may be reused
 within the owning Worker; poses and numerical evidence are recomputed with
 fresh invocation budgets. No reduced geometry or real-time guarantee is implied.
+
+For an incomplete exact sample, the owner may pass validated complete same-pose
+pair proofs back to the same Worker lifetime. The Worker validates those proofs,
+queries only pairs still missing proof, and combines the retained and new pair
+evidence under the original aggregate work and evidence limits. Partial or
+unresolved pair evidence is rechecked and never closes unknown coverage.
 
 The viewport shows checking, established collision, clearance issue, no issue
 at the checked sample, or unresolved/error. Always identify the checked time
@@ -337,25 +427,36 @@ Established colliding bodies use a dedicated red highlight distinct from
 selection. Clearance findings use an amber highlight; unresolved output must
 not be presented as collision or safety. Preserve every pair's own finding:
 collision, clearance and unresolved issues coexist in the same feedback. The
-overall warning title may use the highest severity, but must not filter other
-issues or their highlights. A body participating in both a collision and a
-clearance pair is red; clearance-only bodies remain amber. The pair list keeps
-both relationships and their labels. Unresolved pairs stay explicitly unknown,
-not contact-colored. Live, cached and recorded evidence use the same presentation
-rule. Detailed pair information remains accessible without requiring a formal
-report, including when a compact notice only previews some pairs.
+primary title shows Collision detected only with validated penetration evidence.
+Otherwise incomplete required-pair coverage shows Not fully checked, even when
+known clearance findings are present. Clearance warning requires complete
+coverage at the checked pose and at least one clearance finding. These titles
+never filter other issues or their highlights. A body participating in both a
+collision and a clearance pair is red; clearance-only bodies remain amber. The
+pair list keeps both relationships and their labels. Unresolved pairs stay
+explicitly unknown, not contact-colored. Live, cached and recorded evidence use
+the same presentation rule. Detailed pair information remains accessible
+without requiring a formal report, including when a compact notice only previews
+some pairs.
 
 Whole-part highlighting is the MVP output. It is not a damage model, computed
 contact patch, or structural simulation. Whole-body highlights identify the
 parts from the latest accepted sample, not a computed contact region or proof
-of contact at every intervening frame. During forward motion the highlight
-remains visible until newer feedback supersedes it; the notice identifies the
-checked time and explicitly labels earlier-pose evidence. Manual seeking retains
-only the existing displayed pose/feedback pair, not a warning attached
-to new unchecked geometry. Pending work must not flash that pair back to normal
-appearance. Accept only the latest seek target; late responses cannot replace
-it. Exact cached evidence switches the pair without a checking/reset frame.
-Future evidence never colors an earlier displayed pose. Explicit Pause still
+of contact at every intervening frame. During playback and manual seeking,
+retain the last valid evidence, its checked time, pair details and highlights
+while a new target is pending. The target pose and selected time still update
+immediately. Label retained information as last-checked evidence; never
+describe it as current contact or as the previous frame. This applies in
+either time direction, including evidence checked after the displayed target.
+Replace the retained evidence only when valid evidence for the latest target
+and same playback input lifetime arrives. Exact cached evidence presents the
+target and matching feedback directly. A latest-target failure remains visible
+as an error while preserving last-checked time and highlights; no result from a
+retired input lifetime may be retained or shown. With no accepted evidence,
+show checking/unknown. Feedback, card content and highlight appearance stay
+stable across pending target changes except for the target pose/time
+indication; only a material accepted result or explicit failure changes
+evidence presentation. Explicit Pause still
 freezes the current frame rather than snapping to an earlier checked frame.
 Frozen formal pair replay
 also identifies both bodies; its evidence remains historical and unchanged.
@@ -370,15 +471,31 @@ Formal cases cover a collision during Play before any run, clear endpoints,
 clearance versus penetration versus unresolved, uninterrupted collision playback,
 simultaneous collision/clearance/unresolved pairs, severity precedence only on a
 shared body, all-pair detail access, and live/cached/recorded presentation parity,
+incomplete samples with clearance findings use the incomplete title while
+retaining pair details; observed penetration remains the collision title;
 explicit Pause without snapping, latest-sample highlighting and exact-pose checks,
 cold forward/backward manual seeks through continuous clearance and collision,
-atomic pose/feedback handoff without normal-color gaps, latest-target/error
-handling and cached-seek parity,
-latest-only backpressure, exact-time reuse with no Worker work, cache invalidation,
+immediate target-pose updates while analysis is pending, stable last-checked
+feedback and highlights through forward/backward seeks, latest-target/error
+handling and exact cached-seek parity, latest-only backpressure, exact-point and
+certified-interval reuse with no redundant Worker work, partial exact-sample
+retry preserving and reusing complete pair proofs while querying missing pairs,
+explicit gap queries, point-evidence non-expansion,
+foreground-before-background scheduling, fully proven interval merging,
+unresolved-gap preservation, bounded interval-leaf query work, separated state
+and record revision notifications, unchanged-record revision reuse, input
+invalidation, cache invalidation,
 known formal evidence reuse without recomputation and missing-pose checks before
-later witnesses, cancellation/replacement/late output, invalid input,
-unchanged history/report data, original/native shape identity, localized UI
-updates and fixed panel sizes in both themes. Completion requires these owner
+later witnesses, adjacent-gap scheduling after foreground completion, bounded
+interval evaluation and retained-gap counts, per-pair interval admission, exact
+finding-witness reuse without interval expansion, unknown-gap preservation,
+overlapping unresolved-coverage refinement and proven-overlap rejection,
+cancellation/replacement/late output, foreground preemption of background work,
+nonfatal optional interval deadline handling, indexed changing-time lookup work
+for interval and leaf bounds, invalid input, unchanged state and record revision
+notifications for materially equal values, unchanged history/report data,
+original/native shape identity, localized UI updates and fixed panel sizes in
+both themes. Completion requires these owner
 tests plus normal-App browser playback and inspected screenshots, not a formal
 report alone.
 

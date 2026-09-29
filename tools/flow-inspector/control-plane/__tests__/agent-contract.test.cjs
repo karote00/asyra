@@ -57,6 +57,66 @@ test('admission refuses missing, stale, unmeasurable and out-of-owner requests b
       admitTask({ ...request(), ...change }, contract, 1, 'local-developer')
     )
 })
+
+test('task file authority follows the selected step primary package and exact boundary', () => {
+  const cases = [
+    [
+      require('../../inspectors/network-collaboration-transport-flow-inspector.data.cjs').steps.find(
+        (step) => step.id === 'own-collaboration-instance'
+      ),
+      'packages/collaboration/src/process.ts',
+      'packages/factory/src/data-transact.ts'
+    ],
+    [
+      require('../../inspectors/asyra-sim-r0-flow-inspector.data.cjs').steps.find(
+        (step) => step.id === 'reset-ui-context'
+      ),
+      'packages/ui-context/src/property-registry.ts',
+      'packages/scene-tree/src/index.ts'
+    ]
+  ]
+  for (const [step, allowed, dependency] of cases) {
+    const scopedContract = structuredClone(contract)
+    scopedContract.flows[0].steps[0] = step
+    const input = {
+      ...request(),
+      stepId: step.id,
+      allowedFiles: [allowed],
+      contractDigest: scopedContract.digest
+    }
+    assert.equal(
+      admitTask(input, scopedContract, 1, 'local-developer').step.ownerPackage,
+      step.ownerPackage
+    )
+    assert.throws(
+      () =>
+        admitTask(
+          { ...input, allowedFiles: [dependency] },
+          scopedContract,
+          1,
+          'local-developer'
+        ),
+      /owner|boundary|runtime/i
+    )
+    assert.throws(
+      () =>
+        admitTask(
+          {
+            ...input,
+            allowedFiles: [
+              step.implementationBoundary.find((path) =>
+                path.includes('/__tests__/')
+              )
+            ]
+          },
+          scopedContract,
+          1,
+          'local-developer'
+        ),
+      /runtime|canonical/i
+    )
+  }
+})
 module.exports = { request }
 
 test('real provider admission binds trusted authorization without accepting caller policy', () => {

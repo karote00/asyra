@@ -34,6 +34,7 @@ export class LivePreview {
   private opened = false
   private feedback: PlaybackFeedback = checkingFeedback()
   private lastSample: LiveState['sample'] = null
+  private diagnosticId: number | null = null
   private checkedTime: number | null = null
   private generation = 0
   completion: Promise<void>
@@ -59,10 +60,7 @@ export class LivePreview {
     this.awaitingSeek = options.discontinuity
 
     if (options.discontinuity) {
-      // Compute the next state without resetting the existing presentation.
-      if (this.feedback.kind === 'checking') {
-        this.presentedTime = time
-      }
+      this.presentedTime = time
       this.lastSample = null
       this.checkedTime = null
       this.anchorTime = time
@@ -96,6 +94,7 @@ export class LivePreview {
     const recorded = this.recorded?.at(time)
 
     if (recorded) {
+      this.diagnosticId = null
       this.stopWork()
       this.lastSample = null
       this.accept(recorded)
@@ -112,6 +111,14 @@ export class LivePreview {
     this.awaitingSeek = false
     this.checkedTime = feedback.checkedTime
     this.project()
+    if (this.diagnosticId !== null && feedback.checkedTime !== null)
+      this.api.recordPreviewPublication(
+        this.diagnosticId,
+        this.presentedTime,
+        feedback.checkedTime,
+        feedback.kind,
+        feedback.issues.map((issue) => issue.pairId)
+      )
 
     if (this.checkedTime !== null && this.nextTime() > this.checkedTime) {
       const generation = this.generation
@@ -158,7 +165,7 @@ export class LivePreview {
             this.presentedTime = this.time
             this.awaitingSeek = false
             this.feedback = {
-              ...checkingFeedback(),
+              ...this.feedback,
               kind: 'error',
               message: state.error ?? 'Live check unavailable'
             }
@@ -169,11 +176,14 @@ export class LivePreview {
           ) {
             if (
               this.seeking &&
-              (state.sample.time !== this.time || state.status !== 'ready')
+              (state.sample.time !== this.time ||
+                (state.status !== 'ready' &&
+                  state.sample.evidenceOrigin !== 'interval'))
             )
               return
 
             this.lastSample = state.sample
+            this.diagnosticId = state.sample.diagnosticId ?? null
             const feedback = playbackFeedback(this.snapshot, state.sample)
 
             if (state.status === 'ready') {
@@ -200,7 +210,7 @@ export class LivePreview {
         this.presentedTime = this.time
         this.awaitingSeek = false
         this.feedback = {
-          ...checkingFeedback(),
+          ...this.feedback,
           kind: 'error',
           message:
             error instanceof Error ? error.message : 'Live check unavailable'

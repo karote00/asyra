@@ -134,6 +134,14 @@ const retainedWireIdentities = new Set(
     'run-reference-properties'
   ].map((suffix) => `${repositoryBrand}-sim-${suffix}`)
 )
+// Immutable diagnostic evidence keeps its original schema as provenance. This
+// is data for one historical artifact, not an identifier for current code.
+const retainedHistoricalEvidenceSchemaOwners = new Set([
+  'apps/asyra-sim/evidence/live-200mm-first-contact-a61a7d778/diagnostics.json'
+])
+const retainedHistoricalEvidenceSchemas = new Set([
+  `${repositoryBrand}-sim-live-playback-evidence/v1`
+])
 const lowercaseIdentityOwnerPaths = new Set([
   'package.json',
   'scripts/__tests__/changeset-all-patch.test.mjs',
@@ -160,6 +168,15 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
     retainedWireIdentityOwnerPaths.has(relativePath) &&
     retainedWireIdentities.has(token) &&
     new RegExp(`(['"])${escapedToken}\\1`, 'u').test(line)
+  ) {
+    return true
+  }
+  if (
+    retainedHistoricalEvidenceSchemaOwners.has(relativePath) &&
+    [...retainedHistoricalEvidenceSchemas].some((schema) => {
+      const [schemaToken] = schema.split('/')
+      return token === schemaToken && line.trim() === `"schema": "${schema}",`
+    })
   ) {
     return true
   }
@@ -290,6 +307,54 @@ test('retained Sim wire identities are allowed only as exact load-migration data
       false
     )
   }
+})
+
+test('historical live evidence schema is retained only at its exact artifact path and field', () => {
+  const relativePath =
+    'apps/asyra-sim/evidence/live-200mm-first-contact-a61a7d778/diagnostics.json'
+  const filePath = path.join(repositoryRoot, relativePath)
+  const schema = `${repositoryBrand}-sim-live-playback-evidence/v1`
+  const token = schema.slice(0, schema.indexOf('/'))
+  const schemaLine = `  "schema": "${schema}",`
+  const historicalEvidence = readJson(filePath)
+
+  assert.equal(historicalEvidence.schema, schema)
+  assert.equal(isAllowedPublicIdentity(token, schemaLine, filePath), true)
+  assert.equal(
+    isAllowedPublicIdentity(token, `const ${token} = true`, filePath),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(
+      token,
+      schemaLine,
+      path.join(repositoryRoot, 'apps/asyra-sim/src/ui/workbench.tsx')
+    ),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(
+      token,
+      schemaLine,
+      path.join(
+        repositoryRoot,
+        'apps/asyra-sim/evidence/new-live-run/diagnostics.json'
+      )
+    ),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(
+      token,
+      `  "schema": "${schema.slice(0, schema.indexOf('/'))}/v2",`,
+      filePath
+    ),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(token, `  "producer": "${schema}",`, filePath),
+    false
+  )
 })
 
 test('Public-facing surfaces preserve the official project identities', () => {
