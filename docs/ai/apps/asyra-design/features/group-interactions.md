@@ -25,7 +25,7 @@
 - Group selects the created official Group; Ungroup selects the canonical
   children returned by Preset/Scene Tree, including the empty result.
 - Layers rows are projected from canonical `flattenedElementIds` and
-  `elementDataMap`; Group collapse state is UI-local.
+  `elementDataMap`; Container collapse state is UI-local. Disclosure eligibility uses the public `elementApis.isContainerType` query backed by Core registration, including Group, Frame and custom components registered with `isContainer`. The panel must not maintain its own container type allowlist. Disclosure eligibility does not change Group-only drag/drop admission.
 
 ## Boundaries
 

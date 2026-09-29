@@ -59,8 +59,21 @@ package-resolution path.
    (including engine-created mesh geometry while preserving shared textures),
    destroys the application, and returns deterministic cleanup counts.
 
+Snapshot extraction encloses fractional local bounds in an integer frame before
+Pixi rasterization, normalizing machine-precision noise at integer boundaries.
+The resolution budget and returned bounds use that same frame. This prevents
+fractional content from being truncated and keeps image coordinates consistent
+with review metadata, without changing the target or viewport.
+
 Unsupported capabilities and initialization failures do not emit fallback
 surface output or a successful ready result.
+
+Raster-pattern descriptors map source texels into normalized object bounds:
+`scale: { x: 1 / width, y: 1 / height }` covers one complete object. The Pixi
+adapter uses local texture space and converts texel scale into normalized
+texture scale exactly once. Procedural gradients use the same mapping. This
+preserves the vector contour's alpha and gradient across object sizes and zoom;
+source texture dimensions and canonical geometry are unchanged.
 
 ## Dependency Boundary
 

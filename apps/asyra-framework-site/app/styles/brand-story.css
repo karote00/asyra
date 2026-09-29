@@ -1,0 +1,37 @@
+/* Native named timelines connect chapter geometry to sibling navigation.
+   The links, reading order, and sticky navigation work without the effect. */
+@supports (animation-timeline: view()) and (timeline-scope: --imagine-chapter) {
+  @media (prefers-reduced-motion: no-preference) {
+    .brand-story {
+      timeline-scope:
+        --imagine-chapter, --build-chapter, --evolve-chapter, --inside-chapter,
+        --begin-chapter;
+    }
+
+    .story-chapter {
+      view-timeline-axis: block;
+      view-timeline-inset: 45% 45%;
+    }
+
+    .story-navigation__link {
+      animation-name: chapter-reading-emphasis;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+  }
+}
+
+@keyframes chapter-reading-emphasis {
+  0%,
+  100% {
+    color: var(--ink);
+    border-bottom-color: transparent;
+  }
+
+  1%,
+  99% {
+    color: var(--signal-red);
+    border-bottom-color: var(--signal-red);
+  }
+}

@@ -3,22 +3,36 @@
 ## Operator flow
 
 1. Merge reviewed changes through the protected PR flow. Merging does not deploy.
-2. Open Actions, select **Manual App Release**, choose **main**, and run it.
+2. Open Actions, choose the required release entry, select **main**, and run it:
+   - **Manual App Release** checks all Apps and releases every affected App.
+   - **Manual App Release - Asyra Website** releases only `asyra-framework`.
+   - **Manual App Release - Asyra Design** releases only `asyra-design`.
+   - **Manual App Release - Asyra Sim** releases only `asyra-sim`.
+
+   For a website-only release, use **Manual App Release - Asyra Website** and
+   leave `force_rebuild` unchecked. Shared-package and root-input changes never
+   expand this entry to other Apps. Each entry calls the same reusable pipeline;
+   its global concurrency group serializes all four entries through verification
+   and publication. Verification builds and tests only Apps marked for release;
+   a website-only run does not build or test Design or Sim.
    The dispatch commit is frozen for every job; a later main push cannot change
    the candidate. Arbitrary branches, fork repositories and older SHA inputs
    are deliberately unsupported. Trigger a new run to choose a newer candidate.
-3. Read the plan job summary and its changed-input list. Each App compares its
+
+3. Read the plan job summary and its changed-input list. Each selected App compares its
    own last successful online SHA with the candidate, including accumulated
    commits and the union of old/new transitive workspace dependencies.
-4. The existing CI, packed clean-consumer readiness, ordinary/collaboration E2E
-   and production-artifact tests run against that exact dispatch commit. The
-   release enables the existing balanced AI correctness gate. No production
-   credential is passed to these jobs.
-5. If any verifier fails, do not approve or deploy. If nothing is affected, the
-   workflow ends without requesting a deployment.
-6. Review and approve the **app-production** environment only after the plan
-   and all verifiers are successful. Its approved reviewer is the repository
-   owner; self-approval is allowed for this single-maintainer repository.
+4. The production-artifact workflow builds the planned Apps and their workspace
+   dependencies against the exact dispatch commit, then runs their production
+   browser cases. Design's separate type check runs only when Design is selected.
+   No production credential is passed to this job. Full unit, diagnostic E2E,
+   collaboration and packed clean-consumer checks remain in PR/general CI;
+   manual deployment does not rerun that pipeline.
+5. Any failed or canceled verifier prevents deployment. If nothing is affected,
+   the workflow ends without creating a deployment.
+6. When all verifiers succeed, publication starts automatically. Clicking
+   **Run workflow** is the release authorization; there is no second approval
+   or environment wait timer.
 7. The privileged job re-reads the online records, checks live Vercel project
    identity/configuration, enforces the budget, then releases Apps sequentially.
    It creates one staged Production deployment per affected App, verifies the
@@ -26,9 +40,18 @@
    production domain. No automatic mutation retry or automatic rollback occurs.
 
 For a deployment setting or environment-variable change outside Git, choose
-the specific `force_app` and provide a single-line reason of 8-200 characters.
+the specific `force_app` in the all-App entry, or enable `force_rebuild` in
+an individual entry, and provide a single-line reason of 8-200 characters.
+`force_app` alone does not filter the all-App entry. An individual entry can
+force only its fixed App.
 This intentionally bypasses deployment deduplication and consumes quota.
 Ordinary retries must inspect previous results before starting another run.
+
+Each manual entry explicitly uses `secrets: inherit` when calling the trusted
+release pipeline so its publication job can resolve the environment secrets.
+Keep Vercel credentials in `app-production`; do not copy them to repository
+secrets. The pipeline must not forward secrets to artifact verification or
+consume them in planning. Only publication binds to `app-production`.
 
 ## Setup and cutover
 
@@ -43,7 +66,8 @@ can run. Do not dispatch the publication workflow merely to test this PR.
   Production Domains**. The release refuses to proceed if this is enabled,
   if a Git connection remains, or if the project root is unexpected.
 - In GitHub Environment **app-production**, allow only the branch `main`,
-  require owner approval, set `VERCEL_TEAM_ID`, and store a team-scoped
+  disable **Required reviewers** and the wait timer, set `VERCEL_TEAM_ID`,
+  and store a team-scoped
   `VERCEL_TOKEN` secret. Do not store it as an unrestricted repository secret.
   Keep token expiry/rotation under the account owner's control. Never paste it
   into PRs, logs, source, workflow inputs or chat.
@@ -58,12 +82,37 @@ can run. Do not dispatch the publication workflow merely to test this PR.
   the exact staged origin, refuses redirects and never sends it to external
   assets or the stable production smoke. It never places secrets in URLs.
 
+The environment policy payload is tracked in
+`.github/app-production-environment.json`. GitHub stores the actual policy
+outside Git; merging the file alone does not apply it. A repository administrator
+can apply it from the repository root with the existing GitHub CLI:
+
+```bash
+gh api --method PUT repos/karote00/asyra/environments/app-production \
+  --input .github/app-production-environment.json \
+  --jq '{name, protection_rules, deployment_branch_policy}'
+```
+
+Keep the environment and its secrets. The payload removes required reviewers
+and sets zero wait time while retaining custom branch policies. The existing
+branch policy must still allow exactly the branch `main`; this update does not
+replace branch patterns or secrets. Before applying to an environment with a
+waiting deployment, resolve that run explicitly because removing the review
+rule may let it continue.
+
 ## App ownership and online versions
 
 `scripts/app-release-plan.mjs` owns the three public project identities and
 their roots. It reads committed manifests, traversing runtime, development,
 peer and optional workspace dependencies. Old dependency edges are included
 so deleting a dependency cannot hide an affected deployment.
+
+`selectReleaseApps` in the plan owner validates the optional `targetApp` against
+those project identities before baseline reads and planning. Empty selection
+preserves the all-App flow. A single-App run reads and validates only that App's
+online baseline, so unrelated missing records do not block it. Selection is
+passed to both planning and the pre-publication recomputation; a changed plan
+still fails before publication. Deployment record names and schema stay the same.
 
 App/owned dependency source and assets trigger release. Public documentation
 also triggers the website. Tests, internal AI documents and unrelated
@@ -77,26 +126,57 @@ previous production ID and Actions run. Only a successful final smoke receives
 a success status. Initial setup reads the existing Vercel-created Production
 environment's successful record; its legacy environment name is retained as
 an immutable external compatibility identity. Before any publication, the live
-Vercel production target must match that baseline. Missing records, failed
+deployment serving the stable production host must match that baseline. Missing records, failed
 post-promotion checks, manual rollbacks or other drift require reconciliation;
 the workflow does not silently choose a new baseline.
 
-For reconciliation, inspect the live Vercel production target, its source SHA,
-stable domain and smoke results. An owner may then create a corrected GitHub
+Publication resolves the stable host through `GET /v4/aliases/{host}`, then
+reads that alias's deployment through `GET /v13/deployments/{deploymentId}`.
+The alias must match the host and project without redirecting; the deployment
+must belong to that project, be `READY`, target `production`, and match the
+baseline SHA and recorded deployment ID when present. A project's
+`targets.production` can refer to a canceled or staged deployment and is not
+proof of what the stable host serves.
+
+The service refreshes this evidence at admission, before creation, and before
+promotion; it does not cache routing across those boundaries. After promotion,
+it polls the stable host's alias for the new deployment ID (at most 30 reads,
+two seconds apart), verifies its source SHA, and only then runs stable-domain
+smoke. Unchanged routing times out; missing, redirected, cross-project or
+non-ready routing fails closed. No baseline is rewritten to match a candidate.
+
+A READY staged deployment can have `aliasAssigned: true` and generated team or
+branch aliases while the stable host still serves the previous deployment.
+That flag does not prove production traffic moved. Readiness checks the exact
+source SHA, production target and deployment URL; the pre-promotion stable-host
+lookup separately rejects routing drift. Do not remove generated aliases or
+change credentials to make that flag false.
+
+For reconciliation, inspect the deployment serving the stable production host,
+its source SHA and smoke results. An owner may then create a corrected GitHub
 Deployment record with that actual SHA, deployment ID, a success status and a
 reason linking the recovery evidence. Never mark a failed candidate successful
 to unblock the next run. Package versions are not website version identities.
 
 ## Evidence and limits
 
-`yarn build:production-artifacts` executes the App builds and the website's
-explicit `build:asyra-framework-site` task in one Turbo graph. Root
-`react:build` alone does not include that website task.
-`yarn test:production-artifacts` then consumes those production builds. It never rebuilds or starts Vite middleware. It verifies Sim analysis
-and local persistence, Design local editing/history, and Next production
-routes/client search. It checks browser exceptions and rejects dev-source
-requests. Next runs as an explicitly owned child process and is cleaned up.
-The suite supplements, rather than replaces, the larger diagnostic E2E suites.
+`scripts/app-release-verification.mjs` owns selection of build tasks and browser
+cases. The reusable production-artifact workflow accepts a JSON array of planned
+App IDs. The plan passes only Apps with `release: true`; no-change plans skip
+verification and publication. PR CI supplies no selection and verifies all three
+Apps. Malformed, empty, duplicate or unknown explicit selections fail before any
+work starts.
+
+The runner uses one Turbo graph with qualified App task names and concurrency
+of two, so selected Apps share dependency builds without building unrelated Apps.
+It checks the generated graph before building and checks Design application types
+only after its dependencies are built. The browser phase selects the existing
+production-artifact cases and never rebuilds or starts Vite middleware: Sim
+analysis/persistence, Design local editing/history, and Next production routes
+and client search. It checks browser exceptions and rejects dev-source requests.
+Next runs as an explicitly owned child process and is cleaned up. The existing
+root `yarn build:production-artifacts` and `yarn test:production-artifacts` remain
+available for broad local validation.
 
 The Sim artifact case is a functional production-build proof. It first checks
 the public UI's unchanged 30,000 ms default, then explicitly commits a
@@ -130,7 +210,30 @@ provider rate-limit meter. Provider 429/error responses stop the workflow;
 never delete entries to reclaim budget or repeatedly retry a limited request.
 Build CPU/time, transfer, Functions and storage remain separate usage measures.
 
+## Why the remaining release steps exist
+
+- Protected PR checks own general code correctness, full functional E2E and
+  package release readiness. They remain unchanged and are not prerequisites
+  rerun inside the manual release workflow.
+- Selected-App production-artifact checks verify that the release candidate
+  builds and works without development middleware. Vercel HTTP smoke cannot
+  substitute for these browser interactions.
+- Planning determines whether each selected App needs a deployment. Publication
+  re-reads online state because verification takes time and external deployments
+  or configuration may change in between.
+- Budget checks prevent avoidable quota exhaustion before creating deployments.
+- Staged smoke validates the new deployment before promotion. Stable-domain
+  smoke verifies that production actually serves the promoted deployment.
+- The environment retains production secrets and its main-only branch policy;
+  it adds neither an approval nor a wait timer after manual dispatch.
+
 ## Failure and recovery
+
+- If publication reports `Missing credential for https://api.vercel.com`, check
+  that `VERCEL_TOKEN` exists in `app-production` and the manual entry forwards
+  secrets to the release pipeline. The token value cannot be read back from
+  GitHub. After merging a workflow correction, start a new **Run workflow** on
+  `main`; re-running an older run keeps its original workflow revision.
 
 - Before promotion: leave the current domain untouched. Inspect the recorded
   deployment ID. A timeout may have completed remotely; never blindly retry.
@@ -141,10 +244,10 @@ Build CPU/time, transfer, Functions and storage remain separate usage measures.
   domain and reconcile the deployment record before the next release.
 - A partially completed multi-App batch retains each App's actual state;
   there is no cross-project atomic switch. Do not continue a dependent App
-  after a failure. Check compatible App/backend versions before approving.
+  after a failure. Check compatible App/backend versions before starting the release.
 - Storage migrations, worker/CSP changes, rendering performance, toolchain,
   production configuration and external services need their owner-specific
-  gates and a data-compatible recovery plan before approval. HTTP smoke alone
+  gates and a data-compatible recovery plan before starting the release. HTTP smoke alone
   is insufficient for those changes.
 
 ## Security boundary
@@ -159,8 +262,8 @@ use fixed origins, reject redirects, bound timeouts and redact provider error
 bodies. Production secrets are scoped to the single publication step.
 
 The workflow, controller scripts and their dependency-free imports are trusted
-release code and must be reviewed accordingly. Environment reviewers must
-inspect their diff before approval; secret storage alone is not a security
+release code and must be reviewed accordingly. PR reviewers must
+inspect their diff before merging into main; secret storage alone is not a security
 boundary against a malicious change merged into trusted release code.
 
 References:
@@ -171,3 +274,66 @@ References:
 - <a href="https://vercel.com/docs/deployments/promoting-a-deployment" target="_blank" rel="noopener noreferrer">Staged production promotion</a>
 - <a href="https://vercel.com/docs/instant-rollback" target="_blank" rel="noopener noreferrer">Instant Rollback</a>
 - <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments" target="_blank" rel="noopener noreferrer">GitHub deployment environments</a>
+
+
+## Release API and failure boundaries
+
+Project lookup accepts a project name, but promotion uses the verified Vercel
+project ID: `POST /v10/projects/{projectId}/promote/{deploymentId}` with JSON
+body `{}`. An empty successful response is valid; stable-host polling proves
+completion separately. The controller retains the admitted project ID and
+rejects a replacement project before creation or promotion. READY candidate
+responses must match both the requested deployment ID and admitted project ID.
+
+Promotion can change the project's automatic-domain policy. After promotion,
+the controller reads that policy, restores `autoAssignCustomDomains: false`
+only when necessary, and verifies the result before declaring success. If the
+promotion request fails ambiguously, it performs the same policy check but
+still fails the release; this does not roll back or retry the promotion.
+A failed policy restoration is reported and never retried automatically.
+
+Creation and GitHub record/status writes share the failure-reporting boundary.
+Errors include the created deployment ID when known and the previous live ID.
+A creation timeout reports an unknown candidate; a promotion request failure
+reports an unknown promotion outcome. Inspect the provider before retrying.
+API errors include method, endpoint path and status, without query strings,
+credentials or provider response bodies. Failed success-status writes require
+reconciliation even if the website already switched.
+
+The release entry validates its command, repository, publication credentials,
+run ID and serialized plan before provider requests. Artifact checkout uses
+the caller's frozen commit explicitly. Main CI and manual release are separate:
+manual release still requires its own production-artifact checks to succeed.
+
+### End-to-end audit coverage
+
+| Boundary | Checked behavior and failure handling |
+| --- | --- |
+| Entry and credentials | Four manual entries forward secrets; upstream main and dispatch only. Missing publication parameters fail before API access. Protected Apps require their own bypass secret before any deployment in the batch. |
+| Plan | Per-App successful baseline, accumulated inputs, dependency changes, exact SHA, forced reason, no-change skip and unchanged plan before publishing. |
+| Build | One selected-App Turbo graph; website, Design and Sim production builds and browser cases; failed verification prevents publication. |
+| Provider admission | Project/root/Git settings, stable alias ownership and live SHA, owner-wide quota including failed/canceled deployments. |
+| Candidate | One creation attempt, exact source/environment/ID/project checks, bounded build polling, generated aliases allowed, staged HTTP/script smoke. |
+| Promotion | Project ID and empty JSON body, fresh baseline check, one request, bounded actual-alias polling and source verification, automatic-domain policy restored. |
+| Completion | Public stable-domain smoke and GitHub success status must both pass; no success on wrong routing, smoke failure or status-write failure. |
+| Recovery | Creation/record/status errors retain known IDs; uncertain mutations are not repeated; partial batches stop and require inspection/reconciliation. |
+
+The provider contract tests exercise the HTTP adapter and response handling,
+not just a stubbed publication result. They cover rejected requests, empty
+success responses, timeouts, policy changes and reporting failures. These tests
+and read-only live checks do not perform a real promotion from an unmerged PR.
+
+During the September 17, 2026 audit, all three local production builds and
+browser cases passed. The website's failed run had passed artifact verification
+and deployed-site smoke; its promotion request used a name instead of project ID.
+GitHub Environment `app-production` had `VERCEL_TOKEN`, but no
+`VERCEL_BYPASS_SIM` or `VERCEL_BYPASS_DESIGN`, while those two projects had
+Deployment Protection enabled. Their owner must add those automation bypass
+secrets using the Setup and cutover instructions before releasing either App
+or an all-App plan containing them. Website-only release does not require
+unrelated App secrets. Secret values cannot be supplied through this PR.
+
+API authority:
+<a href="https://github.com/vercel/vercel/blob/main/packages/cli/src/commands/promote/request-promote.ts" target="_blank" rel="noopener noreferrer">Vercel CLI promotion request</a>
+and
+<a href="https://openapi.vercel.sh/" target="_blank" rel="noopener noreferrer">Vercel OpenAPI contract</a>.

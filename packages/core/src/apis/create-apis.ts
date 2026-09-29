@@ -262,6 +262,10 @@ export const createAPIs = (
   }
 
   const renderRequests: RenderRequests = {
+    measureElementContentBounds: (elementIds) =>
+      render.measureElementContentBounds(elementIds),
+    captureElementSnapshot: (elementId, maxDimension, options) =>
+      render.captureElementSnapshot(elementId, maxDimension, options),
     initRender: (width: number, height: number, color: number) =>
       render.init(width, height, color),
     getViewportPosition: () => render.getViewportPosition(),

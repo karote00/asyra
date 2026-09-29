@@ -1,5 +1,8 @@
 import * as THREE from 'three'
-import { RenderEngineCapabilities } from '@asyra/render-engine'
+import {
+  RenderEngineCapabilities,
+  UnsupportedRenderEngineCapabilityError
+} from '@asyra/render-engine'
 import type {
   RenderEngine,
   RenderEngineCommand,
@@ -124,7 +127,10 @@ const SCREEN_PROPERTIES = new Set([
 export class ThreeEngine implements RenderEngine {
   readonly name = 'Asyra Sim CUSTOM Three.js 0.185.1'
   readonly capabilities = new Set([
-    ...Object.values(RenderEngineCapabilities),
+    RenderEngineCapabilities.OBJECTS,
+    RenderEngineCapabilities.GRAPHICS,
+    RenderEngineCapabilities.INTERACTION,
+    RenderEngineCapabilities.RESOURCES,
     SPATIAL_CAPABILITY
   ])
   private readonly objects = new Map<RenderEngineObjectHandle, ObjectRecord>()
@@ -313,6 +319,14 @@ export class ThreeEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertActive()
+    if (query.type === 'snapshot')
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.SNAPSHOT
+      ])
+    if (query.type === 'get-local-content-bounds')
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+      ])
     this.syncProjection()
     if (query.type === 'hit-test')
       return { type: 'hit', target: this.pick(query.point), point: query.point }

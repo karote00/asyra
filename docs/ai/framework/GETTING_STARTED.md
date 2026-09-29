@@ -17,8 +17,8 @@ owner documents remain the implementation contracts.
   [custom composition guide](../../public/start/custom-composition.md).
 - Start from the complete, ready-to-use Asyra Design product with
   [`create-asyra-design-app`](../../../create-app/asyra-design/README.md).
-- Learn one Framework capability at a time from the
-  [executable examples](../../examples/README.md).
+- Learn one Framework capability at a time from the maintained
+  [Golden Paths](golden-paths/README.md).
 - Read the stable consumer guides in the
   [public documentation](../../public/index.md).
 - Change Framework implementation only after following the

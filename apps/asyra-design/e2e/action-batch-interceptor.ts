@@ -1,3 +1,4 @@
+import { AI_STATUS_ENDPOINT } from '../src/ai/connection-status'
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -925,6 +926,13 @@ export const installGeneratedActionBatchInterceptor = async (
       'Generated action-batch interceptor requires one prepared drawing artifact action.'
     )
   }
+  await context.route(`**${AI_STATUS_ENDPOINT}`, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ state: 'ready' }),
+      contentType: 'application/json; charset=utf-8',
+      status: 200
+    })
+  })
   await context.route(`**${ACTION_BATCH_ENDPOINT}`, async (route) => {
     if (route.request().method() !== 'POST') {
       await route.fulfill({
@@ -1028,6 +1036,13 @@ export const installPreparedActionBatchInterceptor = async (
   const encodedBatch = JSON.stringify(response.batch)
 
   const interceptorInstallStartedAt = performance.now()
+  await context.route(`**${AI_STATUS_ENDPOINT}`, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ state: 'ready' }),
+      contentType: 'application/json; charset=utf-8',
+      status: 200
+    })
+  })
   await context.route(`**${ACTION_BATCH_ENDPOINT}`, async (route) => {
     if (route.request().method() !== 'POST') {
       await route.fulfill({

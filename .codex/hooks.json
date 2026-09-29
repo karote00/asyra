@@ -1,0 +1,18 @@
+{
+  "description": "Stateless project checks for worktree boundaries, protected branches, and destructive Git commands.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/agent-safety-hook.mjs\"",
+            "timeout": 5,
+            "additionalContextLimit": 500
+          }
+        ]
+      }
+    ]
+  }
+}

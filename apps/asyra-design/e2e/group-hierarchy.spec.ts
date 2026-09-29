@@ -322,3 +322,83 @@ test.describe('Group hierarchy product projection', () => {
     })
   })
 })
+
+test('nested Frames expose disclosure controls and retain their children when folded', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentURL())
+  await waitForAppReady(page)
+  const ids = await page.evaluate(async () => {
+    const { elementApis } = await import('../src/testing/runtime-access')
+    const { transactionApis } = await import('../src/common-apis/transaction')
+    const root = elementApis.createElement(
+      {
+        type: 'frame',
+        workspacePosition: { x: 0, y: 0 },
+        width: 300,
+        height: 300
+      },
+      { undoable: false }
+    )
+    if (!root) throw new Error('Missing frame')
+    const nested = 'disclosure-nested-frame'
+    const leaf = 'disclosure-frame-child'
+    for (const [id, type, parentId, size] of [
+      [nested, 'frame', root, 150],
+      [leaf, 'rect', nested, 50]
+    ] as const) {
+      const created = transactionApis.runTransaction(() =>
+        elementApis.createElementsInParent(
+          [
+            {
+              id,
+              type,
+              name: id,
+              x: 10,
+              y: 10,
+              width: size,
+              height: size,
+              visible: true,
+              lock: false,
+              props: {
+                position: `${id}-position`,
+                dimension: `${id}-dimension`
+              }
+            }
+          ],
+          parentId,
+          { undoable: false }
+        )
+      )
+      if (!created?.includes(id)) throw new Error(`Missing ${id}`)
+    }
+    return { root, nested, leaf }
+  })
+  const toggle = page.getByTestId(`layers-group-toggle-${ids.nested}`)
+  const leaf = page.getByTestId(`element-item-${ids.leaf}`)
+  await expect(toggle).toBeVisible()
+  await expect(leaf).toBeVisible()
+  await getContentsPanel(page).screenshot({
+    path: testInfo.outputPath('frames-expanded.png')
+  })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(leaf).toHaveCount(0)
+  await getContentsPanel(page).screenshot({
+    path: testInfo.outputPath('frames-collapsed.png')
+  })
+  await toggle.click()
+  await expect(leaf).toBeVisible()
+  await page.getByTestId(`layers-group-toggle-${ids.root}`).click()
+  await expect(toggle).toHaveCount(0)
+  await page.getByTestId(`layers-group-toggle-${ids.root}`).click()
+  await expect(toggle).toBeVisible()
+  await expect(leaf).toBeVisible()
+  const parent = await page.evaluate(
+    async (id) =>
+      (await import('../src/testing/runtime-access')).core.getElementData(id)
+        ?.parentId,
+    ids.leaf
+  )
+  expect(parent).toBe(ids.nested)
+})

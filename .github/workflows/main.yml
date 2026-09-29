@@ -2,6 +2,10 @@ name: CI
 
 on:
   workflow_call:
+    inputs:
+      run_balanced_ai_correctness:
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -93,7 +97,7 @@ jobs:
           FLOW_CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           FLOW_CI_EMIT_EVIDENCE: '1'
         run: |
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target}.test.cjs
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs ci-trial
 
@@ -135,6 +139,8 @@ jobs:
   design-e2e:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/e2e.yml
+    with:
+      run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
 
   e2e-tests:
     needs: design-e2e

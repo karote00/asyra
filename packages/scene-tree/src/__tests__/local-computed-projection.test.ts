@@ -7,6 +7,7 @@ import propsManager, {
 } from '@asyra/props-manager'
 import {
   EventTypes,
+  runTransaction,
   subscribeToEventBatches,
   subscribeToEvents,
   type UpdateTransactionEvent
@@ -207,6 +208,40 @@ describe('SceneTree local computed projection', () => {
     subscriptions.splice(0).forEach((subscription) => {
       subscription.unsubscribe()
     })
+  })
+
+  it('reads each accepted property batch inside one transaction without projecting again at commit', () => {
+    const element = createElement('transaction-read-your-writes')
+    sceneTree.cleanChanges()
+    propsManager.cleanChanges()
+    const positionId = element.save().props?.[PropertyTypes.POSITION]
+    if (typeof positionId !== 'string')
+      throw new Error('Missing position property')
+    const project = vi.spyOn(
+      sceneTree,
+      'projectLocalComputedDataFromPropertyIds'
+    )
+    try {
+      runTransaction(() => {
+        propsManager.updatePropertyById(positionId, 'x', 48)
+        propsManager.commitChanges()
+        expect(propsManager.getPropertyById(positionId)?.getValue().x).toBe(48)
+        expect(project).toHaveBeenCalledTimes(1)
+        expect(element.computed.get('x')).toBe(48)
+        propsManager.updatePropertyById(
+          positionId,
+          'x',
+          Number(element.computed.get('x')) + 12
+        )
+        propsManager.commitChanges()
+        expect(element.computed.get('x')).toBe(60)
+        expect(project).toHaveBeenCalledTimes(2)
+      })
+      expect(element.computed.get('x')).toBe(60)
+      expect(project).toHaveBeenCalledTimes(2)
+    } finally {
+      project.mockRestore()
+    }
   })
 
   it('updates only computed state and publishes one ordered ordinary values batch', () => {

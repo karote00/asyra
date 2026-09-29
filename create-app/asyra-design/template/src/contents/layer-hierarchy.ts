@@ -1,11 +1,12 @@
 import { EntityTypes, type ElementRawData } from '@asyra/utils'
+import { elementApis } from '../common-apis/element'
 
 type ElementDataMap = Record<string, Partial<ElementRawData>>
 
 export interface VisibleLayerRow {
   id: string
   depth: number
-  isGroup: boolean
+  canExpand: boolean
   isExpanded: boolean
 }
 
@@ -130,12 +131,13 @@ export const projectExpandedLayerRow = (
     parentId = parent.parentId
   }
 
-  const isGroup = element.type === EntityTypes.GROUP
+  const canExpand =
+    element.type !== undefined && elementApis.isContainerType(element.type)
   return {
     id: elementId,
     depth,
-    isGroup,
-    isExpanded: isGroup
+    canExpand,
+    isExpanded: canExpand
   }
 }
 
@@ -222,19 +224,21 @@ export const projectVisibleLayerRows = (
     if (
       (parentId && hiddenElementIds.has(parentId)) ||
       (parentId &&
-        parent?.type === EntityTypes.GROUP &&
+        parent?.type !== undefined &&
+        elementApis.isContainerType(parent.type) &&
         collapsedGroupIds.has(parentId))
     ) {
       hiddenElementIds.add(elementId)
       continue
     }
 
-    const isGroup = element.type === EntityTypes.GROUP
+    const canExpand =
+      element.type !== undefined && elementApis.isContainerType(element.type)
     rows.push({
       id: elementId,
       depth: depthById.get(elementId) ?? 0,
-      isGroup,
-      isExpanded: isGroup && !collapsedGroupIds.has(elementId)
+      canExpand,
+      isExpanded: canExpand && !collapsedGroupIds.has(elementId)
     })
   }
 

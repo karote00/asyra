@@ -11,7 +11,7 @@ from PIL import Image
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = SITE_ROOT.parents[1]
-SOURCE = REPO_ROOT / "docs/public/assets/asyra-design-7076-product-evidence.jpg"
+SOURCE = REPO_ROOT / "apps/asyra-design/brand/asyra-design-7076-product-evidence.jpg"
 OUTPUT = (
     SITE_ROOT
     / "public/product-evidence/asyra-design-7076-product-evidence.webp"

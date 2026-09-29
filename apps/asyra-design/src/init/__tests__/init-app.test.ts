@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as preset from '@asyra/preset'
 import core from '../../contexts'
+import * as textCapability from '../capabilities/init-text'
 import * as areaSelection from '../capabilities/init-area-selection'
 import * as aiDrawingProgress from '../capabilities/init-ai-drawing-progress'
 import * as gradientFillEditing from '../capabilities/init-gradient-fill-editing'
@@ -38,6 +39,9 @@ describe('initApp preset composition', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     calls.length = 0
+    vi.spyOn(textCapability, 'initText').mockImplementation(() => {
+      calls.push('text')
+    })
     presetModuleState.applyPreset = vi.fn(() => {
       calls.push('preset')
       return Object.freeze({
@@ -113,6 +117,7 @@ describe('initApp preset composition', () => {
     const initialization = initApp()
 
     expect(presetModuleState.applyPreset).toHaveBeenCalledOnce()
+    expect(textCapability.initText).toHaveBeenCalledExactlyOnceWith(core)
     expect(presetModuleState.applyPreset).toHaveBeenCalledWith(core)
     expect(features.initFeatures).toHaveBeenCalledWith({
       aiRuntime: expect.objectContaining({
@@ -124,6 +129,7 @@ describe('initApp preset composition', () => {
     expect(initialization.aiHistory).not.toBeNull()
     expect(calls).toEqual([
       'preset',
+      'text',
       'canvas-pipeline-debugger',
       'diagnostics',
       'selection-compatibility',

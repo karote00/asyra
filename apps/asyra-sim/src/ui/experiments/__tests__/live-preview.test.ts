@@ -29,6 +29,7 @@ it.each(['checking', 'ready'] as const)(
       witnessTime: 3.2
     })
     if (status === 'checking') sample.complete = false
+    sample.diagnosticId = 22
 
     let state: LiveState = { status: 'idle', sample: null, error: null }
     let notify: () => void = () => undefined
@@ -41,6 +42,7 @@ it.each(['checking', 'ready'] as const)(
         }
       },
       getState: () => state,
+      recordPreviewPublication: vi.fn(),
       open: (
         _input: unknown,
         _time: number,
@@ -72,6 +74,16 @@ it.each(['checking', 'ready'] as const)(
 
     expect(publish.mock.lastCall?.[0].time).toBe(3.37)
     expect(publish.mock.lastCall?.[0].feedback?.checkedTime).toBe(3.2)
+    if (status === 'ready') {
+      const feedback = publish.mock.lastCall?.[0].feedback
+      expect(api.recordPreviewPublication).toHaveBeenCalledWith(
+        22,
+        3.37,
+        3.2,
+        feedback?.kind,
+        feedback?.issues.map((issue) => issue.pairId)
+      )
+    }
     expect(
       playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
     ).toBe(2)
@@ -85,10 +97,13 @@ it.each(['checking', 'ready'] as const)(
 
     preview.sample(1, { ...options, discontinuity: true })
     expect(publish.mock.lastCall?.[0]).toMatchObject({
-      time: 3.51,
+      time: 1,
       pendingTime: 1,
       feedback: { checkedTime: 3.2, kind: 'collision' }
     })
+    expect(
+      playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
+    ).toBe(2)
 
     preview.dispose()
     await preview.completion
@@ -152,6 +167,76 @@ it('presents the same cached sample again after seeking without stale checking f
 
   deliver()
   expect(publish).toHaveBeenCalledTimes(count)
+})
+
+it('shows only an exact interval witness during a pending seek', async () => {
+  const input = liveFixture()
+  const intervalSample = structuredClone(
+    validateLiveEvidence(
+      input,
+      2,
+      runOfficialClearanceMethod(sampleSnapshot(input, 2))
+    )
+  )
+  Object.assign(intervalSample.pairs[0].evidence.leaves[0], {
+    state: 'finding',
+    penetration: true,
+    witnessTime: 2
+  })
+  Object.assign(intervalSample, {
+    complete: false,
+    evidenceOrigin: 'interval'
+  })
+
+  let state: LiveState = { status: 'idle', sample: null, error: null }
+  let notify: () => void = () => undefined
+  const api = {
+    subscribe: (listener: () => void) => {
+      notify = listener
+      return () => {
+        notify = () => undefined
+      }
+    },
+    getState: () => state,
+    open: (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
+      new Promise<void>((resolve) => {
+        options.signal.addEventListener('abort', () => resolve(), {
+          once: true
+        })
+      }),
+    sample: vi.fn()
+  } as unknown as SimRuntime['features']['live']
+  const publish = vi.fn<(value: PlaybackView) => void>()
+  const preview = new LivePreview(
+    input.workcell,
+    input.trajectory,
+    input.interval,
+    () => input,
+    api,
+    publish
+  )
+
+  preview.sample(2, { discontinuity: true })
+  await Promise.resolve()
+  state = {
+    status: 'checking',
+    sample: { ...intervalSample, time: 1 },
+    error: null
+  }
+  notify()
+  expect(publish.mock.lastCall?.[0].feedback?.kind).toBe('checking')
+
+  state = { status: 'checking', sample: intervalSample, error: null }
+  notify()
+
+  expect(publish.mock.lastCall?.[0]).toMatchObject({
+    time: 2,
+    pendingTime: 2,
+    feedback: { kind: 'collision', checkedTime: 2, complete: false }
+  })
+
+  preview.dispose()
+  await preview.completion
 })
 
 it('does not coalesce a crossed trajectory keyframe when animation jumps ahead of the worker', async () => {

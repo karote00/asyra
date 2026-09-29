@@ -17,9 +17,9 @@ assert.equal(response.status, 200)
 assert.equal(new URL(response.url).origin, origin)
 const body = await response.text()
 const bodyText = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
-assert.match(bodyText, /Build the tool your world needs\./)
-assert.match(bodyText, /One foundation\. Any field\./)
-assert.match(bodyText, /Bring your domain\. Keep its logic\./)
+assert.match(bodyText, /An idea worth building\./)
+assert.match(bodyText, /Change the rule\. Keep the work\./)
+assert.match(bodyText, /Choose your starting point\./)
 assert.doesNotMatch(
   bodyText,
   /2025|2026|MIT License|Open source|Asyra Systems?|Inc\.|Company/i

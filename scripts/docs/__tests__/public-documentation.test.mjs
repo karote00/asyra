@@ -112,13 +112,19 @@ test('public indexes derive the exact page, source, and API inventories', async 
   )
 })
 
-test('llms discovery is public-only and states the current/future boundary', async () => {
+test('llms discovery gives the published Starter command and current/future boundary', async () => {
   const { llms } = await createPublicDocumentationBundle({ repositoryRoot })
 
   assert.match(llms, /^# Asyra Framework/m)
   assert.match(llms, /41 public Markdown pages/)
   assert.match(llms, /Current: browser\/Core/)
   assert.match(llms, /Future: Headless Core and Core Kernel/)
+  assert.match(
+    llms,
+    /npx create-asyra-app@0\.1\.0 my-app --package-manager=npm/u
+  )
+  assert.match(llms, /Node\.js 24; npm and Yarn are supported/u)
+  assert.match(llms, /docs\/public\/index\.md#generic-starter-source/u)
   assert.doesNotMatch(llms, /docs\/ai\//)
   assert.doesNotMatch(llms, /AI_PROVIDER_API_KEY|ws:\/\/|package-private/)
   assert.equal((llms.match(/^- \[/gm) ?? []).length, 41)

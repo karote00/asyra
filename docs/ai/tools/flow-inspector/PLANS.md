@@ -8,16 +8,14 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
-## Planned Architecture Direction
+## Planned Verification Coverage Follow-up
 
-- [Flow Development Across Multiple PRs](plans/flow-inspector-multi-pr-development-and-integration-plan.md)
-  - Direction approved 2026-09-10; bounded target/work admission and Board/API/CLI
-    implemented 2026-09-12; [bounded closeout](plans/completed/flow-inspector-target-work-admission-closeout.md)
-    records execution admission and evidence. Integration assessment and baseline acceptance remain open.
-  - Separate persistent flow contracts from task/PR delivery. Verify developing
-    work from the start, preserve accepted behavior, and require one complete
-    integration result before explicit baseline acceptance.
-  - Exact product/Inspector contracts and formal cases must precede implementation.
+- [Verification Coverage Expansion](plans/flow-inspector-verification-coverage-expansion-plan.md)
+  - Proposed on 2026-09-29 following real App and Framework fault injection.
+  - Priorities: expose uncovered steps, admit a complete Design feature, extend
+    declared Framework consumer coverage, and simplify bounded Board tasks.
+  - Planning only. The completed multi-PR slice remains closed; implementation
+    and repository-wide coverage are not implied.
 
 ## Deferred Follow-up
 
@@ -56,6 +54,9 @@ dependency, license, or publication change is implied by the planning revision.
 
 ## Roadmap and Baseline References
 
+- [Completed multi-PR development record](plans/completed/flow-inspector-multi-pr-development-and-integration-plan.md)
+  retains the bounded one-local-owner, one-repository delivery evidence and its
+  separately deferred Phase 5/6 boundaries.
 - [Phase 3 completed record](plans/completed/flow-inspector-phase-3-core-proof-closeout.md)
   retains merged proof evidence; the living `CORE_PROOF.md` has not moved.
 - [Phase 4 local implementation record](plans/completed/flow-inspector-phase-4-local-implementation-closeout.md)
@@ -73,5 +74,8 @@ dependency, license, or publication change is implied by the planning revision.
 The local target/work admission and Board/API/CLI implementation is described in
 [the living contract](CORE_PROOF.md#flow-targets-and-work-decomposition).
 It retains pending obligations, immutable commitments and exact task links.
-Full multi-PR source integration assessment and explicit baseline acceptance
-remain future slices; this entry does not close the overall development plan.
+Complete one-source integration assessment, explicit authorized baseline
+acceptance and captured Factory/Collaboration/UI Context runtime evidence close
+the bounded multi-PR plan. Multi-repository coordination, team operation,
+protected remote delivery and the broader Phase 5/6 work remain separately
+deferred.

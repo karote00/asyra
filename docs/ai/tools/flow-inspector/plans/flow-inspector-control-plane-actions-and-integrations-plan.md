@@ -270,11 +270,11 @@ only, not the historical failure record or full Phase 5/6 requirements.
 
 ## Multi-PR development follow-up - 2026-09-10
 
-The [multi-PR flow plan](flow-inspector-multi-pr-development-and-integration-plan.md)
+The [completed multi-PR flow record](completed/flow-inspector-multi-pr-development-and-integration-plan.md)
 owns the newly approved architecture direction for decomposing one target flow
 into tasks and PRs while retaining accepted-behavior checks and exact integrated
-completion evidence. The bounded local target/work and projection slice is
-implemented under the [living contract](../CORE_PROOF.md#flow-targets-and-work-decomposition);
-source-bound integration assessment remains planned. This does not activate team
-accounts or parallel agents. The existing candidate delivery contract remains
-in force until its corresponding owner slices are specified and verified.
+completion evidence. The bounded local target/work, retained assessment,
+explicit acceptance and captured full-runtime product cases are complete under
+the [living contract](../CORE_PROOF.md#flow-targets-and-work-decomposition).
+This does not activate team accounts, parallel agents, multi-repository work or
+the broader Phase 5/6 owners.

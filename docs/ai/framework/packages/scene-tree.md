@@ -63,6 +63,12 @@ element-slot-to-property relations, and local computed projection.
   ordered Props ancestor closure, maps those properties through Scene's
   reverse relation index, and replaces affected local computed values without
   creating a canonical write.
+- Canonical property subscriptions use applied-batch delivery so successive API
+  calls within one transaction read current computed state. Commit-time observer
+  delivery does not recompute the same batch. Undo/Redo and rollback still use the
+  ordinary applied canonical route; local projections create no history entry.
+  Render consumes the applied computed batch immediately, while UI subscribers
+  receive it only after the enclosing transaction commits.
 - Both local APIs validate the complete batch before mutating the first
   element. Duplicate or inactive element IDs, invalid patch shapes, and
   attempts to write canonical raw keys reject without a partial prefix.

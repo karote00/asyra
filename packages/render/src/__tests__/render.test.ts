@@ -22,6 +22,80 @@ describe('Render', () => {
     render = new Render({ engine })
   })
 
+  it('measures current content with one flush and one query per present target', async () => {
+    await render.init(800, 600, 0xffffff)
+    const element = new RenderContainer()
+    render.viewport.view.addChild(element)
+    render.viewport.getElementById = vi.fn((id) =>
+      id === 'missing' ? undefined : element
+    )
+    Object.defineProperty(engine, 'capabilities', {
+      value: new Set([...engine.capabilities, 'local-content-bounds'])
+    })
+    const bounds = { x: 0, y: 0, width: 120, height: 70 }
+    engine.query = vi.fn(() => ({ type: 'bounds', bounds }))
+    const flush = vi.spyOn(render, 'flushFrame')
+    const result = render.measureElementContentBounds(['a', 'missing', 'b'])
+    expect(result).toEqual([
+      { elementId: 'a', bounds },
+      { elementId: 'missing', bounds: null },
+      { elementId: 'b', bounds }
+    ])
+    expect(flush).toHaveBeenCalledOnce()
+    expect(engine.query).toHaveBeenCalledTimes(2)
+    expect(engine.query).toHaveBeenCalledWith({
+      type: 'get-local-content-bounds',
+      object: element.getEngineHandle()
+    })
+    bounds.width = 900
+    expect(result[0].bounds?.width).toBe(120)
+    flush.mockClear()
+    expect(() => render.measureElementContentBounds(['a', 'a'])).toThrow()
+    expect(() => render.measureElementContentBounds([])).toThrow()
+    expect(() =>
+      render.measureElementContentBounds(
+        Array.from({ length: 201 }, (_, i) => String(i))
+      )
+    ).toThrow()
+    expect(flush).not.toHaveBeenCalled()
+  })
+
+  it('captures only the requested current subtree through the abstract engine', async () => {
+    await render.init(800, 600, 0xffffff)
+    const element = new RenderContainer()
+    render.viewport.view.addChild(element)
+    render.viewport.getElementById = vi.fn(() => element)
+    const expected = {
+      type: 'snapshot' as const,
+      dataUrl: 'data:image/png;base64,cG5n',
+      width: 240,
+      height: 240,
+      bounds: { x: 0, y: 0, width: 240, height: 240 }
+    }
+    engine.query = vi.fn(() => expected)
+    Object.defineProperty(engine, 'capabilities', {
+      value: new Set([...engine.capabilities, 'snapshot'])
+    })
+    const flush = vi.spyOn(render, 'flushFrame')
+    expect(
+      render.captureElementSnapshot('drawing', 1024, {
+        nativeResolution: true,
+        region: expected.bounds
+      })
+    ).toEqual(expected)
+    expect(flush).toHaveBeenCalledOnce()
+    expect(engine.query).toHaveBeenCalledWith({
+      type: 'snapshot',
+      object: element.getEngineHandle(),
+      maxDimension: 1024,
+      nativeResolution: true,
+      region: expected.bounds
+    })
+    render.viewport.getElementById = vi.fn(() => undefined)
+    expect(() => render.captureElementSnapshot('missing', 1024)).toThrow()
+    expect(engine.query).toHaveBeenCalledOnce()
+  })
+
   // Test constructor
   it('should instantiate ViewportLayer', () => {
     expect(render.viewport).toBeInstanceOf(ViewportLayerModule.ViewportLayer)

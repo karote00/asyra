@@ -25,6 +25,8 @@
       "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/flow-inspector-static-workspace-flow-inspector.data.cjs",
@@ -137,11 +139,14 @@
             "purpose": "After Actor A submits an ordinary Agent turn, send its intent, exact image attachment, bounded App context, registered actions, and abort signal through the one same-origin requestActionBatch() transport; the backend owns the Asyra Design domain prompt and provider request, while the exact crdt-7076 sample directly returns its checked-in ordered AiActionBatch instruction file before loading prompt or model work and before Runtime resolution.",
             "inputs": [
               "artifact:precanonical-owner-attribution",
+              "artifact:ai-batch-execution-receipt",
               "Actor A Agent intent",
               "one accepted image attachment",
               "App context and registered backend-facing action descriptions",
               "request abort signal",
-              "server-only provider endpoint, model, and API key for ordinary model-backed requests"
+              "server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests",
+              "artifact:conversation-submission",
+              "artifact:rendered-drawing-review"
             ],
             "outputs": [
               "artifact:server-prepared-action-batch",
@@ -149,12 +154,29 @@
               "artifact:provider-request-timing"
             ],
             "conditions": [
+              "Semantic preparation consumes its published type-specific input schema before compilation, collecting bounded field-path diagnostics through existing operation admission. Disjoint const/enum node discriminators isolate relevant errors without pruning general or overlapping alternatives. Both preparation tools carry validated syntax examples through native registration; examples never become fallback output. Fixed-view construction may use native 2D surfaces instead of spatial projection, while repeated detail and targeted refinements reuse existing pattern and artifact/key owners. Format/projection failures request correction of the same draft; unmet structural review identifies the existing inspection/record_design_review prerequisite without changing evidence or geometry gates. Shared camera and prepared artifacts keep their existing owners; recovery never triggers automatic research, fabricated geometry or new caches.",
+              "Progressive construction uses model-selected priorities and cheap likely-visibility estimates, not exact hidden-surface analysis. Optional pattern instanceRanges expand only selected original-index intervals, preserving palette/order and ordinary validation while skipping unselected geometry work. Existing request-owned review state retains compact deferredDetails across mutations; final current visual deferredChecks must omit or restore every retained part, with pending/missing decisions blocking acceptance. Mutations invalidate dispositions; request disposal clears retained parts. No new cache, canonical mutation path, detail reduction or per-region model round-trip requirement is introduced. See design-preparation.md#priority-based-progressive-work.",
+              "Local operation completion requires a pre-mutation review plan and model criterion assessments backed by current request-owned inspection IDs; mutations invalidate prior evidence. Detailed work requires overview and a separate detail target or native region. Child refinements preserve the established overview target while invalidating prior evidence; an update receipt identifying the edited child does not replace that target. Same-revision recaptures retain scope-specific receipt IDs; partial regions cannot establish overview approval. The backend validates evidence identity and coverage, not semantic beauty; missing or failed evidence blocks completed claims while retaining applied work.",
+              "Local provider diagnostics emit bounded allowlisted tool, research and settlement evidence correlated with usage request IDs, queue/execution and browser admission/create/cooperative-wait durations, response byte/image counts, unioned observed intervals and explicitly unattributed remaining wall time; no raw prompts, private reasoning, credentials, geometry or image bytes are logged, and diagnostic failure cannot affect drawing execution.",
+              "Server construction admits at most 1,000 source nodes and 20,000 source points, then expands compact planar pattern templates and translation axes into at most 10,000 ordinary editable vectors/nodes and 200,000 points per artifact; existing ordered cooperative application slices preserve the single action/Undo boundary without model-side splitting; template admission/projection and immutable ring bounds are reused within one preparation. Application yields to the cooperative host without mandatory two-frame waits. Immutable same-request prepared artifacts resolve without recompilation; explicitly discarded semantic artifacts can be released without touching canonical state, Undo or retained references. Declared structural criteria must pass current-overview assessment before repeated-detail preparation; the completed checkpoint survives detail mutations, while a subsequent failed structure assessment closes it again. Structure-only assessments do not approve final completion; consecutive visual assessments report regressed criteria without treating historical evidence as current or automatically rolling back canonical state. No cross-request cache, inferred lighting, automatic depth sorting or alternate mutation path is introduced.",
+              "Native semantic preparation requires an explicit Group or Frame root and allows mixed nested containers. Group bounds are derived by the backend using the shared Preset bounds API with world geometry preserved; Frame dimensions stay independent. Browser admission validates the completed artifact without rederiving geometry. Registration and persisted Frame identities remain unchanged. This preparation does not provide live Auto Layout or clipping. Native semantic preparation accepts optional structured briefs and numeric checks, acyclic same-parent affine layout relations and shared orthographic projection of explicit planar faces. The App server compiles these once into existing native descriptors and returns compact measurements; failed checks or overflow prevent artifact application. Bounded sibling text-box overlap warnings stay in tool receipts, require intent-aware review and do not certify glyph collision. It does not infer geometry, sort occlusion, choose artistic content or certify visual fidelity. See docs/ai/apps/asyra-design/specs/design-preparation.md#structured-construction-and-requirement-checks. Existing canonical mutation, review and Undo owners remain unchanged.",
               "This step starts only when Actor A presses Send on an ordinary Agent turn; App navigation, required fileId resolution, document load, Agent readiness, and attachment selection do not request or execute a drawing.",
-              "requestActionBatch() is the only public provider request and performs exactly one same-origin HTTP POST for the accepted turn.",
+              "requestActionBatch() is the only public provider request. One same-origin HTTP POST streams the accepted turn; correlated same-origin execution receipts acknowledge intermediate prepared batches before AI continuation.",
+              "Browser NDJSON admission bounds each unfinished frame to 64 MiB and resets accounting at consumed newlines; valid sequential batches have no cumulative transfer quota. Chunk splits preserve UTF-8 decoding and canonical receipt order.",
+              "Semantic fills preserve solid compatibility and admit canonical linear gradients through one App wire schema/validator shared by preparation and browser admission. Projected and repeated faces retain normalized 2D gradient handles and ordered stops without extra geometry. Existing canonical rendering, persistence, validation and Undo remain owners; gradient availability is not visual approval.",
               "The browser request carries the submitted intent, attachment metadata and data URL, bounded App context without a domain prompt or image-tool catalog, registered action descriptions, attempt number, and abort ownership without reading canonical document persistence.",
-              "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies the provider endpoint, model, and API key for an ordinary request.",
+              "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.",
               "The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.",
-              "The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns one AiActionBatch with its batchId and already-prepared arguments.",
+              "Local code-mode composes only registered App tools through the same backend admission and canonical receipts. Exclusive calls queue in arrival order; adjacent read-only contour analyses may overlap. Combined semantic preparation/application reuses its request artifact once, requests compact identity/count evidence at the canonical action source or explicit full mappings, keeps permission context fresh, and defers repeated intermediate measurement until stage inspection, requires a successful current measurement and visual review before completion, and preserves cancellation and failure ownership. Edits require complete composition measurement; affected-subtree reuse requires authoritative document revision and invalidation evidence, which request-local tool history alone cannot supply. Traversal checks the entire subtree in cancellable cooperative chunks, never truncating completion at 200 nodes. Further same-revision captures reuse measurement. Request-owned prepared keyToId references resolve original identities without canvas scans; current actions validate existence and permission. Ordered execute_design_batch validates every registered input before one canonical exchange, preserving Runtime transaction semantics and reviewing once at the stage boundary. Explicit-ID context reads request only selected property fields, defaulting to identity metadata. Native script output is diagnostic, never canonical output.",
+              "Ordinary local turns use native registered tool schemas once, retain final-response control schemas in text, and proceed through parameter-only routine operations with App-owned status labels. The model only asks for material missing input or genuine ambiguity and returns a concise factual outcome; required approvals, original evidence and both review stages remain enforced by their existing owners.",
+              "Provider-native live web search may research concepts, styles, public facts or references without an attachment. Only safe research activity is projected; raw search queries and page bodies are not UI status. No site-specific search tool or domain ordering is registered. Original public URLs use safe import; source-local failures and unsuitable assets require continued research with changed sources, queries or supported methods instead of premature user handoff. Reference import is separately bounded; a search result is not an imported image receipt. Shell, credentials, local file tools and external integrations remain unavailable.",
+              "The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns complete AiActionBatch values with batchId and already-prepared arguments. Sequential intermediate batches await canonical receipts before the model continues.",
+              "For local image requests, the request-owned VTracer tool returns an opaque artifact ID and path bounds/color/count summaries, never SVG coordinates. The model selects target bounds, optional whole-path exclusions and supported single-contour componentMappings for native component preparation. The worker emits spline contours; the backend admits absolute M/L/C/Z geometry, preserves cubic controls, closure, winding and holes, computes true curve bounds once per request artifact, and transforms anchors and controls together without clipping or polygon flattening; this backend owner resolves only same-request references into complete canonical descriptors before Runtime admission. Repeated calls for the same attachment reuse the completed conversion only within that request; unknown references, unknown paths, duplicate/excluded/compound Oval selections, empty output, or invalid bounds fail here. The domain prompt requires receipt-based review and repeated supported corrections without claiming visual fidelity from execution success.",
+              "Before ordinary tracing, AI must submit a short explicit representation plan: preserve vectors with a reason or select a solid native background. Missing/invalid plans cannot start conversion; native plans dispatch separation within the same tool call and return plan evidence for data and rendered review. AI may select one solid native rect/oval background, source bounds, tolerance, optional explicit flat foreground palette and explicit regional clipping. The registered vectorize_image_layers backend tool separates only pixels explained by that region, traces residual PNG pixels, and returns request-local native-background/source-frame evidence. Preparation places the native component below foreground vectors using one shared transform, including native-only output. This is explicit compositing decomposition, never automatic semantic segmentation, whole-image color deletion, frontend geometry or a renderer patch. Repeated decompositions allow refinement without a request-total count limit; malformed, cancelled, oversized or unchanged separation fails at this owner. Ordinary tracing and receipt-based review remain unchanged.",
+              "Explicit flat-palette separation classifies alpha-composited source colors over the selected native base before producing opaque foreground masks; faint matte RGB cannot become solid tracing fragments. Faithful contour intent does not disable palette cleanup. Native curved bases and traced foreground do not guarantee an exact shared boundary, so rendered contact review remains mandatory.",
+              "Contour review requires faithful/cleanup intent and final drawing dimensions. Faithful reviews only measure source irregularities. Cleanup proposals and cumulative refinements satisfy both 0.5 original-source pixels and 0.5 final drawing pixels using the larger nonuniform scale; preparation rechecks actual insertion/replacement dimensions so later enlargement cannot bypass the budget. Reports carry both units and the policy. These bounds do not certify raster fidelity, thin-feature preservation or visual approval; AI stops or reverts when appearance worsens or no eligible improvement remains.",
+              "The AI may request bounded source-pixel contour measurements for up to 16 selected paths per call without a cumulative analysis quota. Request-owned review receipts retain local straighten/smooth-join proposals; only explicitly selected non-overlapping proposals produce a new immutable artifact. Backend preparation preserves anchors, fills, order and source frame, validates topology, and bounds displacement against the original trace to 0.5 source pixels across all generations without a generation-count limit. Sharp corners and compound/unsafe contours are not automatically smoothed. Reports include before/after metrics and remaining limitations, never visual-fidelity approval. No canonical state changes until the existing prepared drawing operation is acknowledged.",
+              "The AI selects plausible representation candidates from the registered catalog, without a preferred component. Request-owned read-only vector analysis returns contour identities, measured fit errors, topology limitations and an opaque analysis receipt. Whole-path component mappings require eligible results from a same-request receipt for the same source artifact; preparation consumes this completed evidence without remeasuring. Analysis never mutates canonical state, chooses artistic intent, exposes coordinate arrays or claims visual approval. Unsupported compound reconstruction remains explicit; original unmapped vectors are preserved. Up to 128 independent read-only calls in flight, each admitting at most 128 candidates, may be dispatched concurrently with separately correlated replies; final settlement drains pending work, other tools remain exclusive, a request-owned single-job CPU queue yields between jobs, and request abort remains enforced. There are no cumulative operation, inspection, measurement, preparation, reference-search/import or total tool-call quotas; normal requests have no total duration or cumulative protocol-byte limit. Individual JSON-lines messages and unfinished buffered input remain bounded to 32 MiB; stderr is drained without retention. Per-call payload, geometry and I/O guards remain.",
               "The checked-in crdt-7076 backend sample remains the local full-flow request path: its documented URL uses fileId=crdt-7076-sample as both socket-authoritative document identity and Collaboration identity; the backend accepts its exact checked-in image and instruction through the ordinary request body.",
               "The crdt-7076 sample uses the same socket-authoritative startup as every other fileId. When the socket is unavailable, the formal provisional local document still accepts Actor A HTTP action-batch execution and retains publications in the ordinary outbox; there is no compressed-document Core.load bootstrap, sample-only Reset behavior, or socket bypass. The permanent standalone Reset remains available for every fileId.",
               "After the exact image and instruction match, the exact crdt-7076 sample backend reads the checked-in ordered AiActionBatch instruction file directly before loading the domain prompt, provider configuration, or model path and returns it without SVG, VTracer, image conversion, geometry reconstruction, normalization, or model work.",
@@ -168,9 +190,9 @@
               "PreparedDrawingArtifact avoids a second frontend point-object graph; Runtime and the App action execute the returned server-prepared descriptor identities."
             ],
             "bypasses": [
-              "An aborted request cancels the same provider/backend attempt and creates no Runtime, canonical, history, persistence, or CRDT result.",
+              "An aborted request cancels the same provider/backend attempt; the invocation transaction rolls back any intermediate canonical changes.",
               "A malformed or unsupported request fails at the provider/backend boundary before Runtime resolution.",
-              "An ordinary model-backed request with incomplete server-only provider endpoint, model, or API key configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.",
+              "An ordinary model-backed request with incomplete server-only selected-backend configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.",
               "An Actor that only opens the sample URL performs ordinary socket document startup with zero action-batch request. Socket unavailability selects the existing provisional local session and never a second App startup route."
             ],
             "allowedContributors": [
@@ -180,6 +202,7 @@
               "backend-owned action-batch preparation",
               "backend-owned Asyra Design domain prompt and registered image-tool catalog",
               "completely configured server-only provider endpoint, model, and API key",
+              "explicit local-codex selection, loopback and same-origin admission, one request-owned Codex process, personal global instructions only, App-owned VTracer calls on submitted attachments, and subscription account-type check",
               "Node.js native fetch with the API key in the authorization header",
               "checked-in crdt-7076 sample input",
               "checked-in ordered crdt-7076 AiActionBatch instruction file",
@@ -190,14 +213,15 @@
               "server-response inbox, startup response preload, or resident action batch",
               "fileId, URL, query parameter, or App bootstrap selecting an action payload",
               "frontend action fixture import, phrase branch, geometry preparation, materialization, or response construction",
-              "retained SVG, VTracer input, alternate drawing source, regeneration fallback, or request-time geometry reconstruction",
+              "retained SVG or tool output across ordinary requests; VTracer input, alternate drawing source, regeneration fallback, or request-time geometry reconstruction for the exact crdt-7076 sample",
               "frontend item, path, point, style, bounds, role, or model semantic validation",
               "frontend model normalization or drawing-artifact encoding",
               "frontend domain prompt, image-tool catalog, provider endpoint, model setting, or API key",
               "provider prompt, configuration, or model work for the exact crdt-7076 sample",
               "model fallback for a partially matching crdt-7076 sample",
               "frontend replacement IDs for server-issued stable descriptor IDs",
-              "a second provider, request method, payload format, compatibility alias, or plan API alias",
+              "a second browser provider or alternate action execution source, compatibility alias, or plan API alias; execution receipts are control acknowledgements on the existing route",
+              "credential file reads or copies, account identity in output, raw provider logs, local Codex environment tools, or automatic HTTP fallback",
               "artificial provider delay or failure simulation",
               "Runtime, Core, Render, or Collaboration behavior flags"
             ],
@@ -211,13 +235,20 @@
               "apps/asyra-design/src/init/__tests__/init-app.test.ts",
               "apps/asyra-design/src/ai/startup.ts",
               "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+              "apps/asyra-design/src/ai/action-batch-protocol.ts",
+              "apps/asyra-design/src/ai/action-batch-endpoint.ts",
               "apps/asyra-design/src/ai/context.ts",
               "apps/asyra-design/src/ai/__tests__",
               "apps/asyra-design/src/startup.ts",
               "apps/asyra-design/server",
+              "apps/asyra-design/vtracer-tool-server.mjs",
+              "apps/asyra-design/__tests__/vtracer-tool-server.test.mjs",
               "apps/asyra-design/server/ai-domain-prompt.ts",
               "apps/asyra-design/server/ai-model-provider.ts",
               "apps/asyra-design/samples/crdt-7076",
+              "apps/asyra-design/e2e/local-ai-provider.spec.ts",
+              "apps/asyra-design/e2e/design-construction.spec.ts",
+              "apps/asyra-design/e2e/fixtures/local-vector-reference.png",
               "apps/asyra-design/e2e/action-batch-interceptor.ts",
               "apps/asyra-design/e2e/test-utils.ts",
               "apps/asyra-design/e2e/conversational-ai.spec.ts",
@@ -228,6 +259,7 @@
             "specRefs": [
               "#pre-canonical-owner-attribution",
               "#request-time-backend-action-batch-contract",
+              "#local-subscription-backend",
               "#server-prepared-aiactionbatch-contract",
               "#non-negotiable-equivalence",
               "#step-local-gates"
@@ -251,13 +283,15 @@
             "outputs": [
               "artifact:resolved-ai-action-batch",
               "artifact:bounded-ai-action-batch-preview",
+              "artifact:ai-batch-execution-receipt",
               "artifact:ai-action-batch-ingestion-timing"
             ],
             "conditions": [
               "This step is selected because corrected attribution found front-end action-schema geometry preparation before Group creation, while the product contract now assigns model preparation to the backend.",
               "requestActionBatch() is the only public provider request and resolveAiActionBatch() is the only Runtime resolution entry. There is no public or internal plan API, alias, compatibility wrapper, alternate payload mode, or client preparation mode.",
-              "The same-origin server transport hands the one returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.",
+              "One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Asyra Design preserves applied progress after ordinary executor/provider failure, stops further work and reports partial completion with the failed activity. Cancellation rolls back; transaction settlement failure reports unknown state. There is no per-action savepoint. Registered executors may explicitly provide bounded public failure explanations through AiActionExecutionError; unknown exceptions retain generic sanitized messages. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.",
               "AiActionBatch carries one batchId, explanation, ordered actions, and bounded summaries. Runtime preflights only that small control envelope, including the empty-batch rule, duplicate action ids, and unknown actions; it does not traverse item, path, point, style, bounds, or geometry arguments.",
+              "Public design-task Core and common API actions share a data-only method/parameter/effect catalogue. Executors delegate to the existing canonical API, omit event/history suppression options, and preserve Runtime permission, confirmation and transaction ownership. Lifecycle, replay, host resources and transient input sessions have explicit coverage dispositions; unknown public additions fail formal coverage. Model discovery retrieves schemas on demand and batches use ordinary backend admission.",
               "Each action definition exposes one backend-facing inputSchema for server action-batch construction and one executor; it has no client action schema, parse, prepare, validation mode, or payload-size flag.",
               "The server-prepared action arguments are not recursively cloned or frozen by Runtime. Permission and execution receive the exact same arguments identity.",
               "resolveAiActionBatch() returns one ResolvedAiActionBatch. Permission produces one PermissionReadyAiActionBatch, and confirmation and terminal state retain one AiActionBatchPreview; every stage preserves batchId.",
@@ -270,7 +304,7 @@
               "ResolvedAiActionBatch and PermissionReadyAiActionBatch remain local, noncanonical, and nonshared; shared props, components, elements, Factory evidence, and CRDT data remain in their existing owners."
             ],
             "bypasses": [
-              "An invalid control envelope fails before permission, transaction, or executor work.",
+              "An invalid control envelope fails before that batch permission or executor work; Asyra Design retains previously applied progress, while the default Runtime failure policy rolls back.",
               "A no-confirmation permission result still creates only the bounded terminal preview and never a full-argument preview."
             ],
             "allowedContributors": [
@@ -310,7 +344,18 @@
               "apps/asyra-design/src/init/foundation/init-features.ts",
               "apps/asyra-design/src/init/foundation/__tests__/init-features.test.ts",
               "apps/asyra-design/src/ai/actions.ts",
+              "apps/asyra-design/src/ai/prepared-drawing-schema.ts",
+              "apps/asyra-design/src/ai/prepared-design.ts",
+              "apps/asyra-design/src/ai/prepared-design-admission.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/basic-api-actions.ts",
+              "apps/asyra-design/src/ai/basic-api-catalog.ts",
+              "apps/asyra-design/src/ai/basic-api-contracts.ts",
+              "apps/asyra-design/src/ai/basic-api-dispositions.ts",
+              "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+              "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+              "apps/asyra-design/src/ai/basic-vector-api-contracts.ts",
               "apps/asyra-design/src/ai/startup.ts",
               "apps/asyra-design/src/ai/conversation.ts",
               "apps/asyra-design/src/ai/presentation.ts",
@@ -686,18 +731,19 @@
               "Server-prepared Group and child descriptors provide exact bounds, stable IDs, relationships, complete source creation data, geometry data, point counts, roles, and slice boundaries; the App builds no intermediate point-object graph and performs no repeated vector validation, bounds, or normalization.",
               "After those prepared descriptors provide exact bounds, the App publishes a runtime-only loading state, commits a connected App DOM overlay, and crosses a browser paint opportunity before the first canonical mutation.",
               "The App acquires one runtime-only document interaction lock before opening the outer App transaction; the lock allows ordinary viewport pan and zoom to repaint the live loading frame and Vector output while it blocks every other document interaction, document mutation, and canonical mutation.",
-              "Viewport navigation while locked continues through ordinary Feature execution and may cross its existing transaction wrapper, but produces no canonical mutation or history and does not alter the AI action transaction evidence or accepted composition bounds; AI cancellation remains available.",
+              "Viewport navigation while locked continues through ordinary Feature execution and may cross its existing transaction wrapper, but produces no canonical mutation or history and does not alter the AI action transaction evidence or accepted composition bounds; AI cancellation, approval, conversation scrolling and typing, and panel open/close remain available within the isolated Agent interface; those DOM events cannot reach canvas shortcuts or document mutation controls.",
               "The single composition route uses the existing Core.createElementsInParent(...) plural route to create one Group, crosses one browser paint opportunity after that Group and before the first child batch, and only then submits multiple deterministic progressive plural Core child batches through the same route.",
               "Progressive batch boundaries use one fixed 2,048-point budget and an element-count budget capped at 32 elements per work unit; one indivisible element may exceed only the point budget.",
               "Every successful canonical slice completes its ordinary Factory, Preset, Render, and UI projection, commits actual element progress, awaits one browser paint opportunity, and then continues through the single serialized action loop with a fixed point budget of 2,048 and at most 32 elements after rechecking the Feature-owned AbortSignal.",
               "The exact-bounds overlay is App-owned transient DOM projection above the ordinary canvas; its CSS activity animates only transform and opacity on the compositor while every completed element continues through the ordinary editable Vector route.",
               "One outer App transaction contains the Group and every child batch and expresses one intended history action.",
-              "The App clears drawing progress and releases the document interaction lock after success, failure, cancellation, or teardown; failure and cancellation preserve complete canonical rollback and visible compensation."
+              "The App clears drawing progress and releases the document interaction lock after success, failure, cancellation, or teardown; ordinary failure retains applied progress under the App runtime policy; cancellation preserves canonical rollback and visible compensation.",
+              "Reference replacement accepts a context-validated Group or Frame root, inserts the prepared drawing, then removes only that old root inside the same invocation transaction. Incomplete insertion preserves the old root. Target change or failed removal throws an explicit safe public reason. Ordinary failures follow runtime preserve-progress settlement; cancellation rolls back. Each subsequent user request owns a new Undo entry, never replacing prior History."
             ],
             "bypasses": [
               "Clarification and no-change turns create no loading state, Group, batch, or history action.",
               "Abort before mutation clears transient progress and emits no canonical or publication work.",
-              "Recoverable item failures retain accepted siblings in one partial batch; a fatal error rolls back the complete turn."
+              "Recoverable item failures retain accepted siblings in one partial batch; ordinary execution failure stops work with retained progress under the App runtime policy."
             ],
             "allowedContributors": [
               "registered Asyra Design AI action schemas",
@@ -753,7 +799,8 @@
               "#exact-bounds-loading-frame",
               "#cooperative-progressive-composition",
               "#transaction-boundary",
-              "#current-local-gates"
+              "#current-local-gates",
+              "#conversation-lifecycle"
             ],
             "failureOwnerStepId": "stage-local-interactive-composition"
           },
@@ -1527,9 +1574,174 @@
               "#definition-of-done"
             ],
             "failureOwnerStepId": "evaluate-performance-and-equivalence"
+          },
+          {
+            "id": "capture-drawing-review",
+            "order": 2.5,
+            "laneId": "app-canonical",
+            "title": "Inspect the rendered drawing",
+            "ownerPackage": "App inspection action",
+            "purpose": "Provide actual bounded rendered evidence for AI review without canonical writes.",
+            "inputs": [
+              "artifact:resolved-ai-action-batch",
+              "canonical target ID",
+              "current rendered projection",
+              "request abort signal"
+            ],
+            "outputs": [
+              "artifact:rendered-drawing-review"
+            ],
+            "conditions": [
+              "Core and Render resolve the target subtree and flush current projected draws before an engine-neutral snapshot query.",
+              "The configured engine extracts real subtree content, excluding overlays and camera framing; no synthetic or stale image is admitted.",
+              "PNG size and object metadata are bounded. Overview renders the complete subtree as a scaled preview without changing original assets or document dimensions. Explicit detail and target-local regions use native resolution; oversized detail targets are rejected. Partial evidence cannot establish whole-composition approval. elementsTruncated refers only to object summaries. Capture does not change selection, viewport or canonical state and owns no image cache.",
+              "Before mutation the provider reviews tool summaries, selects representations from the supported App component conversion catalog, preserves unmapped vector geometry, and iterates supported preparation parameters. Known data discrepancies are addressed before any expensive rendered review; unchanged deterministic conversions are not retries.",
+              "When registered, review_design runs before snapshot inspection. Concrete text-overflow findings return for correction without an image and prevent completed settlement until resolved. There is no cumulative review-cycle or image-count limit; reads remain available and applied progress is retained.",
+              "Mutating operations return acknowledged receipts and deterministic measurement findings. Explicit inspection=defer omits only the intermediate snapshot; all mutations still invalidate prior visual evidence, and phase completion requires fresh capture and review. Default operations carry image evidence; local provider emits native image content for AI comparison and repeated supported corrections. Automatic images do not require duplicate explicit captures. Organization during drawing review invalidates evidence; grouping the current target transfers inspection ownership to the acknowledged new group, while unrelated grouping preserves the target."
+            ],
+            "bypasses": [
+              "Missing target, unsupported engine or unavailable capture returns an explicit limitation."
+            ],
+            "allowedContributors": [
+              "App inspection/common APIs",
+              "Core render facade",
+              "Render projection and engine-neutral query",
+              "configured render engine",
+              "local provider image reply adapter"
+            ],
+            "forbiddenContributors": [
+              "canonical writes during capture",
+              "editor overlays",
+              "diagnostic or synthetic product images",
+              "direct concrete engine access from App",
+              "cross-request image cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai",
+              "apps/asyra-design/src/common-apis",
+              "apps/asyra-design/src/constants",
+              "apps/asyra-design/server",
+              "apps/asyra-design/e2e",
+              "packages/core/src",
+              "packages/render/src",
+              "packages/render-engine/src",
+              "packages/render-engine-pixi/src"
+            ],
+            "specRefs": [
+              "#rendered-drawing-review"
+            ],
+            "failureOwnerStepId": "capture-drawing-review"
+          },
+          {
+            "id": "conversation-lifecycle",
+            "order": 0,
+            "laneId": "app-canonical",
+            "title": "Present and continue the drawing conversation",
+            "ownerPackage": "App conversation controller",
+            "purpose": "Own stable user messages, request lifecycle, question answers and safe recovery independently of provider attempt completion.",
+            "inputs": [
+              "user intent and attachments",
+              "answer or retry correlated to a prior request",
+              "bounded runtime progress, approval decision and authoritative result"
+            ],
+            "outputs": [
+              "artifact:conversation-projection",
+              "artifact:conversation-submission"
+            ],
+            "conditions": [
+              "Append the user message before execution and preserve its identity through settlement.",
+              "Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.",
+              "One App activity projection owns the status below the work-history disclosure and its ordered entries. The disclosure summary shows Working for or Worked for with elapsed time, never an Activity title, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement removes the active disclosure status and marker, retains the result without a Result heading, and never appends success to failed partial work. Model-authored messages retain their language without language instructions or filtering. Missing or oversized operational descriptions use registered labels.",
+              "Activity precedes independent question and answer controls. Questions wait for user input without Finished or a completion timestamp; provider completion alone does not complete the drawing goal. Terminal explanations remain outside the disclosure and show the controller-owned settlement time in the user local timezone at the left instead of a completion bell.",
+              "Panel closure hides presentation; document disposal cancels and retires late events.",
+              "Document-scoped new/history navigation retains per-conversation messages and targets, rejects switches while active, and exposes stable navigation updates independently of progress; presentation preserves unsent drafts.",
+              "Only existing feature and requestActionBatch owners may execute; status never writes canonical state.",
+              "Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action."
+            ],
+            "bypasses": [
+              "Reject duplicate active submissions and stale answers.",
+              "Failed, cancelled or partial work never produces an unconditional success message.",
+              "Retry requires a confirmed pre-write failure or cancellation; unknown application is not replayed."
+            ],
+            "allowedContributors": [
+              "App conversation, confirmation and presentation adapters",
+              "App panel and history presentation",
+              "bounded runtime outcomes and current target references"
+            ],
+            "forbiddenContributors": [
+              "geometry traversal or model output normalization in the panel",
+              "raw provider logs or personal account data",
+              "fabricated reasoning or progress",
+              "UI-owned canonical writes or rollback",
+              "additional provider transport"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai/conversation.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/confirmation.ts",
+              "apps/asyra-design/src/ai/__tests__",
+              "apps/asyra-design/src/app",
+              "apps/asyra-design/e2e",
+              "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md"
+            ],
+            "specRefs": [
+              "#conversation-lifecycle"
+            ],
+            "failureOwnerStepId": "conversation-lifecycle"
           }
         ],
         "routes": [
+          {
+            "id": "route-resolved-action-to-drawing-inspection",
+            "from": "resolve-server-prepared-action-batch",
+            "to": "capture-drawing-review",
+            "kind": "handoff",
+            "predicate": "A resolved, permitted inspect_drawing operation executes read-only inspection through the ordinary action executor, inside the owning invocation.",
+            "producedArtifacts": [
+              "artifact:resolved-ai-action-batch"
+            ]
+          },
+          {
+            "id": "route-drawing-inspection-to-provider",
+            "from": "capture-drawing-review",
+            "to": "request-backend-action-batch",
+            "kind": "handoff",
+            "predicate": "The read-only result returns through the existing action receipt; the local backend delivers actual image content for visual review or an explicit unavailable result before further supported corrections.",
+            "producedArtifacts": [
+              "artifact:rendered-drawing-review"
+            ]
+          },
+          {
+            "id": "route-executed-batch-receipt-to-provider",
+            "from": "resolve-server-prepared-action-batch",
+            "to": "request-backend-action-batch",
+            "kind": "handoff",
+            "predicate": "After an intermediate prepared batch passes permission and canonical execution, return redacted action results and refreshed context within the still-open invocation transaction. The backend awaits this receipt before AI continuation.",
+            "producedArtifacts": [
+              "artifact:ai-batch-execution-receipt"
+            ]
+          },
+          {
+            "id": "route-conversation-projection",
+            "from": "conversation-lifecycle",
+            "kind": "terminal",
+            "predicate": "The panel projects document-scoped conversation state without canonical writes.",
+            "producedArtifacts": [
+              "artifact:conversation-projection"
+            ]
+          },
+          {
+            "id": "route-conversation-to-action-batch",
+            "from": "conversation-lifecycle",
+            "to": "request-backend-action-batch",
+            "kind": "handoff",
+            "predicate": "An admitted submission preserves original intent, attachments and revalidated target context; questions and unsafe retries do not submit.",
+            "producedArtifacts": [
+              "artifact:conversation-submission"
+            ]
+          },
           {
             "id": "route-server-prepared-action-batch-to-runtime",
             "from": "request-backend-action-batch",
@@ -2175,6 +2387,44 @@
         ],
         "artifacts": [
           {
+            "id": "artifact:rendered-drawing-review",
+            "ownerStepId": "capture-drawing-review",
+            "title": "Fresh rendered drawing evidence",
+            "channel": "Read-only action result in the existing same-origin execution receipt",
+            "consumerStepIds": [
+              "request-backend-action-batch"
+            ],
+            "terminal": false,
+            "description": "Bounded real PNG, local capture bounds and object summaries or an explicit unavailable result. Transient evidence only; no document, camera, selection or Undo mutation."
+          },
+          {
+            "id": "artifact:ai-batch-execution-receipt",
+            "ownerStepId": "resolve-server-prepared-action-batch",
+            "title": "Provisional canonical batch execution receipt",
+            "channel": "same-origin one-use execution acknowledgement",
+            "consumerStepIds": [
+              "request-backend-action-batch"
+            ],
+            "terminal": false,
+            "description": "Redacted action results and refreshed bounded App context; not a commit, persisted snapshot or full geometry payload."
+          },
+          {
+            "id": "artifact:conversation-projection",
+            "ownerStepId": "conversation-lifecycle",
+            "channel": "Document-scoped role-specific messages, actual activity, decisions and safe recovery controls",
+            "consumerStepIds": [],
+            "terminal": true
+          },
+          {
+            "id": "artifact:conversation-submission",
+            "ownerStepId": "conversation-lifecycle",
+            "channel": "One admitted feature request retaining original intent, attachments and current targets",
+            "consumerStepIds": [
+              "request-backend-action-batch"
+            ],
+            "terminal": false
+          },
+          {
             "id": "artifact:server-prepared-action-batch",
             "ownerStepId": "request-backend-action-batch",
             "channel": "request-time backend-prepared AiActionBatch returned by requestActionBatch() for Actor A submitted intent and attachment",
@@ -2209,7 +2459,8 @@
             "channel": "@asyra/ai-agent-runtime ResolvedAiActionBatch and PermissionReadyAiActionBatch handoff preserving batchId and action argument identity",
             "consumerStepIds": [
               "yield-ai-loading-paint",
-              "stage-local-interactive-composition"
+              "stage-local-interactive-composition",
+              "capture-drawing-review"
             ],
             "terminal": false
           },
@@ -10818,25 +11069,29 @@
               "artifact:snapshot",
               "artifact:method-evidence",
               "Feature-owned abort signal",
-              "latest requested playback time"
+              "latest requested playback time",
+              "one adjacent interval gap between admitted live evidence points after foreground service"
             ],
             "outputs": [
               "artifact:live-feedback"
             ],
             "conditions": [
               "Own one cancellable non-mutating Feature task and at most one Worker for detached playback inputs. Admit the snapshot once at each trust boundary and require the exact installed method static capability. Create the Worker lazily only for missing sample evidence.",
-              "Send full inputs once per lifetime, then sampled times only. Bound concurrency to one in-flight request and one latest pending time; deadline, byte, work and evidence limits remain enforced.",
+              "Send full inputs once per lifetime, then exact sample times or one bounded adjacent-gap interval task. Only complete exact-sample records are cache hits; an incomplete exact sample stays visible while the owner rechecks its missing pairs. Reuse validated complete same-pose pair proofs, validate them again in the Worker, skip only those pairs, and merge them with newly checked pairs under the original aggregate work/evidence limits. Partial pair evidence is rechecked and never closes unknown coverage. Resolve complete exact recorded-time hits before pacing or unrelated in-flight work; a cache hit never starts analysis. Foreground sampling has one in-flight request and one latest pending time. After an incomplete bounded 500 ms attempt for the unchanged latest exact target, continue only its missing pairs when the accepted sample materially gains validated evidence and the original aggregate evaluation budget has capacity; each attempt keeps the same 500 ms limit. Stop when accepted evidence does not change or the aggregate evaluation budget is exhausted, preserving unknown coverage. A newer target supersedes continuation. Background interval work has at most one pending gap and is admitted only after foreground service; a new foreground target supersedes earlier pending targets and is dispatched as soon as the bounded interval query settles on the same usable Worker. Optional timeout, incomplete/error, or Worker failure preserves unknown evidence and the live input lifetime; retire a Worker only when it is unusable, and reject all of its late output. Invalid response identity/schema or contradictory accepted proof still fails closed. Neither path grows an unbounded queue. Deadline, byte, work and evidence limits remain enforced.",
               "Create an optional installed executor once for the admitted Worker input, otherwise invoke the exact stateless entry. Admit requests at most every 50 ms; slow work coalesces pending times without growing a queue or changing the animation clock.",
-              "Validate each returned static sample against its snapshot, request identity, exact time and pair evidence. Unvisited pairs and failed or incomplete samples remain unknown; never create a formal run, verdict, report or history entry.",
+              "Validate each returned static sample or interval result against its admitted snapshot, request identity, exact query bounds and pair evidence. Retain validated superseded results only in that unchanged input lifetime. Join interval leaves only when their complete coverage and per-pair evidence agree; allow a consistent query to refine overlapping unresolved coverage, reject conflicting proven claims, and limit findings to their exact witnesses. Unvisited pairs, gaps, and failed or incomplete interval work remain unknown. Never create a formal run, verdict, report or history entry.",
+              "Keep accepted samples and certified interval leaves in the bounded LiveEvidenceRecords analysis owner. Maintain an interval-range stabbing index when evidence is admitted and binary-search the validated ordered per-pair leaves; changing target time locates covering ranges/leaves without scanning all retained intervals or leaves. Notify through distinct scalar Core UI property revisions for transient state and records; advance records revision only when accepted evidence materially changes or existing evidence is cleared. Do not put samples or reports in revision properties or deep-compare them on target-time changes.",
               "Publish the first validated finding and first penetration immediately, batching later findings at the bounded progress cadence. Validate progress at both trust boundaries with incremental global limits and require terminal consistency. Provisional evidence neither releases in-flight ownership nor resets its watchdog nor enters reusable records. Evidence admission does not assemble a formal report.",
-              "Seeking invalidates older requests. Cancellation, replacement, visibility suspension and runtime cleanup terminate owned work and reject late delivery. A slow sample never becomes evidence for a newer displayed pose."
+              "After foreground target service, attempt the nearest gap between accepted exact samples using the installed continuous-interval capability. Enforce the lifetime and evaluation caps from the product spec. While interval work runs, retain at most the latest foreground target and dispatch it as soon as that bounded work settles; do not accumulate a target or gap queue.",
+              "Seeking fences older progress/results from presentation without discarding validated evidence for the unchanged input lifetime. Cancellation, input replacement, visibility suspension and runtime cleanup terminate owned work and reject late delivery. A slow sample never becomes evidence for a newer displayed pose."
             ],
             "bypasses": [
-              "Missing capability, invalid input or unacknowledged warnings produce explicit unavailable feedback, never a substitute method or a clear result."
+              "Missing static capability, invalid input or unacknowledged warnings produce explicit unavailable feedback, never a substitute method or a clear result. Missing continuous-motion capability skips optional background gap work and preserves those times as unknown."
             ],
             "allowedContributors": [
               "owned Web Worker",
               "installed static method execution",
+              "installed continuous-interval method execution for bounded adjacent gaps",
               "existing snapshot and evidence validators"
             ],
             "forbiddenContributors": [
@@ -10846,13 +11101,14 @@
               "formal report retention"
             ],
             "cacheDimensions": [
-              "one current owner-admitted input lifetime, including source geometry, trajectory, scope, method, settings and thresholds; exact sampled time for at most 256 bounded live records"
+              "one current owner-admitted input lifetime, including source geometry, trajectory, scope, method, settings and thresholds; bounded exact samples and certified adjacent interval leaves within the live evidence byte and leaf budgets"
             ],
             "implementationBoundary": [
               "apps/asyra-sim/src/analysis/live/**",
               "apps/asyra-sim/src/features/live-playback.ts",
               "apps/asyra-sim/src/features/__tests__/live-playback.test.ts",
-              "apps/asyra-sim/src/constants/feature-names.ts"
+              "apps/asyra-sim/src/constants/feature-names.ts",
+              "apps/asyra-sim/e2e/__tests__/mixed-pair-feedback.spec.ts"
             ],
             "specRefs": [
               "#live-playback-feedback"
@@ -10955,10 +11211,11 @@
               "Ordinary experiment field edits apply through the existing editing Feature when the edit gesture completes. Incomplete scalar input remains transient with immediate validity feedback; bounded authored trajectory/exclusion text persists regardless of executable validity. Serialize pending field actions against the latest canonical revision without dropping later edits or replacing them with an older acknowledgement. External Undo/Redo restores the canonical projection. New file import previews remain noncanonical until explicit acceptance.",
               "Start the storage-owned automatic persistence session after runtime readiness. Restore the project identity from the current URL and publish only acknowledged project identities back to it. Commit valid project names on completed edits; expose copy, export and failure retry without a manual Save action.",
               "App-generated trajectory text starts with known canonical units; new external CSV receives column suggestions with undeclared units. Editing current source text retains existing units and valid mappings without an additional notice or confirmation; missing mapped columns retire only affected declarations, and another CSV requires fresh declarations. Strict JSON keeps its own declarations. Present CSV time and joint mappings as Name, Target (source CSV column) and Unit rows without a visible heading row, preserving full field accessibility and values; wrap long names. Present the clearance label and input inline. The current source-read artifact and storage conversion preview are shared through review and draft acceptance; source, mapping, unit, workcell, cancellation or lifetime changes invalidate acceptance and late reads. UI displays bounded owner-produced conversion values and never converts values itself. Completing an inline trajectory text, mapping or unit edit persists bounded authored source through one existing editing Feature even when executable validation fails, without Apply. Display current diagnostics during input. Invalid input and interval ordering/coverage errors block current playback/preflight/formal analysis, while independent fields remain editable. Inline trajectory edits preserve the authored interval instead of resetting it to source endpoints; changed coverage produces timing diagnostics. Result freshness and recorded reuse compare the same resolved definition, never authored metadata against a normalized snapshot. Its own canonical acknowledgement preserves raw source text and unit declarations; external canonical replay resets the projection. New file imports require explicit Import trajectory acceptance of the same valid preview. Pending commits prevent duplicate submission. Preview and discard never change canonical state.",
-              "Preserve all accepted pair issues in live, cached and recorded feedback. Overall severity never removes clearance or unresolved pairs. Prepare whole-part appearance once per evidence update and reuse it during display frames; red wins only for a body that also participates in a colliding pair. List each pair with its own state and expose every issue through compact expandable details; do not infer damage, contact regions or structural response.",
+              "Preserve all accepted pair issues in live, cached and recorded feedback. Overall severity never removes clearance or unresolved pairs. Show Collision detected only when validated penetration evidence exists; otherwise incomplete required-pair coverage uses Not fully checked even when clearance findings are present. Show Clearance warning only for complete required-pair coverage with at least one clearance finding. Prepare whole-part appearance once per evidence update and reuse it during display frames; red wins only for a body that also participates in a colliding pair. List each pair with its own state and expose every issue through compact expandable details; do not infer damage, contact regions or structural response.",
               "Forward live sampling protects crossed canonical trajectory keyframes until checked, then coalesces optional intermediate times toward the current playhead. Keep only the latest playhead and accepted sample progress, never a queue of display frames. A seek resets the sampling anchor. Narrow viewport feedback is compact until the user expands Details.",
-              "During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking computes the next state and replaces the current presentation only on completed sample or recorded-evidence lookup, not intermediate pair progress.",
-              "One playback controller reuses compatible exact formal witnesses and all-pair clear certificates without a Worker, requesting missing poses from the live owner even before later witnesses. Finding intervals are not continuous contact and witnesses are not first-contact times. Collision feedback never pauses or seeks the clock. Explicit Pause freezes the current frame and requests its exact pose. Keep latest checked parts highlighted during forward motion until newer feedback supersedes them, identifying checked time and earlier-pose evidence without claiming exact current contact. Never apply future evidence to an earlier displayed pose. Manual seeks keep the existing displayed pose and its feedback paired while naming the latest pending target separately; only completed latest-target evidence switches pose and feedback together, without an intermediate reset. Before any accepted feedback, preview the target as checking; failure displays the target as error. Cached targets use the same atomic handoff. Present scope and unknown/error states and matching sampled observations. Cancel stale work on seek, edits, replacement, hidden page, formal analysis or leaving playback. Preserve fixed panels, property-level subscriptions and unchanged history/report data.",
+              "During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking immediately presents the requested target pose while retaining the last valid feedback, checked time and highlights for the current playback input lifetime. While the exact foreground sample is pending, project interval evidence only when its query time exactly equals the requested target and its evidence origin is the validated interval ledger; retain unknown state for all pairs without proof. Terminal exact target evidence replaces the retained projection. Do not describe retained evidence as current contact or as the previous frame, or show intermediate pair progress on new geometry.",
+              "One playback controller consumes the latest submitted playhead and derives its pose immediately from the canonical trajectory. Slider drag/click never waits for analysis or rendering. While a latest target is pending, retain the last valid feedback, checked time and highlights for the same playback input lifetime; identify it as last-checked evidence and never imply it describes the target pose or current contact. With no accepted evidence, show checking/unknown. Replace retained evidence only with valid latest-target evidence; failed latest-target work shows an error while preserving last-checked time and highlights. Exact recorded/live evidence is presented immediately. Late results for the same unchanged analysis input may be retained by the live owner at their exact query identity, but cannot replace newer target feedback. This retention applies in either time direction and never relabels evidence as the previous frame. Finding intervals are not continuous contact and witnesses are not first-contact times. Collision feedback never pauses or seeks the clock. Explicit Pause freezes the current frame and requests its exact pose. Keep checked parts highlighted until newer evidence supersedes them, identifying their checked time without claiming exact current contact. Present scope and unknown/error states and matching sampled observations. Cancel stale work on seek, edits, replacement, hidden page, formal analysis or leaving playback. Preserve fixed panels, property-level subscriptions and unchanged history/report data.",
+              "Keep Preview pose/time publication separate from live analysis record state. Use the existing Core UI property API only for scalar state-revision and records-revision values; the underlying evidence remains owned by LiveEvidenceRecords and saved Run records. LiveObservations subscribes to records revision, not worker-state revision. Manual target changes and progressive feedback never advance records revision. Build the selected Run interval index once per immutable lifetime; each target query binary-searches per-pair leaves and never rebuilds or deep-compares the full interval/report data.",
               "Keep camera state in the viewport subtree. Read-only workbench projection refreshes on canonical revision, selected candidate or runtime identity; local panels and playback never reread unchanged canonical model or retained runs. The retained projection has one current entry, preserves error output, and owns no editable state.",
               "Experiment metadata queries consume the registered runtime/candidate projection, invalidated only by relevant canonical owner evidence; draft-only edits do not recapture canonical experiments. Stable controller/provider composition and property-level subscriptions own UI update boundaries, never component memo wrappers or props comparators. Hierarchy and scope rows subscribe to their displayed scalar fields; numerical draft edits do not notify scope rows, and scope callbacks preserve the latest other draft fields. Mount, joint and original-placement controls subscribe to every consumed property value and unit, while section callbacks merge into the latest committed body. Current read-only projection subscriptions never scan or retain source triangles, bypass relevant canonical dependency invalidation, or own editable model state.",
               "Viewport navigation owns transient camera intent only. Two-finger vertical scroll, mouse wheel and pinch zoom update only the latest transient camera, preserving its target and complete burst deltas without input-mode preferences, device-guessing heuristics or a second animation loop. Horizontal scrolling never pans; Shift-drag pan preserves eye-to-target direction and distance. Fit consumes the current displayed spatial projection and canvas dimensions with padding, excludes hidden/decorative meshes, and never feeds display bounds into analysis. Capture cancellation and runtime retirement remove stale input; ordinary selection and canonical History stay unchanged. Viewport Navigation in editing-v0.md owns the gesture and shortcut contract.",
@@ -11399,7 +11656,7 @@
             "from": "method",
             "to": "live",
             "kind": "normal",
-            "predicate": "The selected installed method returns evidence for the requested static sample.",
+            "predicate": "The selected installed method returns evidence for the requested static sample or one bounded continuous interval gap; each result is validated against its exact query and admitted input.",
             "producedArtifacts": [
               "artifact:method-evidence"
             ]
@@ -11409,7 +11666,7 @@
             "from": "live",
             "to": "ui",
             "kind": "normal",
-            "predicate": "Sample feedback is current for this playback lifetime and includes its checked time.",
+            "predicate": "Sample feedback is current for this playback lifetime and includes its checked time. The live analysis owner retains exact samples and fully validated interval leaves; Core UI properties publish separate scalar revisions for state and materially changed evidence, never full evidence objects. Unknown gaps stay unknown and finding leaves remain limited to their witnesses.",
             "producedArtifacts": [
               "artifact:live-feedback"
             ]
@@ -11419,7 +11676,7 @@
             "from": "live",
             "to": "project",
             "kind": "normal",
-            "predicate": "Accepted sample identities describe the latest checked parts in this current playback lifetime. Preserve simultaneous per-body collision and clearance colors from accepted pair issues; other contacts never suppress a pair. Forward motion may retain their highlight with an explicit earlier-pose label until superseded. Manual seeking retains the existing displayed pose and its feedback together while the target is pending, then switches both on completed latest-target evidence; held evidence never colors newly requested geometry. No current-contact or contact-region geometry is inferred.",
+            "predicate": "Accepted sample or interval evidence describes only its exact checked pose or certified interval coverage. Preserve simultaneous per-body collision and clearance colors from accepted pair issues; other contacts never suppress a pair. During continuous motion and manual seeking, retain the last valid evidence, pair details and highlights at its own checked time while the immediately updated target pose is pending. Identify it as last-checked evidence, never as current contact or as the previous frame; this applies in either time direction, including when checked time is later than displayed time. With no accepted evidence, show checking/unknown. Only valid evidence for the latest target replaces it; failed latest-target work exposes an error while preserving the last checked time and highlights. A finding interval does not imply contact away from its witness. Retained evidence belongs only to the same playback input lifetime; replacement retires it. A target-time change updates the transient pose projection without changing the records revision; only evidence admission or clearing existing records publishes that separate revision. No current-contact or contact-region geometry is inferred.",
             "producedArtifacts": [
               "artifact:live-feedback"
             ]
@@ -15535,6 +15792,7 @@
             ],
             "conditions": [
               "Local and remote UPDATE_PROPERTY evidence derives computed state locally before Render projection.",
+              "Accepted owner batches synchronously update local derived projections before the next API read, including inside an outer transaction. Committed observer delivery does not project those batches twice; replay and rollback use the same applied-batch projection route.",
               "Props expands each changed property ID through its ordered property ancestor closure; Scene maps only that closure through its own reverse relation index to all affected elements and emits one ordered local computed batch.",
               "Undo, Redo, and canonical load recompute through the same property-to-computed route.",
               "UPDATE_COMPUTED_DATA and UPDATE_COMPUTED_DATA_PATCH remain ordinary local reactive events.",
@@ -15604,6 +15862,8 @@
               "apps/asyra-design/src/init/derived-state/init-path-editing-continuation.ts",
               "apps/asyra-design/src/init/capabilities/init-vector-icon-data.ts",
               "apps/asyra-design/src/init/__tests__",
+              "packages/reactive-events/src/event-bus.ts",
+              "packages/reactive-events/src/app/publish.ts",
               "packages/reactive-events/src/scene-tree",
               "packages/reactive-events/src/__tests__",
               "packages/reactive-events/src/types.ts",
@@ -15659,6 +15919,7 @@
               "Factory derives an eligible staged canonical slice, committed remainder, or rollback compensation as one SharedPublication on the ordinary publication route.",
               "SharedPublication contains only transport identity, ordered slices, channel batches, and remote-apply deliveries; artifactId is opaque transport correlation and not a local History reference.",
               "Each staged publication receives stable transaction, publication, slice, and actual compensation identity from the existing journal.",
+              "Opaque publication IDs include one lazy random namespace per producer lifetime so fresh runtimes cannot replay an earlier local counter identity; existing saved IDs and compensation correlations remain unchanged.",
               "Acknowledged externally visible staged slices use the same journal evidence and recorded token for rollback compensation without republishing acknowledged records at commit.",
               "Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.",
               "The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.",
@@ -15730,6 +15991,7 @@
               "Structural add, remove, move, and hierarchy evidence projects directly from the ordinary canonical Scene owner batch.",
               "Property-driven visual updates consume the local computed projection rather than shared raw property evidence.",
               "The same local computed projection updates Render and affected UI context exactly once through distinct Preset consumers without duplicating Render delivery.",
+              "Render receives applied local computed batches before the next coordinate query; UI receives the same batches after successful outer commit. Rollback discards pending UI batches and inverse replay projects restored canonical values.",
               "Local and remote state use the same ordinary Render strategy.",
               "Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload."
             ],
@@ -17271,6 +17533,1123 @@
             ],
             "assertions": [
               "Asyra Design production wiring contains no optional debugger implementation or overlay chunk."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "editable-design",
+      "slug": "editable-design",
+      "title": "Editable Design Preparation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "editable-design",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "editable-design",
+          "kind": "feature",
+          "title": "Editable Design Preparation",
+          "subtitle": "Model decisions to validated native design artifacts"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/specs/design-preparation.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+          "semanticOwner": "General editable design preparation",
+          "inspectorOwner": "Design preparation and execution owners"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "preparation",
+            "title": "Design preparation",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "prepare-semantic-design",
+            "order": 1,
+            "laneId": "preparation",
+            "title": "Prepare semantic design",
+            "ownerPackage": "asyra-design server",
+            "purpose": "Resolve declared layout and native descriptor identities without inventing design content",
+            "inputs": [
+              "bounded semantic draft",
+              "request-local artifact session"
+            ],
+            "outputs": [
+              "artifact:prepared-design"
+            ],
+            "conditions": [
+              "Validate the complete draft before compiling",
+              "AI owns content and style",
+              "Text fit requires actual browser metrics",
+              "Retain analysis only for its immutable request-local artifact"
+            ],
+            "bypasses": [
+              "Read-only advice does not prepare a design"
+            ],
+            "allowedContributors": [
+              "server layout compiler",
+              "App-owned native descriptor protocol",
+              "request-local artifact owner"
+            ],
+            "forbiddenContributors": [
+              "Framework or Preset runtime imports",
+              "model calls inside preparation",
+              "remote fetch",
+              "browser writes",
+              "subject-specific layouts",
+              "font-fit claims from estimates"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/design-preparation.ts",
+              "apps/asyra-design/tsconfig.ai-server.json",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/server/__tests__/design-preparation.test.ts",
+              "apps/asyra-design/src/ai/prepared-design.ts"
+            ],
+            "specRefs": [
+              "#semantic-preparation"
+            ],
+            "failureOwnerStepId": "prepare-semantic-design"
+          },
+          {
+            "id": "resolve-design-operations",
+            "order": 2,
+            "laneId": "preparation",
+            "title": "Resolve model design operations",
+            "ownerPackage": "asyra-design server",
+            "purpose": "Expose semantic preparation and resolve opaque references into canonical App batches",
+            "inputs": [
+              "registered actions",
+              "semantic draft call",
+              "artifact:prepared-design",
+              "operation receipts"
+            ],
+            "outputs": [
+              "artifact:resolved-design-operation"
+            ],
+            "conditions": [
+              "Require registered apply action",
+              "Keep artifacts request-local",
+              "Bound invalid attempts",
+              "Recover invalid draft/reference inputs without writes",
+              "Use the same resolver for dynamic and final batches"
+            ],
+            "bypasses": [
+              "No preparation capability when apply action is absent"
+            ],
+            "allowedContributors": [
+              "preparation session",
+              "native provider tool transport",
+              "existing operation review"
+            ],
+            "forbiddenContributors": [
+              "raw model canonical descriptors",
+              "reference-image prerequisite",
+              "network fetch",
+              "canvas mutation during preparation",
+              "new credentials"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/local-design-tools.ts",
+              "apps/asyra-design/tsconfig.ai-server.json",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+              "apps/asyra-design/src/constants/ai-design.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#provider-handoff"
+            ],
+            "failureOwnerStepId": "resolve-design-operations"
+          },
+          {
+            "id": "apply-prepared-design",
+            "order": 3,
+            "laneId": "preparation",
+            "title": "Apply prepared editable design",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Admit complete server artifacts and create editable hierarchy through canonical APIs",
+            "inputs": [
+              "artifact:resolved-design-operation",
+              "current workspace",
+              "abort signal",
+              "action permission"
+            ],
+            "outputs": [
+              "artifact:applied-design"
+            ],
+            "conditions": [
+              "Admit all entries before writes",
+              "Preserve parent order and IDs",
+              "Yield between bounded chunks",
+              "Use invocation transaction; retain progress on ordinary failure"
+            ],
+            "bypasses": [
+              "Read-only advice"
+            ],
+            "allowedContributors": [
+              "App admission",
+              "common element and hierarchy APIs",
+              "invocation transaction"
+            ],
+            "forbiddenContributors": [
+              "model-authored executable code",
+              "geometry reconstruction",
+              "renderer writes",
+              "permission bypass",
+              "custom Undo"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/e2e/editable-design-variants.spec.ts",
+              "apps/asyra-design/src/ai/prepared-design-admission.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/design-actions.test.ts",
+              "apps/asyra-design/e2e/editable-design.spec.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#canonical-execution"
+            ],
+            "failureOwnerStepId": "apply-prepared-design"
+          },
+          {
+            "id": "read-design-fields",
+            "order": 4,
+            "laneId": "preparation",
+            "title": "Read selected canonical fields",
+            "ownerPackage": "@asyra/core",
+            "purpose": "Detach requested computed fields without cloning omitted geometry",
+            "inputs": [
+              "element ID",
+              "optional flat field selection",
+              "current computed projection"
+            ],
+            "outputs": [
+              "artifact:selected-design-fields"
+            ],
+            "conditions": [
+              "Validate field budget before source read",
+              "Read once per call",
+              "Clone selected own values only",
+              "No selection preserves existing whole observation"
+            ],
+            "bypasses": [
+              "Missing element returns undefined"
+            ],
+            "allowedContributors": [
+              "Core observation facade",
+              "existing shallow computed projection"
+            ],
+            "forbiddenContributors": [
+              "cross-call caches",
+              "nested omitted-field traversal",
+              "canonical writes",
+              "AI-specific field names"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/core/src/apis/scene-tree.ts",
+              "packages/core/src/types/scene-tree.ts",
+              "packages/core/src/__tests__/scene-tree-api.test.ts",
+              "docs/ai/framework/API_SURFACES.md",
+              ".changeset/selective-computed-observation.md"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "read-design-fields"
+          },
+          {
+            "id": "read-document-context",
+            "order": 5,
+            "laneId": "preparation",
+            "title": "Read bounded document context",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Observe fresh editable metadata without vector geometry",
+            "inputs": [
+              "selection or direct children",
+              "offset and limit",
+              "artifact:selected-design-fields"
+            ],
+            "outputs": [
+              "artifact:document-context"
+            ],
+            "conditions": [
+              "Validate before reads",
+              "Page size at most 200",
+              "Explicit preview truncation",
+              "One source read per page object"
+            ],
+            "bypasses": [
+              "Unavailable parent returns no objects"
+            ],
+            "allowedContributors": [
+              "Common API observation",
+              "Core selected-field observation"
+            ],
+            "forbiddenContributors": [
+              "Document writes",
+              "Recursive traversal",
+              "Visual capture",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-context.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-context.test.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "read-document-context"
+          },
+          {
+            "id": "expose-document-context",
+            "order": 6,
+            "laneId": "preparation",
+            "title": "Expose read-only document action",
+            "ownerPackage": "asyra-design App and provider",
+            "purpose": "Provide bounded context without mutation review",
+            "inputs": [
+              "page query",
+              "abort signal",
+              "artifact:document-context"
+            ],
+            "outputs": [
+              "artifact:context-action-receipt"
+            ],
+            "conditions": [
+              "Registered permission",
+              "No automatic inspection",
+              "No correction budget consumed"
+            ],
+            "bypasses": [
+              "Abort before observation"
+            ],
+            "allowedContributors": [
+              "Document context reader",
+              "Existing action transport"
+            ],
+            "forbiddenContributors": [
+              "Canvas writes",
+              "Screenshot capture",
+              "New transaction semantics"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai/context-action.ts",
+              "apps/asyra-design/src/ai/__tests__/context-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "expose-document-context"
+          },
+          {
+            "id": "revise-design-element",
+            "order": 7,
+            "laneId": "preparation",
+            "title": "Revise a current design element",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Admit targeted native edits without replacing other objects",
+            "inputs": [
+              "current element ID",
+              "bounded property/style/name patch",
+              "abort signal"
+            ],
+            "outputs": [
+              "artifact:edited-design-receipt"
+            ],
+            "conditions": [
+              "Whole input validation before writes",
+              "Target and ancestor locks",
+              "Existing native property support",
+              "Invocation Undo and partial retention"
+            ],
+            "bypasses": [
+              "Unchanged values emit no writes"
+            ],
+            "allowedContributors": [
+              "Native text schema",
+              "Common geometry and style APIs",
+              "Core metadata API"
+            ],
+            "forbiddenContributors": [
+              "Custom rollback",
+              "Raw vector point patches",
+              "Unrelated element replacement",
+              "Permission bypass"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/e2e/editable-design.spec.ts",
+              "apps/asyra-design/src/common-apis/design-edit.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-edit.test.ts",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "revise-design-element"
+          },
+          {
+            "id": "organize-design-hierarchy",
+            "order": 8,
+            "laneId": "preparation",
+            "title": "Organize current design hierarchy",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Group, ungroup or reorder current editable objects through native owners",
+            "inputs": [
+              "operation",
+              "bounded current IDs",
+              "optional name or reorder index"
+            ],
+            "outputs": [
+              "artifact:organized-hierarchy-receipt"
+            ],
+            "conditions": [
+              "Complete admission before writes",
+              "Inherited locks",
+              "One raw read per touched node per call",
+              "Existing invocation Undo",
+              "Structural receipt review"
+            ],
+            "bypasses": [
+              "Unchanged reorder is a no-change result"
+            ],
+            "allowedContributors": [
+              "Common hierarchy APIs",
+              "Core metadata reads and rename"
+            ],
+            "forbiddenContributors": [
+              "Arbitrary reparent",
+              "Deleting children",
+              "Fabricated component instances",
+              "Custom geometry or rollback",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-organization.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-organization.test.ts",
+              "apps/asyra-design/src/ai/organization-action.ts",
+              "apps/asyra-design/src/ai/__tests__/organization-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/design-organization.spec.ts"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "organize-design-hierarchy"
+          },
+          {
+            "id": "arrange-design-elements",
+            "order": 9,
+            "laneId": "preparation",
+            "title": "Arrange current design elements",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Align or distribute native projected bounds through canonical positions",
+            "inputs": [
+              "bounded sibling IDs",
+              "axis",
+              "alignment or optional gap",
+              "current native projection"
+            ],
+            "outputs": [
+              "artifact:arrangement-receipt"
+            ],
+            "conditions": [
+              "Complete admission before writes",
+              "Inherited locks",
+              "Four projected corners per target",
+              "One request-local observation per node",
+              "One plural write",
+              "Existing invocation Undo"
+            ],
+            "bypasses": [
+              "Unchanged arrangement performs no write"
+            ],
+            "allowedContributors": [
+              "Core native coordinate conversion",
+              "Preset group geometry projection",
+              "Core plural property update"
+            ],
+            "forbiddenContributors": [
+              "Path reconstruction",
+              "Renderer writes",
+              "Reparenting",
+              "Cross-call cache",
+              "Custom rollback"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-arrangement.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-arrangement.test.ts",
+              "apps/asyra-design/src/ai/arrangement-action.ts",
+              "apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/design-organization.spec.ts"
+            ],
+            "specRefs": [
+              "#arrangement"
+            ],
+            "failureOwnerStepId": "arrange-design-elements"
+          },
+          {
+            "id": "review-current-design",
+            "order": 10,
+            "laneId": "preparation",
+            "title": "Review current design measurements",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Report deterministic fit and bounds findings before visual judgment",
+            "inputs": [
+              "root ID",
+              "bounded current metadata",
+              "native content measurements"
+            ],
+            "outputs": [
+              "artifact:design-review-findings"
+            ],
+            "conditions": [
+              "At most 200 nodes",
+              "One selected observation per node",
+              "One text measurement batch",
+              "No screenshot"
+            ],
+            "bypasses": [
+              "Hidden text is not measured",
+              "Rotated parent-box checks report unavailable"
+            ],
+            "allowedContributors": [
+              "Core selected fields",
+              "Core native content observation"
+            ],
+            "forbiddenContributors": [
+              "Vector payload cloning",
+              "Font heuristics",
+              "Canonical writes",
+              "Visual-quality claims",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
+              "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/native-text.spec.ts"
+            ],
+            "specRefs": [
+              "#deterministic-current-design-review"
+            ],
+            "failureOwnerStepId": "review-current-design"
+          }
+        ],
+        "routes": [],
+        "artifacts": [
+          {
+            "id": "artifact:context-action-receipt",
+            "ownerStepId": "expose-document-context",
+            "title": "read-only action receipt",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "read-only action receipt"
+          },
+          {
+            "id": "artifact:edited-design-receipt",
+            "ownerStepId": "revise-design-element",
+            "title": "edited element ID and review target",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "edited element ID and review target"
+          },
+          {
+            "id": "artifact:organized-hierarchy-receipt",
+            "ownerStepId": "organize-design-hierarchy",
+            "title": "canonical hierarchy receipt",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "canonical hierarchy receipt"
+          },
+          {
+            "id": "artifact:arrangement-receipt",
+            "ownerStepId": "arrange-design-elements",
+            "title": "canonical positions and changed IDs",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "canonical positions and changed IDs"
+          },
+          {
+            "id": "artifact:design-review-findings",
+            "ownerStepId": "review-current-design",
+            "title": "findings and explicit completeness",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "findings and explicit completeness"
+          },
+          {
+            "id": "artifact:document-context",
+            "ownerStepId": "read-document-context",
+            "title": "Document context page",
+            "channel": "read-only action receipt",
+            "consumerStepIds": [
+              "expose-document-context"
+            ],
+            "terminal": false,
+            "description": "Canonical summaries and pagination without geometry"
+          },
+          {
+            "id": "artifact:selected-design-fields",
+            "ownerStepId": "read-design-fields",
+            "title": "Selected canonical fields",
+            "channel": "Core detached observation",
+            "consumerStepIds": [
+              "read-document-context"
+            ],
+            "terminal": false,
+            "description": "Fresh requested fields; no omitted vector payload"
+          },
+          {
+            "id": "artifact:prepared-design",
+            "ownerStepId": "prepare-semantic-design",
+            "title": "Prepared editable design",
+            "channel": "request-local artifact",
+            "consumerStepIds": [
+              "resolve-design-operations"
+            ],
+            "terminal": false,
+            "description": "Ordered canonical descriptors, semantic IDs and deterministic findings"
+          },
+          {
+            "id": "artifact:resolved-design-operation",
+            "ownerStepId": "resolve-design-operations",
+            "title": "Resolved design operation",
+            "channel": "App batch transport",
+            "consumerStepIds": [
+              "apply-prepared-design"
+            ],
+            "terminal": false,
+            "description": "Original validated canonical artifact resolved from the model receipt ID"
+          },
+          {
+            "id": "artifact:applied-design",
+            "ownerStepId": "apply-prepared-design",
+            "title": "Applied editable design",
+            "channel": "canonical document and action result",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Created root and semantic IDs for targeted edits and rendered review"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": [
+          {
+            "id": "bounded-design-preparation",
+            "title": "Bounded design preparation",
+            "assertions": [
+              "Drafts preserve literal content and declared styles",
+              "Bounds and IDs are validated",
+              "Preparation emits no canvas mutation",
+              "Reads reuse immutable findings"
+            ],
+            "stepIds": [
+              "prepare-semantic-design"
+            ],
+            "specRefs": [
+              "#product-cases-and-gates"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "editable-text",
+      "slug": "editable-text",
+      "title": "Editable Text Foundation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "editable-text",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "editable-text",
+          "kind": "feature",
+          "title": "Editable Text Foundation",
+          "subtitle": "Neutral text projection and engine-owned materialization"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/specs/editable-text.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
+          "semanticOwner": "Editable text product contract",
+          "inspectorOwner": "Native text owners"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "text",
+            "title": "Native text",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "project-native-text",
+            "order": 1,
+            "laneId": "text",
+            "title": "Project native text",
+            "ownerPackage": "@asyra/render and @asyra/render-engine",
+            "purpose": "Project native text",
+            "inputs": [
+              "validated plain text and layout box",
+              "typography values"
+            ],
+            "outputs": [
+              "artifact:neutral-text-operation"
+            ],
+            "conditions": [
+              "Plain text only; explicit typography and layout bounds; existing graphics remain compatible."
+            ],
+            "bypasses": [
+              "No text operation for non-text components."
+            ],
+            "allowedContributors": [
+              "@asyra/render and @asyra/render-engine"
+            ],
+            "forbiddenContributors": [
+              "Pixi or DOM types",
+              "component semantics",
+              "font measurement heuristics"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine/src/types.ts",
+              "packages/render/src/types/render-object.ts",
+              "packages/render/src/__tests__/native-text.test.ts"
+            ],
+            "specRefs": [
+              "#neutral-text-projection"
+            ],
+            "failureOwnerStepId": "project-native-text"
+          },
+          {
+            "id": "materialize-native-text",
+            "order": 2,
+            "laneId": "text",
+            "title": "Materialize native text",
+            "ownerPackage": "@asyra/render-engine-pixi",
+            "purpose": "Materialize native text",
+            "inputs": [
+              "artifact:neutral-text-operation"
+            ],
+            "outputs": [
+              "artifact:rendered-native-text"
+            ],
+            "conditions": [
+              "Snapshots use capture-relative text density and restore screen density even on failure; unrelated text is untouched.",
+              "Coalesce screen text resolution from renderer density and world scale; stable flush and pan do no resolution work; bound texture allocation and release owned text tracking.",
+              "Plain text only; explicit typography and layout bounds; existing graphics remain compatible."
+            ],
+            "bypasses": [
+              "No text operation for non-text components."
+            ],
+            "allowedContributors": [
+              "@asyra/render-engine-pixi"
+            ],
+            "forbiddenContributors": [
+              "HTML rendering",
+              "canonical writes",
+              "App decisions",
+              "destroying unrelated scene children"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine-pixi/src/pixi-render-engine.ts",
+              "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+            ],
+            "specRefs": [
+              "#engine-text-materialization"
+            ],
+            "failureOwnerStepId": "materialize-native-text"
+          },
+          {
+            "id": "define-canonical-text",
+            "order": 3,
+            "laneId": "text",
+            "title": "Define canonical text",
+            "ownerPackage": "@asyra/preset",
+            "purpose": "Expose validated editable text definitions for explicit App installation",
+            "inputs": [
+              "canonical property writes or persisted text fields",
+              "position and dimension properties"
+            ],
+            "outputs": [
+              "artifact:canonical-text-definition"
+            ],
+            "conditions": [
+              "Existing preset profiles remain unchanged; schema rejects invalid writes and defaults invalid loaded values"
+            ],
+            "bypasses": [
+              "Non-text components retain existing definitions"
+            ],
+            "allowedContributors": [
+              "preset definitions",
+              "public Core and utils contracts"
+            ],
+            "forbiddenContributors": [
+              "AI-owned document state",
+              "vectorized glyphs",
+              "App-specific content",
+              "Pixi imports"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/components/text.ts",
+              "packages/preset/src/props/components/text-component.ts",
+              "packages/preset/src/index.ts",
+              "packages/preset/src/__tests__/native-text.test.ts"
+            ],
+            "specRefs": [
+              "#canonical-text-component"
+            ],
+            "failureOwnerStepId": "define-canonical-text"
+          },
+          {
+            "id": "install-and-edit-text",
+            "order": 4,
+            "laneId": "text",
+            "title": "Install and edit text in Design",
+            "ownerPackage": "asyra-design",
+            "purpose": "Install canonical text definitions and expose selection-scoped manual editing",
+            "inputs": [
+              "artifact:canonical-text-definition",
+              "current selection typography",
+              "user field edit"
+            ],
+            "outputs": [
+              "artifact:editable-text-app"
+            ],
+            "conditions": [
+              "Register before core start; commit valid fields through canonical property transactions; scope subscriptions to typography"
+            ],
+            "bypasses": [
+              "No text section without a single selected text component"
+            ],
+            "allowedContributors": [
+              "App startup",
+              "UI property projection",
+              "canonical element API"
+            ],
+            "forbiddenContributors": [
+              "direct renderer mutation",
+              "per-keystroke document replacement",
+              "AI-only text storage"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/init/capabilities/init-text.ts",
+              "apps/asyra-design/src/init/init-app.ts",
+              "apps/asyra-design/src/init/__tests__/init-text.test.ts",
+              "apps/asyra-design/src/init/__tests__/init-app.test.ts",
+              "apps/asyra-design/e2e/native-text.spec.ts",
+              "apps/asyra-design/src/properties/text.tsx",
+              "apps/asyra-design/src/properties/__tests__/text.test.tsx",
+              "apps/asyra-design/src/properties/panels/element-properties-panel.tsx"
+            ],
+            "specRefs": [
+              "#canonical-text-component"
+            ],
+            "failureOwnerStepId": "install-and-edit-text"
+          },
+          {
+            "id": "query-native-content-bounds",
+            "order": 5,
+            "laneId": "text",
+            "title": "Observe native content bounds",
+            "ownerPackage": "@asyra/render-engine-pixi",
+            "purpose": "Read native local content geometry without rasterization or layout decisions",
+            "inputs": [
+              "owned engine object",
+              "local-content-bounds capability"
+            ],
+            "outputs": [
+              "artifact:native-content-bounds"
+            ],
+            "conditions": [
+              "Require owned live object",
+              "No image extraction",
+              "Independent of viewport zoom"
+            ],
+            "bypasses": [
+              "Unsupported engine rejects measurement"
+            ],
+            "allowedContributors": [
+              "Neutral query contract",
+              "Native engine local bounds"
+            ],
+            "forbiddenContributors": [
+              "Font-size heuristics",
+              "Layout bounds as content evidence",
+              "Canonical writes",
+              "Raster capture"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine/src/types.ts",
+              "packages/render-engine/src/capabilities.ts",
+              "packages/render-engine/src/__tests__/contract.test.ts",
+              "packages/render-engine/src/testing/recording-render-engine.ts",
+              "packages/render-engine-pixi/src/pixi-render-engine.ts",
+              "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+            ],
+            "specRefs": [
+              "#native-content-measurement"
+            ],
+            "failureOwnerStepId": "query-native-content-bounds"
+          },
+          {
+            "id": "observe-rendered-content",
+            "order": 6,
+            "laneId": "text",
+            "title": "Observe a bounded batch of rendered content",
+            "ownerPackage": "@asyra/render",
+            "purpose": "Flush once and expose actual content bounds through Core",
+            "inputs": [
+              "1..200 unique element IDs",
+              "local-content-bounds engine",
+              "artifact:native-content-bounds"
+            ],
+            "outputs": [
+              "artifact:measured-content-bounds"
+            ],
+            "conditions": [
+              "Validate before flush",
+              "One flush per call",
+              "One native query per present target"
+            ],
+            "bypasses": [
+              "Missing target returns null bounds"
+            ],
+            "allowedContributors": [
+              "Render viewport handles",
+              "Neutral content query",
+              "Core forwarding"
+            ],
+            "forbiddenContributors": [
+              "Canonical writes",
+              "Raster capture",
+              "Heuristic font measurement",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render/src/render.ts",
+              "packages/render/src/index.ts",
+              "packages/render/src/__tests__/render.test.ts",
+              "packages/core/src/core.ts",
+              "packages/core/src/apis/create-apis.ts",
+              "packages/core/src/apis/render.ts",
+              "packages/core/src/types/render.ts",
+              "packages/core/src/__tests__/app-runtime-facade.test.ts",
+              "apps/asyra-design/e2e/native-text.spec.ts"
+            ],
+            "specRefs": [
+              "#native-content-measurement"
+            ],
+            "failureOwnerStepId": "observe-rendered-content"
+          }
+        ],
+        "routes": [
+          {
+            "id": "native-content-to-observation",
+            "from": "query-native-content-bounds",
+            "to": "observe-rendered-content",
+            "kind": "handoff",
+            "predicate": "Native content measurement requested",
+            "producedArtifacts": [
+              "artifact:native-content-bounds"
+            ]
+          },
+          {
+            "id": "project-to-engine",
+            "from": "project-native-text",
+            "to": "materialize-native-text",
+            "kind": "handoff",
+            "predicate": "A text operation is queued",
+            "producedArtifacts": [
+              "artifact:neutral-text-operation"
+            ]
+          },
+          {
+            "id": "text-definition-to-app",
+            "from": "define-canonical-text",
+            "to": "install-and-edit-text",
+            "kind": "handoff",
+            "predicate": "Design starts",
+            "producedArtifacts": [
+              "artifact:canonical-text-definition"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:native-content-bounds",
+            "ownerStepId": "query-native-content-bounds",
+            "title": "local native content bounds",
+            "channel": "owner receipt",
+            "consumerStepIds": [
+              "observe-rendered-content"
+            ],
+            "terminal": false,
+            "description": "local native content bounds"
+          },
+          {
+            "id": "artifact:measured-content-bounds",
+            "ownerStepId": "observe-rendered-content",
+            "title": "per-ID native local bounds or missing-target null",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "per-ID native local bounds or missing-target null"
+          },
+          {
+            "id": "artifact:neutral-text-operation",
+            "ownerStepId": "project-native-text",
+            "title": "Neutral text operation",
+            "channel": "render command",
+            "consumerStepIds": [
+              "materialize-native-text"
+            ],
+            "terminal": false,
+            "description": "Owned plain text and typography snapshot"
+          },
+          {
+            "id": "artifact:rendered-native-text",
+            "ownerStepId": "materialize-native-text",
+            "title": "Rendered native text",
+            "channel": "scene",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Engine-owned plain text projection"
+          },
+          {
+            "id": "artifact:canonical-text-definition",
+            "ownerStepId": "define-canonical-text",
+            "title": "Canonical text definitions",
+            "channel": "registration",
+            "consumerStepIds": [
+              "install-and-edit-text"
+            ],
+            "terminal": false,
+            "description": "Explicitly installed validated text schema and component"
+          },
+          {
+            "id": "artifact:editable-text-app",
+            "ownerStepId": "install-and-edit-text",
+            "title": "Editable App text",
+            "channel": "canonical document",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Text definitions installed and manual edits committed"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": [
+          {
+            "id": "text-lifecycle",
+            "title": "Native text lifecycle",
+            "assertions": [
+              "Caller mutation does not change queued text",
+              "Clear and destruction release engine-owned text only"
+            ],
+            "stepIds": [
+              "project-native-text",
+              "materialize-native-text"
+            ],
+            "specRefs": [
+              "#product-cases-and-gates"
             ]
           }
         ]
@@ -33934,122 +35313,82 @@
       ],
       "data": {
         "authority": {
-          "specPath": "docs/ai/framework/plans/website-product-and-technical-evidence-plan.md",
-          "retainedLandingSpecPath": "docs/ai/framework/plans/completed/asyra-website-landing-page-plan.md",
+          "specPath": "apps/asyra-framework-site/docs/spatial-story.md",
           "inspectorPath": "tools/flow-inspector/inspectors/asyra-website-landing-flow-inspector.data.cjs",
-          "workspacePath": "apps/asyra-framework-site",
-          "visualReferencePath": "docs/ai/framework/website/asyra-landing-v04-approved.png"
+          "workspacePath": "apps/asyra-framework-site"
         },
         "caseIds": [
-          "desktop-editorial-composition",
-          "mobile-single-column-reflow",
-          "result-first-hero",
-          "unlimited-domain-examples",
-          "grow-without-rebuild",
-          "shared-human-ai-action-path",
-          "one-source-across-views",
-          "poc-to-product-continuity",
-          "canonical-runtime-flow-explainer",
-          "connected-site-actions",
-          "responsive-transparent-raster-assets",
-          "perceptually-sharp-raster-rendering",
-          "navigation-only-project-footer",
-          "no-client-reduced-motion-reading",
-          "machine-readable-discovery",
-          "product-first-hero-thesis",
-          "asyra-design-product-proof",
-          "feature-code-runtime-bridge",
-          "change-ownership-map",
-          "audience-readiness-paths",
-          "domain-owned-closing"
+          "continuous-six-chapter-homepage",
+          "stable-infrastructure-relations",
+          "house-to-tower-replacement",
+          "same-footprint-reverse-scroll",
+          "single-scroll-owner-idle",
+          "static-mobile-and-reduced-motion",
+          "native-site-navigation",
+          "real-product-evidence",
+          "three-building-entry-points",
+          "removed-preview-route",
+          "canonical-discovery",
+          "responsive-artwork-delivery"
         ],
         "steps": [
           {
             "cacheDimensions": [],
+            "bypasses": [],
+            "specRefs": [
+              "#current-homepage-contract"
+            ],
+            "forbiddenContributors": [
+              "retired homepage composition as current authority",
+              "unverified product claims",
+              "new dependencies",
+              "changes to Framework or Design runtime"
+            ],
             "id": "freeze-result-first-contract",
             "order": 1,
             "ownerPackage": "Website Landing contract",
-            "purpose": "Freeze the product-first evidence architecture over the retained V04 composition and Cosmic Atlas visual language, while preserving the supplied illustrations and retiring unsupported public claims.",
+            "purpose": "Freeze the approved six-chapter homepage and retirement of the separate preview route.",
             "inputs": [
-              "user-approved V04 Landing reference",
-              "product-owner copy and identity corrections",
-              "product-owner adaptive grid, alpha-shadow, and asset-specific directional shadow decision",
-              "product-owner local-only artwork decision",
-              "product-owner PoC-to-product continuity decision",
-              "product-owner four-panel recurring-character storyboard decision",
-              "product-owner canonical runtime flow explainer decision",
-              "product-owner-approved person storyboard preview",
-              "product-owner shared horizontal page geometry decision",
-              "current Framework product truth",
-              "existing Website environment setup"
+              "product-owner approved green continuous story",
+              "product-owner homepage integration and /story removal decisions",
+              "current Framework product truth"
             ],
             "outputs": [
               "artifact:result-first-contract"
             ],
             "conditions": [
-              "The approved V04 image is the visual authority for the retained composition; the product-owner-approved V09 closing concept is the explicit closing exception.",
-              "Visible Change and Impact Preview contribute no public UI, copy, JavaScript, or selected illustration.",
-              "All existing committed and uncommitted website UI, CSS, tests, and assets are replaced while environment setup is retained.",
-              "Every public hyperlink resolves to its approved in-page or Website Platform supporting route destination.",
-              "Every selected illustration uses the shared adaptive CSS engineering grid plus an asset-specific alpha-derived drop shadow with directional contact and cast vectors, without code-drawing internal diagram topology.",
-              "Source artwork, historical design experiments, and unselected derivative history are Git-ignored local-only inputs excluded from default CI; the eighteen selected public derivatives are the committed public derivatives and production deployment assets.",
-              "The generated public documentation inventory is published at /llms.txt; supporting human-facing routes remain owned by the Website Platform and do not contribute to this Landing route.",
-              "The PoC keeps the same implementation on the product path through explicit engineering review instead of becoming a disposable prototype that must be rebuilt.",
-              "The PoC comparison uses eight border-free direct raster crops from the product-owner-approved person storyboard preview, preserving the same recurring domain expert and engineer instead of redrawing the scenes.",
-              "A semantic HTML and CSS Framework value comparison follows the PoC story and contrasts repeated product behavior with one Feature used by every product surface.",
-              "Header, Hero, domain copy, PoC, proofs, Closing, and Footer share one minimum page width, one 1720px maximum content width, and one responsive inline padding, while every visible Domain Rail row remains full bleed below 1720px and adopts the shared inline padding at and above 1720px.",
-              "The footer contains project navigation only and does not repeat year, license, open-source, or company metadata.",
-              "The primary thesis is “Build product features, not infrastructure.” while “Build the tool your world needs.” remains a supporting product promise.",
-              "Asyra Design is first-class product proof with a real product frame, a concise caption, and a clear path to the live product.",
-              "One real Feature code sample and its runtime path explain the same bounded idea from product intent through canonical ownership and projections.",
-              "The change ownership map distinguishes App-owned product decisions from Framework-owned infrastructure without implying that every product needs every optional subsystem.",
-              "Readiness paths explicitly serve a domain expert, technical evaluator, and product builder without splitting the page into disconnected funnels.",
-              "The domain-owned closing returns agency to the reader instead of ending on infrastructure terminology.",
-              "Website product evidence owns its crop, density, alt text, size budget, and reading context; it does not automatically reuse README media."
-            ],
-            "bypasses": [
-              "No removed Website implementation may contribute UI, CSS, illustration, route, or copy."
+              "One coherent six-chapter story is the homepage at /.",
+              "The /story route is removed, not redirected.",
+              "Keep real product proof, three build/evaluate entry points and supporting navigation."
             ],
             "allowedContributors": [
-              "Landing plan and Inspector",
-              "approved V04 reference",
-              "product-owner-approved V09 closing concept",
-              "product-owner adaptive grid, alpha-shadow, and asset-specific directional shadow decision",
-              "product-owner local-only artwork decision",
-              "product-owner PoC-to-product continuity decision",
-              "product-owner four-panel recurring-character storyboard decision",
-              "product-owner canonical runtime flow explainer decision",
-              "product-owner-approved person storyboard preview",
-              "product-owner shared horizontal page geometry decision",
-              "product-owner corrections including the retired change-impact sections",
-              "current Framework product truth"
-            ],
-            "forbiddenContributors": [
-              "removed Website implementation",
-              "unverified product capability",
-              "new dependency",
-              "unapproved external production asset"
+              "approved website story",
+              "current homepage contract"
             ],
             "implementationBoundary": [
-              "docs/ai/framework/plans/completed/asyra-website-landing-page-plan.md",
+              "apps/asyra-framework-site/docs/spatial-story.md",
               "docs/ai/framework/plans/website-product-and-technical-evidence-plan.md",
               "tools/flow-inspector/inspectors/asyra-website-landing-flow-inspector.data.cjs",
               "tools/flow-inspector/inspectors/__tests__/asyra-website-landing-flow-inspector.contract.test.cjs"
-            ],
-            "specRefs": [
-              "#visual-authority",
-              "#product-cases",
-              "#content-contract",
-              "#quality-gates"
             ],
             "failureOwnerStepId": "freeze-result-first-contract"
           },
           {
             "cacheDimensions": [],
+            "bypasses": [],
+            "specRefs": [
+              "#current-homepage-contract"
+            ],
+            "forbiddenContributors": [
+              "retired homepage composition as current authority",
+              "unverified product claims",
+              "new dependencies",
+              "changes to Framework or Design runtime"
+            ],
             "id": "render-result-first-page",
             "order": 2,
             "ownerPackage": "Website Landing page",
-            "purpose": "Render one semantic result-first page with the approved copy, modern system sans typography, six supplied true-alpha Photoroom illustrations, and one adaptive CSS grid-and-shadow stage.",
+            "purpose": "Compose the accepted story with server-rendered product evidence, resource links and the shared footer.",
             "inputs": [
               "artifact:result-first-contract"
             ],
@@ -34057,151 +35396,49 @@
               "artifact:result-first-page"
             ],
             "conditions": [
-              "The hero reports the product outcome before implementation detail.",
-              "Any field is shown as an open-ended possibility, not a catalog of built-in apps.",
-              "Human and AI intent follow the same governed action path, independent of whether the request came from a person or AI.",
-              "A semantic PoC-to-product storyboard pairs eight border-free direct raster crops from the product-owner-approved person storyboard preview with accessible HTML labels.",
-              "Two ordered Traditional and Asyra flows align as two four-stage desktop rows; below 960px the complete Traditional sequence precedes the complete Asyra sequence, with the same recurring domain expert and engineer carrying both flows; the implementation must not redraw the approved people or scenes.",
-              "At 680px and below, each storyboard panel is scaled against the median rendered proof illustration width and remains within 0.9 to 1.1 times that width so the comic and surrounding proof sections keep one visual scale.",
-              "Every storyboard crop contains no authored edge border and is presented inside one uniform 2px CSS frame.",
-              "The same bounded Feature continues from domain validation through engineer review, hardening, and product delivery.",
-              "The storyboard states that a PoC is not production-ready without engineering review, tests, security, and performance hardening.",
-              "The Landing Framework value comparison shows one product request becoming separate maintenance edits across the product screen, AI action, saved work, undo/redo, and synchronized users; Asyra keeps the request inside its owning Feature as one bounded change.",
-              "The comparison leads with the bounded change-cost result and does not require readers to understand API, transaction, state-application, canonical-owner, projection, or integration terminology.",
-              "The comparison remains readable without connector geometry or color, uses two comparable columns at 1440px and 820px, and reads the complete traditional story before the complete Asyra story at 390px and 320px.",
-              "Header, Hero, domain copy, PoC, proofs, Closing, and Footer resolve through one shared horizontal page geometry contract, while the continuous Domain Rail and both split mobile rows touch the viewport edges below 1720px and align with the shared padded content edges at and above 1720px.",
-              "Every section preserves the approved title, reference line breaks, exact proof image, and V04 vertical rhythm.",
-              "Each active complex visual uses a hash-locked product-owner-supplied Photoroom true-alpha master and three source-bounded lossless responsive WebP derivatives.",
-              "Every selected derivative contains both transparent and opaque pixels, never exceeds its native master width, and preserves the supplied subject pixels through premultiplied-alpha resizing.",
-              "The 2400px Domain Rail master is never artificially enlarged and may use a minimum 1.1 source pixels per rendered CSS pixel at the widest review size; the other illustrations remain at least 2x at their supported review sizes.",
-              "Every illustration container uses the same CSS stage contract: clamp-scaled minor and major grid lines, intersection nodes, a stage-aware fade mask, and alpha-derived drop-shadow depth.",
-              "Contact and cast shadows follow a per-illustration lower-right perspective vector matched to the supplied top-left lighting and apparent elevation; dark stages add a restrained blue ambient reflection without recoloring source pixels.",
-              "The CSS grid and drop shadow are decoration only and never recreate, replace, or modify internal diagram topology, labels, connectors, or signal colors.",
-              "The closing-grid-v07-desktop raster and all prior V04 through V12 raster sources remain preserved but are never selected.",
-              "V09 through V14 Grow experiments remain preserved but unselected.",
-              "Every desktop and mobile complex visual passes the edge-contrast sharpness oracle after fresh high-resolution rendering.",
-              "Every supplied master preserves its object count, topology, connector, signal color, and label intent; CSS owns only the shared background grid and alpha-derived shadow.",
-              "Exact labels and simple domain icons are deterministically raster-composited into one authored continuous domain rail after generation so model text cannot drift.",
-              "The domain rail preserves reference card proportions, both edge assemblies, continuous tracks, exact in-card labels, and reference bottom clearance without repeating a crop that already contains rail or background pixels.",
-              "Rejected V07 desktop experiment assets, closing-core-v07, closing-core-v08, and closing-core-v12 remain preserved but are never selected.",
-              "The rejected V08 Grow remains preserved but is never selected; the retired Visible Change assets also remain preserved but are never selected.",
-              "Rejected V09 Grow remains preserved but is never selected because it flattened the approved asymmetric layers into one smooth trough.",
-              "Rejected V10 Grow remains preserved but is never selected because its procedurally redrawn material frequency does not match the adjacent V06 modules.",
-              "V11 through V14 Grow restoration and single-pipe experiments remain preserved but are never selected.",
-              "The supplied Hero preserves raised blue fasteners; the supplied Domain Rail preserves exact ten domain icons and labels; the supplied One Source preserves top-inset labels and relief depth.",
-              "The supplied transparent closing master preserves a centered protected domain core, one continuous blue infrastructure loop, four symmetric directional bridges, and a complete gunmetal frame; the shared CSS stage supplies the surrounding engineering grid.",
-              "No unreviewed generative topology drift, relabeling, recoloring, or substitute visual may contribute.",
-              "Display and body typography use a modern system sans stack with no legacy display serif or external font dependency.",
-              "Display headings use weight 500 or below with line height at least 1.0, and multiline proof and closing headings use at least 1.04.",
-              "CTA hover and focus are brighter than the default red.",
-              "The same complete narrative remains in DOM order at desktop, mobile, and without JavaScript.",
-              "The Hero leads with “Build product features, not infrastructure.” and keeps “Build the tool your world needs.” in a supporting role.",
-              "A landing-owned derivative of the canonical 7,076-element Asyra Design frame provides authentic current product evidence with a reproducible hash-locked export.",
-              "The maintained public review-actions Feature excerpt is paired with one person-or-AI to Feature, transaction, canonical-owner, and projection path.",
-              "Framework, Preset, App, and external-service responsibilities are presented as distinct ownership layers.",
-              "Readiness actions distinguish product builders, Framework composers, and technical evaluators while current support remains separate from roadmap direction."
-            ],
-            "bypasses": [
-              "If an image does not load, semantic headings and descriptive alt text preserve the complete reading.",
-              "If visual connectors are unavailable, the storyboard ordered lists preserve the complete PoC-to-product sequence."
+              "One semantic main and h1, six native chapters and one shared desktop scene.",
+              "One scheduled scroll owner updates the latest progress and stays idle without input; reverse scroll retraces identical geometry.",
+              "Plan to two-storey house to eight-storey tower preserves the footprint and infrastructure planes.",
+              "Mobile, reduced motion and no JavaScript retain complete snapshots and native navigation.",
+              "Resource content is server-owned and does not subscribe to scroll updates.",
+              "External links open in a new tab with noopener noreferrer.",
+              "The old film and duplicate homepage stories are not mounted."
             ],
             "allowedContributors": [
-              "artifact:result-first-contract",
-              "approved V04 composition and topology",
-              "immutable product-owner-supplied Photoroom true-alpha masters",
-              "supplied closing concept preserved through three transparent responsive widths",
-              "preserved rejected V07 desktop raster refinements",
-              "reviewed V08 desktop raster corrections",
-              "preserved rejected V09 through V14 Grow experiments",
-              "preserved in-image labels and simple domain icons",
-              "semantic React server components",
-              "project-owned source-bounded lossless true-alpha responsive assets",
-              "modern system sans typography",
-              "generated public documentation inventory",
-              "semantic HTML and CSS PoC-to-product storyboard",
-              "semantic HTML and CSS Framework value comparison",
-              "eight border-free direct raster crops from the product-owner-approved person storyboard preview",
-              "CSS responsive layout",
-              "shared adaptive CSS grid and asset-specific alpha-derived directional drop shadows"
-            ],
-            "forbiddenContributors": [
-              "removed Website implementation",
-              "active V04 or V05 crop pixels",
-              "active V09 through V14 Grow experiments",
-              "simple V04 pixel enlargement",
-              "newly drawn active Grow material or geometry",
-              "repeated card crops that contain rail or background pixels",
-              "unreviewed generative topology drift",
-              "invented or merged Grow connector geometry",
-              "code-drawn SVG substitutes for the six supplied mechanical illustrations",
-              "CSS-drawn internal topology for the six supplied mechanical illustrations",
-              "raster section-background grid plates",
-              "canvas or WebGL",
-              "icon-library diagram substitutes",
-              "redrawn storyboard people or scenes",
-              "claim that a PoC is production-ready without engineering review",
-              "Framework runtime package import"
+              "SpatialStory presentation owner",
+              "server-owned HomeResources",
+              "shared SiteFooter",
+              "existing site metadata policy"
             ],
             "implementationBoundary": [
               "apps/asyra-framework-site/app/page.tsx",
-              "apps/asyra-framework-site/app/globals.css",
-              "apps/asyra-framework-site/app/styles/tokens.css",
-              "apps/asyra-framework-site/components/framework-value-story.tsx",
-              "apps/asyra-framework-site/app/layout.tsx",
-              "apps/asyra-framework-site/app/error.tsx",
-              "apps/asyra-framework-site/app/not-found.tsx",
-              "apps/asyra-framework-site/app/robots.ts",
-              "apps/asyra-framework-site/app/sitemap.ts",
-              "apps/asyra-framework-site/artwork/v06",
-              "apps/asyra-framework-site/artwork/v07",
-              "apps/asyra-framework-site/artwork/v08",
-              "apps/asyra-framework-site/artwork/v09",
-              "apps/asyra-framework-site/artwork/v07-desktop",
-              "apps/asyra-framework-site/artwork/v08-desktop",
-              "apps/asyra-framework-site/artwork/v09-desktop",
-              "apps/asyra-framework-site/artwork/v10-desktop",
-              "apps/asyra-framework-site/artwork/v11-desktop",
-              "apps/asyra-framework-site/artwork/v12-desktop",
-              "apps/asyra-framework-site/artwork/v13-desktop",
-              "apps/asyra-framework-site/artwork/v14-desktop",
-              "apps/asyra-framework-site/artwork/v12-transparent",
-              "apps/asyra-framework-site/artwork/photoroom",
-              "apps/asyra-framework-site/public/illustrations",
-              "apps/asyra-framework-site/public/product-evidence",
-              "apps/asyra-framework-site/public/llms.txt",
-              "docs/public/llms.txt",
-              "scripts/docs/public-documentation.mjs",
-              "apps/asyra-framework-site/scripts/build-v06-assets.py",
-              "apps/asyra-framework-site/scripts/build-closing-v07-superres.py",
-              "apps/asyra-framework-site/scripts/build-closing-v08-geometric.py",
-              "apps/asyra-framework-site/scripts/build-closing-v09-concept.py",
-              "apps/asyra-framework-site/scripts/build-v07-desktop-assets.py",
-              "apps/asyra-framework-site/scripts/build-v08-desktop-assets.py",
-              "apps/asyra-framework-site/scripts/build-v09-grow-desktop.py",
-              "apps/asyra-framework-site/scripts/build-v10-grow-desktop.py",
-              "apps/asyra-framework-site/scripts/build-v11-grow-desktop.py",
-              "apps/asyra-framework-site/scripts/build-v12-grow-connector-preview.py",
-              "apps/asyra-framework-site/scripts/build-v13-grow-connector-preview.py",
-              "apps/asyra-framework-site/scripts/build-v14-grow-connector-preview.py",
-              "apps/asyra-framework-site/scripts/build-transparent-v12-assets.py",
-              "apps/asyra-framework-site/scripts/verify-transparent-v12-assets.py",
-              "apps/asyra-framework-site/scripts/build-photoroom-assets.py",
-              "apps/asyra-framework-site/scripts/build-poc-storyboard-crops.py",
-              "apps/asyra-framework-site/scripts/build-product-evidence.py"
-            ],
-            "specRefs": [
-              "#visual-authority",
-              "#content-contract",
-              "#ownership-boundary"
+              "apps/asyra-framework-site/app/styles/spatial-story.css",
+              "apps/asyra-framework-site/components/spatial-story.tsx",
+              "apps/asyra-framework-site/components/home-resources.tsx",
+              "apps/asyra-framework-site/lib/spatial-story.mjs",
+              "apps/asyra-framework-site/lib/spatial-story.d.mts",
+              "apps/asyra-framework-site/lib/story-building.mjs",
+              "apps/asyra-framework-site/lib/story-building.d.mts",
+              "apps/asyra-framework-site/public/illustrations/spatial-story"
             ],
             "failureOwnerStepId": "render-result-first-page"
           },
           {
             "cacheDimensions": [],
+            "bypasses": [],
+            "specRefs": [
+              "#current-homepage-contract"
+            ],
+            "forbiddenContributors": [
+              "retired homepage composition as current authority",
+              "unverified product claims",
+              "new dependencies",
+              "changes to Framework or Design runtime"
+            ],
             "id": "verify-result-first-page",
             "order": 3,
             "ownerPackage": "Website Landing verification",
-            "purpose": "Fail closed on structural drift, stale content, opaque assets, broken links, overflow, visual divergence, or build failure.",
+            "purpose": "Verify the integrated homepage, its preserved supporting routes and the reviewed PR revision.",
             "inputs": [
               "artifact:result-first-page"
             ],
@@ -34209,56 +35446,23 @@
               "artifact:verified-result-first-page"
             ],
             "conditions": [
-              "Inspector, semantic regression, typecheck, lint, production build, and route smoke pass.",
-              "Synchronized full-page and section-level 1440px, 864px, 820px, 390px, and 320px production screenshots are inspected.",
-              "Desktop and mobile edge-contrast sharpness oracles and computed display typography constraints pass.",
-              "Default, hover, and focus CTA states are captured and inspected.",
-              "Default CI validates committed public derivatives without local artwork and never requires the Git-ignored artwork directory.",
-              "When artwork is available on an authoring workstation, ASYRA_LOCAL_ARTWORK_TESTS=1 verifies immutable-master hashes and local build-source contracts before changed derivatives are accepted.",
-              "Every selected derivative must pass true-alpha, source-bounded width, checkerboard, and actual-section-background verification before deployment.",
-              "The adaptive CSS grid and alpha-derived drop shadow are asserted from computed styles and inspected at 2048px, 1440px, 864px, 820px, 390px, and 320px.",
-              "Six distinct computed shadow vectors are asserted at 2048px, 1440px, 864px, 820px, 390px, and 320px; section crops confirm the contact, cast, and dark-stage ambient layers remain visible without clipping.",
-              "The supplied Hero, Domain Rail, Grow, Same Path, One Source, and Closing derivatives are inspected at 1440px and 2048px with section crops before deployment.",
-              "The PoC-to-product storyboard is inspected at 1440px, 820px, 390px, and 320px for path continuity, readable role labels, balanced density, and natural DOM order; at every width below 960px all four Traditional stages precede all four Asyra stages.",
-              "The Landing Framework value comparison is inspected at 1440px, 820px, 390px, and 320px for immediate define-once comprehension, directly comparable desktop and tablet columns, complete small-screen story order, readable type, and freedom from horizontal overflow.",
-              "At 680px, 520px, 390px, and 320px, computed geometry proves each storyboard panel is scaled against the median rendered proof illustration width and remains within 0.9 to 1.1 times that width.",
-              "Computed geometry proves one 1720px maximum content width and the same constrained content edges for Header, Hero, domain copy, PoC, proofs, Closing, and Footer at 3840px, 2560px, 1920px, 1720px, 1719px, 1440px, 864px, 820px, 800px, 680px, 520px, 390px, and 320px, while every visible Domain Rail row remains full bleed below 1720px and aligns with the shared padded content edges at and above 1720px.",
-              "All eight border-free storyboard crops are inspected inside one uniform 2px CSS frame contract without doubled authored edges.",
-              "No-client and reduced-motion modes preserve the complete reading and actions.",
-              "The retired change-impact sections remain absent at every breakpoint and without JavaScript.",
-              "The public /llms.txt response exactly matches the generated public documentation inventory while supporting human-facing routes remain independently owned by the Website Platform."
-            ],
-            "bypasses": [
-              "Production deployment occurs only after every Landing gate passes."
+              "Unit and Inspector contracts, naming, scoped lint, production build and public route smoke pass.",
+              "Browser tests cover desktop/mobile, no JavaScript, reduced motion, reverse scroll, idle work and removed /story returning 404.",
+              "Inspect opening, intermediate building, product evidence, resource handoff and footer screenshots.",
+              "Committed artwork retains true alpha and its bounded transfer size.",
+              "Remote PR checks must pass on the exact submitted head before asking the product owner to review; no merge."
             ],
             "allowedContributors": [
-              "formal tests",
+              "permanent formal tests",
               "production build",
-              "same-state production screenshots",
-              "manual visual comparison after formal oracles"
-            ],
-            "forbiddenContributors": [
-              "development-server-only evidence",
-              "one overview screenshot as sole evidence",
-              "claiming visual completion without inspecting output"
+              "rendered browser screenshots",
+              "exact-head remote CI"
             ],
             "implementationBoundary": [
-              ".gitignore",
-              "apps/asyra-framework-site/package.json",
-              "apps/asyra-framework-site/__tests__/editorial-landing.test.mjs",
-              "apps/asyra-framework-site/__tests__/e2e/editorial-landing-visual.spec.ts",
+              "apps/asyra-framework-site/__tests__",
               "apps/asyra-framework-site/scripts/route-smoke.mjs",
               "apps/asyra-framework-site/scripts/production-smoke.mjs",
-              "apps/asyra-framework-site/public/llms.txt",
-              "docs/public/llms.txt",
-              "apps/asyra-framework-site/scripts/build-transparent-v12-assets.py",
-              "apps/asyra-framework-site/scripts/verify-transparent-v12-assets.py",
-              "apps/asyra-framework-site/scripts/build-photoroom-assets.py",
-              "apps/asyra-framework-site/scripts/build-poc-storyboard-crops.py"
-            ],
-            "specRefs": [
-              "#quality-gates",
-              "#definition-of-done"
+              "apps/asyra-framework-site/docs/spatial-story.md"
             ],
             "failureOwnerStepId": "verify-result-first-page"
           }
@@ -35365,6 +36569,60 @@
         ],
         "steps": [
           {
+            "id": "assess-target-source",
+            "order": 17,
+            "laneId": "proof",
+            "title": "Assess target at one source",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Target source assessment",
+            "inputs": [
+              "artifact:flow-target-state",
+              "artifact:admitted-proof-contract",
+              "artifact:proof-source-snapshot",
+              "artifact:admitted-runtime-source",
+              "trusted exact selected runtime identity from full service registration or exact historical correlation",
+              "artifact:assessed-proof-evidence",
+              "trusted current accepted revision and selected target allocation revision",
+              "complete service-owned proof request inventory and admitted completed records",
+              "exact accepted-version and target-review verification source identities",
+              "trusted current target allocation and source identity for staleness"
+            ],
+            "outputs": [
+              "artifact:target-source-assessment"
+            ],
+            "conditions": [
+              "Select exactly one top-level admitted source artifact or strict three-field sourceIdentity key. The identity-only key is a trusted registration projection or exact immutable historical correlation, not source availability or dispatch authority; null, partial, unknown or double inputs reject. It never replaces per-producer full source/evidence admission or makes an empty inventory pass. Preserve original verdict/currentness policy without source reads or repeated admission.",
+              "Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. The assessment owner provides a currentness-only projection from retained result identities, reusing exact verdict objects without walking obligations or evidence; consumers cache it at identity changes and never recompute it on reads or replay. Format 2 additionally produces one complete targetContract result from the same owner-produced candidate case inventory; format 1 remains readable but never gains this authority through missing fields, partial fields or restart. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
+            ],
+            "bypasses": [
+              "Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness."
+            ],
+            "allowedContributors": [
+              "trusted local service resolving retained owner artifacts",
+              "source owner runtime identity",
+              "proof evidence owner completed observations",
+              "target owner frozen allocation and obligation coverage"
+            ],
+            "forbiddenContributors": [
+              "caller-supplied pass or source equivalence",
+              "PR merge or provider status as handoff proof",
+              "natural-language handoff interpretation",
+              "raw source reads or raw report reassessment",
+              "task execution or accepted history mutation"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/target-evidence.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
+              "tools/flow-inspector/control-plane/__tests__/target-evidence.test.cjs"
+            ],
+            "specRefs": [
+              "#target-source-assessment",
+              "#integrated-target-baseline-acceptance"
+            ],
+            "failureOwnerStepId": "assess-target-source"
+          },
+          {
             "id": "manage-flow-target",
             "order": 16,
             "laneId": "proof",
@@ -35373,18 +36631,20 @@
             "purpose": "Flow targets and work decomposition",
             "inputs": [
               "artifact:admitted-proof-contract",
+              "artifact:reviewed-contract-evolution",
               "retained accepted versions and prepared evolution contracts",
               "explicit local actor decision and expected target revision",
               "artifact:agent-task-state",
               "artifact:pr-review-record",
-              "retained completed baseline proof and source identity"
+              "retained completed baseline proof and source identity",
+              "artifact:target-source-assessment"
             ],
             "outputs": [
               "artifact:flow-target-state",
               "artifact:work-admission"
             ],
             "conditions": [
-              "Bind one flow and exact target revision and accepted baseline. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target."
+              "Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed until an assessment-bound admission and the full target stays pending. Independent admission retains the exact baseline source. Dependent admission instead consumes one exact current completed service-retained target assessment with passing accepted preservation, selected work and prerequisites, matching allocation, actor, target pins and available registered source; persist its assessment/source binding without recomputation and cross-check it on load. Missing, stale, failed or client-supplied evidence rejects before writes. Admitted commitments cannot be removed. Validate dependent task execution against the retained assessment and its still-live exact private source authority; the admission revision alone does not retire that frozen allocation, but source-task revocation or source retirement blocks execution. Neither bounded work nor delivery completes the target or accepts history."
             ],
             "bypasses": [
               "Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance."
@@ -35392,19 +36652,24 @@
             "allowedContributors": [
               "trusted local action service",
               "retained admitted contracts and task/review records",
+              "service-retained current target assessment artifact",
               "existing exclusive store ownership"
             ],
             "forbiddenContributors": [
               "candidate self-authorization",
               "PR status as prerequisite evidence",
               "client-side conformance",
+              "caller-supplied assessment result or source",
               "model or remote dispatch",
               "accepted history mutation"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/flow-target.cjs",
-              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs"
+              "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
+              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/service.test.cjs"
             ],
             "specRefs": [
               "#flow-targets-and-work-decomposition",
@@ -35469,16 +36734,18 @@
             "inputs": [
               "artifact:agent-task-state",
               "artifact:agent-candidate-verdict",
+              "artifact:scoped-work-review",
               "current accepted revision and trusted delivery policy",
               "digest-checked candidate and captured source",
-              "captured package manifest and fixed Factory patch metadata policy",
+              "captured primary package manifest and package-owned patch metadata policy",
               "artifact:github-review-observation"
             ],
             "outputs": [
               "artifact:pr-review-record"
             ],
             "conditions": [
-              "Admit only exact passing latest candidate source with unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
+              "Select Changeset and source ownership from the task step primary package and its captured runtimeAuthority package manifest. Require exact name, path and manifest digest; dependency packages are execution inputs only. Historical records without authority retain fixed Factory ownership. GitHub delivery validates the frozen selected package metadata without deriving package policy.",
+              "Keep strict passing latest candidate admission for legacy/full-candidate preparation. The explicit scoped path instead consumes the service-owned exact current work handoff, retaining original candidate and integration outcomes; prepare and confirm require the same scope/assessment/source/reference identity. Scoped outer format 2 requires the complete saved handoff, while strict format 1 stays unchanged. Bind serial preparation to exact attempt/assessment IDs, select confirmation by retained format, and resolve scoped report/source only at fixed task-owned verification paths. Reuse checked bytes only within one input validation; preserve fresh confirmation checks. Scoped records require unambiguous captured primary-package ownership; historical records without runtimeAuthority retain fixed Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
             ],
             "bypasses": [
               "Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success."
@@ -35497,11 +36764,15 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
               "tools/flow-inspector/control-plane/pr-review.cjs",
               "tools/flow-inspector/control-plane/__tests__/pr-review.test.cjs"
             ],
             "specRefs": [
-              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview"
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview",
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-consumer",
+              "#scoped-work-review-handoff"
             ],
             "failureOwnerStepId": "prepare-pr-review"
           },
@@ -35568,6 +36839,7 @@
               "artifact:admitted-agent-task"
             ],
             "conditions": [
+              "Resolve each task primary package from the selected step owner. Every allowed file must be inside both that package source root and the exact step implementation boundary; dependency closure packages never expand mutation authority.",
               "Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations. Real provider admission requires matching service-owned authorization, exact model, billing mode, expiry and request ceiling; caller or model data cannot authorize itself."
             ],
             "bypasses": [
@@ -35607,13 +36879,22 @@
               "trusted provider transport settlement and usage observations",
               "human stop, cancel, resume, revoke or handoff request",
               "artifact:agent-candidate-verdict",
-              "artifact:work-admission"
+              "artifact:candidate-proof-source",
+              "artifact:assessed-proof-source",
+              "artifact:proof-source-snapshot",
+              "artifact:assessed-proof-evidence",
+              "artifact:work-admission",
+              "source-owned retained snapshot byte verification and direct evidence admission for the fixed retained attempt"
             ],
             "outputs": [
               "artifact:agent-task-state",
-              "artifact:agent-candidate-source"
+              "artifact:agent-candidate-source",
+              "artifact:admitted-task-source"
             ],
             "conditions": [
+              "A scoped candidate verdict and private task source carry runtimeAuthority in exact deep equality with the baseline and source envelope. Retained records with no own authority use only legacy Factory source validation even when the currently loaded contract has runtimeScope; load and replay never upgrade them.",
+              "Publish a private exact task/attempt/repository source artifact only after a controlled source-aware producer result and successful task save, or completed startup source admission. Passed startup retains strict report/evidence checks; completed non-pass startup verifies fixed bytes plus source identity once without reassessing or replacing its historical outcome. Legacy verify-only strategies cannot supply authority. Exact sourceFor reads only the private map; new attempts, noncompleted state, revocation and close retire availability, and failed publication cannot resurrect it. No source hash, IO or history scan occurs on reads/replay, and later composition verifies its own selected bytes.",
+              "New task records use format 2; load only formats 1 and 2. Format-2 passing latest verdicts require the exact runtime, runtime-authority, verification and execution descriptor set when scoped; true historical authority absence retains legacy descriptor validation. Upgrade a format-1 task only when an explicit new candidate proof completes and is saved, preserving older attempts. New admission requires fixed last-attempt UUID source/report locations, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Reads and identical replay do no source work.",
               "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance. Consume the target owner admission check before capture, after capture, and on resume before any operation or provider reservation."
             ],
             "bypasses": [
@@ -35630,7 +36911,13 @@
               "unregistered tools",
               "candidate-selected verifier or accepted baseline"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "task identity",
+              "latest completed attempt identity",
+              "full source and contract/configuration/descriptor identity",
+              "task lifecycle and revocation",
+              "task owner lifetime"
+            ],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/agent-task.cjs",
               "tools/flow-inspector/control-plane/agent-adapter.cjs",
@@ -35641,7 +36928,9 @@
               "tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs"
             ],
             "specRefs": [
-              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution"
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution",
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#retained-candidate-admission",
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#private-candidate-source-handoff"
             ],
             "failureOwnerStepId": "execute-agent-task"
           },
@@ -35655,13 +36944,23 @@
             "inputs": [
               "artifact:agent-candidate-source",
               "artifact:admitted-agent-task",
+              "artifact:proof-source-snapshot",
+              "artifact:proof-runner-result",
+              "artifact:assessed-proof-evidence",
+              "artifact:assessed-proof-source",
+              "source-owned fixed derived files and execution descriptor for the trusted candidate attempt",
               "abort signal and remaining deadline"
             ],
             "outputs": [
-              "artifact:agent-candidate-verdict"
+              "artifact:agent-candidate-verdict",
+              "artifact:candidate-proof-source"
             ],
             "conditions": [
-              "Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution."
+              "Validate the baseline runtimeAuthority against the admitted contract and captured files before creating the candidate directory. Generate scoped aliases only from that authority, retain it unchanged in verdict and source, and publish no source when authority or post-run bytes fail.",
+              "The source-aware producer returns verdict and independent source after exactly one evidence/source evaluation. Forward the admitted source only after actual contained runner settlement and successful post-run byte integrity, preserving failed or partial case outcomes; source admission or integrity failure yields no source artifact. The existing verifier wrapper consumes the same single producer verdict, and persisted verdict JSON gains no source envelope or verified flag. The task owner consumes this independent source through its exact private handoff contract.",
+              "Delegate the generated closure exactly once to the shared contained runner with original contract, complete flow inventory, cancellation/deadline and spawn observer; consume its settled result before evidence/publication. Candidate exports only alias the runner containment functions and do not retain duplicate sandbox or argument policy.",
+              "Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.",
+              "Match the full captured baseline manifest and contract identities before new candidate production. Preserve present verification identity; only genuine historical absence permits constructing this new proof descriptor from verified captured role bytes. Write source-owned fixed generated files, execute their actual configuration and bootstrap, and pass the complete candidate snapshot plus trusted context to one direct evidence admission. Retain runtimeSource, runtimeAuthority, verificationSource and executionSource in a scoped verdict without granting historical replay authority."
             ],
             "bypasses": [
               "No unknown, stale, denied or missing input may become success."
@@ -35683,7 +36982,10 @@
               "tools/flow-inspector/control-plane/__tests__/agent-verifier.test.cjs"
             ],
             "specRefs": [
-              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification"
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification",
+              "#derived-execution-source",
+              "#direct-derived-evidence-admission",
+              "#source-identity-and-verification-outcome"
             ],
             "failureOwnerStepId": "verify-agent-candidate"
           },
@@ -35696,16 +36998,19 @@
             "purpose": "Contract evolution",
             "inputs": [
               "accepted version history",
+              "artifact:admitted-verification-source",
               "admitted candidate contract",
               "observed selector identities and source digests",
               "explicit successor relations and retirement request",
-              "actor capability and exact-base decision"
+              "actor capability and exact-base decision",
+              "artifact:target-source-assessment"
             ],
             "outputs": [
               "artifact:reviewed-contract-evolution"
             ],
             "conditions": [
-              "Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved."
+              "Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved. When a service-admitted verification reference is supplied, bind its exact source tuple, descriptor and execution configuration into review and immutable history without source reads or revalidation. Expose verification-content changes, forbid accepting removal of existing verification authority, and preserve legacy absence without granting new authority.",
+              "A review pinned by a development target can be accepted only through an explicit target-baseline decision consuming the exact current format-2 target assessment. Require matching target, allocation, accepted version, target review, candidate, source and complete producer identities plus passing accepted preservation, targetContract, every work/prerequisite and whole-target integration with no pending obligations. Authorization and retirement capability checks precede idempotent replay. Commit accepted mapping/history/review state atomically; persistence failure changes neither disk nor live state. Eligibility, client verdicts, PR status and format-1 evidence cannot accept history."
             ],
             "bypasses": [
               "No implicit retirement, heuristic acceptance, or preserved green evidence after revision."
@@ -35713,6 +37018,7 @@
             "allowedContributors": [
               "admitted contracts",
               "registered selector observations",
+              "assess-target-source exact retained assessment",
               "explicit actor decision"
             ],
             "forbiddenContributors": [
@@ -35726,7 +37032,9 @@
               "tools/flow-inspector/control-plane/__tests__/evolution.test.cjs"
             ],
             "specRefs": [
-              "#contract-evolution"
+              "#contract-evolution",
+              "#version-verification-references",
+              "#integrated-target-baseline-acceptance"
             ],
             "failureOwnerStepId": "review-contract-evolution"
           },
@@ -35746,7 +37054,8 @@
               "artifact:admitted-proof-contract"
             ],
             "conditions": [
-              "Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership."
+              "Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.",
+              "Publish separately digested runtimeScope format 1 from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. Preserve mapping format 2, Inspector schema 2 and existing contract digest semantics. This step does not read package manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new non-Factory runtime authority."
             ],
             "bypasses": [
               "No missing, ambiguous, empty, or contradictory contract may be bypassed."
@@ -35821,20 +37130,30 @@
             "purpose": "Source and Evidence",
             "inputs": [
               "artifact:admitted-proof-contract",
+              "artifact:admitted-runtime-source",
               "authorized run identity",
+              "complete retained snapshot manifest and task-owned fixed canonical source location for read-only byte verification",
               "declared source roots and dependency metadata",
+              "completed source-owned verification descriptor and trusted canonical candidate attempt source location for fixed derived execution generation/admission",
               "server-selected accepted Git base and integration revision"
             ],
             "outputs": [
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
-              "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks."
+              "Preserve runtimeSource format 1 as a bytes-only identity. Separately derive runtimeAuthority format 1 from the admitted contractScopeDigest and actual public workspace manifests: architecture-ordered step closures, sorted canonical package records and package-name union, dependencies-only workspace:* internal closure, regular non-symlink public source entries, and no cycles, spoofing or role overlap. Cache discovery so each unique path is read and hashed once, re-admit cached contract and manifest authority before any output write, and reject mixed legacy/scoped composition. Scoped execution format 2 aliases every validated package to its captured entry with no dist fallback; it accepts only the exact authority object privately admitted in the same process lifetime by capture or complete actual-byte and manifest-graph revalidation, so a serialized or cloned descriptor must repeat admission. Historical authority absence remains fixed legacy Factory and is never reconstructed from a current contract.",
+              "Explicit derived composition alone may select a previously full-source-admitted derived runtime tuple; a candidate verdict or client path cannot replace that authority. Both APIs require the exact ordinary verification bundle and reject its execution descriptor presence. Ordinary composition also rejects runtime execution descriptor presence. Recheck selected actual bytes once, generate the fixed two files at the new trusted root with reused entry metadata, preserve runtime/verifier identities and bind a new execution/full identity. Keep all immutable output/alias guards; downstream candidate execution must use containment, and service handoff remains a separate prerequisite.",
+              "For retained candidate admission, verify every actual full-manifest entry once through the source-owned safe path, regular file, size and hash boundary at its trusted fixed source root. Write nothing and return no identity or authority flag; descriptor/full-inventory admission remains a separate single direct evidence operation in the same startup lifetime, with neither operation repeated by reads or replay.",
+              "For historical authority absence, preserve the fixed contained-native-typescript-v1 derived execution policy, exact configuration/bootstrap bytes and canonical executionSource identity from the original admitted verification descriptor and trusted attempt source location. Construction alone grants no authority. A present descriptor requires one shared full/runtime/verification admission plus exact fixed-byte/full-inventory/configuration binding, with the location supplied separately by its trusted owner; never trust a saved sourceRoot or caller-selected policy, paths or contents. Missing, changed, extra, unsupported or overlapping inputs fail closed. Historical absence is not upgraded, ordinary composition remains restricted, and actual runner/containment use must be proved by later producer consumers.",
+              "Before an ordinary verification reference handoff, the source owner may validate its already admitted retained runtime and exact five-role bytes through a read-only operation. Require the same canonical repository/attempt/source tree and configuration authority; read each entry once, write nothing, and return no new source identity or persistent verified status. Later composition must still validate the bytes it actually uses.",
+              "For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.",
+              "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority."
             ],
             "bypasses": [
               "No previous snapshot or mutable checkout may replace the captured runtime source."
             ],
             "allowedContributors": [
+              "trusted candidate/service owner supplying completed source artifacts and a canonical attempt location",
               "filesystem reads inside declared repository roots"
             ],
             "forbiddenContributors": [
@@ -35849,7 +37168,12 @@
               "tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs"
             ],
             "specRefs": [
-              "#source-and-evidence"
+              "#source-and-evidence",
+              "#runtime-identity-producer-contract",
+              "#frozen-verification-source",
+              "#derived-execution-source",
+              "#retained-snapshot-byte-verification",
+              "#derived-source-composition"
             ],
             "failureOwnerStepId": "capture-proof-source"
           },
@@ -35863,13 +37187,16 @@
             "inputs": [
               "artifact:proof-source-snapshot",
               "registered scenario",
-              "deadline and cancellation signal"
+              "deadline and cancellation signal",
+              "trusted canonical attempt location and source-owned derived execution descriptor when contained execution is selected"
             ],
             "outputs": [
               "artifact:proof-runner-result"
             ],
             "conditions": [
-              "Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation."
+              "Scoped contained execution requires executionSource format 2, contained-native-typescript-v2, an exact runtimeAuthorityDigest link and the existing verification/configuration links. Retain runtime authority format, digest and contract-scope digest in runner identity without re-reading manifests. Legacy authority absence keeps format 1 behavior.",
+              "Contained derived execution consumes the source-owned fixed configuration/bootstrap roles and exact verification/configuration relationship without re-admitting source. Execute the captured bootstrap with the native loader under the existing OS sandbox; reject missing/unsupported closure or unavailable containment before dispatch, with no caller argv/configuration/process override or ordinary fallback. Return existing report/identity and process settlement; post-run source integrity remains the publisher responsibility.",
+              "Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity."
             ],
             "bypasses": [
               "Denied requests never reach execution; a process failure produces a non-passing runner result."
@@ -35890,7 +37217,9 @@
               "tools/flow-inspector/control-plane/__tests__/runner.test.cjs"
             ],
             "specRefs": [
-              "#controlled-actions-and-retention"
+              "#controlled-actions-and-retention",
+              "#runtime-identity-producer-contract",
+              "#contained-derived-proof-execution"
             ],
             "failureOwnerStepId": "execute-proof-run"
           },
@@ -35904,19 +37233,27 @@
             "inputs": [
               "artifact:admitted-proof-contract",
               "artifact:proof-source-snapshot",
-              "artifact:proof-runner-result"
+              "artifact:proof-runner-result",
+              "artifact:admitted-runtime-source",
+              "trusted candidate-owned canonical execution context for direct derived snapshots"
             ],
             "outputs": [
-              "artifact:assessed-proof-evidence"
+              "artifact:assessed-proof-evidence",
+              "artifact:assessed-proof-source"
             ],
             "conditions": [
-              "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission."
+              "When runtimeAuthority is present, require exact bilateral snapshot/admission presence and equality, bind executionSource.runtimeAuthorityDigest, and retain runtime authority format, digest and contract-scope digest in evidence. A direct source envelope forwards the admitted authority; historical absence cannot synthesize it.",
+              "The direct-derived source/evidence API returns an independent frozen source envelope only after one complete source-owner admission, forwarding the already-computed descriptor values without rehash or IO. Source/contract/configuration/context failures produce no source; case, report and runner outcomes remain independent. Existing evidence-only return shape is unchanged. Ordinary/legacy/service-artifact paths do not create this envelope; candidate publication and task cache consumers are subsequent boundaries.",
+              "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.",
+              "On the direct path, any own executionSource field requires exactly one source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution. A complete service-derived artifact requires bilateral execution presence and exact three-descriptor/full/configuration/contract/attempt binding without source revalidation; retained derived records cannot bypass this through the historical wrong-contract early return."
             ],
             "bypasses": [
               "Missing or invalid reports produce an explicit non-pass, never inferred completion."
             ],
             "allowedContributors": [
-              "validated Vitest JSON result"
+              "validated Vitest JSON result",
+              "source owner validation of a complete captured manifest",
+              "service-retained full-source-bound admission"
             ],
             "forbiddenContributors": [
               "test-file existence as behavioral evidence",
@@ -35928,7 +37265,12 @@
               "tools/flow-inspector/control-plane/__tests__/evidence.test.cjs"
             ],
             "specRefs": [
-              "#source-and-evidence"
+              "#source-and-evidence",
+              "#runtime-identity-producer-contract",
+              "#frozen-verification-source",
+              "#direct-derived-evidence-admission",
+              "#derived-service-and-evidence-admission",
+              "#source-identity-and-verification-outcome"
             ],
             "failureOwnerStepId": "assess-proof-evidence"
           },
@@ -35942,22 +37284,44 @@
             "inputs": [
               "artifact:admitted-proof-contract",
               "artifact:assessed-proof-evidence",
+              "artifact:proof-source-snapshot",
               "registered local request",
               "attempt store",
               "existing static workspace and catalog-declared local resources",
               "artifact:reviewed-contract-evolution",
               "artifact:ci-aggregate-evidence",
               "artifact:agent-task-state",
+              "artifact:admitted-task-source",
+              "artifact:proof-runner-result",
               "artifact:pr-review-record",
               "artifact:flow-target-state",
+              "artifact:target-source-assessment",
               "server-selected accepted Git base"
             ],
             "outputs": [
-              "artifact:proof-board-state"
+              "artifact:proof-board-state",
+              "artifact:admitted-runtime-source",
+              "artifact:admitted-verification-source",
+              "artifact:scoped-work-review"
             ],
             "conditions": [
-              "Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.",
-              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab."
+              "Retain runtimeAuthority only from source-owner capture or complete re-admission, never from current contract reconstruction. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.",
+              "For dependent work admission, resolve only the explicitly selected retained assessment and its registered source, then supply that complete immutable owner artifact and a private exact live-source lookup to manage-flow-target. Require matching actor, current target/allocation and retained pins before the target decision; task start rejects retired source authority even though the admission revision makes the assessment projection historical. Do not accept client result/source fields, recompute prerequisite evidence or treat integration eligibility as admission authority. Existing independent baseline-proof admission remains unchanged.",
+              "For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require accepted preservation and the assessor work result including prerequisites to pass; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.",
+              "Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Internal assessment consumes this exact task-source lifecycle; existing HTTP/CLI forwarding exposes the additive service selection, with exact task/attempt forwarding and service-owned validation; the Board task picker remains a subsequent consumer.",
+              "Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained task target dispatch additionally requires the shared runner and post-run actual-byte check before evidence.",
+              "Internal task-source assessments register the complete exact task runtime tuple and both immutable role references before dispatch. Project only that registered key to assessor sourceIdentity after private source selection or exact startup historical correlation; every producer still needs its own full admission. Cache currentness from exact run/task selection and update only after task save/cache lifetime changes, preserving callbacks and immutable verdicts. Selected task stop/revoke cannot interleave with orchestration; reads and replay perform no source lookup or computation. Shared identical verifier roles keep their actual derived producer execution identity.",
+              "Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.",
+              "Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.",
+              "Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.",
+              "Source-aware version preparation uses that attempt’s retained contract, test-role identity and registered report. Verify retained bytes once at first reference handoff per attempt/service lifetime, bind the exact tuple privately, and re-admit retained references once on startup. Missing source-tree bytes preserve history but forbid new handoffs; reference presence alone is not availability. Review replay requires the version owner’s full current-base/candidate/relations identity and does not repeat source or report IO. Legacy preparation cannot acquire reference authority.",
+              "New attempts retain the exact server-admitted sourceContract definitions. Restore them through the contract owner on restart and bind attempt and snapshot contract, mapping and architecture identities. Present malformed or conflicting sourceContract rejects admission; historical absence remains runtime-only and grants no verification authority. Paired new verification descriptors use one combined source-owner manifest admission; retain the verification descriptor and execution configuration in the same immutable attempt artifact. Reads and replay do not repeat it. Descriptor admission alone does not prove retained source-tree bytes or enable composition.",
+              "Before supplying a verification reference to the version owner, resolve and admit that attempt’s source descriptor and actual execution configuration within this repository. Retain the exact reference and immutable bytes; absent historical descriptors grant no new verification authority. This source admission is independent of version acceptance and does not imply target eligibility.",
+              "Before runner dispatch or evidence assessment, admit runtime sources through the source owner once per attempt and immutable source identity using only the trusted attempt and captured source. Completed evidence is a later persistence/projection input, never a source admission prerequisite. Ordinary live capture uses its complete manifest without IO; restart reads the bounded server-owned attempt manifest once. Retain the full-source-bound admission for evidence consumers; failed or changed identities cannot reuse it. Legacy absence grants no runtime identity and reads or request replay never redo admission.",
+              "Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit ordinary conformance runs against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.",
+              "Expose registered target-assessment list/detail/start/cancel through the existing loopback request and capability boundary and matching local/remote CLI adapters; Forward optional exact task/attempt selection without transport-owned source lookup or a duplicate schema; accepted HTTP registration does not assert proof eligibility. CLI start waits for settlement before closing its local service, and reports eligibility separately from successful inspection/control, consuming service-retained results without transport-side assessment or private producer dispatch. Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.",
+              "Expose exact scoped review preparation as one capability-authenticated loopback action and matching local/remote CLI action. Forward only task/attempt/assessment selectors to the review owner; do not read source, select latest evidence, interpret a verdict or accept a client handoff in transport. Reuse the existing review GET and confirmation paths, and preserve strict preparation unchanged.",
+              "Expose one capability-authenticated target-baseline acceptance action through the same local service, HTTP and local/remote CLI. Authorize before exact request replay; resolve one explicit target and format-2 assessment, require the exact live assessment source and version-owner acceptance predicates, and forward the assessor-owned immutable results without transport interpretation. Publish live accepted mapping/history only after the atomic store save succeeds. Exact authorized replay performs no currentness/source work; generic contract acceptance refuses target-pinned reviews."
             ],
             "bypasses": [
               "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
@@ -35981,6 +37345,7 @@
               "tools/flow-inspector/control-plane/cli.cjs",
               ".github/workflows/main.yml",
               "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
               "tools/flow-inspector/control-plane/__tests__/operations.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/mapping.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/cli.test.cjs",
@@ -35988,9 +37353,20 @@
               "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
             ],
             "specRefs": [
+              "#scoped-work-review-handoff",
               "#controlled-actions-and-retention",
+              "#source-admission-in-the-local-service",
+              "#derived-service-and-evidence-admission",
+              "#frozen-target-proof-production",
+              "#task-source-target-proof-production",
+              "#retained-target-assessment-requests",
+              "#task-source-target-assessment",
+              "#target-assessment-http-transport",
+              "#target-assessment-cli-transport",
+              "#integrated-target-baseline-acceptance",
               "#board",
               "#flow-targets-and-work-decomposition",
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-public-integration",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery"
             ],
             "failureOwnerStepId": "serve-proof-actions"
@@ -36005,18 +37381,25 @@
             "inputs": [
               "artifact:proof-board-state",
               "existing workspace canvas DOM and selected architecture target",
-              "user-selected flow and scenario"
+              "user-selected flow and scenario",
+              "explicit user-selected retained review and run or task/attempt source; public task summaries/detail and cached assessment projections supplied by the action service"
             ],
             "outputs": [
               "artifact:proof-board-view"
             ],
             "conditions": [
+              "Project service-owned runtime authority and contract-scope digests for the selected source. The Board does not derive package closure, aliases, task ownership or eligibility.",
+              "For dependent work preparation, require an explicit retained assessment selection for the selected target and current allocation and forward only its id with the target decision. Present the selected work and prerequisite status from the service projection; do not infer eligibility or use PR/task state as proof. Independent work continues to use the explicit completed baseline-proof selector.",
+              "Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.",
+              "Offer separate explicit run and task/attempt source controls without adopting agent-history automatic selection. Public task/verdict data is display metadata, never source authority; repository display requires an exact public task/attempt assessment tuple. Share only task-detail GET output between the agent panel and source picker by exact task id and public summary signature, bounded to their two current selections and adapter lifetime. Coalesce pending reads, evict failures for retry, and commit consumer signatures only on still-current success; stale responses cannot overwrite new selection. Keep review GET separate, preserve focus/attempt choices on refresh and abort/discard on retirement.",
               "Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.",
               "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
               "On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.",
               "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
               "Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.",
               "Project the selected task/attempt complete delivery preview with source evidence and trusted Changeset content/reason separately, exact confirmation, audit and GitHub HEAD-bound observations through the common action service. Never combine local verification with remote checks or accept baseline from a PR.",
+              "For bounded work preview, list only retained assessments that explicitly name the selected task and attempt, require the user to select one, and forward that selector without deciding eligibility. Show bounded scope, original candidate verification and target integration separately before the existing exact confirmation. Task or attempt retirement clears unavailable selection; refresh and historical reads perform no preparation or external effect.",
+              "For integrated target baseline acceptance, require an explicit current format-2 assessment selection and reason, show accepted preservation, complete targetContract conformance, every work/prerequisite, whole-target integration, exact source/base/review pins and retirement set, then forward only the ids and intent. Eligibility and refresh never accept history. After success, show the immutable accepted decision separately from the now-historical assessment.",
               "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
             ],
             "bypasses": [
@@ -36039,13 +37422,226 @@
             ],
             "specRefs": [
               "#board",
+              "#target-assessment-board-consumer",
+              "#integrated-target-baseline-acceptance",
               "#flow-targets-and-work-decomposition",
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-public-integration",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations"
             ],
             "failureOwnerStepId": "render-proof-board"
           }
         ],
         "routes": [
+          {
+            "id": "target-assessment-to-work-admission",
+            "from": "assess-target-source",
+            "to": "manage-flow-target",
+            "kind": "conditional",
+            "predicate": "Only dependent work admission consumes an explicitly selected current completed assessment with matching actor, target allocation, pins, passing accepted/work/prerequisite results and an available registered source. Independent work keeps baseline-proof admission; no assessment accepts history or completes integration.",
+            "producedArtifacts": [
+              "artifact:target-source-assessment"
+            ]
+          },
+          {
+            "id": "target-assessment-to-version-acceptance",
+            "from": "assess-target-source",
+            "to": "review-contract-evolution",
+            "kind": "conditional",
+            "predicate": "Only an explicit authorized target-baseline action consumes a current completed format-2 assessment with passing accepted preservation, complete targetContract, every work/prerequisite and whole-target integration, no pending obligations, exact target/base/review/source identities and available private source authority. Eligibility and format-1 history never mutate the baseline.",
+            "producedArtifacts": [
+              "artifact:target-source-assessment"
+            ]
+          },
+          {
+            "id": "service-scoped-work-to-review",
+            "from": "serve-proof-actions",
+            "to": "prepare-pr-review",
+            "kind": "conditional",
+            "predicate": "Only explicit scoped preparation or confirmation consumes an exact current service handoff; retained previews and strict legacy review do not require it. The handoff is not a completed PR prerequisite for assessment.",
+            "producedArtifacts": [
+              "artifact:scoped-work-review"
+            ]
+          },
+          {
+            "id": "reviewed-version-to-target-pin",
+            "from": "review-contract-evolution",
+            "to": "manage-flow-target",
+            "kind": "conditional",
+            "predicate": "A new target explicitly selects an exact version-owner-admitted review and an available verification reference; the trusted service supplies the immutable review/candidate pair, and the target pins its version-owned digest without rehashing. The target callback requests requireAvailable only for a new creation after exact replay checking; retained loading requests metadata only, and replay does not invoke the resolver.",
+            "producedArtifacts": [
+              "artifact:reviewed-contract-evolution"
+            ]
+          },
+          {
+            "id": "verification-admission-to-version",
+            "from": "serve-proof-actions",
+            "to": "review-contract-evolution",
+            "kind": "conditional",
+            "predicate": "A version review supplies a verification reference only after the service binds its own attempt, admitted source descriptor and execution configuration; historical absence cannot be promoted.",
+            "producedArtifacts": [
+              "artifact:admitted-verification-source"
+            ]
+          },
+          {
+            "id": "source-snapshot-to-service-admission",
+            "from": "capture-proof-source",
+            "to": "serve-proof-actions",
+            "kind": "required",
+            "predicate": "Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "runtime-admission-to-composition",
+            "from": "serve-proof-actions",
+            "to": "capture-proof-source",
+            "kind": "conditional",
+            "predicate": "Only an explicit later composition consumes previously completed source admissions and fixed retained trees for its selected runtime and exact verification bundle; initial capture and admission never depend on composition or assessed evidence.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
+            ]
+          },
+          {
+            "id": "source-derived-generation-to-candidate",
+            "from": "capture-proof-source",
+            "to": "verify-agent-candidate",
+            "kind": "conditional",
+            "predicate": "During explicit new candidate verification, source-owned construction supplies the fixed generated bytes and execution descriptor before runner dispatch; construction does not claim completed evidence or retained replayability.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "derived-evidence-to-candidate",
+            "from": "assess-proof-evidence",
+            "to": "verify-agent-candidate",
+            "kind": "conditional",
+            "predicate": "After actual runner settlement and before candidate verdict completion, direct evidence returns with one combined source admission using the candidate-owned trusted location parameter; no completed candidate verdict is a prerequisite.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "admitted-source-to-candidate",
+            "from": "assess-proof-evidence",
+            "to": "verify-agent-candidate",
+            "kind": "conditional",
+            "predicate": "After direct derived source admission succeeds and runner settles, forward its source identity independently of case outcome before candidate post-run publication; no completed candidate verdict or passing evidence is a prerequisite.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-source"
+            ]
+          },
+          {
+            "id": "candidate-proof-source-to-task",
+            "from": "verify-agent-candidate",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "A controlled live producer has completed source admission and post-run integrity; forward source independently of case outcome before task persistence and private publication, never from public verdict JSON.",
+            "producedArtifacts": [
+              "artifact:candidate-proof-source"
+            ]
+          },
+          {
+            "id": "retained-candidate-source-to-task",
+            "from": "capture-proof-source",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "For completed non-passing startup candidates, validate the full retained source and original captured contract at the task-owned fixed root before private publication; case assessment and a passing report are not prerequisites.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "retained-source-to-task",
+            "from": "assess-proof-evidence",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "For passing startup records only, exact retained evidence re-admission also returns completed source identity before task source publication; non-passing source-only startup uses its source-owner input directly and does not assess an invented report.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-source"
+            ]
+          },
+          {
+            "id": "retained-evidence-to-task",
+            "from": "assess-proof-evidence",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "At startup after the retained verdict and actual candidate bytes are available, return exact re-admitted evidence before publishing task needs-review; no completed task projection is a prerequisite.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "runtime-admission-to-evidence",
+            "from": "serve-proof-actions",
+            "to": "assess-proof-evidence",
+            "kind": "conditional",
+            "predicate": "After source admission and before raw or retained evidence assessment, service-owned evidence consumes its full-source admission; direct full snapshots use source-owner admission and historical absence grants no runtime conformance.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
+            ]
+          },
+          {
+            "id": "runtime-admission-to-target-assessment",
+            "from": "serve-proof-actions",
+            "to": "assess-target-source",
+            "kind": "conditional",
+            "predicate": "Consume current selected or completed producer source artifacts when supplied; each producer admission remains required for its observation, while a trusted registered identity-only selection does not require a currently available selected artifact.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
+            ]
+          },
+          {
+            "id": "target-state-to-assessment",
+            "from": "manage-flow-target",
+            "to": "assess-target-source",
+            "kind": "required",
+            "predicate": "An explicit assessment selects a frozen target allocation.",
+            "producedArtifacts": [
+              "artifact:flow-target-state"
+            ]
+          },
+          {
+            "id": "target-contract-to-assessment",
+            "from": "admit-proof-contract",
+            "to": "assess-target-source",
+            "kind": "required",
+            "predicate": "Accepted and target verification contracts are admitted for the selected assessment.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "target-source-to-assessment",
+            "from": "capture-proof-source",
+            "to": "assess-target-source",
+            "kind": "conditional",
+            "predicate": "Consume source-owned full snapshots when available for selected or completed producer artifacts. A trusted registered identity-only comparison key does not rebuild or replace these source admissions.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "target-evidence-to-assessment",
+            "from": "assess-proof-evidence",
+            "to": "assess-target-source",
+            "kind": "conditional",
+            "predicate": "Consume completed source-bound observations only when they exist; the complete registered request inventory represents missing or unsettled slots as unknown and permits initial assessment before any observation exists.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "target-assessment-result",
+            "from": "assess-target-source",
+            "to": "serve-proof-actions",
+            "kind": "conditional",
+            "predicate": "Only after complete request registration or a producer settlement, the service retains the separated assessment result without baseline mutation; this result never gates initial source admission or producer registration.",
+            "producedArtifacts": [
+              "artifact:target-source-assessment"
+            ]
+          },
           {
             "id": "work-admission-to-task",
             "from": "manage-flow-target",
@@ -36296,6 +37892,36 @@
             ]
           },
           {
+            "id": "task-source-to-target-proof",
+            "from": "execute-agent-task",
+            "to": "serve-proof-actions",
+            "kind": "conditional",
+            "predicate": "For a new explicit exact task/attempt target-proof selection, consume the current private task source artifact before composition; historical task metadata cannot substitute for this authority.",
+            "producedArtifacts": [
+              "artifact:admitted-task-source"
+            ]
+          },
+          {
+            "id": "contained-runner-to-target-proof",
+            "from": "execute-proof-run",
+            "to": "serve-proof-actions",
+            "kind": "conditional",
+            "predicate": "After task-source target contained execution settles, retain its actual runner result and perform post-run byte verification before evidence publication; no passing outcome is prerequisite.",
+            "producedArtifacts": [
+              "artifact:proof-runner-result"
+            ]
+          },
+          {
+            "id": "contained-runner-to-candidate",
+            "from": "execute-proof-run",
+            "to": "verify-agent-candidate",
+            "kind": "conditional",
+            "predicate": "After the controlled derived runner settles, return its actual report and identity before candidate evidence assessment and source publication; no completed verdict or passing outcome is required.",
+            "producedArtifacts": [
+              "artifact:proof-runner-result"
+            ]
+          },
+          {
             "id": "execute-proof-run-to-assess-proof-evidence",
             "from": "execute-proof-run",
             "to": "assess-proof-evidence",
@@ -36310,7 +37936,7 @@
             "from": "assess-proof-evidence",
             "to": "serve-proof-actions",
             "kind": "handoff",
-            "predicate": "The producer completed its declared boundary.",
+            "predicate": "After source admission and runner settlement, completed evidence returns for persistence and projection only; it is not an input prerequisite for earlier source admission.",
             "producedArtifacts": [
               "artifact:assessed-proof-evidence"
             ]
@@ -36320,7 +37946,7 @@
             "from": "serve-proof-actions",
             "to": "render-proof-board",
             "kind": "handoff",
-            "predicate": "The producer completed its declared boundary.",
+            "predicate": "Consume service-owned board state, exact retained review/target pins and cached assessment records/currentness projections through public HTTP reads; explicit create/start/cancel actions return through the same service authority, without client assessment or private role dispatch.",
             "producedArtifacts": [
               "artifact:proof-board-state"
             ]
@@ -36337,6 +37963,42 @@
         ],
         "artifacts": [
           {
+            "id": "artifact:scoped-work-review",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "private exact scoped work review handoff",
+            "consumerStepIds": [
+              "prepare-pr-review"
+            ]
+          },
+          {
+            "id": "artifact:admitted-verification-source",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "service-owned verification source reference",
+            "consumerStepIds": [
+              "review-contract-evolution"
+            ]
+          },
+          {
+            "id": "artifact:admitted-runtime-source",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "service-owned source admission",
+            "consumerStepIds": [
+              "assess-proof-evidence",
+              "assess-target-source",
+              "capture-proof-source"
+            ]
+          },
+          {
+            "id": "artifact:target-source-assessment",
+            "ownerStepId": "assess-target-source",
+            "channel": "source-bound target assessment",
+            "consumerStepIds": [
+              "serve-proof-actions",
+              "manage-flow-target",
+              "review-contract-evolution"
+            ]
+          },
+          {
             "id": "artifact:work-admission",
             "ownerStepId": "manage-flow-target",
             "channel": "immutable source-bound work admission",
@@ -36351,7 +38013,8 @@
             "ownerStepId": "manage-flow-target",
             "channel": "local-target",
             "consumerStepIds": [
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "assess-target-source"
             ]
           },
           {
@@ -36437,7 +38100,8 @@
             "ownerStepId": "review-contract-evolution",
             "channel": "contract-evolution",
             "consumerStepIds": [
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "manage-flow-target"
             ]
           },
           {
@@ -36450,7 +38114,8 @@
               "assess-proof-evidence",
               "serve-proof-actions",
               "admit-agent-task",
-              "manage-flow-target"
+              "manage-flow-target",
+              "assess-target-source"
             ]
           },
           {
@@ -36460,7 +38125,11 @@
             "channel": "local-proof",
             "consumerStepIds": [
               "execute-proof-run",
-              "assess-proof-evidence"
+              "assess-proof-evidence",
+              "assess-target-source",
+              "serve-proof-actions",
+              "verify-agent-candidate",
+              "execute-agent-task"
             ]
           },
           {
@@ -36469,7 +38138,9 @@
             "ownerStepId": "execute-proof-run",
             "channel": "local-proof",
             "consumerStepIds": [
-              "assess-proof-evidence"
+              "assess-proof-evidence",
+              "verify-agent-candidate",
+              "serve-proof-actions"
             ]
           },
           {
@@ -36477,6 +38148,37 @@
             "title": "Assess proof evidence output",
             "ownerStepId": "assess-proof-evidence",
             "channel": "local-proof",
+            "consumerStepIds": [
+              "serve-proof-actions",
+              "assess-target-source",
+              "verify-agent-candidate",
+              "execute-agent-task"
+            ]
+          },
+          {
+            "id": "artifact:assessed-proof-source",
+            "title": "Assess proof source output",
+            "ownerStepId": "assess-proof-evidence",
+            "channel": "direct derived source/evidence envelope; source-owner completed identity independent of case outcome",
+            "consumerStepIds": [
+              "verify-agent-candidate",
+              "execute-agent-task"
+            ]
+          },
+          {
+            "id": "artifact:candidate-proof-source",
+            "title": "Candidate proof source output",
+            "ownerStepId": "verify-agent-candidate",
+            "channel": "source identity after contained execution and post-run integrity; independent of assertion outcome",
+            "consumerStepIds": [
+              "execute-agent-task"
+            ]
+          },
+          {
+            "id": "artifact:admitted-task-source",
+            "title": "Task source admission output",
+            "ownerStepId": "execute-agent-task",
+            "channel": "private exact task and attempt source admission",
             "consumerStepIds": [
               "serve-proof-actions"
             ]

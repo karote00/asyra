@@ -393,6 +393,7 @@
       outputs: ['artifact:local-computed-projection'],
       conditions: [
         'Local and remote UPDATE_PROPERTY evidence derives computed state locally before Render projection.',
+        'Accepted owner batches synchronously update local derived projections before the next API read, including inside an outer transaction. Committed observer delivery does not project those batches twice; replay and rollback use the same applied-batch projection route.',
         'Props expands each changed property ID through its ordered property ancestor closure; Scene maps only that closure through its own reverse relation index to all affected elements and emits one ordered local computed batch.',
         'Undo, Redo, and canonical load recompute through the same property-to-computed route.',
         'UPDATE_COMPUTED_DATA and UPDATE_COMPUTED_DATA_PATCH remain ordinary local reactive events.',
@@ -462,6 +463,8 @@
         'apps/asyra-design/src/init/derived-state/init-path-editing-continuation.ts',
         'apps/asyra-design/src/init/capabilities/init-vector-icon-data.ts',
         'apps/asyra-design/src/init/__tests__',
+        'packages/reactive-events/src/event-bus.ts',
+        'packages/reactive-events/src/app/publish.ts',
         'packages/reactive-events/src/scene-tree',
         'packages/reactive-events/src/__tests__',
         'packages/reactive-events/src/types.ts',
@@ -518,6 +521,7 @@
         'Factory derives an eligible staged canonical slice, committed remainder, or rollback compensation as one SharedPublication on the ordinary publication route.',
         'SharedPublication contains only transport identity, ordered slices, channel batches, and remote-apply deliveries; artifactId is opaque transport correlation and not a local History reference.',
         'Each staged publication receives stable transaction, publication, slice, and actual compensation identity from the existing journal.',
+        'Opaque publication IDs include one lazy random namespace per producer lifetime so fresh runtimes cannot replay an earlier local counter identity; existing saved IDs and compensation correlations remain unchanged.',
         'Acknowledged externally visible staged slices use the same journal evidence and recorded token for rollback compensation without republishing acknowledged records at commit.',
         'Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.',
         'The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.',
@@ -587,6 +591,7 @@
         'Structural add, remove, move, and hierarchy evidence projects directly from the ordinary canonical Scene owner batch.',
         'Property-driven visual updates consume the local computed projection rather than shared raw property evidence.',
         'The same local computed projection updates Render and affected UI context exactly once through distinct Preset consumers without duplicating Render delivery.',
+        'Render receives applied local computed batches before the next coordinate query; UI receives the same batches after successful outer commit. Rollback discards pending UI batches and inverse replay projects restored canonical values.',
         'Local and remote state use the same ordinary Render strategy.',
         'Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload.'
       ],

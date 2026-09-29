@@ -192,12 +192,12 @@ but this is a hypothesis to validate, not an accepted design:
 App domain / registered actions
              |
         Core Kernel
-  composition · canonical owners
-  transactions · load/save contracts
-  validation · readiness · owner context
+  composition - canonical owners
+  transactions - load/save contracts
+  validation - readiness - owner context
              |
    optional runtime adapters
- Render · Input · UI · Collaboration · AI
+Render - Input - UI - Collaboration - AI
 ```
 
 Possible implementation shapes include:

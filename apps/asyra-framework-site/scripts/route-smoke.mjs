@@ -39,9 +39,9 @@ const homeResponse = await fetch(new URL('/', baseUrl))
 const home = await homeResponse.text()
 const homeText = home.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
 for (const copy of [
-  'Build the tool your world needs.',
-  'One foundation. Any field.',
-  'Bring your domain. Keep its logic.'
+  'An idea worth building.',
+  'Change the rule. Keep the work.',
+  'Choose your starting point.'
 ]) {
   assert.match(
     homeText,

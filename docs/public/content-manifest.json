@@ -501,6 +501,7 @@
       "description": "Current runtime support, candidate status, security reporting, license, migration, and publication boundaries.",
       "sources": [
         "docs/ai/framework/RELEASE_SUPPORT.md",
+        "SUPPORT.md",
         "SECURITY.md",
         "LICENSE",
         "package.json"

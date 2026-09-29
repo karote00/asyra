@@ -34,12 +34,12 @@ describe('Input full runtime reset', () => {
     callback(keyboardEvent())
     expect(vi.getTimerCount()).toBe(1)
     input.resetRuntime()
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(2)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
     expect(input.registry.getEventNames()).toEqual([])
     expect(vi.getTimerCount()).toBe(0)
     input.resetRuntime()
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(2)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
   })
 
@@ -81,7 +81,7 @@ describe('Input full runtime reset', () => {
     })
     expect(() => input.resetRuntime()).toThrow('detach failed')
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(2)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
     expect(input.registry.getEventNames()).toEqual([])
   })
 

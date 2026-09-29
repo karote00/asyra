@@ -7,6 +7,10 @@ import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { serveArtifact } from '../production-artifact-server.mjs'
+import {
+  collectArtifactResourceSnapshot,
+  runWithArtifactResourceEvidence
+} from '../production-artifact-resource-evidence.mjs'
 
 const require = createRequire(
   new URL('../../apps/asyra-design/package.json', import.meta.url)
@@ -110,47 +114,60 @@ test(
     await duration.fill(String(analysisProfile.analysisBudgetMs))
     await duration.press('Enter')
     await expect(duration).toHaveValue(String(analysisProfile.analysisBudgetMs))
-    const startedAt = Date.now()
-    await page
-      .getByRole('button', { name: 'Run analysis', exact: true })
-      .click()
-    await page
-      .getByRole('button', { name: 'View results', exact: true })
-      .click({
-        timeout:
-          analysisProfile.analysisBudgetMs +
-          analysisProfile.publicationAllowanceMs
-      })
-    const result = page.getByTestId('analysis-result')
-    const field = (name) =>
-      result
-        .locator('dl > div')
-        .filter({
-          has: page.getByText(name, { exact: true })
-        })
-        .locator('dd')
-    t.diagnostic(
-      JSON.stringify({
-        profile: 'production-artifact-functional',
-        analysisBudgetMs: analysisProfile.analysisBudgetMs,
-        runToResultMs: Date.now() - startedAt,
-        execution: await field('Execution').innerText(),
-        coverage: await field('Coverage').innerText(),
-        pairs: await field('Pairs with evidence').innerText(),
-        findingAndUnresolved: await field(
-          'Finding / unresolved pairs'
-        ).innerText()
-      })
-    )
-    await expect(field('Execution')).toHaveText('completed')
-    await expect(field('Coverage')).toHaveText('complete')
-    await expect(field('Pairs with evidence')).toHaveText(
-      `${analysisProfile.expectedPairs}/${analysisProfile.expectedPairs}`
-    )
-    await expect(field('Finding / unresolved pairs')).toHaveText(/^\d+ \/ 0$/)
-    await expect(page.getByTestId('analysis-result')).toContainText(
-      'Issue found'
-    )
+    await runWithArtifactResourceEvidence({
+      capture: () => collectArtifactResourceSnapshot({ repositoryRoot: root }),
+      report: (value) => t.diagnostic(value),
+      operation: async ({ mark, observeTerminalInactive }) => {
+        const startedAt = Date.now()
+        mark('run-click-requested-ui')
+        await page
+          .getByRole('button', { name: 'Run analysis', exact: true })
+          .click()
+        mark('run-click-completed-ui')
+        await page
+          .getByRole('button', { name: 'View results', exact: true })
+          .click({
+            timeout:
+              analysisProfile.analysisBudgetMs +
+              analysisProfile.publicationAllowanceMs
+          })
+        observeTerminalInactive('result-button-observed-actionable-ui')
+        mark('result-assertion-started')
+        const result = page.getByTestId('analysis-result')
+        const field = (name) =>
+          result
+            .locator('dl > div')
+            .filter({
+              has: page.getByText(name, { exact: true })
+            })
+            .locator('dd')
+        t.diagnostic(
+          JSON.stringify({
+            profile: 'production-artifact-functional',
+            analysisBudgetMs: analysisProfile.analysisBudgetMs,
+            runToResultMs: Date.now() - startedAt,
+            execution: await field('Execution').innerText(),
+            coverage: await field('Coverage').innerText(),
+            pairs: await field('Pairs with evidence').innerText(),
+            findingAndUnresolved: await field(
+              'Finding / unresolved pairs'
+            ).innerText()
+          })
+        )
+        await expect(field('Execution')).toHaveText('completed')
+        await expect(field('Coverage')).toHaveText('complete')
+        await expect(field('Pairs with evidence')).toHaveText(
+          `${analysisProfile.expectedPairs}/${analysisProfile.expectedPairs}`
+        )
+        await expect(field('Finding / unresolved pairs')).toHaveText(
+          /^\d+ \/ 0$/
+        )
+        await expect(page.getByTestId('analysis-result')).toContainText(
+          'Issue found'
+        )
+        mark('result-assertion-completed')
+      }
+    })
     await page.reload()
     await expect(page.getByTestId('persistence-status')).toHaveText(
       'Saved locally - Production artifact project'

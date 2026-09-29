@@ -61,7 +61,7 @@ const collectExternalImports = (absolutePath) => {
     ) {
       continue
     }
-    imports.add(externalPackageName(specifier))
+    imports.add(specifier)
   }
   return imports
 }
@@ -111,7 +111,8 @@ test('Asyra Design declares only independently composed framework packages', () 
 test('Asyra Design declares every production import as a direct runtime dependency', () => {
   const missingDependencies = new Map()
   for (const absolutePath of [...sourceFiles, ...backendSourceFiles]) {
-    for (const packageName of collectExternalImports(absolutePath)) {
+    for (const specifier of collectExternalImports(absolutePath)) {
+      const packageName = externalPackageName(specifier)
       if (packageJson.dependencies[packageName] !== undefined) continue
       const consumers = missingDependencies.get(packageName) ?? []
       consumers.push(path.relative(appDirectory, absolutePath))
@@ -144,17 +145,47 @@ test('Asyra Design declares the browser-like test environment used by Vitest', (
   )
 })
 
-test('Asyra Design backend depends only on App-owned protocols', () => {
+test('Asyra Design backend uses App protocols and the pure Group bounds entrypoint', () => {
   const failures = []
   for (const absolutePath of backendSourceFiles) {
-    const source = readFileSync(absolutePath, 'utf8')
-    if (/from\s+['"]@asyra\//.test(source)) {
-      failures.push(
-        `${path.relative(appDirectory, absolutePath)} imports an @asyra package`
-      )
+    for (const specifier of collectExternalImports(absolutePath)) {
+      if (
+        specifier.startsWith('@asyra/') &&
+        specifier !== '@asyra/preset/group-bounds'
+      ) {
+        failures.push(
+          `${path.relative(appDirectory, absolutePath)} imports ${specifier}`
+        )
+      }
     }
   }
   assert.deepEqual(failures, [])
+})
+
+test('the public Group bounds entrypoint has no runtime dependencies', async () => {
+  const entry = fileURLToPath(import.meta.resolve('@asyra/preset/group-bounds'))
+  const result = await build({
+    configFile: false,
+    logLevel: 'silent',
+    ssr: { noExternal: true },
+    build: {
+      ssr: entry,
+      write: false,
+      minify: false
+    }
+  })
+  const results = Array.isArray(result) ? result : [result]
+  const chunks = results
+    .flatMap((item) => item.output)
+    .filter((item) => item.type === 'chunk')
+  assert.deepEqual(
+    chunks.flatMap((chunk) => Object.keys(chunk.modules)),
+    [entry]
+  )
+  assert.deepEqual(
+    chunks.flatMap((chunk) => [...chunk.imports, ...chunk.dynamicImports]),
+    []
+  )
 })
 
 for (const configFileName of [

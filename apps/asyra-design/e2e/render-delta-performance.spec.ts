@@ -1,4 +1,7 @@
+import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
+import { assertRenderDeltaContracts } from './render-contracts.mjs'
+import { summarize, summarizeStrategyGeometry } from './render-profile.mjs'
 
 import {
   captureBrowserErrors,
@@ -8,7 +11,7 @@ import {
   waitForAppReady
 } from './test-utils'
 
-interface PhaseBudget {
+interface PhaseMeasurements {
   count: number
   totalMs: number
   p50Ms: number
@@ -16,97 +19,27 @@ interface PhaseBudget {
   maxMs: number
 }
 
-type PhaseBudgetLimit = Pick<PhaseBudget, 'totalMs' | 'p95Ms' | 'maxMs'>
-
 interface RenderDeltaProfileSummary {
   sampleFrames: number
   fullRehydrateCallsDuringDelta: number
   renderSnapshotDeltaApplies: number
   elementSaveCallsDuringDelta: number
   computedSnapshotCallsDuringDelta: number
-  sceneTree: PhaseBudget
-  fullRehydrateReference: PhaseBudget
-  renderSnapshot: PhaseBudget
-  strategyGeometry: PhaseBudget
-  strategyGeometryColdStartMs: number
-  strategyGeometrySteadyState: PhaseBudget
-  engineHandoff: PhaseBudget
+  sceneTree: PhaseMeasurements
+  fullRehydrateReference: PhaseMeasurements
+  renderSnapshot: PhaseMeasurements
+  strategyGeometry: PhaseMeasurements
+  strategyGeometryFirstSampleMs: number
+  strategyGeometrySteadyState: PhaseMeasurements
+  engineHandoff: PhaseMeasurements
 }
 
 const SAMPLE_FRAMES = 12
+const WARMUP_FRAMES = 12
 const DENSE_POINT_COUNT = 56
 const DENSE_TRANSFORM_POINT_COUNT = 7_001
 const SELF_INTERSECTION_STEP = 3
-const PHASE_BUDGETS = {
-  sceneTree: { totalMs: 24, p95Ms: 4, maxMs: 6 },
-  renderSnapshot: { totalMs: 6, p95Ms: 1, maxMs: 2 },
-  strategyGeometry: { totalMs: 24, p95Ms: 4, maxMs: 8 },
-  strategyGeometrySteadyState: { totalMs: 18, p95Ms: 4, maxMs: 6 },
-  engineHandoff: { totalMs: 18, p95Ms: 3, maxMs: 5 }
-} satisfies Record<string, PhaseBudgetLimit>
-const CRITICAL_PATH_P95_BUDGET_MS = 12
-
-const summarize = (samples: number[]): PhaseBudget => {
-  const ordered = [...samples].sort((left, right) => left - right)
-  const percentile = (ratio: number): number => {
-    if (ordered.length === 0) return 0
-    // The bounded profile budgets p95 and max separately. Use the lower sample
-    // quantile so one maximum sample does not make those two oracles identical.
-    const index = Math.min(
-      ordered.length - 1,
-      Math.max(0, Math.floor((ordered.length - 1) * ratio))
-    )
-    return ordered[index]
-  }
-
-  return {
-    count: ordered.length,
-    totalMs: Number(
-      ordered.reduce((total, sample) => total + sample, 0).toFixed(3)
-    ),
-    p50Ms: Number(percentile(0.5).toFixed(3)),
-    p95Ms: Number(percentile(0.95).toFixed(3)),
-    maxMs: Number((ordered.at(-1) ?? 0).toFixed(3))
-  }
-}
-
-const summarizeStrategyGeometry = (samples: number[]) => ({
-  overall: summarize(samples),
-  coldStartMs: Number((samples[0] ?? 0).toFixed(3)),
-  steadyState: summarize(samples.slice(1))
-})
-
-const expectPhaseWithinBudget = (
-  phase: PhaseBudget,
-  budget: PhaseBudgetLimit,
-  expectedCount = SAMPLE_FRAMES
-) => {
-  expect(phase.count).toBe(expectedCount)
-  expect(phase.totalMs).toBeLessThanOrEqual(budget.totalMs)
-  expect(phase.p95Ms).toBeLessThanOrEqual(budget.p95Ms)
-  expect(phase.maxMs).toBeLessThanOrEqual(budget.maxMs)
-}
-
-test('keeps the bounded p95 sample distinct from the separately budgeted max', () => {
-  expect(summarize([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])).toMatchObject({
-    p95Ms: 11,
-    maxMs: 12
-  })
-})
-
-test('separates the first cold strategy frame from the steady-state max', () => {
-  const profile = summarizeStrategyGeometry([
-    6.6, 0.3, 0.4, 0.3, 0.5, 0.3, 0.4, 0.3, 0.5, 0.3, 0.4, 0.3
-  ])
-
-  expect(profile).toMatchObject({
-    overall: { count: 12, maxMs: 6.6 },
-    coldStartMs: 6.6,
-    steadyState: { count: 11, maxMs: 0.5 }
-  })
-})
-
-test.describe('Render delta performance budget', () => {
+test.describe('Render delta correctness and work contracts', () => {
   test.beforeEach(async ({ page }) => {
     captureBrowserErrors(page)
 
@@ -119,13 +52,28 @@ test.describe('Render delta performance budget', () => {
     expect(getCapturedBrowserErrors(page)).toEqual([])
   })
 
-  test('profiles the current dense-vector owner phases without adding cache semantics', async ({
+  test('preserves dense-vector work contracts and reports owner phase timings', async ({
     page
   }, testInfo) => {
     test.setTimeout(120_000)
 
+    const session = await page.context().newCDPSession(page)
+    const traceEvents: unknown[] = []
+    const traceEnabled = process.env.E2E_RENDER_PERFORMANCE_TRACE === 'true'
+    if (traceEnabled) {
+      session.on('Tracing.dataCollected', ({ value }) =>
+        traceEvents.push(...value)
+      )
+      await session.send('Tracing.start', {
+        categories:
+          'v8,devtools.timeline,blink.user_timing,disabled-by-default-v8.gc',
+        transferMode: 'ReportEvents'
+      })
+    }
+    await session.send('Performance.enable')
+    const metricsBefore = await session.send('Performance.getMetrics')
     const rawProfile = await page.evaluate(
-      async ({ pointCount, sampleFrames, intersectionStep }) => {
+      async ({ pointCount, sampleFrames, warmupFrames, intersectionStep }) => {
         // E2E-only access to the currently composed framework runtime.
 
         const {
@@ -259,7 +207,17 @@ test.describe('Render delta performance budget', () => {
         }
 
         const phaseSamples = new Map<string, number[]>()
+        const phaseTimeline: {
+          name: string
+          durationMs: number
+          endMs: number
+        }[] = []
         const pushSample = (phaseName: string, durationMs: number) => {
+          phaseTimeline.push({
+            name: phaseName,
+            durationMs,
+            endMs: performance.timeOrigin + performance.now()
+          })
           const samples = phaseSamples.get(phaseName) ?? []
           samples.push(durationMs)
           phaseSamples.set(phaseName, samples)
@@ -315,10 +273,24 @@ test.describe('Render delta performance budget', () => {
           return originalGetAllComputedData(...args)
         }
 
+        let warmupStrategySamples: number[] = []
         try {
           const movingPointId = traversalIds[1]
           const movingPoint = points[movingPointId]
-          for (let index = 0; index < sampleFrames; index += 1) {
+          for (let index = -warmupFrames; index < sampleFrames; index += 1) {
+            if (index === 0) {
+              warmupStrategySamples = [
+                ...(phaseSamples.get('render-layer:strategy:vector') ?? [])
+              ]
+              phaseSamples.clear()
+              phaseTimeline.length = 0
+              counters.clear()
+              sceneTreeSamples.length = 0
+              engineSamples.length = 0
+              engineFrameSamples.length = 0
+              elementSaveCallsDuringDelta = 0
+              computedSnapshotCallsDuringDelta = 0
+            }
             const angle = (Math.PI * 2 * index) / sampleFrames
             const engineSampleStart = engineSamples.length
             const strategySampleStart =
@@ -398,6 +370,9 @@ test.describe('Render delta performance budget', () => {
 
         return {
           elementId,
+          phaseTimeline,
+          timeOrigin: performance.timeOrigin,
+          warmupStrategySamples,
           sampleFrames,
           fullRehydrateCallsDuringDelta:
             counters.get('computed-mirror-seed') ?? 0,
@@ -417,10 +392,42 @@ test.describe('Render delta performance budget', () => {
       {
         pointCount: DENSE_POINT_COUNT,
         sampleFrames: SAMPLE_FRAMES,
+        warmupFrames: WARMUP_FRAMES,
         intersectionStep: SELF_INTERSECTION_STEP
       }
     )
 
+    const metricsAfter = await session.send('Performance.getMetrics')
+    if (traceEnabled) {
+      const complete = new Promise<void>((resolve) =>
+        session.once('Tracing.tracingComplete', () => resolve())
+      )
+      await session.send('Tracing.end')
+      await complete
+      const tracePath = testInfo.outputPath('render-runtime-trace.json')
+      await writeFile(tracePath, JSON.stringify({ traceEvents }))
+      await testInfo.attach('render-runtime-trace', {
+        path: tracePath,
+        contentType: 'application/json'
+      })
+    }
+    await session.detach()
+    const profilePath = testInfo.outputPath('render-profile-samples.json')
+    await writeFile(
+      profilePath,
+      JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
+        browser: page.context().browser()?.version(),
+        metricsBefore,
+        metricsAfter,
+        rawProfile
+      })
+    )
+    await testInfo.attach('render-profile-samples', {
+      path: profilePath,
+      contentType: 'application/json'
+    })
     const strategyGeometry = summarizeStrategyGeometry(
       rawProfile.strategyGeometrySamples
     )
@@ -435,52 +442,31 @@ test.describe('Render delta performance budget', () => {
       fullRehydrateReference: summarize(rawProfile.fullRehydrateReference),
       renderSnapshot: summarize(rawProfile.renderSnapshotSamples),
       strategyGeometry: strategyGeometry.overall,
-      strategyGeometryColdStartMs: strategyGeometry.coldStartMs,
+      strategyGeometryFirstSampleMs: strategyGeometry.firstSampleMs,
       strategyGeometrySteadyState: strategyGeometry.steadyState,
       engineHandoff: summarize(rawProfile.engineSamples)
     }
 
-    // This single bounded line is the formal profiling artifact consumed in CI.
+    // Timing values are diagnostic observations; they do not establish a
+    // performance pass without a controlled reference host and baseline.
     // eslint-disable-next-line no-console
-    console.info(`RENDER_DELTA_PROFILE ${JSON.stringify(summary)}`)
+    console.info(
+      `RENDER_DELTA_TIMING_OBSERVATION ${JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
+        summary
+      })}`
+    )
+    // Keep the bounded samples in CI logs even when artifact upload is unavailable.
+    // eslint-disable-next-line no-console
+    console.info(
+      `RENDER_DELTA_SAMPLES ${JSON.stringify({ browser: page.context().browser()?.version(), warmup: rawProfile.warmupStrategySamples, measured: rawProfile.strategyGeometrySamples })}`
+    )
 
-    expect(summary.sampleFrames).toBe(SAMPLE_FRAMES)
-    expect(summary.fullRehydrateReference.count).toBe(SAMPLE_FRAMES)
-    expect(summary.fullRehydrateReference.totalMs).toBeGreaterThan(0)
-    expect(summary.fullRehydrateCallsDuringDelta).toBe(0)
-    // These all-owner counts include canonical/UI consumers. Render's own
-    // authoritative read is the separately instrumented seed count above.
-    expect(summary.elementSaveCallsDuringDelta).toBeLessThanOrEqual(
-      SAMPLE_FRAMES
-    )
-    expect(summary.computedSnapshotCallsDuringDelta).toBeLessThanOrEqual(
-      SAMPLE_FRAMES + 1
-    )
-    expect(summary.renderSnapshotDeltaApplies).toBe(SAMPLE_FRAMES)
-    expectPhaseWithinBudget(summary.sceneTree, PHASE_BUDGETS.sceneTree)
-    expectPhaseWithinBudget(
-      summary.renderSnapshot,
-      PHASE_BUDGETS.renderSnapshot
-    )
-    expectPhaseWithinBudget(
-      summary.strategyGeometry,
-      PHASE_BUDGETS.strategyGeometry
-    )
-    expect(summary.strategyGeometryColdStartMs).toBeLessThanOrEqual(
-      PHASE_BUDGETS.strategyGeometry.maxMs
-    )
-    expectPhaseWithinBudget(
-      summary.strategyGeometrySteadyState,
-      PHASE_BUDGETS.strategyGeometrySteadyState,
-      SAMPLE_FRAMES - 1
-    )
-    expectPhaseWithinBudget(summary.engineHandoff, PHASE_BUDGETS.engineHandoff)
-    expect(
-      summary.sceneTree.p95Ms +
-        summary.renderSnapshot.p95Ms +
-        summary.strategyGeometry.p95Ms +
-        summary.engineHandoff.p95Ms
-    ).toBeLessThanOrEqual(CRITICAL_PATH_P95_BUDGET_MS)
+    expect(rawProfile.warmupStrategySamples).toHaveLength(WARMUP_FRAMES)
+    // Keep all-owner call counts, delta applications, and phase sample counts
+    // blocking while leaving their elapsed times observational.
+    assertRenderDeltaContracts(summary, SAMPLE_FRAMES)
 
     const visualReviewState = await page.evaluate(async (elementId) => {
       // E2E-only access to the currently composed framework runtime.
@@ -901,11 +887,12 @@ test.describe('Render delta performance budget', () => {
     expect(moveProfile.moveSamples.length).toBeGreaterThan(0)
     expect(moveProfile.geometryStrategyCount).toBe(0)
 
-    // One bounded line is the reviewable performance artifact for the exact
-    // 7,001-point pointer-drag state used by the screenshots below.
+    // Keep one bounded timing observation for this exact transform path.
     // eslint-disable-next-line no-console
     console.info(
-      `DENSE_VECTOR_TRANSFORM_PROFILE ${JSON.stringify({
+      `DENSE_VECTOR_TRANSFORM_TIMING_OBSERVATION ${JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
         pointCount: moveProfile.pointCount,
         moveUpdates: moveProfile.moveSamples.length,
         moveTotalMs: Number(

@@ -58,7 +58,7 @@ describe('InputSystem', () => {
 
     inputSystem.attachBrowserHost(window, canvas)
 
-    expect(addEventListenerSpy).toHaveBeenCalledTimes(2)
+    expect(addEventListenerSpy).toHaveBeenCalledTimes(3)
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       'keydown',
       expect.any(Function)
@@ -66,6 +66,11 @@ describe('InputSystem', () => {
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       'keyup',
       expect.any(Function)
+    )
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'keyup',
+      expect.any(Function),
+      true
     )
     expect(canvasAddSpy).toHaveBeenCalledTimes(5)
     ;['mousedown', 'mouseup', 'mousemove', 'dblclick'].forEach((eventName) => {
@@ -120,8 +125,8 @@ describe('InputSystem', () => {
     inputSystem.switchWatchedElement(second)
 
     expect(firstRemoveSpy).toHaveBeenCalledTimes(5)
-    expect(removeEventListenerSpy).toHaveBeenCalledTimes(2)
-    expect(nextWindowAdd).toHaveBeenCalledTimes(2)
+    expect(removeEventListenerSpy).toHaveBeenCalledTimes(3)
+    expect(nextWindowAdd).toHaveBeenCalledTimes(3)
     expect(secondAdd).toHaveBeenCalledTimes(5)
   })
 
@@ -138,9 +143,57 @@ describe('InputSystem', () => {
 
     inputSystem.dispose()
 
-    expect(removeEventListenerSpy).toHaveBeenCalledTimes(2)
+    expect(removeEventListenerSpy).toHaveBeenCalledTimes(3)
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'keyup',
+      expect.any(Function),
+      true
+    )
     expect(canvasRemoveSpy).toHaveBeenCalledTimes(5)
   })
+
+  it.each(['MetaLeft', 'ControlLeft'])(
+    'releases %s across a propagation-blocking editor without dispatching editor shortcuts',
+    (modifier) => {
+      const editor = document.createElement('textarea')
+      document.body.append(editor)
+      editor.addEventListener('keydown', (event) => event.stopPropagation())
+      editor.addEventListener('keyup', (event) => event.stopPropagation())
+      inputSystem.attachBrowserHost(window)
+      const receive = vi.fn()
+      inputSystem.registry.register('INPUT_KEYBOARD_A', [
+        { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
+      ])
+      inputSystem.on('INPUT_KEYBOARD_A', receive)
+      const dispatch = (target: HTMLElement, type: string, code: string) => {
+        const event = new KeyboardEvent(type, {
+          code,
+          bubbles: true,
+          cancelable: true
+        })
+        target.dispatchEvent(event)
+        return event
+      }
+      try {
+        dispatch(document.body, 'keydown', modifier)
+        dispatch(document.body, 'keydown', 'KeyA')
+        receive.mockClear()
+        expect(dispatch(editor, 'keyup', modifier).defaultPrevented).toBe(false)
+        expect(receive).not.toHaveBeenCalled()
+        dispatch(editor, 'keyup', 'KeyA')
+        expect(inputSystem['activeKeys'].size).toBe(0)
+        expect(inputSystem['timers'].size).toBe(0)
+        dispatch(editor, 'keydown', 'KeyA')
+        dispatch(editor, 'keyup', 'KeyA')
+        expect(receive).not.toHaveBeenCalled()
+        dispatch(document.body, 'keydown', 'KeyA')
+        expect(receive).toHaveBeenCalledOnce()
+      } finally {
+        inputSystem.dispose()
+        editor.remove()
+      }
+    }
+  )
 
   // Test handleKeyDown
   it('should add key to activeKeys and prevent default if not input active', () => {
@@ -288,6 +341,65 @@ describe('InputSystem', () => {
     inputSystem['handleMouseMove'](event)
 
     expect(inputSystem['activeKeys'].has('leftMouseMove')).toBe(false)
+  })
+
+  it('normalizes wheel-local modifiers without leaking pinch into later input', () => {
+    vi.spyOn(keyMap, 'isModifierKeys').mockRestore()
+    const received = vi.fn()
+    const ctrlOnly = vi.fn()
+    const canvas = document.createElement('canvas')
+    inputSystem.attachBrowserHost(window, canvas)
+    inputSystem.registry.register('test.wheel', [
+      { type: InputType.WHEEL, keys: [PointerKey.WHEEL] }
+    ])
+    inputSystem.registry.register('test.ctrl-wheel', [
+      {
+        type: InputType.WHEEL,
+        keys: [PointerKey.WHEEL],
+        modifiers: [ModifierKey.CTRL]
+      }
+    ])
+    inputSystem.on('test.wheel', received)
+    inputSystem.on('test.ctrl-wheel', ctrlOnly)
+    try {
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          ctrlKey: true,
+          deltaY: -10,
+          cancelable: true
+        })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: expect.objectContaining({ ctrl: true })
+        })
+      )
+      expect(ctrlOnly).toHaveBeenCalledOnce()
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: 10, cancelable: true })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: { ctrl: false, meta: false, alt: false, shift: false }
+        })
+      )
+      expect(ctrlOnly).toHaveBeenCalledOnce()
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          metaKey: true,
+          shiftKey: true,
+          altKey: true,
+          deltaY: 10
+        })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: { ctrl: false, meta: true, alt: true, shift: true }
+        })
+      )
+    } finally {
+      inputSystem.dispose()
+    }
   })
 
   // Test handleWheel

@@ -1,0 +1,5 @@
+[agents]
+# Keep this repository single-agent by default. Project rules, role templates,
+# AGENTS.md, and hooks cannot enable multi-agent tools without an explicit user
+# request for the current task.
+enabled = false

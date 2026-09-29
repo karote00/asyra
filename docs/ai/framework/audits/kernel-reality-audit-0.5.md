@@ -694,7 +694,7 @@ systemContext (depends on ALL 5 state singletons)
 **Risk Timeline:**
 
 ```
-Application启动 → Subscriptions accumulate → YJS arrays grow → PixiJS ticks
+Application starts -> Subscriptions accumulate -> YJS arrays grow -> PixiJS ticks
    ↓                 ↓                       ↓                    ↓
  100ms             1min                    10 min               24h
 Low risk           Medium                  High                Critical

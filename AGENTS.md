@@ -20,12 +20,40 @@ These rules apply to every task without requiring additional document reads:
   behavior. Follow `docs/ai/framework/CODING_STANDARDS.md`.
 - On a non-main feature branch, local commits are allowed at completed,
   validated step/stage boundaries. Never push unless the user explicitly
-  requests the remote operation. Follow
+  requests the remote operation. Before every push, including review fixes to
+  an existing PR, pass the applicable local checks for the version being pushed;
+  failed or unavailable required checks block the push. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.
 - Create new linked worktrees under the main repository's `.worktrees/`
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- Before implementing a capability check or shared behavior, identify its semantic
+  owner and inspect existing public APIs, utils, and registries. Reuse the
+  authoritative capability contract rather than duplicating concrete type lists.
+  Exact type checks are appropriate only for explicitly type-specific behavior;
+  do not broaden those contracts through mechanical replacement. Follow
+  `docs/ai/framework/CODING_STANDARDS.md`.
+- Local `.env` files are persistent local configuration: use and preserve them.
+  Never delete or clear them as test/task cleanup, and never stage, commit, or
+  push them to Git. If missing, create `.env` from `.env.example`; never overwrite
+  an existing local file with the example.
+- Keep non-secret, portable configuration synchronized to `.env.example`.
+  For real secrets such as API keys, include only the variable name and an empty
+  value in `.env.example`; retain the actual value in local `.env` for continued
+  use. Keep machine-specific paths in local `.env`. Treat `.env.example` as a
+  setup template, not a test fixture.
+- Multi-agent work is disabled by default for this repository. Do not spawn,
+  delegate to, suggest, schedule, or otherwise encourage subagents because of
+  AGENTS.md, skills, role templates, hooks, rules, or agent judgment. Use
+  multi-agent tools only when the user explicitly asks for multi-agent work in
+  the current task. The opt-in role templates live under
+  `docs/ai/workflows/multi-agent-templates/`, not in active Codex config.
+- Use one active writer per worktree and preserve changes you did not create.
+  Run the required tests and quality gates before local commits. Local commits,
+  remote pushes, PR creation, merges, publication and deployment remain
+  separate operations with the authorization described in
+  `docs/ai/workflows/git-commit-push-policy.md`.
 - For new apps and app feature/refactor work, read
   `docs/public/start/custom-composition.md` (the reusable App implementation
   guide) and
@@ -73,6 +101,8 @@ These rules apply to every task without requiring additional document reads:
   deploying.
 - Freeze a bounded task contract before editing. Reading may expand to resolve
   risk, but rules and discoveries must not independently expand mutation scope.
+  Task prompts may reference an existing plan's explicit task contract instead
+  of repeating project rules; verify that contract exists in the chosen base.
   Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.
 - For every bug fix, first verify whether existing formal tests detect the bug; if not, add or strengthen the formal regression test before implementation.
 - Follow the Critical Rules section in this file.

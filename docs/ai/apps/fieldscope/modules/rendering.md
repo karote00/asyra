@@ -11,3 +11,9 @@ Permanent domain, admission, engine, runtime and browser tests cover these hando
 Optional surface maps require UV coordinates on full and distant triangle shapes. Surface admission preserves detached immutable RGBA arrays; SurfaceTextureStore owns shared GPU color/normal maps, reference-counted by base materials. Distant material clones share the same pair under their base object's lifetime. Replacing the last textured object or destroying the engine releases the pair. No texture generation occurs during camera movement.
 
 Detail selection reuses completed full/distant instance matrices while admitted instances, geometry, maxError, world transform, camera projection/view and viewport height match. A real dependency change recomputes culling/detail; visibility changes must not expose stale matrices. Instance buffers for detailed crops are written by the detail pass only, avoiding an immediately overwritten full-instance upload. Weak per-mesh entries expire with their owner. Runtime-local weak bounds cache immutable local shape extrema; mutable inputs bypass it and current instance transforms are always included.
+
+
+The CUSTOM engine advertises only its implemented object, graphics, interaction,
+resource and spatial capabilities. The optional framework snapshot query is not
+supported and fails with UnsupportedRenderEngineCapabilityError before projection
+or drawing. Adding a framework capability does not opt this engine into it.

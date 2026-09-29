@@ -11,6 +11,10 @@ profile policy.
   input defaults
 - the current `2D` Pixi provider selection and rollback of partial install
 
+Solid nonzero compound Vector paths preserve transparent holes and nested
+islands according to contour winding. Their fill and hit region share the same
+render projection, while the canonical cubic controls remain editable.
+
 ## Does not own
 
 Core lifecycle, app-domain behavior, UI command policy, custom engine

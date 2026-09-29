@@ -1,0 +1,31 @@
+{
+  "src": "apps/starter-app",
+  "dest": "create-app/starter-app/template",
+  "license": "create-app/starter-app/LICENSE",
+  "scriptOverrides": {
+    "build": "tsc --noEmit && vite build",
+    "react:build": "yarn build",
+    "start": "vite dev"
+  },
+  "removeScripts": ["build:dependencies", "test:e2e"],
+  "standaloneVitestConfig": true,
+  "packableGitignore": true,
+  "cleanFiles": [
+    "node_modules",
+    "yarn.lock",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    ".pnp.cjs",
+    ".pnp.loader.mjs",
+    ".DS_Store",
+    ".env*",
+    ".*-data",
+    ".turbo",
+    "coverage",
+    "dist",
+    "playwright-report",
+    "test-results",
+    "e2e",
+    "playwright.config.ts"
+  ]
+}

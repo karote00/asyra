@@ -76,9 +76,17 @@ provide `clean`.
 - the committed Turbo graph against workspace manifests;
 - root/CI/deployment command wiring;
 - release command ordering and restoration behavior;
+- that a committed generated template remains standalone with exact package
+  pins without requiring Framework source-version parity between release
+  stages;
 - the non-mutating generated-template synchronization command contract;
 - monorepo unit, integration, and contract test placement through
   `scripts/__tests__/test-file-placement.test.mjs`.
+
+The general `docs:readme:check` command checks package READMEs and public
+documentation. It does not select an App or impose that App's generated
+template version on unrelated work. Template synchronization belongs to the
+explicit target release validation commands below.
 
 `yarn deps:validate` separately verifies declared workspace dependencies for
 source imports. It does not replace build, clean, generated-template, or
@@ -105,6 +113,16 @@ may resolve monorepo workspaces, aliases, private source paths, or hoisted
 dependencies. `release:records` freezes the candidate versions, public support
 documents, package READMEs, Changesets configuration, and the distinction
 between readiness and publication.
+
+The version PR commits the Framework package manifests and changelogs computed
+from its pending Changesets, including Changesets' dependency propagation. After
+that PR merges, the separately authorized Framework stage uses the fixed
+`packages/*` allowlist and each manifest's exact version as its release set. It
+checks all exact versions in the registry before publishing any package, skips
+versions already present, and publishes only missing versions from the same
+validated tarballs used by the local packed-consumer gate. Registry errors other
+than an exact-version `E404` fail the stage. The stage does not require pending
+Changesets to remain after the version PR.
 
 Historical prerequisite decisions are resolved from Framework
 `decisions/releases/unreleased.md` and all direct `vX.Y.Z.md` archive files,
@@ -145,20 +163,43 @@ template. The third builds the framework dependency graph, compiles that
 generated template against those local builds, and removes its temporary build
 output. General feature/refactor PR CI does not require current template parity;
 that would expand ordinary source work into generated output contrary to the
-generated-artifact rule. `release:validate` owns the synchronization check and
-reuses its immediately preceding clean framework build for the same template
-compilation.
+generated-artifact rule. Exact dependency equality against the frozen
+Framework release set is checked by `release:template` and the release
+validation path when template/CLI readiness is required. A prior-stage template
+may therefore retain older exact package pins; it cannot pass the later
+readiness check until synchronized with the frozen release set.
+App and CLI readiness own the synchronization check and reuse their immediately
+preceding clean Framework build for the same template compilation. The
+Framework-only validation path does not synchronize, compare, or build an app
+template.
+
+After the Framework versions are published, a Generic Starter registry
+consumer check can use the actual `npm pack` CLI tarball before the CLI itself
+is published. Run the packed CLI through both its npm and Yarn creation paths,
+then verify each fresh consumer's Framework packages resolve from the public
+npm registry in its lockfile and are installed as non-symlink package
+directories. Run the consumer's formal tests, typecheck, lint, production
+build, and applicable Starter interaction tests. Bind the recorded results to
+the source SHA and CLI tarball SHA-256. An HTTP response or the Framework-only
+registry consumer does not prove this generated Starter path.
 
 ## Release Validation and Publication Boundary
 
 ```bash
+yarn release:validate --framework
 yarn release:validate --prod=asyra-design
-yarn release:framework --prod=asyra-design
+yarn release:framework
 yarn release:create-app --prod=asyra-design
 yarn release:full --prod=asyra-design
 ```
 
-`release:validate` runs, in order:
+`release:validate --framework` runs the shared installation, graph, Framework
+build, lint, formal tests, and workspace dependency gates. It stops before
+app-specific browser E2E and template gates. `release:validate --prod=<app>`
+adds the selected app's browser E2E, template synchronization, and generated
+template production build after those shared gates.
+
+The full validation runs, in order:
 
 1. copy repository sources and version-controlled environment defaults into an
    ignored project-local isolated workspace, excluding `.git`, dependencies,
@@ -169,32 +210,34 @@ yarn release:full --prod=asyra-design
 5. root production build;
 6. lint and formal tests;
 7. workspace dependency validation;
-8. collaboration browser E2E on isolated ports;
-9. generated-template synchronization check;
-10. generated-template production build;
+8. app-specific collaboration browser E2E on isolated ports, when an app is
+   selected;
+9. generated-template synchronization check, when an app is selected;
+10. generated-template production build, when an app is selected;
 11. remove the isolated workspace whether validation passes or fails.
 
 Release validation never cleans or builds the developer's active workspace, so
 an active `dev:all`, app server, or package watcher is not interrupted and
 cannot rewrite artifacts during validation.
 
-`release:framework` captures the current Changesets status before version
-materialization, rejects every release entry outside the fixed 19-package
-Framework allowlist, converts workspace dependency ranges, publishes only the
-captured Framework release set in dependency order, restores `workspace:*`,
-and then proves the published set through the registry-only consumer.
+`release:framework` validates Framework packages without entering an App or
+template stage. It preserves the isolated validation workspace, builds and packs
+the Framework packages there, checks workspace dependency ranges, and runs the
+packed consumer against those tarballs. After a separate invocation following
+merge and publication authorization, it publishes those exact validated
+tarballs in dependency order and proves the versions through the registry-only
+consumer. On failure it retains the isolated artifacts for diagnosis; successful
+registry verification cleans them up.
 
 `release:create-app` begins with that registry-only Framework proof, regenerates
 and validates the selected app template, verifies the CLI pack inventory, and
 publishes only `create-app/<app>`. It never discovers or publishes Framework
 workspaces. `release:full` is the explicit synchronized orchestration: it runs
 the Framework stage first and enters the create-app stage only after Framework
-publication and registry verification succeed. Use `release:framework` alone
-when the CLI does not need a release.
+publication and registry verification succeed. This app stage remains separate
+from the Framework version PR and Framework package publication stage.
 
-Once exact release ranges have been applied, the Framework stage restores
-`workspace:*` in a `finally` path whether validation or publication succeeds or
-fails. The generic unscoped `changeset publish` command is not a project release
+The generic unscoped `changeset publish` command is not a project release
 entrypoint because it would also select any unrelated unpublished public
 workspace, including a manually versioned create-app CLI.
 

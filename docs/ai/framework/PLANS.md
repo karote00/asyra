@@ -10,24 +10,28 @@ These plans improve how new visitors understand and verify the existing public
 Framework. They do not authorize Framework behavior changes, new public APIs,
 or unsupported capability claims.
 
-1. Root README comprehension and evidence
+1. Website product and technical evidence
 
-- Reorder the repository entry around real product proof, a concrete value
-  comparison, one verified public Feature, supported starting paths, ownership,
-  and current support.
-- Preserve the accepted public README inventory, generated-surface ownership,
-  contribution policy, and validation contracts.
-- Plan:
-  `docs/ai/framework/plans/root-readme-comprehension-and-evidence-plan.md`
-
-2. Website product and technical evidence
-
-- Preserve the accepted result-first landing identity while adding current
-  product, code, ownership, and readiness evidence.
-- Rebalance or consolidate conceptual sections instead of extending the page
-  with more unverified abstraction.
+- Current homepage authority is the accepted six-chapter spatial story at `/`,
+  with product evidence and three build/evaluate entries following it.
+- Treat the older product-and-technical-evidence and five-chapter brand-story
+  sections as version background unless a new homepage task explicitly changes
+  the current spatial-story contract.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
+
+## Active Adoption Entry Program
+
+- [Adoption Entry and Onboarding Program](
+  plans/adoption-entry-and-onboarding-program-plan.md)
+  - ACTIVE. Tasks 1-8 and their recorded Starter, CLI, AI onboarding,
+    publication, README gate and screenshot results remain complete.
+  - The bounded remaining sequence is FieldScope fact correction (delivered in
+    the current corrective PR), primary Generic Starter entry routing and
+    regression coverage, and cross-domain FieldScope/Asyra Sim homepage
+    evidence and direct website validation, followed by separately authorized
+    production deployment and page acceptance.
+  - The independent Root README evidence plan remains completed.
 
 ## Active Pre-Release Blockers
 

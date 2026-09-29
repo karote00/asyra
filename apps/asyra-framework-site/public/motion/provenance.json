@@ -1,0 +1,29 @@
+{
+  "description": "Product-owner-approved 16-second Blender factory metaphor. Stations A-D illustrate handoffs, not actual package names or a robotics capability.",
+  "durationSeconds": 16,
+  "width": 2560,
+  "height": 1600,
+  "video": {
+    "file": "action-flow.mp4",
+    "sha256": "c28bfb44abbd7f1c2a4cd1e4800a01418f7496994602485d6ab90e3de655ed55"
+  },
+  "poster": {
+    "file": "action-flow-poster.webp",
+    "sha256": "3c307b7121f10e26074af8a1ad6bcda2183eff08a79964fd8f29aae09b477d21",
+    "sourceSha256": "687d1eea79d60976e15f518ee2b8b7ce0d1a74d605b8ef769f6e8c5029921d6e",
+    "export": "Native 2560x1600 frame 1, sharp webp({ quality: 85 }); no enlargement."
+  },
+  "render": {
+    "sourceSha256": "9a2e9a7c94d5794ddd20764e6c65e5d58d586a05ee55a3494d2b8c35636f6910",
+    "scene": "Action Factory - Short Preview",
+    "samples": 64,
+    "codec": "H264",
+    "crf": 26,
+    "script": "scripts/render-action-film.py",
+    "baseSourceSha256": "f73dc525c30a2e3829b4e24507d94fc9ec6f44ecf3becdaccc6f0d4cfd9fcfc2",
+    "shadowRays": 4,
+    "shadowSteps": 12,
+    "revisionScript": "scripts/prepare-action-film.py"
+  },
+  "source": "Local editable revision: work/visualizations/factory-3d/factory-open-portals.blend. Open entrance/exit portals without text signs, fixed station names, no switching camera captions or brand strapline. Original 16-second timing and mechanical/camera poses preserved; shadow sampling increased."
+}

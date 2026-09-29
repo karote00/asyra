@@ -152,6 +152,14 @@ fixture/setup/cleanup. The dedicated three-case command supplies a finite
 `APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource.browser.spec.ts --global-timeout=465000`.
 These test allowances do not renew or extend the Worker-owned execution budget.
 
+Browser frame wall-clock values attached by `mechanical-review.spec.ts`
+describe only the current host and browser.
+They are not general local/CI pass criteria and do not establish a performance
+pass. This repository does not yet provide a controlled benchmark host or
+cross-version comparison harness; benchmark-based performance regression
+detection remains a gap. Keep reporting measurements for diagnosis without
+claiming that the run proves acceptable performance.
+
 Also include small analytical, near-threshold, and over-budget scenes. Record
 hardware, OS, browser, engine version, shape count, pair count, time range,
 segment count, numerical settings, wall time, measurable memory, cancellation
@@ -159,6 +167,9 @@ latency, and unresolved-interval counts.
 
 - M0 defines numerical support and initial resource limits; M5 freezes measured
   release limits.
+- Product deadlines such as configured analysis duration, bounded worker
+  cancellation, and explicit CPU/process resource guards remain enforceable
+  contracts. Removing generic frame-time thresholds does not remove them.
 - Do not lower precision or skip pairs to meet a speed target while retaining
   the original method label.
 - Where memory cannot be measured reliably, disclose the method and limitations;
@@ -167,8 +178,9 @@ latency, and unresolved-interval counts.
   jobs, and uncooperative workers.
 - Repeated run/cancel/restart must not retain unnecessary timers, workers,
   listeners, or GPU resources.
-- Without numerical budgets and specified test hardware, the performance gate
-  has not passed. "It feels smooth" is not evidence.
+- Until M5 fixes a hardware/browser/engine baseline and comparable workload,
+  generic test timings do not qualify release performance. "It feels smooth"
+  is not evidence.
 
 ## 7. Partner Pilots Without Requiring Secrets
 

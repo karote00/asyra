@@ -1,3 +1,5 @@
+import type { KeyboardEvent, SyntheticEvent } from 'react'
+import { AiDocumentInteractionTargetProps } from '../constants'
 import ThemeToggle from './theme-toggle'
 import Zoom from './zoom'
 import ToolButton from './tool-button'
@@ -6,6 +8,15 @@ export interface ToolBarProps {
   readonly aiOpen: boolean
   readonly aiShortcutLabel?: string
   readonly onAiToggle: (invoker: HTMLButtonElement) => void
+}
+
+const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
+  if (
+    (event.type === 'keydown' || event.type === 'keyup') &&
+    !['Enter', ' '].includes((event as KeyboardEvent).key)
+  )
+    return
+  event.stopPropagation()
 }
 
 const ToolBar = ({ aiOpen, aiShortcutLabel, onAiToggle }: ToolBarProps) => {
@@ -24,6 +35,15 @@ const ToolBar = ({ aiOpen, aiShortcutLabel, onAiToggle }: ToolBarProps) => {
       <ToolButton />
       <div className="flex items-center gap-2">
         <button
+          {...AiDocumentInteractionTargetProps.AGENT_CONTROL}
+          onKeyDown={stopAgentInteractionPropagation}
+          onKeyUp={stopAgentInteractionPropagation}
+          onMouseDown={stopAgentInteractionPropagation}
+          onMouseUp={stopAgentInteractionPropagation}
+          onPointerDown={stopAgentInteractionPropagation}
+          onPointerUp={stopAgentInteractionPropagation}
+          onTouchEnd={stopAgentInteractionPropagation}
+          onTouchStart={stopAgentInteractionPropagation}
           aria-expanded={aiOpen}
           aria-label={aiOpen ? 'Close Agent' : 'Open Agent'}
           className={`flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium transition-colors ${
@@ -32,7 +52,10 @@ const ToolBar = ({ aiOpen, aiShortcutLabel, onAiToggle }: ToolBarProps) => {
               : 'border-[#47484e] bg-[#33343a] text-[#dedee3] hover:border-[#686971] hover:bg-[#3d3e44]'
           }`}
           data-testid="ai-agent-toolbar-button"
-          onClick={(event) => onAiToggle(event.currentTarget)}
+          onClick={(event) => {
+            event.stopPropagation()
+            onAiToggle(event.currentTarget)
+          }}
           title={
             aiShortcutLabel
               ? `Toggle Agent Panel (${aiShortcutLabel})`

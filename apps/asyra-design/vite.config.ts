@@ -1,3 +1,4 @@
+import { createAiStatusMiddleware } from './server/ai-status'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -25,9 +26,11 @@ const createActionBatchPlugin = (): Plugin => ({
   name: 'action-batch-server',
   configureServer(server) {
     server.middlewares.use(createActionBatchMiddleware())
+    server.middlewares.use(createAiStatusMiddleware())
   },
   configurePreviewServer(server) {
     server.middlewares.use(createActionBatchMiddleware())
+    server.middlewares.use(createAiStatusMiddleware())
   }
 })
 

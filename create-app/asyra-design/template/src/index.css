@@ -4,8 +4,18 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -15,11 +25,27 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 input,
 textarea {
   user-select: text;
+}
+
+/* A bounded completion cue; reduced motion is handled by the icon utility. */
+@keyframes conversation-bell {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  12.5%,
+  62.5% {
+    transform: rotate(-16deg);
+  }
+  37.5%,
+  87.5% {
+    transform: rotate(16deg);
+  }
 }

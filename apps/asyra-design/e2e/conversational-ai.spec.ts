@@ -126,7 +126,7 @@ test.describe('Conversational AI drawing', () => {
       timeout: 30_000
     })
     await expect(
-      message.getByText('Drawing updated successfully.')
+      message.getByText('Updated 16 editable elements.')
     ).toBeVisible()
     await expect
       .poll(() => readCanonicalDrawingSummary(page))

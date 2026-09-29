@@ -270,6 +270,37 @@ describe('generic HTTP AI provider', () => {
     )
   })
 
+  it.each(['abort', 'dispose'])(
+    'allows explicit no deadline while retaining %s cleanup',
+    async (mode) => {
+      vi.useFakeTimers()
+      const controller = new AbortController()
+      let transport: AbortSignal | undefined
+      const provider = createGenericHttpAiProvider({
+        endpoint: '/api/ai/action-batch',
+        timeoutMs: null,
+        fetch: async (_url, init) => {
+          transport = init.signal
+          return new Promise<AiFetchResponse>(() => undefined)
+        }
+      })
+      const pending = provider.requestActionBatch(providerInput(), {
+        signal: controller.signal
+      })
+      const checked = expectProviderError(
+        pending,
+        mode === 'abort' ? 'AI_PROVIDER_ABORTED' : 'AI_PROVIDER_DISPOSED'
+      )
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+      expect(transport?.aborted).toBe(false)
+      if (mode === 'abort') controller.abort()
+      else provider.dispose()
+      await checked
+      expect(transport?.aborted).toBe(true)
+      expect(vi.getTimerCount()).toBe(0)
+    }
+  )
+
   it('aborts timed-out work and releases request listeners and timers', async () => {
     vi.useFakeTimers()
     const fetch: AiFetch = vi.fn(

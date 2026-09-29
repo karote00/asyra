@@ -44,7 +44,7 @@ test('root README follows the product-to-proof reader journey', () => {
   const readme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8')
   const productEvidencePath = path.join(
     repositoryRoot,
-    'docs/public/assets/asyra-design-7076-product-evidence.jpg'
+    'apps/asyra-design/brand/asyra-design-7076-product-evidence.jpg'
   )
   const collaborationEvidencePath = path.join(
     repositoryRoot,
@@ -104,7 +104,7 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.match(readme, /Asyra Design case study/u)
   assert.match(
     readme,
-    /!\[Asyra Design showing the complete 7,076-element editable cat drawing\]\(docs\/public\/assets\/asyra-design-7076-product-evidence\.jpg\)/u
+    /!\[Asyra Design showing the complete 7,076-element editable cat drawing\]\(apps\/asyra-design\/brand\/asyra-design-7076-product-evidence\.jpg\)/u
   )
   const productEvidence = fs.readFileSync(productEvidencePath)
   assert.deepEqual([...productEvidence.subarray(0, 3)], [0xff, 0xd8, 0xff])
@@ -150,12 +150,30 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.equal(featureExcerpt, undoRedoSource.trim())
   assert.match(readme, /Build a transaction-safe Feature/u)
   assert.match(readme, /## Choose your starting point/u)
+  const starterEntry = readme.indexOf('### Generic Starter')
+  const designEntry = readme.indexOf('### Complete design product')
+  const advancedEntry = readme.indexOf('### Advanced composition')
+  assert.ok(starterEntry > 0 && starterEntry < designEntry)
+  assert.ok(designEntry < advancedEntry)
+  assert.match(readme, /apps\/starter-app\/README\.md/u)
+  assert.match(readme, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
+  assert.match(readme, /apps\/starter-app\/docs\/PRIORITY_EXERCISE\.md/u)
+  assert.match(
+    readme,
+    /npx create-asyra-app@0\.1\.0 my-app --package-manager=npm/u
+  )
+  assert.match(readme, /Node\.js 24 and npm or Yarn/u)
+  assert.doesNotMatch(readme, /not yet published to the public npm registry/u)
+  assert.doesNotMatch(
+    readme,
+    /built-in AI runtime|built-in physics|industrial safety guarantee/iu
+  )
   assert.match(readme, /npm install @asyra\/core/u)
   assert.match(
     readme,
     /npx create-asyra-design-app my-product --package-manager=npm[\s\S]*npm run start/u
   )
-  assert.doesNotMatch(readme, /create-asyra-app|one React homepage/u)
+  assert.doesNotMatch(readme, /one React homepage/u)
   assert.match(readme, /Build product features, not infrastructure/u)
   assert.match(
     readme,
@@ -178,12 +196,35 @@ test('root README follows the product-to-proof reader journey', () => {
   )
   assert.doesNotMatch(readme, /flowchart (TD|LR)/u)
   assert.match(readme, /### Built and demonstrated today/u)
+  assert.match(readme, /editable 2D and\s+3D tools/u)
+  assert.match(readme, /FieldScope[\s\S]*?cucumber and tomato crops/u)
+  assert.match(readme, /Asyra Sim[\s\S]*?development checkpoint/u)
+  assert.match(readme, /apps\/fieldscope\/src\/domain\/crop-layout\.ts/u)
+  assert.match(readme, /apps\/asyra-sim\/README\.md/u)
+  assert.doesNotMatch(readme, /FieldScope[^\n]*no plants/u)
+  assert.match(
+    fs.readFileSync(
+      path.join(
+        repositoryRoot,
+        'apps/fieldscope/src/domain/__tests__/crop-layout.test.ts'
+      ),
+      'utf8'
+    ),
+    /plants both cultivars at 20 cm spacing/u
+  )
+  assert.match(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'apps/asyra-sim/README.md'),
+      'utf8'
+    ),
+    /Development checkpoint, not R0/u
+  )
   assert.match(readme, /### Compose your domain/u)
   assert.match(readme, /### Not turnkey modules/u)
   assert.match(readme, /19 public `@asyra\/\*` ESM packages/u)
   assert.match(readme, /Node\.js 24\.x/u)
   assert.match(readme, /Production `3D`, `HYBRID`/u)
-  assert.match(readme, /does not accept external issues or contributions/u)
+  assert.match(readme, /External pull requests are not accepted by\s+default/u)
   assert.doesNotMatch(
     readme,
     /Runtime Atlas|release candidates|does not independently authorize a release|Yarn 4\.3\.1/u

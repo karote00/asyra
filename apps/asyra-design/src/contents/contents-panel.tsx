@@ -505,7 +505,7 @@ const Contents: React.FC = () => {
                   isSelected={elementSelection.has(elementId)}
                   isHovered={hoveredElementId === elementId}
                   depth={row.depth}
-                  isGroup={row.isGroup}
+                  canExpand={row.canExpand}
                   isExpanded={row.isExpanded}
                   dropState={getRowDropState(elementId)}
                   onToggleGroup={handleToggleGroup}
