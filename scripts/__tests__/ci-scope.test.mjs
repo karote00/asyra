@@ -38,6 +38,25 @@ test('CI check selection narrows changed test inputs and declares E2E suites', (
     collaboration.relationshipMap.executionPlan.checks.e2e.selected,
     ['collaboration']
   )
+  assert.deepEqual(
+    classifyChanges(
+      ['apps/asyra-design/e2e/deep/nested-case.spec.ts'],
+      manifests
+    ).relationshipMap.executionPlan.checks.e2e.selected,
+    ['functional']
+  )
+  assert.deepEqual(
+    classifyChanges(
+      ['apps/asyra-design/e2e/helpers/browser-config.ts'],
+      manifests
+    ).relationshipMap.executionPlan.checks.e2e.selected,
+    ['collaboration', 'functional', 'render-contracts']
+  )
+  assert.deepEqual(
+    classifyChanges(['scripts/run-e2e.sh'], manifests).relationshipMap
+      .executionPlan.checks.e2e.selected,
+    ['collaboration', 'flow-inspector-board', 'functional', 'render-contracts']
+  )
 
   const source = classifyChanges(['packages/core/src/index.ts'], manifests)
   assert.deepEqual(
@@ -60,6 +79,52 @@ test('CI check selection narrows changed test inputs and declares E2E suites', (
     'functional',
     'render-contracts'
   ])
+})
+
+test('workspace manifests own independent lint, test, and standard E2E selections', () => {
+  const source = classifyChanges(
+    ['packages/lumen-core/src/index.ts'],
+    new Map([
+      [
+        '@sample/lumen-core',
+        {
+          name: '@sample/lumen-core',
+          directory: 'packages/lumen-core',
+          group: 'packages',
+          buildTask: 'build:lumen-core',
+          testTask: 'test:ci',
+          dependencies: new Set()
+        }
+      ],
+      [
+        '@sample/atlas-console',
+        {
+          name: '@sample/atlas-console',
+          directory: 'apps/atlas-console',
+          group: 'apps',
+          buildTask: 'build:atlas-console',
+          testTask: 'test:ci',
+          dependencies: new Set(['@sample/lumen-core']),
+          lintTask: 'lint',
+          e2eTask: 'test:e2e:ci'
+        }
+      ]
+    ])
+  )
+  const atlas = source.relationshipMap.workspaceMatrix.find(
+    ({ name }) => name === '@sample/atlas-console'
+  )
+  assert.equal(atlas.lintSelection.mode, 'full')
+  assert.equal(atlas.lintTask, 'lint')
+  assert.equal(atlas.e2eSelection.mode, 'full')
+  assert.equal(atlas.e2eTask, 'test:e2e:ci')
+  assert.equal(atlas.testSelection.mode, 'full')
+  assert.equal(
+    source.relationshipMap.executionPlan.checks.workspaces.find(
+      ({ workspace }) => workspace === '@sample/atlas-console'
+    ).e2e.mode,
+    'full'
+  )
 })
 
 test('shared setup selects all E2E suites and fixture changes keep full owner tests', () => {
@@ -132,7 +197,17 @@ test('transitive package sources select the consumer owner suite, not Vitest rel
   assert.deepEqual(runnerCalls, [
     {
       workspace: '@asyra/core',
+      task: 'eslint',
+      selection: coreWorkspace.lintSelection
+    },
+    {
+      workspace: '@asyra/core',
       task: coreWorkspace.buildTask,
+      selection: undefined
+    },
+    {
+      workspace: '@asyra/core',
+      task: 'has:test',
       selection: undefined
     },
     {
@@ -239,6 +314,14 @@ test('first-level apps, packages, and tools are discovered without named owner l
     writeWorkspace('apps', 'atlas-console', '@sample/atlas-console', {
       '@sample/lumen-core': 'workspace:*'
     })
+    const atlasManifestPath = path.join(
+      fixtureRoot,
+      'apps/atlas-console/package.json'
+    )
+    const atlasManifest = JSON.parse(fs.readFileSync(atlasManifestPath, 'utf8'))
+    atlasManifest.scripts.lint = 'eslint src'
+    atlasManifest.scripts['test:e2e:ci'] = 'playwright test'
+    fs.writeFileSync(atlasManifestPath, JSON.stringify(atlasManifest))
     writeWorkspace('tools', 'orbit-inspector', '@sample/orbit-inspector', {
       '@sample/signal-kit': 'workspace:*'
     })
@@ -272,6 +355,11 @@ test('first-level apps, packages, and tools are discovered without named owner l
         '@sample/signal-kit'
       ]
     )
+    const atlas = entries.find(({ name }) => name === '@sample/atlas-console')
+    assert.equal(atlas.lintTask, 'lint')
+    assert.equal(atlas.e2eTask, 'test:e2e:ci')
+    assert.equal(atlas.lintSelection.mode, 'full')
+    assert.equal(atlas.e2eSelection.mode, 'full')
 
     for (const entry of entries)
       await executeWorkspaceChecks(entry, {
@@ -284,14 +372,18 @@ test('first-level apps, packages, and tools are discovered without named owner l
           run: '4',
           attempt: '1'
         },
-        runTask: async (workspace, task) =>
-          commands.push(`${workspace}:${task}`)
+        runTask: async (workspace, task) => (
+          commands.push(`${workspace}:${task}`),
+          task === 'test:e2e:ci' ? { testCount: 1 } : undefined
+        )
       })
     assert.deepEqual(
       commands,
-      entries.flatMap(({ name, buildTask, testTask }) => [
+      entries.flatMap(({ name, lintTask, buildTask, testTask, e2eTask }) => [
+        `${name}:${lintTask}`,
         `${name}:${buildTask}`,
-        `${name}:${testTask}`
+        `${name}:${testTask}`,
+        ...(e2eTask ? [`${name}:${e2eTask}`] : [])
       ])
     )
   } finally {
@@ -369,9 +461,14 @@ test('a failed workspace build prevents its test task from running', async () =>
   const entry = {
     name: '@sample/failed-build',
     directory: 'packages/failed-build',
+    lintTask: 'eslint',
+    lintSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
     buildTask: 'build:failed-build',
     testTask: 'test:ci',
+    hasTestTask: null,
     testSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
+    e2eTask: null,
+    e2eSelection: { mode: 'not-selected', inputs: [], reason: 'no-e2e-owner' },
     artifactId: 'c1ee386690afbe71'
   }
   const record = await executeWorkspaceChecks(entry, {
@@ -379,12 +476,43 @@ test('a failed workspace build prevents its test task from running', async () =>
     identity: {},
     runTask: async (_workspace, task) => {
       commands.push(task)
-      throw new Error('build failed')
+      if (task === entry.buildTask) throw new Error('build failed')
     }
   })
-  assert.deepEqual(commands, ['build:failed-build'])
-  assert.deepEqual(record.taskSequence, ['build:failed-build'])
+  assert.deepEqual(commands, ['eslint', 'build:failed-build'])
+  assert.deepEqual(record.taskSequence, ['eslint', 'build:failed-build'])
   assert.equal(record.testStatus, 'skipped')
+  assert.equal(record.status, 'failed')
+})
+
+test('a selected guarded workspace with no tests is recorded as zero-tests', async () => {
+  const entry = {
+    name: '@sample/empty-tests',
+    directory: 'packages/empty-tests',
+    lintTask: 'eslint',
+    lintSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
+    buildTask: 'build:empty-tests',
+    testTask: 'test:ci',
+    hasTestTask: 'has:test',
+    testSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
+    testRunner: { command: 'vitest', args: [], hasTestGuard: true },
+    e2eSelection: { mode: 'not-selected', inputs: [], reason: 'no E2E owner' },
+    artifactId: createHash('sha256')
+      .update('@sample/empty-tests')
+      .digest('hex')
+      .slice(0, 16)
+  }
+  const calls = []
+  const record = await executeWorkspaceChecks(entry, {
+    relationshipMapDigest: 'a'.repeat(64),
+    identity: {},
+    runTask: async (_workspace, task) => {
+      calls.push(task)
+      if (task === 'has:test') throw new Error('No test files found')
+    }
+  })
+  assert.deepEqual(calls, ['eslint', 'build:empty-tests', 'has:test'])
+  assert.equal(record.testStatus, 'zero-tests')
   assert.equal(record.status, 'failed')
 })
 
@@ -392,14 +520,19 @@ test('workspace execution preserves the selected Vitest related inputs', async (
   const entry = {
     name: '@sample/related-workspace',
     directory: 'packages/related-workspace',
+    lintTask: 'eslint',
+    lintSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
     buildTask: 'build:related-workspace',
     testTask: 'test:ci',
+    hasTestTask: null,
     testSelection: {
       mode: 'related',
       inputs: ['packages/related-workspace/src/index.ts'],
       reason: 'Vitest related-file graph',
       runner: { command: 'vitest', args: [], hasTestGuard: false }
     },
+    e2eTask: null,
+    e2eSelection: { mode: 'not-selected', inputs: [], reason: 'no-e2e-owner' },
     artifactId: createHash('sha256')
       .update('@sample/related-workspace')
       .digest('hex')
@@ -414,8 +547,8 @@ test('workspace execution preserves the selected Vitest related inputs', async (
     }
   })
 
-  assert.equal(executed[1].task, 'test:ci')
-  assert.deepEqual(executed[1].selection, entry.testSelection)
+  assert.equal(executed[2].task, 'test:ci')
+  assert.deepEqual(executed[2].selection, entry.testSelection)
   assert.deepEqual(record.testSelection, entry.testSelection)
   assert.equal(record.status, 'success')
 })

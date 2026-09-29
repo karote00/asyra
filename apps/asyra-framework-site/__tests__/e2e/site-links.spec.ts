@@ -102,7 +102,14 @@ test('every public page and server-rendered internal link resolves', async ({
   }
 
   expect(externalOrigins).toEqual(
-    new Set(['https://asyra-design.vercel.app', 'https://github.com'])
+    new Set([
+      'https://asyra-design.vercel.app',
+      'https://github.com',
+      'https://www.npmjs.com'
+    ])
   )
   expect(externalUrls).toContain('https://asyra-design.vercel.app/?fileId=demo')
+  expect(externalUrls).toContain(
+    'https://www.npmjs.com/package/create-asyra-app'
+  )
 })

@@ -31,9 +31,12 @@ function workspaceEntry(group, slug, manifest) {
     buildTask: workspaceBuildTaskCandidates(manifest.name).find(
       (task) => scripts[task]
     ),
+    lintTask: scripts.lint ? 'lint' : 'eslint',
     testTask: scripts['test:ci'] ? 'test:ci' : undefined,
     testCommand: scripts['test:ci'],
+    hasTestTask: scripts['has:test'] ? 'has:test' : null,
     testRunner: vitestRunnerContract(scripts['test:ci']),
+    e2eTask: scripts['test:e2e:ci'] ? 'test:e2e:ci' : null,
     dependencies: new Set([
       ...Object.keys(manifest.dependencies ?? {}),
       ...Object.keys(manifest.devDependencies ?? {}),
@@ -47,7 +50,7 @@ function vitestRunnerContract(script) {
   if (typeof script !== 'string') return null
   const direct = script.match(/^vitest run((?:\s+--[a-z-]+(?:=[a-z0-9-]+)?)*)$/)
   const guarded = script.match(
-    /^yarn has:test && vitest run((?:\s+--[a-z-]+(?:=[a-z0-9-]+)?)*) \|\| echo 'No test files found\. Skipping test:ci\.'$/
+    /^yarn has:test && vitest run((?:\s+--[a-z-]+(?:=[a-z0-9-]+)?)*)$/
   )
   const match = direct ?? guarded
   if (!match) return null
@@ -99,42 +102,48 @@ function isVitestRelatedInput(changedPath) {
 
 function selectedE2ESuites(changedPaths, options) {
   const suiteIds = relationshipPolicy.e2eSuites.map(({ id }) => id)
-  const designSuites = new Set(
-    suiteIds.filter((id) => id !== 'flow-inspector-board')
-  )
   if (options.fullValidation || options.selectEveryWorkspace)
     return suiteIds.sort()
 
   const selected = new Set()
-  const designDirectory = relationshipPolicy.designE2EWorkspaceDirectory
+  for (const directory of options.affectedWorkspaceDirectories) {
+    if (
+      relationshipPolicy.e2eSuites.some(({ inputs = [] }) =>
+        inputs.some((input) => input.startsWith(`${directory}/`))
+      ) &&
+      changedPaths.some((changedPath) => !changedPath.includes('/e2e/'))
+    )
+      for (const suite of relationshipPolicy.e2eSuites)
+        if (suite.inputs?.some((input) => input.startsWith(`${directory}/`)))
+          selected.add(suite.id)
+  }
   for (const changedPath of changedPaths) {
-    if (
-      options.affectedWorkspaceDirectories.has(designDirectory) &&
-      !changedPath.startsWith(`${designDirectory}/e2e/`)
-    ) {
-      for (const id of designSuites) selected.add(id)
-    }
-    if (changedPath.startsWith(`${designDirectory}/e2e/`)) {
-      const file = path.basename(changedPath)
-      const exactSuite = relationshipPolicy.e2eSuites.find(({ specs }) =>
-        specs.includes(file)
-      )
-      if (exactSuite) selected.add(exactSuite.id)
-      else if (/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(file))
-        selected.add('functional')
-      else for (const id of designSuites) selected.add(id)
+    const exactSuites = relationshipPolicy.e2eSuites.filter(({ inputs = [] }) =>
+      inputs.some((input) => !input.includes('*') && input === changedPath)
+    )
+    if (exactSuites.length) {
+      for (const suite of exactSuites) selected.add(suite.id)
       continue
     }
+    const selectedByInput = relationshipPolicy.e2eSuites.filter(
+      ({ inputs = [] }) =>
+        inputs.some((input) => matchesPattern(changedPath, input).matched)
+    )
+    for (const suite of selectedByInput) selected.add(suite.id)
     if (
-      changedPath === '.github/workflows/e2e.yml' ||
-      changedPath === 'scripts/run-e2e.sh' ||
-      changedPath.startsWith(`${designDirectory}/`)
-    ) {
-      for (const id of designSuites) selected.add(id)
-      continue
-    }
-    if (changedPath.startsWith('tools/flow-inspector/'))
-      selected.add('flow-inspector-board')
+      selectedByInput.length === 0 &&
+      /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(changedPath)
+    )
+      for (const suite of relationshipPolicy.e2eSuites)
+        if (suite.id === 'functional') selected.add(suite.id)
+    if (selectedByInput.length === 0)
+      for (const suite of relationshipPolicy.e2eSuites)
+        if (
+          suite.supportInputs?.some(
+            (input) => matchesPattern(changedPath, input).matched
+          )
+        )
+          selected.add(suite.id)
   }
   if (
     options.fullValidation ||
@@ -148,6 +157,43 @@ function selectedE2ESuites(changedPaths, options) {
   )
     for (const id of suiteIds) selected.add(id)
   return [...selected].sort()
+}
+
+function e2eOwnerSelection(workspace, ownerPaths, sharedOwnerInput) {
+  if (
+    !workspace.e2eTask ||
+    (!sharedOwnerInput && ownerPaths.length === 0) ||
+    (!sharedOwnerInput &&
+      ownerPaths.length > 0 &&
+      ownerPaths.every((changedPath) => /\.(?:md|mdx)$/.test(changedPath)))
+  )
+    return {
+      mode: 'not-selected',
+      inputs: [],
+      reason: workspace.e2eTask ? 'documentation-only' : 'no-e2e-owner'
+    }
+  const relatedInputs = ownerPaths.filter(
+    (changedPath) =>
+      changedPath.startsWith(`${workspace.directory}/e2e/`) &&
+      /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(changedPath) &&
+      fs.existsSync(path.join(process.cwd(), changedPath))
+  )
+  if (
+    !sharedOwnerInput &&
+    relatedInputs.length > 0 &&
+    relatedInputs.length === ownerPaths.length
+  )
+    return {
+      mode: 'related',
+      inputs: relatedInputs.sort(),
+      reason: 'changed E2E specs owned by workspace',
+      runner: { command: 'playwright' }
+    }
+  return {
+    mode: 'full',
+    inputs: [],
+    reason: sharedOwnerInput ? 'shared-input' : 'affected-e2e-owner'
+  }
 }
 
 function readWorkspaceManifests(root) {
@@ -293,9 +339,10 @@ function workspaceForPath(changedPath, manifests) {
 
 function matchesPattern(changedPath, pattern) {
   const expression = pattern
-    .split(/(\*\*|\{slug\})/)
+    .split(/(\*\*|\*|\{slug\})/)
     .map((part) => {
       if (part === '**') return '.*'
+      if (part === '*') return '[^/]*'
       if (part === '{slug}') return '([a-z0-9]+(?:-[a-z0-9]+)*)'
       return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     })
@@ -483,107 +530,145 @@ function classifyChanges(
 
   const workspaceMatrix = affectedWorkspaces
     .filter((workspace) => workspace.buildTask && workspace.testTask)
-    .map(({ name, directory, buildTask, testTask }) => {
-      const dependencyOwners = new Set([name])
-      let expanded = true
-      while (expanded) {
-        expanded = false
-        for (const { dependency, consumer } of dependencyEdges)
-          if (
-            dependencyOwners.has(consumer) &&
-            !dependencyOwners.has(dependency)
-          ) {
-            dependencyOwners.add(dependency)
-            expanded = true
-          }
-      }
-      const ownerPaths = changedPaths.filter((changedPath) => {
-        const pathOwner = allManifestViews
-          .map((manifests) => workspaceForPath(changedPath, manifests))
-          .find(Boolean)
-        if (pathOwner) return dependencyOwners.has(pathOwner.name)
-        return relationshipPolicy.workspaceInputRules.some((rule) => {
-          const matched = matchesPattern(changedPath, rule.pattern)
-          return (
-            matched.matched &&
-            rule.workspaceDirectory.replace('{slug}', matched.slug) ===
-              directory
-          )
-        })
-      })
-      const relatedInputs = ownerPaths.filter(
-        (changedPath) =>
-          isVitestRelatedInput(changedPath) &&
-          fs.existsSync(path.join(process.cwd(), changedPath))
-      )
-      const relatedInputsAreConsumerOwned = ownerPaths.every((changedPath) => {
-        const pathOwner = allManifestViews
-          .map((manifests) => workspaceForPath(changedPath, manifests))
-          .find(Boolean)
-        return pathOwner?.name === name
-      })
-      const e2eOnlyInputs =
-        ownerPaths.length > 0 &&
-        ownerPaths.every(
-          (changedPath) =>
-            changedPath.startsWith(`${directory}/e2e/`) ||
-            changedPath.startsWith(`${directory}/playwright.`) ||
-            changedPath.startsWith(`${directory}/e2e.`)
-        )
-      const onlyDocumentation =
-        ownerPaths.length > 0 &&
-        ownerPaths.every((changedPath) => /\.(?:md|mdx)$/.test(changedPath))
-      const sharedOwnerInput =
-        selectEveryWorkspace ||
-        options.fullValidation ||
-        unknownPaths.length > 0
-      const testRunner = headManifests.get(name)?.testRunner
-      let testSelection
-      if (sharedOwnerInput)
-        testSelection = { mode: 'full', inputs: [], reason: 'shared-input' }
-      else if (e2eOnlyInputs)
-        testSelection = {
-          mode: 'not-selected',
-          inputs: [],
-          reason: 'separate-e2e-owner'
-        }
-      else if (onlyDocumentation)
-        testSelection = {
-          mode: 'not-selected',
-          inputs: [],
-          reason: 'documentation-only'
-        }
-      else if (
-        relatedInputs.length > 0 &&
-        relatedInputs.length === ownerPaths.length &&
-        testRunner &&
-        relatedInputsAreConsumerOwned
-      )
-        testSelection = {
-          mode: 'related',
-          inputs: relatedInputs.sort(),
-          reason: 'Vitest related-file graph',
-          runner: testRunner
-        }
-      else
-        testSelection = {
-          mode: 'full',
-          inputs: [],
-          reason: 'owner-input-or-runner-unresolved'
-        }
-      return {
+    .map(
+      ({
         name,
         directory,
         buildTask,
+        lintTask,
         testTask,
-        testSelection,
-        artifactId: crypto
-          .createHash('sha256')
-          .update(name)
-          .digest('hex')
-          .slice(0, 16)
+        hasTestTask,
+        e2eTask
+      }) => {
+        const dependencyOwners = new Set([name])
+        let expanded = true
+        while (expanded) {
+          expanded = false
+          for (const { dependency, consumer } of dependencyEdges)
+            if (
+              dependencyOwners.has(consumer) &&
+              !dependencyOwners.has(dependency)
+            ) {
+              dependencyOwners.add(dependency)
+              expanded = true
+            }
+        }
+        const ownerPaths = changedPaths.filter((changedPath) => {
+          const pathOwner = allManifestViews
+            .map((manifests) => workspaceForPath(changedPath, manifests))
+            .find(Boolean)
+          if (pathOwner) return dependencyOwners.has(pathOwner.name)
+          return relationshipPolicy.workspaceInputRules.some((rule) => {
+            const matched = matchesPattern(changedPath, rule.pattern)
+            return (
+              matched.matched &&
+              rule.workspaceDirectory.replace('{slug}', matched.slug) ===
+                directory
+            )
+          })
+        })
+        const relatedInputs = ownerPaths.filter(
+          (changedPath) =>
+            isVitestRelatedInput(changedPath) &&
+            fs.existsSync(path.join(process.cwd(), changedPath))
+        )
+        const relatedInputsAreConsumerOwned = ownerPaths.every(
+          (changedPath) => {
+            const pathOwner = allManifestViews
+              .map((manifests) => workspaceForPath(changedPath, manifests))
+              .find(Boolean)
+            return pathOwner?.name === name
+          }
+        )
+        const e2eOnlyInputs =
+          ownerPaths.length > 0 &&
+          ownerPaths.every(
+            (changedPath) =>
+              changedPath.startsWith(`${directory}/e2e/`) ||
+              changedPath.startsWith(`${directory}/playwright.`) ||
+              changedPath.startsWith(`${directory}/e2e.`)
+          )
+        const onlyDocumentation =
+          ownerPaths.length > 0 &&
+          ownerPaths.every((changedPath) => /\.(?:md|mdx)$/.test(changedPath))
+        const sharedOwnerInput =
+          selectEveryWorkspace ||
+          options.fullValidation ||
+          unknownPaths.length > 0
+        const testRunner = headManifests.get(name)?.testRunner
+        const lintSelection =
+          !sharedOwnerInput &&
+          ownerPaths.length > 0 &&
+          ownerPaths.every((changedPath) => /\.(?:md|mdx)$/.test(changedPath))
+            ? {
+                mode: 'not-selected',
+                inputs: [],
+                reason: 'documentation-only'
+              }
+            : {
+                mode: 'full',
+                inputs: [],
+                reason: sharedOwnerInput
+                  ? 'shared-input'
+                  : 'affected-workspace-owner'
+              }
+        let testSelection
+        if (sharedOwnerInput)
+          testSelection = { mode: 'full', inputs: [], reason: 'shared-input' }
+        else if (e2eOnlyInputs)
+          testSelection = {
+            mode: 'not-selected',
+            inputs: [],
+            reason: 'separate-e2e-owner'
+          }
+        else if (onlyDocumentation)
+          testSelection = {
+            mode: 'not-selected',
+            inputs: [],
+            reason: 'documentation-only'
+          }
+        else if (
+          relatedInputs.length > 0 &&
+          relatedInputs.length === ownerPaths.length &&
+          testRunner &&
+          relatedInputsAreConsumerOwned
+        )
+          testSelection = {
+            mode: 'related',
+            inputs: relatedInputs.sort(),
+            reason: 'Vitest related-file graph',
+            runner: testRunner
+          }
+        else
+          testSelection = {
+            mode: 'full',
+            inputs: [],
+            reason: 'owner-input-or-runner-unresolved'
+          }
+        const e2eSelection = e2eOwnerSelection(
+          { directory, e2eTask },
+          ownerPaths,
+          sharedOwnerInput
+        )
+        return {
+          name,
+          directory,
+          buildTask,
+          lintTask,
+          lintSelection,
+          testTask,
+          hasTestTask,
+          testSelection,
+          e2eTask,
+          e2eSelection,
+          artifactId: crypto
+            .createHash('sha256')
+            .update(name)
+            .digest('hex')
+            .slice(0, 16)
+        }
       }
-    })
+    )
   const changedNames = [...changedWorkspaceNames].sort()
   const affectedNamesInHead = affectedWorkspaces.map(({ name }) => name)
   const frameworkPackages = affectedWorkspaces
@@ -608,16 +693,31 @@ function classifyChanges(
     ...new Set(changedCreateAppDirectories)
   ].sort()
   const workspaceGraph = [...headManifests.values()]
-    .map(({ name, directory, group, buildTask, testTask, dependencies }) => ({
-      name,
-      directory,
-      group,
-      buildTask,
-      testTask,
-      dependencies: [...dependencies]
-        .filter((dependency) => headManifests.has(dependency))
-        .sort()
-    }))
+    .map(
+      ({
+        name,
+        directory,
+        group,
+        buildTask,
+        lintTask,
+        testTask,
+        hasTestTask,
+        e2eTask,
+        dependencies
+      }) => ({
+        name,
+        directory,
+        group,
+        buildTask,
+        lintTask,
+        testTask,
+        hasTestTask,
+        e2eTask,
+        dependencies: [...dependencies]
+          .filter((dependency) => headManifests.has(dependency))
+          .sort()
+      })
+    )
     .sort((left, right) => left.name.localeCompare(right.name))
   const frameworkDeclarationsRequired =
     options.fullValidation ||
@@ -721,15 +821,31 @@ function classifyChanges(
           : 'no-declaration-owner-inputs'
       },
       workspaces: workspaceMatrix.map(
-        ({ name, directory, buildTask, testTask, testSelection }) => ({
-          workspace: name,
+        ({
+          name,
           directory,
           buildTask,
+          lintTask,
+          lintSelection,
           testTask,
+          hasTestTask,
+          testSelection,
+          e2eTask,
+          e2eSelection
+        }) => ({
+          workspace: name,
+          directory,
+          lintTask,
+          lint: lintSelection,
+          buildTask,
+          testTask,
+          hasTestTask,
           reason: changedWorkspaceNames.has(name)
             ? 'direct-owner-input'
             : 'shared-or-transitive-consumer',
-          tests: testSelection
+          tests: testSelection,
+          e2eTask: e2eTask ?? null,
+          e2e: e2eSelection
         })
       ),
       e2e: {
@@ -737,6 +853,14 @@ function classifyChanges(
         notSelected: relationshipPolicy.e2eSuites
           .map(({ id }) => id)
           .filter((id) => !e2eSuites.includes(id)),
+        workspaces: workspaceMatrix
+          .filter(({ e2eSelection }) => e2eSelection.mode !== 'not-selected')
+          .map(({ name, directory, e2eTask, e2eSelection }) => ({
+            workspace: name,
+            directory,
+            task: e2eTask,
+            selection: e2eSelection
+          })),
         reason: e2eSuites.length ? 'declared-suite-inputs' : 'no-suite-inputs'
       }
     }
@@ -757,7 +881,6 @@ function classifyChanges(
     sharedValidationRequired: true,
     frameworkReleaseRequired,
     createAppPackages: resolvedCreateAppPackages,
-    designE2EWorkspaceDirectory: relationshipPolicy.designE2EWorkspaceDirectory,
     designE2ERequired: e2eSuites.some((id) => id !== 'flow-inspector-board'),
     flowInspectorValidationWorkspaceDirectory:
       relationshipPolicy.flowInspectorValidationWorkspaceDirectory,

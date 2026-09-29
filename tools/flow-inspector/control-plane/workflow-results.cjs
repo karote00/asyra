@@ -351,10 +351,6 @@ function aggregateScope(evidence, identity, jobs) {
     typeof relationshipMap.frameworkReleaseRequired === 'boolean' &&
     Array.isArray(relationshipMap.frameworkDeclarationTasks) &&
     typeof relationshipMap.designE2ERequired === 'boolean' &&
-    typeof relationshipMap.designE2EWorkspaceDirectory === 'string' &&
-    relationshipMap.workspaceRoots.some((root) =>
-      relationshipMap.designE2EWorkspaceDirectory.startsWith(root + '/')
-    ) &&
     typeof relationshipMap.flowInspectorValidationWorkspaceDirectory ===
       'string' &&
     relationshipMap.workspaceRoots.some((root) =>
@@ -384,6 +380,9 @@ function aggregateScope(evidence, identity, jobs) {
         ) &&
         typeof workspace.group === 'string' &&
         typeof workspace.buildTask === 'string' &&
+        ['lint', 'eslint'].includes(workspace.lintTask) &&
+        [null, 'has:test'].includes(workspace.hasTestTask ?? null) &&
+        (workspace.e2eTask === null || workspace.e2eTask === 'test:e2e:ci') &&
         typeof workspace.testTask === 'string' &&
         workspace.testTask === 'test:ci' &&
         Array.isArray(workspace.dependencies)
@@ -401,6 +400,13 @@ function aggregateScope(evidence, identity, jobs) {
         workspace &&
         entry.directory === workspace.directory &&
         entry.buildTask === workspace.buildTask &&
+        entry.lintTask === workspace.lintTask &&
+        (entry.hasTestTask ?? null) === (workspace.hasTestTask ?? null) &&
+        (entry.e2eTask ?? null) === (workspace.e2eTask ?? null) &&
+        ['full', 'not-selected'].includes(entry.lintSelection?.mode) &&
+        ['full', 'related', 'not-selected'].includes(
+          entry.e2eSelection?.mode
+        ) &&
         entry.testTask === workspace.testTask &&
         validWorkspaceTests(entry.testSelection) &&
         /^[a-f0-9]{16}$/.test(entry.artifactId ?? '') &&
@@ -431,6 +437,11 @@ function aggregateScope(evidence, identity, jobs) {
           planned &&
           planned.directory === entry.directory &&
           planned.buildTask === entry.buildTask &&
+          planned.lintTask === entry.lintTask &&
+          planned.e2eTask === (entry.e2eTask ?? null) &&
+          JSON.stringify(planned.lint) ===
+            JSON.stringify(entry.lintSelection) &&
+          JSON.stringify(planned.e2e) === JSON.stringify(entry.e2eSelection) &&
           planned.testTask === entry.testTask &&
           JSON.stringify(planned.tests) === JSON.stringify(entry.testSelection)
         )
@@ -590,21 +601,51 @@ function aggregateScope(evidence, identity, jobs) {
       record.relationshipMapDigest === evidence.relationshipMapDigest &&
       record.directory === entry.directory &&
       record.buildTask === entry.buildTask &&
+      record.lintTask === entry.lintTask &&
+      JSON.stringify(record.lintSelection) ===
+        JSON.stringify(entry.lintSelection) &&
+      (record.e2eTask ?? null) === (entry.e2eTask ?? null) &&
+      JSON.stringify(record.e2eSelection) ===
+        JSON.stringify(entry.e2eSelection) &&
       record.testTask === entry.testTask &&
+      (record.hasTestTask ?? null) === (entry.hasTestTask ?? null) &&
       JSON.stringify(record.testSelection) ===
         JSON.stringify(entry.testSelection) &&
       record.status === 'success' &&
+      record.lintStatus ===
+        (entry.lintSelection.mode === 'not-selected'
+          ? 'not-selected'
+          : 'success') &&
       record.buildStatus === 'success' &&
       record.testStatus ===
         (entry.testSelection.mode === 'not-selected'
           ? 'not-selected'
           : 'success') &&
       JSON.stringify(record.taskSequence) ===
-        JSON.stringify(
-          entry.testSelection.mode === 'not-selected'
-            ? [entry.buildTask]
-            : [entry.buildTask, entry.testTask]
-        ) &&
+        JSON.stringify([
+          ...(entry.lintSelection.mode === 'not-selected'
+            ? []
+            : [entry.lintTask]),
+          entry.buildTask,
+          ...(entry.testSelection.mode === 'not-selected'
+            ? []
+            : [
+                ...(entry.hasTestTask ? [entry.hasTestTask] : []),
+                entry.testTask
+              ]),
+          ...(entry.e2eSelection.mode === 'not-selected' ? [] : [entry.e2eTask])
+        ]) &&
+      (entry.e2eSelection.mode === 'not-selected'
+        ? record.e2eStatus === 'not-selected' && record.e2eResult === undefined
+        : record.e2eStatus === 'passed' &&
+          record.e2eResult?.mode === entry.e2eSelection.mode &&
+          JSON.stringify(record.e2eResult.inputs) ===
+            JSON.stringify(entry.e2eSelection.inputs) &&
+          /^[a-f0-9]{64}$/.test(record.e2eResult.reportDigest ?? '') &&
+          Number.isInteger(record.e2eResult.testCount) &&
+          record.e2eResult.testCount > 0 &&
+          record.e2eResult.passedCount === record.e2eResult.testCount &&
+          record.e2eResult.failedCount === 0) &&
       (entry.testSelection.mode === 'not-selected'
         ? record.testResult === undefined
         : record.testResult?.mode === entry.testSelection.mode &&
@@ -660,7 +701,8 @@ function aggregateScope(evidence, identity, jobs) {
       (record) =>
         record?.status === 'failed' ||
         record?.buildStatus === 'failure' ||
-        record?.testStatus === 'failure'
+        record?.testStatus === 'failure' ||
+        record?.e2eStatus === 'failure'
     ) ||
     (frameworkReleaseSelected && jobs.frameworkRelease === 'failure') ||
     (createAppSelected && jobs.createAppReadiness === 'failure') ||

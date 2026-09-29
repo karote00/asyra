@@ -80,11 +80,37 @@
   "e2eSuites": [
     {
       "id": "collaboration",
-      "specs": ["collaboration.spec.ts", "collaboration-ai-agent-video.spec.ts"]
+      "specs": [
+        "collaboration.spec.ts",
+        "collaboration-ai-agent-video.spec.ts"
+      ],
+      "inputs": [
+        "apps/asyra-design/e2e/collaboration.spec.ts",
+        "apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts"
+      ],
+      "supportInputs": ["apps/asyra-design/e2e/**", "scripts/run-e2e.sh"]
     },
-    { "id": "render-contracts", "specs": ["render-delta-performance.spec.ts"] },
-    { "id": "functional", "specs": [] },
-    { "id": "flow-inspector-board", "specs": [] }
+    {
+      "id": "render-contracts",
+      "specs": ["render-delta-performance.spec.ts"],
+      "inputs": ["apps/asyra-design/e2e/render-delta-performance.spec.ts"],
+      "supportInputs": ["apps/asyra-design/e2e/**", "scripts/run-e2e.sh"]
+    },
+    {
+      "id": "functional",
+      "specs": [],
+      "inputs": [
+        "apps/asyra-design/e2e/**.spec.ts",
+        "apps/asyra-design/e2e/**.spec.tsx",
+        "apps/asyra-design/e2e/**.test.ts"
+      ],
+      "supportInputs": ["apps/asyra-design/e2e/**", "scripts/run-e2e.sh"]
+    },
+    {
+      "id": "flow-inspector-board",
+      "specs": [],
+      "inputs": ["tools/flow-inspector/**"]
+    }
   ],
   "workspaceInputRules": [
     {
@@ -124,6 +150,5 @@
     "scripts/release-validation-environment.js",
     "scripts/release-validation-workspace.js"
   ],
-  "designE2EWorkspaceDirectory": "apps/asyra-design",
   "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector"
 }

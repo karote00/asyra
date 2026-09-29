@@ -13,7 +13,7 @@ export default defineConfig({
     '**/dist/**',
     `${fileURLToPath(new URL('./.artifacts/', import.meta.url))}**`
   ],
-  outputDir: './test-results',
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR ?? './test-results',
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -21,13 +21,20 @@ export default defineConfig({
   globalTimeout: 180_000,
   reporter: [
     ['line'],
-    ['json', { outputFile: '.artifacts/browser-report.json' }]
+    [
+      'json',
+      {
+        outputFile:
+          process.env.PLAYWRIGHT_JSON_OUTPUT_FILE ??
+          '.artifacts/browser-report.json'
+      }
+    ]
   ],
   use: {
     baseURL: environment.url,
     viewport: { width: 1440, height: 960 },
     deviceScaleFactor: 1,
-    channel: 'chrome',
+    channel: process.env.CI ? undefined : 'chrome',
     launchOptions: {
       args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     },

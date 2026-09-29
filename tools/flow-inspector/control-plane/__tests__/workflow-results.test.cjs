@@ -23,6 +23,11 @@ function workspaceEntry(
     name,
     directory,
     buildTask,
+    lintTask: 'eslint',
+    hasTestTask: null,
+    e2eTask: null,
+    lintSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
+    e2eSelection: { mode: 'not-selected', inputs: [], reason: 'no-e2e-owner' },
     testTask: 'test:ci',
     testSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
     artifactId: createHash('sha256').update(name).digest('hex').slice(0, 16)
@@ -92,6 +97,10 @@ function makeScope({
         directory: entry.directory,
         buildTask: entry.buildTask,
         testTask: entry.testTask,
+        lintTask: entry.lintTask,
+        e2eTask: entry.e2eTask,
+        lint: entry.lintSelection,
+        e2e: entry.e2eSelection,
         reason: 'direct-owner-input',
         tests: entry.testSelection
       })),
@@ -235,16 +244,56 @@ function workspaceResult(entry, scope, result = {}) {
     directory: entry.directory,
     buildTask: entry.buildTask,
     testTask: entry.testTask,
+    hasTestTask: entry.hasTestTask,
     testSelection: entry.testSelection,
+    lintTask: entry.lintTask,
+    lintSelection: entry.lintSelection,
+    lintStatus:
+      entry.lintSelection.mode === 'not-selected' ? 'not-selected' : 'success',
+    e2eTask: entry.e2eTask ?? null,
+    e2eSelection: entry.e2eSelection,
+    e2eStatus:
+      entry.e2eSelection.mode === 'not-selected' ? 'not-selected' : 'passed',
     buildStatus: 'success',
     testStatus: selection.mode === 'not-selected' ? 'not-selected' : 'success',
     taskSequence:
       selection.mode === 'not-selected'
-        ? [entry.buildTask]
-        : [entry.buildTask, entry.testTask],
+        ? [
+            ...(entry.lintSelection.mode === 'not-selected'
+              ? []
+              : [entry.lintTask]),
+            entry.buildTask
+          ]
+        : [
+            ...(entry.lintSelection.mode === 'not-selected'
+              ? []
+              : [entry.lintTask]),
+            entry.buildTask,
+            ...(entry.testSelection.mode === 'not-selected'
+              ? []
+              : [
+                  ...(entry.hasTestTask ? [entry.hasTestTask] : []),
+                  entry.testTask
+                ]),
+            ...(entry.e2eSelection.mode === 'not-selected'
+              ? []
+              : [entry.e2eTask])
+          ],
     ...(selection.mode === 'not-selected'
       ? {}
       : { testResult: { mode: selection.mode, inputs: selection.inputs } }),
+    ...(entry.e2eSelection.mode === 'not-selected'
+      ? {}
+      : {
+          e2eResult: {
+            mode: entry.e2eSelection.mode,
+            inputs: entry.e2eSelection.inputs,
+            reportDigest: 'a'.repeat(64),
+            testCount: 1,
+            passedCount: 1,
+            failedCount: 0
+          }
+        }),
     status: 'success',
     ...result
   }
@@ -575,7 +624,11 @@ test('formal path owners reach their selected gates through the final aggregate'
     }
     assert.deepEqual(scope.unknownPaths, [], changedPath)
     const result = aggregate(envelopes(), identity, jobsFor(scope), scope)
-    assert.equal(result.status, 'passed', changedPath)
+    assert.equal(
+      result.status,
+      'passed',
+      `${changedPath}: ${result.blockers.join('; ')}`
+    )
     assert.equal(result.producerResults.validate, 'success', changedPath)
     assert.equal(
       result.producerResults.workspaceValidation,
@@ -607,8 +660,8 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
           : 'success',
       taskSequence:
         buildStatus === 'failure'
-          ? [workspace.buildTask]
-          : [workspace.buildTask, workspace.testTask]
+          ? [workspace.lintTask, workspace.buildTask]
+          : [workspace.lintTask, workspace.buildTask, workspace.testTask]
     })
   const jobs = {
     validate: 'success',
@@ -730,6 +783,131 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
   )
 })
 
+test('selected workspace E2E owners require one passing run and reject zero tests', () => {
+  const workspace = workspaceEntry('@fixture/e2e-owner', 'apps/e2e-owner')
+  workspace.e2eTask = 'test:e2e:ci'
+  workspace.e2eSelection = {
+    mode: 'full',
+    inputs: [],
+    reason: 'affected E2E owner'
+  }
+  const scope = makeScope({ workspaceMatrix: [workspace], e2eSuites: [] })
+  const jobs = {
+    workspaceValidation: 'success',
+    workspaceResults: [
+      workspaceResult(workspace, scope, {
+        e2eStatus: 'zero-tests',
+        e2eResult: { status: 'zero-tests', testCount: 0 }
+      })
+    ]
+  }
+  assert.notEqual(assess(envelopes(), jobs, scope).status, 'passed')
+  assert.equal(
+    assess(
+      envelopes(),
+      {
+        ...jobs,
+        workspaceResults: [
+          workspaceResult(workspace, scope, {
+            e2eStatus: 'passed',
+            e2eResult: {
+              mode: 'full',
+              inputs: [],
+              reportDigest: 'a'.repeat(64),
+              testCount: 1,
+              passedCount: 1,
+              failedCount: 0
+            }
+          })
+        ]
+      },
+      scope
+    ).status,
+    'passed',
+    assess(
+      envelopes(),
+      {
+        ...jobs,
+        workspaceResults: [
+          workspaceResult(workspace, scope, {
+            e2eStatus: 'passed',
+            e2eResult: {
+              mode: 'full',
+              inputs: [],
+              reportDigest: 'a'.repeat(64),
+              testCount: 1,
+              passedCount: 1,
+              failedCount: 0
+            }
+          })
+        ]
+      },
+      scope
+    ).blockers.join('; ')
+  )
+  for (const result of ['missing', 'not-selected', 'failed'])
+    assert.notEqual(
+      assess(
+        envelopes(),
+        {
+          ...jobs,
+          workspaceResults: [
+            workspaceResult(workspace, scope, {
+              e2eStatus: result,
+              ...(result === 'missing'
+                ? {}
+                : {
+                    e2eResult: {
+                      mode: 'full',
+                      inputs: [],
+                      reportDigest: 'a'.repeat(64),
+                      testCount: result === 'passed' ? 1 : 0,
+                      passedCount: result === 'passed' ? 1 : 0,
+                      failedCount: result === 'failed' ? 1 : 0
+                    }
+                  })
+            })
+          ]
+        },
+        scope
+      ).status,
+      'passed',
+      result
+    )
+  for (const invalid of [
+    { e2eStatus: 'passed', e2eResult: undefined },
+    { e2eStatus: 'passed', e2eTask: null },
+    {
+      e2eStatus: 'passed',
+      e2eSelection: { mode: 'not-selected', inputs: [], reason: 'stale' }
+    },
+    {
+      e2eStatus: 'passed',
+      e2eResult: {
+        mode: 'full',
+        inputs: [],
+        reportDigest: 'a'.repeat(64),
+        testCount: 0,
+        passedCount: 0,
+        failedCount: 0
+      }
+    }
+  ]) {
+    assert.notEqual(
+      assess(
+        envelopes(),
+        {
+          ...jobs,
+          workspaceResults: [workspaceResult(workspace, scope, invalid)]
+        },
+        scope
+      ).status,
+      'passed',
+      JSON.stringify(invalid)
+    )
+  }
+})
+
 test('selected E2E suites require exact outcomes and unselected suites stay skipped', () => {
   const scope = makeScope({ e2eSuites: ['collaboration'] })
   const incomplete = assess(envelopes(), { e2eSuiteResults: {} }, scope)
@@ -841,9 +1019,10 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
     'tracked Changesets and root documentation inputs',
     'versioned CI relationship policy and discovered documentation roots',
     'run-scoped CI scope evidence',
-    'versioned execution plan for lint, repository scripts, naming, workspace tests, framework declarations, and E2E suites',
+    'versioned execution plan for repository lint, per-workspace lint/build/test, standard manifest-discovered E2E owners, framework declarations, and specialized E2E suites',
     'run-bound outcomes for selected lint, repository scripts, naming, and framework declaration checks',
-    'completed dynamic per-workspace build/test result records',
+    'completed dynamic per-workspace lint/build/test and optional standard E2E result records, including explicit zero-test outcomes',
+    'manifest-discovered E2E task selections and run-bound workspace results',
     'selected Flow Inspector validation outcome',
     'Framework release-tool readiness and selected package release outcome',
     'non-workspace create-app package directories and conditional archive-step outcome',
@@ -866,7 +1045,12 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   )
   assert.ok(
     step.conditions.some((condition) =>
-      /one derived execution plan.*lint.*repository script tests.*naming/iu.test(
+      /workspace.*lint.*build.*test.*E2E.*zero-tests/iu.test(condition)
+    )
+  )
+  assert.ok(
+    step.conditions.some((condition) =>
+      /one derived execution plan(?=.*repository lint)(?=.*repository script tests)(?=.*naming)/isu.test(
         condition
       )
     )

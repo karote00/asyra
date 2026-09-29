@@ -40,6 +40,31 @@ test('the local naming command runs the same formal gate retained in CI', () => 
   )
 })
 
+test('workspace test:ci contracts cannot turn test failures into successful skips', () => {
+  for (const root of ['apps', 'packages', 'tools']) {
+    for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
+      withFileTypes: true
+    })) {
+      if (!entry.isDirectory()) continue
+      const manifestPath = path.join(
+        repositoryRoot,
+        root,
+        entry.name,
+        'package.json'
+      )
+      if (!fs.existsSync(manifestPath)) continue
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+      const task = manifest.scripts?.['test:ci']
+      if (!task) continue
+      assert.doesNotMatch(
+        task,
+        /\|\|\s*echo\s+['"]No test files found/u,
+        `${manifestPath} must preserve test:ci failures`
+      )
+    }
+  }
+})
+
 test('root lint ignores App consumer artifacts without excluding maintained source or tests', async () => {
   const { ESLint } = await import('eslint')
   const eslint = new ESLint({ cwd: repositoryRoot })
@@ -180,6 +205,93 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /max-parallel: 4/)
   assert.match(workspaceJob, /actions\/upload-artifact@/)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+  assert.match(
+    workspaceJob,
+    /Install Chromium for selected workspace E2E[\s\S]*?if: \$\{\{ matrix\.workspace\.e2eSelection\.mode != 'not-selected' \}\}[\s\S]*?playwright install --with-deps chromium/
+  )
+  assert.match(workspaceJob, /name: Build then test the selected workspace/)
+  assert.match(
+    workspaceJob,
+    /id: workspace-checks[\s\S]*?run: node scripts\/run-workspace-checks\.mjs/
+  )
+  const diagnosticsStep = workspaceJob
+    .split(/(?=^ {6}- name: )/m)
+    .find((block) =>
+      block.includes('name: Upload failed workspace E2E diagnostics')
+    )
+  assert.ok(diagnosticsStep)
+  assert.match(
+    diagnosticsStep,
+    /if: always\(\) && steps\.workspace-checks\.outcome == 'failure'/
+  )
+  assert.match(
+    diagnosticsStep,
+    /name: workspace-e2e-diagnostics-\$\{\{ matrix\.workspace\.artifactId \}\}/
+  )
+  assert.match(
+    diagnosticsStep,
+    /\.ci-workspace-results\/\$\{\{ matrix\.workspace\.artifactId \}\}\*\.playwright\.json/
+  )
+  assert.match(
+    diagnosticsStep,
+    /\$\{\{ matrix\.workspace\.directory \}\}\/test-results\//
+  )
+  assert.match(
+    workspaceJob,
+    /name: Upload this workspace result[\s\S]*?\.ci-workspace-results\/\$\{\{ matrix\.workspace\.artifactId \}\}\.json/
+  )
+})
+
+test('standard manifest E2E owners use installed Chromium in CI and keep local Chrome', () => {
+  const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
+  assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
+  assert.match(workspaceRunner, /reportReadSuccessfully = false/)
+  assert.match(
+    workspaceRunner,
+    /if \(reportReadSuccessfully\) fs\.rmSync\(reportPath, \{ force: true \}\)/
+  )
+  assert.match(workspaceRunner, /Preserving failed Playwright report/)
+  assert.doesNotMatch(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_NAME/)
+  const workspaces = [
+    ['apps/asyra-framework-site', 'test:e2e:ci'],
+    ['apps/asyra-sim', 'test:e2e:ci'],
+    ['apps/fieldscope', 'test:e2e:ci'],
+    ['apps/starter-app', 'test:e2e:ci']
+  ]
+  for (const [directory, task] of workspaces) {
+    const manifest = readJSON(`${directory}/package.json`)
+    const config = readText(`${directory}/playwright.config.ts`)
+    assert.ok(manifest.scripts[task], `${directory} must expose ${task}`)
+    assert.match(config, /process\.env\.CI \? undefined : 'chrome'/, directory)
+  }
+})
+
+test('Sim CI browser owner uses the bounded documented group runner', () => {
+  const sim = readJSON('apps/asyra-sim/package.json')
+  const config = readText('apps/asyra-sim/playwright.config.ts')
+  const groups = readText('apps/asyra-sim/scripts/e2e-ci-groups.mjs')
+  const runner = readText('apps/asyra-sim/scripts/run-e2e-ci.mjs')
+  const strategy = readText(
+    'docs/ai/apps/asyra-sim/validation/TEST_STRATEGY.md'
+  )
+
+  assert.equal(
+    sim.scripts['test:e2e:ci'],
+    'APP_URL=http://127.0.0.1:5174 node scripts/run-e2e-ci.mjs'
+  )
+  assert.match(config, /globalTimeout:\s*180_000/)
+  assert.match(groups, /CI_E2E_GROUPS/)
+  assert.match(groups, /collectBrowserSpecFiles/)
+  assert.match(groups, /mergePlaywrightReports/)
+  assert.match(runner, /CI_E2E_GROUPS/)
+  assert.match(runner, /PLAYWRIGHT_JSON_OUTPUT_FILE/)
+  assert.match(runner, /for \(const group of CI_E2E_GROUPS\)/)
+  assert.match(runner, /groupFailures\.push/)
+  assert.doesNotMatch(runner, /if \(groupFailures\.length\) break/)
+  assert.match(
+    strategy,
+    /standard CI browser owner runs the complete Playwright inventory in six/
+  )
 })
 
 test('Dependabot separates routine, major, and security update lanes', () => {
@@ -382,7 +494,11 @@ test('Framework site deployments are independent of PR CI and Git pushes', () =>
     'apps/asyra-framework-site/scripts/vercel-ignore-build.mjs'
   )
   const ci = readText('.github/workflows/main.yml')
+  const sitePlaywright = readText(
+    'apps/asyra-framework-site/playwright.config.ts'
+  )
 
+  assert.match(sitePlaywright, /new URL\(process\.env\.SITE_URL/)
   assert.equal(siteVercel.git.deploymentEnabled, false)
   assert.equal(siteVercel.ignoreCommand, undefined)
   assert.match(ignoreBuild, /apps\/asyra-framework-site/)
