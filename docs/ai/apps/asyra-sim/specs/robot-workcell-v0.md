@@ -321,6 +321,13 @@ evidence, show checking/unknown. The latest target is authoritative for
 replacement, while late results may be retained under the unchanged admitted
 input if they validate for their own exact time.
 
+When the latest exact foreground sample is incomplete because its bounded
+500 ms attempt expired, continue checking only its missing pairs at that same
+time, reusing validated complete pair evidence. Allow at most two additional
+continuation attempts for one unchanged exact target. Each attempt keeps the
+same 500 ms limit; if coverage is still incomplete, preserve unknown and wait
+for another foreground request. A newer target supersedes the continuation.
+
 Reuse only evidence that exactly covers the requested time: an exact sampled
 point or a certified interval containing that time. A point witness says
 nothing about neighboring times, and an unresolved interval remains unknown.
@@ -381,9 +388,11 @@ evidence miss. Each foreground sample and background interval attempt has
 bounded work, wall time and evidence, and malformed output fails closed.
 An optional background interval timeout, explicit incomplete/error result, or
 Worker failure leaves that coverage unknown and keeps the live lifetime
-available for later exact samples. A new foreground target cancels active
-optional interval work and is served by a fresh Worker when needed; late output
-from the retired Worker is ignored. Invalid response identity/schema or
+available for later exact samples. A foreground target arriving during an
+optional interval query supersedes earlier pending targets and is dispatched as
+soon as that bounded query settles; do not retire a usable Worker solely because
+the foreground target changed. Retire an unusable Worker after failure, and
+ignore late output from any retired Worker. Invalid response identity/schema or
 contradictory accepted proof still fails closed.
 
 Publish validated collision or clearance evidence while other pair checks are

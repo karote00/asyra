@@ -349,6 +349,8 @@ export class LivePlaybackRunner {
     let pending: number | null = initialTime
     let pendingInterval: readonly [number, number] | null = null
     let latestTime = initialTime
+    let continuationTime = initialTime
+    let incompleteContinuations = 0
     let inFlight:
       | { kind: 'sample'; id: number; time: number; startedAt: number }
       | { kind: 'interval'; id: number; interval: readonly [number, number] }
@@ -584,6 +586,10 @@ export class LivePlaybackRunner {
 
       pending = time
       latestTime = time
+      if (time !== continuationTime || discontinuity) {
+        continuationTime = time
+        incompleteContinuations = 0
+      }
 
       if (discontinuity) {
         minimumId = nextId + 1
@@ -595,8 +601,6 @@ export class LivePlaybackRunner {
       }
 
       drain()
-      if (pending !== null && inFlight?.kind === 'interval')
-        abandonBackgroundInterval()
     }
 
     const receive = (event: MessageEvent<unknown>) => {
@@ -785,7 +789,20 @@ export class LivePlaybackRunner {
             null
           )
         const accepted = this.records.get(sample.time) ?? sample
-        if (pending === null) queueAdjacentGap(sample.time)
+        if (
+          !sample.complete &&
+          pending === null &&
+          response.id >= minimumId &&
+          response.time === latestTime &&
+          continuationTime === sample.time &&
+          incompleteContinuations < LIVE_LIMITS.maxIncompleteSampleContinuations
+        ) {
+          incompleteContinuations++
+          pending = sample.time
+        } else if (sample.complete && pending === null) {
+          incompleteContinuations = 0
+          queueAdjacentGap(sample.time)
+        }
 
         if (response.id >= minimumId) {
           this.publish({

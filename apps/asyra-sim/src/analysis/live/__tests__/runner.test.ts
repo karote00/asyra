@@ -443,6 +443,90 @@ it('rechecks an incomplete exact pose while retaining its accepted pair evidence
   await task
 })
 
+it('continues an incomplete latest exact sample without another playback request', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = evidence.pairs[0]
+  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: [acceptedPair]
+  })
+
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  const retryRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+  expect(retryRequest).toMatchObject({
+    type: LiveMessages.SAMPLE,
+    id: 2,
+    time: 4,
+    acceptedPairs: [
+      { pairId: acceptedPair.pairId, evidence: { coverage: 'complete' } }
+    ]
+  })
+  worker.emit({ type: LiveMessages.RESULT, id: 2, time: 4, evidence })
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { complete: true, time: 4 }
+  })
+
+  abort.abort()
+  await task
+})
+
+it('bounds automatic incomplete sample continuations', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = evidence.pairs[0]
+  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  for (const id of [1, 2, 3]) {
+    worker.emit({
+      type: LiveMessages.ERROR,
+      id,
+      time: 4,
+      pairs: [acceptedPair]
+    })
+    await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  }
+
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(LIVE_LIMITS.maxIncompleteSampleContinuations + 1)
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { complete: false, time: 4 }
+  })
+
+  abort.abort()
+  await task
+})
+
 it('serves an exact cached target during unrelated work and retains valid stale output without publishing it', async () => {
   const input = liveFixture()
   const firstWorker = new WorkerStub()
@@ -781,7 +865,7 @@ it('keeps the live lifetime when an exact sample refines an unresolved interval 
   await task
 })
 
-it('preempts an in-flight optional interval for the latest foreground sample and fences its late result', async () => {
+it('keeps the latest foreground sample pending until bounded interval work settles on its Worker', async () => {
   vi.useFakeTimers()
   const input = liveFixture()
   const workers: WorkerStub[] = []
@@ -818,34 +902,26 @@ it('preempts an in-flight optional interval for the latest foreground sample and
   const lateIntervalDelivery = backgroundWorker.onmessage
   runner.sample(2, true)
 
-  expect(backgroundWorker.terminate).toHaveBeenCalledOnce()
-  expect(workers).toHaveLength(2)
-  const foregroundWorker = workers[1]
-  expect(foregroundWorker.postMessage.mock.calls[0][0]).toMatchObject({
-    type: LiveMessages.OPEN,
-    snapshot: { snapshotId: input.snapshotId }
-  })
+  expect(backgroundWorker.terminate).not.toHaveBeenCalled()
+  expect(workers).toHaveLength(1)
+  expect(backgroundWorker.postMessage).toHaveBeenLastCalledWith(
+    expect.objectContaining({ type: LiveMessages.INTERVAL, id: 3 })
+  )
 
   lateIntervalDelivery?.(
     new MessageEvent('message', {
-      data: {
-        type: LiveMessages.INTERVAL_RESULT,
-        id: 3,
-        interval: [0, 4],
-        evidence: certifiedClearInterval(input, [0, 4])
-      }
+      data: { type: LiveMessages.INTERVAL_ERROR, id: 3, interval: [0, 4] }
     }) as MessageEvent
   )
-  foregroundWorker.emit({ type: LiveMessages.READY })
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
-  expect(foregroundWorker.postMessage).toHaveBeenLastCalledWith({
+  expect(backgroundWorker.postMessage).toHaveBeenLastCalledWith({
     type: LiveMessages.SAMPLE,
     id: 4,
     time: 2
   })
   expect(runner.getState()).toMatchObject({ status: 'checking', error: null })
 
-  foregroundWorker.emit({
+  backgroundWorker.emit({
     type: LiveMessages.RESULT,
     id: 4,
     time: 2,
@@ -856,6 +932,8 @@ it('preempts an in-flight optional interval for the latest foreground sample and
     sample: { time: 2, complete: true },
     error: null
   })
+  expect(workers).toHaveLength(1)
+  expect(backgroundWorker.terminate).not.toHaveBeenCalled()
   abort.abort()
   await task
 })
