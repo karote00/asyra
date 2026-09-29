@@ -24,7 +24,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const initial = captureSource(
       root,
       path.join(artifacts, 'initial'),
@@ -1022,7 +1022,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const authorization = {
       id: randomUUID(),
       actor: 'local-developer',
@@ -1163,7 +1163,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -1761,7 +1761,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -2019,7 +2019,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previousTemporary = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(repository, {
       serviceOptions: { directory: path.join(repository, 'runs') }
     })
@@ -2172,7 +2172,7 @@ test(
       temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const prior = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -2339,7 +2339,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -2583,7 +2583,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
     try {
       browser = await chromium.launch({
@@ -2691,7 +2691,7 @@ test(
     )
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = artifacts
+    process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -2863,7 +2863,7 @@ test(
     )
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = artifacts
+    process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     const server = await startServer(root, {
       serviceOptions: { directory: path.join(artifacts, 'runs') }
     })
@@ -2964,7 +2964,7 @@ test(
       temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let effects = 0,
       browser
     const head = 'c'.repeat(40)
@@ -3225,7 +3225,7 @@ test(
     )
     fs.mkdirSync(artifacts, { recursive: true })
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = artifacts
+    process.env.TMPDIR = process.env.RUNNER_TEMP || artifacts
     let browser
     try {
       browser = await chromium.launch({
@@ -3324,7 +3324,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
     const server = await startServer(root, {
       serviceOptions: {
@@ -3469,7 +3469,7 @@ test(
     const temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const fixture = createFullRuntimeFixture(root, artifacts)
     const runs = path.join(fixture.repository, 'runs')
     let prepared, server, browser
