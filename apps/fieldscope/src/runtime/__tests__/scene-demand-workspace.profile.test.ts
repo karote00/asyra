@@ -7,7 +7,7 @@ import type { SceneDemandConfiguration } from '../../domain/scene-demand-configu
 import { bootstrap } from '../bootstrap'
 import * as sceneDemandWorkspaceModule from '../scene-demand-workspace'
 
-it('owns versioned scene demand history, invalidation, stable reads and disposal', async () => {
+async function createSceneDemandRuntime() {
   const builds = vi.spyOn(projection, 'buildSiteMeshes')
   const preparations = vi.spyOn(sceneDemand, 'prepareSceneDemand')
   const workspaces = vi.spyOn(
@@ -55,6 +55,58 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
         cancelFrame: vi.fn()
       })
   )
+  return {
+    runtime,
+    builds,
+    preparations,
+    workspaces,
+    sources,
+    wholeBounds,
+    inventories,
+    async dispose() {
+      const stale = runtime.getSceneDemand()
+      await runtime.dispose()
+      expect(runtime.isCurrentSceneDemand(stale)).toBe(false)
+      expect(() => runtime.getSceneDemand()).toThrow(/closed/)
+      expect(() => runtime.getSceneDemandConfiguration()).toThrow(/closed/)
+      vi.unstubAllGlobals()
+      vi.restoreAllMocks()
+    }
+  }
+}
+
+function configuredDemand(
+  initial: SceneDemandConfiguration
+): SceneDemandConfiguration {
+  return {
+    ...initial,
+    evidence: {
+      kind: 'synthetic',
+      id: 'runtime-survey',
+      label: 'Synthetic runtime case'
+    },
+    growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+    clearanceMargin: { kind: 'bounded', metres: 0.03 },
+    route: {
+      kind: 'soil-strip',
+      bay: 0,
+      stripId: 'strip-3',
+      from: 0.25,
+      until: 0.45
+    }
+  }
+}
+
+it('owns versioned scene demand settings, history and stable reads', async () => {
+  const {
+    runtime,
+    preparations,
+    builds,
+    sources,
+    wholeBounds,
+    inventories,
+    dispose
+  } = await createSceneDemandRuntime()
   try {
     const initial = runtime.getSceneDemand()
     const initialConfiguration = runtime.getSceneDemandConfiguration()
@@ -170,8 +222,22 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
     await runtime.redo()
     expect(preparations).toHaveBeenCalledTimes(before + 1)
 
+    stopFirst()
+    stopSecond()
+  } finally {
+    await dispose()
+  }
+}, 30000)
+
+it('invalidates scene demand for farm replacement and bypasses unrelated operations', async () => {
+  const { runtime, preparations, builds, dispose } =
+    await createSceneDemandRuntime()
+  try {
+    await runtime.setSceneDemandConfiguration(
+      configuredDemand(runtime.getSceneDemandConfiguration())
+    )
     const beforeFarmScene = builds.mock.calls.length
-    before = preparations.mock.calls.length
+    let before = preparations.mock.calls.length
     await runtime.setConfiguration({
       ...runtime.getConfiguration(),
       length: 40
@@ -187,6 +253,18 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
       dockX: runtime.getRobot().settings.dockX + 0.1
     })
     expect(preparations).toHaveBeenCalledTimes(before)
+  } finally {
+    await dispose()
+  }
+}, 30000)
+
+it('lazily reuses observation inventory and retires it with its source scene', async () => {
+  const { runtime, workspaces, inventories, dispose } =
+    await createSceneDemandRuntime()
+  try {
+    await runtime.setSceneDemandConfiguration(
+      configuredDemand(runtime.getSceneDemandConfiguration())
+    )
     const workspace = workspaces.mock.results[0].value
     if (!workspace) throw new Error('Missing production scene demand workspace')
     await runtime.setConfiguration({
@@ -223,15 +301,7 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
     expect(successor.inventory).not.toBe(observation.inventory)
     expect(successor.work.inventoryBuilds).toBe(1)
     expect(workspace.isCurrentObservationSpace(successor)).toBe(true)
-    stopFirst()
-    stopSecond()
   } finally {
-    const stale = runtime.getSceneDemand()
-    await runtime.dispose()
-    expect(runtime.isCurrentSceneDemand(stale)).toBe(false)
-    expect(() => runtime.getSceneDemand()).toThrow(/closed/)
-    expect(() => runtime.getSceneDemandConfiguration()).toThrow(/closed/)
-    vi.unstubAllGlobals()
-    vi.restoreAllMocks()
+    await dispose()
   }
 }, 30000)
