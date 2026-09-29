@@ -1191,3 +1191,238 @@ test(
     )
   }
 )
+
+// Keep actual source mutations outside the checkout and outside immutable
+// snapshots. A passing boundary test does not mean an unmapped app is verified.
+test(
+  'source fault injection distinguishes an unmapped Design feature from cross-flow Factory failures',
+  { timeout: 90000 },
+  async (t) => {
+    const { runProcess, runnerEnvironment } = require('../runner.cjs')
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/fault-injection')
+    fs.mkdirSync(parent, { recursive: true })
+    const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+    const repository = path.join(directory, 'repository')
+    const initial = sourceOwner.captureSource(
+      root,
+      path.join(directory, 'initial'),
+      contract
+    )
+    for (const item of initial.files) {
+      const destination = path.join(repository, item.path)
+      fs.mkdirSync(path.dirname(destination), { recursive: true })
+      fs.writeFileSync(
+        destination,
+        fs.readFileSync(path.join(initial.sourceRoot, item.path))
+      )
+    }
+    fs.cpSync(
+      path.join(root, 'apps/asyra-design/src'),
+      path.join(repository, 'apps/asyra-design/src'),
+      { recursive: true }
+    )
+    const appFile = 'apps/asyra-design/src/features/undo-redo/index.ts'
+    const factoryFile = 'packages/factory/src/value-clone.ts'
+    const originals = new Map(
+      [appFile, factoryFile].map((file) => [
+        file,
+        fs.readFileSync(path.join(repository, file), 'utf8')
+      ])
+    )
+    const observations = []
+    t.after(() => {
+      for (const [file, original] of originals) {
+        assert.equal(
+          fs.readFileSync(path.join(root, file), 'utf8'),
+          original,
+          'checkout source must remain unchanged'
+        )
+      }
+      fs.writeFileSync(
+        path.join(directory, 'summary.json'),
+        JSON.stringify(observations, null, 2)
+      )
+      t.diagnostic('Retained fault-injection evidence: ' + directory)
+    })
+    const replace = (file, from, to) => {
+      const original = originals.get(file)
+      assert.equal(
+        original.split(from).length,
+        2,
+        'mutation must have exactly one source site'
+      )
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
+    }
+    const restore = (file) =>
+      fs.writeFileSync(path.join(repository, file), originals.get(file))
+    const prove = async (label, failedIds) => {
+      const runDirectory = path.join(repository, '.proofs', label)
+      const captured = sourceOwner.captureSource(
+        repository,
+        runDirectory,
+        contract
+      )
+      const runner = await runVerification({
+        repositoryRoot: root,
+        runDirectory,
+        snapshot: captured,
+        contract,
+        scenario: 'baseline',
+        flowIds,
+        timeoutMs: 20000
+      })
+      const evidence = assessEvidence(contract, captured, runner, flowIds)
+      observations.push({
+        label,
+        pid: runner.pid,
+        sourceDigest: captured.digest,
+        runtimeDigest: captured.runtimeSource.digest,
+        evidence,
+        reportPath: runner.reportPath
+      })
+      assert.deepEqual(evidence.issues, [], runner.output)
+      assert.equal(runner.reason, null)
+      assert.equal(runner.code, failedIds.length ? 1 : 0)
+      assert.deepEqual(
+        evidence.cases
+          .filter((item) => item.status === 'failed')
+          .map((item) => item.id)
+          .sort(),
+        [...failedIds].sort()
+      )
+      assert.equal(
+        evidence.passedCount,
+        contract.cases.length - failedIds.length
+      )
+      for (const item of evidence.cases) {
+        assert.equal(
+          item.stepId,
+          contract.cases.find((expected) => expected.id === item.id).stepId
+        )
+      }
+      return { captured, evidence }
+    }
+    const appConfig = path.join(directory, 'app.config.mjs')
+    const appRoot = path.join(repository, 'apps/asyra-design')
+    fs.writeFileSync(
+      appConfig,
+      'export default ' +
+        JSON.stringify({
+          root: appRoot,
+          cacheDir: path.join(directory, 'vite-cache'),
+          test: {
+            environment: 'jsdom',
+            include: ['src/features/undo-redo/__tests__/feature.test.ts'],
+            maxWorkers: 1,
+            fileParallelism: false
+          }
+        })
+    )
+    const appProof = async (label, expectedFailed) => {
+      const reportPath = path.join(directory, label + '.json')
+      const sourcePath = path.join(directory, label + '.ts')
+      const sourceBytes = fs.readFileSync(path.join(repository, appFile))
+      fs.writeFileSync(sourcePath, sourceBytes)
+      const testFile =
+        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+      assert.deepEqual(
+        fs.readFileSync(path.join(repository, testFile)),
+        fs.readFileSync(path.join(root, testFile)),
+        'the product oracle must remain unchanged'
+      )
+      const temporary = path.join(directory, 'tmp')
+      fs.mkdirSync(temporary, { recursive: true })
+      const runner = await runProcess({
+        executable: process.execPath,
+        args: [
+          path.join(
+            path.dirname(require.resolve('vitest/package.json')),
+            'vitest.mjs'
+          ),
+          'run',
+          '--config',
+          appConfig,
+          '--reporter=json',
+          '--outputFile=' + reportPath
+        ],
+        cwd: root,
+        env: runnerEnvironment(repository, 'baseline', temporary),
+        timeoutMs: 20000
+      })
+      assert.equal(runner.reason, null, runner.output)
+      assert.ok(fs.existsSync(reportPath), runner.output)
+      const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+      observations.push({
+        label,
+        pid: runner.pid,
+        reportPath,
+        sourcePath,
+        sourceDigest: sourceOwner.sha256(sourceBytes),
+        failed: report.numFailedTests,
+        passed: report.numPassedTests
+      })
+      assert.equal(report.numTotalTests, 2, runner.output)
+      assert.equal(report.numFailedTests, expectedFailed, runner.output)
+      assert.equal(report.numPassedTests, 2 - expectedFailed)
+      assert.equal(report.numPendingTests, 0)
+      assert.equal(report.numRuntimeErrorTestSuites ?? 0, 0)
+      assert.equal(report.success, expectedFailed === 0)
+      assert.equal(report.testResults.length, 1)
+      assert.equal(report.testResults[0].message, '')
+      assert.deepEqual(
+        report.testResults[0].assertionResults.map((item) => item.status),
+        Array(2).fill(expectedFailed ? 'failed' : 'passed')
+      )
+      assert.equal(runner.code, expectedFailed ? 1 : 0)
+    }
+    const baseline = await prove('baseline', [])
+    await appProof('app-baseline', 0)
+    try {
+      replace(appFile, 'if (snapshot.keyShift) {', 'if (!snapshot.keyShift) {')
+      await appProof('app-reversed-shortcut', 2)
+      const appChanged = await prove('app-reversed-shortcut', [])
+      assert.equal(
+        appChanged.captured.digest,
+        baseline.captured.digest,
+        'unmapped app bytes are outside the Factory proof'
+      )
+      assert.equal(
+        appChanged.captured.files.some((item) => item.path === appFile),
+        false
+      )
+      assert.equal(
+        contract.cases.some((item) => item.stepId === 'decide-feature-outcome'),
+        false
+      )
+    } finally {
+      restore(appFile)
+    }
+    await appProof('app-recovery', 0)
+    try {
+      replace(
+        factoryFile,
+        "if (value === null || typeof value !== 'object') {\n    return value\n  }\n\n  const source",
+        "if (value === null || typeof value !== 'object') {\n    return typeof value === 'number' ? (value + 1) as T : value\n  }\n\n  const source"
+      )
+      const changed = await prove('factory-numeric-clone', [
+        'deferred.snapshot',
+        'cancel.snapshot',
+        'cancel.outcome',
+        'cancel.delivery'
+      ])
+      assert.notEqual(
+        changed.captured.runtimeSource.digest,
+        baseline.captured.runtimeSource.digest
+      )
+      assert.deepEqual(
+        changed.evidence.flows.map((flow) => flow.status),
+        ['failed', 'failed']
+      )
+    } finally {
+      restore(factoryFile)
+    }
+    const recovery = await prove('recovery', [])
+    assert.equal(recovery.captured.digest, baseline.captured.digest)
+  }
+)

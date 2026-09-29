@@ -8,6 +8,15 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
+## Planned Verification Coverage Follow-up
+
+- [Verification Coverage Expansion](plans/flow-inspector-verification-coverage-expansion-plan.md)
+  - Proposed on 2026-09-29 following real App and Framework fault injection.
+  - Priorities: expose uncovered steps, admit a complete Design feature, extend
+    declared Framework consumer coverage, and simplify bounded Board tasks.
+  - Planning only. The completed multi-PR slice remains closed; implementation
+    and repository-wide coverage are not implied.
+
 ## Deferred Follow-up
 
 1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
