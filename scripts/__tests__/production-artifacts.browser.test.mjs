@@ -41,7 +41,7 @@ async function browserPage(t, url, closeServer) {
     }
   })
   browser = await chromium.launch({
-    ...(process.env.CI ? {} : { channel: 'chrome' }),
+    channel: 'chrome',
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
   })
   const page = await browser.newPage({
