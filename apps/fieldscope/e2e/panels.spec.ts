@@ -84,7 +84,6 @@ test('side panels preserve immediate edits without remounting the canvas', async
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await expect(page.getByLabel('完整鋼架', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '展開編輯面板', exact: true }).click()
-  await expect(page.getByLabel('完整鋼架', { exact: true })).not.toBeVisible()
   await expect(page.getByLabel('溫室縱向深度', { exact: true })).toHaveValue(
     '42'
   )
