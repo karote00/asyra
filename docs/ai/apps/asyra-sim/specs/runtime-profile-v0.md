@@ -78,10 +78,19 @@ build hosts are unverified and fail explicitly. No sandbox binary is shipped
 in the user distribution.
 Consumer tests disable CommonJS default-export interop so packed ESM live
 bindings preserve the same successor-Core semantics as native modules. They
-execute the packed files, not an alias to Framework source.
+execute the packed files, not an alias to Framework source. The consumer and
+shipped SDK both include the App's portable process/idle supervisor oracle and
+run ordinary tests plus each of the three heavy proof files exactly once. The
+repository source entry additionally runs its repository-only CI ordering
+oracle; copied SDK tests never search for an absent ancestor workflow.
 
-Each owned command has a five-minute deadline and an 8 MiB log limit. Signals
-terminate the active owned process group. Passing evidence records the exact
+Each owned build, install and archive command has a five-minute deadline and an
+8 MiB log limit. The consumer test command has a 21-minute outer deadline around
+the supervisor's 20-minute job envelope, which reserves its full 60-second
+cleanup window; this does not change the App's product analysis limits. Signals
+terminate the active owned process group. The supervisor accepts only the exact
+monorepo manifest/layout or the App's own standalone manifest and installation;
+it never borrows an arbitrary ancestor package. Passing evidence records the exact
 commit, App/tool versions, source/tarball/lock checksums and module-boundary
 evidence. Failed runs preserve bounded logs and a failure record, never a passing
 marker. These developer artifacts are not a user distribution, a dependency
@@ -111,7 +120,7 @@ respective specifications. The following aggregate limits apply in addition:
 | ------------------------------ | ------------------------------------------------------------- |
 | Analysis geometry              | 16 colliders per body, 256 per selected workcell              |
 | Expanded shape pairs           | 4,096 per run, after explicit pair policy                     |
-| Pair/keyframe-segment workload | 500,000 before adaptive subdivision                           |
+| Pair/keyframe-segment workload | Counted and warned; no fixed workload-count admission limit    |
 | Concurrent formal jobs         | One; candidates execute sequentially                          |
 | Formal wall-clock budget       | Default 30 s; user range 0.1–120 s                            |
 | Adaptive node budget           | Default 100,000 total; maximum 1,000,000 per run              |
@@ -152,6 +161,15 @@ estimated completion times; state that no reliable time estimate is available
 until representative profiling exists. Acknowledgement cannot override a hard
 limit or invalid model.
 
+Pair/segment combinations and logical mesh work are different counters. Neither
+has a fixed 500,000-unit abort gate. Finite geometry, trajectory and pair limits,
+the requested wall-clock and adaptive-node budgets, retained evidence limits,
+and owned cancellation still bound execution. Completion always requires the
+whole requested coverage; removing a workload-count gate never certifies an
+unfinished run. Optional method warning thresholds are positive safe integers;
+the effective warning remains the lower of that value and the global 10,000
+threshold. Existing serialized positive warning declarations remain valid.
+
 Byte/count caps limit input and retained evidence, not the browser's total
 resident memory. M5 records actual measurable memory and its measurement
 limitations; it must not claim a memory guarantee from these caps. The normal
@@ -159,6 +177,16 @@ six-axis / approximately 30-obstacle / approximately 200-keyframe / three-candid
 benchmark remains mandatory. Failure to produce useful answers within measured
 limits requires an owner-level correction or an explicit product decision,
 not a narrower undisclosed test fixture.
+
+The large original-workcell benchmark explicitly selects the supported
+120-second / 100,000-node profile for each of its three sequential candidates.
+This is a published measurement profile, not a change to the 30-second default,
+the 120-second maximum, geometry, precision or pair coverage. All candidates
+must complete with retained evidence and no unresolved coverage within that
+profile. Default-budget timeout and cancellation cases remain separate required
+negative tests. Publish the actual host CPU, memory, OS, browser and method
+version with the measurements; a development-host pass is not evidence for the
+planned reference hardware or a total resident-memory guarantee.
 
 ## Evidence and Advancement
 

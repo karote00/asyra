@@ -20,6 +20,7 @@ import { isolatedConsumerCommand } from './consumer-isolation.mjs'
 import { assembleDistribution } from './assemble-distribution.mjs'
 import {
   consumerManifest,
+  consumerPortableFiles,
   consumerBuildConfig,
   assertFrozenRegistryLock,
   assertOwnedPaths,
@@ -33,6 +34,19 @@ const digest = (filename) =>
   createHash('sha256').update(readFileSync(filename)).digest('hex')
 const git = (args) =>
   execFileSync('git', args, { cwd: repository, encoding: 'utf8' }).trim()
+
+export function commandExecutionContract(label) {
+  if (label === 'consumer-tests')
+    return {
+      timeoutMs: 21 * 60 * 1000,
+      environment: {
+        TEST_JOB_MS: String(20 * 60 * 1000),
+        TEST_IDLE_MS: '120000',
+        TEST_CLEANUP_MS: '60000'
+      }
+    }
+  return { timeoutMs: 5 * 60 * 1000, environment: {} }
+}
 
 export async function buildConsumer() {
   if (process.versions.node.split('.')[0] !== '24')
@@ -101,6 +115,7 @@ export async function buildConsumer() {
     if (aborted) throw new Error('Build cancelled.')
     if (isolate)
       ({ command, args } = isolatedConsumerCommand(cwd, command, args))
+    const execution = commandExecutionContract(label)
     const filename = path.join(
       logs,
       `${String(++number).padStart(2, '0')}-${label}.log`
@@ -111,7 +126,7 @@ export async function buildConsumer() {
     await new Promise((resolve, reject) => {
       const child = spawn(command, args, {
         cwd,
-        env: environment,
+        env: { ...environment, ...execution.environment },
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe']
       })
@@ -127,10 +142,10 @@ export async function buildConsumer() {
           /* Already exited. */
         }
       }
-      const timer = setTimeout(
-        () => expire(`${label} exceeded its 5-minute limit.`),
-        300_000
-      )
+      const timer = setTimeout(() => {
+        const minutes = execution.timeoutMs / 60_000
+        expire(`${label} exceeded its ${minutes}-minute limit.`)
+      }, execution.timeoutMs)
       const receive = (chunk) => {
         bytes += chunk.length
         if (bytes > 8 * 1024 * 1024)
@@ -227,6 +242,11 @@ export async function buildConsumer() {
       cpSync(path.join(sourceApp, entry), path.join(consumer, entry), {
         recursive: true
       })
+    for (const file of consumerPortableFiles) {
+      const destination = path.join(consumer, file)
+      mkdirSync(path.dirname(destination), { recursive: true })
+      cpSync(path.join(sourceApp, file), destination)
+    }
     cpSync(path.join(sourceApp, '.env.example'), path.join(consumer, '.env'))
     const manifest = consumerManifest(
       app,
