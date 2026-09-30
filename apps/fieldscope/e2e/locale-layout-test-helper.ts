@@ -65,6 +65,35 @@ export async function runResponsiveLayout(
     await expect(editorToggle).toHaveAttribute('aria-expanded', 'true')
   }
   const right = page.locator('#configuration-panel .workspace-panel-content')
+  await page.locator('.scene-workspace').evaluate(async (workspace) => {
+    await Promise.all(
+      workspace
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished)
+    )
+  })
+  const panelState = await page
+    .locator('#configuration-panel')
+    .evaluate((panel) => {
+      const content = panel.querySelector('.workspace-panel-content')
+      const toggle = document.querySelector(
+        'button[aria-controls="configuration-panel"]'
+      )
+      return {
+        expanded: toggle?.getAttribute('aria-expanded'),
+        rightOpen: panel.parentElement?.getAttribute('data-right-open'),
+        ariaHidden: panel.getAttribute('aria-hidden'),
+        inert: panel.hasAttribute('inert'),
+        contentVisibility: content ? getComputedStyle(content).visibility : null
+      }
+    })
+  expect(panelState).toEqual({
+    expanded: 'true',
+    rightOpen: 'true',
+    ariaHidden: 'false',
+    inert: false,
+    contentVisibility: 'visible'
+  })
   await expect(right).toBeVisible()
   await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
