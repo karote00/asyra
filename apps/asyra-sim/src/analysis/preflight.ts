@@ -342,13 +342,6 @@ function inspectExperiment(
                 Math.min(end, frames[index + 1].time)
             ).length,
     workUnits = pairCount * segmentCount
-  if (workUnits > EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits)
-    blockers.push(
-      issue(
-        'workload-limit',
-        `The requested interval contains ${workUnits} pair/segment combinations; the application limit is ${EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits}.`
-      )
-    )
   if (pairCount > EXPERIMENT_RESOURCE_PROFILE.warningPairs)
     resourceWarnings.push(
       issue(
