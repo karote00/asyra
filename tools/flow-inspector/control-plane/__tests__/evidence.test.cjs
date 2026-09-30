@@ -1314,7 +1314,12 @@ test(
             cacheDir: path.join(directory, `vite-cache-${label}`),
             test: {
               environment: 'jsdom',
-              include: ['src/features/undo-redo/__tests__/feature.test.ts'],
+              include: [
+                path.join(
+                  appRoot,
+                  'src/features/undo-redo/__tests__/feature.test.ts'
+                )
+              ],
               maxWorkers: 1,
               fileParallelism: false
             }

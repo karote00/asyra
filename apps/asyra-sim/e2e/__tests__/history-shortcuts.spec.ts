@@ -35,6 +35,7 @@ for (const modifier of ['Meta', 'Control']) {
 test('text and numeric input retain native Undo without replaying model history', async ({
   page
 }) => {
+  const nativeUndoModifier = process.platform === 'darwin' ? 'Meta' : 'Control'
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const initialDepth = await readHistoryDepth(page)
@@ -48,15 +49,15 @@ test('text and numeric input retain native Undo without replaying model history'
   await name.click()
   await name.press('End')
   await name.pressSequentially(' draft')
-  await name.press('Meta+z')
+  await name.press(`${nativeUndoModifier}+z`)
   await expect(name).toHaveValue('fixture post')
   await expect(x).toHaveValue('-1.25')
   await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth + 1)
-  await name.press('Meta+Shift+z')
+  await name.press(`${nativeUndoModifier}+Shift+z`)
   await expect(name).toHaveValue('fixture post draft')
   await name.press('Escape')
   await x.fill('-8')
-  await x.press('Meta+z')
+  await x.press(`${nativeUndoModifier}+z`)
   await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth + 1)
   await x.press('Escape')
   await page.keyboard.press('Meta+z')

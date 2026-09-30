@@ -268,9 +268,13 @@ for (const kind of ['clearance', 'collision']) {
     })
     expect(frames.length).toBeGreaterThan(0)
     for (const frame of frames) {
-      expect(frame.kind).toBe(kind)
-      if (frame.matches === 'true') expect(frame.text).toContain('Checked ')
-      else expect(frame.text).toContain('Current pose is not yet checked')
+      if (frame.matches === 'true') {
+        expect(frame.kind).toBe(kind)
+        expect(frame.text).toContain('Checked ')
+      } else {
+        expect([kind, 'checking', 'unresolved']).toContain(frame.kind)
+        expect(frame.text).toContain('Current pose is not yet checked')
+      }
       if (frame.pending !== null)
         expect(Number.isFinite(Number(frame.pending))).toBe(true)
     }

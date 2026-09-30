@@ -625,6 +625,7 @@
   }
 
   .framework-technical__routes {
+    grid-auto-rows: 1fr;
     grid-template-columns: 1fr;
     grid-template-rows: none;
   }

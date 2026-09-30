@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, type ReactNode } from 'react'
+import Link from 'next/link'
 import {
   cameraTransform,
   createScrollDriver,
@@ -438,12 +439,12 @@ function StoryChapter({ index }: { index: number }) {
           </a>
         )}
         {index === 5 && (
-          <a
+          <Link
             href="/docs#generic-starter-source"
             className="mt-8 inline-flex items-center gap-8 rounded-full bg-[#183f35] px-6 py-3 text-[15px] text-[#f4f1e7]!"
           >
             Start building <span>↗</span>
-          </a>
+          </Link>
         )}
       </div>
       <div
@@ -601,7 +602,7 @@ export function SpatialStory({
       className="spatial-story-shell group"
       data-motion="off"
     >
-      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-6 backdrop-blur-sm lg:px-[4vw]">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-4 sm:px-6 backdrop-blur-sm lg:px-[4vw]">
         <a href="/" className="wordmark" aria-label="Asyra home">
           ASYRA
         </a>
