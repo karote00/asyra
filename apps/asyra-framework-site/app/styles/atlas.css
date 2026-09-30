@@ -107,7 +107,7 @@
 
 .atlas-studio {
   min-width: 0;
-  padding: clamp(32px, 4vw, 56px);
+  padding: clamp(32px, 4vw, 58px);
 }
 
 .atlas-case-intro {

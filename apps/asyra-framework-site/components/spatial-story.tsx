@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, type ReactNode } from 'react'
-import Link from 'next/link'
 import {
   cameraTransform,
   createScrollDriver,
@@ -439,12 +438,12 @@ function StoryChapter({ index }: { index: number }) {
           </a>
         )}
         {index === 5 && (
-          <Link
+          <a
             href="/docs#generic-starter-source"
             className="mt-8 inline-flex items-center gap-8 rounded-full bg-[#183f35] px-6 py-3 text-[15px] text-[#f4f1e7]!"
           >
             Start building <span>↗</span>
-          </Link>
+          </a>
         )}
       </div>
       <div
