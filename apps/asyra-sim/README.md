@@ -183,9 +183,9 @@ retention fails, the same immutable result remains available for **Retry retenti
 unretained evidence is excluded from portable exports and replacement warns before
 losing it. Undoing retention does not automatically reapply it.
 
-Admission enforces 16 colliders per body, 256 per workcell, 4,096 expanded pairs,
-and 500,000 pair/segment combinations in the requested interval. Larger scopes
-cannot bypass hard limits through acknowledgement. Retained evidence is capped
+Admission enforces 16 colliders per body, 256 per workcell and 4,096 expanded pairs.
+Pair/segment combinations are counted and warned about, without a fixed workload
+abort limit. Acknowledgement cannot bypass structural limits. Retained evidence is capped
 globally, including partial progress; reaching a resource limit never means clear.
 GLB preview rejects files above 16 MiB before reading and terminates decoding
 after its five-second deadline. See the runtime profile for remaining validation

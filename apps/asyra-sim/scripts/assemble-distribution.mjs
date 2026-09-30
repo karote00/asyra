@@ -10,6 +10,7 @@ import { distributionFiles, checksumText } from './distribution-files.mjs'
 import { verifyDistribution } from './verify-files.mjs'
 import { bundledNotices } from './distribution-notices.mjs'
 import { rewriteDistributionMarkdown } from './distribution-docs.mjs'
+import { consumerPortableFiles } from './consumer-contract.mjs'
 
 const copyTree = (source, target) => {
   for (const file of distributionFiles(source)) {
@@ -75,6 +76,8 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
     path.join(sourceApp, 'scripts/run-e2e.mjs'),
     'sdk/app/scripts/run-e2e.mjs'
   )
+  for (const file of consumerPortableFiles)
+    copy(path.join(consumer, file), `sdk/app/${file}`)
   mkdirSync(path.join(sdk, '.build-evidence'), { recursive: true })
   writeFileSync(path.join(sdk, '.build-evidence/.keep'), '')
   copyTree(

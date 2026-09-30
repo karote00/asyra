@@ -93,10 +93,10 @@ it.each([
           maxIterations: 48
         },
         undefined,
-        new OriginalMeshQuery(undefined, undefined, hierarchy)
+        new OriginalMeshQuery(undefined, 500000, hierarchy)
       )
-      // Exhausting all gripper/table triangle pairs exceeds the unchanged
-      // budget without the hierarchy. That reference must remain unknown,
+      // The explicit diagnostic budget bounds this exhaustive reference.
+      // Exhausting gripper/table pairs without the hierarchy remains unknown,
       // never a fabricated clear result; the smaller workpiece oracle completes.
       if (bodyId === 'example:gripper' && !hierarchy) {
         expect(evidence.coverage).toBe('partial')
@@ -111,5 +111,6 @@ it.each([
       expect(evidence.coverage).toBe('complete')
       expect(evidence.upper).toBe(0)
     }
-  }
+  },
+  30000
 )

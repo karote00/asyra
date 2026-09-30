@@ -1,6 +1,11 @@
 import { realpathSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+export const consumerPortableFiles = [
+  'scripts/supervise-tests.py',
+  'scripts/__tests__/supervise-tests.test.mjs'
+]
+
 export function consumerManifest(app, root, packages) {
   if (app.engines?.node !== '24.x' || app.packageManager !== 'yarn@4.3.1')
     throw new Error(
@@ -31,7 +36,8 @@ export function consumerManifest(app, root, packages) {
     scripts: {
       typecheck: 'tsc --noEmit',
       build: 'tsc --noEmit && vite build --config consumer.vite.config.mjs',
-      'test:local': 'vitest run',
+      'test:local':
+        'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --',
       dev: 'vite'
     },
     dependencies: convert(app.dependencies),

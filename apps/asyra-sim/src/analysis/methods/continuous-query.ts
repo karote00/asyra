@@ -14,6 +14,7 @@ import {
   type ConvexShape,
   type DistanceEvidence
 } from './convex-query'
+import type { StaticSampler } from './fresh-static-sampler'
 
 export interface ColliderReference {
   bodyId: string
@@ -52,7 +53,15 @@ export interface PairEvidence {
   evaluations: number
 }
 export interface PairQueryKernel {
+  sample?: StaticSampler
   relativeFrames?: boolean
+  certifyClearBeforeResampling?: boolean
+  /** Charge and checkpoint one completed pending-node evidence handoff. */
+  handoffEvidence?: () => boolean
+  /** Only this actual route's lower certificate ignores positive witness metadata. */
+  lowerUsesPositiveWitnessOnly?: (a: ConvexShape, b: ConvexShape) => boolean
+  /** Called only for this node's consumed in-interval upper <= threshold. */
+  deriveZeroLower?: (a: ConvexShape, b: ConvexShape) => 0 | null | undefined
   distance(a: ConvexShape, b: ConvexShape): DistanceEvidence | null
   lower(
     a: ConvexShape,
@@ -163,6 +172,9 @@ export function queryContinuousPair(
     start: number
     end: number
     segment: number
+    originalRoot?: boolean
+    startEvidence?: DistanceEvidence
+    endEvidence?: DistanceEvidence
   }
   const pending: Node[] = [],
     leaves: IntervalEvidence[] = []
@@ -177,7 +189,14 @@ export function queryContinuousPair(
     for (let segment = 0; segment < frames.length - 1; segment++) {
       const a = Math.max(start, frames[segment].time),
         b = Math.min(end, frames[segment + 1].time)
-      if (a < b) pending.push({ start: a, end: b, segment })
+      if (a < b)
+        pending.push({
+          start: a,
+          end: b,
+          segment,
+          originalRoot:
+            a === frames[segment].time && b === frames[segment + 1].time
+        })
     }
   if (pending.length > maxLeaves)
     return {
@@ -201,57 +220,170 @@ export function queryContinuousPair(
     }
   let evaluations = 0
   let kernelExhausted = false
+  let boundarySource: unknown
   traversal: while (pending.length && evaluations < settings.maxIntervals) {
     checkpoint()
     const node = pending.pop()
     if (!node) break
+    // Take once before admission; neither mismatches nor descendants retain it.
+    const previousBoundary = boundarySource
+    boundarySource = undefined
     const middle = node.start + (node.end - node.start) / 2
+    let startEvidence = node.startEvidence,
+      middleEvidence: DistanceEvidence | undefined,
+      endEvidence = node.endEvidence
+    let completedLower: number | undefined
+    let certifiedLower: number | null = null
     let witness: DistanceEvidence | null = null,
       witnessTime = middle
+    const intervalLower = (
+      a: ConvexShape,
+      b: ConvexShape,
+      completedWitness: DistanceEvidence,
+      time: number
+    ): number | null => {
+      if (
+        completedWitness.upper <= settings.threshold &&
+        time >= node.start &&
+        time <= node.end
+      ) {
+        const derived = kernel?.deriveZeroLower?.(a, b)
+        if (derived !== undefined) return derived
+      }
+      return kernel
+        ? kernel.lower(a, b, completedWitness)
+        : separationLowerBound(a, b, completedWitness.axis)
+    }
     // Endpoints matter for both minima and keyframe contacts. They are evidence,
     // never a substitute for the interval-wide separating certificate below.
-    for (const time of new Set([node.start, middle, node.end])) {
+    const sampleTimes = [...new Set([node.start, middle, node.end])]
+    let source: unknown = node.originalRoot ? previousBoundary : undefined
+    let firstSource: unknown
+    for (const [sampleIndex, time] of sampleTimes.entries()) {
       checkpoint()
-      const [a, b] = shapesAt(
-        query,
-        node.segment,
-        interval(time),
-        kernel?.relativeFrames
-      )
-      const result = kernel
-        ? kernel.distance(a, b)
-        : convexDistance(
+      let inherited: DistanceEvidence | undefined
+      if (time === node.start) inherited = node.startEvidence
+      else if (time === node.end) inherited = node.endEvidence
+      let result: DistanceEvidence | null
+      let sampleExhausted = false
+      if (inherited && kernel?.handoffEvidence) {
+        result = kernel.handoffEvidence() ? inherited : null
+        source = undefined
+      } else {
+        const [a, b] = shapesAt(
+          query,
+          node.segment,
+          interval(time),
+          kernel?.relativeFrames
+        )
+        if (kernel?.sample) {
+          const next = sampleTimes[sampleIndex + 1]
+          const capture =
+            next !== undefined &&
+            !(next === node.end && node.endEvidence && kernel.handoffEvidence)
+          const sampled = kernel.sample(
             a,
             b,
-            settings.distanceTolerance,
-            settings.maxIterations
+            {
+              node,
+              segment: node.segment,
+              start: node.start,
+              end: node.end,
+              time,
+              capture: Boolean(capture),
+              originalRoot: node.originalRoot === true
+            },
+            source
           )
+          result = sampled?.evidence ?? null
+          source = sampled?.source
+          if (sampleIndex === 0) firstSource = source
+          sampleExhausted = sampled?.exhausted === true
+        } else
+          result = kernel
+            ? kernel.distance(a, b)
+            : convexDistance(
+                a,
+                b,
+                settings.distanceTolerance,
+                settings.maxIterations
+              )
+      }
       if (!result) {
         kernelExhausted = true
         if (witness) break
         pending.push(node)
         break traversal
       }
+      if (time === node.start) startEvidence = result
+      if (time === middle) middleEvidence = result
+      if (time === node.end) endEvidence = result
       if (!witness || result.upper < witness.upper || result.penetration) {
         witness = result
         witnessTime = time
       }
+      if (sampleExhausted) {
+        kernelExhausted = true
+        break
+      }
       if (result.penetration) break
+      if (
+        kernel?.certifyClearBeforeResampling &&
+        time === node.start &&
+        node.start !== node.end &&
+        witness.upper >= settings.threshold
+      ) {
+        const [intervalA, intervalB] = shapesAt(
+          query,
+          node.segment,
+          interval(node.start, node.end),
+          kernel.relativeFrames
+        )
+        const candidate = intervalLower(
+          intervalA,
+          intervalB,
+          witness,
+          witnessTime
+        )
+        if (candidate === null) {
+          kernelExhausted = true
+          break
+        }
+        if (
+          kernel.handoffEvidence &&
+          witness.lower > 0 &&
+          kernel.lowerUsesPositiveWitnessOnly?.(intervalA, intervalB)
+        )
+          completedLower = candidate
+        if (candidate > witness.upper)
+          throw new Error('Inconsistent continuous distance certificates')
+        if (candidate > settings.threshold) {
+          certifiedLower = candidate
+          break
+        }
+      }
     }
     if (!witness) throw new Error('No witness evaluation')
     evaluations++
-    const [a, b] = shapesAt(
-      query,
-      node.segment,
-      interval(node.start, node.end),
-      kernel?.relativeFrames
-    )
-    let lower: number | null = witness.lower
+    let lower: number | null = certifiedLower ?? witness.lower
     if (kernelExhausted) lower = null
-    else if (node.start !== node.end)
-      lower = kernel
-        ? kernel.lower(a, b, witness)
-        : separationLowerBound(a, b, witness.axis)
+    else if (
+      certifiedLower === null &&
+      node.start !== node.end &&
+      completedLower !== undefined &&
+      witness.lower > 0 &&
+      kernel?.handoffEvidence
+    )
+      lower = kernel.handoffEvidence() ? completedLower : null
+    else if (certifiedLower === null && node.start !== node.end) {
+      const [a, b] = shapesAt(
+        query,
+        node.segment,
+        interval(node.start, node.end),
+        kernel?.relativeFrames
+      )
+      lower = intervalLower(a, b, witness, witnessTime)
+    }
     if (lower === null) {
       kernelExhausted = true
       // Preserve an established static witness even when no interval-wide
@@ -306,11 +438,45 @@ export function queryContinuousPair(
       })
     else
       pending.push(
-        { start: node.start, end: middle, segment: node.segment },
-        { start: middle, end: node.end, segment: node.segment }
+        {
+          start: node.start,
+          end: middle,
+          segment: node.segment,
+          ...(kernel?.handoffEvidence
+            ? { startEvidence, endEvidence: middleEvidence }
+            : {})
+        },
+        {
+          start: middle,
+          end: node.end,
+          segment: node.segment,
+          ...(kernel?.handoffEvidence
+            ? { startEvidence: middleEvidence, endEvidence }
+            : {})
+        }
       )
     if (kernelExhausted) break
+    const next = pending[pending.length - 1]
+    if (
+      evaluations < settings.maxIntervals &&
+      node.originalRoot &&
+      next?.originalRoot &&
+      next.segment === node.segment - 1 &&
+      next.end === node.start &&
+      !witness.penetration &&
+      witness.upper < settings.threshold &&
+      firstSource !== undefined &&
+      kernel?.sample?.publishBoundary
+    ) {
+      const published = kernel.sample.publishBoundary(firstSource)
+      if (published === null) {
+        kernelExhausted = true
+        break
+      }
+      boundarySource = published
+    }
   }
+  boundarySource = undefined
   for (const node of pending)
     leaves.push({
       start: node.start,

@@ -57,13 +57,25 @@ const inverseDirection = (
 /** Encloses the exact support value, even if a witness direction is ambiguous. */
 export function supportValue(shape: ConvexShape, direction: Vec3): Interval {
   const world = ops.vector(direction),
-    local = inverseDirection(shape, world),
-    g = shape.geometry
+    local = inverseDirection(shape, world)
+  return supportValueAt(shape, world, local)
+}
+
+function supportValueAt(
+  shape: ConvexShape,
+  world: Vector<Interval>,
+  local: Vector<Interval>,
+  triangleValues?: readonly Interval[],
+  radialNorm?: Interval
+): Interval {
+  const g = shape.geometry
   let extent: Interval
   if (g.kind === 'mesh')
     throw new Error('A complete mesh cannot be queried as a convex surrogate')
   if (g.kind === 'triangle') {
-    const values = g.vertices.map((point) => ops.dot(local, ops.vector(point)))
+    const values =
+      triangleValues ??
+      g.vertices.map((point) => ops.dot(local, ops.vector(point)))
     extent = interval(
       Math.max(...values.map((value) => value[0])),
       Math.max(...values.map((value) => value[1]))
@@ -75,31 +87,64 @@ export function supportValue(shape: ConvexShape, direction: Vec3): Interval {
       interval(0)
     )
   else {
-    extent = imul(interval(g.radius), ops.norm(local))
+    extent = imul(interval(g.radius), radialNorm ?? ops.norm(local))
     if (g.kind === 'capsule')
       extent = iadd(extent, imul(interval(g.length / 2), iabs(local[1])))
   }
   return iadd(ops.dot(world, shape.pose.position), extent)
 }
 
+/** Private to one iteration: completed arithmetic, never a retained answer. */
+interface SupportEvaluation {
+  local: Vector<Interval>
+  triangleValues?: readonly Interval[]
+  radialNorm?: Interval
+  value: Interval
+}
+function evaluateSupport(
+  shape: ConvexShape,
+  direction: Vec3
+): SupportEvaluation {
+  const world = ops.vector(direction),
+    local = inverseDirection(shape, world),
+    g = shape.geometry,
+    triangleValues =
+      g.kind === 'triangle'
+        ? g.vertices.map((point) => ops.dot(local, ops.vector(point)))
+        : undefined,
+    radialNorm =
+      g.kind === 'sphere' || g.kind === 'capsule' ? ops.norm(local) : undefined
+  return {
+    local,
+    triangleValues,
+    radialNorm,
+    value: supportValueAt(shape, world, local, triangleValues, radialNorm)
+  }
+}
+
 /** A point in the shape, not a claim that a floating-point branch found its exact extremum. */
-function supportPoint(shape: ConvexShape, direction: Vec3): Vector<Interval> {
-  const local = inverseDirection(shape, ops.vector(direction)),
+function supportPoint(
+  shape: ConvexShape,
+  direction: Vec3,
+  evaluation?: SupportEvaluation
+): Vector<Interval> {
+  const local =
+      evaluation?.local ?? inverseDirection(shape, ops.vector(direction)),
     g = shape.geometry
   let point: Vector<Interval>
   if (g.kind === 'mesh')
     throw new Error('A complete mesh cannot be queried as a convex surrogate')
   if (g.kind === 'triangle') {
-    const scores = g.vertices.map((point) =>
-      imid(ops.dot(local, ops.vector(point)))
-    )
+    const scores = evaluation?.triangleValues
+      ? evaluation.triangleValues.map(imid)
+      : g.vertices.map((point) => imid(ops.dot(local, ops.vector(point))))
     point = ops.vector(g.vertices[scores.indexOf(Math.max(...scores))])
   } else if (g.kind === 'box')
     point = [0, 1, 2].map((index) =>
       interval(((imid(local[index]) < 0 ? -1 : 1) * g.size[index]) / 2)
     ) as unknown as Vector<Interval>
   else {
-    const norm = ops.norm(local)
+    const norm = evaluation?.radialNorm ?? ops.norm(local)
     point =
       norm[0] > 0
         ? ops.scale(local, idiv(interval(g.radius), norm))
@@ -119,9 +164,15 @@ interface Vertex {
   difference: Vector<Interval>
   point: Vec3
 }
-function vertex(a: ConvexShape, b: ConvexShape, axis: Vec3): Vertex {
-  const pa = supportPoint(a, axis),
-    pb = supportPoint(b, scale(axis, -1)),
+function vertex(
+  a: ConvexShape,
+  b: ConvexShape,
+  axis: Vec3,
+  supportA?: SupportEvaluation,
+  supportB?: SupportEvaluation
+): Vertex {
+  const pa = supportPoint(a, axis, supportA),
+    pb = supportPoint(b, scale(axis, -1), supportB),
     difference = ops.sub(pa, pb)
   return { a: pa, b: pb, difference, point: midpoint(difference) }
 }
@@ -337,7 +388,18 @@ export function convexDistance(
         witnessB
       }
     }
-    const bound = separationLowerBound(a, b, axis)
+    const norm = ops.norm(ops.vector(axis))
+    // Preserve the public lower-bound owner's zero-norm bypass. No point is
+    // evaluated until this iteration actually continues past convergence.
+    const supportA = norm[0] > 0 ? evaluateSupport(a, axis) : undefined,
+      supportB = norm[0] > 0 ? evaluateSupport(b, scale(axis, -1)) : undefined,
+      bound =
+        supportA && supportB
+          ? Math.max(
+              0,
+              idiv(ineg(iadd(supportA.value, supportB.value)), norm)[0]
+            )
+          : 0
     lower = Math.max(lower, bound)
     if (lower > upper)
       throw new Error('Inconsistent convex distance certificates')
@@ -352,7 +414,7 @@ export function convexDistance(
         witnessA,
         witnessB
       }
-    const next = vertex(a, b, axis)
+    const next = vertex(a, b, axis, supportA, supportB)
     simplex = closest([...simplex.vertices, next])
   }
   return {
