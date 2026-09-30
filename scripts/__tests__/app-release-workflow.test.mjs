@@ -283,3 +283,29 @@ test('production artifact checkout explicitly freezes the caller commit', () => 
     /with:\n +ref: \$\{\{ github.sha \}\}\n +persist-credentials: false/
   )
 })
+
+test('PR artifact result preserves the required check and cannot pass a missing producer', () => {
+  const main = read('.github/workflows/main.yml')
+  const required = main
+    .split('\n  production-artifact-tests:\n')[1]
+    ?.split('\n  design-e2e:')[0]
+  assert.ok(
+    required,
+    'branch rules require the exact production-artifact-tests check'
+  )
+  assert.match(required, /needs: \[scope, production-artifacts\]/)
+  assert.match(
+    required,
+    /PRODUCTION_APPS: \$\{\{ needs.scope.outputs.production_apps \}\}/
+  )
+  assert.match(
+    required,
+    /PRODUCER_RESULT: \$\{\{ needs.production-artifacts.result \}\}/
+  )
+  assert.match(required, /test "\$SCOPE_RESULT" = success/)
+  assert.match(
+    required,
+    /if \[ "\$PRODUCTION_APPS" = '\[\]' \]; then test "\$PRODUCER_RESULT" = skipped; else test "\$PRODUCER_RESULT" = success; fi/
+  )
+  assert.doesNotMatch(required, /yarn|node scripts\/app-release-verification/)
+})

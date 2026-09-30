@@ -302,6 +302,22 @@ jobs:
     with:
       apps: ${{ needs.scope.outputs.production_apps }}
 
+  # Branch rules require this exact check name; the reusable producer has a prefix.
+  production-artifact-tests:
+    needs: [scope, production-artifacts]
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      SCOPE_RESULT: ${{ needs.scope.result }}
+      PRODUCTION_APPS: ${{ needs.scope.outputs.production_apps }}
+      PRODUCER_RESULT: ${{ needs.production-artifacts.result }}
+    steps:
+      - name: Require selected production artifact result
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$PRODUCTION_APPS" = '[]' ]; then test "$PRODUCER_RESULT" = skipped; else test "$PRODUCER_RESULT" = success; fi
+
   design-e2e:
     if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
