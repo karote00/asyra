@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 for (const width of [390, 1440])
   for (const locale of ['zh-TW', 'en'] as const) {
@@ -52,10 +53,11 @@ for (const width of [390, 1440])
       await expect(
         page.getByText(en ? 'Route unverified' : '路線待確認', { exact: true })
       ).toBeVisible()
-      await page.screenshot({
-        path: testInfo.outputPath('robot-editor.png'),
-        fullPage: false
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('robot-editor.png'),
+          fullPage: false
+        })
       const panel = page.locator(
         '#configuration-panel .workspace-panel-content'
       )
@@ -85,10 +87,11 @@ for (const width of [390, 1440])
         return issues
       })
       expect(overflow).toEqual([])
-      await page.screenshot({
-        path: testInfo.outputPath('robot-survey.png'),
-        fullPage: false
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('robot-survey.png'),
+          fullPage: false
+        })
       await page
         .getByRole('button', {
           name: en ? 'Close editor panel' : '收合編輯面板',
@@ -115,10 +118,11 @@ for (const width of [390, 1440])
             (await page.getByTestId('scene').boundingBox())?.width ?? 0
         )
         .toBeGreaterThan(width - 80)
-      await page.screenshot({
-        path: testInfo.outputPath('robot-closeup.png'),
-        fullPage: false
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('robot-closeup.png'),
+          fullPage: false
+        })
       expect(errors).toEqual([])
     })
   }

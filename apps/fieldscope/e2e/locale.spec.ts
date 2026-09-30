@@ -47,9 +47,11 @@ test('language changes preserve the canvas, camera, layers, configuration and hi
   await page.getByLabel('第 1 項寬度', { exact: true }).fill('1.1')
   await page.getByLabel('第 1 項寬度', { exact: true }).press('Enter')
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
-  await page.locator('canvas').hover()
-  await page.mouse.wheel(0, -Math.log(2) * 1000)
-  await expect(page.getByTestId('zoom-percent')).toHaveText('200%')
+  await page.getByRole('button', { name: '恢復 100% 縮放' }).click()
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+  await page.getByTestId('scene').focus()
+  await page.keyboard.press('=')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('111%')
   const canvas = await page.locator('canvas').elementHandle()
   await selector.selectOption('en')
   await expect(page.getByText('Scene ready', { exact: true })).toBeVisible()
@@ -58,7 +60,7 @@ test('language changes preserve the canvas, camera, layers, configuration and hi
   expect(
     await canvas?.evaluate((node) => node === document.querySelector('canvas'))
   ).toBe(true)
-  await expect(page.getByTestId('zoom-percent')).toHaveText('200%')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('111%')
   await expect(
     page.getByLabel('Plastic film', { exact: true })
   ).not.toBeChecked()

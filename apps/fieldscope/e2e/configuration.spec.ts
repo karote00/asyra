@@ -73,10 +73,11 @@ test('commits each completed field immediately with independent undo and redo', 
   await expect(bottom).toHaveValue('0.45')
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(width).toHaveValue('7')
-  await page.screenshot({
-    path: testInfo.outputPath('immediate-configuration.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('immediate-configuration.png'),
+      fullPage: true
+    })
   expect(errors).toEqual([])
 })
 

@@ -15,6 +15,14 @@ yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2
 yarn workspace @asyra/fieldscope test:e2e
 ```
 
+CI runs `yarn test:e2e:fieldscope`. Its six purpose-based Playwright groups run
+sequentially in separate browser processes. A permanent contract test verifies
+that the groups assign every browser spec exactly once. Each test retains its
+90-second timeout and the full suite keeps its 15-minute budget; failed group
+reports and Playwright diagnostics remain available to CI. Software-rendered
+runs omit artifact-only page screenshots while retaining interaction checks
+and screenshot comparisons that prove canvas behavior.
+
 Build workspace dependencies before app checks when working in a fresh checkout. E2E must use the current worktree's development server and the configured `APP_URL`, not another checkout on the same port. Retain formal test files and inspect synchronized screenshots for visual changes. Preserve test timeouts and resource guards.
 
 Private changes still need an empty changeset. Review the staged diff, create an English PR, and verify all checks on its current head. Do not infer CI success from a previous head.

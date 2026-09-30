@@ -10,7 +10,12 @@ import { decodeRestrictedGlb } from '../../../engine/glb/decode'
 import { resolvePart } from '../../../domain/part-geometry'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import * as convexQuery from '../convex-query'
-import { boundsGap, shapeBounds } from '../mesh-index'
+import {
+  boundsGap,
+  createWorldBoundsResolver,
+  shapeBounds,
+  type Bounds
+} from '../mesh-index'
 
 const ops = poseOperations(intervalAlgebra)
 async function ring(segments = 16): Promise<MeshGeometry> {
@@ -59,6 +64,27 @@ const sphere = (position: Vec3, radius = 0.1) => ({
 })
 
 describe('original mesh solid certificates', () => {
+  it('reuses each transformed bound only for its owning pose', () => {
+    const bounds: Bounds = [
+      [0, 1],
+      [0, 2],
+      [-1, 0]
+    ]
+    const pose = shape(solid).pose,
+      resolve = createWorldBoundsResolver(pose),
+      first = resolve(bounds)
+    expect(resolve(bounds)).toBe(first)
+    expect(first[0][0]).toBeLessThanOrEqual(0)
+    expect(first[0][1]).toBeGreaterThanOrEqual(1)
+
+    const translated = createWorldBoundsResolver(
+      ops.fromPose({ ...IDENTITY_POSE, position: [2, 0, 0] })
+    )(bounds)
+    expect(translated).not.toBe(first)
+    expect(translated[0][0]).toBeLessThanOrEqual(2)
+    expect(translated[0][1]).toBeGreaterThanOrEqual(3)
+  })
+
   it('stops refining positively separated regions after a warning witness while preserving the hole', async () => {
     const geometry = await ring()
     const distance = convexQuery.convexDistance

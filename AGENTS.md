@@ -202,8 +202,8 @@ HIGHEST PRINCIPLE before starting and before advancing each work segment.
 
 ## Quick Reference
 
-- **Testing**: `yarn workspace @package/name test:local`
-- **Formatting**: `yarn lint:ci` (check) / `yarn lint --fix` (fix)
+- **Testing**: `yarn test:workspaces:local` / `yarn test:workspaces:ci`
+- **Lint**: `yarn lint:workspaces:ci` (check) / `yarn eslint . --fix` (fix)
 - **Build**: `yarn react:build`
 - **Architecture**: Communication-Driven Development (CDD) with typed events
 
@@ -308,16 +308,18 @@ For available AI agent skills and domain expertise, see **[docs/ai/skills/](docs
 ### Testing
 
 ```bash
-yarn workspace @package/name test:local  # Development (clean output)
-yarn workspace @package/name test:ci     # CI format with coverage
-yarn test:local                          # All packages, dev format
+yarn workspace @asyra/<app> test:local  # One app, local format
+yarn workspace @asyra/<app> test:ci     # One app, CI format
+yarn test:workspaces:local              # Scripts and all workspace tests
+yarn test:workspaces:ci                 # Scripts and all workspace CI tests
 ```
 
 ### Linting & Formatting
 
 ```bash
-yarn lint:ci        # Check formatting
-yarn lint --fix     # Auto-fix formatting issues
+yarn lint:workspaces:ci  # Lint the repository
+yarn lint:fieldscope     # Lint one app
+yarn eslint . --fix      # Auto-fix repository lint findings
 ```
 
 ### Building

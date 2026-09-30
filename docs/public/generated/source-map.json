@@ -34,7 +34,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "3042df1cb39046f20aaa765e8b98d3a04ef257454994d820375caacb4d445757"
+          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
         },
         {
           "path": "docs/ai/apps/asyra-design/golden-paths/README.md",
@@ -106,7 +106,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "3042df1cb39046f20aaa765e8b98d3a04ef257454994d820375caacb4d445757"
+          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -608,7 +608,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "4f3eba6ad0a6fb2037cd5b6d361c7a2834dff81b9515c8328e0513ba9605ab85"
+          "sha256": "b6b7f5accbfef389bab0c5daf4b6657540cd2b2b9f5efe0af393440732f52d69"
         }
       ]
     },

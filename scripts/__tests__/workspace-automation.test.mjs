@@ -69,7 +69,7 @@ test('Fieldscope E2E CI command supplies its portable local app URL', () => {
   const example = readText('apps/fieldscope/.env.example')
   assert.match(
     manifest.scripts['test:e2e:ci'],
-    /^APP_URL=http:\/\/127\.0\.0\.1:5178 playwright test/u
+    /^APP_URL=http:\/\/127\.0\.0\.1:5178 node scripts\/run-e2e-ci\.mjs$/u
   )
   assert.match(example, /^APP_URL=http:\/\/127\.0\.0\.1:5178$/m)
 })

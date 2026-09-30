@@ -16,8 +16,9 @@
     "test:local": "vitest run",
     "test:ci": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 playwright test --timeout=90000 --global-timeout=900000 --reporter=line,json",
-    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"
+    "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 node scripts/run-e2e-ci.mjs",
+    "test:e2e:contracts": "node --test scripts/__tests__/e2e-ci-groups.test.mjs",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e scripts *.ts *.mjs"
   },
   "dependencies": {
     "@asyra/core": "workspace:*",
