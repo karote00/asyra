@@ -81,6 +81,7 @@ canvas {
   position: absolute;
   inset: 0;
   overflow: auto;
+  scroll-padding-top: 3.5rem;
   overscroll-behavior: contain;
   transition:
     transform 220ms ease,

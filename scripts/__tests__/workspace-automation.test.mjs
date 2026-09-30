@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
-import { createWorkspaceDevAllPlan } from '../dev-all-plan.js'
 import {
   createWorkspaceVersionPlan,
   resolveWorkspaceDependencyRange
 } from '../workspace-versions.js'
+import {
+  countUtilsBuildExecutions,
+  runOwnedBuildCommand
+} from './workspace-build-validation-helpers.mjs'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -38,6 +41,65 @@ test('the local naming command runs the same formal gate retained in CI', () => 
       'scripts/__tests__/display-name-separators.test.mjs'
     )
   )
+})
+
+test('workspace test:ci contracts cannot turn test failures into successful skips', () => {
+  for (const root of ['apps', 'packages', 'tools']) {
+    for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
+      withFileTypes: true
+    })) {
+      if (!entry.isDirectory()) continue
+      const manifestPath = path.join(
+        repositoryRoot,
+        root,
+        entry.name,
+        'package.json'
+      )
+      if (!fs.existsSync(manifestPath)) continue
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+      const task = manifest.scripts?.['test:ci']
+      if (!task) continue
+      assert.doesNotMatch(
+        task,
+        /\|\|\s*echo\s+['"]No test files found/u,
+        `${manifestPath} must preserve test:ci failures`
+      )
+    }
+  }
+})
+
+test('Fieldscope E2E CI command supplies its portable local app URL', () => {
+  const manifest = readJSON('apps/fieldscope/package.json')
+  const example = readText('apps/fieldscope/.env.example')
+  assert.match(
+    manifest.scripts['test:e2e:ci'],
+    /^APP_URL=http:\/\/127\.0\.0\.1:5178 node scripts\/run-e2e-ci\.mjs$/u
+  )
+  assert.match(example, /^APP_URL=http:\/\/127\.0\.0\.1:5178$/m)
+})
+
+test('root E2E commands name the app and separate local from CI runners', () => {
+  const root = readJSON('package.json')
+  for (const app of [
+    'asyra-design',
+    'asyra-framework-site',
+    'asyra-sim',
+    'fieldscope',
+    'starter-app'
+  ]) {
+    const manifest = readJSON(`apps/${app}/package.json`)
+    assert.equal(
+      root.scripts[`test:e2e:${app}`],
+      `yarn workspace @asyra/${app} test:e2e`,
+      `${app} local E2E command`
+    )
+    if (manifest.scripts['test:e2e:ci'])
+      assert.equal(
+        root.scripts[`test:e2e:${app}:ci`],
+        `yarn workspace @asyra/${app} test:e2e:ci`,
+        `${app} CI E2E command`
+      )
+  }
 })
 
 test('root lint ignores App consumer artifacts without excluding maintained source or tests', async () => {
@@ -136,21 +198,11 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     }
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
     for (const job of jobs.filter((block) => block.trim())) {
-      if (
-        /^ {2}(flow-ci|e2e-tests|collaboration-e2e-tests):/.test(job) &&
-        workflowPath === '.github/workflows/main.yml'
-      ) {
-        assert.match(
-          job,
-          /^ {4}if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}$/m
-        )
-      } else {
-        assert.match(
-          job,
-          /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
-          `${workflowPath}: ${job.split('\n')[0]}`
-        )
-      }
+      assert.match(
+        job,
+        /^ {4}if: .*github\.event\.pull_request\.draft == false/m,
+        `${workflowPath}: ${job.split('\n')[0]}`
+      )
     }
   }
 })
@@ -164,12 +216,135 @@ test('Draft filtering preserves non-PR CI triggers and label validation', () => 
   assert.match(e2e, /^ {2}schedule:\n {4}- cron: '0 18 \* \* \*'/m)
 })
 
-test('CI bounds workspace test concurrency without dropping test owners', () => {
+test('CI schedules discovered workspaces through one bounded build-then-test matrix', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
-  assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+  assert.match(workflow, /node scripts\/run-ci-checks\.mjs/)
+  assert.match(
+    workflow,
+    /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
+  )
+  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
+  assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
+  const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+  const workspaceJob = jobs.find((block) =>
+    block.startsWith('  workspace-validation:')
+  )
+  assert.ok(workspaceJob)
+  const jobName = workspaceJob.match(/^ {4}name: (.+)$/m)?.[1]
+  assert.equal(jobName, '${{ matrix.workspace.directory }}')
+  assert.doesNotMatch(
+    jobName,
+    /matrix\.workspace\.(?:buildTask|testTask|artifactId)/
+  )
+  assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
+  assert.match(workspaceJob, /max-parallel: 4/)
+  assert.match(
+    workspaceJob,
+    /timeout-minutes: \$\{\{ fromJSON\(vars\.TEST_JOB_MINUTES \|\| '30'\) \}\}/
+  )
+  assert.match(workspaceJob, /name: Record original test job deadline/)
+  assert.match(
+    workspaceJob,
+    /python3 apps\/asyra-sim\/scripts\/supervise-tests\.py --init-ci/
+  )
+  assert.match(workspaceJob, /name: Report test supervision/)
+  assert.match(workspaceJob, /actions\/upload-artifact@/)
+  assert.equal(
+    scripts['test:workspaces:ci'],
+    'yarn test:scripts && turbo run test:ci --concurrency=2'
+  )
+  assert.doesNotMatch(
+    workspaceJob,
+    /Install Chromium for selected workspace E2E/
+  )
+  assert.match(workspaceJob, /name: Build then test the selected workspace/)
+  assert.match(
+    workspaceJob,
+    /id: workspace-checks[\s\S]*?run: node scripts\/run-workspace-checks\.mjs/
+  )
+  const diagnosticsStep = workspaceJob
+    .split(/(?=^ {6}- name: )/m)
+    .find((block) =>
+      block.includes('name: Upload failed workspace E2E diagnostics')
+    )
+  assert.ok(diagnosticsStep)
+  assert.match(
+    diagnosticsStep,
+    /if: always\(\) && steps\.workspace-checks\.outcome == 'failure'/
+  )
+  assert.match(
+    diagnosticsStep,
+    /name: workspace-e2e-diagnostics-\$\{\{ matrix\.workspace\.artifactId \}\}/
+  )
+  assert.match(
+    diagnosticsStep,
+    /\.ci-workspace-results\/\$\{\{ matrix\.workspace\.artifactId \}\}\*\.playwright\.json/
+  )
+  assert.match(
+    diagnosticsStep,
+    /\$\{\{ matrix\.workspace\.directory \}\}\/test-results\//
+  )
+  assert.match(
+    workspaceJob,
+    /name: Upload this workspace result[\s\S]*?\.ci-workspace-results\/\$\{\{ matrix\.workspace\.artifactId \}\}\.json/
+  )
+})
+
+test('standard manifest E2E owners use the runner Chrome in CI and locally', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  assert.doesNotMatch(workflow, /playwright install --with-deps chromium/)
+  const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
+  assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
+  assert.match(workspaceRunner, /reportReadSuccessfully = false/)
+  assert.match(
+    workspaceRunner,
+    /if \(reportReadSuccessfully\) fs\.rmSync\(reportPath, \{ force: true \}\)/
+  )
+  assert.match(workspaceRunner, /Preserving failed Playwright report/)
+  assert.doesNotMatch(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_NAME/)
+  const workspaces = [
+    ['apps/asyra-framework-site', 'test:e2e:ci'],
+    ['apps/asyra-sim', 'test:e2e:ci'],
+    ['apps/fieldscope', 'test:e2e:ci'],
+    ['apps/starter-app', 'test:e2e:ci']
+  ]
+  for (const [directory, task] of workspaces) {
+    const manifest = readJSON(`${directory}/package.json`)
+    const config = readText(`${directory}/playwright.config.ts`)
+    assert.ok(manifest.scripts[task], `${directory} must expose ${task}`)
+    assert.match(config, /channel:\s*'chrome'/, directory)
+  }
+})
+
+test('Sim CI browser owner uses the bounded documented group runner', () => {
+  const sim = readJSON('apps/asyra-sim/package.json')
+  const config = readText('apps/asyra-sim/playwright.config.ts')
+  const groups = readText('apps/asyra-sim/scripts/e2e-ci-groups.mjs')
+  const runner = readText('apps/asyra-sim/scripts/run-e2e-ci.mjs')
+  const strategy = readText(
+    'docs/ai/apps/asyra-sim/validation/TEST_STRATEGY.md'
+  )
+
+  assert.equal(
+    sim.scripts['test:e2e:ci'],
+    'APP_URL=http://127.0.0.1:5174 node scripts/run-e2e-ci.mjs'
+  )
+  assert.match(config, /globalTimeout:\s*180_000/)
+  assert.match(groups, /CI_E2E_GROUPS/)
+  assert.match(groups, /collectBrowserSpecFiles/)
+  assert.match(groups, /mergePlaywrightReports/)
+  assert.match(runner, /CI_E2E_GROUPS/)
+  assert.match(runner, /PLAYWRIGHT_JSON_OUTPUT_FILE/)
+  assert.match(runner, /process\.env\.RUNNER_TEMP/)
+  assert.match(runner, /for \(const group of CI_E2E_GROUPS\)/)
+  assert.match(runner, /groupFailures\.push/)
+  assert.doesNotMatch(runner, /if \(groupFailures\.length\) break/)
+  assert.match(
+    strategy,
+    /standard CI browser owner runs the complete Playwright inventory in six/
+  )
 })
 
 test('Dependabot separates routine, major, and security update lanes', () => {
@@ -297,8 +472,12 @@ test('root commands validate the committed Turbo graph without rewriting it', ()
     rootManifest.scripts['gen:turbo:check'],
     'node scripts/gen-turbo.js --check'
   )
-  assert.match(rootManifest.scripts['test:local'], /test:scripts/)
-  assert.match(rootManifest.scripts['test:ci'], /test:scripts/)
+  assert.match(rootManifest.scripts['test:workspaces:local'], /test:scripts/)
+  assert.match(rootManifest.scripts['test:workspaces:ci'], /test:scripts/)
+  assert.match(
+    rootManifest.scripts['test:workspaces:local'],
+    /turbo run test:local --concurrency=2/
+  )
   for (const scriptName of [
     'examples:run',
     'examples:inventory',
@@ -321,12 +500,12 @@ test('Asyra Design keeps frontend startup, live transport, and local persistence
   const collaborationReference = readText(
     'docs/ai/apps/asyra-design/modules/collaboration-reference.md'
   )
-  const devAllRunner = readText('scripts/dev-all.js')
-
-  assert.equal(rootManifest.scripts['dev:all'], 'node scripts/dev-all.js')
-  assert.doesNotMatch(rootManifest.scripts['dev:all'], /gen:turbo/)
-  assert.doesNotMatch(devAllRunner, /initialBuilds/)
-  assert.match(developmentGuide, /yarn dev:all/)
+  assert.equal(
+    rootManifest.scripts['start:asyra-design'],
+    'yarn workspace @asyra/asyra-design start'
+  )
+  assert.equal(rootManifest.scripts['dev:all'], undefined)
+  assert.match(developmentGuide, /yarn start:asyra-design/)
   assert.match(developmentGuide, /In a generated project:[\s\S]*yarn start/)
   assert.match(developmentGuide, /fileId.*must be non-empty/i)
   assert.match(developmentGuide, /yarn document:backend/)
@@ -372,7 +551,11 @@ test('Framework site deployments are independent of PR CI and Git pushes', () =>
     'apps/asyra-framework-site/scripts/vercel-ignore-build.mjs'
   )
   const ci = readText('.github/workflows/main.yml')
+  const sitePlaywright = readText(
+    'apps/asyra-framework-site/playwright.config.ts'
+  )
 
+  assert.match(sitePlaywright, /new URL\(process\.env\.SITE_URL/)
   assert.equal(siteVercel.git.deploymentEnabled, false)
   assert.equal(siteVercel.ignoreCommand, undefined)
   assert.match(ignoreBuild, /apps\/asyra-framework-site/)
@@ -489,11 +672,14 @@ test('CI validates the active Framework package release from packed artifacts on
   )
 })
 
-test('E2E automation cancels superseded runs and installs only Chromium', () => {
+test('E2E automation cancels superseded runs and uses runner Chrome', () => {
   const e2e = readText('.github/workflows/e2e.yml')
-  const chromiumInstallCount = (
-    e2e.match(/playwright install --with-deps chromium/g) ?? []
-  ).length
+  const workflowDirectory = path.join(repositoryRoot, '.github', 'workflows')
+  const allWorkflows = fs
+    .readdirSync(workflowDirectory)
+    .filter((file) => /\.ya?ml$/u.test(file))
+    .map((file) => readText(`.github/workflows/${file}`))
+    .join('\n')
 
   assert.match(e2e, /concurrency:/)
   assert.match(
@@ -501,8 +687,11 @@ test('E2E automation cancels superseded runs and installs only Chromium', () => 
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.equal(chromiumInstallCount, 4)
-  assert.doesNotMatch(e2e, /playwright install --with-deps\s*$/m)
+  assert.doesNotMatch(allWorkflows, /playwright install/)
+  assert.doesNotMatch(
+    readText('scripts/run-e2e.sh'),
+    /E2E_RENDER_PERFORMANCE_BROWSER/
+  )
 })
 
 test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace build', () => {
@@ -510,7 +699,7 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   const collaborationBuild = runner.indexOf('build:collaboration-server')
   const collaborationStart = runner.indexOf('collaboration:server:start')
   const collaborationReady = runner.indexOf(
-    'npx wait-on "http-get://${E2E_COLLABORATION_HEALTH_URL#http://}"'
+    'node scripts/wait-for-http.mjs "$E2E_COLLABORATION_HEALTH_URL" GET 60000'
   )
   const appStart = runner.indexOf('yarn workspace @asyra/asyra-design start')
 
@@ -531,9 +720,14 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   )
   assert.match(
     runner,
-    /npx wait-on "http-get:\/\/\$\{E2E_COLLABORATION_HEALTH_URL#http:\/\/\}"/,
+    /node scripts\/wait-for-http\.mjs "\$E2E_COLLABORATION_HEALTH_URL" GET 60000/,
     'Collaboration readiness must use the server GET-only health contract'
   )
+  assert.equal(
+    (runner.match(/node scripts\/wait-for-http\.mjs/g) ?? []).length,
+    3
+  )
+  assert.doesNotMatch(runner, /wait-on/)
   assert.ok(
     appStart > collaborationReady,
     'ordinary E2E must start the App only after collaboration is ready'
@@ -581,19 +775,20 @@ test('render timing limits are observations while deterministic work stays block
   assert.match(mechanical, /frame-timing\.json/)
 })
 
-test('render contract E2E keeps CI Chromium isolated and local Chrome available', () => {
+test('render contract E2E uses runner Chrome in CI and locally', () => {
   const runner = readText('scripts/run-e2e.sh')
 
+  assert.doesNotMatch(runner, /E2E_RENDER_PERFORMANCE_BROWSER/)
   assert.match(
     runner,
-    /if \[ "\$\{CI:-\}" = "true" \]; then[\s\S]*E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*else[\s\S]*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*fi/
+    /yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1/
   )
   assert.match(runner, /render-contracts/)
   assert.match(
     runner,
     /Running render contracts and collecting timing observations/
   )
-  assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e/)
+  assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e:asyra-design/)
 })
 
 test('CI runs balanced AI correctness only for related changes or explicit dispatch', async () => {
@@ -730,26 +925,84 @@ test('AI agent runtime is an optional zero-runtime-dependency workspace package'
   )
 })
 
-test('dev:all discovers all package watchers without scheduling builds', async () => {
-  const plan = await createWorkspaceDevAllPlan(repositoryRoot)
-  const devDirectories = plan.devProcesses.map(({ dir }) => dir)
-  const expectedDirectories = fs
-    .readdirSync(path.join(repositoryRoot, 'packages'), {
-      withFileTypes: true
-    })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join('packages', entry.name))
-    .sort()
-
-  assert.deepEqual(devDirectories, expectedDirectories)
-  assert.ok(plan.devProcesses.every(({ cmd }) => cmd === 'yarn dev'))
-  assert.equal('initialBuilds' in plan, false)
-  assert.equal('serviceBuilds' in plan, false)
-  assert.equal('services' in plan, false)
-  assert.deepEqual(plan.app, {
-    dir: 'apps/asyra-design',
-    cmd: 'yarn start'
-  })
+test('root app commands are scoped by app and purpose', () => {
+  const rootScripts = readJSON('package.json').scripts
+  const appCommands = {
+    'asyra-design': ['@asyra/asyra-design', 'start', 'test:local', 'test:ci'],
+    'asyra-framework-site': [
+      '@asyra/asyra-framework-site',
+      'dev',
+      'test:local',
+      'test:ci'
+    ],
+    'asyra-sim': ['@asyra/asyra-sim', 'dev', 'test:local', 'test:ci'],
+    fieldscope: ['@asyra/fieldscope', 'dev', 'test:local', 'test:ci'],
+    'starter-app': ['@asyra/starter-app', 'dev', 'test:local', 'test:ci']
+  }
+  for (const [
+    app,
+    [workspace, startTask, localTestTask, ciTestTask]
+  ] of Object.entries(appCommands)) {
+    assert.ok(rootScripts[`start:${app}`], `missing start:${app}`)
+    assert.ok(rootScripts[`test:${app}`], `missing test:${app}`)
+    assert.ok(rootScripts[`test:${app}:ci`], `missing test:${app}:ci`)
+    assert.ok(rootScripts[`lint:${app}`], `missing lint:${app}`)
+    assert.ok(rootScripts[`test:e2e:${app}`], `missing test:e2e:${app}`)
+    assert.equal(
+      rootScripts[`start:${app}`],
+      `yarn workspace ${workspace} ${startTask}`
+    )
+    assert.equal(
+      rootScripts[`test:${app}`],
+      `yarn workspace ${workspace} ${localTestTask}`
+    )
+    assert.equal(
+      rootScripts[`test:${app}:ci`],
+      `yarn workspace ${workspace} ${ciTestTask}`
+    )
+    if (app === 'asyra-design') {
+      assert.equal(rootScripts[`lint:${app}`], 'yarn eslint apps/asyra-design')
+      assert.equal(
+        rootScripts[`test:e2e:${app}`],
+        'yarn workspace @asyra/asyra-design test:e2e'
+      )
+    } else {
+      assert.equal(
+        rootScripts[`lint:${app}`],
+        `yarn workspace ${workspace} lint`
+      )
+      assert.equal(
+        rootScripts[`test:e2e:${app}`],
+        `yarn workspace ${workspace} test:e2e`
+      )
+    }
+  }
+  const simRunner = readText('apps/asyra-sim/scripts/run-e2e.mjs')
+  assert.match(simRunner, /process\.argv\.length === 2/)
+  assert.match(simRunner, /run-e2e-ci\.mjs/)
+  assert.match(
+    simRunner,
+    /require\.resolve\('@playwright\/test\/cli'\),\s*'test',\s*\.\.\.process\.argv\.slice\(2\)/
+  )
+  assert.ok(
+    rootScripts['test:scripts'].includes(
+      'apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs'
+    )
+  )
+  for (const script of [
+    'test',
+    'test:local',
+    'test:ci',
+    'test:e2e',
+    'lint',
+    'lint:ci',
+    'dev:all'
+  ])
+    assert.equal(
+      rootScripts[script],
+      undefined,
+      `ambiguous root script remains: ${script}`
+    )
 })
 
 test('workspace version planning materializes release ranges without changing files', () => {
@@ -815,6 +1068,7 @@ test('Board, render contracts and functional E2E have independent required jobs'
   )
   const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
   assert.ok(board, 'Board must report its own result')
+  assert.match(board, /FLOW_PROOF_BROWSER_CHANNEL: chrome/)
   assert.ok(
     renderContracts,
     'render correctness/work contracts must report their own result'
@@ -835,64 +1089,55 @@ test('Board, render contracts and functional E2E have independent required jobs'
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
 
-const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>
-  new Promise((resolve, reject) => {
-    const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
-    if (githubActions) env.GITHUB_ACTIONS = 'true'
-    else delete env.GITHUB_ACTIONS
-    const child = spawn(command, args, {
-      cwd: repositoryRoot,
-      env,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    let timedOut = false
-    let oversized = false
-    const killGroup = () => {
-      if (!child.pid) return
-      try {
-        process.kill(-child.pid, 'SIGKILL')
-      } catch (error) {
-        if (error.code !== 'ESRCH') throw error
-      }
-    }
-    const timer = setTimeout(() => {
-      timedOut = true
-      killGroup()
-    }, timeoutMs)
-    const append = (data) => {
-      output += data.toString()
-      if (output.length > 8 * 1024 * 1024) {
-        oversized = true
-        killGroup()
-      }
-    }
-    child.stdout.on('data', append)
-    child.stderr.on('data', append)
-    child.once('error', (error) => {
-      clearTimeout(timer)
-      reject(error)
-    })
-    child.once('close', (code) => {
-      clearTimeout(timer)
-      if (timedOut || oversized) {
-        const error = new Error(
-          timedOut ? `${command} timed out` : `${command} output exceeded limit`
-        )
-        error.output = output
-        reject(error)
-      } else resolve({ code, output })
-    })
-  })
+test('scope discovery checkout includes the accepted Git base required by CI evidence', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const scopeJob = workflow
+    .split('\n  scope:\n')[1]
+    .split('\n  shared-validation:\n')[0]
 
-const countUtilsBuildExecutions = (output) =>
-  output.split(/\r?\n/u).filter((line) =>
-    // Turbo emits task starts as stream lines locally and group headers in CI.
-    /@asyra\/utils:build:utils: cache bypass, force executing|::group::@asyra\/utils:build:utils/u.test(
-      line
-    )
-  ).length
+  assert.match(scopeJob, /fetch-depth: 0/)
+})
+
+test('Flow Inspector CI proof checkout includes the accepted verifier baseline', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const flowJob = workflow
+    .split('\n  flow-inspector-validation:\n')[1]
+    .split('\n  framework-release-readiness:\n')[0]
+
+  assert.match(flowJob, /fetch-depth: 0/)
+  assert.match(flowJob, /persist-credentials: false/)
+  assert.match(
+    flowJob,
+    /yarn turbo run react:build --filter=@asyra\/asyra-design\.\.\. --concurrency=2/
+  )
+  const buildStep = flowJob.indexOf(
+    'Build Asyra Design for Flow Inspector app proofs'
+  )
+  const contractsTest = flowJob.indexOf(
+    'Test Flow Inspector control-plane contracts'
+  )
+  assert.ok(buildStep < contractsTest)
+})
+
+test('shared CI builds Framework declarations before public documentation checks', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const sharedJob = workflow
+    .split('\n  shared-validation:\n')[1]
+    .split('\n  workspace-validation:\n')[0]
+  const buildStep = sharedJob.indexOf('Build Framework declarations')
+  const scriptsTest = sharedJob.indexOf('node scripts/run-ci-checks.mjs')
+
+  assert.ok(buildStep >= 0 && buildStep < scriptsTest)
+  assert.match(
+    sharedJob,
+    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+  )
+  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.doesNotMatch(
+    sharedJob,
+    /build:(?:ai-agent-runtime|collaboration|core|factory)/
+  )
+})
 
 test('build execution counter includes nested local and CI task starts', () => {
   const outer =
@@ -929,66 +1174,3 @@ test('a timed-out build command terminates its descendant process', async () => 
   }
   assert.ok(status === '' || status.startsWith('Z'), status)
 })
-
-test(
-  'Starter build entries execute each Framework dependency once with valid artifacts',
-  { timeout: 300_000 },
-  async () => {
-    const runBuild = async (args, githubActions) => {
-      const result = await runOwnedBuildCommand('yarn', args, {
-        githubActions,
-        timeoutMs: 120_000
-      })
-      assert.equal(result.code, 0, result.output.slice(-4000))
-      return result.output
-    }
-    const assertOneUtilsBuild = (output, entry) => {
-      const count = countUtilsBuildExecutions(output)
-      assert.equal(count, 1, `${entry} rebuilt @asyra/utils ${count} times`)
-    }
-
-    for (const githubActions of [false, true]) {
-      const environment = githubActions ? 'GitHub Actions' : 'local'
-      const orchestrated = await runBuild(
-        [
-          'turbo',
-          'run',
-          'react:build',
-          '--filter',
-          '@asyra/starter-app',
-          '--concurrency=1',
-          '--log-order=stream',
-          '--log-prefix=task'
-        ],
-        githubActions
-      )
-      assertOneUtilsBuild(orchestrated, `${environment} Turbo react:build`)
-
-      const standalone = await runBuild(
-        ['workspace', '@asyra/starter-app', 'build'],
-        githubActions
-      )
-      assertOneUtilsBuild(standalone, `${environment} direct Starter build`)
-    }
-
-    assert.equal(
-      fs.existsSync(
-        path.join(repositoryRoot, 'apps/starter-app/dist/frontend/index.html')
-      ),
-      true
-    )
-    const utils = await import(
-      pathToFileURL(path.join(repositoryRoot, 'packages/utils/dist/index.js'))
-    )
-    const props = await import(
-      pathToFileURL(
-        path.join(
-          repositoryRoot,
-          'packages/props-manager/dist/components/base.js'
-        )
-      )
-    )
-    assert.equal(typeof utils.Setter, 'function')
-    assert.equal(typeof props.default, 'function')
-  }
-)

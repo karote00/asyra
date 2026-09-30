@@ -129,6 +129,9 @@ test('a previous trackpad preference cannot restore scroll pan after reload', as
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.reload()
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await expect(page.getByTestId('persistence-status')).toHaveText(
+    /^Saved locally - /
+  )
   const initialDepth = await readHistoryDepth(page)
   await expect(
     page.getByRole('button', { name: /Switch to (mouse|trackpad) controls/ })
@@ -150,6 +153,9 @@ test('a previous trackpad preference cannot restore scroll pan after reload', as
     })
     .toBe(false)
   await page.getByRole('button', { name: 'Reset view', exact: true }).click()
+  await expect
+    .poll(async () => (await canvas.screenshot()).equals(initial))
+    .toBe(true)
   await page.getByRole('button', { name: 'Undo', exact: true }).focus()
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.keyboard.down('Control')

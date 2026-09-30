@@ -18,6 +18,11 @@ const titles = [...browserSource.matchAll(/test\(\s*'([^']+)'/g)].map(
   (match) => match[1]
 )
 
+test('production artifact browser tests use runner Chrome in every environment', () => {
+  assert.match(browserSource, /channel:\s*'chrome'/)
+  assert.doesNotMatch(browserSource, /process\.env\.CI\s*\?/)
+})
+
 function capture(mode, apps) {
   const calls = []
   runVerification(mode, apps, (command, args) => {

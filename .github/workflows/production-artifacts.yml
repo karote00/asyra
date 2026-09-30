@@ -32,8 +32,6 @@ jobs:
           node-version: '24'
           cache: yarn
       - run: yarn install --immutable
-      - name: Install the existing Playwright browser
-        run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
       - name: Build production artifacts
         run: node scripts/app-release-verification.mjs build
       - name: Verify bounded production artifact resource evidence

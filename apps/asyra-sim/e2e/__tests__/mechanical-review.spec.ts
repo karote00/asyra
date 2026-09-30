@@ -17,35 +17,46 @@ test('mechanical main bodies remain articulated during playback and report frame
   await expect(play).toBeInViewport()
   await page.screenshot({ path: info.outputPath('mechanical-overview.png') })
   await play.click()
+  const samplingWindowMs = 5000
   const deltas = await page.evaluate(
-    () =>
+    (samplingWindowMs) =>
       new Promise<number[]>((resolve) => {
         const samples: number[] = []
-        let previous = 0,
-          warmup = 15
+        let previous = 0
+        let warmup = 15
+        let frameRequestId = 0
+        const finish = () => {
+          window.clearTimeout(deadline)
+          window.cancelAnimationFrame(frameRequestId)
+          resolve(samples)
+        }
+        const deadline = window.setTimeout(finish, samplingWindowMs)
         const frame = (now: number) => {
           if (previous && warmup-- <= 0) samples.push(now - previous)
           previous = now
-          if (samples.length === 90) resolve(samples)
-          else requestAnimationFrame(frame)
+          if (samples.length >= 90) finish()
+          else frameRequestId = requestAnimationFrame(frame)
         }
-        requestAnimationFrame(frame)
-      })
+        frameRequestId = requestAnimationFrame(frame)
+      }),
+    samplingWindowMs
   )
   await page
     .getByRole('button', { name: 'Pause trajectory', exact: true })
     .click()
   const sorted = [...deltas].sort((a, b) => a - b)
   const metrics = {
-    medianMs: sorted[45],
-    p95Ms: sorted[85],
-    maxMs: sorted[89],
+    medianMs: sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : null,
+    p95Ms:
+      sorted.length > 0 ? sorted[Math.ceil((sorted.length - 1) * 0.95)] : null,
+    maxMs: sorted.at(-1) ?? null,
     frames: deltas.length
   }
   await info.attach('frame-timing.json', {
     contentType: 'application/json',
     body: JSON.stringify({
       ...metrics,
+      samplingWindowMs,
       baseURL: info.project.use.baseURL,
       viewport: page.viewportSize(),
       state:

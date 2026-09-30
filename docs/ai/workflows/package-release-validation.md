@@ -8,7 +8,11 @@ command.
 
 PR validation is independent of hosting. Ready PRs require `validate`,
 `framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
-`production-artifact-tests`. Draft jobs remain deferred until ready for review.
+`production-artifact-tests`. `validate` is the total aggregation check;
+`shared-validation` supplies its common prerequisites and runs the conditional
+create-app package archive check. Framework release readiness is selected for
+affected Framework packages and release-validation owner scripts. Draft jobs
+remain deferred until ready for review.
 Vercel statuses from older Git-integrated deployments are historical evidence,
 not merge prerequisites or proof that CI passed.
 
@@ -17,7 +21,7 @@ Their Git connections are removed during cutover, and repository configurations
 also disable automatic Git deployment. A push, PR or merge does not request an
 App deployment. Package registry publication remains a separate workflow.
 
-## Workspace Build Graph
+## Workspace Build Graph and CI Scope
 
 Each framework package keeps its canonical package-specific build command,
 such as `build:factory` or `build:collaboration`. Asyra Design uses
@@ -36,34 +40,74 @@ Package-specific task names must not use a `^build:<package>` dependency.
 Turbo interprets `^` as the named task on every dependency package, which is
 not the Asyra package-specific task contract.
 
+`scripts/ci-relationships.json` is the single CI relationship policy.
+`scripts/ci-scope.mjs` discovers first-level workspaces under `apps/`,
+`packages/`, and `tools/`, and reads each workspace's declared dependencies and
+canonical build/test scripts. The same versioned relationship map produces the
+affected workspace matrix and the evidence consumed by the final `validate`
+aggregate. Dependency edges from both the base and candidate revisions are
+included, so a removed or renamed workspace still selects its former
+downstream consumers. New workspace names do not require CI job or owner-list
+edits.
+
+Documentation roots are discovered at the first level under `docs/`. Public
+documentation selects the configured website workspace; docs under app,
+package, or tool roots map to their corresponding workspace when defined.
+Other known documentation changes receive shared validation. Root shared
+inputs select all discovered workspaces. `create-app/*` stays outside this
+graph and retains its conditional package archive check. Framework release,
+Design E2E, Flow Inspector, and release readiness remain specialized gates
+selected by the same relationship map.
+
+The workflow schedules selected workspaces through a dynamic matrix. Each
+matrix entry executes its manifest-defined canonical build to completion and
+then `test:ci` sequentially. It uploads a run-bound result record; the `validate`
+aggregate checks the exact selected matrix, relationship-map digest, execution
+identity, task order, and every required job outcome. A missing matrix result,
+omitted workspace, failed task, or skipped selected gate cannot satisfy the
+required aggregate.
+
+CI runs each selected workspace's canonical build task and dependency closure
+to completion before invoking `test:ci`. The test task has no build dependency,
+so it must not be scheduled alongside the build task in a single Turbo run.
+
 Commands:
 
 ```bash
 yarn gen:turbo        # intentionally rewrite turbo.json
 yarn gen:turbo:check  # verify the committed graph without changing files
 yarn react:build      # check the graph, then build the app dependency closure
+yarn start:asyra-design # start only the Asyra Design app
+yarn test:asyra-design # run its local formal tests
+yarn test:asyra-design:ci # run its CI test task
+yarn lint:asyra-design # lint only its maintained app files
+yarn test:workspaces:ci # run script tests and all workspace CI tests
+yarn lint:workspaces:ci # lint the repository
 ```
+
+The same `start:<app>`, `test:<app>`, `test:<app>:ci`, `lint:<app>`, and
+`test:e2e:<app>` commands are available for `asyra-framework-site`,
+`asyra-sim`, `fieldscope`, and `starter-app`.
 
 Any root, app, CI, E2E, or deployment command that directly depends on a
 package-specific Turbo task must first pass `gen:turbo:check` or call a root
 command that does.
 
-`dev:all` discovers `packages/*` from their manifests and starts every package
-`dev` command plus the Asyra Design dev server in parallel. It does not validate
-the Turbo graph or build workspace packages; existing `dist` outputs are a
-precondition. A fresh clone must use this sequence from the repository root:
+Each app has a dedicated root start command. For example, Asyra Design starts
+without launching unrelated package watchers. Build workspace packages first
+from a fresh clone:
 
 ```bash
 yarn install
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 After `yarn clean`, recreate the outputs before restarting the watchers:
 
 ```bash
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 `clean` remains a Turbo workspace command; every package that emits `dist` must
@@ -217,7 +261,7 @@ The full validation runs, in order:
 11. remove the isolated workspace whether validation passes or fails.
 
 Release validation never cleans or builds the developer's active workspace, so
-an active `dev:all`, app server, or package watcher is not interrupted and
+an active app server or package watcher is not interrupted and
 cannot rewrite artifacts during validation.
 
 `release:framework` validates Framework packages without entering an App or

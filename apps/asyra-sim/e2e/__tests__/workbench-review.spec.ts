@@ -8,6 +8,10 @@ for (const width of [1440, 960, 600]) {
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     await page.getByRole('treeitem', { name: '◇ fixture post' }).click()
     await page.setViewportSize({ width, height: 960 })
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    )
     const bounds = () =>
       page.evaluate(() =>
         [

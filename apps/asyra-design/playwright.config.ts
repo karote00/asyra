@@ -5,14 +5,6 @@ import { resolveOrdinaryPlaywrightRuntimePolicy } from './playwright-runtime-pol
 const appEnvironment = resolveEnvironment(loadEnvironment())
 const runtimePolicy = resolveOrdinaryPlaywrightRuntimePolicy(process.env)
 const runsCrdt7076 = process.env.E2E_CRDT_7076 === 'true'
-const renderPerformanceBrowser =
-  process.env.E2E_RENDER_PERFORMANCE_BROWSER?.trim()
-if (renderPerformanceBrowser && renderPerformanceBrowser !== 'chromium') {
-  throw new Error(
-    'E2E_RENDER_PERFORMANCE_BROWSER supports only managed Chromium'
-  )
-}
-const usesManagedChromium = renderPerformanceBrowser === 'chromium'
 const documentBackendURL =
   process.env.E2E_DOCUMENT_BACKEND_URL?.trim() || 'http://127.0.0.1:4201'
 const documentBackendPort = new URL(documentBackendURL).port || '80'
@@ -88,7 +80,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        ...(usesManagedChromium ? {} : { channel: 'chrome' })
+        channel: 'chrome'
       }
     }
 

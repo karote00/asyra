@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test'
 import { Vector3 } from 'three'
 import { cameraPreset, fitCamera } from '../src/render-app/site-projection'
 import { cameraDistance } from '../src/render-app/camera-navigation'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
+
+test.skip(
+  usesCpuSoftwareRenderer,
+  'Crop visibility and camera-scale proofs require the desktop GPU renderer.'
+)
 
 for (const [species, rootX, height, stage] of [
   ['cucumber', 1.05, 0.8, 'harvestable'],

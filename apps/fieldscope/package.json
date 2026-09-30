@@ -16,13 +16,16 @@
     "test:local": "vitest run",
     "test:ci": "vitest run",
     "test:e2e": "playwright test",
-    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"
+    "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 node scripts/run-e2e-ci.mjs",
+    "test:e2e:contracts": "node --test scripts/__tests__/e2e-ci-groups.test.mjs",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e scripts *.ts *.mjs"
   },
   "dependencies": {
     "@asyra/core": "workspace:*",
     "@asyra/preset": "workspace:*",
     "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
+    "@asyra/utils": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "0.185.1"

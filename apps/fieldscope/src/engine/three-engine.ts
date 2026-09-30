@@ -35,6 +35,8 @@ import { disposeObject, drawGraphics } from './graphics'
 export interface GraphicsDriver {
   domElement: HTMLCanvasElement
   autoClear: boolean
+  shadowMap?: { enabled: boolean; type: THREE.ShadowMapType }
+  getContext?: () => WebGLRenderingContext | WebGL2RenderingContext
   setSize(width: number, height: number, updateStyle?: boolean): void
   setPixelRatio(ratio: number): void
   setClearColor(color: number | string, alpha?: number): void
@@ -42,6 +44,20 @@ export interface GraphicsDriver {
   clearDepth(): void
   render(scene: THREE.Scene, camera: THREE.Camera): void
   dispose(): void
+}
+
+const usesSoftwareRenderer = (driver: GraphicsDriver): boolean => {
+  if (!driver.getContext || !driver.shadowMap) return false
+  const gl = driver.getContext()
+  const extension = gl.getExtension('WEBGL_debug_renderer_info') as {
+    UNMASKED_RENDERER_WEBGL: number
+  } | null
+  if (!extension) return false
+  const renderer = gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)
+  return (
+    typeof renderer === 'string' &&
+    /swiftshader|llvmpipe|softpipe|software rasterizer/i.test(renderer)
+  )
 }
 
 interface EnginePlatform {
@@ -186,6 +202,7 @@ export class ThreeEngine implements RenderEngine {
   private root: ObjectRecord | null = null
   private width = 1
   private height = 1
+  private pixelRatio = 1
   private frame: number | null = null
   private frameGeneration = 0
   private destroyed = false
@@ -206,16 +223,21 @@ export class ThreeEngine implements RenderEngine {
     try {
       this.driver = this.platform.createDriver?.() ?? createDefaultDriver()
       this.driver.autoClear = false
-      this.driver.setPixelRatio(
-        Math.min(options.resolution ?? globalThis.devicePixelRatio ?? 1, 2)
+      const softwareRenderer = usesSoftwareRenderer(this.driver)
+      if (softwareRenderer && this.driver.shadowMap)
+        this.driver.shadowMap.enabled = false
+      this.pixelRatio = Math.min(
+        options.resolution ?? globalThis.devicePixelRatio ?? 1,
+        2
       )
+      this.driver.setPixelRatio(this.pixelRatio)
       this.driver.setClearColor(options.backgroundColor ?? 0x101b29, 1)
       this.resize(options.width, options.height)
       this.root = this.create('container', {})
       this.scene.add(new THREE.HemisphereLight(0xe6eedf, 0xb4bea5, 2))
       const key = new THREE.DirectionalLight(0xfff3e5, 2.6)
       key.position.set(-15, 35, -20)
-      key.castShadow = true
+      key.castShadow = !softwareRenderer
       key.shadow.mapSize.set(1024, 1024)
       Object.assign(key.shadow.camera, {
         left: -40,
@@ -661,7 +683,10 @@ export class ThreeEngine implements RenderEngine {
       )
     )
     const pixelsPerUnit =
-      (this.height * Math.abs(this.camera.projectionMatrix.elements[5])) / 2
+      (this.height *
+        this.pixelRatio *
+        Math.abs(this.camera.projectionMatrix.elements[5])) /
+      2
     const matrix = new THREE.Matrix4(),
       world = new THREE.Matrix4(),
       center = new THREE.Vector3(),

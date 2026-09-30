@@ -201,6 +201,11 @@ for (const width of [394, 820, 1440, 2560]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/')
+    if (width >= 1024)
+      await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+        'data-motion',
+        'on'
+      )
     const story = await page
       .locator('[data-story-chapter="0"] > div')
       .first()
@@ -228,6 +233,11 @@ for (const width of [394, 820, 1440, 2560]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/')
+    if (width >= 1024)
+      await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+        'data-motion',
+        'on'
+      )
     const story = await page
       .locator('[data-story-chapter="0"] > div')
       .first()

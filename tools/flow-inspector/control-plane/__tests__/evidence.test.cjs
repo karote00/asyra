@@ -1304,28 +1304,27 @@ test(
       return { captured, evidence }
     }
     const appConfig = path.join(directory, 'app.config.mjs')
-    const appRoot = path.join(repository, 'apps/asyra-design')
-    fs.writeFileSync(
-      appConfig,
-      'export default ' +
-        JSON.stringify({
-          root: appRoot,
-          cacheDir: path.join(directory, 'vite-cache'),
-          test: {
-            environment: 'jsdom',
-            include: ['src/features/undo-redo/__tests__/feature.test.ts'],
-            maxWorkers: 1,
-            fileParallelism: false
-          }
-        })
-    )
     const appProof = async (label, expectedFailed) => {
+      const testFile =
+        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+      fs.writeFileSync(
+        appConfig,
+        'export default ' +
+          JSON.stringify({
+            root: repository,
+            cacheDir: path.join(directory, `vite-cache-${label}`),
+            test: {
+              environment: 'jsdom',
+              include: [path.join(repository, testFile)],
+              maxWorkers: 1,
+              fileParallelism: false
+            }
+          })
+      )
       const reportPath = path.join(directory, label + '.json')
       const sourcePath = path.join(directory, label + '.ts')
       const sourceBytes = fs.readFileSync(path.join(repository, appFile))
       fs.writeFileSync(sourcePath, sourceBytes)
-      const testFile =
-        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
       assert.deepEqual(
         fs.readFileSync(path.join(repository, testFile)),
         fs.readFileSync(path.join(root, testFile)),
@@ -1362,7 +1361,11 @@ test(
         failed: report.numFailedTests,
         passed: report.numPassedTests
       })
-      assert.equal(report.numTotalTests, 2, runner.output)
+      assert.equal(
+        report.numTotalTests,
+        2,
+        `${runner.output}\n${JSON.stringify(report)}`
+      )
       assert.equal(report.numFailedTests, expectedFailed, runner.output)
       assert.equal(report.numPassedTests, 2 - expectedFailed)
       assert.equal(report.numPendingTests, 0)

@@ -104,13 +104,19 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   does not prevent functional evidence collection, but a failed contract job
   still fails the reusable workflow and its required `flow-ci` aggregate. No
   correctness gate is optional.
+- The main CI workflow passes an explicit list of selected suites to the
+  reusable workflow. Full validation selects collaboration, Flow Inspector
+  board, functional, and render-contract suites. Incremental validation selects
+  the suite matching the changed E2E spec; shared workflow/setup inputs select
+  every suite. The final aggregate requires one successful result for each
+  selected suite and a skipped result for each unselected suite.
 - `E2E_SUITE=render-contracts` and `E2E_SUITE=functional` select the bounded
   slice in `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
   slices preserve PID-owned service startup, readiness, fail-fast and cleanup.
-- CI's render-contract job sets `E2E_RENDER_PERFORMANCE_BROWSER=chromium` to
-  use its installed Playwright Chromium. The local render-contract command uses
-  the installed Google Chrome channel in headless mode and does not download a
-  browser.
+- All GitHub Actions E2E jobs use the runner's installed Google Chrome channel,
+  including render-contract and production-artifact checks. They do not install
+  a Playwright-managed browser. Local render-contract runs use the same Chrome
+  channel in headless mode.
 - after creating the dense-vector fixture, the timing test waits for the active
   Collaboration session and publication outbox to become idle before installing
   phase timers; setup publication work is excluded without changing the normal

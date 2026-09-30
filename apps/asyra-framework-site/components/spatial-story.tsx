@@ -601,7 +601,7 @@ export function SpatialStory({
       className="spatial-story-shell group"
       data-motion="off"
     >
-      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-6 backdrop-blur-sm lg:px-[4vw]">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-4 sm:px-6 backdrop-blur-sm lg:px-[4vw]">
         <a href="/" className="wordmark" aria-label="Asyra home">
           ASYRA
         </a>
@@ -629,7 +629,7 @@ export function SpatialStory({
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-4 text-[14px]">
+        <div className="flex items-center gap-3 text-[14px]">
           <nav
             aria-label="Primary navigation"
             className="hidden items-center gap-5 lg:flex"
@@ -650,7 +650,7 @@ export function SpatialStory({
             </a>
           </nav>
           <a
-            className="inline-flex min-h-11 items-center font-medium"
+            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap font-medium"
             data-site-cta=""
             href="/docs#generic-starter-source"
           >
