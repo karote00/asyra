@@ -22,8 +22,7 @@ or unsupported capability claims.
 
 ## Active Adoption Entry Program
 
-- [Adoption Entry and Onboarding Program](
-  plans/adoption-entry-and-onboarding-program-plan.md)
+- [Adoption Entry and Onboarding Program](plans/adoption-entry-and-onboarding-program-plan.md)
   - ACTIVE. Tasks 1-8 and their recorded Starter, CLI, AI onboarding,
     publication, README gate and screenshot results remain complete.
   - The bounded remaining sequence is FieldScope fact correction (delivered in
@@ -37,14 +36,12 @@ or unsupported capability claims.
 
 None.
 
-## Completed CI Workflow Split - Closeout Pending
+## Completed CI Workflow Split
 
 - The repository-wide CI routing, workspace build-before-test, app-purpose
-  commands, and app E2E group split were integrated in PR #264.
-- The retrospective plan and acceptance evidence are recorded in
-  `plans/ci-workflow-splitting-plan.md`.
-- Whole-plan closeout follows review of that exact plan record in the current
-  documentation PR.
+  commands, and app E2E group split were integrated in PR #264 and closed out
+  after review of the retrospective plan record.
+- Completed record: `plans/completed/ci-workflow-splitting-plan.md`.
 
 The Input System environment-neutrality prerequisite completed on 2026-08-10.
 Its retained plan and Inspector are:

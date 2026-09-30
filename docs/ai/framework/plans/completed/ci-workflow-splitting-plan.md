@@ -52,3 +52,11 @@ The implementation commit `5de68999d3c4d8bfbee2c0ab460970a18322a1a6` was titled 
 ## Closeout Readiness
 
 All implementation outcomes above are integrated. Closeout must append the exact reviewed source SHA and decision after this plan record has received trusted review, then move this plan to `plans/completed/`, remove this active index entry, and append the completion rationale to `decisions/releases/unreleased.md`.
+
+## Closeout
+
+Completed: 2026-10-01
+Reviewed source: 834c0a87c68d2a17afd9e11c2456aa27d90e148c
+Outcome: PR #264's scoped CI workflow changes were integrated at merge commit `ae6aac8ef40fc86d4b4cf3f52d91719e471d1f37`; its recorded local and CI validation evidence is summarized above.
+Decision: Accept the CI routing, app-purpose command, dependency-build, and E2E group split as complete. The current documentation PR records the missing retrospective plan; this closeout does not claim additional implementation or review evidence for PR #264.
+Exit criteria: All seven required outcomes in this plan are integrated and supported by the PR #264 validation record; the plan record itself was reviewed at the exact source SHA above.

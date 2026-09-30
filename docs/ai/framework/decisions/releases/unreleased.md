@@ -168,3 +168,16 @@
   independent Root README plan completed.
 - Corrected active record:
   `../../plans/adoption-entry-and-onboarding-program-plan.md`.
+
+## 2026-10-01 — Complete CI Workflow Split
+
+- Close the repository-wide CI split integrated through PR #264. The accepted
+  result routes validation by workspace ownership and declared consumers,
+  builds selected workspace dependency closures before tests, preserves one
+  aggregate required check, and aligns app-purpose commands and E2E groups.
+- The retrospective plan record was reviewed at source
+  `834c0a87c68d2a17afd9e11c2456aa27d90e148c`. PR #264's recorded validation
+  and limitations remain the evidence for the integrated implementation; this
+  entry does not assert new implementation evidence.
+- Completed record:
+  `../../plans/completed/ci-workflow-splitting-plan.md`.
