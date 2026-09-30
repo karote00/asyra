@@ -7,12 +7,12 @@ import {
 
 test(
   'local direct Starter build runs Framework dependencies once',
-  { timeout: 125_000 },
+  { timeout: 80_000 },
   async () => {
     const result = await runOwnedBuildCommand(
       'yarn',
       ['workspace', '@asyra/starter-app', 'build'],
-      { githubActions: false, timeoutMs: 120_000 }
+      { githubActions: false, timeoutMs: 75_000 }
     )
     assert.equal(result.code, 0, result.output.slice(-4000))
     assert.equal(countUtilsBuildExecutions(result.output), 1)

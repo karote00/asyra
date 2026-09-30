@@ -84,7 +84,6 @@ for (const [index, group] of CI_E2E_GROUPS.entries()) {
     '--config',
     'playwright.config.ts',
     ...group.files,
-    '--timeout=90000',
     `--global-timeout=${remainingTimeout}`,
     '--reporter=line,json'
   ]

@@ -35,7 +35,15 @@ export const CI_E2E_GROUPS = [
     ]
   },
   { name: 'workspace-panels', files: ['e2e/panels.spec.ts'] },
-  { name: 'robot-workspace', files: ['e2e/robot.spec.ts'] }
+  {
+    name: 'robot-workspace',
+    files: [
+      'e2e/robot-layout-390-zh-tw.spec.ts',
+      'e2e/robot-layout-390-en.spec.ts',
+      'e2e/robot-layout-1440-zh-tw.spec.ts',
+      'e2e/robot-layout-1440-en.spec.ts'
+    ]
+  }
 ]
 
 function walkFiles(directory, root, output) {

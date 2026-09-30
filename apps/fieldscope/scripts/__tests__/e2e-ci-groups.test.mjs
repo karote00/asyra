@@ -27,6 +27,29 @@ test('FieldScope CI groups cover every browser spec exactly once', () => {
   )
 })
 
+test('a browser spec with a custom time limit contains one Playwright case', () => {
+  for (const file of collectBrowserSpecFiles(appRoot)) {
+    const source = fs.readFileSync(path.join(appRoot, file), 'utf8')
+    if (!/test\.setTimeout\s*\(/u.test(source)) continue
+    const cases = source.match(/^\s*test\s*\(/gmu) ?? []
+
+    assert.equal(
+      cases.length,
+      1,
+      `${file} has a custom timeout and must contain one test case`
+    )
+  }
+})
+
+test('CI E2E runner does not override each case timeout globally', () => {
+  const runner = fs.readFileSync(
+    path.join(appRoot, 'scripts/run-e2e-ci.mjs'),
+    'utf8'
+  )
+
+  assert.doesNotMatch(runner, /--timeout(?:=|\s)/u)
+})
+
 test('software-rendered browser cases budget pixels and keep desktop CSS layout', () => {
   const config = fs.readFileSync(
     path.join(appRoot, 'playwright.config.ts'),

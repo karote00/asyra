@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 test('language changes preserve the canvas, camera, layers, configuration and history', async ({
   page
 }) => {
+  test.setTimeout(90_000)
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const selector = page.getByRole('combobox', { name: '語言', exact: true })

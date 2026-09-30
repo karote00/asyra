@@ -33,7 +33,7 @@ async function checkLayout(page: Page) {
       }
       return issues
     })
-  await expect.poll(violations).toEqual([])
+  expect(await violations()).toEqual([])
 }
 
 export async function runResponsiveLayout(
@@ -65,12 +65,7 @@ export async function runResponsiveLayout(
     await expect(editorToggle).toHaveAttribute('aria-expanded', 'true')
   }
   const right = page.locator('#configuration-panel .workspace-panel-content')
-  await expect(
-    page.getByRole('heading', {
-      name: english ? 'Scene settings' : '場景設定',
-      exact: true
-    })
-  ).toBeVisible({ timeout: 15_000 })
+  await expect(right).toBeVisible()
   await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({

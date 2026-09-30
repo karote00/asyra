@@ -4,6 +4,7 @@ import { usesCpuSoftwareRenderer } from './renderer-environment'
 test('edits crossbeam height and symmetric clearance with independent history', async ({
   page
 }, testInfo) => {
+  test.setTimeout(90_000)
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const beam = page.getByLabel('橫樑高度', { exact: true })

@@ -4,10 +4,13 @@ import { usesCpuSoftwareRenderer } from './renderer-environment'
 test('side panels preserve immediate edits without remounting the canvas', async ({
   page
 }, testInfo) => {
-  const waitForPanelMotion = async (selector: string) => {
-    await page.locator(selector).evaluate(async (node) => {
+  test.setTimeout(60_000)
+  const waitForPanelMotion = async () => {
+    await page.locator('.scene-workspace').evaluate(async (node) => {
       await Promise.all(
-        node.getAnimations().map((animation) => animation.finished)
+        node
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished)
       )
     })
   }
@@ -37,7 +40,7 @@ test('side panels preserve immediate edits without remounting the canvas', async
   await page.getByLabel('溫室縱向深度', { exact: true }).fill('42')
   await page.getByLabel('溫室縱向深度', { exact: true }).press('Enter')
   await page.getByRole('button', { name: '收合編輯面板', exact: true }).click()
-  await waitForPanelMotion('#configuration-panel')
+  await waitForPanelMotion()
   await expect(
     page.getByRole('button', { name: '展開編輯面板', exact: true })
   ).toHaveAttribute('aria-expanded', 'false')
@@ -45,19 +48,17 @@ test('side panels preserve immediate edits without remounting the canvas', async
     page.getByLabel('溫室縱向深度', { exact: true })
   ).not.toBeVisible()
   await page.getByRole('button', { name: '收合圖層面板', exact: true }).click()
-  await waitForPanelMotion('#layer-panel')
-  await expect
-    .poll(async () => (await scene.boundingBox())?.width ?? 0, {
-      timeout: 30000
-    })
-    .toBeGreaterThan(original.width + 550)
+  await waitForPanelMotion()
+  const expandedScene = await scene.boundingBox()
+  if (!expandedScene) throw new Error('Missing expanded scene bounds')
+  expect(expandedScene.width).toBeGreaterThan(original.width + 550)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
       path: testInfo.outputPath('panels-collapsed.png'),
       fullPage: true
     })
   await page.getByRole('button', { name: '展開編輯面板', exact: true }).click()
-  await waitForPanelMotion('#configuration-panel')
+  await waitForPanelMotion()
   await expect(page.getByLabel('溫室縱向深度', { exact: true })).toHaveValue(
     '42'
   )
@@ -65,12 +66,10 @@ test('side panels preserve immediate edits without remounting the canvas', async
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
   ).toBeEnabled()
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
-  await waitForPanelMotion('#layer-panel')
-  await expect
-    .poll(async () => (await scene.boundingBox())?.width ?? 0, {
-      timeout: 30000
-    })
-    .toBeCloseTo(original.width, 0)
+  await waitForPanelMotion()
+  const restoredScene = await scene.boundingBox()
+  if (!restoredScene) throw new Error('Missing restored scene bounds')
+  expect(restoredScene.width).toBeCloseTo(original.width, 0)
   await page.getByRole('button', { name: '整體畫面 ⌘1', exact: true }).click()
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
