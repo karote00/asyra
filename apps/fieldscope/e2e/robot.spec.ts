@@ -7,6 +7,8 @@ for (const width of [390, 1440])
       page
     }, testInfo) => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1100 })
+      if (usesCpuSoftwareRenderer)
+        await page.emulateMedia({ reducedMotion: 'reduce' })
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto('/')
@@ -105,13 +107,9 @@ for (const width of [390, 1440])
             exact: true
           })
           .click()
-      await page.locator('#configuration-panel').evaluate(async (node) => {
-        await Promise.all(
-          node
-            .getAnimations({ subtree: true })
-            .map((animation) => animation.finished)
-        )
-      })
+      const workspace = page.locator('.scene-workspace')
+      await expect(workspace).toHaveAttribute('data-left-open', 'false')
+      await expect(workspace).toHaveAttribute('data-right-open', 'false')
       await expect
         .poll(
           async () =>

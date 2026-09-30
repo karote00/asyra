@@ -1052,6 +1052,14 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
 
   assert.match(flowJob, /fetch-depth: 0/)
   assert.match(flowJob, /persist-credentials: false/)
+  assert.match(
+    flowJob,
+    /yarn turbo run build:core --filter=@asyra\/core\.\.\. --concurrency=2/
+  )
+  assert.ok(
+    flowJob.indexOf('Build Framework declarations for Flow Inspector app proofs') <
+      flowJob.indexOf('Test Flow Inspector control-plane contracts')
+  )
 })
 
 test('shared CI builds Framework declarations before public documentation checks', () => {
