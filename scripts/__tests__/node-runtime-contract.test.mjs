@@ -149,7 +149,7 @@ test('the Framework website Vercel build follows its Turbo dependency graph', ()
 
   assert.equal(
     vercelConfig.buildCommand,
-    'cd ../.. && corepack yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site'
+    'cd ../.. && corepack yarn gen:turbo:check && corepack yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site'
   )
 })
 
