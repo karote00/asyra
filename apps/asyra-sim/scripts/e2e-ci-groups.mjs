@@ -72,24 +72,34 @@ export const CI_E2E_GROUPS = [
       'e2e/__tests__/live-playback.spec.ts',
       'e2e/__tests__/manual-seek.spec.ts',
       'e2e/__tests__/mixed-pair-feedback.spec.ts',
-      'e2e/__tests__/timeline-target-pose.spec.ts'
-    ]
-  },
-  {
-    name: 'browser-runtime',
-    files: [
-      'src/domain/__tests__/runtime.browser.spec.ts',
-      'src/engine/glb/__tests__/runtime.browser.spec.ts',
-      'src/storage/__tests__/runtime.browser.spec.ts',
-      'src/analysis/__tests__/runner.browser.spec.ts',
-      'src/analysis/__tests__/budget-baseline.browser.spec.ts',
-      'src/analysis/methods/__tests__/runtime.browser.spec.ts',
-      'e2e/__tests__/navigation-performance.spec.ts',
-      'e2e/__tests__/trackpad-navigation.spec.ts',
-      'e2e/__tests__/viewport-navigation.spec.ts',
+      'e2e/__tests__/timeline-target-pose.spec.ts',
       'e2e/__tests__/playback-continuity.spec.ts',
       'e2e/__tests__/playback-latency.spec.ts',
       'e2e/__tests__/playback-notice.spec.ts'
+    ]
+  },
+  {
+    name: 'browser-navigation',
+    files: [
+      'e2e/__tests__/navigation-performance.spec.ts',
+      'e2e/__tests__/trackpad-navigation.spec.ts',
+      'e2e/__tests__/viewport-navigation.spec.ts'
+    ]
+  },
+  {
+    name: 'browser-analysis-runtime',
+    files: [
+      'src/analysis/__tests__/runner.browser.spec.ts',
+      'src/analysis/__tests__/budget-baseline.browser.spec.ts',
+      'src/analysis/methods/__tests__/runtime.browser.spec.ts'
+    ]
+  },
+  {
+    name: 'browser-platform-runtime',
+    files: [
+      'src/domain/__tests__/runtime.browser.spec.ts',
+      'src/engine/glb/__tests__/runtime.browser.spec.ts',
+      'src/storage/__tests__/runtime.browser.spec.ts'
     ]
   },
   {
