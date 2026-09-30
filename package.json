@@ -117,7 +117,10 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "js-yaml@npm:4.1.1": "npm:4.3.2",
-    "minimatch@npm:10.1.1": "npm:10.2.6"
+    "minimatch@npm:10.1.1": "npm:10.2.6",
+    "brace-expansion@npm:^2.0.2": "npm:2.1.7",
+    "brace-expansion@npm:^5.0.2": "npm:5.0.12",
+    "brace-expansion@npm:^5.0.8": "npm:5.0.12"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
