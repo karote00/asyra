@@ -37,6 +37,15 @@ or unsupported capability claims.
 
 None.
 
+## Completed CI Workflow Split - Closeout Pending
+
+- The repository-wide CI routing, workspace build-before-test, app-purpose
+  commands, and app E2E group split were integrated in PR #264.
+- The retrospective plan and acceptance evidence are recorded in
+  `plans/ci-workflow-splitting-plan.md`.
+- Whole-plan closeout follows review of that exact plan record in the current
+  documentation PR.
+
 The Input System environment-neutrality prerequisite completed on 2026-08-10.
 Its retained plan and Inspector are:
 
