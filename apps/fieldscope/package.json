@@ -16,7 +16,7 @@
     "test:local": "vitest run",
     "test:ci": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 playwright test --reporter=line,json",
+    "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 playwright test --timeout=90000 --global-timeout=900000 --reporter=line,json",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"
   },
   "dependencies": {

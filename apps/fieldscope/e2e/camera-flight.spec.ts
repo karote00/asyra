@@ -1,8 +1,5 @@
 import { expect, test } from '@playwright/test'
-
-const usesCpuSoftwareRenderer =
-  process.env.WEBGL_RENDERER === 'swiftshader' ||
-  (process.platform !== 'darwin' && !process.env.WEBGL_RENDERER)
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 test.skip(
   usesCpuSoftwareRenderer,

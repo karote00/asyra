@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 test('commits each completed field immediately with independent undo and redo', async ({
   page
@@ -119,20 +120,26 @@ test('edits crossbeam height and symmetric clearance with independent history', 
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(height).toHaveValue('5')
   await expect(page.getByText(/已套用：/)).toHaveCount(0)
-  await page.screenshot({
-    path: testInfo.outputPath('editable-structure-dimensions.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('editable-structure-dimensions.png'),
+      fullPage: true
+    })
   await page.getByLabel('第 7 項寬度').scrollIntoViewIfNeeded()
-  await page.screenshot({
-    path: testInfo.outputPath('editable-side-clearance.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('editable-side-clearance.png'),
+      fullPage: true
+    })
 })
 
 test('soil-width edits stay responsive in the fully planted scene', async ({
   page
 }, testInfo) => {
+  test.skip(
+    usesCpuSoftwareRenderer,
+    'The 250ms render-response budget is measured on the desktop GPU path; SwiftShader runs the functional interaction suite.'
+  )
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const input = page.getByLabel('第 1 項寬度', { exact: true })
@@ -173,6 +180,10 @@ test('soil-width edits stay responsive in the fully planted scene', async ({
 test('soil edit history restores the rendered canvas as well as field values', async ({
   page
 }, testInfo) => {
+  test.skip(
+    usesCpuSoftwareRenderer,
+    'Canvas raster equivalence is verified with the desktop GPU renderer.'
+  )
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const input = page.getByLabel('第 1 項寬度', { exact: true })

@@ -16,9 +16,9 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-html.has-open-dialog,
-body.has-open-dialog {
-  overflow-y: hidden;
+html:has(dialog:modal),
+body:has(dialog:modal) {
+  overflow: hidden;
   overscroll-behavior: none;
 }
 

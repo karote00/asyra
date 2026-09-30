@@ -31,6 +31,7 @@ export function PlaybackNotice() {
     <aside
       data-testid="playback-feedback"
       data-kind={feedback.kind}
+      data-complete={feedback.complete}
       data-pose-matches={matches}
       data-pending-time={pendingTime}
       aria-live="polite"

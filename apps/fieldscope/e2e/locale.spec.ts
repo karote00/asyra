@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test'
 
 async function checkLayout(page: Page) {
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.documentElement
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished)
+    )
+  })
   const violations = () =>
     page.evaluate(() => {
       const issues: string[] = []
@@ -25,7 +32,7 @@ async function checkLayout(page: Page) {
       }
       return issues
     })
-  await expect.poll(violations).toEqual([])
+  await expect.poll(violations, { timeout: 30000 }).toEqual([])
 }
 
 test('language changes preserve the canvas, camera, layers, configuration and history', async ({

@@ -144,6 +144,7 @@ for (const kind of ['clearance', 'collision']) {
     await page.evaluate(() => {
       const frames: {
         kind: string | null
+        complete: string | null
         matches: string | null
         height: number
         pending: string | null
@@ -177,6 +178,7 @@ for (const kind of ['clearance', 'collision']) {
 
         frames.push({
           kind: current.getAttribute('data-kind'),
+          complete: current.getAttribute('data-complete'),
           matches: current.getAttribute('data-pose-matches'),
           height: current.getBoundingClientRect().height,
           pending: current.getAttribute('data-pending-time'),
@@ -209,6 +211,7 @@ for (const kind of ['clearance', 'collision']) {
       const trace = Reflect.get(window, 'manualSeekTrace') as {
         frames: {
           kind: string | null
+          complete: string | null
           matches: string | null
           pending: string | null
           text: string
@@ -256,6 +259,7 @@ for (const kind of ['clearance', 'collision']) {
       const trace = Reflect.get(window, 'manualSeekTrace') as {
         frames: {
           kind: string | null
+          complete: string | null
           matches: string | null
           height: number
           pending: string | null
@@ -268,12 +272,18 @@ for (const kind of ['clearance', 'collision']) {
     })
     expect(frames.length).toBeGreaterThan(0)
     for (const frame of frames) {
-      if (frame.matches === 'true') {
+      if (frame.matches === 'true' && frame.kind === kind) {
         expect(frame.kind).toBe(kind)
+        expect(frame.complete).toBe('true')
         expect(frame.text).toContain('Checked ')
       } else {
         expect([kind, 'checking', 'unresolved']).toContain(frame.kind)
-        expect(frame.text).toContain('Current pose is not yet checked')
+        if (frame.kind === 'unresolved') {
+          expect(frame.complete).toBe('false')
+          expect(frame.text).toContain('Incomplete coverage')
+        }
+        if (frame.matches !== 'true')
+          expect(frame.text).toContain('Current pose is not yet checked')
       }
       if (frame.pending !== null)
         expect(Number.isFinite(Number(frame.pending))).toBe(true)

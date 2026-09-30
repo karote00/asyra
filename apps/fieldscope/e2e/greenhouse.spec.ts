@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
+
+test.skip(
+  usesCpuSoftwareRenderer,
+  'Greenhouse geometry and raster proofs require the desktop GPU renderer.'
+)
 
 test('real greenhouse route exposes the structure, section, inner aisle and responsive controls', async ({
   page

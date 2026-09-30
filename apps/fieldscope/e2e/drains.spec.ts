@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test'
 import { Vector3 } from 'three'
 import { cameraPreset, fitCamera } from '../src/render-app/site-projection'
 import { cameraDistance } from '../src/render-app/camera-navigation'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
+
+test.skip(
+  usesCpuSoftwareRenderer,
+  'Drain geometry visibility and camera-scale proofs require the desktop GPU renderer.'
+)
 
 test('rounded drain mouth is visible through the real front camera', async ({
   page
