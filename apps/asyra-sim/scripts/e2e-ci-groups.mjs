@@ -3,15 +3,20 @@ import path from 'node:path'
 
 export const CI_E2E_GROUPS = [
   {
-    name: 'project-storage',
+    name: 'project-state',
+    files: [
+      'e2e/__tests__/projects.spec.ts',
+      'e2e/__tests__/automatic-persistence.spec.ts',
+      'e2e/__tests__/pilot-recovery.spec.ts'
+    ]
+  },
+  {
+    name: 'project-evidence',
     files: [
       'e2e/__tests__/visual-references.spec.ts',
       'e2e/__tests__/candidate-comparison.spec.ts',
       'e2e/__tests__/retained-runs.spec.ts',
-      'e2e/__tests__/field-observations.spec.ts',
-      'e2e/__tests__/projects.spec.ts',
-      'e2e/__tests__/automatic-persistence.spec.ts',
-      'e2e/__tests__/pilot-recovery.spec.ts'
+      'e2e/__tests__/field-observations.spec.ts'
     ]
   },
   {
@@ -23,15 +28,25 @@ export const CI_E2E_GROUPS = [
     ]
   },
   {
-    name: 'analysis-workflows',
+    name: 'analysis-inputs',
     files: [
-      'e2e/__tests__/methods.spec.ts',
       'e2e/__tests__/acceptance-rules.spec.ts',
       'e2e/__tests__/resources.spec.ts',
       'e2e/__tests__/workcell.spec.ts',
-      'e2e/__tests__/original-part-admission.spec.ts',
+      'e2e/__tests__/original-part-admission.spec.ts'
+    ]
+  },
+  {
+    name: 'analysis-runs',
+    files: [
+      'e2e/__tests__/methods.spec.ts',
       'e2e/__tests__/experiments.spec.ts',
-      'e2e/__tests__/formal-outcomes.spec.ts',
+      'e2e/__tests__/formal-outcomes.spec.ts'
+    ]
+  },
+  {
+    name: 'playback-feedback',
+    files: [
       'e2e/__tests__/live-playback.spec.ts',
       'e2e/__tests__/manual-seek.spec.ts',
       'e2e/__tests__/mixed-pair-feedback.spec.ts',
@@ -56,12 +71,17 @@ export const CI_E2E_GROUPS = [
     ]
   },
   {
-    name: 'workbench-interactions',
+    name: 'workbench-import',
     files: [
       'e2e/__tests__/trajectory-import.spec.ts',
-      'e2e/__tests__/toolbar.spec.ts',
-      'e2e/__tests__/starter-experiments.spec.ts',
       'e2e/__tests__/workbench-flow.spec.ts'
+    ]
+  },
+  {
+    name: 'workbench-controls',
+    files: [
+      'e2e/__tests__/toolbar.spec.ts',
+      'e2e/__tests__/starter-experiments.spec.ts'
     ]
   },
   {

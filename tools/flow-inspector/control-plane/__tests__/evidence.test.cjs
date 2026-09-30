@@ -1305,6 +1305,8 @@ test(
     }
     const appConfig = path.join(directory, 'app.config.mjs')
     const appProof = async (label, expectedFailed) => {
+      const testFile =
+        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
       fs.writeFileSync(
         appConfig,
         'export default ' +
@@ -1313,9 +1315,7 @@ test(
             cacheDir: path.join(directory, `vite-cache-${label}`),
             test: {
               environment: 'jsdom',
-              include: [
-                'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
-              ],
+              include: [path.join(repository, testFile)],
               maxWorkers: 1,
               fileParallelism: false
             }
@@ -1325,8 +1325,6 @@ test(
       const sourcePath = path.join(directory, label + '.ts')
       const sourceBytes = fs.readFileSync(path.join(repository, appFile))
       fs.writeFileSync(sourcePath, sourceBytes)
-      const testFile =
-        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
       assert.deepEqual(
         fs.readFileSync(path.join(repository, testFile)),
         fs.readFileSync(path.join(root, testFile)),
@@ -1363,7 +1361,11 @@ test(
         failed: report.numFailedTests,
         passed: report.numPassedTests
       })
-      assert.equal(report.numTotalTests, 2, runner.output)
+      assert.equal(
+        report.numTotalTests,
+        2,
+        `${runner.output}\n${JSON.stringify(report)}`
+      )
       assert.equal(report.numFailedTests, expectedFailed, runner.output)
       assert.equal(report.numPassedTests, 2 - expectedFailed)
       assert.equal(report.numPendingTests, 0)

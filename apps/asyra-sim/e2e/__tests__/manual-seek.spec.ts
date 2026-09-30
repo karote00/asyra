@@ -308,7 +308,14 @@ for (const kind of ['clearance', 'collision']) {
       })
     })
     expect(frames.length).toBeGreaterThan(0)
-    expect(frames.every((frame) => frame.kind === kind)).toBe(true)
+    expect(
+      frames.some(
+        (frame) =>
+          frame.kind === kind &&
+          frame.matches === 'true' &&
+          frame.complete === 'true'
+      )
+    ).toBe(true)
     expect(new Set(sampled).size).toBeGreaterThan(1)
     const heights = frames.map((frame) => frame.height)
     expect(

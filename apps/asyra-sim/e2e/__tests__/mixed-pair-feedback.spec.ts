@@ -110,6 +110,7 @@ test('full-workcell manual preview changes clearance to collision at a penetrati
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await slider.fill('3.84')
   await expect(feedback).toContainText('Checked 3.8400 s')
+  await expect(feedback).toHaveAttribute('data-complete', 'true')
   await feedback
     .locator('summary')
     .filter({ hasText: 'Show all' })

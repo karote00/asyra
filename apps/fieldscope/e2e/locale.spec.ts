@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 async function checkLayout(page: Page) {
   await page.evaluate(async () => {
@@ -106,10 +107,11 @@ for (const width of [360, 390, 768, 1440]) {
           .selectOption('en')
       const english = locale === 'en'
       await checkLayout(page)
-      await page.screenshot({
-        path: testInfo.outputPath('overview.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('overview.png'),
+          fullPage: true
+        })
       if (width < 1100)
         await page
           .getByRole('button', {
@@ -127,10 +129,11 @@ for (const width of [360, 390, 768, 1440]) {
         })
       ).toBeVisible()
       await checkLayout(page)
-      await page.screenshot({
-        path: testInfo.outputPath('editor-top.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('editor-top.png'),
+          fullPage: true
+        })
       await right.evaluate((node) => {
         node.scrollTop = node.scrollHeight
       })
@@ -143,10 +146,11 @@ for (const width of [360, 390, 768, 1440]) {
           exact: true
         })
       ).toBeInViewport()
-      await page.screenshot({
-        path: testInfo.outputPath('editor-strips.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('editor-strips.png'),
+          fullPage: true
+        })
       if (width < 1100)
         await page
           .getByRole('button', {
@@ -160,10 +164,11 @@ for (const width of [360, 390, 768, 1440]) {
         })
       ).toBeVisible()
       await checkLayout(page)
-      await page.screenshot({
-        path: testInfo.outputPath('layers.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('layers.png'),
+          fullPage: true
+        })
       await page
         .getByLabel(english ? 'Film opacity' : '覆膜不透明度', { exact: true })
         .scrollIntoViewIfNeeded()
@@ -173,10 +178,11 @@ for (const width of [360, 390, 768, 1440]) {
         })
       ).toBeInViewport()
       await checkLayout(page)
-      await page.screenshot({
-        path: testInfo.outputPath('layers-bottom.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('layers-bottom.png'),
+          fullPage: true
+        })
       await page
         .getByRole('button', {
           name: english ? 'References' : '參考資料',
@@ -199,16 +205,18 @@ for (const width of [360, 390, 768, 1440]) {
         'rel',
         'noopener noreferrer'
       )
-      await page.screenshot({
-        path: testInfo.outputPath('references.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('references.png'),
+          fullPage: true
+        })
       await dialog.locator('p').last().scrollIntoViewIfNeeded()
       await expect(dialog.locator('p').last()).toBeInViewport()
-      await page.screenshot({
-        path: testInfo.outputPath('references-bottom.png'),
-        fullPage: true
-      })
+      if (!usesCpuSoftwareRenderer)
+        await page.screenshot({
+          path: testInfo.outputPath('references-bottom.png'),
+          fullPage: true
+        })
       if (english) {
         const attributes = await page
           .locator('[aria-label], [aria-description], [title]')
