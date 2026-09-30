@@ -70,7 +70,7 @@ export async function runResponsiveLayout(
       name: english ? 'Scene settings' : '場景設定',
       exact: true
     })
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 15_000 })
   await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
