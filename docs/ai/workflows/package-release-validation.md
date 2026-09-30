@@ -104,6 +104,13 @@ identity, task order, and every required job outcome. A missing matrix result,
 omitted workspace, failed task, or skipped selected gate cannot satisfy the
 required aggregate.
 
+Shared repository tests include public API documentation validation. Whenever
+those tests are selected, the shared job first builds the Framework declaration
+tasks they consume, even when no public documentation path changed. This selects
+build prerequisites only; workspace test and E2E selection remain scoped by the
+relationship map. Existing local build artifacts are not evidence that a clean
+runner has those prerequisites.
+
 CI runs each selected workspace's canonical build task and dependency closure
 to completion before invoking `test:ci`. The test task has no build dependency,
 so it must not be scheduled alongside the build task in a single Turbo run.
