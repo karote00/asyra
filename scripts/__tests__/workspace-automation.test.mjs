@@ -1056,10 +1056,13 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
     flowJob,
     /yarn turbo run build:core --filter=@asyra\/core\.\.\. --concurrency=2/
   )
-  assert.ok(
-    flowJob.indexOf('Build Framework declarations for Flow Inspector app proofs') <
-      flowJob.indexOf('Test Flow Inspector control-plane contracts')
+  const buildStep = flowJob.indexOf(
+    'Build Core declarations and workspace dependencies for Flow Inspector app proofs'
   )
+  const contractsTest = flowJob.indexOf(
+    'Test Flow Inspector control-plane contracts'
+  )
+  assert.ok(buildStep < contractsTest)
 })
 
 test('shared CI builds Framework declarations before public documentation checks', () => {
