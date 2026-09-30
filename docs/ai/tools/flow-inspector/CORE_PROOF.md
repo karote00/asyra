@@ -466,7 +466,9 @@ revision, GitHub run, and run attempt. Its versioned execution plan records
 lint, repository script tests, naming, framework declarations, workspace test
 selection, and four E2E suites in one relationship map. Full validation selects
 all declared checks. Incremental validation runs lint on changed applicable
-files, repository script tests for declared repository-test inputs, supported
+files, repository script tests for declared repository-test inputs (document
+groups select registered test files, while code/configuration selects the full
+suite), supported
 Vitest related tests only for source/test inputs owned by the consumer
 workspace, and only the E2E suite owners selected by changed paths. Transitive
 dependency-source inputs, configurations, fixtures, deleted or renamed test
@@ -484,7 +486,11 @@ paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
 selected work all fail the total check. Shared validation (security audit,
 dependency and Turbo validation, Changeset admission, and the planned lint,
 repository script, and naming checks) remains required for every non-draft run.
-Framework declarations are produced only when their declared check is selected.
+Framework declarations are produced when selected script tests require API
+analysis, including every full repository script run. Document-only plan and
+workflow checks do not require declarations. File-selected script receipts must
+record exactly the registered test files in the execution plan; incomplete or
+additional test-file receipts cannot satisfy the aggregate.
 Each E2E suite reports its own result; selected suites must succeed and
 unselected suites must remain skipped. The functional and collaboration suites
 also emit exact case evidence for the fixed Design inventory.

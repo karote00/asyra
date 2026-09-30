@@ -719,17 +719,6 @@ function classifyChanges(
       })
     )
     .sort((left, right) => left.name.localeCompare(right.name))
-  const frameworkDeclarationsRequired =
-    options.fullValidation ||
-    changedPaths.some(
-      (changedPath) => matchesPattern(changedPath, 'docs/public/**').matched
-    )
-  const frameworkDeclarationTasks = workspaceGraph
-    .filter(
-      ({ group }) => frameworkDeclarationsRequired && group === 'packages'
-    )
-    .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
-
   const affectedWorkspaceDirectories = new Set(
     affectedWorkspaces.map(({ directory }) => directory)
   )
@@ -752,19 +741,74 @@ function classifyChanges(
         relationshipPolicy.lintFullInputPaths.includes(changedPath) ||
         /(^|\/)tsconfig(?:\.[^/]+)?\.json$/.test(changedPath)
     )
+  // Documentation selects its own contracts; code/configuration retains the full suite.
+  const scriptGroups = relationshipPolicy.repositoryScriptGroups
+  const selectedGroups = new Set()
+  const publicSources = new Set(
+    JSON.parse(
+      fs.readFileSync(
+        path.join(scriptDirectory, '../docs/public/content-manifest.json'),
+        'utf8'
+      )
+    ).pages.flatMap((page) => page.sources)
+  )
   const repositoryScriptsInputs = [...new Set(changedPaths)]
-    .filter((changedPath) =>
-      relationshipPolicy.repositoryScriptsInputPatterns.some(
+    .filter((changedPath) => {
+      const documentation =
+        changedPath.endsWith('.md') ||
+        changedPath.startsWith('docs/public/') ||
+        changedPath === 'LICENSE'
+      if (documentation) {
+        // Specific plan/workflow contracts take precedence over generic internal docs.
+        let matchedGroup = false
+        for (const [id, group] of Object.entries(scriptGroups)) {
+          if (
+            group.patterns.some(
+              (pattern) => matchesPattern(changedPath, pattern).matched
+            )
+          ) {
+            selectedGroups.add(id)
+            matchedGroup = true
+            break
+          }
+        }
+        if (publicSources.has(changedPath)) selectedGroups.add('publicSources')
+        if (matchedGroup) return false
+      }
+      if (changedPath.startsWith('docs/')) return true
+      return relationshipPolicy.repositoryScriptsInputPatterns.some(
         (pattern) => matchesPattern(changedPath, pattern).matched
       )
-    )
+    })
     .sort()
   const repositoryScriptsRequired =
-    repositoryScriptsInputs.length > 0 || unknownPaths.length > 0
+    options.fullValidation ||
+    repositoryScriptsInputs.length > 0 ||
+    unknownPaths.length > 0
+  const repositoryScriptTests = [
+    ...new Set([...selectedGroups].flatMap((id) => scriptGroups[id].tests))
+  ].sort()
+  let repositoryScriptsMode = 'not-selected'
   let repositoryScriptsReason = 'no-script-owner-inputs'
-  if (unknownPaths.length) repositoryScriptsReason = 'unknown-input-owner'
-  else if (repositoryScriptsInputs.length)
+  if (repositoryScriptTests.length) {
+    repositoryScriptsMode = 'files'
+    repositoryScriptsReason = 'selected-document-contracts'
+  }
+  if (repositoryScriptsRequired) {
+    repositoryScriptsMode = 'full'
     repositoryScriptsReason = 'declared-repository-test-inputs'
+  }
+  if (unknownPaths.length) repositoryScriptsReason = 'unknown-input-owner'
+  const frameworkDeclarationsRequired =
+    repositoryScriptsRequired ||
+    [...selectedGroups].some(
+      (id) => scriptGroups[id].requiresFrameworkDeclarations
+    )
+  const frameworkDeclarationTasks = workspaceGraph
+    .filter(
+      ({ group }) => frameworkDeclarationsRequired && group === 'packages'
+    )
+    .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
   const namingInputs = [...new Set(changedPaths)]
     .filter(
       (changedPath) =>
@@ -795,11 +839,22 @@ function classifyChanges(
         reason: lintReason
       },
       repositoryScripts: {
-        mode: repositoryScriptsRequired ? 'full' : 'not-selected',
+        mode: repositoryScriptsMode,
         command: 'test:scripts',
+        ...(repositoryScriptsMode === 'files'
+          ? { tests: repositoryScriptTests }
+          : {}),
         inputs: unknownPaths.length
           ? [...new Set([...repositoryScriptsInputs, ...changedPaths])].sort()
-          : repositoryScriptsInputs,
+          : [
+              ...new Set([
+                ...repositoryScriptsInputs,
+                ...changedPaths.filter(
+                  (file) =>
+                    /\.(?:md|mdx)$/.test(file) || file.startsWith('docs/')
+                )
+              ])
+            ].sort(),
         reason: repositoryScriptsReason
       },
       naming: {
@@ -817,7 +872,7 @@ function classifyChanges(
         mode: frameworkDeclarationsRequired ? 'full' : 'not-selected',
         tasks: frameworkDeclarationTasks,
         reason: frameworkDeclarationsRequired
-          ? 'full-validation-or-public-documentation-api-inputs'
+          ? 'selected-tests-require-framework-declarations'
           : 'no-declaration-owner-inputs'
       },
       workspaces: workspaceMatrix.map(

@@ -11,7 +11,10 @@ import {
   readWorkspaceManifests
 } from '../ci-scope.mjs'
 import { executeWorkspaceChecks } from '../run-workspace-checks.mjs'
-import { executeSelectedChecks } from '../run-ci-checks.mjs'
+import {
+  executeSelectedChecks,
+  runRepositoryScripts
+} from '../run-ci-checks.mjs'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -246,8 +249,7 @@ test('repository scripts suite follows repository data read by its formal tests'
   for (const input of [
     '.github/dependabot.yml',
     'apps/asyra-design/vite.config.ts',
-    'apps/asyra-design/src/index.css',
-    'apps/asyra-design/docs/development.md'
+    'apps/asyra-design/src/index.css'
   ]) {
     const scope = classifyChanges([input], manifests)
     assert.equal(
@@ -265,6 +267,133 @@ test('repository scripts suite follows repository data read by its formal tests'
     unknown.relationshipMap.executionPlan.checks.repositoryScripts.mode,
     'full'
   )
+})
+
+test('plan-only changes select plan checks without API analysis or declaration builds', () => {
+  for (const input of [
+    'docs/ai/framework/plans/ci-workflow-splitting-plan.md',
+    'docs/ai/apps/fieldscope/plans/completed/example/plan.md',
+    'docs/ai/framework/PLANS.md',
+    'docs/ai/framework/decisions/releases/unreleased.md'
+  ]) {
+    const { checks } = classifyChanges([input], manifests).relationshipMap
+      .executionPlan
+    assert.equal(checks.repositoryScripts.mode, 'files', input)
+    assert.deepEqual(checks.repositoryScripts.tests, [
+      'scripts/__tests__/plan-closeout.test.mjs',
+      'scripts/__tests__/task-context.test.mjs'
+    ])
+    assert.equal(checks.frameworkDeclarations.mode, 'not-selected', input)
+  }
+})
+
+test('internal workflow documentation selects contract tests without public API checks', () => {
+  const { checks } = classifyChanges(
+    ['docs/ai/workflows/package-release-validation.md'],
+    manifests
+  ).relationshipMap.executionPlan
+  assert.equal(checks.repositoryScripts.mode, 'files')
+  assert.ok(
+    checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/workspace-automation.test.mjs'
+    )
+  )
+  assert.ok(
+    checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/ci-scope.test.mjs'
+    )
+  )
+  assert.ok(
+    checks.repositoryScripts.tests.every(
+      (file) => !file.startsWith('scripts/docs/')
+    )
+  )
+  assert.equal(checks.frameworkDeclarations.mode, 'not-selected')
+})
+
+test('public docs and mixed plan edits select public checks with their declaration prerequisites', () => {
+  const { checks } = classifyChanges(
+    [
+      'docs/public/start/custom-composition.md',
+      'docs/ai/framework/plans/example.md'
+    ],
+    manifests
+  ).relationshipMap.executionPlan
+  assert.equal(checks.repositoryScripts.mode, 'files')
+  assert.ok(
+    checks.repositoryScripts.tests.includes(
+      'scripts/docs/__tests__/public-documentation.test.mjs'
+    )
+  )
+  assert.ok(
+    checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/plan-closeout.test.mjs'
+    )
+  )
+  assert.equal(checks.frameworkDeclarations.mode, 'full')
+  assert.ok(
+    checks.frameworkDeclarations.tasks.some(
+      (task) => task.workspace === '@asyra/persistence'
+    )
+  )
+})
+
+test('every full repository scripts run includes Framework declaration prerequisites', () => {
+  for (const input of [
+    'scripts/ci-scope.mjs',
+    'apps/fieldscope/src/main.tsx',
+    'packages/core/src/index.ts'
+  ]) {
+    const { checks } = classifyChanges([input], manifests).relationshipMap
+      .executionPlan
+    assert.equal(checks.repositoryScripts.mode, 'full')
+    assert.equal(checks.frameworkDeclarations.mode, 'full', input)
+    assert.ok(checks.frameworkDeclarations.tasks.length > 0)
+  }
+})
+
+test('plans referenced by public pages check source hashes without invoking API analysis', () => {
+  const plan =
+    'docs/ai/framework/plans/headless-core-and-core-kernel-future-plan.md'
+  for (const inputs of [
+    [plan],
+    [plan, 'docs/public/generated/source-map.json']
+  ]) {
+    const { checks } = classifyChanges(inputs, manifests).relationshipMap
+      .executionPlan
+    assert.equal(checks.repositoryScripts.mode, 'files')
+    assert.ok(
+      checks.repositoryScripts.tests.includes(
+        'scripts/docs/__tests__/public-source-map.test.mjs'
+      )
+    )
+    assert.ok(
+      !checks.repositoryScripts.tests.includes(
+        'scripts/docs/__tests__/public-documentation.test.mjs'
+      )
+    )
+    assert.equal(checks.frameworkDeclarations.mode, 'not-selected')
+  }
+})
+
+test('executable plan inputs retain full validation while public README inputs retain API checks', () => {
+  for (const input of [
+    'docs/ai/framework/plans/example/flow.cjs',
+    'docs/ai/framework/plans/example/demo.mdx'
+  ]) {
+    const executable = classifyChanges([input], manifests).relationshipMap
+      .executionPlan.checks
+    assert.equal(executable.repositoryScripts.mode, 'full', input)
+    assert.equal(executable.frameworkDeclarations.mode, 'full', input)
+  }
+  const readme = classifyChanges(['apps/asyra-design/README.md'], manifests)
+    .relationshipMap.executionPlan.checks
+  assert.ok(
+    readme.repositoryScripts.tests.includes(
+      'scripts/docs/__tests__/public-readme-validation.test.mjs'
+    )
+  )
+  assert.equal(readme.frameworkDeclarations.mode, 'full')
 })
 
 test('Framework changes follow declared workspace edges transitively', () => {
@@ -755,4 +884,57 @@ test('a selected workspace without build or test scripts remains an explicit blo
     'Workspace has no canonical CI test task: @sample/missing-tasks',
     'Workspace has no canonical build task: @sample/missing-tasks'
   ])
+})
+
+test('document check execution runs the selected formal files and retains exact execution evidence', () => {
+  const { repositoryScripts } = classifyChanges(
+    ['docs/ai/framework/PLANS.md'],
+    manifests
+  ).relationshipMap.executionPlan.checks
+  const calls = []
+  const result = runRepositoryScripts(repositoryScripts, (command, args) =>
+    calls.push({ command, args })
+  )
+  assert.deepEqual(calls, [
+    { command: process.execPath, args: ['--test', ...repositoryScripts.tests] }
+  ])
+  assert.deepEqual(result.executedTests, repositoryScripts.tests)
+  assert.throws(() =>
+    runRepositoryScripts(
+      { ...repositoryScripts, tests: ['../../unregistered.test.mjs'] },
+      () => assert.fail('must not execute')
+    )
+  )
+  assert.throws(
+    () =>
+      runRepositoryScripts(repositoryScripts, () => {
+        throw new Error('assertion failed')
+      }),
+    /assertion failed/
+  )
+})
+
+test('mixed source and documentation edits retain the complete repository suite and declaration build', () => {
+  const { checks } = classifyChanges(
+    ['docs/ai/framework/PLANS.md', 'packages/core/src/index.ts'],
+    manifests
+  ).relationshipMap.executionPlan
+  assert.equal(checks.repositoryScripts.mode, 'full')
+  assert.equal(checks.repositoryScripts.tests, undefined)
+  assert.equal(checks.frameworkDeclarations.mode, 'full')
+})
+
+test('full validation does not lose repository checks on a documentation-only changed path', () => {
+  const { checks } = classifyChanges(
+    ['docs/ai/framework/PLANS.md'],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    { fullValidation: true }
+  ).relationshipMap.executionPlan
+  assert.equal(checks.repositoryScripts.mode, 'full')
+  assert.equal(checks.frameworkDeclarations.mode, 'full')
 })

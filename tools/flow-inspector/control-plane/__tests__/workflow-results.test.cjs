@@ -221,6 +221,9 @@ function checkResultsFor(scope) {
               selection.mode === 'not-selected' ? 'not-selected' : 'passed',
             mode: selection.mode,
             inputs: selection.inputs,
+            ...(name === 'repositoryScripts' && selection.mode === 'files'
+              ? { executedTests: selection.tests }
+              : {}),
             ...(name === 'lint' && selection.mode !== 'not-selected'
               ? {
                   executedFiles: selection.inputs.length
@@ -314,6 +317,9 @@ function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
           status: selection.mode === 'not-selected' ? 'not-selected' : 'passed',
           mode: selection.mode,
           inputs: selection.inputs,
+          ...(name === 'repositoryScripts' && selection.mode === 'files'
+            ? { executedTests: selection.tests }
+            : {}),
           ...(name === 'lint' && selection.mode !== 'not-selected'
             ? {
                 executedFiles: selection.inputs.length
@@ -610,7 +616,8 @@ test('formal path owners reach their selected gates through the final aggregate'
     'create-app/asyra-design/package.json',
     'scripts/release-package-artifacts.js',
     'turbo.base.json',
-    'docs/ai/apps/fieldscope/PLANS.md'
+    'docs/ai/apps/fieldscope/PLANS.md',
+    'docs/public/index.md'
   ]) {
     const scope = {
       version: 2,
@@ -630,6 +637,37 @@ test('formal path owners reach their selected gates through the final aggregate'
       `${changedPath}: ${result.blockers.join('; ')}`
     )
     assert.equal(result.producerResults.validate, 'success', changedPath)
+    const selection =
+      scope.relationshipMap.executionPlan.checks.repositoryScripts
+    if (selection.mode === 'files') {
+      for (const executedTests of [
+        undefined,
+        selection.tests.slice(1),
+        [...selection.tests, 'unregistered.test.mjs']
+      ]) {
+        const incomplete = jobsFor(scope)
+        incomplete.selectedCheckResults.checks.repositoryScripts.executedTests =
+          executedTests
+        assert.notEqual(
+          aggregate(envelopes(), identity, incomplete, scope).status,
+          'passed',
+          changedPath + ' mismatched script receipt'
+        )
+      }
+    }
+    if (
+      scope.relationshipMap.executionPlan.checks.frameworkDeclarations.mode ===
+      'full'
+    ) {
+      const missingDeclarations = jobsFor(scope)
+      missingDeclarations.frameworkDeclarationResult = 'skipped'
+      assert.notEqual(
+        aggregate(envelopes(), identity, missingDeclarations, scope).status,
+        'passed',
+        changedPath + ' missing declarations'
+      )
+    }
+
     assert.equal(
       result.producerResults.workspaceValidation,
       scope.workspaceMatrix.length > 0 ? 'success' : 'skipped',

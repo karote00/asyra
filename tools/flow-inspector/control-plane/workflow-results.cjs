@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { createHash } = require('node:crypto')
+const { validRepositoryScriptSelection } = require('./ci-script-selection.cjs')
 const inventory = Object.freeze(
   [
     {
@@ -287,9 +288,7 @@ function aggregateScope(evidence, identity, jobs) {
     ['full', 'files', 'not-selected'].includes(lintSelection.mode) &&
     Array.isArray(lintSelection.inputs) &&
     repositoryScriptSelection &&
-    ['full', 'not-selected'].includes(repositoryScriptSelection.mode) &&
-    repositoryScriptSelection.command === 'test:scripts' &&
-    Array.isArray(repositoryScriptSelection.inputs) &&
+    validRepositoryScriptSelection(repositoryScriptSelection) &&
     namingSelection &&
     ['full', 'not-selected'].includes(namingSelection.mode) &&
     namingSelection.command === 'lint:naming' &&
@@ -520,6 +519,12 @@ function aggregateScope(evidence, identity, jobs) {
         return false
       if (selection.mode === 'not-selected')
         return result.status === 'not-selected'
+      if (name === 'repositoryScripts' && selection.mode === 'files')
+        return (
+          result.status === 'passed' &&
+          JSON.stringify(result.executedTests) ===
+            JSON.stringify(selection.tests)
+        )
       if (name === 'lint') {
         if (
           result.status === 'not-selected' &&

@@ -18,7 +18,8 @@
     "scripts/ci-scope.mjs",
     "scripts/ci-relationships.json",
     "scripts/run-ci-checks.mjs",
-    "scripts/run-workspace-checks.mjs"
+    "scripts/run-workspace-checks.mjs",
+    "tools/flow-inspector/control-plane/ci-script-selection.cjs"
   ],
   "sharedInputPatterns": [".github/workflows/**"],
   "rootDocumentationPaths": [
@@ -49,7 +50,6 @@
     "scripts/**",
     ".github/**",
     ".changeset/**",
-    "docs/**",
     "apps/**",
     "packages/**",
     "tools/**",
@@ -151,5 +151,80 @@
     "scripts/release-validation-environment.js",
     "scripts/release-validation-workspace.js"
   ],
-  "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector"
+  "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector",
+  "repositoryScriptGroups": {
+    "plans": {
+      "patterns": [
+        "docs/ai/**/plans/**",
+        "docs/ai/**/PLANS.md",
+        "docs/ai/**/decisions/**"
+      ],
+      "tests": [
+        "scripts/__tests__/plan-closeout.test.mjs",
+        "scripts/__tests__/task-context.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "workflows": {
+      "patterns": [
+        "docs/ai/workflows/**",
+        "docs/ai/framework/rules/**",
+        "AGENTS.md",
+        "docs/ai/**/WORKFLOW.md"
+      ],
+      "tests": [
+        "scripts/__tests__/plan-closeout.test.mjs",
+        "scripts/__tests__/task-context.test.mjs",
+        "scripts/__tests__/ci-scope.test.mjs",
+        "scripts/__tests__/workspace-automation.test.mjs",
+        "scripts/__tests__/changeset-pr-check.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "publicSourceMap": {
+      "patterns": ["docs/public/generated/source-map.json"],
+      "tests": ["scripts/docs/__tests__/public-source-map.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
+    "publicDocumentation": {
+      "patterns": [
+        "docs/public/**",
+        "packages/**/README.md",
+        "README.md",
+        "SUPPORT.md",
+        "SECURITY.md",
+        "LICENSE",
+        "create-app/**/README.md",
+        "apps/asyra-design/README.md"
+      ],
+      "tests": [
+        "scripts/docs/__tests__/public-content-contract.test.mjs",
+        "scripts/docs/__tests__/public-documentation-inputs.test.mjs",
+        "scripts/docs/__tests__/public-documentation-validation.test.mjs",
+        "scripts/docs/__tests__/public-documentation.test.mjs",
+        "scripts/docs/__tests__/public-package-readmes.test.mjs",
+        "scripts/docs/__tests__/public-package-reference.test.mjs",
+        "scripts/docs/__tests__/public-readme-inputs.test.mjs",
+        "scripts/docs/__tests__/public-readme-validation.test.mjs",
+        "scripts/docs/__tests__/support-policy-validation.test.mjs",
+        "scripts/docs/__tests__/public-source-map.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": true
+    },
+    "internalDocumentation": {
+      "patterns": [
+        "docs/ai/**",
+        "apps/**/docs/**",
+        "apps/**/README.md",
+        "tools/**/README.md"
+      ],
+      "tests": ["scripts/__tests__/workspace-automation.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
+    "publicSources": {
+      "patterns": [],
+      "tests": ["scripts/docs/__tests__/public-source-map.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    }
+  }
 }

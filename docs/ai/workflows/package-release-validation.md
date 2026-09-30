@@ -59,6 +59,31 @@ graph and retains its conditional package archive check. Framework release,
 Design E2E, Flow Inspector, and release readiness remain specialized gates
 selected by the same relationship map.
 
+Repository script checks use `repositoryScriptGroups` in the relationship
+policy. There is no blanket `docs/**` input for the full `test:scripts` suite.
+Document paths select the first matching group below; mixed edits combine the
+selected test files. Executable/configuration files inside internal docs retain
+full script validation, even when stored beside a plan.
+
+| Changed input                                                                                                              | Selected script checks                                         | Framework declarations first |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------- |
+| Markdown plans, `PLANS.md`, and decision records under `docs/ai/`                                                          | Plan closeout and task context                                 | No                           |
+| Markdown workflow/rule files, `WORKFLOW.md`, and `AGENTS.md`                                                               | Plan/task, CI scope, workspace automation, Changeset contracts | No                           |
+| `docs/public/generated/source-map.json`                                                                                    | Source/page hash validation                                    | No                           |
+| Other `docs/public/**`, package README files, root README/support/security/license, create-app README files, Design README | Public documentation/API/README contracts                      | Yes                          |
+| Other internal Markdown docs and app/tool README files                                                                     | Workspace automation contracts                                 | No                           |
+| Any document listed as a source in the public content manifest                                                             | Additional source/page hash validation                         | No additional build          |
+| Code/configuration declared as repository script inputs, unknown inputs, or full validation                                | Full `test:scripts` suite                                      | Yes                          |
+
+The public source hash check reads source bytes without TypeScript API analysis.
+Changing a referenced plan may require refreshing its source-map hash; this does
+not select API analysis. Full script validation overrides the file selection
+when code and documents change together. Declaration builds follow the selected
+tests' prerequisites, not a `docs/public/**` path heuristic: API checks need
+resolved workspace type exports even when selected by a script/code change.
+The runner records the exact selected test files and the aggregate rejects
+missing, partial, or unexpected execution receipts.
+
 The workflow schedules selected workspaces through a dynamic matrix. Each
 matrix entry executes its manifest-defined canonical build to completion and
 then `test:ci` sequentially. It uploads a run-bound result record; the `validate`
