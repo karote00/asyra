@@ -46,6 +46,7 @@ function makeScope({
   ],
   createAppPackages = [],
   frameworkReleaseRequired = false,
+  productionApps = [],
   unknownPaths = []
 } = {}) {
   const graph = workspaceMatrix.map((entry) => ({
@@ -68,6 +69,18 @@ function makeScope({
     changedPaths: [],
     unknownRelations: unknownPaths,
     checks: {
+      productionArtifacts: { apps: productionApps, inputs: [] },
+      securityAudit: { mode: 'not-selected', inputs: [] },
+      dependencyValidation: { mode: 'not-selected', inputs: [] },
+      turboValidation: { mode: 'not-selected', inputs: [] },
+      controlPlane: {
+        mode: workspaceMatrix.some(
+          (entry) => entry.directory === 'tools/flow-inspector'
+        )
+          ? 'full'
+          : 'not-selected',
+        inputs: []
+      },
       lint: { mode: 'full', inputs: [], reason: 'test fixture' },
       repositoryScripts: {
         mode: 'full',
@@ -122,6 +135,7 @@ function makeScope({
     documentationRoots: [],
     excludedRoots: { 'create-app': 'archive-readiness' },
     workspaceGraph: graph,
+    productionApps,
     dependencyEdges: [],
     frameworkDeclarationTasks,
     changedWorkspaceNames: workspaceMatrix.map(({ name }) => name),
@@ -373,6 +387,10 @@ function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
         : 'skipped',
       workspaceResults: matrixResults,
       frameworkRelease: 'skipped',
+      productionArtifacts: 'skipped',
+      securityAudit: 'skipped',
+      dependencyValidation: 'skipped',
+      turboValidation: 'skipped',
       designForwarder: 'success',
       collaborationForwarder: 'success',
       createAppReadiness: 'skipped',
@@ -554,6 +572,16 @@ test('formal path owners reach their selected gates through the final aggregate'
     const selectedE2E = plan.checks.e2e.selected
     const designSelected = scope.relationshipMap.designE2ERequired
     return Object.fromEntries([
+      [
+        'productionArtifacts',
+        plan.checks.productionArtifacts.apps.length ? 'success' : 'skipped'
+      ],
+      ...['securityAudit', 'dependencyValidation', 'turboValidation'].map(
+        (name) => [
+          name,
+          plan.checks[name].mode === 'full' ? 'success' : 'skipped'
+        ]
+      ),
       ['validate', 'success'],
       ['e2e', selectedE2E.length ? 'success' : 'skipped'],
       ['designSelected', designSelected ? 'true' : 'false'],
@@ -715,6 +743,10 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
       'render-contracts': 'skipped'
     },
     frameworkRelease: 'skipped',
+    productionArtifacts: 'skipped',
+    securityAudit: 'skipped',
+    dependencyValidation: 'skipped',
+    turboValidation: 'skipped',
     createAppReadiness: 'skipped',
     flowInspectorValidation: 'skipped',
     designForwarder: 'success',
@@ -1028,7 +1060,7 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   assert.match(main, /^ {2}validate:/m)
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(
     main,
@@ -1191,6 +1223,10 @@ test('missing, unknown, duplicate, or stale-attempt scope evidence cannot pass',
         e2e: 'success',
         designSelected: 'true',
         frameworkRelease: 'skipped',
+        productionArtifacts: 'skipped',
+        securityAudit: 'skipped',
+        dependencyValidation: 'skipped',
+        turboValidation: 'skipped',
         createAppReadiness: 'skipped',
         flowInspectorValidation: 'skipped',
         designForwarder: 'success',
@@ -1309,7 +1345,7 @@ test('workflow waits on reusable producers and always collects after failed test
   )
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(main, /workflow-results\.cjs aggregate/)
   assert.doesNotMatch(main, /workflow-results\.cjs aggregate-scope/)
@@ -1485,6 +1521,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       FLOW_WORKSPACE_VALIDATION_RESULT: 'success',
       FLOW_WORKSPACE_RESULTS_DIR: workspaceResultsDirectory,
       FLOW_FRAMEWORK_RELEASE_RESULT: 'skipped',
+      FLOW_PRODUCTION_ARTIFACT_RESULT: 'skipped',
+      FLOW_SECURITY_AUDIT_RESULT: 'skipped',
+      FLOW_DEPENDENCY_VALIDATION_RESULT: 'skipped',
+      FLOW_TURBO_VALIDATION_RESULT: 'skipped',
       FLOW_CREATE_APP_READINESS_RESULT: 'skipped',
       FLOW_FLOW_INSPECTOR_VALIDATION_RESULT: 'skipped',
       FLOW_DESIGN_FORWARDER_RESULT: 'success',
@@ -1582,3 +1622,51 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     fs.rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('production artifact selection is required by the final aggregate and cannot pass as skipped or extra work', () => {
+  const selected = makeScope({
+    workspaceMatrix: [],
+    e2eSuites: [],
+    productionApps: ['asyra-framework']
+  })
+  const jobs = {
+    workspaceValidation: 'skipped',
+    productionArtifacts: 'success'
+  }
+  assert.equal(assess(envelopes(), jobs, selected).status, 'passed')
+  for (const result of [undefined, 'skipped', 'failure', 'cancelled']) {
+    assert.notEqual(
+      assess(envelopes(), { ...jobs, productionArtifacts: result }, selected)
+        .status,
+      'passed'
+    )
+  }
+  const unselected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+  assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
+})
+
+for (const guard of [
+  'securityAudit',
+  'dependencyValidation',
+  'turboValidation'
+]) {
+  test(`${guard} must succeed when selected and must stay skipped when unselected`, () => {
+    const selected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+    selected.executionPlan.checks[guard] = {
+      mode: 'full',
+      inputs: ['yarn.lock']
+    }
+    selected.relationshipMapDigest = createHash('sha256')
+      .update(JSON.stringify(selected.relationshipMap))
+      .digest('hex')
+    const jobs = { workspaceValidation: 'skipped', [guard]: 'success' }
+    assert.equal(assess(envelopes(), jobs, selected).status, 'passed')
+    for (const result of [undefined, 'skipped', 'failure', 'cancelled'])
+      assert.notEqual(
+        assess(envelopes(), { ...jobs, [guard]: result }, selected).status,
+        'passed'
+      )
+    const unselected = makeScope({ workspaceMatrix: [], e2eSuites: [] })
+    assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
+  })
+}

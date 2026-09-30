@@ -6,15 +6,12 @@ import { execFileSync } from 'node:child_process'
 import { ESLint } from 'eslint'
 import scriptSelection from '../tools/flow-inspector/control-plane/ci-script-selection.cjs'
 
-const registeredTests = new Set(
-  Object.values(
-    JSON.parse(
-      fs.readFileSync(
-        new URL('./ci-relationships.json', import.meta.url),
-        'utf8'
-      )
-    ).repositoryScriptGroups
-  ).flatMap((group) => group.tests)
+const relationshipPolicy = JSON.parse(
+  fs.readFileSync(new URL('./ci-relationships.json', import.meta.url), 'utf8')
+)
+const registeredTests = new Set(relationshipPolicy.registeredScriptTests)
+const serialBuildTests = new Set(
+  relationshipPolicy.repositoryScriptGroups.buildExecution.tests
 )
 
 const checkNames = ['lint', 'repositoryScripts', 'naming']
@@ -112,9 +109,16 @@ function runRepositoryScripts(selection, execute = execFileSync) {
   )
     throw new Error('CI repository script selection is missing or malformed')
   if (selection.mode === 'files') {
-    execute(process.execPath, ['--test', ...selection.tests], {
-      stdio: 'inherit'
-    })
+    const parallel = selection.tests.filter(
+      (file) => !serialBuildTests.has(file)
+    )
+    const serial = selection.tests.filter((file) => serialBuildTests.has(file))
+    if (parallel.length)
+      execute(process.execPath, ['--test', ...parallel], { stdio: 'inherit' })
+    if (serial.length)
+      execute(process.execPath, ['--test', '--test-concurrency=1', ...serial], {
+        stdio: 'inherit'
+      })
     return { status: 'passed', executedTests: selection.tests }
   }
   execute('yarn', [selection.command], { stdio: 'inherit' })

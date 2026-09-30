@@ -13,7 +13,7 @@ function validRepositoryScriptSelection(selection, registeredTests) {
       selection.tests.every(
         (file) =>
           typeof file === 'string' &&
-          /^scripts\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+\.test\.(?:mjs|cjs)$/.test(
+          /^(?:scripts|apps|tools)\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+\.test\.(?:mjs|cjs)$/.test(
             file
           ) &&
           (!registeredTests || registeredTests.has(file))

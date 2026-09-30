@@ -109,7 +109,11 @@ test('all App configs prevent Git auto-deployment before any build is created', 
 })
 test('production proof is included in PR CI and never starts Vite dev or preview middleware', () => {
   const workflow = read('.github/workflows/production-artifacts.yml')
-  assert.match(workflow, /pull_request:/)
+  assert.doesNotMatch(workflow, /pull_request:/)
+  assert.match(
+    read('.github/workflows/main.yml'),
+    /apps: \$\{\{ needs.scope.outputs.production_apps \}\}/
+  )
   assert.match(workflow, /workflow_call:/)
   assert.match(
     workflow,

@@ -50,39 +50,51 @@ included, so a removed or renamed workspace still selects its former
 downstream consumers. New workspace names do not require CI job or owner-list
 edits.
 
-Documentation roots are discovered at the first level under `docs/`. Public
-documentation selects the configured website workspace; docs under app,
-package, or tool roots map to their corresponding workspace when defined.
-Other known documentation changes receive shared validation. Root shared
-inputs select all discovered workspaces. `create-app/*` stays outside this
-graph and retains its conditional package archive check. Framework release,
-Design E2E, Flow Inspector, and release readiness remain specialized gates
-selected by the same relationship map.
+### Input ownership
 
-Repository script checks use `repositoryScriptGroups` in the relationship
-policy. There is no blanket `docs/**` input for the full `test:scripts` suite.
-Document paths select the first matching group below; mixed edits combine the
-selected test files. Executable/configuration files inside internal docs retain
-full script validation, even when stored beside a plan.
+One PR scope calculation selects workspace, repository-contract, E2E, dependency,
+and production-artifact checks. Reusable workflows consume that calculation;
+Production Artifacts has no independent PR trigger. Plan checks run through the
+selected repository contracts; there is no second unconditional plan workflow.
 
-| Changed input                                                                                                              | Selected script checks                                         | Framework declarations first |
-| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------- |
-| Markdown plans, `PLANS.md`, and decision records under `docs/ai/`                                                          | Plan closeout and task context                                 | No                           |
-| Markdown workflow/rule files, `WORKFLOW.md`, and `AGENTS.md`                                                               | Plan/task, CI scope, workspace automation, Changeset contracts | No                           |
-| `docs/public/generated/source-map.json`                                                                                    | Source/page hash validation                                    | No                           |
-| Other `docs/public/**`, package README files, root README/support/security/license, create-app README files, Design README | Public documentation/API/README contracts                      | Yes                          |
-| Other internal Markdown docs and app/tool README files                                                                     | Workspace automation contracts                                 | No                           |
-| Any document listed as a source in the public content manifest                                                             | Additional source/page hash validation                         | No additional build          |
-| Code/configuration declared as repository script inputs, unknown inputs, or full validation                                | Full `test:scripts` suite                                      | Yes                          |
+| Changed input                                                                    | Required checks and propagation                                                                                                            |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plan/closeout Markdown, PLANS index, decision records                            | Plan/task contracts; no App build, E2E, dependency audit or API analysis                                                                   |
+| Workflow/rule Markdown                                                           | Applicable workflow contracts; no product workspace propagation                                                                            |
+| Package/app README                                                               | Public README/API contracts where declared; no downstream App build, E2E or package release readiness                                      |
+| Registered test file                                                             | That formal test; workspace tests stay with their owner and do not propagate to runtime consumers                                          |
+| App implementation/configuration                                                 | Owning App and declared runtime consumers; its supported E2E and production artifact where applicable                                      |
+| Framework implementation                                                         | Package plus transitive consumers from both Git snapshots; release readiness and affected App artifacts                                    |
+| Root package scripts                                                             | Script/workspace contracts; no automatic product selection                                                                                 |
+| Root engine, package manager, workspace layout, compiler/build-runner dependency | Actual shared consumers; global toolchain changes select all workspaces                                                                    |
+| Yarn resolutions or patch bytes                                                  | Traverse both resolved lock graphs, including resolution overrides, and select consuming workspaces; a Next.js-only update selects Website |
+| Turbo task configuration                                                         | Changed qualified task owners; shared build/test task or global configuration selects its consumers                                        |
+| CI implementation/workflow                                                       | CI execution and aggregation contracts; no blanket all-App selection                                                                       |
+| Production artifact verifier/workflow                                            | Artifact contracts and all supported artifact producers, because the shared verifier changed                                               |
+| Changeset metadata                                                               | Changeset admission/contracts; no Flow Inspector board or unrelated App work                                                               |
+| Public content or generated source map                                           | Website consumer and applicable content/hash contracts; hash checks alone do not need API analysis                                         |
 
-The public source hash check reads source bytes without TypeScript API analysis.
-Changing a referenced plan may require refreshing its source-map hash; this does
-not select API analysis. Full script validation overrides the file selection
-when code and documents change together. Declaration builds follow the selected
-tests' prerequisites, not a `docs/public/**` path heuristic: API checks need
-resolved workspace type exports even when selected by a script/code change.
-The runner records the exact selected test files and the aggregate rejects
-missing, partial, or unexpected execution receipts.
+`scripts/ci-relationships.json` declares registered repository tests and their
+input groups. Mixed edits take the union of checks. Public API checks select
+Framework declaration prerequisites; CI-only or plan-only checks do not.
+`full` is an explicit validation mode (main/manual/reusable full entry), not a
+fallback for every root file. It selects the complete workspace graph and all
+checks. Unknown paths, malformed lock input and unresolved dependencies block
+classification before product jobs can start.
+
+The scope phase reads Git and the generated Yarn records before installation.
+It resolves base and candidate dependency closures once per scope invocation;
+all producers consume its immutable execution plan and digest. Package test and
+document changes cannot become runtime dependency changes. Deleted/renamed
+runtime owners retain their base-snapshot consumers.
+
+Each scope records workspace input paths and root field/resolution reasons.
+The final aggregate binds security, dependency/Turbo checks, repository tests,
+workspace receipts, E2E suites and production artifacts to the selected plan.
+A required producer skipped or failed, an unexpected producer, and incomplete
+script-file receipts cannot pass. Changeset admission remains a PR-wide metadata
+check. Security, dependency and Turbo checks run only when their inputs changed
+or full validation was explicitly selected.
 
 The workflow schedules selected workspaces through a dynamic matrix. Each
 matrix entry executes its manifest-defined canonical build to completion and

@@ -4,24 +4,8 @@
   "excludedRoots": {
     "create-app": "archive-readiness"
   },
-  "sharedInputPaths": [
-    "package.json",
-    "yarn.lock",
-    ".yarnrc.yml",
-    "turbo.base.json",
-    "turbo.json",
-    ".gitignore",
-    "eslint.config.js",
-    "eslint.config.mjs",
-    "tsconfig.json",
-    "scripts/gen-turbo.js",
-    "scripts/ci-scope.mjs",
-    "scripts/ci-relationships.json",
-    "scripts/run-ci-checks.mjs",
-    "scripts/run-workspace-checks.mjs",
-    "tools/flow-inspector/control-plane/ci-script-selection.cjs"
-  ],
-  "sharedInputPatterns": [".github/workflows/**"],
+  "sharedInputPaths": [".yarnrc.yml", "tsconfig.json", "scripts/gen-turbo.js"],
+  "sharedInputPatterns": [],
   "rootDocumentationPaths": [
     "README.md",
     "SUPPORT.md",
@@ -39,44 +23,9 @@
   ],
   "lintFullInputPaths": [
     "eslint.config.js",
-    ".gitignore",
-    "package.json",
-    "yarn.lock",
-    ".yarnrc.yml",
-    "tsconfig.json",
-    "eslint.config.mjs"
-  ],
-  "repositoryScriptsInputPatterns": [
-    "scripts/**",
-    ".github/**",
-    ".changeset/**",
-    "apps/**",
-    "packages/**",
-    "tools/**",
-    "create-app/**",
-    "agents/**",
-    "release-configs/**",
-    ".codex/**",
-    ".antigravity/**",
-    "package.json",
-    "AGENTS.md",
-    ".gitignore",
-    ".env.example",
-    "README.md",
-    "SUPPORT.md",
-    "SECURITY.md",
-    "LICENSE",
-    "CHANGELOG.md",
-    "RELEASE_NOTES.md",
-    "vercel.json",
-    "turbo.json",
-    "turbo.base.json",
-    "tsconfig.json",
-    "eslint.config.js",
     "eslint.config.mjs",
-    "yarn.lock",
-    ".yarnrc.yml",
-    ".yarn/patches/**"
+    ".gitignore",
+    "tsconfig.json"
   ],
   "e2eSuites": [
     {
@@ -110,33 +59,18 @@
     {
       "id": "flow-inspector-board",
       "specs": [],
-      "inputs": ["tools/flow-inspector/**"]
+      "inputs": [
+        "tools/flow-inspector/control-plane/board*",
+        "tools/flow-inspector/control-plane/__tests__/board*",
+        "tools/flow-inspector/control-plane/server.cjs",
+        "tools/flow-inspector/control-plane/service.cjs"
+      ]
     }
   ],
   "workspaceInputRules": [
     {
-      "pattern": "scripts/**",
-      "workspaceDirectory": "tools/flow-inspector"
-    },
-    {
-      "pattern": ".changeset/**",
-      "workspaceDirectory": "tools/flow-inspector"
-    },
-    {
       "pattern": "docs/public/**",
       "workspaceDirectory": "apps/asyra-framework-site"
-    },
-    {
-      "pattern": "docs/ai/apps/{slug}/**",
-      "workspaceDirectory": "apps/{slug}"
-    },
-    {
-      "pattern": "docs/ai/packages/{slug}/**",
-      "workspaceDirectory": "packages/{slug}"
-    },
-    {
-      "pattern": "docs/ai/tools/{slug}/**",
-      "workspaceDirectory": "tools/{slug}"
     }
   ],
   "frameworkReleaseReadinessPaths": [
@@ -218,13 +152,271 @@
         "apps/**/README.md",
         "tools/**/README.md"
       ],
-      "tests": ["scripts/__tests__/workspace-automation.test.mjs"],
+      "tests": [],
       "requiresFrameworkDeclarations": false
     },
     "publicSources": {
       "patterns": [],
       "tests": ["scripts/docs/__tests__/public-source-map.test.mjs"],
       "requiresFrameworkDeclarations": false
+    },
+    "ci": {
+      "patterns": [
+        "scripts/ci-*",
+        "scripts/run-ci-checks.mjs",
+        "scripts/run-workspace-checks.mjs",
+        ".github/workflows/main.yml",
+        ".github/workflows/e2e.yml",
+        "tools/flow-inspector/control-plane/ci-script-selection.cjs",
+        "tools/flow-inspector/control-plane/workflow-results.cjs",
+        "tools/flow-inspector/control-plane/ci-script-selection.cjs",
+        "tools/flow-inspector/control-plane/workflow-results.cjs",
+        "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
+        "docs/ai/tools/flow-inspector/CORE_PROOF.md",
+        "scripts/run-e2e.sh",
+        "scripts/balanced-ai-correctness-scope.mjs"
+      ],
+      "tests": [
+        "scripts/__tests__/ci-scope.test.mjs",
+        "scripts/__tests__/workspace-automation.test.mjs",
+        "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
+        "tools/flow-inspector/__tests__/package.test.cjs",
+        "scripts/__tests__/release-automation.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "workspaceAutomation": {
+      "patterns": [
+        "package.json",
+        "apps/*/package.json",
+        "packages/*/package.json",
+        "tools/*/package.json",
+        "create-app/**/package.json",
+        "turbo*.json",
+        "scripts/gen-turbo.js",
+        "scripts/check-test-exists.js",
+        ".github/**",
+        "eslint.config.*",
+        "apps/asyra-design/vite.config.ts",
+        "apps/asyra-design/src/index.css",
+        "apps/**/tsconfig*.json",
+        "packages/**/tsconfig*.json",
+        "apps/**/postcss.config.*",
+        "packages/**/postcss.config.*"
+      ],
+      "tests": [
+        "scripts/__tests__/workspace-automation.test.mjs",
+        "scripts/__tests__/deps-validate.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "buildExecution": {
+      "patterns": [
+        "turbo*.json",
+        "scripts/gen-turbo.js",
+        "scripts/workspace-build*",
+        "scripts/build-workspace*"
+      ],
+      "tests": [
+        "scripts/__tests__/workspace-build-turbo-local.test.mjs",
+        "scripts/__tests__/workspace-build-direct-local.test.mjs",
+        "scripts/__tests__/workspace-build-turbo-ci.test.mjs",
+        "scripts/__tests__/workspace-build-direct-ci.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "release": {
+      "patterns": [
+        "scripts/release-*",
+        "scripts/framework-release-*",
+        ".changeset/config.json"
+      ],
+      "tests": [
+        "scripts/__tests__/release-automation.test.mjs",
+        "scripts/__tests__/release-records.test.mjs",
+        "scripts/__tests__/framework-release-publisher.test.mjs",
+        "scripts/__tests__/framework-release-artifacts.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "appRelease": {
+      "patterns": [
+        "scripts/app-release*",
+        "scripts/production-artifact*",
+        ".github/workflows/app-release*",
+        ".github/workflows/production-artifacts.yml",
+        ".github/app-production-environment.json",
+        "release-configs/**"
+      ],
+      "tests": [
+        "scripts/__tests__/app-release-plan.test.mjs",
+        "scripts/__tests__/app-release-service.test.mjs",
+        "scripts/__tests__/app-release-provider.test.mjs",
+        "scripts/__tests__/app-release-entry.test.mjs",
+        "scripts/__tests__/app-release-workflow.test.mjs",
+        "scripts/__tests__/app-release-verification.test.mjs",
+        "scripts/__tests__/app-release-verification.test.mjs",
+        "scripts/__tests__/production-artifact-resource-evidence.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "changesets": {
+      "patterns": [".changeset/**", "scripts/changeset-*"],
+      "tests": [
+        "scripts/__tests__/changeset-all-patch.test.mjs",
+        "scripts/__tests__/changeset-pr-check.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "agentAutomation": {
+      "patterns": [
+        "agents/**",
+        ".codex/**",
+        ".antigravity/**",
+        "scripts/agent-*",
+        "scripts/agent-coordination/**",
+        "scripts/agent-evals/**",
+        "scripts/merge-agent-*"
+      ],
+      "tests": [
+        "scripts/__tests__/agent-safety-hook.test.mjs",
+        "scripts/agent-evals/__tests__/engine.test.mjs",
+        "scripts/agent-coordination/__tests__/guard-core.test.cjs",
+        "scripts/__tests__/agent-hook-adapter.test.mjs",
+        "scripts/__tests__/merge-agent-subpr.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "createApp": {
+      "patterns": ["create-app/**", "scripts/create-app*"],
+      "tests": ["scripts/__tests__/create-app-cli.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
+    "http": {
+      "patterns": ["scripts/wait-for-http*"],
+      "tests": ["scripts/__tests__/wait-for-http.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
+    "naming": {
+      "patterns": [
+        "scripts/brand-*",
+        "scripts/display-name-*",
+        "scripts/test-file-*"
+      ],
+      "tests": [
+        "scripts/__tests__/test-file-placement.test.mjs",
+        "scripts/__tests__/brand-neutral-code.test.mjs",
+        "scripts/__tests__/display-name-separators.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "dependencies": {
+      "patterns": ["scripts/deps-*"],
+      "tests": ["scripts/__tests__/deps-validate.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
+    "planImplementation": {
+      "patterns": [
+        "scripts/task-context.mjs",
+        "scripts/plan-closeout.mjs",
+        ".github/workflows/plan-workflow-tests.yml"
+      ],
+      "tests": [
+        "scripts/__tests__/plan-closeout.test.mjs",
+        "scripts/__tests__/task-context.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "appE2EGroups": {
+      "patterns": [
+        "apps/fieldscope/scripts/e2e-ci-*",
+        "apps/asyra-sim/scripts/e2e-ci-*"
+      ],
+      "tests": [
+        "apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
+        "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": false
+    },
+    "publicApiInputs": {
+      "patterns": [
+        "scripts/docs/**",
+        "packages/*/src/**",
+        "packages/*/package.json",
+        "scripts/framework-release-packages.js"
+      ],
+      "tests": [
+        "scripts/docs/__tests__/public-content-contract.test.mjs",
+        "scripts/docs/__tests__/public-documentation-inputs.test.mjs",
+        "scripts/docs/__tests__/public-documentation-validation.test.mjs",
+        "scripts/docs/__tests__/public-documentation.test.mjs",
+        "scripts/docs/__tests__/public-package-readmes.test.mjs",
+        "scripts/docs/__tests__/public-package-reference.test.mjs",
+        "scripts/docs/__tests__/public-readme-inputs.test.mjs",
+        "scripts/docs/__tests__/public-readme-validation.test.mjs",
+        "scripts/docs/__tests__/support-policy-validation.test.mjs",
+        "scripts/docs/__tests__/public-source-map.test.mjs"
+      ],
+      "requiresFrameworkDeclarations": true
     }
-  }
+  },
+  "productionArtifactInputs": [
+    "scripts/app-release-verification.mjs",
+    "scripts/production-artifact*",
+    ".github/workflows/production-artifacts.yml"
+  ],
+  "registeredScriptTests": [
+    "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
+    "apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
+    "scripts/__tests__/agent-hook-adapter.test.mjs",
+    "scripts/__tests__/agent-safety-hook.test.mjs",
+    "scripts/__tests__/app-release-entry.test.mjs",
+    "scripts/__tests__/app-release-plan.test.mjs",
+    "scripts/__tests__/app-release-provider.test.mjs",
+    "scripts/__tests__/app-release-service.test.mjs",
+    "scripts/__tests__/app-release-verification.test.mjs",
+    "scripts/__tests__/app-release-workflow.test.mjs",
+    "scripts/__tests__/brand-neutral-code.test.mjs",
+    "scripts/__tests__/changeset-all-patch.test.mjs",
+    "scripts/__tests__/changeset-pr-check.test.mjs",
+    "scripts/__tests__/ci-scope.test.mjs",
+    "scripts/__tests__/create-app-cli.test.mjs",
+    "scripts/__tests__/deps-validate.test.mjs",
+    "scripts/__tests__/display-name-separators.test.mjs",
+    "scripts/__tests__/framework-release-artifacts.test.mjs",
+    "scripts/__tests__/framework-release-publisher.test.mjs",
+    "scripts/__tests__/merge-agent-subpr.test.mjs",
+    "scripts/__tests__/plan-closeout.test.mjs",
+    "scripts/__tests__/production-artifact-resource-evidence.test.mjs",
+    "scripts/__tests__/release-automation.test.mjs",
+    "scripts/__tests__/release-records.test.mjs",
+    "scripts/__tests__/task-context.test.mjs",
+    "scripts/__tests__/test-file-placement.test.mjs",
+    "scripts/__tests__/wait-for-http.test.mjs",
+    "scripts/__tests__/workspace-automation.test.mjs",
+    "scripts/__tests__/workspace-build-direct-ci.test.mjs",
+    "scripts/__tests__/workspace-build-direct-local.test.mjs",
+    "scripts/__tests__/workspace-build-turbo-ci.test.mjs",
+    "scripts/__tests__/workspace-build-turbo-local.test.mjs",
+    "scripts/agent-coordination/__tests__/guard-core.test.cjs",
+    "scripts/agent-evals/__tests__/engine.test.mjs",
+    "scripts/docs/__tests__/public-content-contract.test.mjs",
+    "scripts/docs/__tests__/public-documentation-inputs.test.mjs",
+    "scripts/docs/__tests__/public-documentation-validation.test.mjs",
+    "scripts/docs/__tests__/public-documentation.test.mjs",
+    "scripts/docs/__tests__/public-package-readmes.test.mjs",
+    "scripts/docs/__tests__/public-package-reference.test.mjs",
+    "scripts/docs/__tests__/public-readme-inputs.test.mjs",
+    "scripts/docs/__tests__/public-readme-validation.test.mjs",
+    "scripts/docs/__tests__/public-source-map.test.mjs",
+    "scripts/docs/__tests__/support-policy-validation.test.mjs",
+    "tools/flow-inspector/__tests__/package.test.cjs",
+    "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs"
+  ],
+  "contractOnlyInputs": [
+    "tools/flow-inspector/control-plane/ci-script-selection.cjs",
+    "tools/flow-inspector/control-plane/workflow-results.cjs",
+    "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
+    "docs/ai/tools/flow-inspector/CORE_PROOF.md"
+  ]
 }

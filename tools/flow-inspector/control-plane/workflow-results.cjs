@@ -479,11 +479,8 @@ function aggregateScope(evidence, identity, jobs) {
       e2eSelection.selected.some((suite) => suite !== 'flow-inspector-board') &&
     relationshipMap.designE2ERequired === (jobs.designSelected === 'true') &&
     relationshipMap.flowInspectorValidationRequired ===
-      matrix.some(
-        ({ directory }) =>
-          directory ===
-          relationshipMap.flowInspectorValidationWorkspaceDirectory
-      ) &&
+      (executionPlan.checks.controlPlane?.mode === 'full') &&
+    (executionPlan.mode !== 'full' || matrix.length === graph.length) &&
     JSON.stringify(relationshipMap.unknownPaths) === '[]' &&
     JSON.stringify(evidence.unknownPaths) === '[]'
   if (!admitted)
@@ -550,6 +547,36 @@ function aggregateScope(evidence, identity, jobs) {
   if (!checkResultsValid)
     blockers.push(
       'selected-checks: missing, stale, or mismatched execution results'
+    )
+  for (const name of [
+    'securityAudit',
+    'dependencyValidation',
+    'turboValidation'
+  ]) {
+    const guard = executionPlan?.checks?.[name]
+    if (
+      !['full', 'not-selected'].includes(guard?.mode) ||
+      !Array.isArray(guard?.inputs) ||
+      jobs[name] !== (guard.mode === 'full' ? 'success' : 'skipped')
+    )
+      blockers.push(`${name}: missing, failed or unexpected selected guard`)
+  }
+  const artifactSelection = executionPlan?.checks?.productionArtifacts
+  const artifactApps = artifactSelection?.apps
+  const validArtifacts =
+    Array.isArray(artifactApps) &&
+    unique(artifactApps) &&
+    artifactApps.every((app) =>
+      ['asyra-design', 'asyra-sim', 'asyra-framework'].includes(app)
+    ) &&
+    JSON.stringify(artifactApps) ===
+      JSON.stringify(relationshipMap?.productionApps)
+  if (
+    !validArtifacts ||
+    jobs.productionArtifacts !== (artifactApps.length ? 'success' : 'skipped')
+  )
+    blockers.push(
+      'production-artifacts: missing, failed or unexpected selected producer'
     )
   const declarationsSelected =
     executionPlan?.checks?.frameworkDeclarations?.mode === 'full'
@@ -709,6 +736,7 @@ function aggregateScope(evidence, identity, jobs) {
         record?.testStatus === 'failure' ||
         record?.e2eStatus === 'failure'
     ) ||
+    jobs.productionArtifacts === 'failure' ||
     (frameworkReleaseSelected && jobs.frameworkRelease === 'failure') ||
     (createAppSelected && jobs.createAppReadiness === 'failure') ||
     jobs.designForwarder === 'failure' ||
@@ -824,6 +852,10 @@ if (require.main === module) {
       flowInspectorValidation:
         process.env.FLOW_FLOW_INSPECTOR_VALIDATION_RESULT,
       frameworkRelease: process.env.FLOW_FRAMEWORK_RELEASE_RESULT,
+      productionArtifacts: process.env.FLOW_PRODUCTION_ARTIFACT_RESULT,
+      securityAudit: process.env.FLOW_SECURITY_AUDIT_RESULT,
+      dependencyValidation: process.env.FLOW_DEPENDENCY_VALIDATION_RESULT,
+      turboValidation: process.env.FLOW_TURBO_VALIDATION_RESULT,
       createAppReadiness: process.env.FLOW_CREATE_APP_READINESS_RESULT,
       designForwarder: process.env.FLOW_DESIGN_FORWARDER_RESULT,
       collaborationForwarder: process.env.FLOW_COLLABORATION_FORWARDER_RESULT

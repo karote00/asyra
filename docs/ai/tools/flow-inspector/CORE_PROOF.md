@@ -446,13 +446,15 @@ exclusions above describe their original activation, not this later grant.
 The existing `validate` GitHub check is the single aggregate result for selected CI scopes
 and applicable Flow Inspector evidence. It waits for scope classification,
 the `shared-validation` producer, Framework, Design, Sim, Website, development
-tools, Framework release readiness, and the reusable Design E2E workflow. It runs after failures
+tools, Framework release readiness, selected production artifacts, and the reusable Design E2E workflow. It runs after failures
 or skips and consumes completed job results; it does not analyze runtime source
 or execute a second test suite. An app-only change runs that app's tests/build
 and downstream consumers reached through declared workspace dependencies. A
-Framework workspace change also selects dependent apps, including the existing
-Fieldscope and Starter App consumers. Root lockfile,
-workspace, build, and workflow configuration changes select all five scopes.
+Framework runtime change also selects dependent apps, including Fieldscope and
+Starter App. Test-only and Markdown changes do not propagate to those consumers.
+Root manifest fields and base/candidate lock resolution closures select their
+actual consumers; CI scripts and workflow metadata select contracts. Global
+compiler/toolchain changes and explicit full validation select every workspace.
 Unknown paths fail scope classification and cannot produce a passing total.
 
 The fixed path-owner map recognizes `.changeset/` release metadata and the
@@ -467,8 +469,7 @@ lint, repository script tests, naming, framework declarations, workspace test
 selection, and four E2E suites in one relationship map. Full validation selects
 all declared checks. Incremental validation runs lint on changed applicable
 files, repository script tests for declared repository-test inputs (document
-groups select registered test files, while code/configuration selects the full
-suite), supported
+and code input groups select registered test files), supported
 Vitest related tests only for source/test inputs owned by the consumer
 workspace, and only the E2E suite owners selected by changed paths. Transitive
 dependency-source inputs, configurations, fixtures, deleted or renamed test
@@ -483,9 +484,14 @@ contract documentation selects its tool contract suite. A rerun with a
 different attempt cannot reuse the previous attempt's scope evidence: rerun the
 entire workflow so all producers emit evidence for the new attempt. Missing scope output, unknown
 paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
-selected work all fail the total check. Shared validation (security audit,
-dependency and Turbo validation, Changeset admission, and the planned lint,
-repository script, and naming checks) remains required for every non-draft run.
+selected work all fail the total check. The shared-validation job remains required for every non-draft run and performs
+Changeset admission plus the selected guards, lint, repository contracts and
+naming checks.
+Security audit, dependency and Turbo checks have explicit input selections and
+required/skipped outcomes. Production artifacts use the scope-selected App IDs;
+the reusable artifact workflow has no independent PR trigger. Plan checks are
+selected repository contracts, with no separate unconditional workflow. Full
+mode requires every workspace in the graph, not only those near changed paths.
 Framework declarations are produced when selected script tests require API
 analysis, including every full repository script run. Document-only plan and
 workflow checks do not require declarations. File-selected script receipts must

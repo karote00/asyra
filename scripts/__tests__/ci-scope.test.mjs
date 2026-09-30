@@ -1,3 +1,4 @@
+import { rootInputImpact } from '../ci-input-impact.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -58,7 +59,7 @@ test('CI check selection narrows changed test inputs and declares E2E suites', (
   assert.deepEqual(
     classifyChanges(['scripts/run-e2e.sh'], manifests).relationshipMap
       .executionPlan.checks.e2e.selected,
-    ['collaboration', 'flow-inspector-board', 'functional', 'render-contracts']
+    ['collaboration', 'functional', 'render-contracts']
   )
 
   const source = classifyChanges(['packages/core/src/index.ts'], manifests)
@@ -131,7 +132,7 @@ test('workspace manifests own independent lint, test, and standard E2E selection
 })
 
 test('shared setup selects all E2E suites and fixture changes keep full owner tests', () => {
-  const shared = classifyChanges(['yarn.lock'], manifests)
+  const shared = classifyChanges(['tsconfig.json'], manifests)
   assert.deepEqual(shared.relationshipMap.executionPlan.checks.e2e.selected, [
     'collaboration',
     'flow-inspector-board',
@@ -232,41 +233,27 @@ test('transitive package sources select the consumer owner suite, not Vitest rel
   )
 })
 
-test('repository scripts tests follow declared repository input roots', () => {
-  const appChange = classifyChanges(['apps/fieldscope/src/main.tsx'], manifests)
-  assert.equal(
-    appChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
-    'full'
-  )
-  const helperChange = classifyChanges(['scripts/ci-scope.mjs'], manifests)
-  assert.equal(
-    helperChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
-    'full'
-  )
-})
-
-test('repository scripts suite follows repository data read by its formal tests', () => {
-  for (const input of [
+test('repository contracts follow their declared inputs without a whole-script fallback', () => {
+  const app = classifyChanges(['apps/fieldscope/src/main.tsx'], manifests)
+  assert.equal(app.executionPlan.checks.repositoryScripts.mode, 'not-selected')
+  for (const file of [
+    'scripts/ci-scope.mjs',
     '.github/dependabot.yml',
     'apps/asyra-design/vite.config.ts',
     'apps/asyra-design/src/index.css'
   ]) {
-    const scope = classifyChanges([input], manifests)
     assert.equal(
-      scope.relationshipMap.executionPlan.checks.repositoryScripts.mode,
-      'full',
-      input
+      classifyChanges([file], manifests).executionPlan.checks.repositoryScripts
+        .mode,
+      'files',
+      file
     )
   }
-
   const unknown = classifyChanges(
     ['new-root/consumer-contract.json'],
     manifests
   )
-  assert.equal(
-    unknown.relationshipMap.executionPlan.checks.repositoryScripts.mode,
-    'full'
-  )
+  assert.ok(unknown.unknownPaths.length)
 })
 
 test('plan-only changes select plan checks without API analysis or declaration builds', () => {
@@ -338,18 +325,16 @@ test('public docs and mixed plan edits select public checks with their declarati
   )
 })
 
-test('every full repository scripts run includes Framework declaration prerequisites', () => {
-  for (const input of [
-    'scripts/ci-scope.mjs',
-    'apps/fieldscope/src/main.tsx',
-    'packages/core/src/index.ts'
-  ]) {
-    const { checks } = classifyChanges([input], manifests).relationshipMap
-      .executionPlan
-    assert.equal(checks.repositoryScripts.mode, 'full')
-    assert.equal(checks.frameworkDeclarations.mode, 'full', input)
-    assert.ok(checks.frameworkDeclarations.tasks.length > 0)
-  }
+test('API-dependent source checks include declarations while CI contracts do not', () => {
+  const source = classifyChanges(['packages/core/src/index.ts'], manifests)
+    .executionPlan.checks
+  assert.equal(source.repositoryScripts.mode, 'files')
+  assert.equal(source.frameworkDeclarations.mode, 'full')
+  assert.equal(
+    classifyChanges(['scripts/ci-scope.mjs'], manifests).executionPlan.checks
+      .frameworkDeclarations.mode,
+    'not-selected'
+  )
 })
 
 test('plans referenced by public pages check source hashes without invoking API analysis', () => {
@@ -384,7 +369,7 @@ test('executable plan inputs retain full validation while public README inputs r
     const executable = classifyChanges([input], manifests).relationshipMap
       .executionPlan.checks
     assert.equal(executable.repositoryScripts.mode, 'full', input)
-    assert.equal(executable.frameworkDeclarations.mode, 'full', input)
+    assert.ok(executable.repositoryScripts.inputs.includes(input))
   }
   const readme = classifyChanges(['apps/asyra-design/README.md'], manifests)
     .relationshipMap.executionPlan.checks
@@ -728,17 +713,11 @@ test('selected CI checks run only planned owners and record declared skips', asy
   assert.equal(result.checks.naming.status, 'passed')
 })
 
-test('shared build and workflow inputs select every discovered workspace', () => {
-  for (const input of [
-    '.gitignore',
-    'turbo.base.json',
-    '.github/workflows/main.yml',
-    'scripts/run-ci-checks.mjs'
-  ]) {
-    const result = classifyChanges([input], manifests)
-    assert.deepEqual(names(result), [...manifests.keys()].sort(), input)
-    assert.equal(result.frameworkReleaseRequired, true, input)
-    assert.deepEqual(result.unknownPaths, [], input)
+test('global compiler and package-manager configuration selects every workspace', () => {
+  for (const file of ['tsconfig.json', '.yarnrc.yml', 'scripts/gen-turbo.js']) {
+    const result = classifyChanges([file], manifests)
+    assert.deepEqual(names(result), [...manifests.keys()].sort())
+    assert.equal(result.frameworkReleaseRequired, true)
   }
 })
 
@@ -750,21 +729,19 @@ test('explicit documentation relationships select their actual workspace consume
     ['docs/ai/apps/fieldscope/PLANS.md'],
     manifests
   )
-  assert.deepEqual(names(appDocs), ['@asyra/fieldscope'])
+  assert.deepEqual(names(appDocs), [])
 
   const toolDocs = classifyChanges(
     ['docs/ai/tools/flow-inspector/CORE_PROOF.md'],
     manifests
   )
-  assert.deepEqual(names(toolDocs), ['@asyra/flow-inspector'])
+  assert.deepEqual(names(toolDocs), [])
 
   const packageDocs = classifyChanges(
     ['docs/ai/packages/core/README.md'],
     manifests
   )
-  assert.ok(names(packageDocs).includes('@asyra/core'))
-  assert.ok(names(packageDocs).includes('@asyra/asyra-design'))
-  assert.ok(names(packageDocs).includes('@asyra/fieldscope'))
+  assert.deepEqual(names(packageDocs), [])
 })
 
 test('shared contract documents and tracked root documents require shared validation', () => {
@@ -844,7 +821,7 @@ test('release input and affected package changes select Framework release readin
     manifests
   )
   assert.equal(script.frameworkReleaseRequired, true)
-  assert.deepEqual(names(script), ['@asyra/flow-inspector'])
+  assert.deepEqual(names(script), [])
 
   const packageChange = classifyChanges(
     ['packages/core/src/index.ts'],
@@ -859,11 +836,8 @@ test('unknown paths select all workspaces and remain an aggregate blocker', () =
   assert.deepEqual(result.unknownPaths, ['new-unclassified-root/file.txt'])
 })
 
-test('empty changed-path evidence conservatively selects all workspaces', () => {
-  assert.deepEqual(
-    names(classifyChanges([], manifests)),
-    [...manifests.keys()].sort()
-  )
+test('empty incremental diff does not create product work', () => {
+  assert.deepEqual(names(classifyChanges([], manifests)), [])
 })
 
 test('a selected workspace without build or test scripts remains an explicit blocker', () => {
@@ -914,13 +888,17 @@ test('document check execution runs the selected formal files and retains exact 
   )
 })
 
-test('mixed source and documentation edits retain the complete repository suite and declaration build', () => {
+test('mixed source and documentation edits combine required repository contracts and declaration build', () => {
   const { checks } = classifyChanges(
     ['docs/ai/framework/PLANS.md', 'packages/core/src/index.ts'],
     manifests
   ).relationshipMap.executionPlan
-  assert.equal(checks.repositoryScripts.mode, 'full')
-  assert.equal(checks.repositoryScripts.tests, undefined)
+  assert.equal(checks.repositoryScripts.mode, 'files')
+  assert.ok(
+    checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/plan-closeout.test.mjs'
+    )
+  )
   assert.equal(checks.frameworkDeclarations.mode, 'full')
 })
 
@@ -937,4 +915,321 @@ test('full validation does not lose repository checks on a documentation-only ch
   ).relationshipMap.executionPlan
   assert.equal(checks.repositoryScripts.mode, 'full')
   assert.equal(checks.frameworkDeclarations.mode, 'full')
+})
+
+test('documentation and test-only package edits do not select consumer builds or release readiness', () => {
+  for (const input of [
+    'packages/core/README.md',
+    'docs/ai/apps/fieldscope/PLANS.md'
+  ]) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(names(result), [], input)
+    assert.deepEqual(result.executionPlan.checks.e2e.selected, [], input)
+    assert.equal(result.frameworkReleaseRequired, false, input)
+  }
+  const testOnly = classifyChanges(
+    ['packages/core/src/__tests__/element-selection-api.test.ts'],
+    manifests
+  )
+  assert.deepEqual(names(testOnly), ['@asyra/core'])
+  assert.deepEqual(testOnly.executionPlan.checks.e2e.selected, [])
+  assert.equal(testOnly.frameworkReleaseRequired, false)
+})
+
+test('test files outside Design never select Design functional E2E', () => {
+  for (const input of [
+    'apps/asyra-framework-site/__tests__/routes.test.mjs',
+    'scripts/docs/__tests__/public-source-map.test.mjs'
+  ]) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(result.executionPlan.checks.e2e.selected, [], input)
+  }
+})
+
+test('CI implementation and Changeset inputs select their contracts without product workspaces', () => {
+  for (const input of [
+    'scripts/ci-scope.mjs',
+    'scripts/run-ci-checks.mjs',
+    '.github/workflows/main.yml',
+    '.changeset/example.md'
+  ]) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(names(result), [], input)
+    assert.deepEqual(result.executionPlan.checks.e2e.selected, [], input)
+    assert.equal(
+      result.executionPlan.checks.repositoryScripts.mode,
+      'files',
+      input
+    )
+    assert.equal(
+      result.executionPlan.checks.frameworkDeclarations.mode,
+      'not-selected',
+      input
+    )
+  }
+})
+
+test('explicit full validation selects every workspace even when only one App changed', () => {
+  const result = classifyChanges(
+    ['apps/asyra-framework-site/app/page.tsx'],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    { fullValidation: true }
+  )
+  assert.deepEqual(names(result), [...manifests.keys()].sort())
+})
+
+test('root script edits select script contracts without product builds', () => {
+  const result = classifyChanges(
+    ['package.json'],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    {
+      inputChanges: {
+        baseRoot: { scripts: { 'test:scripts': 'old' } },
+        headRoot: { scripts: { 'test:scripts': 'new' } }
+      }
+    }
+  )
+  assert.deepEqual(names(result), [])
+  assert.equal(result.executionPlan.checks.repositoryScripts.mode, 'files')
+  assert.deepEqual(result.executionPlan.checks.e2e.selected, [])
+})
+
+test('lock resolution edits select only workspaces that consume the changed resolution', () => {
+  const lock = (version) =>
+    `__metadata:\n  version: 8\n\n"next@npm:^16.3.0":\n  version: ${version}\n  resolution: "next@npm:${version}"\n\n"react@npm:19.2.8":\n  version: 19.2.8\n  resolution: "react@npm:19.2.8"\n\n"@asyra/asyra-framework-site@workspace:apps/asyra-framework-site":\n  resolution: "@asyra/asyra-framework-site@workspace:apps/asyra-framework-site"\n  dependencies:\n    next: "npm:^16.3.0"\n    react: "npm:19.2.8"\n\n"@asyra/asyra-design@workspace:apps/asyra-design":\n  resolution: "@asyra/asyra-design@workspace:apps/asyra-design"\n  dependencies:\n    react: "npm:19.2.8"\n`
+  const selectedManifests = new Map(
+    [...manifests].filter(([name]) =>
+      ['@asyra/asyra-framework-site', '@asyra/asyra-design'].includes(name)
+    )
+  )
+  const result = classifyChanges(
+    ['yarn.lock'],
+    selectedManifests,
+    selectedManifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    {
+      inputChanges: {
+        baseLock: lock('16.3.3'),
+        headLock: lock('16.3.6'),
+        baseRoot: {},
+        headRoot: {}
+      }
+    }
+  )
+  assert.deepEqual(names(result), ['@asyra/asyra-framework-site'])
+  assert.equal(result.workspaceMatrix[0].e2eSelection.mode, 'full')
+  assert.deepEqual(result.executionPlan.checks.e2e.selected, [])
+  assert.equal(result.frameworkReleaseRequired, false)
+})
+
+test('production artifacts follow the selected runtime Apps and explicit verifier inputs', () => {
+  assert.deepEqual(
+    classifyChanges(['docs/ai/framework/PLANS.md'], manifests).relationshipMap
+      .productionApps,
+    []
+  )
+  assert.deepEqual(
+    classifyChanges(['apps/asyra-framework-site/app/page.tsx'], manifests)
+      .relationshipMap.productionApps,
+    ['asyra-framework']
+  )
+  assert.deepEqual(
+    classifyChanges(['.github/workflows/production-artifacts.yml'], manifests)
+      .relationshipMap.productionApps,
+    ['asyra-sim', 'asyra-design', 'asyra-framework']
+  )
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/production-artifacts.yml'),
+    'utf8'
+  )
+  assert.doesNotMatch(workflow, /^ {2}pull_request:/m)
+  const main = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  assert.match(main, /apps: \$\{\{ needs.scope.outputs.production_apps \}\}/)
+})
+
+test('plan documents do not select dependency audits or graph builders', () => {
+  const { checks } = classifyChanges(
+    ['docs/ai/framework/PLANS.md'],
+    manifests
+  ).executionPlan
+  for (const name of [
+    'securityAudit',
+    'dependencyValidation',
+    'turboValidation'
+  ])
+    assert.equal(checks[name].mode, 'not-selected', name)
+})
+
+test('root toolchain changes still select all product owners', () => {
+  const result = classifyChanges(
+    ['package.json'],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    {
+      inputChanges: {
+        baseRoot: { engines: { node: '22.x' } },
+        headRoot: { engines: { node: '24.x' } }
+      }
+    }
+  )
+  assert.deepEqual(names(result), [...manifests.keys()].sort())
+  assert.equal(result.executionPlan.checks.e2e.selected.length, 4)
+})
+
+test('unresolved dependency metadata and unowned Markdown fail classification', () => {
+  const lock =
+    '__metadata:\n  version: 8\n\n"@asyra/asyra-framework-site@workspace:apps/asyra-framework-site":\n  dependencies:\n    absent: "npm:1.0.0"\n'
+  const result = classifyChanges(
+    ['yarn.lock'],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    {
+      inputChanges: {
+        baseRoot: {},
+        headRoot: {},
+        baseLock: lock,
+        headLock: lock
+      }
+    }
+  )
+  assert.ok(
+    result.unknownPaths.some((message) =>
+      message.includes('Unresolved Yarn dependency')
+    )
+  )
+  assert.deepEqual(
+    classifyChanges(['unknown-area/readme.md'], manifests).unknownPaths,
+    ['unknown-area/readme.md']
+  )
+})
+
+test('full script command covers every registered contract exactly once and serializes build regressions', () => {
+  const policy = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'scripts/ci-relationships.json'),
+      'utf8'
+    )
+  )
+  const root = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  const commands = root.scripts['test:scripts'].split(' && ')
+  const tests = commands[0].split(' ').slice(2)
+  assert.equal(commands[1], 'yarn test:workspace-builds')
+  const all = [...tests, ...policy.repositoryScriptGroups.buildExecution.tests]
+  assert.equal(new Set(all).size, all.length)
+  assert.deepEqual(all.sort(), [...policy.registeredScriptTests].sort())
+})
+
+const dependencyLock = (version, { remove = false, override = false } = {}) => {
+  const descriptor = override ? `npm:${version}` : 'npm:^1.0.0'
+  return (
+    [
+      '__metadata:\n  version: 8',
+      `"shared@${descriptor}":\n  version: ${version}`,
+      ...['alpha', 'beta'].map(
+        (name) =>
+          `"@sample/${name}@workspace:apps/${name}":\n  resolution: "@sample/${name}@workspace:apps/${name}"` +
+          (remove && name === 'alpha'
+            ? ''
+            : '\n  dependencies:\n    shared: "npm:^1.0.0"')
+      )
+    ].join('\n\n') + '\n'
+  )
+}
+const dependencyConsumers = new Map(
+  ['alpha', 'beta'].map((name) => [
+    `@sample/${name}`,
+    { name: `@sample/${name}`, directory: `apps/${name}` }
+  ])
+)
+
+for (const scenario of [
+  {
+    name: 'shared transitive dependency changes select both consumers',
+    base: dependencyLock('1.0.0'),
+    head: dependencyLock('1.0.1'),
+    expected: ['@sample/alpha', '@sample/beta']
+  },
+  {
+    name: 'removed dependency remains owned through the base snapshot',
+    base: dependencyLock('1.0.0'),
+    head: dependencyLock('1.0.0', { remove: true }),
+    expected: ['@sample/alpha']
+  },
+  {
+    name: 'root resolution overrides follow the actual resolved consumer graph',
+    base: dependencyLock('1.0.0', { override: true }),
+    head: dependencyLock('1.0.1', { override: true }),
+    baseRoot: { resolutions: { shared: '1.0.0' } },
+    headRoot: { resolutions: { shared: '1.0.1' } },
+    expected: ['@sample/alpha', '@sample/beta']
+  }
+]) {
+  test(scenario.name, () => {
+    const impact = rootInputImpact(['yarn.lock'], dependencyConsumers, {
+      inputChanges: {
+        baseRoot: scenario.baseRoot ?? {},
+        headRoot: scenario.headRoot ?? {},
+        baseLock: scenario.base,
+        headLock: scenario.head
+      }
+    })
+    assert.deepEqual([...impact.workspaces].sort(), scenario.expected)
+    assert.equal(impact.all, false)
+  })
+}
+
+test('a failed classifier cannot launch the control-plane proof workflow', () => {
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  const job = workflow
+    .split('  flow-inspector-validation:')[1]
+    .split('  framework-release-readiness:')[0]
+  assert.match(job, /if:.*needs\.scope\.result == 'success'/)
+})
+
+test('selected build regression files retain the serial resource boundary', () => {
+  const selection = classifyChanges(['scripts/gen-turbo.js'], manifests)
+    .executionPlan.checks.repositoryScripts
+  const calls = []
+  const result = runRepositoryScripts(selection, (command, args) =>
+    calls.push({ command, args })
+  )
+  const builds = selection.tests.filter((file) =>
+    file.includes('/workspace-build-')
+  )
+  assert.ok(builds.length > 0)
+  assert.deepEqual(calls.at(-1), {
+    command: process.execPath,
+    args: ['--test', '--test-concurrency=1', ...builds]
+  })
+  assert.ok(calls[0].args.every((value) => !builds.includes(value)))
+  assert.deepEqual(result.executedTests, selection.tests)
 })
