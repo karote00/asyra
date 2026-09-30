@@ -113,6 +113,46 @@ yarn start:asyra-design
 `clean` remains a Turbo workspace command; every package that emits `dist` must
 provide `clean`.
 
+## CI Lane and E2E Split Rules
+
+Root commands name the app and the operation they perform. Use
+`start:<app>` for one app, `test:<app>` for its local formal tests,
+`test:<app>:ci` for its CI test task, `lint:<app>` for its lint task, and
+`test:e2e:<app>` (with `:ci` where defined) for its browser suite. Use the
+explicit workspace commands for repository-wide work. Do not restore an
+ambiguous command that starts or validates several unrelated apps at once.
+
+Keep change selection and execution in their current owners:
+
+- `scripts/ci-relationships.json` owns workspace relationships, shared inputs,
+  and specialized E2E suite inputs.
+- `scripts/ci-scope.mjs` derives the affected workspace matrix and selected
+  gates from the base-to-head change set and those relationships.
+- `.github/workflows/main.yml` executes the selected workspace and specialized
+  gates; its required aggregate rejects missing, failed, or skipped selected
+  results.
+- Each app's `test:e2e:ci` runner and group manifest own that app's browser
+  suite boundaries. The reusable Design workflow owns its functional,
+  collaboration, board, and render-contract jobs.
+
+Do not copy workspace or E2E file inventories into the workflow. When an app
+uses CI groups, group cases by a coherent product or runtime responsibility,
+not by an arbitrary test count. The app's group-coverage contract must prove
+that every discovered spec is assigned exactly once. Keep expensive or
+resource-sensitive cases in bounded groups of their own when evidence shows
+they could consume the enclosing group budget. A group timeout bounds that
+group; it does not justify combining unrelated behaviors into one timed test or
+raising a timeout without evidence. A test file with an explicit timeout must
+contain one test item, and that item must cover one meaningful behavior.
+Host-dependent performance observations remain diagnostic unless they run
+against a controlled performance contract.
+
+Browser E2E uses the runner's installed Google Chrome channel. Keep Playwright
+configs on `channel: 'chrome'`; CI must not download Playwright-managed
+Chromium. The browser channel and installation contract are checked by the
+repository automation tests. App-specific E2E configuration and budgets remain
+with the app that owns the suite.
+
 ## Script Tests
 
 `yarn test:scripts` verifies:
