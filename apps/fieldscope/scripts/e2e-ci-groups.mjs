@@ -2,7 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export const CI_E2E_GROUPS = [
-  { name: 'scene-configuration', files: ['e2e/configuration.spec.ts'] },
+  {
+    name: 'scene-configuration',
+    files: [
+      'e2e/configuration-immediate-edits.spec.ts',
+      'e2e/configuration-clearance-history.spec.ts',
+      'e2e/configuration-planted-scene-responsiveness.spec.ts',
+      'e2e/configuration-canvas-history.spec.ts',
+      'e2e/soil-history-shortcut.spec.ts'
+    ]
+  },
   {
     name: 'camera-interaction',
     files: ['e2e/camera-flight.spec.ts', 'e2e/camera-touch.spec.ts']
@@ -11,7 +20,20 @@ export const CI_E2E_GROUPS = [
     name: 'greenhouse-model',
     files: ['e2e/crops.spec.ts', 'e2e/drains.spec.ts', 'e2e/greenhouse.spec.ts']
   },
-  { name: 'locale-layout', files: ['e2e/locale.spec.ts'] },
+  {
+    name: 'locale-layout',
+    files: [
+      'e2e/locale-state.spec.ts',
+      'e2e/locale-layout-360-zh-tw.spec.ts',
+      'e2e/locale-layout-360-en.spec.ts',
+      'e2e/locale-layout-390-zh-tw.spec.ts',
+      'e2e/locale-layout-390-en.spec.ts',
+      'e2e/locale-layout-768-zh-tw.spec.ts',
+      'e2e/locale-layout-768-en.spec.ts',
+      'e2e/locale-layout-1440-zh-tw.spec.ts',
+      'e2e/locale-layout-1440-en.spec.ts'
+    ]
+  },
   { name: 'workspace-panels', files: ['e2e/panels.spec.ts'] },
   { name: 'robot-workspace', files: ['e2e/robot.spec.ts'] }
 ]
