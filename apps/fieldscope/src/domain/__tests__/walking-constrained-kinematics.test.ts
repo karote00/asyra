@@ -134,13 +134,14 @@ describe('selected-chain root motion', () => {
 })
 
 describe('exact polynomial complementary tripod cycle', () => {
-  it('issues phase-root membership from the actual support branch only', () => {
-    const { source, raw } = cycleFixture({
-      sourceProfile: 'solid-articulation/2'
-    })
-    const owner = new WalkingConstrainedCycleOwner()
-    const cycle = owner.prepare(source, raw)
-    for (const phase of [0, 1] as const) {
+  it.each([0, 1] as const)(
+    'issues phase-root membership from the actual support branch only - phase %i',
+    (phase) => {
+      const { source, raw } = cycleFixture({
+        sourceProfile: 'solid-articulation/2'
+      })
+      const owner = new WalkingConstrainedCycleOwner()
+      const cycle = owner.prepare(source, raw)
       const receipt = owner.readPhaseRootMotion(cycle, phase)
       if (!receipt) throw new Error('Missing phase-root receipt')
       expect(receipt.phase).toBe(phase)
@@ -186,20 +187,20 @@ describe('exact polynomial complementary tripod cycle', () => {
       const work = owner.work.operations
       expect(owner.readPhaseRootMotion(cycle, phase)).toBe(receipt)
       expect(owner.work.operations).toBe(work)
+      expect(owner.readPhaseRootMotion(cycle, 0)).not.toBe(
+        owner.readPhaseRootMotion(cycle, 1)
+      )
+      expect(owner.readPhaseRootMotion({ ...cycle }, 0)).toBeUndefined()
+      expect(owner.readPhaseRootMotion(cycle, 2)).toBeUndefined()
+      expect(
+        owner
+          .readConstantMotion(cycle)
+          ?.bodies.some((e) => e.body.id.includes('coxa'))
+      ).toBe(false)
+      owner.dispose()
+      expect(owner.readPhaseRootMotion(cycle, 0)).toBeUndefined()
     }
-    expect(owner.readPhaseRootMotion(cycle, 0)).not.toBe(
-      owner.readPhaseRootMotion(cycle, 1)
-    )
-    expect(owner.readPhaseRootMotion({ ...cycle }, 0)).toBeUndefined()
-    expect(owner.readPhaseRootMotion(cycle, 2)).toBeUndefined()
-    expect(
-      owner
-        .readConstantMotion(cycle)
-        ?.bodies.some((e) => e.body.id.includes('coxa'))
-    ).toBe(false)
-    owner.dispose()
-    expect(owner.readPhaseRootMotion(cycle, 0)).toBeUndefined()
-  })
+  )
   it('issues constant-root membership only from compiler constant descendants', () => {
     const { source, raw } = cycleFixture({
       sourceProfile: 'solid-articulation/2'
