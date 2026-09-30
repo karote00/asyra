@@ -1,7 +1,14 @@
 import { expect, type Page, type TestInfo } from '@playwright/test'
 import { usesCpuSoftwareRenderer } from './renderer-environment'
 
-async function expectPageFitsViewport(page: Page) {
+async function checkLayout(page: Page) {
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.documentElement
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished)
+    )
+  })
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1
@@ -23,6 +30,7 @@ export async function runResponsiveLayout(
       .getByRole('combobox', { name: '語言', exact: true })
       .selectOption('en')
   const english = locale === 'en'
+  await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
       path: testInfo.outputPath('overview.png'),
@@ -37,8 +45,37 @@ export async function runResponsiveLayout(
     await expect(editorToggle).toHaveAttribute('aria-expanded', 'true')
   }
   const right = page.locator('#configuration-panel .workspace-panel-content')
+  await page.locator('.scene-workspace').evaluate(async (workspace) => {
+    await Promise.all(
+      workspace
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished)
+    )
+  })
+  const panelState = await page
+    .locator('#configuration-panel')
+    .evaluate((panel) => {
+      const content = panel.querySelector('.workspace-panel-content')
+      const toggle = document.querySelector(
+        'button[aria-controls="configuration-panel"]'
+      )
+      return {
+        expanded: toggle?.getAttribute('aria-expanded'),
+        rightOpen: panel.parentElement?.getAttribute('data-right-open'),
+        ariaHidden: panel.getAttribute('aria-hidden'),
+        inert: panel.hasAttribute('inert'),
+        contentVisibility: content ? getComputedStyle(content).visibility : null
+      }
+    })
+  expect(panelState).toEqual({
+    expanded: 'true',
+    rightOpen: 'true',
+    ariaHidden: 'false',
+    inert: false,
+    contentVisibility: 'visible'
+  })
   await expect(right).toBeVisible()
-  await expectPageFitsViewport(page)
+  await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
       path: testInfo.outputPath('editor-top.png'),
@@ -50,6 +87,7 @@ export async function runResponsiveLayout(
   await page
     .getByLabel(english ? 'Strip 7 width' : '第 7 項寬度', { exact: true })
     .scrollIntoViewIfNeeded()
+  await checkLayout(page)
   await expect(
     page.getByLabel(english ? 'Strip 7 width' : '第 7 項寬度', {
       exact: true
@@ -72,6 +110,7 @@ export async function runResponsiveLayout(
       exact: true
     })
   ).toBeVisible()
+  await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
       path: testInfo.outputPath('layers.png'),
@@ -85,6 +124,7 @@ export async function runResponsiveLayout(
       exact: true
     })
   ).toBeInViewport()
+  await checkLayout(page)
   if (!usesCpuSoftwareRenderer)
     await page.screenshot({
       path: testInfo.outputPath('layers-bottom.png'),
@@ -106,7 +146,7 @@ export async function runResponsiveLayout(
     .click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
-  await expectPageFitsViewport(page)
+  await checkLayout(page)
   await expect(dialog.locator('a')).toHaveAttribute('target', '_blank')
   await expect(dialog.locator('a')).toHaveAttribute(
     'rel',
