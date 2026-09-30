@@ -25,6 +25,24 @@ test('bounded CI groups cover each configured Sim browser spec exactly once', ()
   assert.ok(
     selected.every((file) => fs.statSync(path.join(appRoot, file)).isFile())
   )
+  const resourceGroups = CI_E2E_GROUPS.filter((group) =>
+    group.name.startsWith('representative-resource-candidate-')
+  )
+  assert.equal(resourceGroups.length, 3)
+  assert.ok(resourceGroups.every((group) => group.files.length === 1))
+  assert.deepEqual(
+    resourceGroups.map((group) => group.files[0]),
+    [1, 2, 3].map(
+      (candidate) =>
+        `src/analysis/methods/__tests__/representative-resource-candidate-${candidate}.browser.spec.ts`
+    )
+  )
+  const cancellationGroup = CI_E2E_GROUPS.find(
+    (group) => group.name === 'analysis-cancellation'
+  )
+  assert.deepEqual(cancellationGroup?.files, [
+    'e2e/__tests__/analysis-cancellation.spec.ts'
+  ])
 })
 
 test('merged reports preserve every outcome and bind each run command to identity', () => {

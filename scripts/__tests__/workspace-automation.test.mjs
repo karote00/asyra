@@ -74,6 +74,30 @@ test('Fieldscope E2E CI command supplies its portable local app URL', () => {
   assert.match(example, /^APP_URL=http:\/\/127\.0\.0\.1:5178$/m)
 })
 
+test('root E2E commands name the app and separate local from CI runners', () => {
+  const root = readJSON('package.json')
+  for (const app of [
+    'asyra-design',
+    'asyra-framework-site',
+    'asyra-sim',
+    'fieldscope',
+    'starter-app'
+  ]) {
+    const manifest = readJSON(`apps/${app}/package.json`)
+    assert.equal(
+      root.scripts[`test:e2e:${app}`],
+      `yarn workspace @asyra/${app} test:e2e`,
+      `${app} local E2E command`
+    )
+    if (manifest.scripts['test:e2e:ci'])
+      assert.equal(
+        root.scripts[`test:e2e:${app}:ci`],
+        `yarn workspace @asyra/${app} test:e2e:ci`,
+        `${app} CI E2E command`
+      )
+  }
+})
+
 test('root lint ignores App consumer artifacts without excluding maintained source or tests', async () => {
   const { ESLint } = await import('eslint')
   const eslint = new ESLint({ cwd: repositoryRoot })
@@ -212,10 +236,20 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   )
   assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
   assert.match(workspaceJob, /max-parallel: 4/)
+  assert.match(
+    workspaceJob,
+    /timeout-minutes: \$\{\{ fromJSON\(vars\.TEST_JOB_MINUTES \|\| '20'\) \}\}/
+  )
+  assert.match(workspaceJob, /name: Record original test job deadline/)
+  assert.match(
+    workspaceJob,
+    /python3 apps\/asyra-sim\/scripts\/supervise-tests\.py --init-ci/
+  )
+  assert.match(workspaceJob, /name: Report test supervision/)
   assert.match(workspaceJob, /actions\/upload-artifact@/)
   assert.equal(
     scripts['test:workspaces:ci'],
-    'yarn test:scripts && turbo run test:ci'
+    'yarn test:scripts && turbo run test:ci --concurrency=2'
   )
   assert.doesNotMatch(
     workspaceJob,
@@ -436,6 +470,10 @@ test('root commands validate the committed Turbo graph without rewriting it', ()
   )
   assert.match(rootManifest.scripts['test:workspaces:local'], /test:scripts/)
   assert.match(rootManifest.scripts['test:workspaces:ci'], /test:scripts/)
+  assert.match(
+    rootManifest.scripts['test:workspaces:local'],
+    /turbo run test:local --concurrency=2/
+  )
   for (const scriptName of [
     'examples:run',
     'examples:inventory',
@@ -931,10 +969,22 @@ test('root app commands are scoped by app and purpose', () => {
       )
       assert.equal(
         rootScripts[`test:e2e:${app}`],
-        `yarn workspace ${workspace} test:e2e:ci`
+        `yarn workspace ${workspace} test:e2e`
       )
     }
   }
+  const simRunner = readText('apps/asyra-sim/scripts/run-e2e.mjs')
+  assert.match(simRunner, /process\.argv\.length === 2/)
+  assert.match(simRunner, /run-e2e-ci\.mjs/)
+  assert.match(
+    simRunner,
+    /require\.resolve\('@playwright\/test\/cli'\), 'test', \.\.\.process\.argv\.slice\(2\)/
+  )
+  assert.ok(
+    rootScripts['test:scripts'].includes(
+      'apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs'
+    )
+  )
   for (const script of [
     'test',
     'test:local',

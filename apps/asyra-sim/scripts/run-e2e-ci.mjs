@@ -18,9 +18,9 @@ const repositoryRoot = path.resolve(appRoot, '../..')
 const temporary =
   process.env.RUNNER_TEMP ||
   fileURLToPath(new URL('../.artifacts/browser-tmp/', import.meta.url))
-const aggregateReportPath = process.env.PLAYWRIGHT_JSON_OUTPUT_FILE
-if (!aggregateReportPath)
-  throw new Error('PLAYWRIGHT_JSON_OUTPUT_FILE must identify the CI report')
+const aggregateReportPath =
+  process.env.PLAYWRIGHT_JSON_OUTPUT_FILE ??
+  path.join(appRoot, '.artifacts', 'browser-report.json')
 
 const artifactId = crypto
   .createHash('sha256')

@@ -37,11 +37,33 @@ export const CI_E2E_GROUPS = [
     ]
   },
   {
+    name: 'analysis-cancellation',
+    files: ['e2e/__tests__/analysis-cancellation.spec.ts']
+  },
+  {
     name: 'analysis-runs',
     files: [
       'e2e/__tests__/methods.spec.ts',
       'e2e/__tests__/experiments.spec.ts',
       'e2e/__tests__/formal-outcomes.spec.ts'
+    ]
+  },
+  {
+    name: 'representative-resource-candidate-1',
+    files: [
+      'src/analysis/methods/__tests__/representative-resource-candidate-1.browser.spec.ts'
+    ]
+  },
+  {
+    name: 'representative-resource-candidate-2',
+    files: [
+      'src/analysis/methods/__tests__/representative-resource-candidate-2.browser.spec.ts'
+    ]
+  },
+  {
+    name: 'representative-resource-candidate-3',
+    files: [
+      'src/analysis/methods/__tests__/representative-resource-candidate-3.browser.spec.ts'
     ]
   },
   {

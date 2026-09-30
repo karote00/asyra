@@ -27,6 +27,19 @@ test('FieldScope CI groups cover every browser spec exactly once', () => {
   )
 })
 
+test('software-rendered browser cases budget pixels and keep desktop CSS layout', () => {
+  const config = fs.readFileSync(
+    path.join(appRoot, 'playwright.config.ts'),
+    'utf8'
+  )
+
+  assert.match(
+    config,
+    /deviceScaleFactor:\s*usesCpuSoftwareRenderer\s*\?\s*0\.25\s*:\s*1/
+  )
+  assert.match(config, /viewport:\s*\{\s*width:\s*1440,\s*height:\s*1100\s*\}/)
+})
+
 test('merged CI report retains every group suite, failure and timing result', () => {
   const merged = mergePlaywrightReports([
     {

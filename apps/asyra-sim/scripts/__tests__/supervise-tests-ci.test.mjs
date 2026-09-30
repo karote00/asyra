@@ -11,8 +11,7 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
   const markers = [
     'Record original test job deadline',
     'Initialize test execution envelope',
-    'run: yarn react:build',
-    'run: yarn test:ci'
+    'run: node scripts/run-workspace-checks.mjs'
   ]
   function checkOrdering(source) {
     for (const marker of markers) {
@@ -24,17 +23,17 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
         source.indexOf(markers[index - 1]) < source.indexOf(markers[index])
       )
   }
-  const validateJob = workflow.match(
-    /\n {2}validate:\n([\s\S]*?)(?=\n {2}[a-zA-Z][\w-]*:\n|$)/
+  const workspaceJob = workflow.match(
+    /\n {2}workspace-validation:\n([\s\S]*?)(?=\n {2}[a-zA-Z][\w-]*:\n|$)/
   )?.[1]
-  assert.ok(validateJob)
-  checkOrdering(validateJob)
+  assert.ok(workspaceJob)
+  checkOrdering(workspaceJob)
   for (const marker of markers) {
     assert.throws(
-      () => checkOrdering(validateJob.replace(marker, 'removed')),
+      () => checkOrdering(workspaceJob.replace(marker, 'removed')),
       marker
     )
-    assert.throws(() => checkOrdering(validateJob + '\n' + marker), marker)
+    assert.throws(() => checkOrdering(workspaceJob + '\n' + marker), marker)
   }
   const manifest = JSON.parse(
     readFileSync(new URL('../../package.json', import.meta.url), 'utf8')

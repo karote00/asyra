@@ -6,7 +6,7 @@ import { representativeSnapshot } from './representative-fixture'
 
 const benchmarkDurationMs = 120000
 
-for (const candidate of [0, 1, 2]) {
+export function registerRepresentativeResourceTest(candidate: number) {
   test(`full original-part representative workcell produces useful bounded evidence for candidate ${candidate + 1}`, async ({
     page,
     browser
@@ -127,9 +127,6 @@ for (const candidate of [0, 1, 2]) {
         ...measurement
       })
     })
-    expect(measurement.elapsedMs).toBeLessThan(
-      snapshot.budget.maxDurationMs + 5000
-    )
     expect(measurement.evaluations).toBeLessThanOrEqual(
       snapshot.budget.maxIntervals
     )

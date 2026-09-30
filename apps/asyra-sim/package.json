@@ -16,7 +16,7 @@
     "test:local": "node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/supervise-tests-ci.test.mjs && python3 scripts/supervise-tests.py --",
     "test:ci": "node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/supervise-tests-ci.test.mjs && python3 scripts/supervise-tests.py --",
     "test:heavy": "python3 scripts/supervise-tests.py --heavy",
-    "test:e2e": "node scripts/run-e2e.mjs",
+    "test:e2e": "APP_URL=http://127.0.0.1:5174 node scripts/run-e2e.mjs",
     "test:e2e:ci": "APP_URL=http://127.0.0.1:5174 node scripts/run-e2e-ci.mjs",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src samples scripts e2e app-environment.mjs playwright.config.ts vite.config.ts vitest.config.ts"
   },

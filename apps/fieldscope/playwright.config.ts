@@ -13,8 +13,8 @@ export default defineConfig({
   use: {
     baseURL: environment.url,
     viewport: { width: 1440, height: 1100 },
-    // Keep the desktop CSS layout while reducing the SwiftShader pixel budget.
-    deviceScaleFactor: usesCpuSoftwareRenderer ? 0.5 : 1,
+    // Keep the desktop CSS layout while bounding SwiftShader work in physical pixels.
+    deviceScaleFactor: usesCpuSoftwareRenderer ? 0.25 : 1,
     channel: 'chrome',
     launchOptions: {
       // Match the desktop GPU on macOS; software rendering remains explicitly selectable.

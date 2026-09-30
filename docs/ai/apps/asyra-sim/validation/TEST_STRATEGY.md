@@ -145,12 +145,16 @@ must show complete coverage, bounded retained evidence and Worker cleanup for
 all three candidates. It does not claim all candidates pass at the default
 budget or on unmeasured reference hardware.
 
-Each benchmark test allows its 120-second execution budget plus 15 seconds for
-fixture/setup/cleanup. The dedicated three-case command supplies a finite
-465,000-ms global harness deadline: three such allowances plus the existing
-60-second server-start allowance. Run
-`APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource.browser.spec.ts --global-timeout=465000`.
+Each candidate is one actual test in its own browser spec file, with a
+120-second execution budget plus 15 seconds for fixture/setup/cleanup. The
+dedicated three-file command supplies a finite 465,000-ms global harness
+deadline: three such allowances plus the existing 60-second server-start
+allowance. This aggregate command runs each candidate as an independent test
+item; it does not combine them into one test. Run
+`APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource-candidate-1.browser.spec.ts src/analysis/methods/__tests__/representative-resource-candidate-2.browser.spec.ts src/analysis/methods/__tests__/representative-resource-candidate-3.browser.spec.ts --global-timeout=465000`.
 These test allowances do not renew or extend the Worker-owned execution budget.
+Measured wall time is diagnostic evidence only; host-dependent elapsed-time
+thresholds are not pass criteria.
 
 Browser frame wall-clock values attached by `mechanical-review.spec.ts`
 describe only the current host and browser.
