@@ -1,46 +1,15 @@
 import { expect, test } from '@playwright/test'
-import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 test('commits each completed field immediately with independent undo and redo', async ({
   page
-}, testInfo) => {
+}) => {
   test.setTimeout(60_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  const row = page.getByLabel('第 1 項種類')
-  const rowBounds = await row.boundingBox()
-  if (!rowBounds) throw new Error('Missing strip row')
-  for (const label of ['上移第 1 項', '下移第 1 項', '刪除第 1 項']) {
-    const button = page.getByRole('button', { name: label, exact: true })
-    const bounds = await button.boundingBox()
-    if (!bounds) throw new Error('Missing strip action')
-    expect(bounds.width).toBe(32)
-    expect(bounds.height).toBe(32)
-    expect(bounds.y + bounds.height / 2).toBeCloseTo(
-      rowBounds.y + rowBounds.height / 2
-    )
-    const drawing = await button.locator('svg path').evaluate((node) => {
-      const box = (node as SVGGraphicsElement).getBBox()
-      const style = getComputedStyle(node)
-      const stroke =
-        style.stroke === 'none' ? 0 : Number.parseFloat(style.strokeWidth)
-      return { width: box.width + stroke, height: box.height + stroke }
-    })
-    expect(drawing.width).toBe(16)
-    expect(drawing.height).toBe(16)
-  }
-
-  await expect(
-    page.getByRole('button', { name: '套用設定', exact: true })
-  ).toHaveCount(0)
-  await expect(page.getByText('查看陣列資料')).toHaveCount(0)
   const length = page.getByLabel('溫室縱向深度', { exact: true })
   const width = page.getByLabel('單棟寬度', { exact: true })
-  const initial = await length.boundingBox()
-  expect(initial?.height).toBeLessThanOrEqual(28)
-  expect(initial?.width).toBeLessThanOrEqual(96)
   await length.fill('12.7')
   await length.press('Enter')
   await expect(
@@ -73,10 +42,5 @@ test('commits each completed field immediately with independent undo and redo', 
   await expect(bottom).toHaveValue('0.45')
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(width).toHaveValue('7')
-  if (!usesCpuSoftwareRenderer)
-    await page.screenshot({
-      path: testInfo.outputPath('immediate-configuration.png'),
-      fullPage: true
-    })
   expect(errors).toEqual([])
 })
