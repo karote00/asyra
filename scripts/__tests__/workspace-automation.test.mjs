@@ -1054,10 +1054,10 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
   assert.match(flowJob, /persist-credentials: false/)
   assert.match(
     flowJob,
-    /yarn turbo run build:core --filter=@asyra\/core\.\.\. --concurrency=2/
+    /yarn turbo run react:build --filter=@asyra\/asyra-design\.\.\. --concurrency=2/
   )
   const buildStep = flowJob.indexOf(
-    'Build Core declarations and workspace dependencies for Flow Inspector app proofs'
+    'Build Asyra Design for Flow Inspector app proofs'
   )
   const contractsTest = flowJob.indexOf(
     'Test Flow Inspector control-plane contracts'

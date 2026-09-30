@@ -216,8 +216,8 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
-      - name: Build Core declarations and workspace dependencies for Flow Inspector app proofs
-        run: yarn turbo run build:core --filter=@asyra/core... --concurrency=2
+      - name: Build Asyra Design for Flow Inspector app proofs
+        run: yarn turbo run react:build --filter=@asyra/asyra-design... --concurrency=2
       - name: Test Flow Inspector control-plane contracts
         run: |
           node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
