@@ -42,8 +42,8 @@ it('respects edited row types and end insets without phantom plants', () => {
     startInset: 0.4,
     endInset: 0.5,
     strips: [
-      { kind: 'drain', width: 0.3 },
-      { kind: 'soil', width: 1 }
+      { id: 'fixture-1', kind: 'drain', width: 0.3 },
+      { id: 'fixture-2', kind: 'soil', width: 1 }
     ]
   })
   const plants = createCropPositions(config)
@@ -54,7 +54,10 @@ it('respects edited row types and end insets without phantom plants', () => {
     )
   ).toBe(true)
   expect(
-    createCropPositions({ ...config, strips: [{ kind: 'soil', width: 1 }] })
+    createCropPositions({
+      ...config,
+      strips: [{ id: 'fixture-3', kind: 'soil', width: 1 }]
+    })
   ).toEqual([])
 })
 it('rejects soil that fits the pole but not the additional plant-root offset', () => {
@@ -62,8 +65,8 @@ it('rejects soil that fits the pole but not the additional plant-root offset', (
     validateConfiguration({
       ...DEFAULT_CONFIGURATION,
       strips: [
-        { kind: 'drain', width: 0.3 },
-        { kind: 'soil', width: 0.18 }
+        { id: 'fixture-4', kind: 'drain', width: 0.3 },
+        { id: 'fixture-5', kind: 'soil', width: 0.18 }
       ]
     })
   ).toThrow()

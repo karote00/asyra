@@ -1233,3 +1233,47 @@ test('selected build regression files retain the serial resource boundary', () =
   assert.ok(calls[0].args.every((value) => !builds.includes(value)))
   assert.deepEqual(result.executedTests, selection.tests)
 })
+
+test('FieldScope profiles follow its selected test owner without activating for unrelated CI or plans', () => {
+  for (const [file, expected] of [
+    ['apps/fieldscope/src/simulation/walking-motion.ts', true],
+    [
+      'apps/fieldscope/src/simulation/__tests__/walking-motion-sheet-subdivision.profile.test.ts',
+      true
+    ],
+    ['.github/workflows/fieldscope-profile.yml', true],
+    ['docs/ai/apps/fieldscope/plans/harvest-robot/plan.md', false],
+    ['scripts/ci-scope.mjs', false],
+    ['apps/fieldscope/e2e/panels.spec.ts', false]
+  ]) {
+    assert.equal(
+      classifyChanges([file], manifests).relationshipMap
+        .fieldscopeProfilesRequired,
+      expected,
+      file
+    )
+  }
+})
+
+test('internal BDD specifications and reference images are document inputs, while executable docs remain blocked', () => {
+  for (const file of [
+    'docs/ai/apps/fieldscope/bdd-features/harvest-robot.feature',
+    'docs/ai/apps/fieldscope/references/robot-components/01-chassis.png'
+  ]) {
+    const result = classifyChanges([file], manifests)
+    assert.deepEqual(result.unknownPaths, [], file)
+    assert.deepEqual(names(result), [], file)
+    assert.notEqual(
+      result.executionPlan.checks.repositoryScripts.mode,
+      'full',
+      file
+    )
+  }
+  assert.deepEqual(
+    classifyChanges(
+      ['docs/ai/apps/fieldscope/references/execute.cjs'],
+      manifests
+    ).unknownPaths,
+    ['docs/ai/apps/fieldscope/references/execute.cjs']
+  )
+})

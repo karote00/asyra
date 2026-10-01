@@ -418,5 +418,15 @@
     "tools/flow-inspector/control-plane/workflow-results.cjs",
     "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
     "docs/ai/tools/flow-inspector/CORE_PROOF.md"
+  ],
+  "fieldscopeProfilesWorkspaceDirectory": "apps/fieldscope",
+  "internalDocumentationAssetPatterns": [
+    "docs/ai/**/bdd-features/*.feature",
+    "docs/ai/**/references/**.png",
+    "docs/ai/**/references/**.jpg",
+    "docs/ai/**/references/**.jpeg",
+    "docs/ai/**/references/**.webp",
+    "docs/ai/**/references/**.svg",
+    "docs/ai/**/references/**.pdf"
   ]
 }

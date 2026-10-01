@@ -25,6 +25,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
+      fieldscope_profiles_required: ${{ steps.scope.outputs.fieldscope_profiles_required }}
       production_apps: ${{ steps.scope.outputs.production_apps }}
       workspace_matrix: ${{ steps.scope.outputs.workspace_matrix }}
       execution_plan: ${{ steps.scope.outputs.execution_plan }}
@@ -260,6 +261,27 @@ jobs:
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs ci-trial
 
+  fieldscope-profile-heavy:
+    if: ${{ always() && needs.scope.result == 'success' && (needs.workspace-validation.result == 'success' || needs.workspace-validation.result == 'skipped') && needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, workspace-validation]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: heavy
+
+  fieldscope-profile-source:
+    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, fieldscope-profile-heavy]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: source
+
+  fieldscope-profile-remaining:
+    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, fieldscope-profile-source]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: remaining
+
   framework-release-readiness:
     if: ${{ always() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: [scope, shared-validation]
@@ -362,6 +384,7 @@ jobs:
         workspace-validation,
         flow-inspector-validation,
         framework-release-readiness,
+        fieldscope-profile-remaining,
         production-artifacts,
         design-e2e,
         e2e-tests,
@@ -397,6 +420,12 @@ jobs:
         with:
           name: ci-selected-check-results
           path: .
+      - name: Require complete FieldScope profiles
+        env:
+          PROFILE_SELECTED: ${{ needs.scope.outputs.fieldscope_profiles_required }}
+          PROFILE_RESULT: ${{ needs.fieldscope-profile-remaining.result }}
+        run: |
+          if [ "$PROFILE_SELECTED" = true ]; then test "$PROFILE_RESULT" = success; else test "$PROFILE_SELECTED" = false && test "$PROFILE_RESULT" = skipped; fi
       - name: Aggregate selected CI scope and completed flow results
         env:
           FLOW_RESULT_REPOSITORY: ${{ github.repository }}

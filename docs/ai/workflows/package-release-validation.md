@@ -104,6 +104,16 @@ identity, task order, and every required job outcome. A missing matrix result,
 omitted workspace, failed task, or skipped selected gate cannot satisfy the
 required aggregate.
 
+FieldScope's selected numerical profile owner runs heavy, source and remaining
+groups in order on separate CI runners after its ordinary workspace validation.
+A change to the profile workflow selects those groups directly. Profile-only
+verification can follow a skipped ordinary matrix; a failed ordinary matrix blocks
+it. The final aggregate requires all selected groups to complete successfully.
+Unrelated plan and CI-contract changes do not activate the profile suite.
+Internal `bdd-features/*.feature` specifications and supported reference images
+under `docs/ai/**/references/` are document inputs. This does not admit executable
+files in those directories or turn them into App runtime changes.
+
 CI runs each selected workspace's canonical build task and dependency closure
 to completion before invoking `test:ci`. The test task has no build dependency,
 so it must not be scheduled alongside the build task in a single Turbo run.

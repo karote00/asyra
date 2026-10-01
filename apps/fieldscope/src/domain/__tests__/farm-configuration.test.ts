@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import {
   DEFAULT_CONFIGURATION,
+  createConfigurationStrip,
   configurationSite,
   validateConfiguration
 } from '../farm-configuration'
@@ -26,10 +27,10 @@ const config = {
   netTop: 2.6,
   netBottom: 0.5,
   strips: [
-    { kind: 'drain' as const, width: 0.3 },
-    { kind: 'soil' as const, width: 1 },
-    { kind: 'drain' as const, width: 0.3 },
-    { kind: 'soil' as const, width: 2 }
+    { id: 'fixture-1', kind: 'drain' as const, width: 0.3 },
+    { id: 'fixture-2', kind: 'soil' as const, width: 1 },
+    { id: 'fixture-3', kind: 'drain' as const, width: 0.3 },
+    { id: 'fixture-4', kind: 'soil' as const, width: 2 }
   ]
 }
 it('derives arches, final frames, typed strips, soil-side poles and net elevations from one configuration', () => {
@@ -75,7 +76,7 @@ it('derives arches, final frames, typed strips, soil-side poles and net elevatio
 it('accepts soil-only layouts without generating phantom supports or empty meshes', () => {
   const accepted = validateConfiguration({
     ...config,
-    strips: [{ kind: 'soil', width: 6 }]
+    strips: [{ id: 'fixture-5', kind: 'soil', width: 6 }]
   })
   expect(createSupportAssembly(accepted).tubes).toHaveLength(0)
   expect(
@@ -119,8 +120,8 @@ it('rejects soil that fits a pole but cannot hold the required crop root', () =>
     validateConfiguration({
       ...DEFAULT_CONFIGURATION,
       strips: [
-        { kind: 'drain', width: 0.3 },
-        { kind: 'soil', width: 0.18 }
+        { id: 'fixture-6', kind: 'drain', width: 0.3 },
+        { id: 'fixture-7', kind: 'soil', width: 0.18 }
       ]
     })
   ).toThrow()
@@ -159,4 +160,42 @@ it('accepts exactly two centimetres of symmetric clearance without rounding belo
     validateConfiguration({ ...DEFAULT_CONFIGURATION, width: total + 0.04 })
   )
   expect(site.margin).toBeCloseTo(0.02)
+})
+
+it.each([undefined, '', '   ', 12])(
+  'rejects missing or invalid canonical strip identity: %s',
+  (id) => {
+    const input = structuredClone(DEFAULT_CONFIGURATION)
+    Object.assign(input.strips[0], { id })
+    expect(() => validateConfiguration(input)).toThrow()
+  }
+)
+
+it('rejects duplicate strip identities even when their dimensions differ', () => {
+  const input = {
+    ...DEFAULT_CONFIGURATION,
+    strips: DEFAULT_CONFIGURATION.strips.map((strip) => ({
+      ...strip,
+      id: 'duplicate'
+    }))
+  }
+  expect(() => validateConfiguration(input)).toThrow()
+})
+
+it('keeps default identities stable and gives each added strip a new identity', () => {
+  const first = validateConfiguration(DEFAULT_CONFIGURATION)
+  const second = validateConfiguration(DEFAULT_CONFIGURATION)
+  expect(first.strips.map((strip) => strip.id)).toEqual(
+    second.strips.map((strip) => strip.id)
+  )
+  const added = createConfigurationStrip('soil', 0.3)
+  const replacement = createConfigurationStrip('soil', 0.3)
+  expect(added.id).not.toBe(replacement.id)
+  expect(first.strips.some((strip) => strip.id === added.id)).toBe(false)
+  const accepted = validateConfiguration({
+    ...first,
+    strips: [...first.strips, added]
+  })
+  expect(accepted.strips.at(-1)).toEqual(added)
+  expect(added).toEqual({ id: added.id, kind: 'soil', width: 0.3 })
 })

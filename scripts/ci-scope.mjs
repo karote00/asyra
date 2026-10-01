@@ -491,6 +491,9 @@ function classifyChanges(
     }
     if (matched) continue
     if (
+      relationshipPolicy.internalDocumentationAssetPatterns.some(
+        (pattern) => matchesPattern(changedPath, pattern).matched
+      ) ||
       relationshipPolicy.rootDocumentationPaths.includes(changedPath) ||
       /^(?:scripts|\.github|\.changeset|agents|\.codex|\.antigravity|release-configs)\//.test(
         changedPath
@@ -1070,6 +1073,14 @@ function classifyChanges(
     affectedWorkspaceNames: affectedNamesInHead,
     workspaceMatrix,
     executionPlan,
+    fieldscopeProfilesRequired:
+      changedPaths.includes('.github/workflows/fieldscope-profile.yml') ||
+      workspaceMatrix.some(
+        ({ directory, testSelection }) =>
+          directory ===
+            relationshipPolicy.fieldscopeProfilesWorkspaceDirectory &&
+          testSelection.mode !== 'not-selected'
+      ),
     sharedValidationRequired: true,
     frameworkReleaseRequired,
     createAppPackages: resolvedCreateAppPackages,
@@ -1154,6 +1165,10 @@ function main() {
     fs.appendFileSync(
       outputPath,
       `production_apps=${JSON.stringify(classification.relationshipMap.productionApps)}\nworkspace_matrix=${JSON.stringify(classification.workspaceMatrix)}\n`
+    )
+    fs.appendFileSync(
+      outputPath,
+      `fieldscope_profiles_required=${classification.relationshipMap.fieldscopeProfilesRequired}\n`
     )
     fs.appendFileSync(
       outputPath,
