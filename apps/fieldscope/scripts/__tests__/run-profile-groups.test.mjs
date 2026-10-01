@@ -5,12 +5,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
+import ts from 'typescript'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -559,4 +561,36 @@ except ValueError:
   )
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout.trim(), 'rejected')
+})
+
+test('each walking motion profile isolates one scenario in its own worker file', () => {
+  const directory = path.join(app, 'src/simulation/__tests__')
+  const files = readdirSync(directory).filter((file) =>
+    /^walking-motion(?:-.+)?\.profile\.test\.ts$/.test(file)
+  )
+  assert.ok(files.length > 0)
+  for (const file of files) {
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(path.join(directory, file), 'utf8'),
+      ts.ScriptTarget.Latest,
+      true
+    )
+    const cases = []
+    function visit(node) {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        ['it', 'test'].includes(node.expression.text)
+      )
+        cases.push(node)
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+    assert.equal(
+      cases.length,
+      1,
+      `${file} must isolate exactly one profile scenario`
+    )
+  }
 })

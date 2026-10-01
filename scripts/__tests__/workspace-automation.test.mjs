@@ -1253,3 +1253,17 @@ test('FieldScope profile groups run serially outside the ordinary job and block 
     )
   )
 })
+
+test('FieldScope profile failures retain complete bounded supervision artifacts', () => {
+  const profile = yaml.load(
+    readText('.github/workflows/fieldscope-profile.yml')
+  )
+  const upload = profile.jobs.profile.steps.find((step) =>
+    step.uses?.startsWith('actions/upload-artifact@')
+  )
+  assert.ok(upload, 'profile diagnostics must survive the ephemeral runner')
+  assert.equal(upload.if, 'always()')
+  assert.equal(upload.with.name, 'fieldscope-profile-${{ inputs.group }}')
+  assert.equal(upload.with.path, 'apps/fieldscope/.artifacts/test-supervision/')
+  assert.equal(upload.with['include-hidden-files'], true)
+})

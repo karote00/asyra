@@ -36,3 +36,11 @@ jobs:
         env:
           PROFILE_GROUP: ${{ inputs.group }}
         run: python3 apps/fieldscope/scripts/run-profile-groups.py --group "$PROFILE_GROUP"
+      - name: Upload profile supervision artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fieldscope-profile-${{ inputs.group }}
+          path: apps/fieldscope/.artifacts/test-supervision/
+          include-hidden-files: true
+          if-no-files-found: ignore

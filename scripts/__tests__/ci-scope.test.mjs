@@ -1238,7 +1238,7 @@ test('FieldScope profiles follow its selected test owner without activating for 
   for (const [file, expected] of [
     ['apps/fieldscope/src/simulation/walking-motion.ts', true],
     [
-      'apps/fieldscope/src/simulation/__tests__/walking-motion.profile.test.ts',
+      'apps/fieldscope/src/simulation/__tests__/walking-motion-sheet-subdivision.profile.test.ts',
       true
     ],
     ['.github/workflows/fieldscope-profile.yml', true],
