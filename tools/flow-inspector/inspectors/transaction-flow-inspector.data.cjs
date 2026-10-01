@@ -260,14 +260,19 @@
         'artifact:commit-validation',
         'synchronous state-owner apply acknowledgement',
         'transaction replay restoration mode',
+        'optional instance-bound history-group membership and synchronous lifecycle request',
         'framework cooperative render policy, defaulting to progressive with an explicit atomic opt-out'
       ],
       outputs: ['artifact:canonical-transaction-outcome'],
       conditions: [
-        'Commit records one undo entry from undoable journal entries.',
+        'An ordinary commit records one undo entry from undoable journal entries; an explicitly enrolled member instead retains that same committed history in its pending group.',
         'Outer commit materializes each finalized replace-latest stage as ordinary state-owner-backed History from its first complete before bundle and latest complete after bundle; ordinary entries before and after the stage preserve their action order.',
         'Commit-current interruption finalizes the latest complete staged bundle, while rollback discards staged History and restores canonical state through the rollback journal.',
         'Rollback replays inverses in reverse order without undo, redo, or user-action-completed effects.',
+        'Factory owns explicit start/update/end history groups: each synchronous member closes normally; only successful undoable members are retained, without a pending Undo entry or user-action-completed event. Sealing a nonempty idle group appends one entry and completion identity; empty groups leave stacks unchanged.',
+        'Pending groups permit separate user commits, ordinary ordered Undo/Redo and remote applies between members. Recorded inverse values apply in order without same-field protection or conflict rebasing. Undo reverses member order, Redo restores it, and a replay failure restores all applied replay work before retaining the original stack position.',
+        'New undoable members and nonempty sealing clear Redo; group opening and empty sealing do not. Foreign, closed or reset handles and unrelated active boundaries reject enrollment before mutation. Runtime reset releases group journals and observers.',
+        'Group status counts are updated from each newly committed member once; isolated observers receive committed status only. A configured threshold is advisory and never caps mutations or prunes retained history.',
         'Undo and redo use the same replay primitive with their own history effects.',
         'The framework cooperative render policy defaults to progressive and permits an explicit atomic opt-out for interactions that must complete one full canonical mutation and projection before a dependent mutation begins.',
         'When progressive Undo or Redo replays a committed History entry, Factory uses its recorded progressive slice boundaries or already-delivered immediate owner-batch boundaries and applies that same canonical replay in recorded order. Compatible consecutive single-element Scene events inside one source boundary use the plural Scene owner apply in batches of at most 32 after complete preflight. Recorded progressive boundaries remain exact render boundaries; immediate source boundaries remain ordered while their shared evidence is grouped into bounded publication windows of at most 512 distinct work items and completed projection is coalesced into render slices with a default budget of 1,024 distinct work items. Ordered ids are the work identity when present and delivery identity is the fallback. The framework cooperative host/paint yield occurs after each render slice, and the complete replay remains one History transition inside one outer transaction.',
@@ -315,6 +320,10 @@
         'packages/factory/src/**',
         'packages/core/src/apis/element-selection.ts',
         'packages/core/src/apis/create-apis.ts',
+        'packages/core/src/types/index.ts',
+        'packages/core/src/types/history.ts',
+        'packages/core/src/index.ts',
+        'packages/core/src/__tests__/history-groups.test.ts',
         'packages/core/src/core.ts',
         'packages/core/src/__tests__/element-selection-api.test.ts',
         'packages/reactive-events/src/event-bus.ts',
@@ -344,6 +353,7 @@
         'docs/ai/framework/rules/data-flow-and-transactions.md'
       ],
       specRefs: [
+        'docs/ai/framework/packages/factory.md#transaction-history-groups',
         '#reuse-the-existing-inverse-replay-engine',
         '#rollback',
         '#undo'

@@ -36,6 +36,15 @@ or unsupported capability claims.
 
 None.
 
+## Transaction History Groups
+
+- [Transaction History Groups](plans/transaction-history-group-plan.md)
+  - Active design preparation for an independent Framework PR to `main`.
+  - Explicitly enroll committed batches without capturing intervening user or
+    remote actions; seal one Undo entry when the producer completes or stops.
+  - Includes grouped replay, batch publication ordering and advisory counts.
+    AI product integration and object editing locks remain downstream work.
+
 ## Completed CI Workflow Split
 
 - The repository-wide CI routing, workspace build-before-test, app-purpose

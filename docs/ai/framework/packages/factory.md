@@ -413,3 +413,73 @@ Authority:
 - Validators execute synchronously and in registration order.
 - Default and consumer-owned instances do not share transaction state unless
   explicitly wired to do so.
+
+## Transaction history groups
+
+Planned public contract - implementation is tracked in
+[Transaction History Groups](../plans/transaction-history-group-plan.md).
+
+### Lifecycle and input
+
+Factory owns `startHistoryGroup`, `updateHistoryGroup`, `endHistoryGroup` and
+`getHistoryGroupStatus`; Core exposes the same instance-bound operations.
+`startHistoryGroup(options?)` returns an opaque local handle. Options may include
+an advisory positive integer `warningChangeCount` and an `onChange` callback.
+Neither a handle nor its metadata is persisted or sent to collaborators.
+
+`updateHistoryGroup(handle, mutate)` runs one synchronous finite transaction,
+returns its callback result, and enrolls only successful undoable journal work.
+Nested transaction calls join that member. An unrelated active transaction,
+foreign/closed/retired handle, or replay/remote origin is rejected before apply.
+Thenable results reject and roll back the current member; callers prepare async
+work beforehand and must not schedule later mutations inside the callback.
+
+Each member uses normal validation, rollback, shared publication, computed/UI
+updates and persistence. Nothing remains transaction-open between updates.
+No-op/non-undoable members add no history. Failed members roll back themselves;
+earlier successful members remain visible and retained.
+
+`endHistoryGroup(handle)` requires an idle owner and closes the handle. A
+nonempty group appends one Undo entry at closure time and emits one ordinary
+user-action-completed identity; an empty group leaves both history stacks alone.
+A successful undoable member clears Redo as a new mutation normally does;
+sealing a nonempty group also clears Redo. Opening a group never clears Redo.
+Other local edits remain separate entries. Remote applies remain remote.
+
+### Ordered replay and concurrency
+
+Open groups are absent from Undo/Redo. Ordinary Undo/Redo remains usable between
+members and does not close any group or stop its producer. Example: user x=0 ->
+10, grouped x=10 -> 20, user Undo -> 0. Pending groups do not protect live values.
+Producers read current state and validate targets again before their next batch.
+Existing hierarchy validation still rejects invalid replay; there is no fallback
+reload, forced target resurrection or new conflict-resolution policy.
+
+Sealed group Undo replays all member inverses in reverse order; Redo applies
+members forward. Their recorded source publication boundaries remain ordered.
+A replay failure restores already-applied replay through canonical rollback,
+leaves the source history entry available, and closes the boundary it opened.
+One group replay is one history transition, including progressive replay.
+Multiple groups have independent handles and may be interleaved.
+
+### Counts and lifetime
+
+Status contains committed member and undoable change counts, open/closed state,
+and whether the configured warning threshold was reached. Counts accumulate
+from admitted journals, without rescanning earlier members or cloning documents.
+`onChange` receives status after each successful member and closure; observer
+failure cannot alter commits. Threshold crossing is advisory, never a work cap.
+Callbacks receive no intermediate/provisional membership or rollback artifacts.
+Reset/disposal invalidates handles and releases retained journals and callbacks;
+it does not roll back committed data or insert entries into a new document.
+
+### Product cases and acceptance
+
+Permanent tests cover two members/one Undo, visibility before seal, interleaved
+user edits and ordered same-field Undo/Redo, multiple handles, empty/non-undoable
+members, failed member and failed shared settlement, grouped replay failure,
+foreign/closed/reset handles, nested boundaries, remote changes, count increments
+and advisory observer isolation. Core tests prove instance binding and lifecycle.
+Existing journal, rollback, collaboration, persistence and progressive replay
+contracts remain required. Mixed deferred hierarchy and immediate computed
+publication must reach consumers in causal order without per-property UI flushes.
