@@ -253,3 +253,22 @@ The supported cases and release-gate ownership are defined by
   render registrations, and the property target
 - active component instances block mutation with a structured
   `REGISTRATION_IN_USE` failure
+
+## Canonical batch projection
+
+After canonical apply, each complete Scene Tree mutation batch publishes local
+`SCENE_TREE_CHANGED` evidence through the existing applied-projection boundary.
+The local payload includes the Scene Tree instance-local `projectionOwner`
+symbol; it never enters persisted or network data. Preset filters structural
+projection by this identity. Render consumes this evidence once before another
+hierarchy API runs.
+It no longer reconstructs local hierarchy timing from shared-channel delivery.
+UI/effect observers still receive committed batches at the outer transaction end;
+`sharedDelivery` continues to control collaboration/shared channels independently.
+Rollback, Undo/Redo and remote canonical apply use the same Scene Tree owner path.
+No projection event creates another journal, publication or persistence record.
+
+Ordered Undo/Redo of raw name/visibility/lock values applies the recorded target
+value even when a later pending producer changed that field. Scene Tree derives
+fresh before evidence from current canonical data. Ordinary command and remote
+stale-evidence validation remains strict; this does not add conflict resolution.

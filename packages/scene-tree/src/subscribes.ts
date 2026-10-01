@@ -243,19 +243,22 @@ export const initSceneTreeSubscribes = () => {
         return false
       }
 
+      const replayMode = getTransactionReplayMode()
+      const orderedHistoryReplay =
+        replayMode === 'undo' || replayMode === 'redo'
       const valid = changes.every(({ key, before, after }) => {
         if (key === 'name') {
           return (
             typeof before === 'string' &&
             typeof after === 'string' &&
-            element.get(key) === before
+            (orderedHistoryReplay || element.get(key) === before)
           )
         }
         return (
           (key === 'visible' || key === 'lock') &&
           typeof before === 'boolean' &&
           typeof after === 'boolean' &&
-          element.get(key) === before
+          (orderedHistoryReplay || element.get(key) === before)
         )
       })
       if (!valid) {

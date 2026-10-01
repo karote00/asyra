@@ -161,3 +161,105 @@ describe('Factory flow proof', () => {
     })
   })
 })
+
+// History membership is explicit; ordinary user history remains available.
+describe('Factory flow proof history group', () => {
+  it('member snapshot', () => {
+    const factory = new Factory()
+    const replayed: unknown[] = []
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event) => {
+        replayed.push((event as AllEvent & { payload: unknown }).payload)
+        return true
+      }
+    )
+    const group = factory.startHistoryGroup()
+    const payload = { id: 'x', before: 0, after: 1 }
+    factory.updateHistoryGroup(group, () =>
+      factory.updateTransaction({
+        type: EventTypes.UPDATE_TRANSACTION,
+        eventName: EventTypes.UPDATE_PROPERTY,
+        payload,
+        options: {}
+      })
+    )
+    payload.before = 8
+    payload.after = 9
+    factory.endHistoryGroup(group)
+    factory.undo()
+    expect(replayed).toEqual([{ id: 'x', before: 1, after: 0 }])
+  })
+
+  it('member delivery', () => {
+    const factory = new Factory()
+    const channel = SharedDataChannelNames.SCENE_TREE
+    factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    const projected: unknown[] = []
+    const commits: TransactionStatusPayload[] = []
+    factory.observeSharedDataChannel(channel, (value) => projected.push(value))
+    factory.subscribeToCommitCapture((value) => commits.push(value))
+    const group = factory.startHistoryGroup()
+    for (const after of [1, 2])
+      factory.updateHistoryGroup(group, () =>
+        factory.updateTransaction({
+          type: EventTypes.UPDATE_TRANSACTION,
+          eventName: EventTypes.UPDATE_PROPERTY,
+          payload: { id: 'x', before: after - 1, after },
+          options: { shared: channel }
+        })
+      )
+    expect(projected).toHaveLength(2)
+    expect(commits).toHaveLength(2)
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    factory.endHistoryGroup(group)
+    expect(projected).toHaveLength(2)
+    expect(commits).toHaveLength(2)
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+  })
+
+  it('pending and ordered replay', () => {
+    const factory = new Factory()
+    let value = 0
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event) => {
+        value = (event as AllEvent & { payload: { after: number } }).payload
+          .after
+        return true
+      }
+    )
+    const write = (after: number) => {
+      const before = value
+      value = after
+      factory.updateTransaction({
+        type: EventTypes.UPDATE_TRANSACTION,
+        eventName: EventTypes.UPDATE_PROPERTY,
+        payload: { id: 'x', before, after },
+        options: {}
+      })
+    }
+    factory.startTransaction()
+    write(10)
+    factory.endTransaction()
+    const group = factory.startHistoryGroup()
+    factory.updateHistoryGroup(group, () => write(20))
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+    factory.undo()
+    expect(value).toBe(0)
+    factory.redo()
+    expect(value).toBe(10)
+    factory.updateHistoryGroup(group, () => write(30))
+    expect(factory.getHistoryGroupStatus(group)).toMatchObject({
+      memberCount: 2,
+      changeCount: 2,
+      state: 'open'
+    })
+    factory.endHistoryGroup(group)
+    expect(factory.getUndoHistoryDepth()).toBe(2)
+    factory.undo()
+    expect(value).toBe(10)
+    factory.redo()
+    expect(value).toBe(30)
+  })
+})

@@ -95,6 +95,34 @@ System orchestrator and lifecycle coordinator.
   observer name without sharing registrations or cleanup state.
 - Default singleton imports intentionally share state and subscriptions.
 
+## Explicit history groups
+
+Core forwards `startHistoryGroup`, `updateHistoryGroup`, `endHistoryGroup` and
+`getHistoryGroupStatus` to its injected Factory. The opaque handle and status
+contracts are exported from the public Core facade. Finite updates commit and
+project normally; sealing adds one Undo entry. Handle lifetime, counts, observer
+isolation and ordered replay follow the
+[Factory contract](factory.md#transaction-history-groups).
+
+```ts
+const history = core.startHistoryGroup({
+  warningChangeCount: 10000,
+  onChange: (status) => showHistoryWarning(status.warningReached)
+})
+try {
+  core.updateHistoryGroup(history, () => applyFirstBatch())
+  // Await external work here, outside the synchronous callback.
+  core.updateHistoryGroup(history, () => applyNextBatch())
+} finally {
+  core.endHistoryGroup(history) // Retains successful work on Stop or failure.
+}
+```
+
+The threshold is caller-owned and advisory. It does not limit history or stop
+work. Prepare asynchronous inputs before entering an update. A callback must
+not schedule future writes. Closing an empty group adds no history; reset makes
+old handles invalid. This API does not lock objects or replace nested transactions.
+
 ## Complete Runtime Handoff
 
 `preflightLoad(data)` checks a detached target against the current trusted

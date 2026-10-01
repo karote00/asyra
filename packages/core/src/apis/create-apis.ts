@@ -458,6 +458,11 @@ export const createAPIs = (
     ...createElementSelectionAPIs(selection, factory),
     ...createUIContextAPIs(),
     ...createSystemPropertyAPIs(),
-    applyCanonicalChanges
+    applyCanonicalChanges,
+    startHistoryGroup: (options) => factory.startHistoryGroup(options),
+    updateHistoryGroup: (handle, mutate) =>
+      factory.updateHistoryGroup(handle, mutate),
+    endHistoryGroup: (handle) => factory.endHistoryGroup(handle),
+    getHistoryGroupStatus: (handle) => factory.getHistoryGroupStatus(handle)
   }
 }

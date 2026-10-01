@@ -14,6 +14,8 @@ import {
 import { EventTypes } from '../types.js'
 import {
   acknowledgeTransactionReplayApplied,
+  getTransactionReplayRestorationEvents,
+  getFailedTransactionReplayRestorationEvents,
   runInTransactionReplayMode,
   wasTransactionReplayApplied
 } from '../transaction-replay.js'
@@ -687,4 +689,70 @@ describe('Event Bus - Communication Backbone', () => {
       renderSub.unsubscribe()
     })
   })
+})
+
+describe('owner-prepared replay restoration', () => {
+  const first = {
+    type: EventTypes.UPDATE_ELEMENT_DATA,
+    payload: { id: 'one', changes: [] }
+  }
+  const second = {
+    type: EventTypes.UPDATE_ELEMENT_DATA,
+    payload: { id: 'two', changes: [] }
+  }
+
+  it('retains complete owner batches in reverse apply order within one replay', () => {
+    runInTransactionReplayMode('undo', () => {
+      acknowledgeTransactionReplayApplied([first])
+      acknowledgeTransactionReplayApplied()
+      acknowledgeTransactionReplayApplied([second])
+      expect(getTransactionReplayRestorationEvents()).toEqual([second, first])
+      expect(Object.isFrozen(getTransactionReplayRestorationEvents())).toBe(
+        true
+      )
+    })
+    expect(getTransactionReplayRestorationEvents()).toBeUndefined()
+  })
+
+  it('retains both outer and nested owner preimages on failure', () => {
+    const failure = new Error('Nested owner failure')
+    expect(() =>
+      runInTransactionReplayMode('undo', () => {
+        acknowledgeTransactionReplayApplied([first])
+        runInTransactionReplayMode('undo', () => {
+          acknowledgeTransactionReplayApplied([second])
+          throw failure
+        })
+      })
+    ).toThrow()
+    expect(getFailedTransactionReplayRestorationEvents(failure)).toEqual([
+      second,
+      first
+    ])
+  })
+
+  it.each([new Error('owner failure'), 'owner failure'])(
+    'preserves nested applied failure evidence: %s',
+    (failure) => {
+      expect(() =>
+        runInTransactionReplayMode('undo', () => {
+          runInTransactionReplayMode('undo', () => {
+            acknowledgeTransactionReplayApplied([first])
+            throw failure
+          })
+        })
+      ).toThrow()
+      expect(getFailedTransactionReplayRestorationEvents(failure)).toEqual([
+        first
+      ])
+      expect(() =>
+        runInTransactionReplayMode('redo', () => {
+          throw failure
+        })
+      ).toThrow()
+      expect(
+        getFailedTransactionReplayRestorationEvents(failure)
+      ).toBeUndefined()
+    }
+  )
 })

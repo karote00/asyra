@@ -1,3 +1,7 @@
+import type {
+  HistoryGroupHandle,
+  HistoryGroupOptions
+} from './history-group.js'
 import {
   runTransaction,
   runWithTransactionOwner,
@@ -163,6 +167,38 @@ class Factory {
         // The default diagnostic bridge follows the same observer isolation.
       }
     }
+  }
+
+  startHistoryGroup(options?: HistoryGroupOptions) {
+    return this.transact.startHistoryGroup(options)
+  }
+
+  getHistoryGroupStatus(handle: HistoryGroupHandle) {
+    return this.transact.getHistoryGroupStatus(handle)
+  }
+
+  updateHistoryGroup<T>(handle: HistoryGroupHandle, mutate: () => T): T {
+    return this.transact.withHistoryGroup(handle, () =>
+      runWithTransactionOwner(this.transactionOwner, () =>
+        runTransaction(() => {
+          const result = mutate()
+          if (
+            result &&
+            (typeof result === 'object' || typeof result === 'function') &&
+            'then' in result &&
+            typeof result.then === 'function'
+          ) {
+            void Promise.resolve(result).catch(() => undefined)
+            throw new Error('History group member must be synchronous')
+          }
+          return result
+        })
+      )
+    )
+  }
+
+  endHistoryGroup(handle: HistoryGroupHandle) {
+    return this.transact.endHistoryGroup(handle)
   }
 
   startTransaction() {

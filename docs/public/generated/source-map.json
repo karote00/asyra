@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "62175dd2ceec5d808c3e0d54fc84b60ab8827a31add41e7dc5d59430f4ed7cbb"
+          "sha256": "b57b0835f82b594114da02bdc730089747316a083e3b7a0bc0792dd2d711bab0"
         }
       ]
     },
@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         }
       ]
     },
@@ -138,11 +138,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
+          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
-          "sha256": "84e51c0d6cdf49ed672257c433664b0ded00fc1aa3daf8c4edf13d794fff5c0c"
+          "sha256": "10e3de3cb983391aa8a60dd58bdab4f99889f2cffc9ae890f17c4f38f134e63f"
         }
       ]
     },
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -214,7 +214,7 @@
         },
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "31bda688e9d65b75cca18810d3f3e3b19851eff8307fddafd01672394a728717"
+          "sha256": "e89a3fe8215b184a18dca3c6318cf715dc1caea60cb7267e7dc682dacc992bc2"
         }
       ]
     },
@@ -228,7 +228,7 @@
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
+          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
         }
       ]
     },
@@ -252,11 +252,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "31bda688e9d65b75cca18810d3f3e3b19851eff8307fddafd01672394a728717"
+          "sha256": "e89a3fe8215b184a18dca3c6318cf715dc1caea60cb7267e7dc682dacc992bc2"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
         },
         {
           "path": "packages/core/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
+          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
         },
         {
           "path": "packages/factory/package.json",
@@ -438,7 +438,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "62175dd2ceec5d808c3e0d54fc84b60ab8827a31add41e7dc5d59430f4ed7cbb"
+          "sha256": "b57b0835f82b594114da02bdc730089747316a083e3b7a0bc0792dd2d711bab0"
         },
         {
           "path": "packages/preset/package.json",
@@ -466,7 +466,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
-          "sha256": "84e51c0d6cdf49ed672257c433664b0ded00fc1aa3daf8c4edf13d794fff5c0c"
+          "sha256": "10e3de3cb983391aa8a60dd58bdab4f99889f2cffc9ae890f17c4f38f134e63f"
         },
         {
           "path": "packages/reactive-events/package.json",
@@ -522,7 +522,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "31bda688e9d65b75cca18810d3f3e3b19851eff8307fddafd01672394a728717"
+          "sha256": "e89a3fe8215b184a18dca3c6318cf715dc1caea60cb7267e7dc682dacc992bc2"
         },
         {
           "path": "packages/scene-tree/package.json",

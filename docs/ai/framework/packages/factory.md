@@ -416,7 +416,7 @@ Authority:
 
 ## Transaction history groups
 
-Planned public contract - implementation is tracked in
+Public contract - implementation and acceptance are tracked in
 [Transaction History Groups](../plans/transaction-history-group-plan.md).
 
 ### Lifecycle and input

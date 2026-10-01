@@ -37,6 +37,7 @@ import {
 } from '@asyra/utils'
 import type {
   AllEvent,
+  SceneTreeChangedEvent,
   UpdateComputedDataBatchEvent,
   UpdateComputedDataEvent,
   UpdateComputedDataPatchEvent
@@ -1715,39 +1716,6 @@ export const registerDefaultDataChannelObservers = (
     }
   })
 
-  const uiContextSceneTreeDataChannelObserver = defineDataChannelObserver({
-    name: 'preset.uiContext.sceneTree',
-    channel: SharedDataChannelNames.SCENE_TREE,
-    onBatch: (changes: readonly SceneTreeChange[]) => {
-      if (uiContextSyncLifetime.disposed) {
-        return
-      }
-      changes
-        .filter((change) => !isLocalComputedSceneTreeChange(change))
-        .forEach((change) => {
-          handleUIContextSceneTreeChange(
-            change,
-            core,
-            deps,
-            uiContextSyncLifetime
-          )
-        })
-      flushPendingUIContextSync(uiContextSyncLifetime, core, deps)
-    }
-  })
-
-  const renderSceneTreeDataChannelObserver = defineDataChannelObserver({
-    name: 'preset.render.sceneTree',
-    channel: SharedDataChannelNames.SCENE_TREE,
-    onBatch: (changes: readonly SceneTreeChange[]) => {
-      if (!disposed) {
-        updateRenderSceneTreeBatch(
-          changes.filter((change) => !isLocalComputedSceneTreeChange(change))
-        )
-      }
-    }
-  })
-
   const uiContextSelectionDataChannelObserver = defineDataChannelObserver({
     name: 'preset.uiContext.selection',
     channel: SharedDataChannelNames.SELECTION,
@@ -1774,8 +1742,17 @@ export const registerDefaultDataChannelObservers = (
       registerObserver(canonicalPropertyDataChannelObserver)
     }
 
-    const localComputedChangesFromEvents = (events: readonly AllEvent[]) =>
+    const localSceneChangesFromEvents = (events: readonly AllEvent[]) =>
       events.flatMap((event) => {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          const { projectionOwner, changes } = (event as SceneTreeChangedEvent)
+            .payload
+          return projectionOwner === deps.sceneTree.projectionOwner
+            ? changes.filter(
+                (change) => !isLocalComputedSceneTreeChange(change)
+              )
+            : []
+        }
         const computedEvent = toLocalComputedProjectionEvent(event)
         if (!computedEvent) return []
         const change = toLocalComputedSceneTreeChange(computedEvent)
@@ -1785,7 +1762,7 @@ export const registerDefaultDataChannelObservers = (
       eventSubscriptions.push(
         subscribeToAppliedEventBatches((events) => {
           if (!disposed)
-            updateRenderSceneTreeBatch(localComputedChangesFromEvents(events))
+            updateRenderSceneTreeBatch(localSceneChangesFromEvents(events))
         })
       )
       cleanupReporter.report()
@@ -1794,7 +1771,7 @@ export const registerDefaultDataChannelObservers = (
       eventSubscriptions.push(
         subscribeToEventBatches((events) => {
           if (disposed) return
-          const changes = localComputedChangesFromEvents(events)
+          const changes = localSceneChangesFromEvents(events)
           if (changes.length === 0) return
           changes.forEach((change) =>
             handleUIContextSceneTreeChange(
@@ -1931,7 +1908,6 @@ export const registerDefaultDataChannelObservers = (
     }
 
     if (renderSceneEnabled) {
-      registerObserver(renderSceneTreeDataChannelObserver)
       renderSceneTreeStore.reload()
     }
     if (selectionEnabled) {
@@ -1939,7 +1915,6 @@ export const registerDefaultDataChannelObservers = (
       registerObserver(renderSelectionDataChannelObserver)
     }
     if (uiContextEnabled) {
-      registerObserver(uiContextSceneTreeDataChannelObserver)
       registerObserver(uiContextSelectionDataChannelObserver)
     }
     if (vectorEditingEnabled) {

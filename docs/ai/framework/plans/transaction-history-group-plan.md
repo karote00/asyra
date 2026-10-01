@@ -2,7 +2,8 @@
 
 ## Status and scope
 
-Active design preparation - implementation and a separate PR to `main` were
+Framework implementation and local acceptance are complete; PR review and
+downstream App integration are separate. Implementation and a PR to `main` were
 authorized on 2026-10-01 in the originating AI panel conversation. This plan was
 adopted from the coordinator's unmerged AI worktree as a new Framework task;
 it is not represented as a prerequisite already integrated in `main`.
@@ -59,10 +60,9 @@ normally. The group becomes one Undo entry only when its caller closes it.
 The Framework is producer-neutral. AI request IDs, prompts and conversation
 messages remain App-owned; the App maps one request to one group.
 
-## Proposed API shape
+## API contract
 
-Names below are proposals, not available exports. Resolve names at the Factory
-owner and expose them through Core before adding consumers.
+Factory owns these public APIs; Core forwards them through its instance facade.
 
 ```ts
 const group = core.startHistoryGroup()
@@ -76,7 +76,7 @@ core.endHistoryGroup(group)
 ```
 
 - `startHistoryGroup` returns an opaque handle bound to one Factory instance and
-  document lifetime. It does not start a transaction or change stack depth.
+  runtime lifetime. It does not start a transaction or change stack depth.
 - `updateHistoryGroup` binds exactly one finite transaction to that handle,
   runs the existing transaction machinery, and enrolls its successful journal
   atomically with commit. It returns the operation result; errors preserve the
@@ -226,8 +226,8 @@ remain outside history; sealing creates exactly one restorable entry. Stop and
 failures retain prior successful commits. Interleaved replay satisfies the
 ordinary ordered replay contract; no tests hide it behind locks or reloads. Same-batch
 ordering, multi-selection values, durability and grouped replay failure recovery
-pass formal tests. Memory warnings are advisory. No current implementation or
-performance success is claimed by this plan.
+pass formal tests. Memory warnings are advisory. Framework acceptance is recorded below; App
+integration and real-model performance are not claimed by this Framework PR.
 
 ## Evidence and exclusions
 
@@ -267,3 +267,93 @@ The design review resolved same-field Undo, independent membership, closure
 identity and failure rollback; runtime proof is intentionally red before APIs
 exist. Flow target `71b5432f-9e1f-403a-9fb3-d55458f61b27` revision 1 admits the
 source-bound cases. This admission is not runtime acceptance.
+
+Factory segment result: 283 owner tests and Factory build pass. A red replay
+case exposed lost member slice order; sealed history now indexes existing source
+batches with member-scoped slice identities, without cloning canonical payloads.
+Atomic and progressive Undo/Redo cover repeated target/slice names.
+
+Next segment: `finalize-transaction-state` Core facade contribution. Same Factory
+product contract and Inspector allowlist; Core only binds public methods/types
+to its injected Factory and existing runtime lifetime. No new global group owner.
+Cases: independent Core instances, real SceneTree edits, pending/closed history,
+retired handle. Gates: Core focused tests/build and public types. Stop if the
+facade needs to reconstruct journal evidence or bypass owner lifetime.
+
+Notification evidence segment: `finalize-transaction-state` projection handoff.
+Re-read its state-owner acknowledgement and Preset boundaries; diagnose the
+mixed-delivery group/move/ungroup case in the real Design canvas before changing
+production publication. Formal consumer test lives in
+`apps/asyra-design/e2e/transaction-history-groups.spec.ts`. Assert hierarchy and
+native snapshot bounds after one finite member, before group closure, then
+Undo/Redo. App production behavior remains excluded. No renderer repair or
+forced reload is allowed. A causal-order defect requires a red case and an
+exact owner-contract update before its implementation.
+
+The real-canvas red test fails after the finite member closes with
+`Snapshot target has no finite visible bounds`. This confirms grouping alone
+cannot repair publication. The revised projection handoff reuses the existing
+`SCENE_TREE_CHANGED` identity and local applied-event boundary for complete
+canonical Scene Tree batches. Preset Render consumes it instead of the delayed
+shared echo; UI/shared/collaboration timing stays unchanged. The Inspector owner
+boundary now includes that Reactive Events publisher and its Preset consumer
+regression. Existing computed projection remains unchanged. No payload cache,
+new renderer path or document reload is part of this correction.
+
+Same owner segment, ordered-overlap regression: the real Core raw-data replay
+rejected a recorded inverse when a pending producer had changed the same field.
+The red Core test proves that mismatch (history moved but the value stayed).
+Scene Tree synchronous Undo/Redo now accepts the recorded target value while
+preparing fresh before evidence from its current state. Ordinary command/remote
+stale-evidence checks remain strict. This is ordered replay, not conflict
+resolution; Factory, Scene Tree and Core regression gates cover the correction.
+
+Failure-atomic overlap case: a two-write user action followed by a pending write
+must restore the actual pre-Undo value if its second inverse fails. The new Core
+regression is red: static source restoration returns the old historical value.
+Within `finalize-transaction-state`, extend the existing synchronous apply
+acknowledgement with optional owner-prepared restoration events. Scene Tree raw
+replay prepares these from current canonical before values; Factory retains them
+only for acknowledged applies. Other owners/custom handlers retain the existing
+prevalidated inverse contract. Do not infer complete restoration from a partial
+journal. Gates: Core overlap/failure, Factory full replay, Reactive Events nested
+acknowledgement/failure tests and the existing integration cases.
+
+### UI projection correction - Step Execution Card
+
+Owner: `finalize-transaction-state`, canonical projection handoff. Inputs are
+completed immutable Scene Tree changes and their instance-local projection
+identity. Render consumes applied batches; UI consumes the same ordered batches
+at outer commit and flushes once. Shared delivery is not local projection order.
+Existing computed routes, persistence and network payloads remain unchanged.
+The real browser regression now proves a nested Layers row has depth 1 instead
+of 2 although canonical hierarchy and Render are correct. No canonical rescan,
+reload, global cross-instance delivery or intermediate UI notifications are
+allowed. Implementation allowlist and failure owner remain this step's Scene
+Tree, Reactive Events, Preset and real Design regression files. Gates: deferred
+UI, owner isolation, mixed-delivery Layers depth, rollback, Undo/Redo, and the
+existing large-batch case. Stop if correction requires new app production code.
+The identity is a local symbol only, never persisted or sent over the wire.
+The regression passes: Render and Layers agree before sealing and after Undo/Redo.
+
+## Framework acceptance
+
+Factory (283), Reactive Events (67), Core (255), Scene Tree (206) and Preset
+(174) unit/integration cases pass. Source-bound Transaction flow proof covers
+nine cases. Real browser acceptance covers finite-member visibility before seal,
+exact document and image restoration after one Undo/Redo, existing Group
+interaction (9 browser cases), and remote Group Undo/Redo with and without
+tombstones (3 collaboration cases). One earlier hover setup run lost its second
+selection before grouping; the isolated case and full 9-case rerun pass without
+changing that test. No timing or renderer fix is claimed for that occurrence. The formal
+7,076-object drawing case passes and its screenshot was inspected. Naming, applicable lint/type/build and public documentation generation pass.
+The target assessment is completed and eligible on the reviewed projection
+contract; all nine source-bound obligations pass. The original allocation lacked
+an executable verification-source pin and is superseded by the source-pinned
+allocation. Public package artifacts and clean-consumer validation are recorded
+in the PR; no package publication is authorized.
+
+The originating AI execution plan remains active in its own worktree. Its
+request enrollment, interaction unlock and warning UI are not implemented here.
+This plan stays active until that downstream integration is completed; do not
+close the entire plan merely because this Framework PR is ready for review.

@@ -228,6 +228,10 @@ class Core implements CoreAPIs {
   updateElementProperties!: CoreAPIs['updateElementProperties']
   patchElementProperties!: CoreAPIs['patchElementProperties']
   applyCanonicalChanges!: CoreAPIs['applyCanonicalChanges']
+  startHistoryGroup!: CoreAPIs['startHistoryGroup']
+  updateHistoryGroup!: CoreAPIs['updateHistoryGroup']
+  endHistoryGroup!: CoreAPIs['endHistoryGroup']
+  getHistoryGroupStatus!: CoreAPIs['getHistoryGroupStatus']
 
   sceneTreeInit!: SceneTreeAPIs['sceneTreeInit']
   sceneTreeLoadData!: SceneTreeAPIs['sceneTreeLoadData']

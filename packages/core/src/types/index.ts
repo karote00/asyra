@@ -1,3 +1,5 @@
+import type { HistoryGroupAPIs } from './history.js'
+export type { HistoryGroupAPIs } from './history.js'
 import { InputSystemAPIs, InputSystemRawAPIs } from './input-system.js'
 import { PropsAPIs } from './props.js'
 import { RenderAPIs } from './render.js'
@@ -54,4 +56,5 @@ export type CoreAPIs = InputSystemAPIs &
   UIContextAPIs &
   SystemManagedPropertyAPIs &
   ElementPropertyAPIs &
-  CanonicalChangeAPIs
+  CanonicalChangeAPIs &
+  HistoryGroupAPIs
