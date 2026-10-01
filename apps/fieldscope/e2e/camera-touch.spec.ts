@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
+
+test.skip(
+  usesCpuSoftwareRenderer,
+  'Touch camera rendering comparisons require the desktop GPU path; this suite runs with SwiftShader on CI.'
+)
 
 test.use({
   viewport: { width: 390, height: 844 },

@@ -18,6 +18,7 @@
     "test:local": "vitest run",
     "test:ci": "vitest run",
     "test:e2e": "yarn build:dependencies && ../../node_modules/.bin/playwright test --config playwright.config.ts",
+    "test:e2e:ci": "yarn build:dependencies && ../../node_modules/.bin/playwright test --config playwright.config.ts --reporter=line,json",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts"
   },
   "dependencies": {

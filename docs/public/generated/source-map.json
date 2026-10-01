@@ -16,7 +16,7 @@
     },
     {
       "id": "start/create-design-app",
-      "pageSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
+      "pageSha256": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
       "sources": [
         {
           "path": "create-app/asyra-design/package.json",
@@ -34,7 +34,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "3042df1cb39046f20aaa765e8b98d3a04ef257454994d820375caacb4d445757"
+          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
         },
         {
           "path": "docs/ai/apps/asyra-design/golden-paths/README.md",
@@ -106,7 +106,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "3042df1cb39046f20aaa765e8b98d3a04ef257454994d820375caacb4d445757"
+          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -248,7 +248,7 @@
     },
     {
       "id": "build/hierarchy-groups",
-      "pageSha256": "20e06e66ff1b9425be2453b819f7591c8e2ba80ed6b2f377dd265922a9224b95",
+      "pageSha256": "a4ca491e53c161d6bf08c01c137aaa43d33b28f2ab52359e3cc725f7bb236016",
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
@@ -358,7 +358,7 @@
         },
         {
           "path": "packages/core/package.json",
-          "sha256": "337b7e993ee8ef4b306bb122e7c8b0c2c05d0d847e481cb3bb0da31029834408"
+          "sha256": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
         }
       ]
     },
@@ -386,7 +386,7 @@
         },
         {
           "path": "packages/factory/package.json",
-          "sha256": "aa4d13934fd3abee400ae73992e27dcad4aefd7a8e988c1518394a5e57d7b9b0"
+          "sha256": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
         }
       ]
     },
@@ -400,7 +400,7 @@
         },
         {
           "path": "packages/feature-system/package.json",
-          "sha256": "edf788304a9c11e15e5715874ca9a7ef6d57df6b1678eede939142cfc64bbcc2"
+          "sha256": "8003296f7f49d0b9f9609ebc4df4d769afb0a9444efa47f1195d088217bd3642"
         }
       ]
     },
@@ -414,7 +414,7 @@
         },
         {
           "path": "packages/input-system/package.json",
-          "sha256": "5be05998823efb687eba35d9c2adaf4f2b1e4b041c115f17cec7bdc2e1256101"
+          "sha256": "f2b6d51e4544caee6e77ef17eebc9639038013e26fa7b20267d77fb18c05cecd"
         }
       ]
     },
@@ -442,7 +442,7 @@
         },
         {
           "path": "packages/preset/package.json",
-          "sha256": "48b39b9d7dcec49581ad1fde94998cb4038e501421baac8c3cac3c79f7535c44"
+          "sha256": "13920c798bd85010d6d7e144bf67def7a9a7babb3ad7c8314786a432c23d38a6"
         }
       ]
     },
@@ -456,7 +456,7 @@
         },
         {
           "path": "packages/props-manager/package.json",
-          "sha256": "39e113f8335ccde5e518912519af2ee510ff9cbdcbb60a90363fc8a15ff43b11"
+          "sha256": "4c01896bc23707dd6381b284d4ac23f157e7719f63c736291c08dd6ce853b653"
         }
       ]
     },
@@ -470,7 +470,7 @@
         },
         {
           "path": "packages/reactive-events/package.json",
-          "sha256": "c2283b49e24780d43f432a3fb6ae39ca4d3dcba3c5ea20f7be41ec9312322fdf"
+          "sha256": "0dfbf0a60b0fd9db00624bd02b4b1d24a555544c26f3d5334a64fbecddfe77a1"
         }
       ]
     },
@@ -484,7 +484,7 @@
         },
         {
           "path": "packages/render/package.json",
-          "sha256": "05ab4bf15178652da404b03c37efb8efb190ac1f72ce2a0fc2c4b384002dd644"
+          "sha256": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
         }
       ]
     },
@@ -498,7 +498,7 @@
         },
         {
           "path": "packages/render-engine/package.json",
-          "sha256": "73c6e8af46ab7300476fb58f2263964621d9e033ec2b676fe26aabd0757b9c3f"
+          "sha256": "1bd7687ec05a2c910791d8674bd691d694f0fb9a35d8f182c4f0e8c7e387849d"
         }
       ]
     },
@@ -512,7 +512,7 @@
         },
         {
           "path": "packages/render-engine-pixi/package.json",
-          "sha256": "b9a81ab4be57896994d6987e0ad3ce293689de46c2d1eb6cb06b19249d962134"
+          "sha256": "a7c7c847e74f04054de4197b391a844086f120276505272162f6f738724db31e"
         }
       ]
     },
@@ -526,7 +526,7 @@
         },
         {
           "path": "packages/scene-tree/package.json",
-          "sha256": "bd241a96cffac76e7308889130c3187111b32bf495bf5b5729532bc38738b069"
+          "sha256": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
         }
       ]
     },
@@ -540,7 +540,7 @@
         },
         {
           "path": "packages/selection/package.json",
-          "sha256": "254544e2b1d4b9484aad9584e74a8a98dd114721d195f4ece87d148dae148c76"
+          "sha256": "d3e232c55b88217b98d1e80ebcaf8424ec51dece6b06190e9303b7851ff8653b"
         }
       ]
     },
@@ -554,7 +554,7 @@
         },
         {
           "path": "packages/system-context/package.json",
-          "sha256": "8f5ceb4081501dcfd805dcddae230dd34463f1b277b832f04ddeaaa4722dced1"
+          "sha256": "8814061ab9e1e542957c036437c4cae9a91235723cb58c4b55f904b0042fc579"
         }
       ]
     },
@@ -568,7 +568,7 @@
         },
         {
           "path": "packages/ui-context/package.json",
-          "sha256": "e4c754a442892b423400279e20248444226a296f76535955e02771e74e44326d"
+          "sha256": "84aad307f287d47722845b7026d7c0b4f75b7fc1aabd37ab1c732a16e4c531a8"
         }
       ]
     },
@@ -582,7 +582,7 @@
         },
         {
           "path": "packages/utils/package.json",
-          "sha256": "81cbf6bc50b2463f6cb789530affd51a1a33766bbfc93a68ed3f005044f9eec3"
+          "sha256": "d2009c0606c4f176a39d2ee7a1f50f14ba60a7293c8e8a8956918cadee7afb62"
         }
       ]
     },
@@ -608,7 +608,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "64a333e1587b443206a83d8f7c4a7a1d3c9a3bda77c5a99cecb885a4a602bf62"
+          "sha256": "91d7b1ea8b88cb88dd041279d0b1292150671ef4c1184f13f536defe1f35ef85"
         }
       ]
     },

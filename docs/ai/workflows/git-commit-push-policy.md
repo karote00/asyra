@@ -86,17 +86,25 @@ verification, not the first place to discover locally detectable failures.
    Resolve applicable checks from the task contract, package scripts, generators
    and CI workflows; do not invent command names or assume App tests cover
    repository integration.
-2. Run the required local checks after the last relevant edit. Cover focused
+2. Fetch the intended PR target branch from its remote and compare it with the
+   source branch. If the target contains commits not included in the source,
+   rebase the source branch onto the fetched target before continuing. Recheck
+   target freshness immediately before every push; if it advanced during
+   validation, rebase and repeat affected local checks before pushing. This
+   requirement does not authorize force-pushing or rewriting already-shared
+   source history; if the required rebase would need either, stop and obtain
+   explicit authorization.
+3. Run the required local checks after the last relevant edit. Cover focused
    behavior tests, applicable lint/typecheck/build, generated-file checks and
    directly affected repository contracts. For a new workspace, include
    changeset admission, workspace/Turbo generation, test-file placement and
    naming checks. CLI/template work also requires its declared clean-consumer
    gates; visual changes require the declared browser and screenshot review.
-3. Review the final diff and run `git diff --check`. After committing, run
+4. Review the final diff and run `git diff --check`. After committing, run
    commit-dependent checks against the actual head and intended PR base, such
    as `changeset:pr:check` with its base/head environment variables. Confirm
    local uncommitted files did not supply behavior missing from the commit.
-4. Report the source revision, commands and outcomes in the existing handoff or
+5. Report the source revision, commands and outcomes in the existing handoff or
    PR description. Distinguish passed, failed, not applicable and unavailable
    checks. Then push only if authorized and all required local checks passed.
 

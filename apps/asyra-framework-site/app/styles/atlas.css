@@ -107,7 +107,7 @@
 
 .atlas-studio {
   min-width: 0;
-  padding: clamp(32px, 4vw, 56px);
+  padding: clamp(32px, 4vw, 58px);
 }
 
 .atlas-case-intro {
@@ -547,7 +547,7 @@
   }
 
   .atlas-case-picker {
-    padding: 24px 20px;
+    padding: 18px 20px;
   }
 
   .atlas-case-picker h2 {

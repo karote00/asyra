@@ -126,7 +126,10 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
     true
   )
 
-  const observations = page.getByTestId('live-observations').locator('summary')
+  const observations = page
+    .getByTestId('live-observations')
+    .locator('summary')
+    .filter({ hasText: 'Playback observations' })
   const recorded = await observations.textContent()
 
   await time.fill(String(first))

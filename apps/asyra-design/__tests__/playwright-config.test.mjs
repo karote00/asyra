@@ -65,7 +65,7 @@ test('ordinary and collaboration Playwright suites have separate discovery', () 
   assert.match(statusToast, /status-toast-visual\.spec\.ts/)
 })
 
-test('functional Playwright suites use Google Chrome while the isolated timing gate can pin managed Chromium', async () => {
+test('Playwright suites use the installed Google Chrome', async () => {
   const [ordinarySource, ...functionalSources] = await Promise.all(
     [
       '../playwright.config.ts',
@@ -76,11 +76,8 @@ test('functional Playwright suites use Google Chrome while the isolated timing g
     )
   )
 
-  assert.match(ordinarySource, /E2E_RENDER_PERFORMANCE_BROWSER/)
-  assert.match(
-    ordinarySource,
-    /usesManagedChromium[\s\S]{0,160}channel:\s*'chrome'/
-  )
+  assert.doesNotMatch(ordinarySource, /E2E_RENDER_PERFORMANCE_BROWSER/)
+  assert.match(ordinarySource, /channel:\s*'chrome'/)
   functionalSources.forEach((configSource) => {
     assert.match(
       configSource,

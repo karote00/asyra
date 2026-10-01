@@ -81,7 +81,7 @@ Goal: keep Asyra modular, deterministic, and reusable across canvas domains (des
 
 - [ ] Affected package builds pass.
 - [ ] Affected package tests pass (or new tests added for behavior contract).
-- [ ] Cross-cutting change runs `yarn lint:ci`.
+- [ ] Cross-cutting change runs `yarn lint:workspaces:ci`.
 - [ ] Regression tests cover combined behaviors when applicable:
   - CRDT + undo/redo
   - shortcuts + session lifecycle

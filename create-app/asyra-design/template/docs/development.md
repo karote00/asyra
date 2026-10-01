@@ -6,7 +6,7 @@
 - Yarn 4.3.1, or the package manager selected by the generator
 
 In the monorepo, install and build from the repository root, then run
-`yarn dev:all`. In a generated project:
+`yarn start:asyra-design`. In a generated project:
 
 ```bash
 yarn start

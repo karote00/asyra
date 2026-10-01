@@ -12,6 +12,7 @@
 - `deprecation-lifecycle.md`
 - `pre-release-legacy-removal.md`
 - `no-patch-fixes.md`
+- `no-unrequested-compatibility.md`
 - `generated-artifacts.md`
 - `visual-review-microscope.md`
 - `task-iteration-replan.md`

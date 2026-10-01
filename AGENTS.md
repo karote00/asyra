@@ -33,6 +33,11 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- Follow the project-wide no-unrequested-compatibility rule: implement the
+  current contract and remove superseded behavior; add compatibility handling
+  only when the owner is explicitly a compatibility/migration path or the task
+  explicitly requests a workaround. See
+  `docs/ai/framework/rules/no-unrequested-compatibility.md`.
 - Before implementing a capability check or shared behavior, identify its semantic
   owner and inspect existing public APIs, utils, and registries. Reuse the
   authoritative capability contract rather than duplicating concrete type lists.
@@ -202,8 +207,8 @@ HIGHEST PRINCIPLE before starting and before advancing each work segment.
 
 ## Quick Reference
 
-- **Testing**: `yarn workspace @package/name test:local`
-- **Formatting**: `yarn lint:ci` (check) / `yarn lint --fix` (fix)
+- **Testing**: `yarn test:workspaces:local` / `yarn test:workspaces:ci`
+- **Lint**: `yarn lint:workspaces:ci` (check) / `yarn eslint . --fix` (fix)
 - **Build**: `yarn react:build`
 - **Architecture**: Communication-Driven Development (CDD) with typed events
 
@@ -308,16 +313,18 @@ For available AI agent skills and domain expertise, see **[docs/ai/skills/](docs
 ### Testing
 
 ```bash
-yarn workspace @package/name test:local  # Development (clean output)
-yarn workspace @package/name test:ci     # CI format with coverage
-yarn test:local                          # All packages, dev format
+yarn workspace @asyra/<app> test:local  # One app, local format
+yarn workspace @asyra/<app> test:ci     # One app, CI format
+yarn test:workspaces:local              # Scripts and all workspace tests
+yarn test:workspaces:ci                 # Scripts and all workspace CI tests
 ```
 
 ### Linting & Formatting
 
 ```bash
-yarn lint:ci        # Check formatting
-yarn lint --fix     # Auto-fix formatting issues
+yarn lint:workspaces:ci  # Lint the repository
+yarn lint:fieldscope     # Lint one app
+yarn eslint . --fix      # Auto-fix repository lint findings
 ```
 
 ### Building
@@ -338,6 +345,7 @@ yarn workspace @package/name build  # Package-specific build
 
 - **🚨 NAMING BEFORE IMPLEMENTATION**: Choose identifier ownership, neutral names, and persisted/wire compatibility before implementation. Run the formal naming gate before propagating new names and at completed stage boundaries; do not defer naming review until PR creation. Follow `docs/ai/framework/rules/naming-and-persisted-identities.md`.
 - **🚨 BOUNDED TASK SCOPE AND CLOSURE RULE**: Before editing, freeze the objective, authorized mutation scope, fixed discovery methods for audits/reviews, required gates, exclusions, and stop conditions. Project rules may block, require evidence, or stop in-scope work, but they cannot independently authorize out-of-scope implementation. After editing begins, final review is limited to the diff, direct consumers, regressions caused by the diff, and the frozen gates; do not open new repository-wide discovery. Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.
+- **🚨 NO UNREQUESTED COMPATIBILITY RULE**: Apply the current contract and remove superseded behavior. Do not introduce compatibility handling for an old version unless the owning path is explicitly for compatibility/migration or the task specifically requests a workaround. Follow `docs/ai/framework/rules/no-unrequested-compatibility.md`.
 - **🚨 BUGFIX TEST-FIRST RULE**: Before any bug-fix implementation, verify whether existing formal tests detect the reported failure. If they do not, add or strengthen formal tests/oracles first and prove they fail on the current behavior before changing production code (see `docs/ai/framework/rules/bugfix-test-first.md`). Manual screenshots, one-time diagnostics, and visual inspection are not enough.
 - **🚨 MONOREPO IMPORT RULE**: **ALWAYS** use `@asyra/package-name` for cross-package imports, NEVER use relative paths like `../../../other-package` (see `docs/ai/framework/CODING_STANDARDS.md`)
 - **🚨 MAIN BRANCH PROTECTION**: NEVER work on main branch - use feature branches only (see `docs/ai/project/rules/main-branch-protection.md`)

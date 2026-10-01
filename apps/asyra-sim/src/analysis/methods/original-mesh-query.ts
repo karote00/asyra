@@ -14,8 +14,8 @@ import {
   boundsGap,
   buildMeshIndex,
   refineMeshIndex,
+  createWorldBoundsResolver,
   shapeBounds,
-  worldBounds,
   worldPoint,
   type Bounds,
   type MeshIndex,
@@ -202,6 +202,10 @@ export class OriginalMeshQuery {
     this.tick()
     const ai = this.index(a),
       bi = this.index(b)
+    const resolveA = createWorldBoundsResolver(a.pose),
+      resolveB = createWorldBoundsResolver(b.pose),
+      boundsA = shapeBounds(a, ai, resolveA),
+      boundsB = shapeBounds(b, bi, resolveB)
     const seed =
       this.#sourceUpper?.a === a && this.#sourceUpper.b === b
         ? this.#sourceUpper.seed
@@ -223,7 +227,7 @@ export class OriginalMeshQuery {
       b,
       ai?.root.bounds,
       bi?.root.bounds,
-      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      boundsGap(boundsA, boundsB),
       threshold
     )
     if (gap > threshold) return { ...result, lower: gap }
@@ -262,8 +266,8 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
-      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const ab = an ? resolveA(an.bounds) : boundsA
+      const bb = bn ? resolveB(bn.bounds) : boundsB
       const bound = this.projectGap(
         a,
         b,
@@ -287,8 +291,8 @@ export class OriginalMeshQuery {
       for (const at of an?.triangles ?? [undefined])
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
-          const ab = at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
-            bb = bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
+          const ab = at ? resolveA(at.bounds) : boundsA,
+            bb = bt ? resolveB(bt.bounds) : boundsB
           const triangleGap = boundsGap(ab, bb)
           if (triangleGap > searchThreshold) {
             lower = Math.min(lower, triangleGap)
@@ -340,6 +344,10 @@ export class OriginalMeshQuery {
     this.tick()
     const ai = this.index(a),
       bi = this.index(b)
+    const resolveA = createWorldBoundsResolver(a.pose),
+      resolveB = createWorldBoundsResolver(b.pose),
+      boundsA = shapeBounds(a, ai, resolveA),
+      boundsB = shapeBounds(b, bi, resolveB)
     if (!ai && !bi)
       throw new Error('Native interval queries use their analytical kernel')
     const overall = this.projectGap(
@@ -347,7 +355,7 @@ export class OriginalMeshQuery {
       b,
       ai?.root.bounds,
       bi?.root.bounds,
-      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      boundsGap(boundsA, boundsB),
       threshold
     )
     if (overall > threshold) return overall
@@ -363,8 +371,8 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
-      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const ab = an ? resolveA(an.bounds) : boundsA
+      const bb = bn ? resolveB(bn.bounds) : boundsB
       const gap = this.projectGap(
         a,
         b,
@@ -388,10 +396,9 @@ export class OriginalMeshQuery {
       for (const at of an?.triangles ?? [undefined])
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
-          let gap = boundsGap(
-            at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
-            bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
-          )
+          const ab = at ? resolveA(at.bounds) : boundsA,
+            bb = bt ? resolveB(bt.bounds) : boundsB
+          let gap = boundsGap(ab, bb)
           if (gap <= threshold) {
             // A box overlap is not a surface overlap. Search an axis, then use
             // the original triangle's outward support over the complete interval.

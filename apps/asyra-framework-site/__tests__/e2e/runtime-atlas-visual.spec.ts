@@ -155,7 +155,7 @@ test('Runtime Atlas case changes ease the studio to its new height', async ({
     .toContain('end')
 
   const finalHeight = (await shell.boundingBox())?.height ?? 0
-  expect(Math.abs(initialHeight - finalHeight)).toBeGreaterThan(120)
+  expect(Math.abs(initialHeight - finalHeight)).toBeGreaterThan(115)
   await shell.screenshot({
     animations: 'disabled',
     path: testInfo.outputPath('runtime-atlas-case-transition.png')

@@ -48,6 +48,12 @@ test('public tool archive retains usable viewer assets without repository runtim
       consumer.resolve('@asyra/flow-inspector/viewer.js'),
       path.join(installed, 'viewer.js')
     )
+    assert.equal(
+      typeof consumer(
+        '@asyra/flow-inspector/control-plane/workflow-results.cjs'
+      ).aggregate,
+      'function'
+    )
     for (const file of [
       'LICENSE',
       'README.md',

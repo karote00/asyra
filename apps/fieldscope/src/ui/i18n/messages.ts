@@ -37,6 +37,16 @@ export const zhTW = {
   'robot.ground.prepared': '已整理並量測',
   'robot.ground.soft': '鬆軟',
   'robot.focus': '近看機器人',
+  'robot.model.heading': '顯示模型',
+  'robot.model.legacy': '舊輪式單臂',
+  'robot.model.walking': '多腳左右雙組手臂',
+  'robot.model.legacyDetails': '原有輪式單臂概念模型與既有參數。',
+  'robot.model.walkingDetails':
+    '合成六腳、四臂採收模型：左右各有支撐臂與剪切臂，並包含採收箱架。底盤寬 {width} m。',
+  'robot.model.walkingLimits': '目前僅供模型外觀與通行粗篩；巡邏採摘尚未完成。',
+  'robot.model.legacyControlsUnavailable':
+    '新模型尺寸與動作參數尚未開放編輯；切回舊模型可調整原有輪式參數。',
+  'robot.model.error': '無法切換顯示模型，已保留目前選擇。',
   'robot.field.width': '寬度',
   'robot.field.length': '長度',
   'robot.field.height': '收折高度',
@@ -191,6 +201,7 @@ export const zhTW = {
   'validation.range': '{field}必須介於 {min} 與 {max} 公尺',
   'validation.stripCount': '畦溝配置需要 1 至 32 個項目',
   'validation.stripKind': '畦溝種類必須是土壤或水道',
+  'validation.stripIdentity': '畦溝識別碼不可空白或重複',
   'validation.clearance': '畦溝總寬必須小於單棟寬度，左右至少各留 2cm',
   'validation.arch': '拱頂起拱高度不可超過半跨寬；請增加寬度或降低高度',
   'validation.inset': '前後留白之間至少需保留 60cm',
@@ -242,6 +253,19 @@ export const en = {
   'robot.ground.prepared': 'Prepared and surveyed',
   'robot.ground.soft': 'Soft',
   'robot.focus': 'Inspect robot',
+  'robot.model.heading': 'Displayed model',
+  'robot.model.legacy': 'Legacy wheeled arm',
+  'robot.model.walking': 'Multi-legged dual-side arms',
+  'robot.model.legacyDetails':
+    'The original wheeled single-arm concept and its existing parameters.',
+  'robot.model.walkingDetails':
+    'Synthetic six-legged, four-arm harvesting model with a support arm and cutter arm on each side, plus a harvest-crate tray. Chassis width {width} m.',
+  'robot.model.walkingLimits':
+    'Currently limited to model appearance and preliminary travel screening; patrol harvesting is not yet implemented.',
+  'robot.model.legacyControlsUnavailable':
+    'Dimensions and motion parameters for the new model are not editable yet. Switch to the legacy model to edit its wheeled-robot parameters.',
+  'robot.model.error':
+    'The displayed model could not be changed. The current selection was kept.',
   'robot.field.width': 'Width',
   'robot.field.length': 'Length',
   'robot.field.height': 'Stowed height',
@@ -400,6 +424,7 @@ export const en = {
   'validation.range': '{field} must be between {min} and {max} metres.',
   'validation.stripCount': 'The layout needs 1 to 32 strips.',
   'validation.stripKind': 'Strip type must be soil or drain.',
+  'validation.stripIdentity': 'Strip identities must be nonempty and unique.',
   'validation.clearance':
     'Strip widths must leave at least 2cm clearance on each side of the bay.',
   'validation.arch':

@@ -7,7 +7,9 @@ import {
 } from './configuration-editor'
 import { configurationSite } from '../domain/farm-configuration'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import core from '@asyra/core'
 import { bootstrap, type FarmRuntime } from '../runtime/bootstrap'
+import { createWorkbenchInputKeyCombinations } from '../runtime/input-shortcuts'
 import { createLayout } from '../domain/greenhouse'
 import { createDrainProfile } from '../domain/drain-profile'
 import { type CameraMode, type LayerId } from '../render-app/site-projection'
@@ -214,42 +216,22 @@ function SceneWorkspace({
       } else if (event.altKey) runtime.zoom(delta)
       else runtime.dolly(delta * (event.shiftKey ? 4 : 1))
     }
-    const shortcut = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.repeat)
-        return
-      const element = event.target
-      if (
-        element instanceof HTMLElement &&
-        (element.isContentEditable ||
-          element.tagName === 'TEXTAREA' ||
-          (element instanceof HTMLInputElement &&
-            !['range', 'checkbox', 'button'].includes(element.type)))
-      )
-        return
-      if (event.code === 'KeyZ') {
-        event.preventDefault()
-        event.stopPropagation()
-        void (event.shiftKey ? runtime.redo() : runtime.undo()).catch((e) =>
-          setError(e)
-        )
-        return
-      }
-      if (
-        event.shiftKey ||
-        (event.code !== 'Digit1' && event.code !== 'Digit0')
-      )
-        return
-      event.preventDefault()
-      event.stopPropagation()
-      if (event.code === 'Digit1') runtime.fit()
-      else runtime.actualSize()
-    }
     target.addEventListener('wheel', wheel, { passive: false })
-    window.addEventListener('keydown', shortcut, true)
     return () => {
       target.removeEventListener('wheel', wheel)
-      window.removeEventListener('keydown', shortcut, true)
     }
+  }, [runtime])
+  useEffect(() => {
+    if (!runtime) return
+    return core.registerInputKeyCombinations(
+      createWorkbenchInputKeyCombinations({
+        history: (redo) => {
+          void (redo ? runtime.redo() : runtime.undo()).catch(setError)
+        },
+        fit: runtime.fit,
+        actualSize: runtime.actualSize
+      })
+    )
   }, [runtime])
   useCameraFlight(host, runtime)
   const previous = useRef<{

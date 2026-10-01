@@ -10,22 +10,71 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  validate:
+  scope:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    # Engineering envelope, not an app SLA. Calibrate from complete job receipts.
-    timeout-minutes: ${{ fromJSON(vars.TEST_JOB_MINUTES || '20') }}
+    outputs:
+      fieldscope_profiles_required: ${{ steps.scope.outputs.fieldscope_profiles_required }}
+      production_apps: ${{ steps.scope.outputs.production_apps }}
+      workspace_matrix: ${{ steps.scope.outputs.workspace_matrix }}
+      execution_plan: ${{ steps.scope.outputs.execution_plan }}
+      e2e_suites: ${{ steps.scope.outputs.e2e_suites }}
+      relationship_map_digest: ${{ steps.scope.outputs.relationship_map_digest }}
+      framework_declaration_tasks: ${{ steps.scope.outputs.framework_declaration_tasks }}
+      framework_release_required: ${{ steps.scope.outputs.framework_release_required }}
+      create_app_packages: ${{ steps.scope.outputs.create_app_packages }}
+      design_e2e_required: ${{ steps.scope.outputs.design_e2e_required }}
+      flow_inspector_validation_required: ${{ steps.scope.outputs.flow_inspector_validation_required }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Classify changed workspaces and consumers
+        id: scope
+        env:
+          CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_SCOPE_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' }}
+        run: node scripts/ci-scope.mjs
+      - name: Upload CI scope evidence
+        if: steps.scope.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-scope-evidence
+          path: ci-scope-evidence.json
+          if-no-files-found: error
+
+  shared-validation:
+    if: ${{ always() && needs.scope.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: scope
+    runs-on: ubuntu-latest
+    outputs:
+      security_audit_result: ${{ steps.security_audit.outcome }}
+      dependency_validation_result: ${{ steps.dependency_validation.outcome }}
+      turbo_validation_result: ${{ steps.turbo_validation.outcome }}
+      create_app_result: ${{ steps.create_app.outcome }}
+      framework_declaration_result: ${{ steps.framework_declarations.outcome }}
 
     steps:
       - name: Record original test job deadline
         env:
-          TEST_JOB_MINUTES: ${{ vars.TEST_JOB_MINUTES || '20' }}
+          TEST_JOB_MINUTES: ${{ vars.TEST_JOB_MINUTES || '30' }}
           TEST_IDLE_MS: ${{ vars.TEST_IDLE_MS || '120000' }}
           TEST_CLEANUP_MS: ${{ vars.TEST_CLEANUP_MS || '60000' }}
         run: |
@@ -60,25 +109,105 @@ jobs:
         run: yarn changeset:pr:check
 
       - name: Audit high-severity dependencies
+        id: security_audit
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.securityAudit.mode == 'full' }}
         run: yarn security:audit
 
       - name: Validate workspace dependencies
+        id: dependency_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.dependencyValidation.mode == 'full' }}
         run: yarn deps:validate
 
       - name: Validate turbo.json
+        id: turbo_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.turboValidation.mode == 'full' }}
         run: yarn gen:turbo:check
 
-      - name: Build React
-        run: yarn react:build
+      - name: Build Framework declarations
+        id: framework_declarations
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.frameworkDeclarations.mode == 'full' }}
+        env:
+          FRAMEWORK_DECLARATION_TASKS: ${{ needs.scope.outputs.framework_declaration_tasks }}
+        run: |
+          read -r -a tasks <<< "$FRAMEWORK_DECLARATION_TASKS"
+          if [ ${#tasks[@]} -gt 0 ]; then yarn turbo run "${tasks[@]}" --concurrency=2; fi
 
-      - name: Lint
-        run: yarn lint:ci
+      - name: Execute selected lint and repository checks
+        id: selected_checks
+        env:
+          CI_EXECUTION_PLAN: ${{ needs.scope.outputs.execution_plan }}
+          CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
+          CI_SCOPE_REPOSITORY: ${{ github.repository }}
+          CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_SCOPE_INTEGRATION: ${{ github.sha }}
+          CI_SCOPE_RUN: ${{ github.run_id }}
+          CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
+          CI_CHECK_RESULTS_FILE: ci-selected-check-results.json
+        run: node scripts/run-ci-checks.mjs
 
-      - name: Test
-        if: success()
-        # Each workspace also owns test workers; avoid multiplying both pools.
-        run: yarn test:ci --concurrency=2
+      - name: Upload selected CI check results
+        if: always() && hashFiles('ci-selected-check-results.json') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-selected-check-results
+          path: ci-selected-check-results.json
+          if-no-files-found: error
 
+      - name: Validate affected create-app package archives
+        id: create_app
+        if: ${{ needs.scope.outputs.create_app_packages != '' }}
+        env:
+          CREATE_APP_PACKAGES: ${{ needs.scope.outputs.create_app_packages }}
+        run: |
+          for package_directory in $CREATE_APP_PACKAGES; do
+            npm pack --dry-run --json "./$package_directory" > /dev/null
+          done
+
+  workspace-validation:
+    name: ${{ matrix.workspace.directory }}
+    needs: scope
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    # Engineering envelope, not an app SLA. Calibrate from complete job receipts.
+    timeout-minutes: ${{ fromJSON(vars.TEST_JOB_MINUTES || '30') }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        workspace: ${{ fromJson(needs.scope.outputs.workspace_matrix) }}
+    steps:
+      - name: Record original test job deadline
+        env:
+          TEST_JOB_MINUTES: ${{ vars.TEST_JOB_MINUTES || '30' }}
+          TEST_IDLE_MS: ${{ vars.TEST_IDLE_MS || '120000' }}
+          TEST_CLEANUP_MS: ${{ vars.TEST_CLEANUP_MS || '60000' }}
+        run: |
+          echo "TEST_JOB_DEADLINE_MS=$(( $(date +%s) * 1000 + TEST_JOB_MINUTES * 60000 ))" >> "$GITHUB_ENV"
+          echo "TEST_IDLE_MS=$TEST_IDLE_MS" >> "$GITHUB_ENV"
+          echo "TEST_CLEANUP_MS=$TEST_CLEANUP_MS" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Initialize test execution envelope
+        run: python3 apps/asyra-sim/scripts/supervise-tests.py --init-ci
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: yarn install --immutable
+      - name: Build then test the selected workspace
+        id: workspace-checks
+        env:
+          CI_WORKSPACE_MATRIX_ITEM: ${{ toJSON(matrix.workspace) }}
+          CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
+          CI_SCOPE_REPOSITORY: ${{ github.repository }}
+          CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_SCOPE_INTEGRATION: ${{ github.sha }}
+          CI_SCOPE_RUN: ${{ github.run_id }}
+          CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
+        run: node scripts/run-workspace-checks.mjs
       - name: Report test supervision
         if: always()
         run: |
@@ -90,20 +219,72 @@ jobs:
               result.pop('consoleTail', None)
               print(json.dumps({'receipt': str(path), **result}))
           PY
+      - name: Upload this workspace result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: workspace-result-${{ matrix.workspace.artifactId }}
+          path: .ci-workspace-results/${{ matrix.workspace.artifactId }}.json
+          if-no-files-found: ignore
 
-      - name: Verify Flow Inspector core proof
-        env:
-          FLOW_CI_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
-          FLOW_CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-          FLOW_CI_EMIT_EVIDENCE: '1'
+      - name: Upload failed workspace E2E diagnostics
+        if: always() && steps.workspace-checks.outcome == 'failure' && matrix.workspace.e2eSelection.mode != 'not-selected'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: workspace-e2e-diagnostics-${{ matrix.workspace.artifactId }}
+          path: |
+            .ci-workspace-results/${{ matrix.workspace.artifactId }}*.playwright.json
+            ${{ matrix.workspace.directory }}/test-results/
+          if-no-files-found: warn
+
+  flow-inspector-validation:
+    needs: [scope, workspace-validation]
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: yarn install --immutable
+      - name: Build Asyra Design for Flow Inspector app proofs
+        run: yarn turbo run react:build --filter=@asyra/asyra-design... --concurrency=2
+      - name: Test Flow Inspector control-plane contracts
         run: |
           node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs ci-trial
 
+  fieldscope-profile-heavy:
+    if: ${{ always() && needs.scope.result == 'success' && (needs.workspace-validation.result == 'success' || needs.workspace-validation.result == 'skipped') && needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, workspace-validation]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: heavy
+
+  fieldscope-profile-source:
+    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, fieldscope-profile-heavy]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: source
+
+  fieldscope-profile-remaining:
+    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, fieldscope-profile-source]
+    uses: ./.github/workflows/fieldscope-profile.yml
+    with:
+      group: remaining
+
   framework-release-readiness:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    needs: validate
+    if: ${{ always() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, shared-validation]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -136,54 +317,144 @@ jobs:
       - name: Verify release records
         run: yarn release:records
 
+  production-artifacts:
+    needs: scope
+    if: ${{ needs.scope.result == 'success' && needs.scope.outputs.production_apps != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    uses: ./.github/workflows/production-artifacts.yml
+    with:
+      apps: ${{ needs.scope.outputs.production_apps }}
+
+  # Branch rules require this exact check name; the reusable producer has a prefix.
+  production-artifact-tests:
+    needs: [scope, production-artifacts]
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      SCOPE_RESULT: ${{ needs.scope.result }}
+      PRODUCTION_APPS: ${{ needs.scope.outputs.production_apps }}
+      PRODUCER_RESULT: ${{ needs.production-artifacts.result }}
+    steps:
+      - name: Require selected production artifact result
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$PRODUCTION_APPS" = '[]' ]; then test "$PRODUCER_RESULT" = skipped; else test "$PRODUCER_RESULT" = success; fi
+
   design-e2e:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
       run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
+      selected_suites: ${{ needs.scope.outputs.e2e_suites }}
 
   e2e-tests:
-    needs: design-e2e
+    needs: [scope, design-e2e]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
       FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.design-result }}
+      E2E_SUITE_SELECTED: ${{ contains(fromJSON(needs.scope.outputs.e2e_suites), 'functional') }}
+      DESIGN_E2E_WORKFLOW_RESULT: ${{ needs.design-e2e.result }}
     steps:
-      - name: Require successful Design E2E producer
-        run: test "$FLOW_PRODUCER_RESULT" = success
+      - name: Require selected Design E2E producer
+        run: |
+          if [ "$E2E_SUITE_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped; else test "$FLOW_PRODUCER_RESULT" = skipped; fi
 
   collaboration-e2e-tests:
-    needs: design-e2e
+    needs: [scope, design-e2e]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
       FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.collaboration-result }}
+      E2E_SUITE_SELECTED: ${{ contains(fromJSON(needs.scope.outputs.e2e_suites), 'collaboration') }}
+      DESIGN_E2E_WORKFLOW_RESULT: ${{ needs.design-e2e.result }}
     steps:
-      - name: Require successful collaboration E2E producer
-        run: test "$FLOW_PRODUCER_RESULT" = success
+      - name: Require selected collaboration E2E producer
+        run: |
+          if [ "$E2E_SUITE_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped; else test "$FLOW_PRODUCER_RESULT" = skipped; fi
 
-  flow-ci:
-    needs: [validate, design-e2e]
+  validate:
+    needs:
+      [
+        scope,
+        shared-validation,
+        workspace-validation,
+        flow-inspector-validation,
+        framework-release-readiness,
+        fieldscope-profile-remaining,
+        production-artifacts,
+        design-e2e,
+        e2e-tests,
+        collaboration-e2e-tests
+      ]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      FLOW_RESULT_REPOSITORY: ${{ github.repository }}
-      FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
-      FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-      FLOW_RESULT_INTEGRATION: ${{ github.sha }}
-      FLOW_RESULT_RUN: ${{ github.run_id }}
-      FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
-      FLOW_VALIDATE_RESULT: ${{ needs.validate.result }}
-      FLOW_E2E_RESULT: ${{ needs.design-e2e.result }}
-      FLOW_DESIGN_EVIDENCE: ${{ needs.design-e2e.outputs.design-evidence }}
-      FLOW_COLLABORATION_EVIDENCE: ${{ needs.design-e2e.outputs.collaboration-evidence }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-      - name: Aggregate completed flow results
+      - name: Download workspace matrix results
+        if: always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: workspace-result-*
+          path: .ci-workspace-results
+          merge-multiple: true
+      - name: Download CI scope evidence
+        if: always() && needs.scope.result == 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-scope-evidence
+          path: .
+      - name: Download selected CI check results
+        if: always() && needs.shared-validation.result != 'skipped'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-selected-check-results
+          path: .
+      - name: Require complete FieldScope profiles
+        env:
+          PROFILE_SELECTED: ${{ needs.scope.outputs.fieldscope_profiles_required }}
+          PROFILE_RESULT: ${{ needs.fieldscope-profile-remaining.result }}
+        run: |
+          if [ "$PROFILE_SELECTED" = true ]; then test "$PROFILE_RESULT" = success; else test "$PROFILE_SELECTED" = false && test "$PROFILE_RESULT" = skipped; fi
+      - name: Aggregate selected CI scope and completed flow results
+        env:
+          FLOW_RESULT_REPOSITORY: ${{ github.repository }}
+          FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          FLOW_RESULT_INTEGRATION: ${{ github.sha }}
+          FLOW_RESULT_RUN: ${{ github.run_id }}
+          FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
+          FLOW_SELECTED_CHECK_RESULTS_FILE: ci-selected-check-results.json
+          FLOW_WORKSPACE_VALIDATION_RESULT: ${{ needs.workspace-validation.result }}
+          FLOW_WORKSPACE_RESULTS_DIR: .ci-workspace-results
+          FLOW_FLOW_INSPECTOR_VALIDATION_RESULT: ${{ needs.flow-inspector-validation.result }}
+          FLOW_PRODUCTION_ARTIFACT_RESULT: ${{ needs.production-artifacts.result }}
+          FLOW_FRAMEWORK_RELEASE_RESULT: ${{ needs.framework-release-readiness.result }}
+          FLOW_FRAMEWORK_DECLARATION_RESULT: ${{ needs.shared-validation.outputs.framework_declaration_result }}
+          FLOW_CREATE_APP_READINESS_RESULT: ${{ needs.shared-validation.outputs.create_app_result }}
+          FLOW_DESIGN_FORWARDER_RESULT: ${{ needs.e2e-tests.result }}
+          FLOW_COLLABORATION_FORWARDER_RESULT: ${{ needs.collaboration-e2e-tests.result }}
+          FLOW_SECURITY_AUDIT_RESULT: ${{ needs.shared-validation.outputs.security_audit_result }}
+          FLOW_DEPENDENCY_VALIDATION_RESULT: ${{ needs.shared-validation.outputs.dependency_validation_result }}
+          FLOW_TURBO_VALIDATION_RESULT: ${{ needs.shared-validation.outputs.turbo_validation_result }}
+          FLOW_VALIDATE_RESULT: ${{ needs.shared-validation.result }}
+          FLOW_E2E_RESULT: ${{ needs.design-e2e.result }}
+          FLOW_DESIGN_SELECTED: ${{ needs.scope.outputs.design_e2e_required }}
+          FLOW_E2E_FUNCTIONAL_RESULT: ${{ needs.design-e2e.outputs.design-result }}
+          FLOW_E2E_RENDER_CONTRACTS_RESULT: ${{ needs.design-e2e.outputs.render-contracts-result }}
+          FLOW_E2E_COLLABORATION_RESULT: ${{ needs.design-e2e.outputs.collaboration-result }}
+          FLOW_E2E_BOARD_RESULT: ${{ needs.design-e2e.outputs.board-result }}
+          FLOW_SCOPE_EVIDENCE_FILE: ci-scope-evidence.json
+          FLOW_DESIGN_EVIDENCE: ${{ needs.design-e2e.outputs.design-evidence }}
+          FLOW_COLLABORATION_EVIDENCE: ${{ needs.design-e2e.outputs.collaboration-evidence }}
         run: node tools/flow-inspector/control-plane/workflow-results.cjs aggregate

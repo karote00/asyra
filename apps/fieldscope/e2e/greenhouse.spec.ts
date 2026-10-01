@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
+
+test.skip(
+  usesCpuSoftwareRenderer,
+  'Greenhouse geometry and raster proofs require the desktop GPU renderer.'
+)
 
 test('real greenhouse route exposes the structure, section, inner aisle and responsive controls', async ({
   page
@@ -22,9 +28,6 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   await expect(page.locator('canvas')).toHaveCount(1)
-  await expect(
-    page.getByRole('heading', { name: '每棟橫向配置' })
-  ).toBeVisible()
   await page.evaluate(
     () =>
       new Promise<void>((resolve) =>
@@ -40,6 +43,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     fullPage: true,
     animations: 'disabled'
   })
+  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   await expect(page.getByLabel('塑膠覆膜', { exact: true })).not.toBeChecked()
   await page.getByRole('button', { name: '端面', exact: true }).click()

@@ -106,8 +106,8 @@ test('release validation covers build, tests, dependencies, collaboration, and g
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:ci',
-    'yarn test:ci',
+    'yarn lint:workspaces:ci',
+    'yarn test:workspaces:ci',
     'yarn deps:validate',
     'yarn workspace @asyra/asyra-design test:e2e:collaboration',
     'yarn release:app:check --prod=asyra-design',
@@ -124,8 +124,8 @@ test('Framework validation is app-independent and does not generate or build app
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:ci',
-    'yarn test:ci',
+    'yarn lint:workspaces:ci',
+    'yarn test:workspaces:ci',
     'yarn deps:validate'
   ])
   assert.doesNotMatch(plan.join('\n'), /release:app|test:e2e:collaboration/u)
@@ -143,8 +143,8 @@ test('Framework release validation can preserve its successful isolated build fo
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:ci',
-    'yarn test:ci',
+    'yarn lint:workspaces:ci',
+    'yarn test:workspaces:ci',
     'yarn deps:validate'
   ])
 })
@@ -164,7 +164,7 @@ test('public release gates high-severity dependency advisories', () => {
   )
   assert.match(
     workflow,
-    /- name: Audit high-severity dependencies\s+run: yarn security:audit/u
+    /- name: Audit high-severity dependencies\s+id: security_audit\s+if: \$\{\{ fromJSON\(needs.scope.outputs.execution_plan\).checks.securityAudit.mode == 'full' \}\}\s+run: yarn security:audit/u
   )
 })
 

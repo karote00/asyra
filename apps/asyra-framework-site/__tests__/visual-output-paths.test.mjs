@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { access, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 import test from 'node:test'
 
 import playwrightConfig from '../playwright.config.ts'
@@ -10,16 +11,27 @@ const e2eRoot = path.join(siteRoot, '__tests__', 'e2e')
 const expectedOutputRoot = path.join(siteRoot, 'test-results', 'platform')
 const recursiveSiteRoot = path.join(siteRoot, 'apps', 'asyra-framework-site')
 
-test('ordinary visual review uses the developer machine Chrome', () => {
-  const chromiumProject = playwrightConfig.projects?.find(
-    (project) => project.name === 'chromium'
-  )
+test('ordinary visual review uses the installed Chrome in and outside CI', async () => {
+  const previousCI = process.env.CI
+  try {
+    delete process.env.CI
+    const localConfig =
+      await import('../playwright.config.ts?local-visual-review')
+    const localChromium = localConfig.default.projects?.find(
+      (project) => project.name === 'chromium'
+    )
+    assert.equal(localChromium?.use?.channel, 'chrome')
 
-  assert.equal(
-    chromiumProject?.use?.channel,
-    'chrome',
-    'ordinary website E2E must use the installed Chrome channel instead of a Playwright-managed browser version'
-  )
+    process.env.CI = '1'
+    const ciConfig = await import('../playwright.config.ts?ci-visual-review')
+    const ciChromium = ciConfig.default.projects?.find(
+      (project) => project.name === 'chromium'
+    )
+    assert.equal(ciChromium?.use?.channel, 'chrome')
+  } finally {
+    if (previousCI === undefined) delete process.env.CI
+    else process.env.CI = previousCI
+  }
 })
 
 test('visual review artifacts stay inside the app-owned output root', async () => {

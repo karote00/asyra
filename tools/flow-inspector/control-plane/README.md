@@ -135,10 +135,10 @@ node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{c
 FLOW_PROOF_URL=http://127.0.0.1:4318 node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 ```
 
-The browser test uses the repository's existing Playwright harness and installed
-Chromium. To use an already installed Chrome locally, add
-`FLOW_PROOF_BROWSER_CHANNEL=chrome` to that command. No browser or dependency is
-downloaded by the test. Use a free `FLOW_PROOF_URL` port for tests; they never
+The browser test uses the repository's existing Playwright harness. CI sets
+`FLOW_PROOF_BROWSER_CHANNEL=chrome` to use the runner's installed Google Chrome;
+set the same variable locally to use installed Chrome. No browser or dependency
+is downloaded by the test. Use a free `FLOW_PROOF_URL` port for tests; they never
 stop an existing listener. For example, use port 4319 while a board runs on 4318.
 The test starts the actual server, runs real Factory checks, exercises the page,
 and records desktop/mobile screenshots plus source identities under
