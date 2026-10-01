@@ -1,3 +1,4 @@
+import { LocalToolAccess } from './local-tool-scheduler'
 import {
   ContourReviewLimits,
   CONTOUR_QUALITY_SCHEMA,
@@ -69,6 +70,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+      executionAccess: LocalToolAccess.INDEPENDENT,
       description:
         'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths per call. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
       inputSchema: {
@@ -170,6 +172,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+      executionAccess: LocalToolAccess.INDEPENDENT,
       description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
       inputSchema: {
         type: 'object',

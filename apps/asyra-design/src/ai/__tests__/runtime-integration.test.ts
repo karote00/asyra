@@ -124,6 +124,9 @@ const compact16ItemBatch = (): AiActionBatch => {
 }
 
 const prepareCommonApis = () => {
+  vi.spyOn(transactionApis, 'startHistoryGroup')
+  vi.spyOn(transactionApis, 'updateHistoryGroup')
+  vi.spyOn(transactionApis, 'endHistoryGroup')
   vi.spyOn(selectionApis, 'getSelectedIds').mockReturnValue(['shape-1'])
   vi.spyOn(selectionApis, 'selectElements').mockImplementation(() => undefined)
   vi.spyOn(hierarchyApis, 'getWorkspaceId').mockReturnValue('workspace-1')
@@ -206,7 +209,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     vi.restoreAllMocks()
   })
 
-  it('runs the requested backend batch through one common transaction with bounded preview', async () => {
+  it('runs the backend batch through finite members of one history group with bounded preview', async () => {
     const result = await executeBatch(referenceBatch())
 
     expect(result).toMatchObject({
@@ -248,7 +251,10 @@ describe('Asyra Design server action-batch runtime integration', () => {
     expect(JSON.stringify(result.preview)).not.toMatch(
       /arguments|elementIds|shape-1|shape-2/
     )
-    expect(transactionApis.runTransaction).toHaveBeenCalledOnce()
+    expect(transactionApis.runTransaction).not.toHaveBeenCalled()
+    expect(transactionApis.startHistoryGroup).toHaveBeenCalledOnce()
+    expect(transactionApis.updateHistoryGroup).toHaveBeenCalledTimes(2)
+    expect(transactionApis.endHistoryGroup).toHaveBeenCalledOnce()
     expect(elementApis.setElementVisible).toHaveBeenCalledWith(
       'shape-1',
       false,
@@ -266,7 +272,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     )
   })
 
-  it('creates the inline 16-item server response in one Group and one outer transaction', async () => {
+  it('creates the inline 16-item server response in one Group and one history group', async () => {
     vi.spyOn(elementApis, 'createElementsInParent').mockImplementation(
       (descriptors) => descriptors.map(({ id }) => id)
     )
@@ -289,7 +295,10 @@ describe('Asyra Design server action-batch runtime integration', () => {
       status: 'executed'
     })
 
-    expect(transactionApis.runTransaction).toHaveBeenCalledOnce()
+    expect(transactionApis.runTransaction).not.toHaveBeenCalled()
+    expect(transactionApis.startHistoryGroup).toHaveBeenCalledOnce()
+    expect(transactionApis.updateHistoryGroup).toHaveBeenCalledTimes(2)
+    expect(transactionApis.endHistoryGroup).toHaveBeenCalledOnce()
     expect(elementApis.createElementsInParent).toHaveBeenCalledTimes(2)
     expect(
       vi.mocked(elementApis.createElementsInParent).mock.calls[0]?.[0]
@@ -331,7 +340,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     }
   })
 
-  it('waits for visible confirmation and rolls back the invocation on denial', async () => {
+  it('waits for visible confirmation without starting canonical history on denial', async () => {
     vi.mocked(elementApis.getElementType).mockReturnValue('group')
     const batch: AiActionBatch = {
       actions: [
@@ -390,7 +399,8 @@ describe('Asyra Design server action-batch runtime integration', () => {
         reason: 'confirmation-cancelled',
         status: 'cancelled'
       })
-      expect(transactionApis.runTransaction).toHaveBeenCalledOnce()
+      expect(transactionApis.runTransaction).not.toHaveBeenCalled()
+      expect(transactionApis.startHistoryGroup).not.toHaveBeenCalled()
     } finally {
       unsubscribe()
       await runtime.dispose()

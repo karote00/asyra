@@ -7,6 +7,7 @@ const coreHistoryGroupDisposition = {
   reason:
     'Host-owned history lifecycle uses instance-local handles and synchronous mutation callbacks. The host enrolls model action batches; individual model actions do not open or settle request history.',
   methods: [
+    'isTransactionBoundaryIdle',
     'startHistoryGroup',
     'updateHistoryGroup',
     'endHistoryGroup',
@@ -168,8 +169,13 @@ export const basicApiDispositions = [
   {
     owner: 'transaction',
     reason:
-      'Runtime owns the invocation transaction and publication ordering. Model actions must not nest or settle it.',
+      'The host owns invocation mutation admission, history grouping and publication ordering. Model actions must not nest or settle that lifecycle.',
     methods: [
+      'isTransactionBoundaryIdle',
+      'startHistoryGroup',
+      'updateHistoryGroup',
+      'endHistoryGroup',
+      'subscribeToTransactionStatus',
       'startTransaction',
       'endTransaction',
       'rollbackTransaction',

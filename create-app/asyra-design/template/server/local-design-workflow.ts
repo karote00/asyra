@@ -1,4 +1,5 @@
 import { AiActionNames } from '../src/constants/ai-actions'
+import { LocalToolAccess } from './local-tool-scheduler'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import type { createLocalDesignTools } from './local-design-tools'
 import {
@@ -24,6 +25,7 @@ export const createLocalDesignWorkflow = (
             {
               ...preparation,
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
+              executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
                 'Prepare and apply one semantic draft in one call, through existing validation and canvas operations. Prefer this when the intended draft is ready to draw. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer only within a planned stage, then inspect its actual result. Does not replace existing objects or retry failures. ' +
                 preparation.description,

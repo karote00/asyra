@@ -1,4 +1,4 @@
-import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import {
   arrangeDesign,
   type DesignArrangementRequest
@@ -28,8 +28,8 @@ export const createArrangementAction = (
       gap: { type: 'number', minimum: 0, maximum: 100000 }
     }
   },
-  execute: async (request, { signal }) => {
-    if (signal.aborted) throw new Error('Design arrangement cancelled.')
-    return arrange(request)
+  execute: async (request, context) => {
+    if (context.signal.aborted) throw new Error('Design arrangement cancelled.')
+    return runAiMutation(context, () => arrange(request))
   }
 })

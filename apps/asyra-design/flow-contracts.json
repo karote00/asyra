@@ -1,0 +1,167 @@
+{
+  "version": 2,
+  "manifestPath": "apps/asyra-design/flow-contracts.json",
+  "targetId": "ai-execution-flow",
+  "architecturePath": "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+  "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+  "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+  "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
+  "negativeCaseIds": ["compose.registered-tools"],
+  "externalInputs": [
+    "artifact:request-context",
+    "artifact:tool-program",
+    "artifact:prepared-artifact",
+    "artifact:execution-receipt",
+    "artifact:inspection-evidence"
+  ],
+  "workspaceSources": [
+    {
+      "name": "@asyra/asyra-design",
+      "inputs": ["src/**", "server/**", "vtracer-tool-server.mjs"],
+      "entry": null
+    },
+    {
+      "name": "@asyra/design-system",
+      "inputs": ["src/**"],
+      "entry": "src/index.tsx"
+    }
+  ],
+  "flows": [
+    {
+      "id": "execution-owner-baseline",
+      "title": "Execution owner boundaries",
+      "goal": "Verify baseline capability, continuity, preparation, execution, review, settlement and diagnostics owners; these boundary cases do not replace the full live drawing integration gate.",
+      "stepIds": [
+        "request",
+        "compose",
+        "prepare",
+        "apply",
+        "inspect",
+        "settle",
+        "observe"
+      ],
+      "cases": [
+        {
+          "id": "compose.registered-tools",
+          "stepId": "compose",
+          "testName": "execution proof preserves registered native capability envelopes"
+        },
+        {
+          "id": "request.continuity",
+          "stepId": "request",
+          "testName": "execution proof validates continuity references before a successor request"
+        },
+        {
+          "id": "prepare.lifetime",
+          "stepId": "prepare",
+          "testName": "execution proof retains immutable preparation within its request only"
+        },
+        {
+          "id": "apply.composition",
+          "stepId": "apply",
+          "testName": "execution proof composes preparation and canonical dispatch without repeated work"
+        },
+        {
+          "id": "inspect.current-evidence",
+          "stepId": "inspect",
+          "testName": "execution proof distinguishes stage readiness from current final assessment"
+        },
+        {
+          "id": "settle.partial",
+          "stepId": "settle",
+          "testName": "execution proof retains partial progress when a successor makes no change"
+        },
+        {
+          "id": "observe.accounting",
+          "stepId": "observe",
+          "testName": "execution proof accounts observed spans without private payloads or invented model timing"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "request-to-compose",
+          "decision": "required",
+          "caseIds": ["compose.registered-tools"]
+        },
+        {
+          "routeId": "compose-to-prepare",
+          "decision": "required",
+          "caseIds": ["prepare.lifetime"]
+        },
+        {
+          "routeId": "compose-to-apply",
+          "decision": "required",
+          "caseIds": ["apply.composition"]
+        },
+        {
+          "routeId": "prepare-to-apply",
+          "decision": "required",
+          "caseIds": ["apply.composition"]
+        },
+        {
+          "routeId": "apply-to-compose",
+          "decision": "required",
+          "caseIds": ["request.continuity"]
+        },
+        {
+          "routeId": "apply-to-inspect",
+          "decision": "required",
+          "caseIds": ["inspect.current-evidence"]
+        },
+        {
+          "routeId": "apply-to-settle",
+          "decision": "required",
+          "caseIds": ["settle.partial"]
+        },
+        {
+          "routeId": "inspect-to-compose",
+          "decision": "required",
+          "caseIds": ["inspect.current-evidence"]
+        },
+        {
+          "routeId": "inspect-to-settle",
+          "decision": "required",
+          "caseIds": ["inspect.current-evidence"]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "omit-registered-tools",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current registered tools",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "omit-registered-tools",
+      "title": "Omit registered tools",
+      "expectedFailedCaseIds": ["compose.registered-tools"],
+      "mutation": {
+        "file": "apps/asyra-design/server/local-ai-provider.ts",
+        "from": "dynamicTools: nativeDefinitions,",
+        "to": "dynamicTools: [],"
+      }
+    },
+    {
+      "id": "misclassify-combined-tool",
+      "title": "Run a canvas workflow as independent preparation",
+      "expectedFailedCaseIds": ["apply.composition"],
+      "mutation": {
+        "file": "apps/asyra-design/server/local-design-workflow.ts",
+        "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
+        "to": "executionAccess: LocalToolAccess.INDEPENDENT,"
+      }
+    },
+    {
+      "id": "ignore-canonical-evidence",
+      "title": "Ignore a stale App inspection verdict",
+      "expectedFailedCaseIds": ["inspect.current-evidence"],
+      "mutation": {
+        "file": "apps/asyra-design/server/local-operation-tools.ts",
+        "from": "entry.result.current === true",
+        "to": "true"
+      }
+    }
+  ]
+}

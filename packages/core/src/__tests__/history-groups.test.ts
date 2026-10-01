@@ -33,6 +33,25 @@ beforeEach(() => {
 })
 
 describe('Core history group facade', () => {
+  it('reads admission from the injected Factory rather than a global transaction', () => {
+    const factory = new Factory()
+    const core = create(factory)
+    const other = create(new Factory())
+    expect(core.isTransactionBoundaryIdle()).toBe(true)
+    factory.startTransaction()
+    expect(core.isTransactionBoundaryIdle()).toBe(false)
+    expect(other.isTransactionBoundaryIdle()).toBe(true)
+    factory.endTransaction()
+    expect(core.isTransactionBoundaryIdle()).toBe(true)
+    const group = core.startHistoryGroup()
+    expect(core.isTransactionBoundaryIdle()).toBe(true)
+    core.updateHistoryGroup(group, () =>
+      expect(core.isTransactionBoundaryIdle()).toBe(false)
+    )
+    core.endHistoryGroup(group)
+    expect(core.isTransactionBoundaryIdle()).toBe(true)
+  })
+
   it('binds finite edits and group history to the injected Factory', () => {
     const factory = new Factory()
     const core = create(factory)

@@ -72,7 +72,7 @@ Run the narrow test for the changed owner first, then the standalone gates:
 ```bash
 yarn typecheck
 yarn react:build
-yarn test
+yarn test:asyra-design
 ```
 
 Use the documented E2E commands only when the affected behavior requires the

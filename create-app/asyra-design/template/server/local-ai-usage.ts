@@ -61,6 +61,11 @@ const evidenceKeys = new Set([
   'code',
   'durationMs',
   'queueMs',
+  'requestBytes',
+  'toolCount',
+  'toolDefinitionBytes',
+  'eagerToolCount',
+  'eagerToolDefinitionBytes',
   'executionMs',
   'responseTextBytes',
   'imageCount',
@@ -192,10 +197,16 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
   let invalidSnapshot = false
   let finished = false
   let sequence = 0
+  const transport = { sentBytes: 0, receivedBytes: 0 }
   const activeIntervals = new Set<string>()
   let intervalStartedAt = 0
   let observedToolAndResearchMs = 0
   return {
+    recordTransport(direction: 'sent' | 'received', bytes: number): void {
+      if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
+      const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'
+      transport[key] += bytes
+    },
     trace(
       stage:
         | 'tool_started'
@@ -206,7 +217,11 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
         | 'research_completed'
         | 'orchestration_completed'
         | 'protocol_rejected'
-        | 'settlement',
+        | 'settlement'
+        | 'capabilities_advertised'
+        | 'provider_request_started'
+        | 'provider_request_completed'
+        | 'provider_request_failed',
       evidence: unknown
     ): void {
       if (finished) return
@@ -328,6 +343,7 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
           observedToolAndResearchMs: observedMs,
           unattributedMs: durationMs - observedMs
         },
+        transport: { ...transport },
         outcome,
         usageStatus,
         tokens

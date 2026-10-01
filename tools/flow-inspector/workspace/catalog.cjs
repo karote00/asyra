@@ -37,6 +37,10 @@ module.exports = Object.freeze({
     'flow-inspector-static-workspace': 'static-workspace'
   }),
   groupOverrides: Object.freeze({
+    'ai-execution-flow': Object.freeze({
+      group: 'Apps',
+      subgroup: 'Asyra Design'
+    }),
     'flow-inspector-core-proof': Object.freeze({
       group: 'Tools',
       subgroup: 'Flow Inspector'

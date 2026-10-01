@@ -150,3 +150,32 @@ it('keeps overview and native detail capture separate without mutating source ge
     nativeResolution: true
   })
 })
+
+it('binds action output to canonical evidence and validates it without another snapshot', async () => {
+  const { createInspectionEvidence } =
+    await import('../../common-apis/inspection-evidence')
+  const { createInspectionValidationAction } = await import('../inspection')
+  let changed: () => void = () => undefined
+  const stop = vi.fn()
+  const evidence = createInspectionEvidence((listener) => {
+    changed = listener
+    return stop
+  })
+  const inspect = vi.fn(() => ({ available: true, image: { dataUrl: 'png' } }))
+  const action = createAiInspectionAction(inspect, evidence)
+  const validate = createInspectionValidationAction(evidence)
+  const context = { signal: new AbortController().signal } as never
+  const result = (await action.execute({ elementId: 'drawing' }, context)) as {
+    evidence: { sessionId: string; revision: number }
+  }
+  expect(
+    await validate.execute({ evidence: result.evidence }, context)
+  ).toEqual({ current: true })
+  changed()
+  expect(
+    await validate.execute({ evidence: result.evidence }, context)
+  ).toEqual({ current: false })
+  expect(inspect).toHaveBeenCalledOnce()
+  evidence.dispose()
+  expect(stop).toHaveBeenCalledOnce()
+})

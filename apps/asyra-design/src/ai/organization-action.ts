@@ -1,4 +1,4 @@
-import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import {
   organizeDesign,
   type DesignOrganizationRequest
@@ -27,8 +27,9 @@ export const createOrganizationAction = (
       index: { type: 'integer', minimum: 0 }
     }
   },
-  execute: async (request, { signal }) => {
-    if (signal.aborted) throw new Error('Design organization cancelled.')
-    return organize(request)
+  execute: async (request, context) => {
+    if (context.signal.aborted)
+      throw new Error('Design organization cancelled.')
+    return runAiMutation(context, () => organize(request))
   }
 })

@@ -11,6 +11,12 @@ import {
 import { createLocalImageTools } from '../local-image-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 
+const basicActionName = (method: string) => {
+  const contract = basicApiContracts.find((api) => api.method === method)
+  if (!contract) throw new Error(`Missing registered API: ${method}`)
+  return contract.name
+}
+
 describe('backend operation tools', () => {
   it('reviews measurements before images and resolves text overflow before completion', async () => {
     let overflow = true
@@ -640,21 +646,31 @@ it('does not equate an available screenshot with an accepted design review', asy
 })
 
 it('requires a frozen plan, current overview and detail evidence, and all criteria before completion', async () => {
+  const results: Record<string, unknown> = {
+    [AiActionNames.INSPECT_DRAWING]: {
+      available: true,
+      evidence: { sessionId: 'app-session', revision: 1 },
+      image: { dataUrl: png, width: 1, height: 1 }
+    },
+    [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: {
+      current: true,
+      coverage: { complete: true }
+    }
+  }
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: batch.actions.map((action) => ({
       actionId: action.id,
       actionName: action.name,
-      result:
-        action.name === AiActionNames.INSPECT_DRAWING
-          ? { available: true, image: { dataUrl: png, width: 1, height: 1 } }
-          : { compositionId: 'drawing' }
+      result: results[action.name] ?? { compositionId: 'drawing' }
     }))
   }))
   const tools = createLocalOperationTools(
-    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
-      (name) => ({ name, description: name, inputSchema: {} })
-    ),
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+      AiActionNames.SET_ELEMENT_VISIBILITY
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     { modelActions: (a) => a, resolveBatch: (b) => b },
     execute
   )
@@ -950,15 +966,256 @@ it('follows a new group containing the current review target without switching t
   })
 })
 
+it('accepts the whole drawing after a late detail group is ungrouped and reparented', async () => {
+  const stamp = { sessionId: 'regrouped-document', revision: 1 }
+  let towerContainsDetail = true
+  const moveName = basicActionName('moveElements')
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      let result: Record<string, unknown> = {}
+      if (action.name === AiActionNames.ORGANIZE_DESIGN) {
+        result = {
+          status: 'complete',
+          ...action.arguments,
+          ...(action.arguments.operation === 'group'
+            ? { groupId: 'tower' }
+            : {}),
+          ...(action.arguments.operation === 'ungroup'
+            ? { groupId: 'collar', elementIds: ['collar-face'], removed: true }
+            : {})
+        }
+      } else if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+        result = { compositionId: 'collar' }
+      } else if (action.name === AiActionNames.INSPECT_DRAWING) {
+        result = {
+          available: true,
+          evidence: stamp,
+          imageScope: 'overview',
+          image: { dataUrl: png, width: 1, height: 1 }
+        }
+      } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
+        const scope = action.arguments.scope as
+          { overviewIds?: string[] } | undefined
+        result = {
+          current: true,
+          coverage: {
+            complete:
+              towerContainsDetail && scope?.overviewIds?.includes('tower'),
+            missingIds: [],
+            uncoveredIds: []
+          }
+        }
+      } else if (action.name === AiActionNames.REVIEW_DESIGN) {
+        result = {
+          complete: true,
+          evidence: stamp,
+          findings: [],
+          measuredTextIds: []
+        }
+      }
+      return { actionId: action.id, actionName: action.name, result }
+    })
+  }))
+  const tools = createLocalOperationTools(
+    [
+      AiActionNames.ORGANIZE_DESIGN,
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+      moveName
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute,
+    { reviewTargetId: 'body' }
+  )
+  const call = (name: string, args: unknown) =>
+    tools.call(name, args, new AbortController().signal).then(JSON.parse)
+  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    phase: 'plan',
+    method: 'Draw and refine',
+    references: [],
+    criteria: ['Shape'],
+    detailRequired: false
+  })
+  await call(AiActionNames.ORGANIZE_DESIGN, {
+    arguments: { operation: 'group', elementIds: ['body'] },
+    inspection: 'defer'
+  })
+  await call(AiActionNames.APPLY_PREPARED_DESIGN, {
+    arguments: {},
+    inspection: 'defer'
+  })
+  await call(AiActionNames.ORGANIZE_DESIGN, {
+    arguments: { operation: 'ungroup', elementIds: ['collar'] },
+    inspection: 'defer'
+  })
+  await call(moveName, {
+    arguments: {
+      request: {
+        elementIds: ['collar-face'],
+        targetParentId: 'tower',
+        targetIndex: 1
+      }
+    },
+    inspection: 'defer'
+  })
+  const unrelated = await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: { elementId: 'other', view: 'overview' }
+  })
+  await expect(
+    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+      phase: 'visual',
+      inspectionIds: [unrelated.actionResults[0].result.inspectionId],
+      checks: [
+        { requirement: 'Shape', status: 'pass', evidence: 'Unrelated image' }
+      ]
+    })
+  ).rejects.toThrow(/cover|full drawing/)
+  const inspected = await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: { elementId: 'tower', view: 'overview' }
+  })
+  await expect(
+    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+      phase: 'visual',
+      inspectionIds: [inspected.actionResults[0].result.inspectionId],
+      checks: [
+        {
+          requirement: 'Shape',
+          status: 'pass',
+          evidence: 'Whole tower visible'
+        }
+      ]
+    })
+  ).resolves.toMatchObject({ accepted: true })
+  const validation = execute.mock.calls.findLast(
+    ([batch]) =>
+      batch.actions[0].name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+  )?.[0]
+  expect(validation?.actions[0].arguments).toMatchObject({
+    scope: { requiredIds: ['tower', 'collar-face'], overviewIds: ['tower'] }
+  })
+  expect(
+    execute.mock.calls
+      .filter(
+        ([batch]) => batch.actions[0].name === AiActionNames.REVIEW_DESIGN
+      )
+      .map(([batch]) => batch.actions[0].arguments.elementId)
+  ).toEqual(['other', 'tower'])
+  towerContainsDetail = false
+  await tools.validateCompletion()
+  const final = tools.settleOutcome({
+    batchId: 'done',
+    actions: [
+      {
+        id: 'done',
+        name: AiActionNames.REPORT_OUTCOME,
+        arguments: { outcome: 'completed' },
+        summary: 'Done'
+      }
+    ]
+  })
+  expect(final.actions[0].arguments.outcome).toBe('unsupported')
+})
+
+it.each([
+  {
+    name: AiActionNames.REMOVE_AI_COMPOSITION,
+    arguments: { compositionId: 'original' },
+    result: { status: 'complete', appliedElementIds: ['original'] }
+  },
+  {
+    name: basicActionName('removeSubtree'),
+    arguments: { elementId: 'original' },
+    result: { elementId: 'original', removed: [{ elementId: 'original' }] }
+  },
+  {
+    name: basicActionName('deleteElement'),
+    arguments: { elementId: 'original' },
+    result: true
+  }
+])('retires explicitly removed drawing roots via $name', async (removal) => {
+  let capturedScope: unknown
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      let result: unknown = {}
+      if (action.name === removal.name) result = removal.result
+      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+        result = { compositionId: 'successor' }
+      if (action.name === AiActionNames.INSPECT_DRAWING)
+        result = {
+          available: true,
+          image: { dataUrl: png },
+          evidence: { sessionId: 'doc', revision: 1 }
+        }
+      if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
+        capturedScope = action.arguments.scope
+        result = { current: true, coverage: { complete: true } }
+      }
+      return { actionId: action.id, actionName: action.name, result }
+    })
+  }))
+  const tools = createLocalOperationTools(
+    [
+      removal.name,
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute,
+    { reviewTargetId: 'original' }
+  )
+  const call = (name: string, args: unknown) =>
+    tools.call(name, args, new AbortController().signal).then(JSON.parse)
+  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    phase: 'plan',
+    method: 'Refine',
+    references: [],
+    criteria: ['Shape'],
+    detailRequired: false
+  })
+  await call(removal.name, {
+    arguments: removal.arguments,
+    inspection: 'defer'
+  })
+  await call(AiActionNames.APPLY_PREPARED_DESIGN, {
+    arguments: {},
+    inspection: 'defer'
+  })
+  const image = await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: { elementId: 'successor' }
+  })
+  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    phase: 'visual',
+    inspectionIds: [image.actionResults[0].result.inspectionId],
+    checks: [
+      { requirement: 'Shape', status: 'pass', evidence: 'Refined shape' }
+    ]
+  })
+  expect(capturedScope).toEqual({
+    requiredIds: ['successor'],
+    overviewIds: ['successor']
+  })
+})
+
 it('measures a deferred stage once at inspection while preserving receipts and final review requirements', async () => {
   const results: Record<string, unknown> = {
     [AiActionNames.INSPECT_DRAWING]: {
       available: true,
+      evidence: { sessionId: 'app-session', revision: 1 },
       imageScope: 'overview',
       image: { dataUrl: png, width: 1, height: 1 }
     },
+    [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: {
+      current: true,
+      coverage: { complete: true }
+    },
     [AiActionNames.REVIEW_DESIGN]: {
       complete: true,
+      evidence: { sessionId: 'app-session', revision: 1 },
       measuredTextIds: [],
       findings: []
     },
@@ -984,7 +1241,8 @@ it('measures a deferred stage once at inspection while preserving receipts and f
     [
       AiActionNames.APPLY_PREPARED_DESIGN,
       AiActionNames.REVIEW_DESIGN,
-      AiActionNames.INSPECT_DRAWING
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
     { modelActions: (a) => a, resolveBatch: (v) => v },
     executeBatch
@@ -1275,6 +1533,17 @@ it('validates nested batch items and union choices before any canonical dispatch
 it('retains the whole drawing review target after a child refinement', async () => {
   const executeBatch = vi.fn(async (batch: AiActionBatch) => {
     const action = batch.actions[0]
+    if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: action.id,
+            actionName: action.name,
+            result: { current: true, coverage: { complete: true } }
+          }
+        ]
+      }
     return {
       context: {},
       actionResults: [
@@ -1285,6 +1554,7 @@ it('retains the whole drawing review target after a child refinement', async () 
             action.name === AiActionNames.UPDATE_DESIGN_ELEMENT
               ? { status: 'complete', compositionId: 'child' }
               : {
+                  evidence: { sessionId: 'app-session', revision: 1 },
                   available: true,
                   partial: false,
                   imageScope: action.arguments.view ?? 'overview',
@@ -1296,9 +1566,11 @@ it('retains the whole drawing review target after a child refinement', async () 
     }
   })
   const operations = createLocalOperationTools(
-    [AiActionNames.UPDATE_DESIGN_ELEMENT, AiActionNames.INSPECT_DRAWING].map(
-      (name) => ({ name, description: name, inputSchema: {} })
-    ),
+    [
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     { modelActions: (a) => a, resolveBatch: (v) => v },
     executeBatch,
     { reviewTargetId: 'whole' }
@@ -1729,4 +2001,304 @@ it('reports exact review input fields before stateful evidence validation', asyn
       new AbortController().signal
     )
   ).rejects.toThrow('checks[0].requirement')
+})
+
+it.each(['assessment', 'completion'])(
+  'rejects stale %s when the App reports an external change after capture',
+  async (stage) => {
+    let current = true
+    const validateName = AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    const execute = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === validateName
+            ? { current, coverage: { complete: current } }
+            : {
+                available: true,
+                image: { dataUrl: 'data:image/png;base64,AA==' },
+                evidence: { sessionId: 'app-session', revision: 1 }
+              }
+      }))
+    }))
+    const operations = createLocalOperationTools(
+      [AiActionNames.INSPECT_DRAWING, validateName].map((name) => ({
+        name,
+        description: name,
+        inputSchema: {}
+      })),
+      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      execute,
+      { reviewTargetId: 'drawing' }
+    )
+    const signal = new AbortController().signal
+    await operations.call(
+      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      {
+        phase: 'plan',
+        method: 'Match the brief',
+        references: [],
+        criteria: ['Appearance'],
+        detailRequired: false
+      },
+      signal
+    )
+    const capture = JSON.parse(
+      await operations.call(
+        AiActionNames.INSPECT_DRAWING,
+        {
+          arguments: { elementId: 'drawing' }
+        },
+        signal
+      )
+    )
+    const assessment = {
+      phase: 'visual',
+      inspectionIds: [capture.actionResults[0].result.inspectionId],
+      checks: [
+        { requirement: 'Appearance', status: 'pass', evidence: 'Matches' }
+      ]
+    }
+    expect(
+      JSON.parse(
+        await operations.call(
+          AiDesignToolIds.RECORD_DESIGN_REVIEW,
+          assessment,
+          signal
+        )
+      )
+    ).toMatchObject({ accepted: true })
+    current = false
+    if (stage === 'assessment') {
+      await expect(
+        operations.call(
+          AiDesignToolIds.RECORD_DESIGN_REVIEW,
+          assessment,
+          signal
+        )
+      ).rejects.toThrow(/changed|current|stale/i)
+    } else {
+      await operations.validateCompletion(signal)
+      const settled = operations.settleOutcome({
+        batchId: 'done',
+        actions: [
+          {
+            id: 'done',
+            name: AiActionNames.REPORT_OUTCOME,
+            arguments: { outcome: 'completed', message: 'Done' },
+            summary: 'Done'
+          }
+        ]
+      })
+      expect(settled.actions[0].arguments).toMatchObject({
+        outcome: 'unsupported'
+      })
+    }
+    expect(
+      execute.mock.calls.filter(
+        ([batch]) => batch.actions[0].name === validateName
+      )
+    ).toHaveLength(2)
+  }
+)
+
+it('remeasures only when capture observes a different canonical generation', async () => {
+  let revision = 1
+  let changeDuringCapture = true
+  const execute = vi.fn(async (batch: AiActionBatch) => {
+    const action = batch.actions[0]
+    if (action.name === AiActionNames.INSPECT_DRAWING && changeDuringCapture) {
+      revision++
+      changeDuringCapture = false
+    }
+    const evidence = { sessionId: 'document', revision }
+    const results: Record<string, unknown> = {
+      [AiActionNames.REVIEW_DESIGN]: {
+        complete: true,
+        evidence,
+        measuredTextIds: [],
+        findings: []
+      },
+      [AiActionNames.INSPECT_DRAWING]: {
+        available: true,
+        evidence,
+        image: { dataUrl: png }
+      },
+      [AiActionNames.UPDATE_DESIGN_ELEMENT]: {
+        status: 'complete',
+        compositionId: 'drawing'
+      }
+    }
+    return {
+      context: {},
+      actionResults: [
+        {
+          actionId: action.id,
+          actionName: action.name,
+          result: results[action.name]
+        }
+      ]
+    }
+  })
+  const operations = createLocalOperationTools(
+    [
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.INSPECT_DRAWING
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    { reviewTargetId: 'drawing' }
+  )
+  const signal = new AbortController().signal
+  await operations.call(
+    AiActionNames.UPDATE_DESIGN_ELEMENT,
+    { arguments: { elementId: 'drawing' }, inspection: 'defer' },
+    signal
+  )
+  const inspect = () =>
+    operations.call(
+      AiActionNames.INSPECT_DRAWING,
+      { arguments: { elementId: 'drawing' } },
+      signal
+    )
+  await inspect()
+  const measurements = () =>
+    execute.mock.calls.filter(
+      ([batch]) => batch.actions[0].name === AiActionNames.REVIEW_DESIGN
+    ).length
+  expect(measurements()).toBe(2)
+  await inspect()
+  expect(measurements()).toBe(2)
+})
+
+it.each(['missing stamp', 'missing validation action'])(
+  'cannot approve evidence with %s',
+  async (missing) => {
+    const execute = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: [
+        {
+          actionId: batch.actions[0].id,
+          actionName: AiActionNames.INSPECT_DRAWING,
+          result: {
+            available: true,
+            image: { dataUrl: png },
+            ...(missing === 'missing stamp'
+              ? {}
+              : { evidence: { sessionId: 'app', revision: 1 } })
+          }
+        }
+      ]
+    }))
+    const names: string[] = [AiActionNames.INSPECT_DRAWING]
+    const actions = names.map((name) => ({
+      name,
+      description: name,
+      inputSchema: {}
+    }))
+    if (missing === 'missing stamp')
+      actions.push({
+        name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+        description: 'Validate',
+        inputSchema: {}
+      })
+    const tools = createLocalOperationTools(
+      actions,
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      execute,
+      { reviewTargetId: 'drawing' }
+    )
+    const signal = new AbortController().signal
+    await tools.call(
+      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      {
+        phase: 'plan',
+        method: 'Match',
+        references: [],
+        criteria: ['Appearance'],
+        detailRequired: false
+      },
+      signal
+    )
+    const capture = JSON.parse(
+      await tools.call(
+        AiActionNames.INSPECT_DRAWING,
+        { arguments: { elementId: 'drawing' } },
+        signal
+      )
+    )
+    await expect(
+      tools.call(
+        AiDesignToolIds.RECORD_DESIGN_REVIEW,
+        {
+          phase: 'visual',
+          inspectionIds: [capture.actionResults[0].result.inspectionId],
+          checks: [
+            { requirement: 'Appearance', status: 'pass', evidence: 'Matches' }
+          ]
+        },
+        signal
+      )
+    ).rejects.toThrow(/current inspection/)
+    expect(execute).toHaveBeenCalledOnce()
+  }
+)
+
+it('compacts only successful valueless basic mutation acknowledgements and retains full opt-in', async () => {
+  const write = basicActionName('moveElements')
+  const read = basicActionName('getVectorAnchorPoints')
+  const count = 5000
+  const values = [
+    { status: 'complete', value: 'new-id', elementId: 'new-id' },
+    { status: 'no-change', value: false, elementId: 'unchanged' },
+    { status: 'complete', value: null, finding: 'retain unknown data' },
+    { status: 'no-change', value: [{ x: 12, y: 34 }] }
+  ]
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action, index) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result:
+        index < count
+          ? { status: 'complete', value: null, elementId: `existing-${index}` }
+          : values[index - count]
+    }))
+  }))
+  const tools = createLocalOperationTools(
+    [write, read].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const args = {
+    inspection: 'defer',
+    operations: Array.from({ length: count + values.length }, (_, index) => ({
+      name: index === count + values.length - 1 ? read : write,
+      arguments: {}
+    }))
+  }
+  const compact = JSON.parse(
+    await tools.call('execute_design_batch', args, new AbortController().signal)
+  )
+  expect(compact.batchSummary).toEqual({
+    operationCount: count + values.length,
+    actionCount: count + values.length,
+    acknowledgedActions: [{ actionName: write, count }]
+  })
+  expect(
+    compact.actionResults.map((entry: { result: unknown }) => entry.result)
+  ).toEqual(values)
+  expect(JSON.stringify(compact).length).toBeLessThan(2000)
+  const full = JSON.parse(
+    await tools.call(
+      'execute_design_batch',
+      { ...args, response: 'full' },
+      new AbortController().signal
+    )
+  )
+  expect(full.actionResults).toHaveLength(count + values.length)
+  expect(execute).toHaveBeenCalledTimes(2)
 })

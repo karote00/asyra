@@ -1,8 +1,10 @@
+import type { createInspectionEvidence } from '../common-apis/inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { reviewDesign } from '../common-apis/design-review'
 import { AiActionNames } from '../constants'
 export const createDesignReviewAction = (
-  review: typeof reviewDesign = reviewDesign
+  review: typeof reviewDesign = reviewDesign,
+  evidence?: ReturnType<typeof createInspectionEvidence>
 ): AiActionDefinition<{ elementId: string }> => ({
   name: AiActionNames.REVIEW_DESIGN,
   description:
@@ -15,6 +17,12 @@ export const createDesignReviewAction = (
   },
   execute: async ({ elementId }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')
-    return review(elementId, signal)
+    if (!evidence) return review(elementId, signal)
+    const result = await evidence.capture(async () => {
+      const measurement = await review(elementId, signal)
+      return { ...measurement, available: measurement.complete }
+    })
+    signal.throwIfAborted()
+    return result
   }
 })

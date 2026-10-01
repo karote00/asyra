@@ -71,19 +71,19 @@ reminder that earlier changes are kept or that Undo is available. Retry is admit
 failure or cancellation; partial/unknown outcomes require review. An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement accepts the referenced native Frame or traced Group, prepares new content before removing only that root and executes in one
-canonical transaction; ordinary failure retains applied progress; cancellation rolls back. Target ambiguity
+request-owned history group. Each finite mutation member commits independently; failure rolls back its active member, and Stop or failure seals prior successful members into one Undo entry. Target ambiguity
 requires clarification, never deleting unrelated objects.
 
 The controller is document-scoped. Closing the panel hides it; reopening retains
-conversation state. Stop is explicit and remains available under the canonical
-interaction lock. Navigation/disposal cancels work and retires late events. A stale
+conversation state. Stop is explicit and remains available during execution. AI research and waits
+hold no document interaction lock. Navigation/disposal cancels work and retires late events. A stale
 success toast cannot imply that a later failed revision succeeded.
 
 ## Architecture boundaries
 
 Submission and continuation enter the existing App feature and same-origin
 requestActionBatch route. The App server owns prompt, provider, registered image
-tools and sanitized errors. Each completed prepared AiActionBatch reaches runtime resolution, permission and registered actions inside one invocation transaction. The server waits for execution receipts before continuing AI work. Conversation
+tools and sanitized errors. Each completed prepared AiActionBatch reaches runtime resolution, permission and registered actions inside one invocation scope with finite Factory mutation members. The server waits for execution receipts before continuing AI work. Conversation
 state, status and UI never become canonical or shared document state. UI may not
 prepare geometry, bypass permission, or infer rollback. No credential or raw provider
 log may reach UI, templates or reports.
@@ -130,28 +130,28 @@ Each batch retains ordinary resolution and permission checks. Tool artifacts are
 request-owned and cannot be used by another request. Execution receipts contain
 bounded results and refreshed App context, never complete document geometry.
 
-One invocation owns one transaction and the existing document interaction lock.
-The lock blocks document edits while allowing Agent panel open/close, approval,
-Stop, scrolling and draft typing. Agent DOM events remain isolated from canvas
-shortcuts and mutation controls.
+One invocation owns one lazy Factory history group. Its finite synchronous mutation
+members publish normally, and reads or waits hold no transaction. User input, Undo,
+Redo and remote changes remain independent; admission waits for an existing user
+transaction to settle before enrolling the next AI member. Agent DOM events remain
+isolated from canvas shortcuts and mutation controls.
 Normal settlement commits all completed batches into one Undo entry. Capability
 limits are normal settlement: explain the unsupported remainder and whether any
 changes were made, with no Try again. A limitation of one tool requires checking
 other registered operations before declaring App capability unavailable. Never
-invent a tool or silently claim an incomplete request is complete. Ordinary executor/provider failures stop further work and commit applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. There is no per-action savepoint: writes made before an executor throws are also retained. Explicit cancellation still rolls back; transaction settlement failures report unknown state rather than claiming retained progress. All terminal paths release the interaction lock.
+invent a tool or silently claim an incomplete request is complete. Ordinary executor/provider failures stop further work and commit applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. Each failed synchronous member rolls back its own writes. Explicit cancellation preserves completed members and seals their single Undo entry; pending members cannot start after cancellation. Settlement failures report unknown state rather than claiming retained progress.
 Questions before drawing remain non-mutating clarification; a new user request
-never silently joins an already settled transaction. Each modifying user request appends its own Undo entry; replacing canvas objects never overwrites previous History. Confirmation explains that prior steps remain undoable. Known executor failures include a bounded App-authored cause and recovery guidance, not raw exceptions.
+never silently joins an already settled history group. Each modifying user request appends its own Undo entry; replacing canvas objects never overwrites previous History. Confirmation explains that prior steps remain undoable. Known executor failures include a bounded App-authored cause and recovery guidance, not raw exceptions.
 
 ### Canvas keyboard handoff
 
 Opening the Agent with its keyboard shortcut must not leave held modifiers in
 the input system after composer autofocus. Clicking the canvas while the Agent
 is idle restores drawing shortcuts without closing the panel or discarding the
-draft. Composer typing and IME editing stay isolated from canvas actions; the
-active Agent document interaction lock remains authoritative. During execution,
-a blocked canvas pointer event releases composer focus without forwarding an edit;
-Command/Control+1 uses the ordinary fit-zoom input route while mutation shortcuts
-remain blocked.
+draft. Composer typing and IME editing stay isolated from canvas actions. During
+execution, clicking the canvas releases composer focus and normal input remains
+available. Command/Control+1 uses the ordinary fit-zoom input route; user mutations
+retain their own transaction and Undo entry.
 
 ### Local provider usage observability
 

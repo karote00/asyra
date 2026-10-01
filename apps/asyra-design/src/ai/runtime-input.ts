@@ -11,7 +11,11 @@ import { createArrangementAction } from './arrangement-action'
 import { createOrganizationAction } from './organization-action'
 import { createDesignEditAction } from './design-edit-action'
 import { createDocumentContextAction } from './context-action'
-import { createAiInspectionAction } from './inspection'
+import {
+  createAiInspectionAction,
+  createInspectionValidationAction
+} from './inspection'
+import { createInspectionEvidence } from '../common-apis/inspection-evidence'
 import { createAiActions } from './actions'
 import { createPreparedDesignAction } from './design-actions'
 import {
@@ -33,23 +37,29 @@ export interface CreateAiRuntimeInputOptions {
 
 export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
-): CreateAiAgentRuntimeInput => ({
-  actionDefinitions: [
-    ...createBasicApiActions(),
-    ...createAiActions(),
-    createPreparedDesignAction(),
-    createDocumentContextAction(),
-    createDesignEditAction(),
-    createOrganizationAction(),
-    createArrangementAction(),
-    createDesignReviewAction(),
-    createAiInspectionAction()
-  ],
-  confirmationHandler: createAiConfirmationHandler(options.requestConfirmation),
-  contextProvider: createAiContextProvider(),
-  options: { ...options.runtimeOptions, failurePolicy: 'preserve-progress' },
-  ownedResources: options.ownedResources,
-  permissionPolicy: createAiPermissionPolicy(options.permissionRules),
-  provider: options.provider,
-  transactionRunner: options.transactionRunner ?? createAiTransactionRunner()
-})
+): CreateAiAgentRuntimeInput => {
+  const evidence = createInspectionEvidence()
+  return {
+    actionDefinitions: [
+      ...createBasicApiActions(),
+      ...createAiActions(),
+      createPreparedDesignAction(),
+      createDocumentContextAction(),
+      createDesignEditAction(),
+      createOrganizationAction(),
+      createArrangementAction(),
+      createDesignReviewAction(undefined, evidence),
+      createAiInspectionAction(undefined, evidence),
+      createInspectionValidationAction(evidence)
+    ],
+    confirmationHandler: createAiConfirmationHandler(
+      options.requestConfirmation
+    ),
+    contextProvider: createAiContextProvider(),
+    options: { ...options.runtimeOptions, failurePolicy: 'preserve-progress' },
+    ownedResources: [...(options.ownedResources ?? []), evidence],
+    permissionPolicy: createAiPermissionPolicy(options.permissionRules),
+    provider: options.provider,
+    transactionRunner: options.transactionRunner ?? createAiTransactionRunner()
+  }
+}

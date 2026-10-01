@@ -322,6 +322,42 @@ const executePrepared = async (
   )
 
 describe('Asyra Design AI composition action catalog', () => {
+  it('enrolls native composition writes without holding a member during paint', async () => {
+    const apis = actionApis()
+    let inMutation = false
+    apis.createCompositionGroup = vi.fn((descriptor) => {
+      expect(inMutation).toBe(true)
+      return descriptor.id
+    })
+    apis.createCompositionElements = vi.fn((descriptors) => {
+      expect(inMutation).toBe(true)
+      return descriptors.map(({ id }) => id)
+    })
+    const action = actionByName(AiActionNames.INSERT_VECTOR_COMPOSITION, apis, {
+      waitForPaint: async () => {
+        expect(inMutation).toBe(false)
+      }
+    })
+    await action.execute(
+      createServerPreparedCompositionArtifact({
+        compositionRole: 'drawing',
+        parent: 'workspace',
+        items: [ovalItem()]
+      }),
+      {
+        signal: new AbortController().signal,
+        runMutation: async (mutate) => {
+          inMutation = true
+          try {
+            return mutate()
+          } finally {
+            inMutation = false
+          }
+        }
+      }
+    )
+  })
+
   it('registers the server-facing actions in deterministic order', () => {
     expect(createAiActions(actionApis()).map(({ name }) => name)).toEqual([
       AiActionNames.REPORT_OUTCOME,

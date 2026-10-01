@@ -169,6 +169,10 @@ class Factory {
     }
   }
 
+  isTransactionBoundaryIdle(): boolean {
+    return this.transact.isTransactionBoundaryIdle()
+  }
+
   startHistoryGroup(options?: HistoryGroupOptions) {
     return this.transact.startHistoryGroup(options)
   }

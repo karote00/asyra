@@ -44,7 +44,7 @@ const elementCreationOptionsSchema = apiObject(
 const elementMoveRequestSchema = apiObject({
   elementIds: apiIds,
   targetParentId: apiString,
-  targetIndex: { type: 'integer' }
+  targetIndex: { type: 'integer', minimum: 0 }
 })
 
 const isContainerTypeApi = defineBasicApi({
@@ -361,7 +361,8 @@ const moveElementsApi = defineBasicApi({
   method: 'moveElements',
   effect: 'write',
   parameters: [{ name: 'request', schema: elementMoveRequestSchema }],
-  description: 'Preserves App group-geometry behavior.'
+  description:
+    'Preserves App group-geometry behavior. Read the target parent children with core.getElementData first. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
 })
 
 const removeSubtreeApi = defineBasicApi({

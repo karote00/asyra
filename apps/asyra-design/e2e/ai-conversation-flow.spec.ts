@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
   createTestDocumentIdentity,
+  createRectangle,
   getActiveTool,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
@@ -1420,7 +1421,7 @@ for (const width of [360, 1280]) {
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await page.getByRole('button', { name: 'Approve', exact: true }).click()
     const failed = page.getByTestId('ai-agent-message').last()
-    await expect(failed).toHaveAttribute('data-outcome', 'partial')
+    await expect(failed).toHaveAttribute('data-outcome', 'failed')
     await expect(failed).toContainText(
       'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
     )
@@ -1455,3 +1456,124 @@ for (const width of [360, 1280]) {
     expect(requests).toBe(4)
   })
 }
+
+test('streamed AI members stay visible and independent of user Undo, then Stop seals one entry', async ({
+  page
+}, testInfo) => {
+  const prepared = drawing('interleaved-history')
+  let stream: ServerResponse | undefined
+  const receipts: unknown[] = []
+  const server = createServer((request, response) => {
+    request.resume()
+    response.writeHead(200, {
+      'content-type': 'application/x-ndjson',
+      'access-control-allow-origin': '*'
+    })
+    response.flushHeaders()
+    stream = response
+    response.write(
+      JSON.stringify({
+        type: 'batch',
+        receiptToken: '11111111-1111-1111-1111-111111111111',
+        batch: {
+          batchId: 'first-member',
+          actions: [
+            {
+              id: 'draw',
+              name: 'insert_vector_composition',
+              arguments: prepared,
+              summary: 'Draw first stage'
+            }
+          ]
+        }
+      }) + '\n'
+    )
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  if (!address || typeof address === 'string')
+    throw new Error('Missing stream address')
+  try {
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) => {
+      if (route.request().headers()['x-ai-batch-receipt']) {
+        receipts.push(route.request().postDataJSON())
+        return route.fulfill({ json: { accepted: true } })
+      }
+      return route.continue({
+        url: `http://127.0.0.1:${address.port}/api/ai/action-batch`
+      })
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    const before = await getCoreDocumentDigest(page)
+    const depth = await getUndoHistoryDepth(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page.getByLabel('Message Agent').fill('Draw two stages')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect.poll(() => receipts.length).toBe(1)
+    const message = page.getByTestId('ai-agent-message')
+    await expect(message).toHaveAttribute('data-outcome', 'active')
+    expect(await getUndoHistoryDepth(page)).toBe(depth)
+    const snapshot = await page.evaluate(async (id) => {
+      const { core } = await import('../src/testing/runtime-access')
+      return core.captureElementSnapshot(id, 1024)
+    }, prepared.groupDescriptor.id)
+    expect(snapshot.width).toBeGreaterThan(0)
+    expect(snapshot.height).toBeGreaterThan(0)
+    const first = await getCoreDocumentDigest(page)
+    expect(first).not.toEqual(before)
+    await page.getByTestId('toolbar').click({ position: { x: 5, y: 5 } })
+    await page.keyboard.press('Meta+1')
+    await page.screenshot({ path: testInfo.outputPath('pending-drawing.png') })
+    await createRectangle(page, 0.6, 0.6)
+    await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + 1)
+    await undo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(first)
+    await expect(message).toHaveAttribute('data-outcome', 'active')
+    if (!stream) throw new Error('Missing stream')
+    stream.write(
+      JSON.stringify({
+        type: 'batch',
+        receiptToken: '22222222-2222-2222-2222-222222222222',
+        batch: {
+          batchId: 'second-member',
+          actions: [
+            {
+              id: 'rename',
+              name: 'update_design_element',
+              arguments: {
+                elementId: prepared.groupDescriptor.id,
+                name: 'Second stage'
+              },
+              summary: 'Refine second stage'
+            }
+          ]
+        }
+      }) + '\n'
+    )
+    await expect.poll(() => receipts.length).toBe(2)
+    await page
+      .getByRole('button', { name: 'Cancel request', exact: true })
+      .click()
+    await expect(message).toHaveAttribute('data-outcome', 'cancelled')
+    await expect(message).toContainText(
+      'Changes already applied have been kept.'
+    )
+    expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+    const after = await getCoreDocumentDigest(page)
+    expect(after).not.toEqual(first)
+    await page.screenshot({ path: testInfo.outputPath('stopped-drawing.png') })
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    await undo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    await redo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(after)
+  } finally {
+    stream?.end()
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})

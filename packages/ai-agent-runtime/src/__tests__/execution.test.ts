@@ -3,6 +3,8 @@ import {
   AI_REDACTED_VALUE,
   AiExecutionError,
   executeAiActions,
+  runAiMutation,
+  type AiMutationExecutor,
   type ConfirmedAiActionBatch,
   type AiExecutionContext
 } from '..'
@@ -40,6 +42,36 @@ const confirmedActionBatch = (
   })
 
 describe('AI registered action execution', () => {
+  it('uses only its own supplied mutation boundary and prevents pre-aborted writes', async () => {
+    const writes: string[] = []
+    const scope: AiMutationExecutor = async (write) => {
+      writes.push('enter')
+      const result = write()
+      writes.push('leave')
+      return result
+    }
+    const controller = new AbortController()
+    await executeAiActions(
+      confirmedActionBatch([
+        async (_args, context) => {
+          expect(context.runMutation).toBe(scope)
+          return runAiMutation(context, () => writes.push('write'))
+        }
+      ]),
+      controller.signal,
+      {},
+      scope
+    )
+    expect(writes).toEqual(['enter', 'write', 'leave'])
+    controller.abort()
+    await expect(
+      runAiMutation({ signal: controller.signal, runMutation: scope }, () =>
+        writes.push('late')
+      )
+    ).rejects.toThrow()
+    expect(writes).toEqual(['enter', 'write', 'leave'])
+  })
+
   it('executes in order and returns detached redacted summaries', async () => {
     let releaseFirst: (() => void) | undefined
     const firstGate = new Promise<void>((resolve) => {

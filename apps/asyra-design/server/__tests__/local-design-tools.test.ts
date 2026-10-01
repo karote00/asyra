@@ -681,3 +681,21 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
   for (const [batch] of execute.mock.calls)
     expect(batch.actions[0].arguments).toMatchObject({ elementId: expected[0] })
 })
+
+it('defaults application to compact receipts while retaining all prepared identity references', async () => {
+  const tools = createLocalDesignTools(actions)
+  const prepared = JSON.parse(
+    await tools.call('prepare_design', { draft: draft() }, signal())
+  )
+  const compact = tools.resolveBatch(request(prepared.artifactId))
+  expect(compact.actions[0].arguments).toMatchObject({ response: 'compact' })
+  const fullRequest = request(prepared.artifactId)
+  Object.assign(fullRequest.actions[0].arguments, { response: 'full' })
+  const full = tools.resolveBatch(fullRequest)
+  expect(full.actions[0].arguments).toMatchObject({ response: 'full' })
+  const design = (compact.actions[0].arguments as { design: PreparedDesign })
+    .design
+  expect(tools.resolveTargets({ artifactId: prepared.artifactId })).toEqual(
+    Object.values(design.keyToId)
+  )
+})
