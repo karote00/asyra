@@ -6,7 +6,7 @@ function demonstrationAdapter(task, scenario, contract) {
   let turn = 0
   const file = task.allowedFiles[0]
   const mutation = contract.definition.scenarios.find(
-    (item) => item.id === 'inverse-regression'
+    (item) => item.id === contract.defaultNegativeScenario
   ).mutation
   return {
     async next(observation) {

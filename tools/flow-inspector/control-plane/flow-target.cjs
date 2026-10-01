@@ -284,7 +284,7 @@ function createTargetOwner({
         /^[a-f0-9]{64}$/.test(source.runtimeSourceDigest ?? '') &&
         (authorityPresent.length === 0 ||
           (authorityPresent.length === authorityKeys.length &&
-            source.runtimeAuthorityFormat === 1 &&
+            [1, 2].includes(source.runtimeAuthorityFormat) &&
             /^[a-f0-9]{64}$/.test(source.runtimeAuthorityDigest ?? '') &&
             /^[a-f0-9]{64}$/.test(source.contractScopeDigest ?? ''))) &&
         assessment.result.source?.repository === source.repository &&

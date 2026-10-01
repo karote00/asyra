@@ -2,12 +2,17 @@
 const fs = require('node:fs')
 const vm = require('node:vm')
 const { execFileSync } = require('node:child_process')
-const { admitContract, MANIFEST_PATH } = require('./contracts.cjs')
+const {
+  admitContract,
+  MANIFEST_PATH,
+  canonicalRelativePath
+} = require('./contracts.cjs')
 const { sha256, safePath } = require('./snapshot.cjs')
 const verifierFiles = Object.freeze(
   [
     'contracts.cjs',
     'snapshot.cjs',
+    'workspace-sources.cjs',
     'runner.cjs',
     'evidence.cjs',
     'ci-context.cjs',
@@ -42,7 +47,12 @@ function prepareCIContext(
   const base = revision(baseRef),
     integration = revision('HEAD')
   const read = (commit, file) => git(['show', commit + ':' + file])
-  const manifest = JSON.parse(read(base, MANIFEST_PATH))
+  const manifestPath = Object.hasOwn(snapshot, 'verificationSource')
+    ? snapshot.verificationSource?.roles?.manifest
+    : MANIFEST_PATH
+  if (!canonicalRelativePath(manifestPath))
+    throw new Error('Invalid selected verification manifest')
+  const manifest = JSON.parse(read(base, manifestPath))
   const sandbox = { module: { exports: {} }, globalThis: {} }
   vm.runInNewContext(
     read(base, manifest.architecturePath).toString(),
@@ -50,9 +60,11 @@ function prepareCIContext(
     { timeout: 1000 }
   )
   const accepted = admitContract(manifest, sandbox.module.exports)
+  if (accepted.manifestPath !== manifestPath)
+    throw new Error('Accepted manifest differs from selected proof')
   const policyIssues = []
   const protectedFiles = [
-    MANIFEST_PATH,
+    manifestPath,
     manifest.architecturePath,
     manifest.specPath,
     manifest.testFile,

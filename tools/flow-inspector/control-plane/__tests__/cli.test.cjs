@@ -11,6 +11,42 @@ const {
 } = require('./accepted-repository-fixture.cjs')
 const root = path.resolve(__dirname, '../../../..')
 
+test('local CLI selects a product manifest without retargeting a remote service', async (t) => {
+  const { sha256 } = require('../snapshot.cjs')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'selection-'))
+  const manifestPath = path.relative(
+    root,
+    path.join(directory, 'flow-contracts.json')
+  )
+  const definition = structuredClone(
+    require('../../../../packages/factory/flow-contracts.json')
+  )
+  definition.manifestPath = manifestPath
+  fs.writeFileSync(path.join(root, manifestPath), JSON.stringify(definition))
+  t.after(() => {
+    fs.rmSync(directory, { recursive: true, force: true })
+    fs.rmSync(
+      path.join(root, 'tmp/flow-inspector/products', sha256(manifestPath)),
+      { recursive: true, force: true }
+    )
+  })
+  const output = []
+  assert.equal(
+    await main(['--manifest', manifestPath, 'status'], {
+      repositoryRoot: root,
+      write: (line) => output.push(line)
+    }),
+    0
+  )
+  assert.equal(JSON.parse(output.join('')).manifestPath, manifestPath)
+  await assert.rejects(
+    main(['--manifest', manifestPath, '--url', 'http://127.0.0.1:1', 'status']),
+    /selection|manifest|Usage/
+  )
+})
+
 test('offline provider contract uses identical CLI, HTTP and service task evidence', async () => {
   const { randomUUID } = require('node:crypto')
   const parent = path.join(root, 'tmp/flow-inspector/cli-tests')

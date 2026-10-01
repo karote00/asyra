@@ -186,9 +186,12 @@ const cases = {
 
 function manifest(kind) {
   const selected = cases[kind]
+  const negativeCaseIds = selected
+    .slice(kind === 'accepted' ? -1 : -2)
+    .map(([id]) => id)
   return {
     version: 2,
-    negativeCaseIds: [selected.at(-1)[0]],
+    negativeCaseIds,
     targetId: architecture.target.id,
     architecturePath,
     specPath,
@@ -232,11 +235,14 @@ function manifest(kind) {
       {
         id: 'fixture-regression',
         title: 'Fixture regression',
-        expectedFailedCaseIds: [selected.at(-1)[0]],
+        expectedFailedCaseIds: negativeCaseIds,
         mutation: {
-          file: 'packages/factory/src/data-transact.ts',
-          from: "if (options.outcome === 'rollback') {",
-          to: "if (options.outcome === 'rollback' && false) {"
+          file: 'packages/ui-context/src/property-registry.ts',
+          from:
+            kind === 'accepted'
+              ? 'return Array.from(this.properties.keys())'
+              : 'this.properties.get(key)?.getValue()',
+          to: kind === 'accepted' ? "return ['unexpected-key']" : 'undefined'
         }
       }
     ]
@@ -250,11 +256,24 @@ const aliases = packageNames
   )
   .join(',\n')
 const config = (kind) => `import path from 'node:path'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitest/config'
 
 const source = process.env.FLOW_PROOF_SOURCE as string
+const mapping = JSON.parse(readFileSync(path.join(source, '${manifestPath}'), 'utf8'))
+const scenario = mapping.scenarios.find((entry: { id: string }) => entry.id === (process.env.FLOW_PROOF_SCENARIO ?? 'baseline'))
+if (!scenario) throw new Error('Unknown proof scenario')
+const mutation = scenario.mutation
 
 export default defineConfig({
+  plugins: [{
+    name: 'proof-runtime-scenario', enforce: 'pre',
+    transform(code, id) {
+      if (!mutation || id !== path.join(source, mutation.file)) return
+      if (code.split(mutation.from).length !== 2) throw new Error('Negative proof mutation site changed')
+      return { code: code.replace(mutation.from, mutation.to), map: null }
+    }
+  }],
   resolve: {
     alias: {
 ${aliases}

@@ -5,7 +5,18 @@ const { createHash } = require('node:crypto')
 const { execFileSync } = require('node:child_process')
 const vm = require('node:vm')
 const { pathToFileURL } = require('node:url')
-const { admitContract } = require('./contracts.cjs')
+const {
+  admitContract,
+  canonicalRelativePath,
+  workspaceName,
+  validateWorkspaceSources
+} = require('./contracts.cjs')
+const {
+  discoverWorkspaceManifests,
+  resolveWorkspaceAuthority,
+  sourceInputPath,
+  verifyWorkspaceManifests
+} = require('./workspace-sources.cjs')
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
 const sourcePackages = ['factory', 'reactive-events', 'utils', 'persistence']
@@ -51,8 +62,10 @@ const runtimePath = (file, authority) => {
     authority.packages.some(
       (entry) =>
         file === entry.manifestPath ||
-        (file.startsWith(entry.repositoryDirectory + '/src/') &&
-          !file.split('/').includes('__tests__'))
+        (authority.format === 2
+          ? sourceInputPath(file, entry)
+          : file.startsWith(entry.repositoryDirectory + '/src/') &&
+            !file.split('/').includes('__tests__'))
     )
   )
 }
@@ -79,9 +92,11 @@ function freezeAuthority(value) {
   return value
 }
 
-function resolveRuntimeAuthority(contract, read) {
+function resolveRuntimeAuthority(contract, read, discover) {
   const scope = contract.runtimeScope
   if (!scope) return
+  if (scope.format === 2)
+    return freezeAuthority(resolveWorkspaceAuthority(contract, read, discover))
   const reject = (condition, message) => {
     if (!condition) throw new Error('Runtime authority: ' + message)
   }
@@ -212,7 +227,7 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
       'packageNames',
       'digest'
     ]) &&
-      authority.format === 1 &&
+      [1, 2].includes(authority.format) &&
       fingerprint(authority.contractScopeDigest) &&
       Array.isArray(authority.stepClosures) &&
       authority.stepClosures.length > 0 &&
@@ -225,9 +240,11 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
   )
   const { digest, ...payload } = authority
   reject(digest === sha256(JSON.stringify(payload)), 'digest mismatch')
+  const workspace = authority.format === 2
+  const validName = workspace ? workspaceName : canonicalPackageName
   const packageNames = authority.packages.map((entry) => entry?.name)
   reject(
-    packageNames.every(canonicalPackageName) &&
+    packageNames.every(validName) &&
       JSON.stringify(packageNames) ===
         JSON.stringify([...new Set(packageNames)].sort()) &&
       JSON.stringify(authority.packageNames) === JSON.stringify(packageNames),
@@ -235,28 +252,52 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
   )
   const packages = new Map()
   for (const entry of authority.packages) {
-    const repositoryDirectory = 'packages/' + entry.name.slice('@asyra/'.length)
+    const repositoryDirectory = workspace
+      ? entry.repositoryDirectory
+      : 'packages/' + entry.name.slice('@asyra/'.length)
     reject(
       sameKeys(entry, [
         'name',
         'repositoryDirectory',
         'manifestPath',
         'entryPath',
+        ...(workspace ? ['sourceInputs'] : []),
         'manifestDigest',
         'directWorkspaceDependencies'
       ]) &&
+        canonicalRelativePath(repositoryDirectory) &&
         entry.repositoryDirectory === repositoryDirectory &&
         entry.manifestPath === repositoryDirectory + '/package.json' &&
-        entry.entryPath === repositoryDirectory + '/src/index.ts' &&
+        (workspace
+          ? entry.entryPath === null ||
+            (canonicalRelativePath(entry.entryPath) &&
+              entry.entryPath.startsWith(repositoryDirectory + '/'))
+          : entry.entryPath === repositoryDirectory + '/src/index.ts') &&
         fingerprint(entry.manifestDigest) &&
         Array.isArray(entry.directWorkspaceDependencies) &&
-        entry.directWorkspaceDependencies.every(canonicalPackageName) &&
+        entry.directWorkspaceDependencies.every(validName) &&
         JSON.stringify(entry.directWorkspaceDependencies) ===
           JSON.stringify(
             [...new Set(entry.directWorkspaceDependencies)].sort()
           ),
       'invalid package descriptor'
     )
+    if (workspace) {
+      validateWorkspaceSources([
+        {
+          name: entry.name,
+          inputs: entry.sourceInputs,
+          entry:
+            entry.entryPath === null
+              ? null
+              : entry.entryPath.slice(repositoryDirectory.length + 1)
+        }
+      ])
+      reject(
+        entry.entryPath === null || sourceInputPath(entry.entryPath, entry),
+        'entry outside runtime inputs'
+      )
+    }
     packages.set(entry.name, entry)
   }
   for (const entry of packages.values())
@@ -287,7 +328,7 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
         typeof step.stepId === 'string' &&
         step.stepId.length > 0 &&
         !stepIds.has(step.stepId) &&
-        canonicalPackageName(step.ownerPackage) &&
+        validName(step.ownerPackage) &&
         JSON.stringify(step.packageNames) ===
           JSON.stringify(closure(step.ownerPackage)),
       'invalid step closure at index ' + index
@@ -305,7 +346,7 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
   if (contract) {
     const scope = contract.runtimeScope
     reject(
-      scope?.format === 1 &&
+      scope?.format === authority.format &&
         scope.digest === authority.contractScopeDigest &&
         JSON.stringify(
           scope.steps.map((step) => ({
@@ -321,6 +362,33 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
           ),
       'contract scope mismatch'
     )
+    if (workspace) {
+      const declarations = new Map(
+        validateWorkspaceSources(scope.workspaceSources).map((entry) => [
+          entry.name,
+          entry
+        ])
+      )
+      reject(
+        [...declarations.keys()].every((name) => packages.has(name)),
+        'unused workspace source declaration'
+      )
+      for (const entry of packages.values()) {
+        const declared = declarations.get(entry.name) ?? {
+          inputs: ['src/**'],
+          entry: 'src/index.ts'
+        }
+        reject(
+          JSON.stringify(entry.sourceInputs) ===
+            JSON.stringify(declared.inputs) &&
+            entry.entryPath ===
+              (declared.entry === null
+                ? null
+                : entry.repositoryDirectory + '/' + declared.entry),
+          'workspace source declaration mismatch'
+        )
+      }
+    }
   }
   if (fullFiles) {
     const files = new Map(fullFiles.map((entry) => [entry.path, entry]))
@@ -328,7 +396,8 @@ function validateRuntimeAuthority(authority, contract, fullFiles) {
     for (const entry of authority.packages)
       reject(
         files.get(entry.manifestPath)?.digest === entry.manifestDigest &&
-          files.has(entry.entryPath),
+          ((workspace && entry.entryPath === null) ||
+            files.has(entry.entryPath)),
         'package manifest or entry is absent from runtime inventory'
       )
   }
@@ -379,6 +448,17 @@ function createVerificationSource(fullFiles, contract, authority) {
   return Object.freeze({ ...payload, digest: sha256(JSON.stringify(payload)) })
 }
 
+function executionRolesForAuthority(runtimeAuthority) {
+  const directory =
+    runtimeAuthority?.format === 2
+      ? '.flow-proof'
+      : 'tools/flow-inspector/control-plane'
+  return Object.freeze({
+    configuration: `${directory}/candidate-config.mjs`,
+    bootstrap: `${directory}/candidate-bootstrap.cjs`
+  })
+}
+
 function createDerivedExecution(input, authorityAdmission) {
   const requireValue = (condition, message) => {
     if (!condition) throw new Error('Execution source: ' + message)
@@ -411,10 +491,8 @@ function createDerivedExecution(input, authorityAdmission) {
       path.basename(sourceRoot) === 'source',
     'trusted canonical source root required'
   )
-  const configurationFile =
-    'tools/flow-inspector/control-plane/candidate-config.mjs'
-  const bootstrapFile =
-    'tools/flow-inspector/control-plane/candidate-bootstrap.cjs'
+  const { configuration: configurationFile, bootstrap: bootstrapFile } =
+    executionRolesForAuthority(runtimeAuthority)
   const original = verificationSource?.roles?.configuration
   requireValue(
     verificationSource?.format === 1 &&
@@ -436,10 +514,12 @@ function createDerivedExecution(input, authorityAdmission) {
     'generated paths overlap original source roles'
   )
   const aliases = runtimeAuthority
-    ? runtimeAuthority.packages.map((entry) => ({
-        find: entry.name,
-        replacement: path.join(sourceRoot, entry.entryPath)
-      }))
+    ? runtimeAuthority.packages
+        .filter((entry) => entry.entryPath !== null)
+        .map((entry) => ({
+          find: entry.name,
+          replacement: path.join(sourceRoot, entry.entryPath)
+        }))
     : null
   const configuration = `import original from ${JSON.stringify(pathToFileURL(path.join(sourceRoot, original)).href)};
 import { stripTypeScriptTypes } from 'node:module';
@@ -838,9 +918,10 @@ function verifyCapturedRuntimeAuthority(
     throw new Error('Runtime authority: invalid captured root manifest')
   }
   reject(
-    Array.isArray(rootManifest.workspaces) &&
-      rootManifest.workspaces.filter((entry) => entry === 'packages/*')
-        .length === 1,
+    authority.format === 2 ||
+      (Array.isArray(rootManifest.workspaces) &&
+        rootManifest.workspaces.filter((entry) => entry === 'packages/*')
+          .length === 1),
     'captured workspace layout mismatch'
   )
   const files = new Map(fullFiles.map((entry) => [entry.path, entry]))
@@ -860,6 +941,11 @@ function verifyCapturedRuntimeAuthority(
       }),
     'captured runtime bytes mismatch'
   )
+  if (authority.format === 2) {
+    verifyWorkspaceManifests(authority, bytesByPath)
+    admittedRuntimeAuthorities.add(authority)
+    return
+  }
   for (const entry of authority.packages) {
     let metadata
     try {
@@ -1134,7 +1220,9 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     captured.set(relative, entry)
     return entry
   }
-  const runtimeAuthority = resolveRuntimeAuthority(contract, read)
+  const runtimeAuthority = resolveRuntimeAuthority(contract, read, (manifest) =>
+    discoverWorkspaceManifests(repositoryRoot, manifest, safePath)
+  )
   const directories = runtimeAuthority
     ? runtimeAuthority.packages.map((entry) => entry.repositoryDirectory)
     : sourcePackages.map((name) => 'packages/' + name)
@@ -1147,19 +1235,43 @@ function captureSource(repositoryRoot, runDirectory, contract) {
           'Symlinked proof source: ' + relative + '/' + entry.name
         )
       if (entry.name === '__tests__') continue
+      if (
+        runtimeAuthority?.format === 2 &&
+        (entry.name.startsWith('.') ||
+          /\.(test|spec)\.[cm]?[jt]sx?$/.test(entry.name))
+      )
+        continue
       const child = relative + '/' + entry.name
       if (entry.isDirectory()) walk(child)
       else if (entry.isFile()) paths.add(child)
       else throw new Error('Unsupported source file: ' + child)
     }
   }
-  for (const directory of directories) {
-    walk(directory + '/src')
-    paths.add(directory + '/package.json')
-  }
+  if (runtimeAuthority?.format === 2) {
+    for (const entry of runtimeAuthority.packages) {
+      for (const input of entry.sourceInputs) {
+        const relative = entry.repositoryDirectory + '/' + input
+        if (input.endsWith('/**')) walk(relative.slice(0, -3))
+        else {
+          if (!sourceInputPath(relative, entry))
+            throw new Error('Invalid runtime source input: ' + relative)
+          paths.add(relative)
+        }
+      }
+      paths.add(entry.manifestPath)
+    }
+  } else
+    for (const directory of directories) {
+      walk(directory + '/src')
+      paths.add(directory + '/package.json')
+    }
   paths.add('package.json')
   paths.add('yarn.lock')
   const runtimePaths = new Set(paths)
+  if (runtimeAuthority?.format === 2)
+    for (const scenario of contract.scenarios)
+      if (scenario.mutation && !runtimePaths.has(scenario.mutation.file))
+        throw new Error('Negative mutation is absent from runtime source')
   for (const relative of [
     contract.manifestPath,
     contract.architecturePath,
@@ -1255,11 +1367,12 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     head,
     files,
     fileCount: files.length,
-    readCount: files.length
+    readCount: captured.size
   }
 }
 
 module.exports = {
+  executionRolesForAuthority,
   admitRuntimeAuthoritySource,
   composeDerivedSource,
   verifyRetainedSnapshotBytes,
