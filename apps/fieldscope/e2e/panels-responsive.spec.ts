@@ -16,9 +16,11 @@ test('desktop to mobile transition retains edited dimensions, canvas and keyboar
   await page.getByLabel('溫室縱向深度', { exact: true }).fill('42')
   await page.getByLabel('溫室縱向深度', { exact: true }).press('Enter')
   await page.setViewportSize({ width: 390, height: 844 })
+  // Resize readiness shares the case deadline; a five-second assertion default
+  // is not a portable responsiveness requirement for CPU-rendered browsers.
   await expect(
     page.getByRole('button', { name: '展開編輯面板', exact: true })
-  ).toBeVisible()
+  ).toBeVisible({ timeout: testInfo.timeout })
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await expect(page.getByLabel('完整鋼架', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '展開編輯面板', exact: true }).click()
