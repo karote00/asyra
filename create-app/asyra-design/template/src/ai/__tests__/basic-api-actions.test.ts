@@ -7,7 +7,11 @@ import {
 
 it('delegates every contract in parameter order without copying inputs or injecting history flags', async () => {
   for (const contract of basicApiContracts) {
+    let inMutation = false
+    const mutating =
+      contract.effect !== 'read' && contract.effect !== 'viewport'
     const method = vi.fn(function (this: object, ...args: unknown[]) {
+      expect(inMutation).toBe(mutating)
       return { receiver: this, args }
     })
     const owner = { [contract.method]: method }
@@ -28,7 +32,17 @@ it('delegates every contract in parameter order without copying inputs or inject
     const args = Object.fromEntries(
       contract.parameters.map((p) => [p, { input: p }])
     )
-    await action.execute(args, { signal: new AbortController().signal })
+    await action.execute(args, {
+      signal: new AbortController().signal,
+      runMutation: async (mutate) => {
+        inMutation = true
+        try {
+          return mutate()
+        } finally {
+          inMutation = false
+        }
+      }
+    })
     expect(method).toHaveBeenCalledExactlyOnceWith(
       ...contract.parameters.map((p) => args[p])
     )

@@ -1,7 +1,13 @@
 import { expect, it, vi } from 'vitest'
+import type { AiMutationExecutor } from '@asyra/ai-agent-runtime'
 vi.mock('../../common-apis/design-edit', () => ({ editDesignElement: vi.fn() }))
 import { createDesignEditAction } from '../design-edit-action'
 it('forwards targeted edits and rejects an already cancelled operation', async () => {
+  const mutationCalls = vi.fn()
+  const runMutation: AiMutationExecutor = async (mutate) => {
+    mutationCalls()
+    return mutate()
+  }
   const edit = vi.fn(() => ({
     status: 'complete',
     compositionId: 'a',
@@ -10,8 +16,10 @@ it('forwards targeted edits and rejects an already cancelled operation', async (
   const action = createDesignEditAction(edit)
   const controller = new AbortController()
   await action.execute({ elementId: 'a', properties: { text: 'Updated' } }, {
-    signal: controller.signal
+    signal: controller.signal,
+    runMutation
   } as never)
+  expect(mutationCalls).toHaveBeenCalledOnce()
   expect(edit).toHaveBeenCalledExactlyOnceWith({
     elementId: 'a',
     properties: { text: 'Updated' }

@@ -97,8 +97,8 @@ System orchestrator and lifecycle coordinator.
 
 ## Explicit history groups
 
-Core forwards `startHistoryGroup`, `updateHistoryGroup`, `endHistoryGroup` and
-`getHistoryGroupStatus` to its injected Factory. The opaque handle and status
+Core forwards `isTransactionBoundaryIdle`, `startHistoryGroup`,
+`updateHistoryGroup`, `endHistoryGroup` and `getHistoryGroupStatus` to its injected Factory. The opaque handle and status
 contracts are exported from the public Core facade. Finite updates commit and
 project normally; sealing adds one Undo entry. Handle lifetime, counts, observer
 isolation and ordered replay follow the
@@ -117,6 +117,11 @@ try {
   core.endHistoryGroup(history) // Retains successful work on Stop or failure.
 }
 ```
+
+Before a finite group operation, a host may check
+`core.isTransactionBoundaryIdle()` and wait for the existing transaction status
+subscription when another interaction is still active. Recheck after every await;
+this instance-owned snapshot reserves nothing and never changes history.
 
 The threshold is caller-owned and advisory. It does not limit history or stop
 work. Prepare asynchronous inputs before entering an update. A callback must

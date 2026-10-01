@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "ES2023.Array"],
     "types": ["node"],
     "strict": true,
     "noEmit": true,
@@ -23,6 +23,9 @@
     "server/__tests__/local-ai-live.test.ts",
     "server/design-preparation.ts",
     "server/__tests__/design-preparation.test.ts",
-    "server/__tests__/local-design-tools.test.ts"
+    "server/__tests__/local-design-tools.test.ts",
+    "server/__tests__/local-tool-scheduler.test.ts",
+    "server/__tests__/local-design-workflow.test.ts",
+    "server/__tests__/execution-flow-proof.test.ts"
   ]
 }

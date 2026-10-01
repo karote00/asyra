@@ -43,7 +43,7 @@ describe('Asyra Design AI document interaction integration', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps App pan and zoom writes live across cooperative checkpoints while document mutations stay blocked', async () => {
+  it('keeps ordinary document input, pan and zoom live during AI preparation', async () => {
     const viewport = document.createElement('div')
     viewport.setAttribute(
       AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
@@ -66,13 +66,11 @@ describe('Asyra Design AI document interaction integration', () => {
       panFeature.api.pan(-event.deltaX, -event.deltaY)
     })
 
-    const runner = createAiTransactionRunner({
-      runTransaction: async (execute) => execute()
-    })
+    const runner = createAiTransactionRunner()
 
     expect(documentInteractionLock.isActive()).toBe(false)
     await runner.run('AI-assisted action', async () => {
-      expect(documentInteractionLock.isActive()).toBe(true)
+      expect(documentInteractionLock.isActive()).toBe(false)
       await Promise.resolve()
 
       canvas.dispatchEvent(
@@ -93,7 +91,7 @@ describe('Asyra Design AI document interaction integration', () => {
       )
 
       await Promise.resolve()
-      expect(documentInteractionLock.isActive()).toBe(true)
+      expect(documentInteractionLock.isActive()).toBe(false)
       canvas.dispatchEvent(
         new WheelEvent('wheel', {
           bubbles: true,
@@ -114,7 +112,7 @@ describe('Asyra Design AI document interaction integration', () => {
     })
 
     expect(documentInteractionLock.isActive()).toBe(false)
-    expect(attemptedDocumentMutation).not.toHaveBeenCalled()
+    expect(attemptedDocumentMutation).toHaveBeenCalledTimes(3)
     expect(mocks.core.setSystemProperty).toHaveBeenCalledWith(
       PresetSystemPropertyKeys.VIEWPORT_POSITION,
       { x: 5, y: 13 }

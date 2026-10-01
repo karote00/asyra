@@ -416,6 +416,13 @@ Authority:
 
 ## Transaction history groups
 
+`isTransactionBoundaryIdle()` reports the instance-owned admission snapshot for
+finite history-group lifecycle calls. Pending groups alone are idle; active
+transactions, replay, settlement, member enrollment and group notification are
+busy. The snapshot does not reserve the boundary: check and enter synchronously,
+and recheck after awaiting. Existing transaction status subscriptions may trigger
+a retry after settlement unwinds. Shared-evidence restrictions remain separate.
+
 Public contract - implementation and acceptance are tracked in
 [Transaction History Groups](../plans/transaction-history-group-plan.md).
 

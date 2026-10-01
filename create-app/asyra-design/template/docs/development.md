@@ -62,7 +62,7 @@ Run the focused owner test first. Before handing off a general App change, run:
 ```bash
 yarn typecheck
 yarn react:build
-yarn test
+yarn test:asyra-design
 ```
 
 Browser changes also require the relevant Playwright suite. Collaboration

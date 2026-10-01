@@ -228,6 +228,7 @@ class Core implements CoreAPIs {
   updateElementProperties!: CoreAPIs['updateElementProperties']
   patchElementProperties!: CoreAPIs['patchElementProperties']
   applyCanonicalChanges!: CoreAPIs['applyCanonicalChanges']
+  isTransactionBoundaryIdle!: CoreAPIs['isTransactionBoundaryIdle']
   startHistoryGroup!: CoreAPIs['startHistoryGroup']
   updateHistoryGroup!: CoreAPIs['updateHistoryGroup']
   endHistoryGroup!: CoreAPIs['endHistoryGroup']

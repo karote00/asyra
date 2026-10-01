@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiProviderError,
+  AiTransactionSettlementError,
   createAiAgentRuntime,
+  runAiMutation,
   type AiProvider,
   type AiActionBatch
 } from '..'
@@ -12,6 +14,160 @@ const batch = (id: string): AiActionBatch => ({
 })
 
 describe('one invocation with dependent prepared batches', () => {
+  it('uses grouped host evidence when preserve-progress has no successful member', async () => {
+    const runtime = createAiAgentRuntime({
+      options: { failurePolicy: 'preserve-progress' },
+      provider: { requestActionBatch: async () => batch('rejected') },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          inputSchema: {},
+          execute: async () => {
+            throw new Error('Rejected before write')
+          }
+        }
+      ],
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: {
+        run: async (_label, execute) => {
+          try {
+            return await execute(async (mutate) => mutate())
+          } catch (cause) {
+            throw new AiTransactionSettlementError(cause, 'rolled-back')
+          }
+        }
+      }
+    })
+    const result = await runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal
+    })
+    expect(result.status).toBe('failed')
+    expect(result.transaction?.status).toBe('rolled-back')
+    await runtime.dispose()
+  })
+
+  it.each(['stop', 'failure'] as const)(
+    'reports retained work on grouped %s without a completed action receipt',
+    async (mode) => {
+      const controller = new AbortController()
+      const runtime = createAiAgentRuntime({
+        provider: { requestActionBatch: async () => batch('partial') },
+        actionDefinitions: [
+          {
+            name: 'edit',
+            description: 'Edit',
+            inputSchema: {},
+            execute: async () => {
+              if (mode === 'stop') controller.abort()
+              throw new Error('A later slice failed')
+            }
+          }
+        ],
+        contextProvider: { getContext: async () => ({}) },
+        permissionPolicy: { evaluate: () => 'allow' },
+        confirmationHandler: { confirm: async () => true },
+        transactionRunner: {
+          run: async (_label, execute) => {
+            try {
+              return await execute()
+            } catch (cause) {
+              throw new AiTransactionSettlementError(cause, 'committed')
+            }
+          }
+        }
+      })
+      const result = await runtime.run({
+        intent: 'Draw',
+        signal: controller.signal
+      })
+      expect(result.status).toBe(mode === 'stop' ? 'cancelled' : 'failed')
+      expect(result.transaction?.status).toBe('committed')
+      if (result.status === 'failed') {
+        expect(result.stage).toBe('execution')
+        expect(result.code).toBe('AI_EXECUTION_FAILED')
+      }
+      await runtime.dispose()
+    }
+  )
+
+  it('keeps finite mutation scopes isolated across interleaved invocations', async () => {
+    const scopes = new Map<AbortSignal, string>()
+    const writes: string[] = []
+    let activeScope: string | undefined
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let arrivals = 0
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (input, options) => {
+          if (!options.executeBatch) throw new Error('Expected batch executor')
+          await options.executeBatch(batch(input.intent + '-first'))
+          if (++arrivals === 2) release()
+          await gate
+          return batch(input.intent + '-second')
+        }
+      },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          inputSchema: {},
+          execute: async (args: { id: string }, context) =>
+            runAiMutation(context, () => {
+              expect(activeScope).toBe(scopes.get(context.signal))
+              writes.push(activeScope + ':' + args.id)
+              return { status: 'complete' }
+            })
+        }
+      ],
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: {
+        run: async (_label, execute, options) => {
+          if (!options) throw new Error('Expected request signal')
+          const signal = options.signal
+          const own = String(scopes.size)
+          scopes.set(signal, own)
+          return execute(async (mutate) => {
+            expect(scopes.get(signal)).toBe(own)
+            activeScope = own
+            try {
+              return mutate()
+            } finally {
+              activeScope = undefined
+            }
+          })
+        }
+      }
+    })
+    const results = await Promise.all(
+      ['A', 'B'].map((intent) =>
+        runtime.run({
+          intent,
+          signal: new AbortController().signal
+        })
+      )
+    )
+    expect(results.map((result) => result.status)).toEqual([
+      'executed',
+      'executed'
+    ])
+    expect(writes).toEqual([
+      '0:A-first',
+      '1:B-first',
+      '0:A-second',
+      '1:B-second'
+    ])
+    await runtime.dispose()
+  })
+
   const setup = (provider: AiProvider, rollbackFails = false) => {
     const writes: string[] = []
     const history: string[][] = []

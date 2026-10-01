@@ -9,7 +9,12 @@ import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createLocalAiUsage } from '../local-ai-usage'
-import { checkLocalAiProvider } from '../local-ai-provider'
+import {
+  checkLocalAiProvider,
+  requestLocalAiActionBatch
+} from '../local-ai-provider'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import * as designTools from '../local-design-tools'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
 import { AiImageToolIds } from '../ai-domain-prompt'
@@ -56,13 +61,28 @@ interface Packet {
   method: string
   params: Record<string, unknown>
 }
+const nativeToolDefinitions = (thread?: Record<string, unknown>) =>
+  (
+    thread?.dynamicTools as {
+      tools: {
+        name: string
+        description: string
+        inputSchema: unknown
+        deferLoading: boolean
+      }[]
+    }[]
+  ).flatMap(({ tools }) => tools ?? [])
+
 const fakeServer = (
   options: {
     instructionSources?: unknown
+    reasoningEffort?: string | null
+    toolNamespace?: string | null
     account?: unknown
     output?: string
     status?: string
     hold?: boolean
+    manualToolReplies?: boolean
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
     research?: boolean
@@ -92,8 +112,30 @@ const fakeServer = (
   const packets: Packet[] = []
   let analysisReplies = 0
   let imageReplies = 0
-  const send = (packet: unknown) =>
-    child.stdout.write(JSON.stringify(packet) + '\n')
+  const send = (packet: unknown) => {
+    const request = packet as {
+      method?: string
+      params?: {
+        tool?: string
+        namespace?: string | null
+        item?: { type: string; tool?: string; namespace?: string | null }
+      }
+    }
+    let call = request.method === 'item/tool/call' ? request.params : undefined
+    if (request.params?.item?.type === 'dynamicToolCall')
+      call = request.params.item
+    if (call) {
+      const groups = packets.find(({ method }) => method === 'thread/start')
+        ?.params.dynamicTools as { name: string; tools?: { name: string }[] }[]
+      call.namespace =
+        options.toolNamespace === undefined
+          ? groups?.find(({ tools }) =>
+              tools?.some(({ name }) => name === call.tool)
+            )?.name
+          : options.toolNamespace
+    }
+    return child.stdout.write(JSON.stringify(packet) + '\n')
+  }
   const notify = (method: string, params: Record<string, unknown>) =>
     send({
       method,
@@ -134,6 +176,7 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
+          if (options.manualToolReplies) return
           if (
             options.repeatedImageCalls &&
             ++imageReplies < options.repeatedImageCalls
@@ -272,6 +315,10 @@ const fakeServer = (
           result = {
             thread: { id: 'thread-1' },
             model: 'selected-model',
+            reasoningEffort:
+              options.reasoningEffort === undefined
+                ? 'medium'
+                : options.reasoningEffort,
             instructionSources: options.instructionSources ?? [],
             runtimeWorkspaceRoots: []
           }
@@ -336,6 +383,322 @@ afterEach(() => {
 })
 
 describe('local subscription AI backend', () => {
+  it('overlaps independent preparation and API description through owner declarations', async () => {
+    let signalEntered!: () => void
+    const entered = new Promise<void>((resolve) => {
+      signalEntered = resolve
+    })
+    let resume!: () => void
+    const release = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    const create = designTools.createLocalDesignTools
+    let preparations = 0
+    vi.spyOn(designTools, 'createLocalDesignTools').mockImplementation(
+      (...args) => {
+        const owner = create(...args)
+        return {
+          ...owner,
+          call: async (...params) => {
+            const result = await owner.call(...params)
+            preparations++
+            signalEntered()
+            await release
+            return result
+          }
+        }
+      }
+    )
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    const completion = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'apply_prepared_design',
+            description: 'Apply',
+            inputSchema: {}
+          },
+          ...basicApiContracts.map(({ name, description }) => ({
+            name,
+            description,
+            inputSchema: {}
+          }))
+        ]
+      },
+      { environment, executeBatch }
+    )
+    try {
+      await untilTurn(server.packets)
+      server.send({
+        id: 201,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: 'prepare-independent',
+          tool: 'prepare_design',
+          arguments: {
+            draft: {
+              type: 'frame',
+              name: 'Draft',
+              width: 20,
+              height: 20,
+              children: []
+            }
+          }
+        }
+      })
+      await entered
+      server.send({
+        id: 202,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: 'describe-independent',
+          tool: 'describe_design_apis',
+          arguments: {}
+        }
+      })
+      await vi.waitFor(() =>
+        expect(server.packets).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: 202,
+              result: expect.objectContaining({ success: true })
+            })
+          ])
+        )
+      )
+      expect(
+        server.packets.some((packet) => packet.id === 201 && 'result' in packet)
+      ).toBe(false)
+      expect(preparations).toBe(1)
+      expect(executeBatch).not.toHaveBeenCalled()
+      for (const definition of nativeToolDefinitions(
+        server.packets.find(({ method }) => method === 'thread/start')?.params
+      ))
+        expect(definition).not.toHaveProperty('executionAccess')
+    } finally {
+      resume()
+      server.finish()
+      await completion
+    }
+  })
+
+  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
+    'discovers deferred vector APIs through the real native provider',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      const calls: { tool: string; namespace: string }[] = []
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(...args)
+        children.push(child)
+        let buffer = ''
+        child.stdout?.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString()
+          let newline: number
+          while ((newline = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newline)
+            buffer = buffer.slice(newline + 1)
+            try {
+              const packet = JSON.parse(line)
+              if (packet.method === 'item/tool/call')
+                calls.push({
+                  tool: packet.params.tool,
+                  namespace: packet.params.namespace
+                })
+            } catch {
+              /* Only record native tool identities. */
+            }
+          }
+        })
+        return child
+      })
+      const contract = basicApiContracts.find(
+        ({ method }) => method === 'getVectorAnchorPointAtWorkspacePos'
+      )
+      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+      if (!contract || !executable)
+        throw new Error('Missing native discovery probe configuration')
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      try {
+        const result = await requestLocalAiActionBatch(
+          {
+            intent: `Inspect the API for editing vector nodes: discover and call describe_design_apis for ${contract.name}. Use native discovery and Code Mode as needed. This is a protocol check only; do not execute a canvas operation. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            context: {},
+            actions: [
+              {
+                name: contract.name,
+                description: contract.description,
+                inputSchema:
+                  contract.inputSchema as AiProviderInput['actions'][number]['inputSchema']
+              },
+              { name: 'report_outcome', description: 'Report', inputSchema: {} }
+            ],
+            attempt: 1
+          },
+          {
+            executable,
+            model: 'gpt-6-astra',
+            executeBatch,
+            signal: AbortSignal.timeout(90_000)
+          }
+        )
+        expect(result).toMatchObject({
+          actions: expect.arrayContaining([
+            expect.objectContaining({ name: 'report_outcome' })
+          ])
+        })
+        expect(calls).toContainEqual({
+          tool: 'describe_design_apis',
+          namespace: 'design_operations'
+        })
+        expect(executeBatch).not.toHaveBeenCalled()
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    95_000
+  )
+
+  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
+    'records phase-specific review criteria through real deferred discovery',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      const calls: { tool: string; namespace: string; arguments: unknown }[] =
+        []
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(...args)
+        children.push(child)
+        let buffer = ''
+        child.stdout?.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString()
+          let newline: number
+          while ((newline = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newline)
+            buffer = buffer.slice(newline + 1)
+            try {
+              const packet = JSON.parse(line)
+              if (packet.method === 'item/tool/call')
+                calls.push({
+                  tool: packet.params.tool,
+                  namespace: packet.params.namespace,
+                  arguments: packet.params.arguments
+                })
+            } catch {
+              /* Only record native tool identities. */
+            }
+          }
+        })
+        return child
+      })
+      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+      if (!executable)
+        throw new Error('Missing native discovery probe configuration')
+      const plan = {
+        phase: 'plan',
+        method: 'native-shapes',
+        references: [],
+        criteria: ['A red square sized 100 by 100 px'],
+        detailRequired: false
+      }
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      try {
+        const result = await requestLocalAiActionBatch(
+          {
+            intent: `Protocol test: discover record_design_review and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            context: {},
+            actions: [
+              {
+                name: 'inspect_drawing',
+                description: 'Inspect drawing',
+                inputSchema: {}
+              },
+              { name: 'report_outcome', description: 'Report', inputSchema: {} }
+            ],
+            attempt: 1
+          },
+          {
+            executable,
+            model: 'gpt-6-astra',
+            executeBatch,
+            signal: AbortSignal.timeout(90_000)
+          }
+        )
+        expect(result).toMatchObject({
+          actions: expect.arrayContaining([
+            expect.objectContaining({ name: 'report_outcome' })
+          ])
+        })
+        expect(calls).toContainEqual({
+          tool: 'record_design_review',
+          namespace: 'design_operations',
+          arguments: plan
+        })
+        expect(executeBatch).not.toHaveBeenCalled()
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    95_000
+  )
+
+  it.skipIf(!process.env.LOCAL_AI_PROTOCOL_EXECUTABLE)(
+    'checks installed native registration without inference',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(...args)
+        children.push(child)
+        return child
+      })
+      try {
+        const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+        if (!executable)
+          throw new Error('Missing native registration probe configuration')
+        await checkLocalAiProvider({
+          model: 'gpt-6-astra',
+          executable,
+          signal: AbortSignal.timeout(30_000)
+        })
+        expect(children).toHaveLength(1)
+        expect(
+          children[0].exitCode !== null || children[0].signalCode !== null
+        ).toBe(true)
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    35_000
+  )
+
   it('sends native tool schemas once and retains only final control actions in text', async () => {
     const server = fakeServer()
     const action = {
@@ -355,9 +718,9 @@ describe('local subscription AI backend', () => {
         executeBatch: async () => ({ actionResults: [], context: {} })
       }
     )
-    const definitions = server.packets.find(
-      ({ method }) => method === 'thread/start'
-    )?.params.dynamicTools as { name: string }[]
+    const definitions = nativeToolDefinitions(
+      server.packets.find(({ method }) => method === 'thread/start')?.params
+    )
     expect(
       definitions.filter(({ name }) => name === 'select_elements')
     ).toHaveLength(1)
@@ -399,7 +762,7 @@ describe('local subscription AI backend', () => {
     const thread = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
-    const definitions = thread?.dynamicTools as { name: string }[]
+    const definitions = nativeToolDefinitions(thread)
     expect(definitions.map(({ name }) => name)).not.toContain(
       'search_reference_images'
     )
@@ -412,10 +775,7 @@ describe('local subscription AI backend', () => {
         'insert_vector_composition'
       ])
     )
-    const preparedTools = thread?.dynamicTools as {
-      name: string
-      description: string
-    }[]
+    const preparedTools = definitions
     for (const name of ['prepare_design', 'prepare_and_apply_design']) {
       const definition = preparedTools.find((tool) => tool.name === name)
       for (const example of designPreparationExamples)
@@ -777,6 +1137,69 @@ describe('local subscription AI backend', () => {
     expect(server.child.kill).toHaveBeenCalledOnce()
   })
 
+  it('pins medium effort on both thread configuration and the model turn', async () => {
+    const server = fakeServer()
+    await requestConfiguredAiActionBatch(input, { environment })
+    expect(
+      server.packets.find(({ method }) => method === 'thread/start')?.params
+        .config
+    ).toMatchObject({ model_reasoning_effort: 'medium' })
+    expect(
+      server.packets.find(({ method }) => method === 'turn/start')?.params
+    ).toMatchObject({ effort: 'medium' })
+  })
+
+  it.each(['unregistered_namespace', 'design_preparation', null])(
+    'rejects a tool called through the wrong namespace %s before execution',
+    async (toolNamespace) => {
+      const server = fakeServer({
+        toolNamespace,
+        toolCall: true,
+        toolName: 'select_elements',
+        toolArguments: { arguments: { elementIds: [] } }
+      })
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      await expect(
+        requestConfiguredAiActionBatch(
+          {
+            ...input,
+            actions: [
+              {
+                name: 'select_elements',
+                description: 'Select',
+                inputSchema: {}
+              }
+            ]
+          },
+          { environment, executeBatch }
+        )
+      ).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+      })
+      expect(executeBatch).not.toHaveBeenCalled()
+      expect(server.child.kill).toHaveBeenCalledOnce()
+    }
+  )
+
+  it.each(['high', 'low', null])(
+    'rejects native effort %s before starting a model turn',
+    async (reasoningEffort) => {
+      const server = fakeServer({ reasoningEffort })
+      await expect(
+        requestConfiguredAiActionBatch(input, { environment })
+      ).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
+      })
+      expect(server.packets.some(({ method }) => method === 'turn/start')).toBe(
+        false
+      )
+      expect(server.child.kill).toHaveBeenCalledOnce()
+    }
+  )
+
   it.each(['AGENTS.md', 'AGENTS.override.md'])(
     'accepts personal %s without returning its path or identity',
     async (file) => {
@@ -823,12 +1246,29 @@ describe('local subscription AI backend', () => {
       sandbox: 'read-only',
       environments: [],
       dynamicTools: expect.arrayContaining([
-        expect.objectContaining({ name: 'import_reference_image' })
+        expect.objectContaining({
+          type: 'namespace',
+          tools: expect.arrayContaining([
+            expect.objectContaining({ name: 'import_reference_image' })
+          ])
+        })
       ]),
       selectedCapabilityRoots: [],
       runtimeWorkspaceRoots: [],
       allowProviderModelFallback: false
     })
+    // Native app-server DynamicToolSpec requires the function discriminator.
+    // Check every advertised definition, not only one known tool name.
+    expect(thread?.dynamicTools).toBeInstanceOf(Array)
+    for (const definition of nativeToolDefinitions(thread)) {
+      expect(definition).toMatchObject({
+        type: 'function',
+        deferLoading: true,
+        name: expect.any(String),
+        description: expect.any(String),
+        inputSchema: expect.any(Object)
+      })
+    }
     expect(thread?.developerInstructions).toContain(
       'Return the prepared action batch without invoking backend operation tools'
     )
@@ -1471,7 +1911,7 @@ describe('native semantic design handoff', () => {
     const thread = child.packets.find(
       (p) => p.method === 'thread/start'
     )?.params
-    expect(thread?.dynamicTools).toEqual(
+    expect(nativeToolDefinitions(thread)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'prepare_design' })
       ])
@@ -1619,6 +2059,55 @@ it('accepts cumulative protocol traffic beyond 32 MiB while bounding each messag
   expect(server.child.kill).toHaveBeenCalledOnce()
 })
 
+it('keeps a registered review tool available after rejected input and accepts a corrected call in the same turn', async () => {
+  const failures: Record<string, unknown>[] = []
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'record_design_review',
+    toolArguments: { phase: 'plan' },
+    followupTool: (reply) => {
+      failures.push(reply)
+      return {
+        name: 'record_design_review',
+        args: {
+          phase: 'plan',
+          method: 'Editable illustration',
+          references: [],
+          criteria: ['Retain the requested appearance'],
+          detailRequired: true
+        }
+      }
+    }
+  })
+  spawn.mockReturnValue(server.child)
+  const executeBatch = vi.fn()
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        ...input.actions,
+        { name: 'inspect_drawing', description: 'Inspect', inputSchema: {} }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  expect(failures).toEqual([
+    expect.objectContaining({
+      available: true,
+      code: 'PREPARATION_REJECTED',
+      recoverable: true,
+      message: expect.stringContaining('required field is missing')
+    })
+  ])
+  expect(server.packets.find((packet) => packet.id === 99)).toMatchObject({
+    result: { success: false }
+  })
+  expect(server.packets.find((packet) => packet.id === 100)).toMatchObject({
+    result: { success: true }
+  })
+  expect(executeBatch).not.toHaveBeenCalled()
+})
+
 it('exposes review planning to the model and traces the operation without certifying an unassessed image', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const outcome = {
@@ -1695,7 +2184,14 @@ it('exposes review planning to the model and traces the operation without certif
   })
   const records = log.mock.calls.map(([value]) => JSON.parse(String(value)))
   const trace = records.filter((entry) => entry.event === 'ai_request_trace')
-  expect(trace.map((entry) => entry.stage)).toEqual([
+  expect(
+    trace
+      .filter(
+        (entry) =>
+          entry.stage.startsWith('tool_') || entry.stage === 'settlement'
+      )
+      .map((entry) => entry.stage)
+  ).toEqual([
     'tool_started',
     'tool_execution_started',
     'tool_completed',

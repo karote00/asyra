@@ -727,6 +727,15 @@ files, prerequisites, missing coverage, overlapping responsibility and cycles
 reject the entire decision without writing. Resolve overlap by revising assignments;
 there is no override that grants shared arbitrary mutation authority.
 
+For format-2 workspace contracts, work allocation follows the exact admitted
+owner step implementation boundary, including App `src` and `server` files.
+It does not infer a directory from the package name. Runtime code extensions
+match contract admission; tests and verification inputs cannot become work files.
+The existing format-1 package scope remains its historical contract. Allocation
+is a scope commitment only: subsequent captured-source/task admission still
+verifies the actual workspace owner, declared source inputs and exact authority.
+An allocation cannot make an unbound or wrong-owner file executable.
+
 Create and revise decisions require a UUID request identity, actor, reason and
 expected target revision (zero for creation). Each successful decision appends a
 full immutable revision and audit atomically in the existing exclusively owned

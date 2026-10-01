@@ -7,7 +7,11 @@ const { createHash, randomUUID } = require('node:crypto')
 const { loadContract, admitContract } = require('../contracts.cjs')
 const { createTargetOwner } = require('../flow-target.cjs')
 const root = path.resolve(__dirname, '../../../..')
-function setup(t) {
+function setup(
+  t,
+  appOwner = false,
+  appFile = 'apps/asyra-design/server/local-tool-scheduler.ts'
+) {
   const parent = path.join(root, 'tmp/flow-inspector/target-tests')
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'store-'))
@@ -20,7 +24,24 @@ function setup(t) {
     id: 'future.obligation',
     testName: 'Future obligation fixture'
   })
-  const contract = admitContract(definition, accepted.architectureDefinition)
+  const architecture = structuredClone(accepted.architectureDefinition)
+  if (appOwner) {
+    definition.version = 2
+    for (const scenario of definition.scenarios)
+      if (scenario.mutation) scenario.mutation.file = appFile
+    definition.workspaceSources = [
+      {
+        name: '@asyra/asyra-design',
+        inputs: ['src/**', 'server/**'],
+        entry: null
+      }
+    ]
+    for (const step of architecture.steps) {
+      step.ownerPackage = '@asyra/asyra-design'
+      step.implementationBoundary = [appFile]
+    }
+  }
+  const contract = admitContract(definition, architecture)
   const tasks = new Map(),
     reviews = new Map()
   const options = {
@@ -42,7 +63,9 @@ function setup(t) {
       stepId: c.stepId,
       obligationIds: [c.id],
       scope: 'Promise ' + c.id,
-      allowedFiles: ['packages/factory/src/data-transact.ts'],
+      allowedFiles: [
+        appOwner ? appFile : 'packages/factory/src/data-transact.ts'
+      ],
       prerequisites: []
     }))
   const request = {
@@ -1377,4 +1400,57 @@ test('legacy unpinned targets remain readable but cannot acquire an accepted ver
   }
   fs.writeFileSync(file, JSON.stringify(saved))
   assert.throws(() => createTargetOwner(value.options), /accepted.*version/i)
+})
+
+test('private App server work uses its admitted owner boundary and survives retained loading', (t) => {
+  const { owner, options, request } = setup(t, true)
+  const saved = owner.decide(request, 'local-developer')
+  assert.equal(saved.revision, 1)
+  assert.equal(owner.get(saved.id).works.length, 3)
+  assert.deepEqual(
+    createTargetOwner(options).get(saved.id),
+    owner.get(saved.id)
+  )
+})
+
+test('App work rejects files outside its admitted runtime boundary without allocation', (t) => {
+  const { owner, request } = setup(t, true)
+  for (const file of [
+    'packages/factory/src/data-transact.ts',
+    'apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts',
+    'apps/asyra-design/server/local-ai-provider.ts',
+    'apps/asyra-design/package.json'
+  ]) {
+    const invalid = structuredClone(request)
+    invalid.works[0].allowedFiles = [file]
+    assert.throws(
+      () => owner.decide(invalid, 'local-developer'),
+      /file.*scope/i
+    )
+    assert.deepEqual(owner.list(), [])
+  }
+})
+
+test('App UI runtime work admits TSX while an unknown scope version grants no authority', (t) => {
+  const { owner, options, request } = setup(
+    t,
+    true,
+    'apps/asyra-design/src/contents/GroupDisclosure.tsx'
+  )
+  const saved = owner.decide(request, 'local-developer')
+  assert.equal(saved.revision, 1)
+  assert.deepEqual(
+    createTargetOwner(options).get(saved.id),
+    owner.get(saved.id)
+  )
+  const contracts = options.getContracts()
+  options.getContracts = () =>
+    contracts.map((contract) => ({
+      ...contract,
+      runtimeScope: { ...contract.runtimeScope, format: 999 }
+    }))
+  assert.throws(
+    () => createTargetOwner(options),
+    /unsupported runtime scope version/
+  )
 })
