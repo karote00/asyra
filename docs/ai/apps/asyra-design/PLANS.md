@@ -4,6 +4,9 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active preparation: [AI Design Execution Flow](plans/ai-execution-flow-plan.md).
+  Continues the merged AI panel with intent-driven orchestration and work reuse;
+  see its preparation prerequisite before starting production implementation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
   Implementation is in progress under the plan’s bounded owner stages.

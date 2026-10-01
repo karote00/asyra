@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('node:path')
 const { validId } = require('./store.cjs')
+const { sourceInputPath } = require('./workspace-sources.cjs')
 const freeze = (value) => {
   if (value && typeof value === 'object') {
     Object.values(value).forEach(freeze)
@@ -174,13 +175,19 @@ function admitTask(
   )
   const primaryPackageRoot =
     'packages/' + step.ownerPackage.slice('@asyra/'.length) + '/'
+  const workspaceScope = contract.runtimeScope?.format === 2
   for (const file of files) {
     requireTask(
       canonicalFile(file) &&
-        step.ownerPackage.startsWith('@asyra/') &&
-        file.startsWith(primaryPackageRoot + 'src/') &&
-        file.endsWith('.ts') &&
-        !file.includes('/__tests__/'),
+        !file
+          .split('/')
+          .some((part) => part.startsWith('.') || part === '__tests__') &&
+        !/\.(test|spec)\.[cm]?[jt]sx?$/.test(file) &&
+        (workspaceScope
+          ? /\.[cm]?[jt]sx?$/.test(file)
+          : step.ownerPackage.startsWith('@asyra/') &&
+            file.startsWith(primaryPackageRoot + 'src/') &&
+            file.endsWith('.ts')),
       'non-runtime or noncanonical path'
     )
     requireTask(
@@ -230,4 +237,39 @@ function admitTask(
     })
   )
 }
-module.exports = { admitTask, TASK_POLICY, canonicalFile, freeze }
+function admitTaskSource(task, snapshot) {
+  const authority = snapshot.runtimeAuthority
+  requireTask([1, 2].includes(authority?.format), 'missing runtime authority')
+  requireTask(
+    snapshot.contractDigest === task.contractDigest,
+    'source contract mismatch'
+  )
+  const owner = authority.packages.find(
+    (entry) => entry.name === task.step.ownerPackage
+  )
+  requireTask(owner, 'missing source owner')
+  for (const file of task.allowedFiles) {
+    requireTask(
+      canonicalFile(file) &&
+        (authority.format === 2
+          ? sourceInputPath(file, owner)
+          : file.startsWith(owner.repositoryDirectory + '/src/') &&
+            file.endsWith('.ts')) &&
+        snapshot.runtimeSource.files.some((entry) => entry.path === file) &&
+        task.step.implementationBoundary.some(
+          (boundary) =>
+            boundary === file ||
+            (boundary.endsWith('/**') && file.startsWith(boundary.slice(0, -2)))
+        ),
+      'file outside captured runtime source owner'
+    )
+  }
+}
+
+module.exports = {
+  admitTask,
+  admitTaskSource,
+  TASK_POLICY,
+  canonicalFile,
+  freeze
+}

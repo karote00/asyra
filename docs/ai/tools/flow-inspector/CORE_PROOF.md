@@ -19,6 +19,46 @@ forward publication crosses the existing Factory handoff before cancellation.
 
 ## Admission
 
+### App flow correction contract
+
+App feature and cross-owner integration flows are intended development targets.
+The package-only execution restriction below is a known implementation defect
+being corrected under
+`docs/ai/apps/asyra-design/plans/ai-execution-flow-plan.md`, Task 0; App runtime
+verification is not complete until its source and execution gates pass.
+
+A product proof manifest may declare its canonical repository-relative
+`manifestPath`. Admission retains that path, and explicit loading must match the
+declared location. Historical Factory manifests without this field retain their
+original manifest identity. Selecting another product cannot silently select
+Factory. Manifest, architecture, spec, test and configuration identities stay
+bound to their owning proof.
+
+Negative transformations select an exact runtime file within a selected step's
+implementation boundary. They cannot change a verification-role file, test,
+undeclared runtime or escaped path. Contract admission checks the declared
+boundary; source admission must additionally establish real captured runtime
+membership before execution. Existing Factory demonstrations remain ordinary
+instances of this rule, with unchanged required failing obligations.
+
+The source owner must resolve actual workspace identity and inputs for App and
+integration targets; a public package entry or a `packages/*` path cannot be a
+universal feature requirement. This correction does not relax source identity,
+containment, case completeness or retained-evidence checks.
+
+Mappings for workspace features declare `workspaceSources`: an array of unique
+workspace `name`, workspace-relative runtime `inputs`, and nullable source
+`entry`. Inputs are exact source paths or directory `/**` patterns; the entry,
+when present, must belong to those inputs. Source ownership resolves the actual
+workspace path from root-declared manifests. Selected owners and their declared
+runtime workspace dependencies form the capture closure; undeclared dependency
+source overrides use their existing `src/**` source convention. Extra declared
+owners outside that closure are rejected. A private App needs no public export
+or package entry. This explicit source declaration binds runtime scope format 2;
+retained format 1 evidence is not reinterpreted as workspace evidence.
+
+### Existing proof obligations
+
 The product-owned proof manifest names each flow's goal, its ordered selected
 steps, the existing architecture source, the formal test file, and exact required
 case names. The manifest is an explicit test mapping, not another architecture.
@@ -114,6 +154,15 @@ same captured input digest. Scenario names and expected failures are owned by th
 manifest; runner, CLI, and board consume that registration.
 
 ## Controlled Actions and Retention
+
+A local service may select a canonical product proof `manifestPath`; the CLI
+exposes this as `--manifest <repository-relative-path>` before its command.
+Fresh candidate reads and restart use that same product identity. An explicit
+store belonging to another product is rejected; implicit product stores are
+isolated by manifest identity. With `--url`, selection belongs to the running
+service and cannot also be supplied by the client. An absent selection keeps
+the existing Factory entry point. Retained workspace runtime authority format 2
+remains versioned and bound to its source; unknown versions remain errors.
 
 Registered verification, negative demonstrations, cancellation, mapping-diff
 preparation, and explicit mapping acceptance/rejection are supported. CLI and HTTP
@@ -217,6 +266,11 @@ UUID `requestId` makes a verification retry return its original attempt; conflic
 reuse is rejected, and caller-owned arrays are detached before asynchronous work.
 
 The server URL is owned by `FLOW_PROOF_URL`, shared by the server and browser tests.
+Copy `tools/flow-inspector/.env.example` to the ignored local
+`tools/flow-inspector/.env`, then load it with Node's `--env-file` option when
+running the CLI or browser regressions. Keep local values; never commit `.env`.
+The optional browser channel selects an already installed browser for headless
+regressions and does not change the proof runtime or provider configuration.
 The server serves the existing committed workspace assets from an explicit
 allowlist and loads the proof adapter only in its target documents. `/` serves
 Overview; `/<catalog-slug>` serves the selected Inspector with the same workspace
@@ -827,6 +881,10 @@ admission source. Each task start requires that exact registered source authorit
 remain available. The admission's own target revision makes the assessment projection
 historical without invalidating its frozen allocation, but source-task revocation or
 source retirement blocks execution.
+Complete source authority identities may use package format 1 or workspace
+format 2. Unknown versions or incomplete digest links reject before reservation;
+the target owner consumes these identities without discovering workspace paths
+or repeating source validation.
 A reserved task cannot omit or substitute its binding. A stale, missing or changed
 relation fails before adapter operations or provider reservations. Task identity
 replay creates no new attempt. Existing provider dispatch blocks remain authoritative.
@@ -1558,6 +1616,13 @@ activate version retention, composition, service assessment or baseline acceptan
 
 ### Derived execution source
 
+For workspace runtime authority format 2, fixed generated execution roles live
+under `.flow-proof/` inside the captured source tree. This keeps generated
+configuration outside declared workspace runtime roots, including flows of the
+Inspector tool itself. The source owner supplies the exact role selection to
+the runner; arbitrary caller paths remain invalid. Retained authority format 1
+keeps its original generated role locations and byte validation.
+
 For scoped authority the source owner defines
 `contained-native-typescript-v2` for the candidate verifier's generated
 configuration and parent-watch bootstrap.
@@ -1642,6 +1707,8 @@ has no caller-provided process runner, executable, argument, configuration or
 sandbox-policy override. It requires an own non-null execution descriptor with
 format 2 and policy `contained-native-typescript-v2`, the source owner's two fixed
 configuration/bootstrap roles, an exact original verification digest link,
+with runtime authority format 1 or 2 selecting roles through the source owner's
+fixed selector (including `.flow-proof/` for workspace authority),
 `runtimeAuthorityDigest` link and
 `configurationDigest === executionSource.digest`. Missing, partial or unsupported
 closure inputs reject before dispatch; ordinary execution is not a fallback.

@@ -5,6 +5,7 @@ const { spawn } = require('node:child_process')
 const { createRequire } = require('node:module')
 const { createHash } = require('node:crypto')
 const { setInterval, clearInterval } = require('node:timers')
+const { executionRolesForAuthority } = require('./snapshot.cjs')
 
 function runProcess({
   executable,
@@ -178,6 +179,7 @@ async function runContainedVerification(options) {
   }
   const execution = snapshot.executionSource
   const runtimeAuthority = snapshot.runtimeAuthority
+  const expectedRoles = executionRolesForAuthority(runtimeAuthority)
   const scoped = Object.hasOwn(snapshot, 'runtimeAuthority')
   if (
     !Object.hasOwn(snapshot, 'executionSource') ||
@@ -189,17 +191,15 @@ async function runContainedVerification(options) {
       (scoped
         ? 'contained-native-typescript-v2'
         : 'contained-native-typescript-v1') ||
-    execution.roles?.configuration !==
-      'tools/flow-inspector/control-plane/candidate-config.mjs' ||
-    execution.roles?.bootstrap !==
-      'tools/flow-inspector/control-plane/candidate-bootstrap.cjs' ||
+    execution.roles?.configuration !== expectedRoles.configuration ||
+    execution.roles?.bootstrap !== expectedRoles.bootstrap ||
     !/^[a-f0-9]{64}$/.test(execution.digest ?? '') ||
     snapshot.configurationDigest !== execution.digest ||
     !snapshot.verificationSource ||
     !/^[a-f0-9]{64}$/.test(execution.verificationSourceDigest ?? '') ||
     execution.verificationSourceDigest !== snapshot.verificationSource.digest ||
     (scoped &&
-      (runtimeAuthority?.format !== 1 ||
+      (![1, 2].includes(runtimeAuthority?.format) ||
         !/^[a-f0-9]{64}$/.test(runtimeAuthority.digest ?? '') ||
         !/^[a-f0-9]{64}$/.test(runtimeAuthority.contractScopeDigest ?? '') ||
         execution.runtimeAuthorityDigest !== runtimeAuthority.digest))

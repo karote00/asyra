@@ -161,120 +161,172 @@ test('mapping and decision commit together and an interrupted write cannot accep
   recovered.close()
 })
 
-test('derived attempt format three requires source authority and retains versioned lifecycle without upgrading history', (t) => {
-  const directory = fixture(t)
-  let store = openStore(directory)
-  try {
-    const record = { ...attempt(), format: 3, mappingRevision: 1 }
-    const repository = path.resolve(__dirname, '../../../..')
-    const contract = require('../contracts.cjs').loadContract(repository)
-    const source = require('../snapshot.cjs')
-    const captured = source.captureSource(
-      repository,
-      path.join(directory, record.id),
-      contract
-    )
-    const generated = source.createDerivedExecution({
-      sourceRoot: captured.sourceRoot,
-      verificationSource: captured.verificationSource,
-      runtimeAuthority: captured.runtimeAuthority
-    })
-    Object.assign(record, {
-      contractDigest: contract.digest,
-      sourceContract: {
-        definition: contract.definition,
-        architectureDefinition: contract.architectureDefinition
-      },
-      snapshot: { ...captured, executionSource: generated.executionSource }
-    })
-    assert.doesNotThrow(
-      () => store.save(record),
-      'store shape is not full source admission'
-    )
-    assert.equal(
-      store.get(record.id).snapshot.runtimeAuthority.digest,
-      captured.runtimeAuthority.digest
-    )
-    const legacy = {
-      ...attempt(),
-      format: 2,
-      mappingRevision: 1,
-      contractDigest: contract.digest
-    }
-    store.save(legacy)
-    for (const [label, mutate] of [
-      ['missing format', (value) => Reflect.deleteProperty(value, 'format')],
-      [
-        'null format',
-        (value) => {
-          value.format = null
+for (const authorityFormat of [1, 2])
+  test(
+    'derived attempt retains source authority format ' +
+      authorityFormat +
+      ' without upgrading history',
+    (t) => {
+      const directory = fixture(t)
+      let store = openStore(directory)
+      try {
+        const record = { ...attempt(), format: 3, mappingRevision: 1 }
+        const repository = path.resolve(__dirname, '../../../..')
+        const { loadContract } = require('../contracts.cjs')
+        let contract = loadContract(repository)
+        if (authorityFormat === 2) {
+          const definition = structuredClone(contract.definition)
+          definition.manifestPath = path.relative(
+            repository,
+            path.join(directory, 'flow-contracts.json')
+          )
+          definition.workspaceSources = [
+            {
+              name: '@asyra/factory',
+              inputs: ['src/**'],
+              entry: 'src/index.ts'
+            }
+          ]
+          fs.writeFileSync(
+            path.join(repository, definition.manifestPath),
+            JSON.stringify(definition)
+          )
+          contract = loadContract(
+            repository,
+            undefined,
+            definition.manifestPath
+          )
         }
-      ],
-      [
-        'unknown format',
-        (value) => {
-          value.format = 4
+        const source = require('../snapshot.cjs')
+        const captured = source.captureSource(
+          repository,
+          path.join(directory, record.id),
+          contract
+        )
+        const generated = source.createDerivedExecution({
+          sourceRoot: captured.sourceRoot,
+          verificationSource: captured.verificationSource,
+          runtimeAuthority: captured.runtimeAuthority
+        })
+        Object.assign(record, {
+          contractDigest: contract.digest,
+          sourceContract: {
+            definition: contract.definition,
+            architectureDefinition: contract.architectureDefinition
+          },
+          snapshot: { ...captured, executionSource: generated.executionSource }
+        })
+        assert.doesNotThrow(
+          () => store.save(record),
+          'store shape is not full source admission'
+        )
+        assert.equal(
+          store.get(record.id).snapshot.runtimeAuthority.digest,
+          captured.runtimeAuthority.digest
+        )
+        const legacy = {
+          ...attempt(),
+          format: 2,
+          mappingRevision: 1,
+          contractDigest: contract.digest
         }
-      ],
-      [
-        'missing contract',
-        (value) => Reflect.deleteProperty(value, 'sourceContract')
-      ],
-      [
-        'missing descriptor',
-        (value) => Reflect.deleteProperty(value.snapshot, 'executionSource')
-      ],
-      [
-        'invalid runtime authority',
-        (value) => {
-          value.snapshot.runtimeAuthority.digest = 'wrong'
+        store.save(legacy)
+        for (const [label, mutate] of [
+          [
+            'missing format',
+            (value) => Reflect.deleteProperty(value, 'format')
+          ],
+          [
+            'null format',
+            (value) => {
+              value.format = null
+            }
+          ],
+          [
+            'unknown format',
+            (value) => {
+              value.format = 4
+            }
+          ],
+          [
+            'missing contract',
+            (value) => Reflect.deleteProperty(value, 'sourceContract')
+          ],
+          [
+            'missing descriptor',
+            (value) => Reflect.deleteProperty(value.snapshot, 'executionSource')
+          ],
+          [
+            'invalid runtime authority',
+            (value) => {
+              value.snapshot.runtimeAuthority.digest = 'wrong'
+            }
+          ],
+          [
+            'unknown runtime authority',
+            (value) => {
+              value.snapshot.runtimeAuthority.format = 3
+            }
+          ],
+          [
+            'execution authority mismatch',
+            (value) => {
+              value.snapshot.executionSource.runtimeAuthorityDigest =
+                '0'.repeat(64)
+            }
+          ],
+          [
+            'invalid mapping revision',
+            (value) => {
+              value.mappingRevision = 0
+            }
+          ],
+          [
+            'invalid contract digest',
+            (value) => {
+              value.contractDigest = 'wrong'
+            }
+          ]
+        ]) {
+          const invalid = structuredClone(record)
+          mutate(invalid)
+          assert.throws(
+            () => store.save(invalid),
+            /Invalid|source|derived/i,
+            label
+          )
         }
-      ],
-      [
-        'execution authority mismatch',
-        (value) => {
-          value.snapshot.executionSource.runtimeAuthorityDigest = '0'.repeat(64)
+        for (const key of [
+          'runtimeSource',
+          'verificationSource',
+          'executionSource'
+        ]) {
+          for (const value of [null, [], 'present', true]) {
+            const invalid = structuredClone(record)
+            invalid.snapshot[key] = value
+            assert.throws(
+              () => store.save(invalid),
+              /Invalid|source|derived/i,
+              key
+            )
+          }
         }
-      ],
-      [
-        'invalid mapping revision',
-        (value) => {
-          value.mappingRevision = 0
+        for (const key of ['definition', 'architectureDefinition']) {
+          const invalid = structuredClone(record)
+          invalid.sourceContract[key] = []
+          assert.throws(
+            () => store.save(invalid),
+            /Invalid|source|derived/i,
+            key
+          )
         }
-      ],
-      [
-        'invalid contract digest',
-        (value) => {
-          value.contractDigest = 'wrong'
-        }
-      ]
-    ]) {
-      const invalid = structuredClone(record)
-      mutate(invalid)
-      assert.throws(() => store.save(invalid), /Invalid|source|derived/i, label)
-    }
-    for (const key of [
-      'runtimeSource',
-      'verificationSource',
-      'executionSource'
-    ]) {
-      for (const value of [null, [], 'present', true]) {
-        const invalid = structuredClone(record)
-        invalid.snapshot[key] = value
-        assert.throws(() => store.save(invalid), /Invalid|source|derived/i, key)
+        store.close()
+        store = openStore(directory)
+        assert.equal(store.get(record.id).format, 3)
+        assert.equal(store.get(record.id).phase, 'interrupted')
+        assert.equal(store.get(legacy.id).format, 2)
+      } finally {
+        store.close()
       }
     }
-    for (const key of ['definition', 'architectureDefinition']) {
-      const invalid = structuredClone(record)
-      invalid.sourceContract[key] = []
-      assert.throws(() => store.save(invalid), /Invalid|source|derived/i, key)
-    }
-    store.close()
-    store = openStore(directory)
-    assert.equal(store.get(record.id).format, 3)
-    assert.equal(store.get(record.id).phase, 'interrupted')
-    assert.equal(store.get(legacy.id).format, 2)
-  } finally {
-    store.close()
-  }
-})
+  )

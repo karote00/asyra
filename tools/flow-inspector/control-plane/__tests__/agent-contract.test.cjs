@@ -2,6 +2,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const path = require('node:path')
+const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
 const { loadContract } = require('../contracts.cjs')
 const { admitTask, TASK_POLICY } = require('../agent-contract.cjs')
@@ -17,6 +18,47 @@ const request = () => ({
   budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 },
   contractDigest: contract.digest,
   revision: 1
+})
+
+test('workspace task admission binds actual App source inputs without granting dependency writes', (t) => {
+  const parent = path.join(root, 'tmp/flow-inspector/app-task-admission')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'case-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
+  const selected = appRuntimeFixture(root, directory)
+  const input = {
+    ...request(),
+    stepId: 'schedule',
+    contractDigest: selected.digest,
+    allowedFiles: ['apps/asyra-design/server/local-tool-scheduler.ts']
+  }
+  const task = admitTask(input, selected, 1, 'local-developer')
+  const snapshot = require('../snapshot.cjs').captureSource(
+    root,
+    path.join(directory, 'capture'),
+    selected
+  )
+  const { admitTaskSource } = require('../agent-contract.cjs')
+  assert.doesNotThrow(() => admitTaskSource(task, snapshot))
+  for (const file of [
+    'packages/utils/src/propsManager/fills.ts',
+    'apps/asyra-design/package.json',
+    'apps/asyra-design/server/.env',
+    'apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts',
+    'apps/asyra-design/server/missing.ts'
+  ]) {
+    const forged = {
+      ...task,
+      allowedFiles: [file],
+      step: { ...task.step, implementationBoundary: [file] }
+    }
+    assert.throws(() => admitTaskSource(forged, snapshot), /source|owner/i)
+  }
+  assert.throws(
+    () => admitTaskSource(task, { ...snapshot, runtimeAuthority: undefined }),
+    /authority/i
+  )
 })
 test('admission binds the exact concrete owner, adjacent contracts and retained obligations', () => {
   const input = request()

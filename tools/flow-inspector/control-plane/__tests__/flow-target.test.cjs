@@ -563,32 +563,37 @@ test('admission reserves source and task before execution and survives restart w
   )
 })
 
-test('assessment-bound admission enables exact dependent work and survives restart without accepting the target', (t) => {
-  const f = dependentAdmissionFixture(t)
-  const before = f.options.getBaseline()
-  const result = f.owner.decide(f.admission, 'local-developer')
-  assert.equal(result.decision.admission.assessmentId, f.assessment.id)
-  assert.equal(result.decision.admission.allocationRevision, f.target.revision)
-  assert.deepEqual(result.decision.admission.source, {
-    digest: f.assessment.runtime.sourceDigest,
-    head: f.assessment.runtime.head
+for (const authorityFormat of [1, 2])
+  test(`assessment-bound admission with authority ${authorityFormat} survives restart without accepting the target`, (t) => {
+    const f = dependentAdmissionFixture(t)
+    f.assessment.runtime.runtimeAuthorityFormat = authorityFormat
+    const before = f.options.getBaseline()
+    const result = f.owner.decide(f.admission, 'local-developer')
+    assert.equal(result.decision.admission.assessmentId, f.assessment.id)
+    assert.equal(
+      result.decision.admission.allocationRevision,
+      f.target.revision
+    )
+    assert.deepEqual(result.decision.admission.source, {
+      digest: f.assessment.runtime.sourceDigest,
+      head: f.assessment.runtime.head
+    })
+    assert.deepEqual(
+      f.owner.checkTask(f.task, f.source.snapshot),
+      result.decision.admission
+    )
+    const current = f.owner.get(f.target.id)
+    assert.equal(current.status, 'pending')
+    assert.equal(current.works[0].status, 'pending')
+    assert.equal(current.works[0].prerequisites[0].status, 'passed')
+    assert.deepEqual(f.options.getBaseline(), before)
+    const restored = createTargetOwner(f.options)
+    assert.deepEqual(
+      restored.checkTask(f.task, f.source.snapshot),
+      result.decision.admission
+    )
+    assert.equal(restored.get(f.target.id).status, 'pending')
   })
-  assert.deepEqual(
-    f.owner.checkTask(f.task, f.source.snapshot),
-    result.decision.admission
-  )
-  const current = f.owner.get(f.target.id)
-  assert.equal(current.status, 'pending')
-  assert.equal(current.works[0].status, 'pending')
-  assert.equal(current.works[0].prerequisites[0].status, 'passed')
-  assert.deepEqual(f.options.getBaseline(), before)
-  const restored = createTargetOwner(f.options)
-  assert.deepEqual(
-    restored.checkTask(f.task, f.source.snapshot),
-    result.decision.admission
-  )
-  assert.equal(restored.get(f.target.id).status, 'pending')
-})
 
 test('assessment-bound task start rejects retired source authority after its own admission revision', (t) => {
   const f = dependentAdmissionFixture(t)
@@ -608,6 +613,16 @@ test('assessment source authority requires one complete versioned identity', (t)
     () => f.owner.decide(f.admission, 'local-developer'),
     /assessment source identity/i
   )
+})
+
+test('assessment source authority rejects unknown versions before reservation', (t) => {
+  const f = dependentAdmissionFixture(t)
+  f.assessment.runtime.runtimeAuthorityFormat = 3
+  assert.throws(
+    () => f.owner.decide(f.admission, 'local-developer'),
+    /assessment source identity/i
+  )
+  assert.equal(f.owner.get(f.target.id).revision, f.target.revision)
 })
 
 test('retained assessment admission rejects a changed source even with a recomputed digest', (t) => {
