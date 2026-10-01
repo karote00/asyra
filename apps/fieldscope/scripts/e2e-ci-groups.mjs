@@ -34,7 +34,14 @@ export const CI_E2E_GROUPS = [
       'e2e/locale-layout-1440-en.spec.ts'
     ]
   },
-  { name: 'workspace-panels', files: ['e2e/panels.spec.ts'] },
+  {
+    name: 'workspace-panels',
+    files: [
+      'e2e/panels.spec.ts',
+      'e2e/panels-responsive.spec.ts',
+      'e2e/reference-dialog.spec.ts'
+    ]
+  },
   {
     name: 'robot-workspace',
     files: [

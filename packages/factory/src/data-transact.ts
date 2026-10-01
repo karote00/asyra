@@ -1,4 +1,9 @@
 import type {
+  HistoryGroupHandle,
+  HistoryGroupOptions,
+  HistoryGroupStatus
+} from './history-group.js'
+import type {
   EndTransactionOptions,
   PropsChange,
   ReplaceLatestHistoryOptions,
@@ -55,9 +60,17 @@ interface TransactionJournalEntry {
   inverseEvents?: readonly AllEvent[]
   shared?: JournalSharedChange
 }
+interface PendingHistoryGroup {
+  members: FactoryHistoryEntry[]
+  status: HistoryGroupStatus
+  options: HistoryGroupOptions
+}
+
 interface FactoryHistoryEntry {
   readonly entries: readonly TransactionJournalEntry[]
   readonly progressiveDeliverySequence?: FactoryMutationDeliverySequence
+  readonly sourceBatches?: readonly SharedDeliveryBatch[]
+  readonly sourceSliceIds?: ReadonlyMap<string, string>
 }
 interface ReplaceLatestHistoryStage {
   readonly eventOrder: string[]
@@ -147,6 +160,8 @@ import {
   hasSynchronousEventBatchHandler,
   isDetachedTransactionValue,
   isTransactionReplayApplied,
+  getTransactionReplayRestorationEvents,
+  getFailedTransactionReplayRestorationEvents,
   publishEvent,
   publishEventsToObservers,
   publishEventToObservers,
@@ -394,6 +409,9 @@ class DataTransact {
   >()
   private preparedActionHistoryEntries:
     readonly TransactionJournalEntry[] | null = null
+  private historyGroups = new WeakMap<HistoryGroupHandle, PendingHistoryGroup>()
+  private enrollingHistoryGroup: PendingHistoryGroup | undefined
+  private notifyingHistoryGroup = false
   private undoStack: FactoryHistoryEntry[] = []
   private redoStack: FactoryHistoryEntry[] = []
   private isTransacting = 0
@@ -509,6 +527,154 @@ class DataTransact {
     this.canReplayEventBatch = callbacks?.canReplayEventBatch
     this.onSharedDeliveryBatch = callbacks?.onSharedDeliveryBatch
     this.onSharedPublication = callbacks?.onSharedPublication
+  }
+
+  private assertHistoryGroupBoundaryIdle(): void {
+    if (
+      this.isTransacting !== 0 ||
+      this.transactionSettlementDepth !== 0 ||
+      this.inUndo ||
+      this.inRedo ||
+      this.enrollingHistoryGroup ||
+      this.notifyingHistoryGroup
+    ) {
+      throw new Error(
+        'History group lifecycle requires an idle transaction owner'
+      )
+    }
+    this.assertSharedEvidenceCanonicalControlAllowed()
+  }
+
+  private requireHistoryGroup(
+    handle: HistoryGroupHandle,
+    open = true
+  ): PendingHistoryGroup {
+    const group = this.historyGroups.get(handle)
+    if (!group || (open && group.status.state !== 'open')) {
+      throw new Error('History group handle is foreign, closed or retired')
+    }
+    return group
+  }
+
+  startHistoryGroup(options: HistoryGroupOptions = {}): HistoryGroupHandle {
+    this.assertHistoryGroupBoundaryIdle()
+    const threshold = options.warningChangeCount
+    if (
+      threshold !== undefined &&
+      (!Number.isSafeInteger(threshold) || threshold <= 0)
+    ) {
+      throw new Error(
+        'History group warningChangeCount must be a positive safe integer'
+      )
+    }
+    const handle = Object.freeze({}) as HistoryGroupHandle
+    this.historyGroups.set(handle, {
+      members: [],
+      options: { ...options },
+      status: Object.freeze({
+        state: 'open',
+        memberCount: 0,
+        changeCount: 0,
+        warningReached: false
+      })
+    })
+    return handle
+  }
+
+  getHistoryGroupStatus(handle: HistoryGroupHandle): HistoryGroupStatus {
+    return this.requireHistoryGroup(handle, false).status
+  }
+
+  private notifyHistoryGroup(group: PendingHistoryGroup): void {
+    this.notifyingHistoryGroup = true
+    try {
+      group.options.onChange?.(group.status)
+    } catch {
+      // Advisory observers cannot change a committed outcome.
+    } finally {
+      this.notifyingHistoryGroup = false
+    }
+  }
+
+  withHistoryGroup<T>(handle: HistoryGroupHandle, runMember: () => T): T {
+    this.assertHistoryGroupBoundaryIdle()
+    const group = this.requireHistoryGroup(handle)
+    const before = group.status
+    this.enrollingHistoryGroup = group
+    try {
+      return runMember()
+    } finally {
+      this.enrollingHistoryGroup = undefined
+      if (group.status !== before) this.notifyHistoryGroup(group)
+    }
+  }
+
+  private createGroupedHistory(
+    members: readonly FactoryHistoryEntry[]
+  ): FactoryHistoryEntry {
+    const sourceBatches: SharedDeliveryBatch[] = []
+    const sourceSliceIds = new Map<string, string>()
+    const slices: { sliceId: string; orderedIds: string[] }[] = []
+    members.forEach((member, memberIndex) => {
+      const batches = this.orderHistorySourceBatchesByDeliverySequence(
+        member,
+        this.historySourceBatches(this.deliveredHistoryRecords(member))
+      )
+      const memberSlices = new Map<string, string[]>()
+      batches.forEach((batch) => {
+        const sliceId = `${memberIndex}:${batch.sliceId}`
+        sourceSliceIds.set(batch.batchId, sliceId)
+        const ids = memberSlices.get(sliceId) ?? []
+        ids.push(...batch.deliveries.map(({ deliveryId }) => deliveryId))
+        memberSlices.set(sliceId, ids)
+        sourceBatches.push(batch)
+      })
+      memberSlices.forEach((orderedIds, sliceId) =>
+        slices.push({ sliceId, orderedIds })
+      )
+    })
+    return {
+      // Reuse immutable owner evidence. Only the index of references is joined.
+      entries: members.flatMap((member) => member.entries),
+      sourceBatches: Object.freeze(sourceBatches),
+      sourceSliceIds,
+      ...(slices.length > 0
+        ? {
+            progressiveDeliverySequence: deepFreezeValue({
+              mode: 'progressive' as const,
+              ...(members.some(
+                (member) =>
+                  member.progressiveDeliverySequence?.batchPublications ===
+                  false
+              )
+                ? { batchPublications: false }
+                : {}),
+              slices
+            })
+          }
+        : {})
+    }
+  }
+
+  endHistoryGroup(handle: HistoryGroupHandle): HistoryGroupStatus {
+    this.assertHistoryGroupBoundaryIdle()
+    const group = this.requireHistoryGroup(handle)
+    const history = this.createGroupedHistory(group.members)
+    group.members = []
+    group.status = Object.freeze({ ...group.status, state: 'closed' })
+    if (group.status.memberCount > 0) {
+      this.undoStack.push(history)
+      this.redoStack = []
+      this.actionId += 1
+      this.onUserActionCompleted?.({
+        actionId: this.actionId,
+        changeCount: group.status.changeCount,
+        timestamp: Date.now()
+      })
+    }
+    this.notifyHistoryGroup(group)
+    group.options = {}
+    return group.status
   }
 
   start(origin?: TransactionOrigin) {
@@ -2717,7 +2883,7 @@ class DataTransact {
   private applyReplayEvent(
     event: AllEvent,
     mode: TransactionReplayMode
-  ): boolean {
+  ): { applied: boolean; restorationEvents?: readonly AllEvent[] } {
     const previousApplyingReplayEvent = this.applyingReplayEvent
     this.applyingReplayEvent = true
     try {
@@ -2735,7 +2901,10 @@ class DataTransact {
         } else {
           publishEvent(event)
         }
-        return isTransactionReplayApplied()
+        return {
+          applied: isTransactionReplayApplied(),
+          restorationEvents: getTransactionReplayRestorationEvents()
+        }
       })
     } finally {
       this.applyingReplayEvent = previousApplyingReplayEvent
@@ -2745,14 +2914,17 @@ class DataTransact {
   private applyReplayEventBatch(
     events: readonly AllEvent[],
     mode: TransactionReplayMode
-  ): boolean {
+  ): { applied: boolean; restorationEvents?: readonly AllEvent[] } {
     const previousApplyingReplayEvent = this.applyingReplayEvent
     this.applyingReplayEvent = true
     try {
       return runInTransactionReplayMode(mode, () => {
         applyEventBatchToSynchronousOwners(events)
         publishEventsToObservers(events)
-        return isTransactionReplayApplied()
+        return {
+          applied: isTransactionReplayApplied(),
+          restorationEvents: getTransactionReplayRestorationEvents()
+        }
       })
     } finally {
       this.applyingReplayEvent = previousApplyingReplayEvent
@@ -2893,8 +3065,18 @@ class DataTransact {
       const isRetainedHistoryReplay =
         this.historyReplaySharedState?.ownsReplayEvidence === true
       this.retainingHistoryReplaySharedEvidence = isRetainedHistoryReplay
+      let restorationRecorded = false
+      const retainRestoration = (events?: readonly AllEvent[]) => {
+        if (restorationRecorded) return
+        restorationRecorded = true
+        if (events) restorationBatches?.push([...events])
+        else
+          appliedSteps.forEach(({ restorationEvents }) => {
+            if (restorationEvents) restorationBatches?.push(restorationEvents)
+          })
+      }
       try {
-        const applied =
+        const result =
           appliedSteps.length > 1
             ? this.applyReplayEventBatch(
                 appliedSteps.map(({ replayEvent }) => replayEvent),
@@ -2905,12 +3087,8 @@ class DataTransact {
         if (isRetainedHistoryReplay) {
           this.suppressHistoryReplayOwnerSharedEntries(recordedEntries)
         }
-        if (applied) {
-          appliedSteps.forEach(({ restorationEvents }) => {
-            if (restorationEvents) {
-              restorationBatches?.push(restorationEvents)
-            }
-          })
+        if (result.applied) {
+          retainRestoration(result.restorationEvents)
           if (isRetainedHistoryReplay) {
             appliedSteps.forEach(({ shared }) => {
               if (shared && !('suppress' in shared)) {
@@ -2942,11 +3120,7 @@ class DataTransact {
           )
         }
         if (wasTransactionReplayApplied(error)) {
-          appliedSteps.forEach(({ restorationEvents }) => {
-            if (restorationEvents) {
-              restorationBatches?.push(restorationEvents)
-            }
-          })
+          retainRestoration(getFailedTransactionReplayRestorationEvents(error))
         }
         failures.push(error)
       } finally {
@@ -3576,6 +3750,27 @@ class DataTransact {
     }
 
     const previousRedoStack = this.redoStack
+    const group = this.enrollingHistoryGroup
+    if (group) {
+      this.redoStack = []
+      return {
+        complete: () => {
+          group.members.push(history)
+          const changeCount = group.status.changeCount + committedChanges.length
+          group.status = Object.freeze({
+            state: 'open',
+            memberCount: group.status.memberCount + 1,
+            changeCount,
+            warningReached:
+              group.options.warningChangeCount !== undefined &&
+              changeCount >= group.options.warningChangeCount
+          })
+        },
+        rollback: () => {
+          this.redoStack = previousRedoStack
+        }
+      }
+    }
     this.undoStack.push(history)
     this.redoStack = []
 
@@ -3824,6 +4019,7 @@ class DataTransact {
     history: FactoryHistoryEntry,
     batches: readonly SharedDeliveryBatch[]
   ): readonly SharedDeliveryBatch[] {
+    if (history.sourceBatches) return history.sourceBatches
     const sequence = history.progressiveDeliverySequence
     if (!sequence) return batches
 
@@ -4055,12 +4251,12 @@ class DataTransact {
           })
         )
       )
+      const sourceSliceId =
+        history.sourceSliceIds?.get(sourceBatch.batchId) ?? sourceBatch.sliceId
       const batch = deepFreezeValue({
         batchId,
         sliceId:
-          direction === 'forward'
-            ? sourceBatch.sliceId
-            : `${sourceBatch.sliceId}:inverse`,
+          direction === 'forward' ? sourceSliceId : `${sourceSliceId}:inverse`,
         artifactId: this.currentArtifactId,
         transactionId: this.currentTransactionId,
         origin: this.transactionOrigin(),
@@ -4411,6 +4607,8 @@ class DataTransact {
   }
 
   undo() {
+    if (this.enrollingHistoryGroup)
+      throw new Error('Cannot replay history inside a group member')
     if (this.isTransacting > 0 && this.activeOrigin === 'remote') {
       throw new Error('Remote transaction cannot consume local undo history')
     }
@@ -4481,6 +4679,8 @@ class DataTransact {
   }
 
   redo() {
+    if (this.enrollingHistoryGroup)
+      throw new Error('Cannot replay history inside a group member')
     if (this.isTransacting > 0 && this.activeOrigin === 'remote') {
       throw new Error('Remote transaction cannot consume local redo history')
     }
@@ -4587,6 +4787,8 @@ class DataTransact {
   }
 
   dispose() {
+    this.historyGroups = new WeakMap()
+    this.enrollingHistoryGroup = undefined
     this.discardPendingImmediatePublication()
     this.pendingSharedPublications.length = 0
     this.unacknowledgedSharedPublications.length = 0

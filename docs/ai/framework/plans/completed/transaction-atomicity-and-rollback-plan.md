@@ -194,6 +194,18 @@ Rollback must:
 
 Reverse a successfully committed user-action history entry.
 
+Explicit history groups collect successful finite transactions without keeping a
+transaction open. Members publish and persist normally; only sealing appends the
+combined Undo entry. Pending groups do not intercept unrelated Undo/Redo. Replay
+follows recorded order, including overlapping writes; failed replay restores the
+actual pre-replay values. The public API and lifecycle contract is maintained in
+<a href="../../packages/factory.md#transaction-history-groups" target="_blank" rel="noopener noreferrer">Factory - Transaction history groups</a>.
+Completed canonical Scene Tree batches project immediately to Render and in the
+same order to UI at transaction end by default, scoped to the originating Scene
+Tree. Explicit immediate previews flush that local sequence before outer
+completion without duplicate delivery at commit.
+Shared delivery order does not determine local hierarchy projection.
+
 Undo may:
 
 - pop from the undo stack

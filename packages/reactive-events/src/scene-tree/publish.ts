@@ -9,7 +9,8 @@ import type {
   GroupInstanceTypes,
   MoveHierarchyRequest,
   RemoveElementsChange,
-  SceneTreeRawData
+  SceneTreeRawData,
+  SceneTreeChange
 } from '@asyra/utils'
 import { publishEvent } from '../event-bus.js'
 import { publishLocalProjectionEvents } from '../app/publish.js'
@@ -19,6 +20,30 @@ import type {
   UpdateComputedDataEvent,
   UpdateComputedDataPatchEvent
 } from './events.js'
+
+/** The owner supplies detached, immutable changes; shared delivery is separate. */
+export const publishLocalSceneTreeChanges = (
+  changes: readonly SceneTreeChange[],
+  projectionOwner: symbol,
+  immediate = false
+): void => {
+  if (changes.length === 0) return
+  publishLocalProjectionEvents(
+    [
+      Object.freeze({
+        type: EventTypes.SCENE_TREE_CHANGED,
+        payload: Object.freeze({
+          projectionOwner,
+          changes: Object.freeze([...changes])
+        })
+      })
+    ],
+    {
+      scope: projectionOwner,
+      immediate
+    }
+  )
+}
 
 export const publishLocalComputedDataEvents = (
   events: readonly (

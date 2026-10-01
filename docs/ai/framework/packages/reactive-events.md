@@ -98,3 +98,27 @@ Provide typed cross-package event communication.
 - Publisher and subscriber payload types stay aligned.
 - Event contracts are versioned/deprecated deliberately.
 - Removing an event has migration notes in docs.
+
+## Canonical Scene Tree projection
+
+`publishLocalSceneTreeChanges` publishes the owner's completed immutable batch
+under the existing `SCENE_TREE_CHANGED` event identity, with an instance-local
+`projectionOwner` symbol for consumer isolation. Applied subscribers see
+it immediately; ordinary observers wait for the outer commit by default.
+Explicit immediate Scene Tree preview uses a scoped local projection queue:
+flush earlier same-instance projection events with the new preview, preserve
+order, and omit those identities from commit delivery. Other scopes, command
+events and ordinary computed events stay deferred. Scope queues retain event
+references only and are cleared at transaction end/rollback; each preview visits
+only its scope, not the whole pending event list. It has no shared
+channel, persistence or Undo ownership and is not a mutation command. Scene Tree
+publishes only accepted canonical changes; rejected preparations never enter
+this route. Replay and rollback publish from the same Scene Tree owner.
+
+During synchronous replay, a canonical owner can pass a complete immutable
+restoration batch to `acknowledgeTransactionReplayApplied`. The batch describes
+its actual pre-apply values; repeated acknowledgements without a batch preserve
+that evidence. Factory consumes it for failed Undo/Redo restoration. Ordinary
+handlers without this optional acknowledgement retain the prevalidated static
+inverse contract. Applied-then-failed nested calls preserve evidence only within
+the same replay lifetime; later calls cannot inherit it from a reused error.

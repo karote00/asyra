@@ -36,6 +36,25 @@ const identityKeys = [
   'run',
   'attempt'
 ]
+// Attempts identify executions, not source revisions. GitHub dependency outcomes
+// below remain the authority for the latest job status; an older receipt cannot
+// turn a failed or incomplete rerun green.
+const sourceIdentityKeys = identityKeys.filter((key) => key !== 'attempt')
+function isSameRunEvidence(producer, current) {
+  if (!sourceIdentityKeys.every((key) => producer?.[key] === current[key]))
+    return false
+  if (current.run === 'local')
+    return current.attempt === 'local' && producer.attempt === 'local'
+  const positiveAttempt = (value) =>
+    typeof value === 'string' &&
+    /^[1-9][0-9]*$/.test(value) &&
+    Number.isSafeInteger(Number(value))
+  return (
+    positiveAttempt(producer.attempt) &&
+    positiveAttempt(current.attempt) &&
+    Number(producer.attempt) <= Number(current.attempt)
+  )
+}
 const e2eSuiteNames = [
   'collaboration',
   'flow-inspector-board',
@@ -161,7 +180,7 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
       e?.version === 1 &&
       typeof e.reportValid === 'boolean' &&
       /^[a-f0-9]{64}$/.test(e.reportDigest ?? '') &&
-      identityKeys.every((k) => e.identity?.[k] === identity[k]) &&
+      isSameRunEvidence(e.identity, identity) &&
       Array.isArray(e.cases) &&
       JSON.stringify(e.cases.map((o) => o?.id)) === JSON.stringify(expectedIds)
     const observed = admitted ? e.cases.find((o) => o.id === c.id) : null
@@ -449,7 +468,7 @@ function aggregateScope(evidence, identity, jobs) {
   const admitted =
     validIdentity &&
     evidence?.version === 2 &&
-    identityKeys.every((key) => evidence.identity?.[key] === identity[key]) &&
+    isSameRunEvidence(evidence.identity, identity) &&
     validMap &&
     validMatrix &&
     expectedWorkspacePlan.length === matrix.length &&
@@ -485,7 +504,7 @@ function aggregateScope(evidence, identity, jobs) {
     JSON.stringify(evidence.unknownPaths) === '[]'
   if (!admitted)
     blockers.push(
-      'CI relationship map is missing, unknown, malformed, or belongs to another run attempt'
+      'CI relationship map is missing, unknown, malformed, or has an incompatible source/run/attempt'
     )
 
   const selectedCheckResults = jobs.selectedCheckResults
@@ -496,9 +515,7 @@ function aggregateScope(evidence, identity, jobs) {
   const checkResultsValid =
     admitted &&
     selectedCheckResults?.version === 1 &&
-    identityKeys.every(
-      (key) => selectedCheckResults.identity?.[key] === identity[key]
-    ) &&
+    isSameRunEvidence(selectedCheckResults.identity, identity) &&
     selectedCheckResults.relationshipMapDigest ===
       evidence.relationshipMapDigest &&
     selectedCheckResults.executionPlanDigest === expectedExecutionPlanDigest &&
@@ -629,7 +646,7 @@ function aggregateScope(evidence, identity, jobs) {
     const recordValid =
       admitted &&
       record.version === 1 &&
-      identityKeys.every((key) => record.identity?.[key] === identity[key]) &&
+      isSameRunEvidence(record.identity, identity) &&
       record.relationshipMapDigest === evidence.relationshipMapDigest &&
       record.directory === entry.directory &&
       record.buildTask === entry.buildTask &&

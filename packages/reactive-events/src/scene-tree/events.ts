@@ -12,10 +12,17 @@ import type {
   RemoveElementsChange,
   SceneTreeDataOwner,
   SceneTreeRawData,
+  SceneTreeChange,
   SubtreeChange,
   UpdateElementBatchChange
 } from '@asyra/utils'
 import { EventTypes } from '../types.js'
+
+/** Complete canonical mutation, consumed locally before another API runs. */
+export interface SceneTreeChangedEvent {
+  type: typeof EventTypes.SCENE_TREE_CHANGED
+  payload: { projectionOwner: symbol; changes: readonly SceneTreeChange[] }
+}
 
 export interface SceneTreeInitEvent {
   type: EventTypes
@@ -118,6 +125,7 @@ export interface UpdateComputedDataPatchEvent {
 }
 
 export type SceneTreeEvents =
+  | SceneTreeChangedEvent
   | SceneTreeInitEvent
   | SceneTreeLoadDataEvent
   | SceneTreeLoadCompleteEvent

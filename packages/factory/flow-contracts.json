@@ -130,6 +130,65 @@
           "caseIds": ["cancel.delivery"]
         }
       ]
+    },
+    {
+      "id": "history-groups",
+      "title": "Collect independent commits into one Undo entry",
+      "goal": "Explicit committed members remain outside history until closure while ordinary ordered Undo stays usable.",
+      "stepIds": [
+        "record-reversible-journal",
+        "finalize-transaction-state",
+        "settle-local-shared-projection"
+      ],
+      "cases": [
+        {
+          "id": "history-group.ordered-replay",
+          "stepId": "finalize-transaction-state",
+          "testName": "Factory flow proof history group pending and ordered replay"
+        },
+        {
+          "id": "history-group.snapshot",
+          "stepId": "record-reversible-journal",
+          "testName": "Factory flow proof history group member snapshot"
+        },
+        {
+          "id": "history-group.delivery",
+          "stepId": "settle-local-shared-projection",
+          "testName": "Factory flow proof history group member delivery"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "journal-to-finalize",
+          "decision": "required",
+          "caseIds": ["history-group.ordered-replay"]
+        },
+        {
+          "routeId": "decision-to-finalize",
+          "decision": "required",
+          "caseIds": ["history-group.ordered-replay"]
+        },
+        {
+          "routeId": "validation-to-finalize",
+          "decision": "required",
+          "caseIds": ["history-group.ordered-replay"]
+        },
+        {
+          "routeId": "boundary-to-journal",
+          "decision": "required",
+          "caseIds": ["history-group.snapshot"]
+        },
+        {
+          "routeId": "journal-to-shared",
+          "decision": "required",
+          "caseIds": ["history-group.delivery"]
+        },
+        {
+          "routeId": "finalize-to-shared",
+          "decision": "required",
+          "caseIds": ["history-group.delivery"]
+        }
+      ]
     }
   ],
   "defaultNegativeScenario": "inverse-regression",

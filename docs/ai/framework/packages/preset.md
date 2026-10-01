@@ -153,10 +153,17 @@ recovery policy.
   prerequisites, profile policy, apply result, failed-apply rollback, and
   retained cleanup of successful installation resources.
 - App owns which preset choices to request and any later Core customization.
-- The preset-owned Scene Tree shared-channel observer routes committed add,
+- The preset-owned applied-event subscriber routes completed canonical add,
   remove, scalar, ordered batch, and record-patch envelopes to the matching
   public Render scene-tree store operation without composing or retaining a
-  snapshot. ADD and REMOVE forward canonical `parentId` and sibling `index`
+  snapshot. Scene Tree structural batches arrive through `SCENE_TREE_CHANGED`
+  once after their canonical handoff, before a dependent mutation; computed
+  events use the existing local route. Shared-channel echoes do not render again.
+  Both local structural consumers filter the Scene Tree instance-local
+  `projectionOwner` symbol. UI receives that same ordered evidence at the outer
+  transaction end by default; explicit immediate previews flush the same scoped
+  sequence once before outer completion. Shared echoes cannot reorder hierarchy.
+  ADD and REMOVE forward canonical `parentId` and sibling `index`
   unchanged so Render can maintain exact parent membership and order. Scalar and
   batch routes preserve each canonical `raw` or `computed` owner together with
   its complete before/after evidence; Preset does not infer ownership. It records

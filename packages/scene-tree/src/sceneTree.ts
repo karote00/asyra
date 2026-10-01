@@ -47,11 +47,12 @@ import {
   getTransactionOwner,
   issueDetachedTransactionOwnerBatch,
   publishLocalComputedDataEvents,
+  publishLocalSceneTreeChanges,
   runInTransactionReplayMode,
   type UpdateComputedDataBatchEvent,
   type UpdateComputedDataPatchEvent,
   type UpdateTransactionEvent,
-  updateTransaction
+  updateTransactionBatch
 } from '@asyra/reactive-events'
 import propsManager, {
   type CanonicalPropertyDeliveryOwner,
@@ -642,6 +643,8 @@ const toStringArray = (value: unknown): string[] => {
 }
 
 class SceneTree {
+  /** Local projection identity; never persisted or included in shared data. */
+  readonly projectionOwner = Symbol('SceneTree projection')
   _elements: Map<string, ElementInstanceTypes> = new Map()
   _deletedMap: Map<string, ElementInstanceTypes> = new Map()
   workspace: string = ''
@@ -2320,16 +2323,35 @@ class SceneTree {
         }
       })
 
+      const restorationEvents = getTransactionReplayMode()
+        ? preparedMutation.evidence.map((change) => {
+            const rawChange = change as UpdateElementDataChange
+            return Object.freeze({
+              type: EventTypes.UPDATE_ELEMENT_DATA,
+              payload: Object.freeze({
+                id: rawChange.id,
+                changes: Object.freeze(
+                  rawChange.changes.map(({ key, before, after }) =>
+                    Object.freeze({ key, before: after, after: before })
+                  )
+                )
+              })
+            })
+          })
+        : undefined
+
       artifact.entries.forEach(({ element, after }) => {
         ;(element as Element).assignCanonicalElementData(after)
       })
 
       try {
-        transactionOwner.updateTransactionBatch(events)
-        acknowledgeTransactionReplayApplied()
+        this.handoffSceneTreeChanges(events, () =>
+          transactionOwner.updateTransactionBatch(events)
+        )
+        acknowledgeTransactionReplayApplied(restorationEvents)
       } catch (error) {
         if (reportsAcceptedCanonicalBatchHandoff(error)) {
-          acknowledgeTransactionReplayApplied()
+          acknowledgeTransactionReplayApplied(restorationEvents)
         } else {
           artifact.entries.forEach(({ element, before }) => {
             ;(element as Element).assignCanonicalElementData(before)
@@ -2477,7 +2499,9 @@ class SceneTree {
             children
           )
         })
-        transactionOwner.updateTransactionBatch(events)
+        this.handoffSceneTreeChanges(events, () =>
+          transactionOwner.updateTransactionBatch(events)
+        )
         acknowledgeTransactionReplayApplied()
       } catch (error) {
         if (reportsAcceptedCanonicalBatchHandoff(error)) {
@@ -2608,7 +2632,9 @@ class SceneTree {
           ;(element as Element).assignCanonicalParentId('')
           this._deletedMap.set(element.get('id'), element)
         })
-        transactionOwner.updateTransactionBatch(events)
+        this.handoffSceneTreeChanges(events, () =>
+          transactionOwner.updateTransactionBatch(events)
+        )
         markCanonicalBatchHandoffAccepted(handoffState)
         acknowledgeTransactionReplayApplied()
         disposalAttempted = true
@@ -4996,6 +5022,27 @@ class SceneTree {
     }
   }
 
+  private handoffSceneTreeChanges(
+    events: readonly UpdateTransactionEvent[],
+    handoff: () => void
+  ): void {
+    const changes = events.map((event) => event.payload as SceneTreeChange)
+    const immediate = events.some(
+      (event) => event.options?.sharedDelivery === 'immediate'
+    )
+    try {
+      handoff()
+    } catch (error) {
+      // Accepted journals are undone through the same owner path. Rejected
+      // preparations restore internally and must never reach the projection.
+      if (reportsAcceptedCanonicalBatchHandoff(error)) {
+        publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
+      }
+      throw error
+    }
+    publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
+  }
+
   private prepareSceneTreeTransactionEvents(
     options?: EVENT_OPTIONS
   ): readonly UpdateTransactionEvent[] {
@@ -5121,7 +5168,9 @@ class SceneTree {
 
     if (transactionOwner) {
       try {
-        transactionOwner.updateTransactionBatch(events)
+        this.handoffSceneTreeChanges(sceneEvents, () =>
+          transactionOwner.updateTransactionBatch(events)
+        )
         markCanonicalBatchHandoffAccepted(handoffState)
         acknowledgeTransactionReplayApplied()
       } catch (error) {
@@ -5132,9 +5181,9 @@ class SceneTree {
         throw error
       }
     } else {
-      events.forEach((event) => {
-        updateTransaction(event)
-      })
+      this.handoffSceneTreeChanges(sceneEvents, () =>
+        updateTransactionBatch(events)
+      )
       acknowledgeTransactionReplayApplied()
     }
 
@@ -5151,9 +5200,8 @@ class SceneTree {
       return
     }
 
-    this.prepareSceneTreeTransactionEvents(options).forEach((event) => {
-      updateTransaction(event)
-    })
+    const events = this.prepareSceneTreeTransactionEvents(options)
+    this.handoffSceneTreeChanges(events, () => updateTransactionBatch(events))
     this.cleanChanges()
   }
 

@@ -70,7 +70,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963",
+        "contract": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -114,7 +114,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a",
+        "contract": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a",
         "guide": "f3135c07050bec8d0c4949166149dff46755e6c4daf7254480044ed3ac6d77a2",
         "manifest": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
       },
@@ -206,7 +206,7 @@
         "./group-bounds"
       ],
       "sourceDigests": {
-        "contract": "62175dd2ceec5d808c3e0d54fc84b60ab8827a31add41e7dc5d59430f4ed7cbb",
+        "contract": "0982c7a42c3d9547d774efd85f11a36a5b360043c565e63562ae12a50a35d959",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
         "manifest": "13920c798bd85010d6d7e144bf67def7a9a7babb3ad7c8314786a432c23d38a6"
       },
@@ -250,7 +250,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "84e51c0d6cdf49ed672257c433664b0ded00fc1aa3daf8c4edf13d794fff5c0c",
+        "contract": "9fde25d55c73e61ce823cfc06edd03953fee3fc9fc3de54caf772bf0ca347629",
         "guide": "534d53e7eae5e7f38ddbf2977688a63af2857553e1246ef4f77d5b9eb40df275",
         "manifest": "0dfbf0a60b0fd9db00624bd02b4b1d24a555544c26f3d5334a64fbecddfe77a1"
       },
@@ -341,7 +341,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "31bda688e9d65b75cca18810d3f3e3b19851eff8307fddafd01672394a728717",
+        "contract": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
       },

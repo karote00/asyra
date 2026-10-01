@@ -499,3 +499,10 @@ export type CorePresetDependencies = ReturnType<
 >
 
 export { Core }
+
+export type {
+  HistoryGroupHandle,
+  HistoryGroupOptions,
+  HistoryGroupStatus
+} from '@asyra/factory'
+export type { HistoryGroupAPIs } from './types/history.js'

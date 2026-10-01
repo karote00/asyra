@@ -17,12 +17,17 @@ import {
   updateElementData,
   updateComputedData,
   updateComputedDataPatch,
+  type SceneTreeChangedEvent,
   type UpdateElementDataEvent,
   type UpdateComputedDataEvent,
   type UpdateComputedDataPatchEvent
 } from '../scene-tree/index.js'
 import { EventTypes } from '../types.js'
-import { SCENE_TREE_ACTIONS, type AddRemoveElementsChange } from '@asyra/utils'
+import {
+  SCENE_TREE_ACTIONS,
+  type SceneTreeChange,
+  type AddRemoveElementsChange
+} from '@asyra/utils'
 
 type LocalComputedProjectionEvent =
   UpdateComputedDataEvent | UpdateComputedDataPatchEvent
@@ -62,6 +67,80 @@ describe('scene-tree publishers', () => {
       })
       expect(applied).toHaveBeenCalledTimes(1)
       expect(committed).toHaveBeenCalledTimes(1)
+    } finally {
+      a.unsubscribe()
+      b.unsubscribe()
+    }
+  })
+
+  it('flushes an explicit preview with prior same-owner changes once while other projections wait', () => {
+    const first = Symbol('first')
+    const second = Symbol('second')
+    const applied: SceneTreeChangedEvent[] = []
+    const observed: SceneTreeChangedEvent[][] = []
+    const a = subscribeToAppliedEventBatches((events) =>
+      applied.push(
+        ...(events.filter(
+          (e) => e.type === EventTypes.SCENE_TREE_CHANGED
+        ) as SceneTreeChangedEvent[])
+      )
+    )
+    const b = subscribeToEventBatches((events) => {
+      const changes = events.filter(
+        (e) => e.type === EventTypes.SCENE_TREE_CHANGED
+      ) as SceneTreeChangedEvent[]
+      if (changes.length) observed.push(changes)
+    })
+    const publish = (id: string, owner: symbol, immediate = false) =>
+      sceneTreeEvents.publishLocalSceneTreeChanges(
+        [
+          {
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+            eventName: EventTypes.UPDATE_ELEMENT_DATA,
+            id,
+            changes: [{ key: 'name', before: 'Before', after: 'After' }],
+            options: {
+              sharedDelivery: immediate ? 'immediate' : 'transaction-end'
+            }
+          } as SceneTreeChange
+        ],
+        owner,
+        immediate
+      )
+    const ids = () =>
+      observed.map((events) =>
+        events.flatMap((e) =>
+          e.payload.changes.map((c) => ('id' in c ? c.id : ''))
+        )
+      )
+    try {
+      runTransaction(() => {
+        publish('deferred-first', first)
+        publish('deferred-second', second)
+        expect(observed).toEqual([])
+        publish('preview-first', first, true)
+        expect(ids()).toEqual([['deferred-first', 'preview-first']])
+        publish('next-preview', first, true)
+        expect(ids()).toEqual([
+          ['deferred-first', 'preview-first'],
+          ['next-preview']
+        ])
+      })
+      expect(ids()).toEqual([
+        ['deferred-first', 'preview-first'],
+        ['next-preview'],
+        ['deferred-second']
+      ])
+      expect(applied).toHaveLength(4)
+      expect(() =>
+        runTransaction(() => {
+          publish('discarded', first)
+          throw new Error('stop')
+        })
+      ).toThrow('stop')
+      runTransaction(() => publish('fresh-preview', first, true))
+      expect(ids().slice(-1)[0]).toEqual(['fresh-preview'])
+      expect(ids().flat()).not.toContain('discarded')
     } finally {
       a.unsubscribe()
       b.unsubscribe()

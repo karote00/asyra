@@ -81,3 +81,9 @@ export {
 export * from './shared-delivery.js'
 export * from './mutation-batch.js'
 export * from './transaction.js'
+
+export type {
+  HistoryGroupHandle,
+  HistoryGroupOptions,
+  HistoryGroupStatus
+} from './history-group.js'
