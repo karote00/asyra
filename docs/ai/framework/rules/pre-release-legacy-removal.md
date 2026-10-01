@@ -6,6 +6,11 @@ This rule applies to any framework, preset, or app behavior that has not been re
 
 Released public APIs follow `deprecation-lifecycle.md`. Unreleased internal flows, product render paths, app workflows, debug metadata, and migration experiments do not get a compatibility window.
 
+All tasks also follow `no-unrequested-compatibility.md`: compatibility or
+migration work is permitted only in an owner explicitly established for that
+purpose, or when a task specifically requests a workaround. This rule does not
+authorize new compatibility behavior in an unrelated task.
+
 ## Core Rule
 
 Pre-release legacy code must be upgraded to the current contract or deleted. It must not remain reachable as a product path, hidden fallback, alternate data shape, or diagnostic-driven runtime branch.
