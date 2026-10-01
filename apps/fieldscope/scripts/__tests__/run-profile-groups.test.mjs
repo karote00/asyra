@@ -153,7 +153,7 @@ if result['outcome'] == 'failed':
   return fake
 }
 
-function run(root, supervisor, mode = 'pass') {
+function run(root, supervisor, mode = 'pass', group = null) {
   const record = path.join(root, 'record.jsonl')
   const code =
     loadRunner +
@@ -162,6 +162,7 @@ result = owner.run_profile_groups(
     Path(sys.argv[2]),
     Path(sys.argv[3]),
     environment=json.loads(sys.argv[4]),
+    group=json.loads(sys.argv[5]),
 )
 print(json.dumps(result))
 `
@@ -172,7 +173,15 @@ print(json.dumps(result))
   }
   const result = spawnSync(
     'python3',
-    ['-c', code, runner, root, supervisor, JSON.stringify(environment)],
+    [
+      '-c',
+      code,
+      runner,
+      root,
+      supervisor,
+      JSON.stringify(environment),
+      JSON.stringify(group)
+    ],
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
   assert.equal(result.status, 0, result.stderr)
@@ -482,4 +491,72 @@ except owner.ProfileGroupInterrupted as error:
       .map((line) => JSON.parse(line)),
     [[heavy]]
   )
+})
+
+for (const [group, files] of Object.entries({
+  heavy: [heavy],
+  source: [source],
+  remaining: [remaining]
+})) {
+  test(`selected profile group ${group} runs exactly its own files without claiming the full suite`, (t) => {
+    const root = fixture()
+    t.after(() => rmSync(root, { recursive: true, force: true }))
+    const { result, calls } = run(
+      root,
+      writeFakeSupervisor(root),
+      'pass',
+      group
+    )
+    assert.deepEqual(calls, [files])
+    assert.equal(result.outcome, 'passed')
+    assert.equal(result.completion, 'profile-group-complete')
+    assert.deepEqual(result.selection, {
+      kind: 'profile-group',
+      coverage: 'filtered-profiles',
+      files,
+      title: null
+    })
+    assert.deepEqual(
+      result.groups.map((entry) => entry.name),
+      [group]
+    )
+  })
+}
+
+test('selected profile groups preserve incomplete receipts as failure', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const { result, calls } = run(
+    root,
+    writeFakeSupervisor(root),
+    'incomplete',
+    'source'
+  )
+  assert.deepEqual(calls, [[source]])
+  assert.equal(result.outcome, 'failed')
+  assert.equal(result.completion, 'incomplete')
+  assert.equal(result.selection.coverage, 'filtered-profiles')
+})
+
+test('unknown profile groups reject before launching a supervisor', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const result = spawnSync(
+    'python3',
+    [
+      '-c',
+      loadRunner +
+        String.raw`
+try:
+    owner.run_profile_groups(Path(sys.argv[2]), group="typo")
+except ValueError:
+    print("rejected")
+`,
+      runner,
+      root
+    ],
+    { cwd: app, encoding: 'utf8', timeout: 5000 }
+  )
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stdout.trim(), 'rejected')
 })

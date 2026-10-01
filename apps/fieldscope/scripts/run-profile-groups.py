@@ -1,5 +1,6 @@
 """Run complete FieldScope profiles as three sequential supervised groups."""
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -218,10 +219,20 @@ def group_summary(name, files, receipt):
     return summary
 
 
-def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None):
+def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None, group=None):
+    if group is not None and group not in ("heavy", "source", "remaining"):
+        raise ValueError("Unknown profile group")
     groups = discover_profile_groups(app)
+    selection = {
+        "kind": "profile-group" if group is not None else "profile-suite",
+        "coverage": "filtered-profiles" if group is not None else "profiles",
+        "files": groups[group] if group is not None else groups["all"],
+        "title": None,
+    }
     completed = []
     for name in ("heavy", "source", "remaining"):
+        if group is not None and name != group:
+            continue
         files = groups[name]
         receipt = run_supervisor(app, supervisor, files, environment)
         completed.append(group_summary(name, files, receipt))
@@ -231,38 +242,24 @@ def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None):
                 "completion": "incomplete",
                 "error": receipt.get("error")
                 or "Profile group did not complete",
-                "selection": {
-                    "kind": "profile-suite",
-                    "coverage": "profiles",
-                    "files": groups["all"],
-                    "title": None,
-                },
+                "selection": selection,
                 "groups": completed,
             }
     return {
         "outcome": "passed",
-        "completion": "profile-suite-complete",
+        "completion": "profile-group-complete" if group is not None else "profile-suite-complete",
         "error": None,
-        "selection": {
-            "kind": "profile-suite",
-            "coverage": "profiles",
-            "files": groups["all"],
-            "title": None,
-        },
+        "selection": selection,
         "groups": completed,
     }
 
 
 def main():
-    if len(sys.argv) != 1:
-        print(json.dumps({
-            "outcome": "failed",
-            "completion": "incomplete",
-            "error": "Profile group runner accepts no arguments",
-        }))
-        return 1
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--group", choices=("heavy", "source", "remaining"))
+    args = parser.parse_args()
     try:
-        result = run_profile_groups()
+        result = run_profile_groups(group=args.group)
     except ProfileGroupInterrupted as error:
         print(json.dumps({
             "outcome": "failed",

@@ -104,12 +104,15 @@ identity, task order, and every required job outcome. A missing matrix result,
 omitted workspace, failed task, or skipped selected gate cannot satisfy the
 required aggregate.
 
-Shared repository tests include public API documentation validation. Whenever
-those tests are selected, the shared job first builds the Framework declaration
-tasks they consume, even when no public documentation path changed. This selects
-build prerequisites only; workspace test and E2E selection remain scoped by the
-relationship map. Existing local build artifacts are not evidence that a clean
-runner has those prerequisites.
+FieldScope's selected numerical profile owner runs heavy, source and remaining
+groups in order on separate CI runners after its ordinary workspace validation.
+A change to the profile workflow selects those groups directly. Profile-only
+verification can follow a skipped ordinary matrix; a failed ordinary matrix blocks
+it. The final aggregate requires all selected groups to complete successfully.
+Unrelated plan and CI-contract changes do not activate the profile suite.
+Internal `bdd-features/*.feature` specifications and supported reference images
+under `docs/ai/**/references/` are document inputs. This does not admit executable
+files in those directories or turn them into App runtime changes.
 
 CI runs each selected workspace's canonical build task and dependency closure
 to completion before invoking `test:ci`. The test task has no build dependency,
