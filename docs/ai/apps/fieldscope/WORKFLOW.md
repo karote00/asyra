@@ -18,8 +18,10 @@ yarn workspace @asyra/fieldscope test:e2e
 CI runs `yarn test:e2e:fieldscope`. Its six purpose-based Playwright groups run
 sequentially in separate browser processes. A permanent contract test verifies
 that the groups assign every browser spec exactly once. Each test retains its
-90-second timeout and the full suite keeps its 15-minute budget; failed group
-reports and Playwright diagnostics remain available to CI. Software-rendered
+existing individual timeout and the full suite keeps its 15-minute budget; failed group
+reports and Playwright diagnostics remain available to CI. Desktop panel toggles,
+responsive canvas/state retention and reference-dialog accessibility are separate
+cases with 60-second guards; their complete assertions do not share one timer. Software-rendered
 runs omit artifact-only page screenshots while retaining interaction checks
 and screenshot comparisons that prove canvas behavior.
 

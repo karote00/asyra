@@ -11,8 +11,9 @@ it is not represented as a prerequisite already integrated in `main`.
 Worktree: `.worktrees/transaction-history-groups`.
 Branch: `codex/transaction-history-groups`.
 Initial base: `origin/main` at `c93176e1b14d58281664247071cfcd3552f7e0dc`.
-The coordinating agent in the originating conversation owns closeout; Asa owns
-PR review and merge. Single-agent work, no new conversation. Implementation
+The coordinating agent in the originating conversation owns closeout. Asa gave
+one-time authorization on 2026-10-02 to merge this Framework PR after all CI
+passes; the downstream AI PR remains for Asa's review. Single-agent work, no new conversation. Implementation
 requires reviewed product and Transaction Inspector contracts first.
 
 ## Framework PR
@@ -404,3 +405,29 @@ rendering. Files: existing app/publish.ts, scene-tree/publish.ts, publisher test
 current specs/Inspector and generated catalog. Gates: source-level test-first
 preview/order/isolation/rollback, existing element-creation E2E, pending-group
 E2E, Preset/Reactive/Factory/Core, collaboration, and final 7076 milestone.
+
+### Authorized CI stability follow-up
+
+On 2026-10-02 the user authorized resolving the remaining CI blocker, merging
+this Framework PR only after all checks pass, then rebasing and continuing the
+original AI worktree. Mutation scope for this follow-up is Fieldscope's panel
+E2E allocation, its existing CI group registry, direct workflow documentation
+and this plan. Existing CI attempts 1 and 4 reproduce the monolithic panel
+case exceeding 60 seconds at different late-stage operations; the unchanged
+SwiftShader case passes locally. Split independent desktop collapse/reopen,
+responsive state retention and reference-dialog accessibility journeys into
+formal cases. Preserve their assertions, same-canvas checks, individual resource
+guards and the suite's 15-minute budget. Batch the repeated DOM unit checks
+without dropping any field from the oracle. No production or Inspector contract
+changes, timeout increases or geometry-profile changes are authorized by this
+slice. Run both software and desktop panel cases, CI assignment contracts,
+App lint/typecheck and naming; retain source-space and history evidence already
+validated above. Final review is limited to this allocation and its consumers.
+
+Follow-up validation: all three cases pass on SwiftShader (58.4 seconds total)
+and desktop Metal (10.2 seconds total); desktop/mobile/dialog screenshots were
+inspected. The responsive case explicitly awaits panel animation completion
+before testing keyboard focus, and still asserts the original Tab destination.
+All five CI assignment contracts, App TypeScript, ESLint (existing warnings
+only), naming and formatting pass. All original checks remain; no product code
+or timeout changed. Latest-head complete-workflow CI remains required.
