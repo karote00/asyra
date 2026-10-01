@@ -144,10 +144,27 @@ export function worldBounds(
     projectBounds(bounds, pose, [0, 0, 1])
   ]
 }
-export function shapeBounds(shape: ConvexShape, index?: MeshIndex): Bounds {
+export function createWorldBoundsResolver(
+  pose: AlgebraPose<Interval>
+): (bounds: Bounds) => Bounds {
+  const transformed = new WeakMap<object, Bounds>()
+  return (bounds) => {
+    const retained = transformed.get(bounds)
+    if (retained) return retained
+    const result = worldBounds(bounds, pose)
+    transformed.set(bounds, result)
+    return result
+  }
+}
+export function shapeBounds(
+  shape: ConvexShape,
+  index?: MeshIndex,
+  resolveBounds: (bounds: Bounds) => Bounds = (bounds) =>
+    worldBounds(bounds, shape.pose)
+): Bounds {
   if (shape.geometry.kind === 'mesh') {
     if (!index) throw new Error('Missing complete mesh index')
-    return worldBounds(index.root.bounds, shape.pose)
+    return resolveBounds(index.root.bounds)
   }
   return [0, 1, 2].map((axis) => {
     const direction: [number, number, number] = [0, 0, 0]

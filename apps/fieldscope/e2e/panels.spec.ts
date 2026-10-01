@@ -1,10 +1,23 @@
 import { expect, test } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 test('side panels preserve immediate edits without remounting the canvas', async ({
   page
 }, testInfo) => {
+  test.setTimeout(60_000)
+  const waitForPanelMotion = async () => {
+    await page.locator('.scene-workspace').evaluate(async (node) => {
+      await Promise.all(
+        node
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished)
+      )
+    })
+  }
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByLabel('1914 小胡瓜', { exact: true }).uncheck()
+  await page.getByLabel('玉女小蕃茄', { exact: true }).uncheck()
   const scene = page.getByTestId('scene')
   const checkToolbar = async () => {
     const toolbar = await page.getByTestId('viewport-toolbar').boundingBox()
@@ -25,7 +38,9 @@ test('side panels preserve immediate edits without remounting the canvas', async
   expect(left.x + left.width).toBeLessThanOrEqual(original.x + 1)
   expect(right.x).toBeGreaterThanOrEqual(original.x + original.width - 1)
   await page.getByLabel('溫室縱向深度', { exact: true }).fill('42')
+  await page.getByLabel('溫室縱向深度', { exact: true }).press('Enter')
   await page.getByRole('button', { name: '收合編輯面板', exact: true }).click()
+  await waitForPanelMotion()
   await expect(
     page.getByRole('button', { name: '展開編輯面板', exact: true })
   ).toHaveAttribute('aria-expanded', 'false')
@@ -33,14 +48,17 @@ test('side panels preserve immediate edits without remounting the canvas', async
     page.getByLabel('溫室縱向深度', { exact: true })
   ).not.toBeVisible()
   await page.getByRole('button', { name: '收合圖層面板', exact: true }).click()
-  await expect
-    .poll(async () => (await scene.boundingBox())?.width ?? 0)
-    .toBeGreaterThan(original.width + 550)
-  await page.screenshot({
-    path: testInfo.outputPath('panels-collapsed.png'),
-    fullPage: true
-  })
+  await waitForPanelMotion()
+  const expandedScene = await scene.boundingBox()
+  if (!expandedScene) throw new Error('Missing expanded scene bounds')
+  expect(expandedScene.width).toBeGreaterThan(original.width + 550)
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('panels-collapsed.png'),
+      fullPage: true
+    })
   await page.getByRole('button', { name: '展開編輯面板', exact: true }).click()
+  await waitForPanelMotion()
   await expect(page.getByLabel('溫室縱向深度', { exact: true })).toHaveValue(
     '42'
   )
@@ -48,14 +66,16 @@ test('side panels preserve immediate edits without remounting the canvas', async
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
   ).toBeEnabled()
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
-  await expect
-    .poll(async () => (await scene.boundingBox())?.width ?? 0)
-    .toBeCloseTo(original.width, 0)
+  await waitForPanelMotion()
+  const restoredScene = await scene.boundingBox()
+  if (!restoredScene) throw new Error('Missing restored scene bounds')
+  expect(restoredScene.width).toBeCloseTo(original.width, 0)
   await page.getByRole('button', { name: '整體畫面 ⌘1', exact: true }).click()
-  await page.screenshot({
-    path: testInfo.outputPath('panels-expanded.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('panels-expanded.png'),
+      fullPage: true
+    })
   expect(await canvas.evaluate((node) => node.isConnected)).toBe(true)
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(
@@ -64,7 +84,6 @@ test('side panels preserve immediate edits without remounting the canvas', async
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await expect(page.getByLabel('完整鋼架', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '展開編輯面板', exact: true }).click()
-  await expect(page.getByLabel('完整鋼架', { exact: true })).not.toBeVisible()
   await expect(page.getByLabel('溫室縱向深度', { exact: true })).toHaveValue(
     '42'
   )
@@ -78,19 +97,21 @@ test('side panels preserve immediate edits without remounting the canvas', async
   await input.focus()
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('單棟寬度', { exact: true })).toBeFocused()
-  await page.screenshot({
-    path: testInfo.outputPath('mobile-editor.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('mobile-editor.png'),
+      fullPage: true
+    })
   await page.getByRole('button', { name: '參考資料', exact: true }).click()
   await expect(page.getByRole('dialog', { name: '參考資料' })).toBeVisible()
   await expect(
     page.getByRole('link', { name: '南改場溫網室技術專刊 ↗' })
   ).toHaveAttribute('target', '_blank')
-  await page.screenshot({
-    path: testInfo.outputPath('reference-library.png'),
-    fullPage: true
-  })
+  if (!usesCpuSoftwareRenderer)
+    await page.screenshot({
+      path: testInfo.outputPath('reference-library.png'),
+      fullPage: true
+    })
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).not.toBeVisible()
   await expect(

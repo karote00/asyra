@@ -1013,7 +1013,7 @@ spread and at completion; `yarn workspace @asyra/starter-app test`,
 `node --test scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/release-template-readiness.test.mjs`;
 `yarn release:app --prod=starter-app` and
 `yarn release:app:check --prod=starter-app`; `yarn release:packages` then
-`yarn release:template --prod=starter-app`; `yarn lint:ci`;
+`yarn release:template --prod=starter-app`; `yarn lint:workspaces:ci`;
 `git diff --check` and bounded staged-diff review. After commit, run
 `yarn changeset:pr:check` with the exact integration base and Task 4 head,
 verify the committed source contains all tested behavior, then push and open
@@ -1094,7 +1094,7 @@ The applicable website gates are
 `test:local`, scoped lint, typecheck, production build, public route smoke,
 and focused desktop/mobile Playwright navigation, reduced-motion, no-JS, and
 visual review; GitHub-compatible README desktop/narrow media-present and
-media-unavailable captures; root `yarn lint:ci`; `git diff --check`, staged
+media-unavailable captures; root `yarn lint:workspaces:ci`; `git diff --check`, staged
 review, and the exact-base Changeset PR check where applicable. Repeat the
 affected local gates before each push; CI on the exact PR head is a separate
 reported state.
@@ -1157,7 +1157,7 @@ identifier-bearing changes; focused docs generator, README/public documentation
 validation, and Sim release-policy tests; `yarn docs:readme:packages`,
 `yarn docs:readme:packages:check`, `yarn docs:readme:validate`,
 `yarn docs:public`, `yarn docs:public:check`, and
-`yarn docs:public:validate`; applicable `yarn lint:ci`, `git diff --check`,
+`yarn docs:public:validate`; applicable `yarn lint:workspaces:ci`, `git diff --check`,
 staged review, and exact-base `yarn changeset:pr:check`. Run the composite
 `yarn docs:readme:check` once and report any Design-template-only failure as
 such; its individual applicable components must pass. Revalidate the current

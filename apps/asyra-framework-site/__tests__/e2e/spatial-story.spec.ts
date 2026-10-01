@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 
 async function seek(page: Page, chapter: number, progress: number) {
+  await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+    'data-motion',
+    'on'
+  )
   const top = await page
     .locator(`[data-story-chapter="${chapter}"]`)
     .evaluate(
@@ -149,6 +153,10 @@ test('native chapter links, resize and live reduced motion retain content', asyn
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
+  await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+    'data-motion',
+    'on'
+  )
   await page.getByRole('link', { name: 'Adapt', exact: true }).click()
   await expect(page).toHaveURL(/#replace$/)
   await expect(page.locator('[data-shared-scene]')).toHaveAttribute(

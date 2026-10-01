@@ -561,7 +561,7 @@ Feature: Conversational AI drawing performance
   Scenario: Required fileId always selects the socket document and Collaboration room
     Given RenderApp receives one required fileId URL
     Then the fileId should select the socket document and Collaboration room
-    And root dev:all should start only frontend workspace processes and the App dev server
+    And root start:asyra-design should start the Asyra Design dev server
     And the explicit collaboration:server command or collaboration Playwright should separately supply the WebSocket endpoint
     When the first Actor connects
     And one Actor in that document session should be classified as single-Actor processing

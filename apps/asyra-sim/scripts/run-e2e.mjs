@@ -10,15 +10,19 @@ const temporary = fileURLToPath(
   new URL('../.artifacts/browser-tmp/', import.meta.url)
 )
 mkdirSync(temporary, { recursive: true })
-const child = spawn(
-  process.execPath,
-  [require.resolve('@playwright/test/cli'), 'test', ...process.argv.slice(2)],
-  {
-    cwd: appRoot,
-    env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary },
-    stdio: 'inherit'
-  }
-)
+const command =
+  process.argv.length === 2
+    ? [fileURLToPath(new URL('./run-e2e-ci.mjs', import.meta.url))]
+    : [
+        require.resolve('@playwright/test/cli'),
+        'test',
+        ...process.argv.slice(2)
+      ]
+const child = spawn(process.execPath, command, {
+  cwd: appRoot,
+  env: { ...process.env, TMPDIR: temporary, TMP: temporary, TEMP: temporary },
+  stdio: 'inherit'
+})
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.on(signal, () => child.kill(signal))
 child.on('error', (error) => {

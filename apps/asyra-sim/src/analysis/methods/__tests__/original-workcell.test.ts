@@ -109,3 +109,37 @@ it('runs the complete ordinary six-axis original-part study without exhausting t
   expect(evidence.pairs).toHaveLength(snapshot.pairs.length)
   expect(exhausted.map((pair) => pair.pairId)).toEqual([])
 }, 20000)
+
+it('profiles the CI-trace slow original-part pair across live poses', async () => {
+  const snapshot = await originalWorkcellSnapshot()
+  const pair = snapshot.pairs.find(
+    ({ id }) => id === 'example:joint-1/main-body::example:joint-3/main-body'
+  )
+  if (!pair) throw new Error('Missing trace-identified original-part pair')
+  const execute = createOriginalPartExecutor(),
+    durations: number[] = []
+  const evidence = [3.904, 3.92, 4].map((time) => {
+    const started = performance.now()
+    const result = execute(
+      { ...snapshot, interval: [time, time], pairs: [pair] },
+      {
+        signal: new AbortController().signal,
+        checkpoint: () => undefined,
+        emitPair: () => undefined
+      }
+    )
+    durations.push(Math.round(performance.now() - started))
+    expect(result.coverage).toBe('complete')
+    expect(result.pairs).toHaveLength(1)
+    return result
+  })
+  // eslint-disable-next-line no-console -- permanent bounded CI-trace performance profile
+  console.info(
+    JSON.stringify({
+      profile: 'ci-trace-joint1-joint3-live-pair',
+      samples: [3.904, 3.92, 4],
+      coverage: evidence.map((result) => result.coverage),
+      durationsMs: durations
+    })
+  )
+}, 20000)

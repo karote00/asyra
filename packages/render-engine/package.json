@@ -45,7 +45,7 @@
     "test:types": "tsc --noEmit --strict --skipLibCheck --target ES2020 --module ESNext --moduleResolution Node src/__tests__/contract-signatures.type-test.ts",
     "test": "yarn has:test && vitest || echo 'No test files found. Skipping test.'",
     "test:local": "yarn test:types && vitest run",
-    "test:ci": "yarn has:test && yarn test:types && vitest run --coverage --reporter=default --reporter=junit || echo 'No test files found. Skipping test:ci.'"
+    "test:ci": "yarn has:test && yarn test:types && vitest run --coverage --reporter=default --reporter=junit"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.6",

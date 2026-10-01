@@ -114,20 +114,26 @@ it('uses completed refined roots in the current distance and interval traversal'
       return completed
     }
   )
-  const world = vi.spyOn(meshIndex, 'worldBounds')
+  const resolverFactory = meshIndex.createWorldBoundsResolver
+  const resolvedBounds: object[] = []
+  vi.spyOn(meshIndex, 'createWorldBoundsResolver').mockImplementation(
+    (pose) => {
+      const resolve = resolverFactory(pose)
+      return (bounds) => {
+        resolvedBounds.push(bounds)
+        return resolve(bounds)
+      }
+    }
+  )
   const context = new OriginalMeshQuery(),
     a = shape(0),
     b = shape(1 / 8)
   const witness = context.distance(a, b, 1 / 64, 1e-6, 48)
   expect(completed).toBeDefined()
-  expect(
-    world.mock.calls.some(([bounds]) => bounds === completed?.root.bounds)
-  ).toBe(true)
-  world.mockClear()
+  expect(resolvedBounds).toContain(completed?.root.bounds)
+  resolvedBounds.length = 0
   expect(context.lowerOver(a, b, 1 / 64, witness)).toBeGreaterThan(1 / 64)
-  expect(
-    world.mock.calls.some(([bounds]) => bounds === completed?.root.bounds)
-  ).toBe(true)
+  expect(resolvedBounds).toContain(completed?.root.bounds)
 })
 
 it.each([false, true])(

@@ -17,10 +17,19 @@ export default defineConfig({
     baseURL: process.env.SITE_URL ?? 'http://127.0.0.1:3020',
     trace: 'retain-on-failure'
   },
+  webServer: {
+    command: `yarn dev --hostname 127.0.0.1 --port ${new URL(process.env.SITE_URL ?? 'http://127.0.0.1:3020').port || '3020'}`,
+    url: process.env.SITE_URL ?? 'http://127.0.0.1:3020',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000
+  },
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' }
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome'
+      }
     }
   ]
 })

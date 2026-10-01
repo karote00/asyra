@@ -1,3 +1,4 @@
+import type { SourceRegion } from '../domain/source-occupancy'
 import type { FarmConfiguration } from '../domain/farm-configuration'
 import type { Point3 } from '../domain/greenhouse'
 import { TriangleBuilder } from '../domain/mesh'
@@ -63,12 +64,14 @@ function tieShape(radius: number) {
       point(b, outer, low)
     )
   }
+  // The original trigonometric band seam is not welded.
+  builder.region('open-shell', 0)
   builder.box([x + radius, y, z], [0.004, 0.006, 0.006])
   builder.box(
     [x + radius + 0.005, y, z],
     [0.01, NET_LAYOUT.tieWidth, NET_LAYOUT.tieThickness]
   )
-  return builder.shape()
+  return { shape: builder.shape(), regions: builder.regions() }
 }
 
 /** Same canonical hardware, represented by shared local shapes and world origins. */
@@ -82,6 +85,7 @@ export function buildCultivationMeshes(
       layer: LayerId
       color: number
       shape: SpatialShape
+      regions: readonly SourceRegion[]
       instances: SpatialInstance[]
     }
   >()
@@ -90,14 +94,14 @@ export function buildCultivationMeshes(
     layer: LayerId,
     color: number,
     position: Point3,
-    produce: () => SpatialShape
+    produce: () => { shape: SpatialShape; regions: readonly SourceRegion[] }
   ) => {
     let group = groups.get(key)
     if (!group) {
       group = {
         layer,
         color,
-        shape: geometry.primitive(key, produce),
+        ...geometry.primitive(key, produce),
         instances: []
       }
       groups.set(key, group)
@@ -116,7 +120,7 @@ export function buildCultivationMeshes(
     add(key, layer, color, a, () => {
       const builder = new TriangleBuilder()
       builder.tube({ points: [[0, 0, 0], delta], diameter: member.diameter })
-      return builder.shape()
+      return { shape: builder.shape(), regions: builder.regions() }
     })
   }
   const assembly = createSupportAssembly(config)
@@ -133,7 +137,7 @@ export function buildCultivationMeshes(
     add(key, 'clips', 0xb4bfbe, clip.origin, () => {
       const builder = new TriangleBuilder()
       builder.tube(springClipWire({ ...clip, origin: [0, 0, 0] }))
-      return builder.shape()
+      return { shape: builder.shape(), regions: builder.regions() }
     })
   }
   const result: SiteMesh[] = []
@@ -148,6 +152,7 @@ export function buildCultivationMeshes(
             ? 'supports'
             : `${group.layer}-${index}`,
         layer: group.layer,
+        regions: group.regions,
         visible: true,
         descriptor: readSpatialDescriptor({
           kind: 'mesh',

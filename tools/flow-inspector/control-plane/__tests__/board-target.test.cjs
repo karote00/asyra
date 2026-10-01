@@ -20,7 +20,7 @@ test(
       temporary = path.join(artifacts, 'browser-tmp')
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
-    process.env.TMPDIR = temporary
+    process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
     let fixturePR = 0
     const server = await startServer(root, {

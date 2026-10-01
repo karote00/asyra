@@ -8,11 +8,18 @@ import { InstancedMesh, type BufferGeometry } from 'three'
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import * as crops from '../../domain/crop-models'
+import * as robotModel from '../../domain/robot-model'
+import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as projection from '../../render-app/site-projection'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
 import * as navigation from '../../render-app/camera-navigation'
-
+import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
+import {
+  DEFAULT_WALKING_RUNTIME_SELECTION,
+  createWalkingRuntimeSelection
+} from '../../domain/walking-runtime-selection'
+import { SpatialLayer } from '../../render-app/spatial-layer'
 it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
   'preserves runtime ownership and disposal for %s',
   async (mode) => {
@@ -20,6 +27,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     const updates = vi.spyOn(RenderMesh.prototype, 'update')
     const build = vi.spyOn(projection, 'buildSiteMeshes')
     const cropBuild = vi.spyOn(crops, 'createCropModels')
+    const robotBuild = vi.spyOn(robotModel, 'createRobotModel')
     const preset = vi.spyOn(projection, 'cameraPreset')
     let measurementMs = 0
     const measureScene = navigation.measureScene
@@ -75,6 +83,20 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     }
     try {
       flush()
+      const initialScene = runtime.getScene()
+      const initialSceneDemand = runtime.getSceneDemand()
+      expect(runtime.getSceneDemand()).toBe(initialSceneDemand)
+      expect(runtime.isCurrentSceneDemand(initialSceneDemand)).toBe(true)
+      const dockSource = runtime.getDockSource()
+      expect(runtime.isCurrentDockSource(dockSource)).toBe(true)
+      const robotSource = runtime.getRobotSource()
+      expect(runtime.isCurrentRobotSource(robotSource)).toBe(true)
+      for (let i = 0; i < 3; i++) {
+        expect(runtime.getDockSource() === dockSource).toBe(true)
+        expect(runtime.getRobotSource()).toBe(robotSource)
+        runtime.evaluateRobotPose(robotSource, REST_JOINTS)
+      }
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       const notify = vi.fn(),
         unsubscribe = runtime.subscribe(notify)
       if (mode === 'navigation') {
@@ -188,6 +210,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         expect(measure).toHaveBeenCalledTimes(1)
         expect(notify).not.toHaveBeenCalled()
         expect(runtime.getView()).toBe(initial)
+        expect(runtime.getScene()).toBe(initialScene)
+        expect(runtime.isCurrentScene(initialScene)).toBe(true)
         expect(build).toHaveBeenCalledTimes(1)
         await Promise.all([
           runtime.setLayer('film', false),
@@ -344,10 +368,10 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           startInset: 0.4,
           endInset: 0.8,
           strips: [
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 1 },
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 2 }
+            { id: 'fixture-1', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-2', kind: 'soil' as const, width: 1 },
+            { id: 'fixture-3', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-4', kind: 'soil' as const, width: 2 }
           ]
         }
         if (mode === 'history') {
@@ -356,6 +380,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           flush()
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 1)
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           expect(build).toHaveBeenCalledTimes(2)
           expect(measure).toHaveBeenCalledTimes(2)
@@ -373,12 +399,16 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           await runtime.redo()
           flush()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 3)
           expect(build).toHaveBeenCalledTimes(4)
           await expect(
             runtime.setConfiguration({ ...changedConfig, netBottom: 4 })
           ).rejects.toThrow()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(build).toHaveBeenCalledTimes(4)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           await runtime.setConfiguration(changedConfig)
@@ -394,12 +424,20 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         }
         stopConfig()
       }
+      expect(runtime.getRobotSource()).toBe(robotSource)
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       unsubscribe()
     } finally {
+      const staleSceneDemand = runtime.getSceneDemand()
       await runtime.dispose()
       expect(driver.dispose).toHaveBeenCalledTimes(1)
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
+      expect(() => runtime.getScene()).toThrow()
+      expect(runtime.isCurrentSceneDemand(staleSceneDemand)).toBe(false)
+      expect(() => runtime.getSceneDemand()).toThrow()
+      expect(() => runtime.getRobotSource()).toThrow()
+      expect(() => runtime.getDockSource()).toThrow()
       await runtime.dispose()
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
@@ -407,6 +445,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       structure.mockRestore()
       updates.mockRestore()
       cropBuild.mockRestore()
+      robotBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()
       measure.mockRestore()
@@ -416,3 +455,125 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
   },
   15000
 )
+
+it('selects one walking runtime through Core history and keeps W2 work out of W1 and camera refreshes', async () => {
+  const submissions = vi.spyOn(SpatialLayer.prototype, 'submit')
+  const driver: GraphicsDriver = {
+    domElement: document.createElement('canvas'),
+    autoClear: true,
+    setSize: vi.fn(),
+    setPixelRatio: vi.fn(),
+    setClearColor: vi.fn(),
+    clear: vi.fn(),
+    clearDepth: vi.fn(),
+    render: vi.fn(),
+    dispose: vi.fn()
+  }
+  let pending: FrameRequestCallback | undefined
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe = vi.fn()
+      disconnect = vi.fn()
+    }
+  )
+  const host = document.createElement('div')
+  host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
+  const runtime = await bootstrap(
+    host,
+    () =>
+      new ThreeEngine({
+        createDriver: () => driver,
+        requestFrame: (callback) => {
+          pending = callback
+          return 1
+        },
+        cancelFrame: () => {
+          pending = undefined
+        }
+      })
+  )
+  const flush = () => {
+    const callback = pending
+    pending = undefined
+    callback?.(0)
+  }
+  try {
+    flush()
+    expect(runtime.getWalkingRuntimeSelection()).toBe(
+      DEFAULT_WALKING_RUNTIME_SELECTION
+    )
+    expect(runtime.getWalkingOperatingReport().status).toBe('legacy-view')
+    const selection = createWalkingRuntimeSelection(
+      createSyntheticWalkingRobotDefinition({
+        definitionId: 'bootstrap-walking-runtime'
+      })
+    )
+    await runtime.setWalkingRuntimeSelection(selection)
+    flush()
+    const active = runtime.getWalkingOperatingReport()
+    expect(active.status).not.toBe('legacy-view')
+    if (active.status === 'legacy-view' || !active.envelope)
+      throw new Error('Missing active walking report')
+    expect(active.selection).toEqual(selection)
+    const source = active.source
+    const envelope = active.envelope
+    const demand = active.demand
+    runtime.move(0.1, 0, 0)
+    runtime.zoom(1)
+    expect(runtime.getWalkingOperatingReport()).toBe(active)
+    const currentnessDuringDemandNotification = vi.fn()
+    const stopDemand = runtime.subscribeSceneDemand(() => {
+      currentnessDuringDemandNotification(
+        runtime.isCurrentWalkingOperatingReport(active)
+      )
+    })
+    const farmFrames = submissions.mock.calls.length
+    await runtime.setConfiguration({
+      ...runtime.getConfiguration(),
+      length: runtime.getConfiguration().length + 0.1
+    })
+    expect(submissions).toHaveBeenCalledTimes(farmFrames + 1)
+    const refreshed = runtime.getWalkingOperatingReport()
+    if (refreshed.status === 'legacy-view' || !refreshed.envelope)
+      throw new Error('Missing refreshed walking report')
+    expect(refreshed.source).toBe(source)
+    expect(refreshed.envelope).toBe(envelope)
+    expect(refreshed.demand).not.toBe(demand)
+    expect(currentnessDuringDemandNotification).toHaveBeenCalledWith(false)
+    stopDemand()
+    await runtime.undo()
+    expect(runtime.getWalkingRuntimeSelection()).toEqual(selection)
+    await runtime.undo()
+    expect(runtime.getWalkingRuntimeSelection()).toBe(
+      DEFAULT_WALKING_RUNTIME_SELECTION
+    )
+    expect(runtime.getWalkingOperatingReport().status).toBe('legacy-view')
+    await runtime.redo()
+    expect(runtime.getWalkingRuntimeSelection()).toEqual(selection)
+    expect(runtime.getWalkingOperatingReport().status).not.toBe('legacy-view')
+    const reportBeforeDemandOnlyRefresh = runtime.getWalkingOperatingReport()
+    const demandOnlyFrames = submissions.mock.calls.length
+    await runtime.setSceneDemandConfiguration({
+      ...runtime.getSceneDemandConfiguration(),
+      evidence: {
+        kind: 'synthetic',
+        id: 'bootstrap-report-only-refresh',
+        label: 'Synthetic report-only refresh'
+      }
+    })
+    const reportAfterDemandOnlyRefresh = runtime.getWalkingOperatingReport()
+    expect(reportAfterDemandOnlyRefresh).not.toBe(reportBeforeDemandOnlyRefresh)
+    expect(
+      runtime.isCurrentWalkingOperatingReport(reportAfterDemandOnlyRefresh)
+    ).toBe(true)
+    expect(submissions).toHaveBeenCalledTimes(demandOnlyFrames)
+    const stale = runtime.getWalkingOperatingReport()
+    await runtime.dispose()
+    expect(runtime.isCurrentWalkingOperatingReport(stale)).toBe(false)
+  } finally {
+    await runtime.dispose()
+    submissions.mockRestore()
+    vi.unstubAllGlobals()
+  }
+}, 15000)

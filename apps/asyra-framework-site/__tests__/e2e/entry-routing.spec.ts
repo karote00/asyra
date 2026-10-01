@@ -10,11 +10,13 @@ test('primary Start building CTAs route to Generic Starter source', async ({
   })
   await expect(startBuildingCtas).toHaveCount(2)
   for (let index = 0; index < 2; index += 1) {
-    await expect(startBuildingCtas.nth(index)).toHaveAttribute(
-      'href',
-      '/docs#generic-starter-source'
+    const cta = startBuildingCtas.nth(index)
+    await expect(cta).toHaveAttribute('href', '/docs#generic-starter-source')
+    await cta.evaluate((anchor: HTMLAnchorElement) =>
+      anchor.scrollIntoView({ behavior: 'instant', block: 'center' })
     )
-    await startBuildingCtas.nth(index).click()
+    await expect(cta).toBeInViewport()
+    await cta.click()
     await expect(page).toHaveURL(/\/docs#generic-starter-source$/)
     await expect(
       page.getByRole('heading', { name: 'Generic Starter source' })

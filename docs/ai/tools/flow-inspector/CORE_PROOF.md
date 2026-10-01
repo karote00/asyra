@@ -443,18 +443,86 @@ exclusions above describe their original activation, not this later grant.
 
 ## Final workflow aggregation
 
-The `flow-ci` GitHub job waits for `validate` and the reusable Design E2E
-workflow, and runs even when a dependency fails. It consumes their completed
-results; it does not analyze runtime source or execute a second test suite.
+The existing `validate` GitHub check is the single aggregate result for selected CI scopes
+and applicable Flow Inspector evidence. It waits for scope classification,
+the `shared-validation` producer, Framework, Design, Sim, Website, development
+tools, Framework release readiness, selected production artifacts, and the reusable Design E2E workflow. It runs after failures
+or skips and consumes completed job results; it does not analyze runtime source
+or execute a second test suite. An app-only change runs that app's tests/build
+and downstream consumers reached through declared workspace dependencies. A
+Framework runtime change also selects dependent apps, including Fieldscope and
+Starter App. Test-only and Markdown changes do not propagate to those consumers.
+Root manifest fields and base/candidate lock resolution closures select their
+actual consumers; CI scripts and workflow metadata select contracts. Global
+compiler/toolchain changes and explicit full validation select every workspace.
+Unknown paths fail scope classification and cannot produce a passing total.
+
+The fixed path-owner map recognizes `.changeset/` release metadata and the
+tracked root documents (`README.md`, `SUPPORT.md`, `SECURITY.md`, `LICENSE`,
+`CHANGELOG.md`, `RELEASE_NOTES.md`, and `AGENTS.md`). These paths use shared
+Changeset, repository-script, and document validation without selecting
+unrelated workspace suites. Unknown paths remain blockers.
+
+Scope evidence identifies the repository, base, candidate HEAD, integration
+revision, GitHub run, and run attempt. Its versioned execution plan records
+lint, repository script tests, naming, framework declarations, workspace test
+selection, and four E2E suites in one relationship map. Full validation selects
+all declared checks. Incremental validation runs lint on changed applicable
+files, repository script tests for declared repository-test inputs (document
+and code input groups select registered test files), supported
+Vitest related tests only for source/test inputs owned by the consumer
+workspace, and only the E2E suite owners selected by changed paths. Transitive
+dependency-source inputs, configurations, fixtures, deleted or renamed test
+inputs, unsupported runners, and shared inputs retain the complete owner suite.
+Unknown path relations also select repository script tests while remaining a
+CI blocker. The final job requires the same identity and plan/map digests, requires
+every selected producer to succeed, and requires every unselected producer to
+remain skipped. Missing selected outputs and zero-evidence results cannot pass.
+Known docs-only changes still run
+shared validation and the applicable document-owner check; Flow Inspector
+contract documentation selects its tool contract suite. A rerun with a
+different attempt cannot reuse the previous attempt's scope evidence: rerun the
+entire workflow so all producers emit evidence for the new attempt. Missing scope output, unknown
+paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
+selected work all fail the total check. The shared-validation job remains required for every non-draft run and performs
+Changeset admission plus the selected guards, lint, repository contracts and
+naming checks.
+Security audit, dependency and Turbo checks have explicit input selections and
+required/skipped outcomes. Production artifacts use the scope-selected App IDs;
+the reusable artifact workflow has no independent PR trigger. Plan checks are
+selected repository contracts, with no separate unconditional workflow. Full
+mode requires every workspace in the graph, not only those near changed paths.
+Framework declarations are produced when selected script tests require API
+analysis, including every full repository script run. Document-only plan and
+workflow checks do not require declarations. File-selected script receipts must
+record exactly the registered test files in the execution plan; incomplete or
+additional test-file receipts cannot satisfy the aggregate.
+Each E2E suite reports its own result; selected suites must succeed and
+unselected suites must remain skipped. The functional and collaboration suites
+also emit exact case evidence for the fixed Design inventory.
+Changes to Framework release-validation scripts also select
+`framework-release-readiness`, even when no package workspace changed.
+`create-app/<app>` is outside the workspace graph; affected CLI package
+directories select the conditional `npm pack --dry-run --json` step inside
+`validate`, and the aggregate requires that step's result.
 The existing Factory proof remains an independent producer. A successful
 Factory job does not establish Design conformance.
 
 The existing required check names `e2e-tests` and `collaboration-e2e-tests`
 remain available as result-forwarding jobs after the reusable workflow settles.
-Each requires its actual producer job's exported result to equal `success`;
-failure, cancellation, skipping or absent output fails the forwarding check.
-These jobs do not rerun tests or replace case evidence. They preserve existing
-repository rules without changing protection or bypassing required checks.
+When Design is selected, each requires its actual producer job's exported
+result to equal `success`; failure, cancellation, skipping or absent output
+fails the forwarding check. When Design is not selected, the producer must be
+skipped and the forwarding job succeeds only after checking that workflow-level
+skip. The named forwarding checks therefore complete for both selected and
+explicitly unselected scopes; their status cannot remain pending due to an
+inapplicable Design suite.
+These jobs do not rerun tests or replace case evidence. The aggregate uses the
+existing required `validate` check name, so the active ruleset can block on the
+selected category and release results without a new remote check-name change.
+The Design case aggregator runs only when scope selects Design. For other
+scopes it records the Design cases as not selected while the fixed total still
+requires the applicable selected CI jobs to complete.
 
 The bounded Design mapping contains the existing single-element Delete case
 and two collaboration Delete cases (connected windows and nested Group removal).

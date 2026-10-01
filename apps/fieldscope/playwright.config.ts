@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test'
 import { resolveAppEnvironment } from './app-environment.mjs'
+import { usesCpuSoftwareRenderer } from './e2e/renderer-environment'
 const environment = resolveAppEnvironment()
 export default defineConfig({
   testDir: './e2e',
@@ -12,7 +13,8 @@ export default defineConfig({
   use: {
     baseURL: environment.url,
     viewport: { width: 1440, height: 1100 },
-    deviceScaleFactor: 1,
+    // Keep the desktop CSS layout while bounding SwiftShader work in physical pixels.
+    deviceScaleFactor: usesCpuSoftwareRenderer ? 0.25 : 1,
     channel: 'chrome',
     launchOptions: {
       // Match the desktop GPU on macOS; software rendering remains explicitly selectable.

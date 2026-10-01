@@ -32,7 +32,10 @@ const hit = (engine: ThreeEngine, x = 320, y = 240) => {
   if (result.type !== 'hit') throw new Error('Expected a hit-query result')
   return result.target
 }
-const setup = () => {
+const setup = (
+  configureDriver?: (driver: GraphicsDriver) => void,
+  resolution = 1
+) => {
   const canvas = document.createElement('canvas')
   canvas.getBoundingClientRect = () => ({
     x: 0,
@@ -48,6 +51,7 @@ const setup = () => {
   const driver: GraphicsDriver = {
     domElement: canvas,
     autoClear: true,
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
     setSize: vi.fn(),
     setPixelRatio: vi.fn(),
     setClearColor: vi.fn(),
@@ -56,6 +60,7 @@ const setup = () => {
     render: vi.fn(),
     dispose: vi.fn()
   }
+  configureDriver?.(driver)
   let pending: FrameRequestCallback | undefined
   const engine = new ThreeEngine({
     createDriver: () => driver,
@@ -70,7 +75,8 @@ const setup = () => {
   const root = engine.initialize({
     host: document.createElement('div'),
     width: 640,
-    height: 480
+    height: 480,
+    resolution
   }).root
   const add = (spatial: SpatialDescriptor) => {
     const handle = engine.execute({
@@ -98,6 +104,29 @@ const setup = () => {
 }
 
 describe('CUSTOM Three engine', () => {
+  it('disables shadow mapping for a detected software WebGL renderer', () => {
+    const extension = { UNMASKED_RENDERER_WEBGL: 0x9246 }
+    const getExtension = vi.fn((name: string) =>
+      name === 'WEBGL_debug_renderer_info' ? extension : null
+    )
+    const getParameter = vi.fn(() => 'Google SwiftShader')
+    let driver!: GraphicsDriver & {
+      getContext: () => WebGLRenderingContext
+    }
+    const fixture = setup((value) => {
+      driver = value as typeof driver
+      driver.getContext = () =>
+        ({ getExtension, getParameter }) as unknown as WebGLRenderingContext
+    })
+
+    fixture.engine.execute({ type: 'flush' })
+
+    expect(getExtension).toHaveBeenCalledWith('WEBGL_debug_renderer_info')
+    expect(getParameter).toHaveBeenCalledWith(extension.UNMASKED_RENDERER_WEBGL)
+    expect(driver.shadowMap?.enabled).toBe(false)
+    fixture.engine.destroy()
+  })
+
   it('does not advertise or simulate unsupported subtree snapshots', () => {
     const { engine, driver, root } = setup()
     expect(engine.capabilities.has('snapshot')).toBe(false)
@@ -576,6 +605,31 @@ it('selects instance detail from projected error and culls off-screen plants wit
   engine.execute({ type: 'flush' })
   expect(full.count).toBe(1)
   expect(distant.count).toBe(0)
+  engine.destroy()
+})
+
+it('selects detail against physical pixels when the renderer uses a fractional pixel ratio', () => {
+  const { engine, driver, add } = setup(undefined, 0.5)
+  add({
+    ...camera,
+    position: [0, 0, 12],
+    far: 1000
+  })
+  add({
+    ...box,
+    instances: [{ position: [0, 0, 0], yaw: 0 }],
+    distant: { shape: { kind: 'sphere', radius: 0.5 }, maxError: 0.06 }
+  })
+
+  engine.execute({ type: 'flush' })
+
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const [full, distant] = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  ) as THREE.InstancedMesh[]
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
   engine.destroy()
 })
 

@@ -94,8 +94,8 @@
 .page-hero--feature {
   align-items: center;
   min-height: clamp(520px, 46vw, 620px);
-  padding-bottom: clamp(58px, 7vw, 92px);
-  padding-top: clamp(58px, 7vw, 92px);
+  padding-bottom: clamp(58px, 7vw, 90px);
+  padding-top: clamp(58px, 7vw, 90px);
 }
 
 .page-hero--split {

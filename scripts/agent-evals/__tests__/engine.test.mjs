@@ -470,7 +470,7 @@ test('formal eval suite is part of the existing repository CI test entry', () =>
       .split(' ')
       .includes('scripts/agent-evals/__tests__/engine.test.mjs')
   )
-  assert.ok(scripts['test:ci'].includes('yarn test:scripts'))
+  assert.ok(scripts['test:workspaces:ci'].includes('yarn test:scripts'))
 })
 
 test('historical reviews are interpreted using the rubric retained by their evaluation', (t) => {

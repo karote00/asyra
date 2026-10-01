@@ -75,7 +75,7 @@ yarn workspace @asyra/package-name build
 For a cross-package change, also run:
 
 ```bash
-yarn lint:ci
+yarn lint:workspaces:ci
 yarn react:build
 ```
 

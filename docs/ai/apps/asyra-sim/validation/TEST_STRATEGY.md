@@ -145,12 +145,16 @@ must show complete coverage, bounded retained evidence and Worker cleanup for
 all three candidates. It does not claim all candidates pass at the default
 budget or on unmeasured reference hardware.
 
-Each benchmark test allows its 120-second execution budget plus 15 seconds for
-fixture/setup/cleanup. The dedicated three-case command supplies a finite
-465,000-ms global harness deadline: three such allowances plus the existing
-60-second server-start allowance. Run
-`APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource.browser.spec.ts --global-timeout=465000`.
+Each candidate is one actual test in its own browser spec file, with a
+120-second execution budget plus 15 seconds for fixture/setup/cleanup. The
+dedicated three-file command supplies a finite 465,000-ms global harness
+deadline: three such allowances plus the existing 60-second server-start
+allowance. This aggregate command runs each candidate as an independent test
+item; it does not combine them into one test. Run
+`APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource-candidate-1.browser.spec.ts src/analysis/methods/__tests__/representative-resource-candidate-2.browser.spec.ts src/analysis/methods/__tests__/representative-resource-candidate-3.browser.spec.ts --global-timeout=465000`.
 These test allowances do not renew or extend the Worker-owned execution budget.
+Measured wall time is diagnostic evidence only; host-dependent elapsed-time
+thresholds are not pass criteria.
 
 Browser frame wall-clock values attached by `mechanical-review.spec.ts`
 describe only the current host and browser.
@@ -244,6 +248,17 @@ separate evidence from the automatic gates. Geometry authority remains the
 source-space tests; GPU PNG byte equality is not an Undo oracle. Theme screenshots
 wait for computed colors and finish finite transitions before capture.
 
+The standard CI browser owner runs the complete Playwright inventory in six
+bounded invocations declared by `apps/asyra-sim/scripts/e2e-ci-groups.mjs`.
+Every configured browser spec must belong to exactly one group. Each invocation
+keeps the Playwright global watchdog and its normal server/process cleanup; the
+owner continues later groups after a failure and reports the complete attempt
+as failed or incomplete. Group output directories remain separate under
+`apps/asyra-sim/test-results/ci/`, so later groups do not erase earlier traces.
+The CI runner binds each group report to the source revision, exact selected
+files, command, run identity, timestamps, outcome counts, and output path. These
+timestamps diagnose execution only; they are not product-performance limits.
+
 Remaining differences: the sample is authored, not manufacturer-certified;
 the local SwiftShader timing is not reference-hardware evidence. Independent
 numerical review, larger workload qualification and a rebuilt packaged release
@@ -334,7 +349,6 @@ canonical Undo/Redo plus reload. Observation metadata edits and accepted
 attachment removal must commit while new files remain prepared; prove no source
 retention until explicit attachment acceptance, with Undo/Redo and reload.
 
-
 ### Authored-input independence regression gate
 
 - `editing.test.ts`: erroneous trajectory/exclusion text persists with independent
@@ -364,7 +378,6 @@ retention until explicit attachment acceptance, with Undo/Redo and reload.
 - Run trajectory-import, experiments, automatic-persistence and field-observations
   E2E suites alongside the regression flow. Inspect emitted live-app screenshots;
   parser-only tests do not close this gate.
-
 
 Verified 2026-09-08 in `codex/asyra-sim-m2-import-contract`: 647 App tests,
 17 E2E cases (one worker, no retries), App build including typecheck, App lint,

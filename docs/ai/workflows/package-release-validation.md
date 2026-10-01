@@ -8,7 +8,11 @@ command.
 
 PR validation is independent of hosting. Ready PRs require `validate`,
 `framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
-`production-artifact-tests`. Draft jobs remain deferred until ready for review.
+`production-artifact-tests`. `validate` is the total aggregation check;
+`shared-validation` supplies its common prerequisites and runs the conditional
+create-app package archive check. Framework release readiness is selected for
+affected Framework packages and release-validation owner scripts. Draft jobs
+remain deferred until ready for review.
 Vercel statuses from older Git-integrated deployments are historical evidence,
 not merge prerequisites or proof that CI passed.
 
@@ -17,7 +21,7 @@ Their Git connections are removed during cutover, and repository configurations
 also disable automatic Git deployment. A push, PR or merge does not request an
 App deployment. Package registry publication remains a separate workflow.
 
-## Workspace Build Graph
+## Workspace Build Graph and CI Scope
 
 Each framework package keeps its canonical package-specific build command,
 such as `build:factory` or `build:collaboration`. Asyra Design uses
@@ -36,38 +40,165 @@ Package-specific task names must not use a `^build:<package>` dependency.
 Turbo interprets `^` as the named task on every dependency package, which is
 not the Asyra package-specific task contract.
 
+`scripts/ci-relationships.json` is the single CI relationship policy.
+`scripts/ci-scope.mjs` discovers first-level workspaces under `apps/`,
+`packages/`, and `tools/`, and reads each workspace's declared dependencies and
+canonical build/test scripts. The same versioned relationship map produces the
+affected workspace matrix and the evidence consumed by the final `validate`
+aggregate. Dependency edges from both the base and candidate revisions are
+included, so a removed or renamed workspace still selects its former
+downstream consumers. New workspace names do not require CI job or owner-list
+edits.
+
+### Input ownership
+
+One PR scope calculation selects workspace, repository-contract, E2E, dependency,
+and production-artifact checks. Reusable workflows consume that calculation;
+Production Artifacts has no independent PR trigger. Plan checks run through the
+selected repository contracts; there is no second unconditional plan workflow.
+
+| Changed input                                                                    | Required checks and propagation                                                                                                            |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plan/closeout Markdown, PLANS index, decision records                            | Plan/task contracts; no App build, E2E, dependency audit or API analysis                                                                   |
+| Workflow/rule Markdown                                                           | Applicable workflow contracts; no product workspace propagation                                                                            |
+| Package/app README                                                               | Public README/API contracts where declared; no downstream App build, E2E or package release readiness                                      |
+| Registered test file                                                             | That formal test; workspace tests stay with their owner and do not propagate to runtime consumers                                          |
+| App implementation/configuration                                                 | Owning App and declared runtime consumers; its supported E2E and production artifact where applicable                                      |
+| Framework implementation                                                         | Package plus transitive consumers from both Git snapshots; release readiness and affected App artifacts                                    |
+| Root package scripts                                                             | Script/workspace contracts; no automatic product selection                                                                                 |
+| Root engine, package manager, workspace layout, compiler/build-runner dependency | Actual shared consumers; global toolchain changes select all workspaces                                                                    |
+| Yarn resolutions or patch bytes                                                  | Traverse both resolved lock graphs, including resolution overrides, and select consuming workspaces; a Next.js-only update selects Website |
+| Turbo task configuration                                                         | Changed qualified task owners; shared build/test task or global configuration selects its consumers                                        |
+| CI implementation/workflow                                                       | CI execution and aggregation contracts; no blanket all-App selection                                                                       |
+| Production artifact verifier/workflow                                            | Artifact contracts and all supported artifact producers, because the shared verifier changed                                               |
+| Changeset metadata                                                               | Changeset admission/contracts; no Flow Inspector board or unrelated App work                                                               |
+| Public content or generated source map                                           | Website consumer and applicable content/hash contracts; hash checks alone do not need API analysis                                         |
+
+`scripts/ci-relationships.json` declares registered repository tests and their
+input groups. Mixed edits take the union of checks. Public API checks select
+Framework declaration prerequisites; CI-only or plan-only checks do not.
+`full` is an explicit validation mode (main/manual/reusable full entry), not a
+fallback for every root file. It selects the complete workspace graph and all
+checks. Unknown paths, malformed lock input and unresolved dependencies block
+classification before product jobs can start.
+
+The scope phase reads Git and the generated Yarn records before installation.
+It resolves base and candidate dependency closures once per scope invocation;
+all producers consume its immutable execution plan and digest. Package test and
+document changes cannot become runtime dependency changes. Deleted/renamed
+runtime owners retain their base-snapshot consumers.
+
+Each scope records workspace input paths and root field/resolution reasons.
+The final aggregate binds security, dependency/Turbo checks, repository tests,
+workspace receipts, E2E suites and production artifacts to the selected plan.
+A required producer skipped or failed, an unexpected producer, and incomplete
+script-file receipts cannot pass. Changeset admission remains a PR-wide metadata
+check. Security, dependency and Turbo checks run only when their inputs changed
+or full validation was explicitly selected.
+
+The workflow schedules selected workspaces through a dynamic matrix. Each
+matrix entry executes its manifest-defined canonical build to completion and
+then `test:ci` sequentially. It uploads a run-bound result record; the `validate`
+aggregate checks the exact selected matrix, relationship-map digest, execution
+identity, task order, and every required job outcome. A missing matrix result,
+omitted workspace, failed task, or skipped selected gate cannot satisfy the
+required aggregate.
+
+FieldScope's selected numerical profile owner runs heavy, source and remaining
+groups in order on separate CI runners after its ordinary workspace validation.
+A change to the profile workflow selects those groups directly. Profile-only
+verification can follow a skipped ordinary matrix; a failed ordinary matrix blocks
+it. The final aggregate requires all selected groups to complete successfully.
+Unrelated plan and CI-contract changes do not activate the profile suite.
+Internal `bdd-features/*.feature` specifications and supported reference images
+under `docs/ai/**/references/` are document inputs. This does not admit executable
+files in those directories or turn them into App runtime changes.
+
+CI runs each selected workspace's canonical build task and dependency closure
+to completion before invoking `test:ci`. The test task has no build dependency,
+so it must not be scheduled alongside the build task in a single Turbo run.
+
 Commands:
 
 ```bash
 yarn gen:turbo        # intentionally rewrite turbo.json
 yarn gen:turbo:check  # verify the committed graph without changing files
 yarn react:build      # check the graph, then build the app dependency closure
+yarn start:asyra-design # start only the Asyra Design app
+yarn test:asyra-design # run its local formal tests
+yarn test:asyra-design:ci # run its CI test task
+yarn lint:asyra-design # lint only its maintained app files
+yarn test:workspaces:ci # run script tests and all workspace CI tests
+yarn lint:workspaces:ci # lint the repository
 ```
+
+The same `start:<app>`, `test:<app>`, `test:<app>:ci`, `lint:<app>`, and
+`test:e2e:<app>` commands are available for `asyra-framework-site`,
+`asyra-sim`, `fieldscope`, and `starter-app`.
 
 Any root, app, CI, E2E, or deployment command that directly depends on a
 package-specific Turbo task must first pass `gen:turbo:check` or call a root
 command that does.
 
-`dev:all` discovers `packages/*` from their manifests and starts every package
-`dev` command plus the Asyra Design dev server in parallel. It does not validate
-the Turbo graph or build workspace packages; existing `dist` outputs are a
-precondition. A fresh clone must use this sequence from the repository root:
+Each app has a dedicated root start command. For example, Asyra Design starts
+without launching unrelated package watchers. Build workspace packages first
+from a fresh clone:
 
 ```bash
 yarn install
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 After `yarn clean`, recreate the outputs before restarting the watchers:
 
 ```bash
 yarn react:build
-yarn dev:all
+yarn start:asyra-design
 ```
 
 `clean` remains a Turbo workspace command; every package that emits `dist` must
 provide `clean`.
+
+## CI Lane and E2E Split Rules
+
+Root commands name the app and the operation they perform. Use
+`start:<app>` for one app, `test:<app>` for its local formal tests,
+`test:<app>:ci` for its CI test task, `lint:<app>` for its lint task, and
+`test:e2e:<app>` (with `:ci` where defined) for its browser suite. Use the
+explicit workspace commands for repository-wide work. Do not restore an
+ambiguous command that starts or validates several unrelated apps at once.
+
+Keep change selection and execution in their current owners:
+
+- `scripts/ci-relationships.json` owns workspace relationships, shared inputs,
+  and specialized E2E suite inputs.
+- `scripts/ci-scope.mjs` derives the affected workspace matrix and selected
+  gates from the base-to-head change set and those relationships.
+- `.github/workflows/main.yml` executes the selected workspace and specialized
+  gates; its required aggregate rejects missing, failed, or skipped selected
+  results.
+- Each app's `test:e2e:ci` runner and group manifest own that app's browser
+  suite boundaries. The reusable Design workflow owns its functional,
+  collaboration, board, and render-contract jobs.
+
+Do not copy workspace or E2E file inventories into the workflow. When an app
+uses CI groups, group cases by a coherent product or runtime responsibility,
+not by an arbitrary test count. The app's group-coverage contract must prove
+that every discovered spec is assigned exactly once. Keep expensive or
+resource-sensitive cases in bounded groups of their own when evidence shows
+they could consume the enclosing group budget. A group timeout bounds that
+group; it does not justify combining unrelated behaviors into one timed test or
+raising a timeout without evidence. A test file with an explicit timeout must
+contain one test item, and that item must cover one meaningful behavior.
+Host-dependent performance observations remain diagnostic unless they run
+against a controlled performance contract.
+
+Browser E2E uses the runner's installed Google Chrome channel. Keep Playwright
+configs on `channel: 'chrome'`; CI must not download Playwright-managed
+Chromium. The browser channel and installation contract are checked by the
+repository automation tests. App-specific E2E configuration and budgets remain
+with the app that owns the suite.
 
 ## Script Tests
 
@@ -217,7 +348,7 @@ The full validation runs, in order:
 11. remove the isolated workspace whether validation passes or fails.
 
 Release validation never cleans or builds the developer's active workspace, so
-an active `dev:all`, app server, or package watcher is not interrupted and
+an active app server or package watcher is not interrupted and
 cannot rewrite artifacts during validation.
 
 `release:framework` validates Framework packages without entering an App or

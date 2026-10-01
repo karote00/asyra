@@ -140,7 +140,7 @@ Package-level change:
 Cross-package framework change:
 
 - build/test all affected packages
-- `yarn lint:ci`
+- `yarn lint:workspaces:ci`
 
 Quality gates:
 
