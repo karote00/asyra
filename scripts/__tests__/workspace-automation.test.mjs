@@ -155,10 +155,12 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
     const workflow = readText(workflowPath)
     assert.match(workflow, /^permissions:\n {2}contents: read$/m, workflowPath)
     for (const line of workflow.match(/^\s*-?\s*uses:\s*\S+$/gm) ?? []) {
-      if (line.trim() === 'uses: ./.github/workflows/e2e.yml') {
+      if (
+        /^uses: \.\/\.github\/workflows\/[a-z0-9-]+\.yml$/.test(line.trim())
+      ) {
         assert.equal(workflowPath, '.github/workflows/main.yml')
         assert.match(
-          readText('.github/workflows/e2e.yml'),
+          readText(line.trim().slice('uses: ./'.length)),
           /^ {2}workflow_call:/m
         )
       } else {
@@ -207,11 +209,11 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
   }
 })
 
-test('Draft filtering preserves non-PR CI triggers and label validation', () => {
+test('Draft filtering preserves explicit full triggers without rerunning unrelated label changes', () => {
   const ci = readText('.github/workflows/main.yml')
   const e2e = readText('.github/workflows/e2e.yml')
   assert.match(ci, /push:\n {4}branches:\n {6}- main/)
-  assert.match(ci, /types: \[[^\]]*labeled, unlabeled/)
+  assert.doesNotMatch(ci, /types: \[[^\]]*labeled/)
   assert.match(e2e, /^ {2}workflow_dispatch:/m)
   assert.match(e2e, /^ {2}schedule:\n {4}- cron: '0 18 \* \* \*'/m)
 })

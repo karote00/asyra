@@ -1,9 +1,18 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { ESLint } from 'eslint'
+import scriptSelection from '../tools/flow-inspector/control-plane/ci-script-selection.cjs'
+
+const relationshipPolicy = JSON.parse(
+  fs.readFileSync(new URL('./ci-relationships.json', import.meta.url), 'utf8')
+)
+const registeredTests = new Set(relationshipPolicy.registeredScriptTests)
+const serialBuildTests = new Set(
+  relationshipPolicy.repositoryScriptGroups.buildExecution.tests
+)
 
 const checkNames = ['lint', 'repositoryScripts', 'naming']
 
@@ -29,7 +38,14 @@ function validateExecutionPlan(plan) {
     !Array.isArray(lint.inputs)
   )
     throw new Error('CI lint selection is missing or malformed')
-  for (const name of ['repositoryScripts', 'naming']) {
+  if (
+    !scriptSelection.validRepositoryScriptSelection(
+      plan.checks.repositoryScripts,
+      registeredTests
+    )
+  )
+    throw new Error('CI repository script selection is missing or malformed')
+  for (const name of ['naming']) {
     const selection = plan.checks[name]
     if (
       !['full', 'not-selected'].includes(selection.mode) ||
@@ -84,6 +100,28 @@ async function runLint(selection, repositoryRoot) {
 
 function runYarnScript(script) {
   execFileSync('yarn', [script], { stdio: 'inherit' })
+  return { status: 'passed' }
+}
+
+function runRepositoryScripts(selection, execute = execFileSync) {
+  if (
+    !scriptSelection.validRepositoryScriptSelection(selection, registeredTests)
+  )
+    throw new Error('CI repository script selection is missing or malformed')
+  if (selection.mode === 'files') {
+    const parallel = selection.tests.filter(
+      (file) => !serialBuildTests.has(file)
+    )
+    const serial = selection.tests.filter((file) => serialBuildTests.has(file))
+    if (parallel.length)
+      execute(process.execPath, ['--test', ...parallel], { stdio: 'inherit' })
+    if (serial.length)
+      execute(process.execPath, ['--test', '--test-concurrency=1', ...serial], {
+        stdio: 'inherit'
+      })
+    return { status: 'passed', executedTests: selection.tests }
+  }
+  execute('yarn', [selection.command], { stdio: 'inherit' })
   return { status: 'passed' }
 }
 
@@ -152,7 +190,7 @@ async function main() {
     identity,
     relationshipMapDigest,
     lint: (selection) => runLint(selection, repositoryRoot),
-    repositoryScripts: (selection) => runYarnScript(selection.command),
+    repositoryScripts: (selection) => runRepositoryScripts(selection),
     naming: (selection) => runYarnScript(selection.command)
   })
   result.identity = identity
@@ -182,7 +220,12 @@ async function main() {
     process.exitCode = 1
 }
 
-export { executeSelectedChecks, resolveLintFiles, validateExecutionPlan }
+export {
+  executeSelectedChecks,
+  resolveLintFiles,
+  validateExecutionPlan,
+  runRepositoryScripts
+}
 
 if (
   process.argv[1] &&

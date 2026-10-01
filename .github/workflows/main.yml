@@ -10,17 +10,22 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   scope:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
+      production_apps: ${{ steps.scope.outputs.production_apps }}
       workspace_matrix: ${{ steps.scope.outputs.workspace_matrix }}
       execution_plan: ${{ steps.scope.outputs.execution_plan }}
       e2e_suites: ${{ steps.scope.outputs.e2e_suites }}
@@ -55,10 +60,13 @@ jobs:
           if-no-files-found: error
 
   shared-validation:
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ always() && needs.scope.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
     runs-on: ubuntu-latest
     outputs:
+      security_audit_result: ${{ steps.security_audit.outcome }}
+      dependency_validation_result: ${{ steps.dependency_validation.outcome }}
+      turbo_validation_result: ${{ steps.turbo_validation.outcome }}
       create_app_result: ${{ steps.create_app.outcome }}
       framework_declaration_result: ${{ steps.framework_declarations.outcome }}
 
@@ -100,12 +108,18 @@ jobs:
         run: yarn changeset:pr:check
 
       - name: Audit high-severity dependencies
+        id: security_audit
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.securityAudit.mode == 'full' }}
         run: yarn security:audit
 
       - name: Validate workspace dependencies
+        id: dependency_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.dependencyValidation.mode == 'full' }}
         run: yarn deps:validate
 
       - name: Validate turbo.json
+        id: turbo_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.turboValidation.mode == 'full' }}
         run: yarn gen:turbo:check
 
       - name: Build Framework declarations
@@ -152,7 +166,7 @@ jobs:
   workspace-validation:
     name: ${{ matrix.workspace.directory }}
     needs: scope
-    if: ${{ always() && needs.scope.outputs.workspace_matrix != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     # Engineering envelope, not an app SLA. Calibrate from complete job receipts.
     timeout-minutes: ${{ fromJSON(vars.TEST_JOB_MINUTES || '30') }}
@@ -224,7 +238,7 @@ jobs:
 
   flow-inspector-validation:
     needs: [scope, workspace-validation]
-    if: ${{ always() && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -281,8 +295,31 @@ jobs:
       - name: Verify release records
         run: yarn release:records
 
+  production-artifacts:
+    needs: scope
+    if: ${{ needs.scope.result == 'success' && needs.scope.outputs.production_apps != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    uses: ./.github/workflows/production-artifacts.yml
+    with:
+      apps: ${{ needs.scope.outputs.production_apps }}
+
+  # Branch rules require this exact check name; the reusable producer has a prefix.
+  production-artifact-tests:
+    needs: [scope, production-artifacts]
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      SCOPE_RESULT: ${{ needs.scope.result }}
+      PRODUCTION_APPS: ${{ needs.scope.outputs.production_apps }}
+      PRODUCER_RESULT: ${{ needs.production-artifacts.result }}
+    steps:
+      - name: Require selected production artifact result
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$PRODUCTION_APPS" = '[]' ]; then test "$PRODUCER_RESULT" = skipped; else test "$PRODUCER_RESULT" = success; fi
+
   design-e2e:
-    if: ${{ always() && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
@@ -325,6 +362,7 @@ jobs:
         workspace-validation,
         flow-inspector-validation,
         framework-release-readiness,
+        production-artifacts,
         design-e2e,
         e2e-tests,
         collaboration-e2e-tests
@@ -338,7 +376,7 @@ jobs:
         with:
           node-version: 24
       - name: Download workspace matrix results
-        if: always() && needs.scope.outputs.workspace_matrix != '[]'
+        if: always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]'
         continue-on-error: true
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -371,11 +409,15 @@ jobs:
           FLOW_WORKSPACE_VALIDATION_RESULT: ${{ needs.workspace-validation.result }}
           FLOW_WORKSPACE_RESULTS_DIR: .ci-workspace-results
           FLOW_FLOW_INSPECTOR_VALIDATION_RESULT: ${{ needs.flow-inspector-validation.result }}
+          FLOW_PRODUCTION_ARTIFACT_RESULT: ${{ needs.production-artifacts.result }}
           FLOW_FRAMEWORK_RELEASE_RESULT: ${{ needs.framework-release-readiness.result }}
           FLOW_FRAMEWORK_DECLARATION_RESULT: ${{ needs.shared-validation.outputs.framework_declaration_result }}
           FLOW_CREATE_APP_READINESS_RESULT: ${{ needs.shared-validation.outputs.create_app_result }}
           FLOW_DESIGN_FORWARDER_RESULT: ${{ needs.e2e-tests.result }}
           FLOW_COLLABORATION_FORWARDER_RESULT: ${{ needs.collaboration-e2e-tests.result }}
+          FLOW_SECURITY_AUDIT_RESULT: ${{ needs.shared-validation.outputs.security_audit_result }}
+          FLOW_DEPENDENCY_VALIDATION_RESULT: ${{ needs.shared-validation.outputs.dependency_validation_result }}
+          FLOW_TURBO_VALIDATION_RESULT: ${{ needs.shared-validation.outputs.turbo_validation_result }}
           FLOW_VALIDATE_RESULT: ${{ needs.shared-validation.result }}
           FLOW_E2E_RESULT: ${{ needs.design-e2e.result }}
           FLOW_DESIGN_SELECTED: ${{ needs.scope.outputs.design_e2e_required }}

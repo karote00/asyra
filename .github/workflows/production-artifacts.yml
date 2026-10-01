@@ -1,21 +1,19 @@
 name: Production Artifacts
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
   workflow_call:
     inputs:
       apps:
-        description: JSON array of planned App IDs; empty runs all Apps for PR CI
+        description: JSON array of explicitly selected App IDs
         type: string
-        default: ''
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   production-artifact-tests:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: inputs.apps != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
