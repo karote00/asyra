@@ -315,7 +315,12 @@ function workspaceResult(entry, scope, result = {}) {
     ...result
   }
 }
-function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
+function assess(
+  records = envelopes(),
+  jobs = {},
+  scope = designScopeEvidence,
+  currentIdentity = identity
+) {
   const selectedScope = scope ?? designScopeEvidence
   const matrixResults = selectedScope.relationshipMap.workspaceMatrix.map(
     (entry) => workspaceResult(entry, selectedScope)
@@ -358,7 +363,7 @@ function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
   )
   return aggregate(
     records,
-    identity,
+    currentIdentity,
     {
       validate: 'success',
       e2e: selectedSuites.length ? 'success' : 'skipped',
@@ -1131,11 +1136,13 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
     )
   )
   assert.ok(
-    step.conditions.some((condition) => /same.*run attempt/iu.test(condition))
+    step.conditions.some((condition) => /same.*run id/iu.test(condition))
   )
   assert.ok(
     step.conditions.some((condition) =>
-      /rerun.*entire workflow/iu.test(condition)
+      /partial reruns.*reuse.*earlier positive integer attempts/iu.test(
+        condition
+      )
     )
   )
   assert.ok(
@@ -1206,7 +1213,7 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   ])
   assert.equal(artifact.ownerStepId, 'aggregate-workflow-results')
 })
-test('missing, unknown, duplicate, or stale-attempt scope evidence cannot pass', () => {
+test('missing, unknown, duplicate, or future-attempt scope evidence cannot pass', () => {
   const evidence = makeScope()
   const jobs = {
     workspaceValidation: 'success',
@@ -1595,17 +1602,30 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       )
       assert.equal(aggregated.status, expectedStatus === 'passed' ? 0 : 1)
     }
-    const staleAttempt = spawnSync(process.execPath, [cli, 'aggregate'], {
+    fs.writeFileSync(scopeEvidenceFile, JSON.stringify(currentScope))
+    fs.writeFileSync(
+      selectedCheckResultsFile,
+      JSON.stringify(checkResultsFor(currentScope))
+    )
+    fs.writeFileSync(
+      path.join(
+        workspaceResultsDirectory,
+        `${designWorkspace.artifactId}.json`
+      ),
+      JSON.stringify(workspaceResult(designWorkspace, currentScope))
+    )
+    const partialRerun = spawnSync(process.execPath, [cli, 'aggregate'], {
       env: { ...completeRun, FLOW_RESULT_ATTEMPT: '2' },
       encoding: 'utf8'
     })
-    assert.equal(staleAttempt.status, 1)
-    assert.equal(JSON.parse(staleAttempt.stdout).status, 'unverified')
+    assert.equal(partialRerun.status, 0, partialRerun.stdout)
+    assert.equal(JSON.parse(partialRerun.stdout).status, 'passed')
     const result = spawnSync(process.execPath, [cli, 'aggregate'], {
       env: {
-        ...env,
+        ...completeRun,
         FLOW_DESIGN_EVIDENCE: JSON.stringify(evidence),
         FLOW_COLLABORATION_EVIDENCE: 'invalid',
+        FLOW_WORKSPACE_VALIDATION_RESULT: 'failure',
         FLOW_VALIDATE_RESULT: 'success',
         FLOW_E2E_RESULT: 'failure',
         FLOW_DESIGN_SELECTED: 'true'
@@ -1670,3 +1690,155 @@ for (const guard of [
     assert.notEqual(assess(envelopes(), jobs, unselected).status, 'passed')
   })
 }
+
+test('partial reruns reuse successful receipts from the same source and selection', () => {
+  const scope = structuredClone(designScopeEvidence)
+  const workspaceResults = scope.relationshipMap.workspaceMatrix.map(
+    (entry, index) =>
+      workspaceResult(entry, scope, {
+        identity: { ...identity, attempt: index ? '1' : '2' }
+      })
+  )
+  const result = assess(envelopes(), { workspaceResults }, scope, {
+    ...identity,
+    attempt: '3'
+  })
+  assert.equal(result.status, 'passed', result.blockers.join('; '))
+  assert.equal(result.identity.attempt, '3')
+  assert.equal(scope.identity.attempt, '1')
+  assert.equal(workspaceResults[0].identity.attempt, '2')
+})
+
+test('earlier successes cannot override latest failed or incomplete dependencies', () => {
+  const current = { ...identity, attempt: '3' }
+  for (const producer of [
+    'validate',
+    'workspaceValidation',
+    'e2e',
+    'designForwarder',
+    'collaborationForwarder'
+  ]) {
+    for (const outcome of ['failure', 'cancelled', 'skipped', '']) {
+      const result = assess(
+        envelopes(),
+        { [producer]: outcome },
+        designScopeEvidence,
+        current
+      )
+      assert.notEqual(result.status, 'passed', `${producer}: ${outcome}`)
+    }
+  }
+  const cases = envelopes()
+  cases[0] = collect(report([0]), 'design', { ...identity, attempt: '2' })
+  cases[0].cases[0].observations[0].results = ['failed']
+  assert.equal(assess(cases, {}, designScopeEvidence, current).status, 'failed')
+})
+
+test('partial reruns reject foreign source, future attempts and changed selection evidence', () => {
+  const current = { ...identity, attempt: '3' }
+  const incompatibleIdentity = {
+    repository: 'other/repo',
+    base: 'd'.repeat(40),
+    head: 'd'.repeat(40),
+    integration: 'd'.repeat(40),
+    run: '456'
+  }
+  for (const [key, value] of Object.entries(incompatibleIdentity)) {
+    const scope = structuredClone(designScopeEvidence)
+    scope.identity[key] = value
+    assert.notEqual(
+      assess(envelopes(), {}, scope, current).status,
+      'passed',
+      key
+    )
+  }
+  for (const attempt of [
+    '4',
+    '0',
+    '-1',
+    '1.5',
+    'NaN',
+    '',
+    'local',
+    '9007199254740992'
+  ]) {
+    const scope = structuredClone(designScopeEvidence)
+    scope.identity.attempt = attempt
+    assert.notEqual(
+      assess(envelopes(), {}, scope, current).status,
+      'passed',
+      attempt
+    )
+  }
+  const scope = structuredClone(designScopeEvidence)
+  const checks = checkResultsFor(scope)
+  checks.executionPlanDigest = 'f'.repeat(64)
+  assert.notEqual(
+    assess(envelopes(), { selectedCheckResults: checks }, scope, current)
+      .status,
+    'passed'
+  )
+  const workspaces = scope.relationshipMap.workspaceMatrix.map((entry) =>
+    workspaceResult(entry, scope)
+  )
+  workspaces[0].relationshipMapDigest = 'f'.repeat(64)
+  assert.notEqual(
+    assess(envelopes(), { workspaceResults: workspaces }, scope, current)
+      .status,
+    'passed'
+  )
+})
+
+test('each reused producer still rejects incompatible execution identities', () => {
+  const current = { ...identity, attempt: '3' }
+  for (const changed of [
+    { attempt: '4' },
+    { run: 'another-run' },
+    { head: 'e'.repeat(40) },
+    { attempt: 'local' }
+  ]) {
+    const evidence = envelopes()
+    evidence[0].identity = { ...identity, ...changed }
+    assert.notEqual(
+      assess(evidence, {}, designScopeEvidence, current).status,
+      'passed'
+    )
+    const selectedCheckResults = checkResultsFor(designScopeEvidence)
+    selectedCheckResults.identity = { ...identity, ...changed }
+    assert.notEqual(
+      assess(
+        envelopes(),
+        { selectedCheckResults },
+        designScopeEvidence,
+        current
+      ).status,
+      'passed'
+    )
+    const workspaceResults =
+      designScopeEvidence.relationshipMap.workspaceMatrix.map((entry) =>
+        workspaceResult(entry, designScopeEvidence, {
+          identity: { ...identity, ...changed }
+        })
+      )
+    assert.notEqual(
+      assess(envelopes(), { workspaceResults }, designScopeEvidence, current)
+        .status,
+      'passed'
+    )
+  }
+})
+
+test('local evidence stays local and never enters a GitHub rerun', () => {
+  const local = { ...identity, run: 'local', attempt: 'local' }
+  const scope = structuredClone(designScopeEvidence)
+  scope.identity = local
+  const receipts = [
+    collect(report([0]), 'design', local),
+    collect(report([1, 2]), 'collaboration', local)
+  ]
+  assert.equal(assess(receipts, {}, scope, local).status, 'passed')
+  assert.notEqual(
+    assess(receipts, {}, scope, { ...identity, attempt: '2' }).status,
+    'passed'
+  )
+})

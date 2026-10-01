@@ -480,9 +480,14 @@ every selected producer to succeed, and requires every unselected producer to
 remain skipped. Missing selected outputs and zero-evidence results cannot pass.
 Known docs-only changes still run
 shared validation and the applicable document-owner check; Flow Inspector
-contract documentation selects its tool contract suite. A rerun with a
-different attempt cannot reuse the previous attempt's scope evidence: rerun the
-entire workflow so all producers emit evidence for the new attempt. Missing scope output, unknown
+contract documentation selects its tool contract suite. A partial rerun may reuse
+successful evidence from an earlier positive integer attempt of the same exact
+repository/base/head/integration/run and unchanged plan/map. Retain each receipt's
+original attempt; reject future or malformed attempts and evidence from another
+run or source. GitHub's latest selected dependency outcomes remain authoritative:
+an older successful receipt cannot override a later failed, cancelled, missing
+or skipped selected job. Local evidence uses the exact `local` run/attempt pair;
+it cannot enter a GitHub run. Missing scope output, unknown
 paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
 selected work all fail the total check. The shared-validation job remains required for every non-draft run and performs
 Changeset admission plus the selected guards, lint, repository contracts and

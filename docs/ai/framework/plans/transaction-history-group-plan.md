@@ -431,3 +431,40 @@ before testing keyboard focus, and still asserts the original Tab destination.
 All five CI assignment contracts, App TypeScript, ESLint (existing warnings
 only), naming and formatting pass. All original checks remain; no product code
 or timeout changed. Latest-head complete-workflow CI remains required.
+
+### CI aggregation follow-up - partial reruns
+
+User feedback on 2026-10-02 changes the requested CI behavior: a failed job must
+not force every successful job for the same source to rerun. Owner step:
+`aggregate-workflow-results`, Core Proof `#final-workflow-aggregation`. Inputs
+remain trusted run-bound scope, selected-check/workspace/E2E receipts, their
+plan/map digests, and GitHub's latest dependency outcomes. Output remains the
+canonical validate result. Admit earlier positive integer attempts only within
+the exact repository/base/head/integration/run identity and unchanged selection.
+GitHub's latest failed/cancelled/missing selected dependency still blocks even
+when an older successful receipt exists. Unknown/future attempt, different run,
+source, selection, missing/duplicate evidence or failed case remains rejected.
+Keep producer attempt identities in evidence; do not relabel them as current.
+
+Boundary: existing aggregator and permanent workflow-result tests, its exact
+spec/Inspector condition and generated workspace catalog, plus this plan. No new
+network authority, producer execution changes, relaxed assertions, cross-run
+reuse or timeout changes. The existing main workflow already supplies latest
+shared/matrix/per-suite outcomes; the aggregator consumes those rather than
+recreating job execution. First prove mixed-attempt successful evidence fails,
+then test latest failures plus mismatched source, plan and future attempts.
+Gates: aggregation regression suite, direct CI scope/runner contracts, Inspector
+catalog equality, tool contract suite, naming/lint. These are the bounded
+acceptance conditions for this CI correction; downstream AI work remains pending
+Framework merge.
+
+Partial-rerun correction evidence: the new mixed-attempt case failed before the
+owner change. All 136 aggregation/scope/workspace-automation cases now pass,
+including the real CLI partial rerun, latest dependency failures, producer case
+failure, source/run/plan mismatch, future/malformed attempts and local isolation.
+Tool package gates pass (12 React plus 100 contracts), including generated
+catalog equality; the focused headless CI presentation case passes. Naming,
+focused ESLint and diff checks pass. An exploratory full Board command lacked
+its required URL configuration and did not establish full Board acceptance;
+the directly relevant CI presentation case was rerun with project-local `.env`.
+No Board UI code changed. Final exact-head CI remains pending.
