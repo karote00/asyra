@@ -63,6 +63,46 @@ describe('canonical Scene Tree projection boundary', () => {
       deferred.unsubscribe()
     }
   })
+  it('uses effective transaction delivery options when the change payload has no options', () => {
+    sceneTree.reset()
+    sceneTree.init()
+    sceneTree.cleanChanges()
+    const workspace = sceneTree.currentWorkspace
+    if (!workspace) throw new Error('Missing workspace')
+    const seen: unknown[] = []
+    const subscription = subscribeToEventBatches((events) => {
+      seen.push(
+        ...events.filter(
+          (event) => event.type === EventTypes.SCENE_TREE_CHANGED
+        )
+      )
+    })
+    const owner = {
+      startTransaction: vi.fn(),
+      endTransaction: vi.fn(),
+      updateTransactionBatch: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn()
+    }
+    try {
+      runWithTransactionOwner(owner, () =>
+        runTransaction(() => {
+          sceneTree.changes.push({
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+            eventName: EventTypes.UPDATE_ELEMENT_DATA,
+            id: workspace.get('id'),
+            changes: [{ key: 'name', before: 'Before', after: 'After' }]
+          })
+          sceneTree.commitSceneTreeTransaction({ sharedDelivery: 'immediate' })
+          expect(seen).toHaveLength(1)
+        })
+      )
+      expect(seen).toHaveLength(1)
+    } finally {
+      subscription.unsubscribe()
+    }
+  })
+
   it('never projects rejected raw preparations and projects accepted failure once', () => {
     sceneTree.reset()
     sceneTree.init()

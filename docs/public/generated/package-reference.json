@@ -206,7 +206,7 @@
         "./group-bounds"
       ],
       "sourceDigests": {
-        "contract": "b57b0835f82b594114da02bdc730089747316a083e3b7a0bc0792dd2d711bab0",
+        "contract": "0982c7a42c3d9547d774efd85f11a36a5b360043c565e63562ae12a50a35d959",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
         "manifest": "13920c798bd85010d6d7e144bf67def7a9a7babb3ad7c8314786a432c23d38a6"
       },
@@ -250,7 +250,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "10e3de3cb983391aa8a60dd58bdab4f99889f2cffc9ae890f17c4f38f134e63f",
+        "contract": "9fde25d55c73e61ce823cfc06edd03953fee3fc9fc3de54caf772bf0ca347629",
         "guide": "534d53e7eae5e7f38ddbf2977688a63af2857553e1246ef4f77d5b9eb40df275",
         "manifest": "0dfbf0a60b0fd9db00624bd02b4b1d24a555544c26f3d5334a64fbecddfe77a1"
       },
@@ -341,7 +341,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "e89a3fe8215b184a18dca3c6318cf715dc1caea60cb7267e7dc682dacc992bc2",
+        "contract": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
       },

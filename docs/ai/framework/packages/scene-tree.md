@@ -263,7 +263,9 @@ symbol; it never enters persisted or network data. Preset filters structural
 projection by this identity. Render consumes this evidence once before another
 hierarchy API runs.
 It no longer reconstructs local hierarchy timing from shared-channel delivery.
-UI/effect observers still receive committed batches at the outer transaction end;
+UI/effect observers receive batches at the outer transaction end by default.
+Explicit immediate previews deliver earlier same-instance local changes first
+and are not delivered again at commit;
 `sharedDelivery` continues to control collaboration/shared channels independently.
 Rollback, Undo/Redo and remote canonical apply use the same Scene Tree owner path.
 No projection event creates another journal, publication or persistence record.

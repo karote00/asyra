@@ -24,18 +24,25 @@ import type {
 /** The owner supplies detached, immutable changes; shared delivery is separate. */
 export const publishLocalSceneTreeChanges = (
   changes: readonly SceneTreeChange[],
-  projectionOwner: symbol
+  projectionOwner: symbol,
+  immediate = false
 ): void => {
   if (changes.length === 0) return
-  publishLocalProjectionEvents([
-    Object.freeze({
-      type: EventTypes.SCENE_TREE_CHANGED,
-      payload: Object.freeze({
-        projectionOwner,
-        changes: Object.freeze([...changes])
+  publishLocalProjectionEvents(
+    [
+      Object.freeze({
+        type: EventTypes.SCENE_TREE_CHANGED,
+        payload: Object.freeze({
+          projectionOwner,
+          changes: Object.freeze([...changes])
+        })
       })
-    })
-  ])
+    ],
+    {
+      scope: projectionOwner,
+      immediate
+    }
+  )
 }
 
 export const publishLocalComputedDataEvents = (

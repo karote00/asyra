@@ -2345,7 +2345,7 @@ class SceneTree {
       })
 
       try {
-        this.handoffSceneTreeChanges(preparedMutation.evidence, () =>
+        this.handoffSceneTreeChanges(events, () =>
           transactionOwner.updateTransactionBatch(events)
         )
         acknowledgeTransactionReplayApplied(restorationEvents)
@@ -2499,7 +2499,7 @@ class SceneTree {
             children
           )
         })
-        this.handoffSceneTreeChanges(preparedMutation.evidence, () =>
+        this.handoffSceneTreeChanges(events, () =>
           transactionOwner.updateTransactionBatch(events)
         )
         acknowledgeTransactionReplayApplied()
@@ -2632,7 +2632,7 @@ class SceneTree {
           ;(element as Element).assignCanonicalParentId('')
           this._deletedMap.set(element.get('id'), element)
         })
-        this.handoffSceneTreeChanges(preparedMutation.evidence, () =>
+        this.handoffSceneTreeChanges(events, () =>
           transactionOwner.updateTransactionBatch(events)
         )
         markCanonicalBatchHandoffAccepted(handoffState)
@@ -5023,20 +5023,24 @@ class SceneTree {
   }
 
   private handoffSceneTreeChanges(
-    changes: readonly SceneTreeChange[],
+    events: readonly UpdateTransactionEvent[],
     handoff: () => void
   ): void {
+    const changes = events.map((event) => event.payload as SceneTreeChange)
+    const immediate = events.some(
+      (event) => event.options?.sharedDelivery === 'immediate'
+    )
     try {
       handoff()
     } catch (error) {
       // Accepted journals are undone through the same owner path. Rejected
       // preparations restore internally and must never reach the projection.
       if (reportsAcceptedCanonicalBatchHandoff(error)) {
-        publishLocalSceneTreeChanges(changes, this.projectionOwner)
+        publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
       }
       throw error
     }
-    publishLocalSceneTreeChanges(changes, this.projectionOwner)
+    publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
   }
 
   private prepareSceneTreeTransactionEvents(
@@ -5164,9 +5168,8 @@ class SceneTree {
 
     if (transactionOwner) {
       try {
-        this.handoffSceneTreeChanges(
-          sceneEvents.map((event) => event.payload as SceneTreeChange),
-          () => transactionOwner.updateTransactionBatch(events)
+        this.handoffSceneTreeChanges(sceneEvents, () =>
+          transactionOwner.updateTransactionBatch(events)
         )
         markCanonicalBatchHandoffAccepted(handoffState)
         acknowledgeTransactionReplayApplied()
@@ -5178,9 +5181,8 @@ class SceneTree {
         throw error
       }
     } else {
-      this.handoffSceneTreeChanges(
-        sceneEvents.map((event) => event.payload as SceneTreeChange),
-        () => updateTransactionBatch(events)
+      this.handoffSceneTreeChanges(sceneEvents, () =>
+        updateTransactionBatch(events)
       )
       acknowledgeTransactionReplayApplied()
     }
@@ -5199,10 +5201,7 @@ class SceneTree {
     }
 
     const events = this.prepareSceneTreeTransactionEvents(options)
-    this.handoffSceneTreeChanges(
-      events.map((event) => event.payload as SceneTreeChange),
-      () => updateTransactionBatch(events)
-    )
+    this.handoffSceneTreeChanges(events, () => updateTransactionBatch(events))
     this.cleanChanges()
   }
 

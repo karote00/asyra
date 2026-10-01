@@ -48,12 +48,16 @@ interface TransactionBoundaryState {
   rollbackOnly: boolean
   rollbackOnlyFailure?: TransactionFailure
   pendingObserverEvents: AllEvent[]
+  pendingProjectionEvents: Map<symbol, AllEvent[]>
+  deliveredProjectionEvents: WeakSet<AllEvent>
 }
 
 const createTransactionBoundaryState = (): TransactionBoundaryState => ({
   depth: 0,
   rollbackOnly: false,
-  pendingObserverEvents: []
+  pendingObserverEvents: [],
+  pendingProjectionEvents: new Map(),
+  deliveredProjectionEvents: new WeakSet()
 })
 
 const ownerBoundaryStates = new WeakMap<
@@ -84,6 +88,8 @@ export const startTransaction = () => {
     state.rollbackOnly = false
     state.rollbackOnlyFailure = undefined
     state.pendingObserverEvents = []
+    state.pendingProjectionEvents.clear()
+    state.deliveredProjectionEvents = new WeakSet()
     owner?.startTransaction()
     publishEvent({
       type: EventTypes.START_TRANSACTION
@@ -261,14 +267,32 @@ export const updateTransactionBatch = (
   publishEventsToObservers(detachedEvents)
 }
 
-/** Local derived values are already applied; UI observers wait for the outer commit. */
+/** Optional scoped preview delivery; ordinary local projections remain deferred. */
+export interface LocalProjectionOptions {
+  readonly scope: symbol
+  readonly immediate?: boolean
+}
+
+/** Local derived values are already applied; each preview/commit observes them once. */
 export const publishLocalProjectionEvents = (
-  events: readonly AllEvent[]
+  events: readonly AllEvent[],
+  options?: LocalProjectionOptions
 ): void => {
   const state = getTransactionBoundaryState(getTransactionOwner())
   if (state.depth > 0) {
     publishAppliedEventBatch(events)
     state.pendingObserverEvents.push(...events)
+    if (options) {
+      const pending = state.pendingProjectionEvents.get(options.scope) ?? []
+      pending.push(...events)
+      if (options.immediate) {
+        state.pendingProjectionEvents.delete(options.scope)
+        pending.forEach((event) => state.deliveredProjectionEvents.add(event))
+        publishCommittedEventsToObservers(Object.freeze(pending))
+      } else {
+        state.pendingProjectionEvents.set(options.scope, pending)
+      }
+    }
   } else {
     publishEventsToObservers(events)
   }
@@ -297,12 +321,16 @@ export const endTransaction = (options: EndTransactionOptions = {}) => {
       : (options.outcome ?? 'commit')
     const failure = state.rollbackOnlyFailure ?? options.failure
     const payload = failure ? { outcome, failure } : { outcome }
-    const pendingObserverEvents = Object.freeze([
-      ...state.pendingObserverEvents
-    ])
+    const pendingObserverEvents = Object.freeze(
+      state.pendingObserverEvents.filter(
+        (event) => !state.deliveredProjectionEvents.has(event)
+      )
+    )
     state.rollbackOnly = false
     state.rollbackOnlyFailure = undefined
     state.pendingObserverEvents = []
+    state.pendingProjectionEvents.clear()
+    state.deliveredProjectionEvents = new WeakSet()
 
     let ownerFailed = false
     let ownerError: unknown

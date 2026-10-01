@@ -2,7 +2,20 @@
  * New public members must receive a contract or a reviewed entry here.
  * These lists are build/test metadata, never a dynamic execution allowlist.
  */
+const coreHistoryGroupDisposition = {
+  owner: 'core',
+  reason:
+    'Host-owned history lifecycle uses instance-local handles and synchronous mutation callbacks. The host enrolls model action batches; individual model actions do not open or settle request history.',
+  methods: [
+    'startHistoryGroup',
+    'updateHistoryGroup',
+    'endHistoryGroup',
+    'getHistoryGroupStatus'
+  ]
+} as const
+
 export const basicApiDispositions = [
+  coreHistoryGroupDisposition,
   {
     owner: 'core',
     reason:

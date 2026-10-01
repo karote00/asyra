@@ -292,7 +292,7 @@
         'A scene-tree inverse add resolves its recorded parent id and child index through the owning Scene Tree before restoration.',
         'Scene-tree replay routes standalone element-owned keys to Element data and computed-only keys to Computed data before returning its synchronous semantic apply acknowledgement; add/remove graph mutations collapse their internal initialization, parentId, children, and computed setter side effects so the explicit add/remove event is the sole reversible journal and shared-projection owner for that graph operation.',
         'Every custom inverter output is a non-null event object with a string event type; an invalid output is aggregated as that journal entry rollback failure while replay still attempts the remaining journal inverses.',
-        'Scene Tree publishes each completed canonical mutation batch through the local applied-projection route before a dependent API can mutate its hierarchy again. Preset Render consumes the applied route exactly once, and UI consumes the same canonical sequence once at outer commit. Both filter by the Scene Tree instance-local projection identity; shared delivery cannot reorder local projection. Shared delivery policy, collaboration and persistence remain transaction-owned; rollback and replay use the same canonical projection route.',
+        'Scene Tree publishes each completed canonical mutation batch through the local applied-projection route before a dependent API can mutate its hierarchy again. Preset Render consumes the applied route exactly once, and UI consumes the same canonical sequence once at outer commit by default. Explicit immediate preview flushes only its same-instance pending local projection sequence, without duplicate commit delivery or flushing unrelated commands. Both filter by the Scene Tree instance-local projection identity; shared delivery cannot reorder local projection. Shared delivery policy, collaboration and persistence remain transaction-owned; rollback and replay use the same canonical projection route.',
         'A state-owner apply failure is synchronously aggregated as rollback-failed.',
         'Failed undo or redo restores its source history entry, resets replay status, and closes any boundary it opened.'
       ],
@@ -337,6 +337,7 @@
         'packages/reactive-events/src/scene-tree/publish.ts',
         'packages/reactive-events/src/index.ts',
         'packages/reactive-events/src/__tests__/event-bus.test.ts',
+        'packages/reactive-events/src/__tests__/scene-tree-publish.test.ts',
         'packages/scene-tree/src/sceneTree.ts',
         'packages/scene-tree/src/subscribes.ts',
         'packages/scene-tree/src/components/computed.ts',
@@ -361,7 +362,6 @@
         'docs/ai/framework/rules/data-flow-and-transactions.md'
       ],
       specRefs: [
-        'docs/ai/framework/packages/factory.md#transaction-history-groups',
         '#reuse-the-existing-inverse-replay-engine',
         '#rollback',
         '#undo'

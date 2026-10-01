@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Framework implementation and local acceptance are complete; PR review and
+Framework implementation and local regression acceptance are complete; latest PR CI, review and
 downstream App integration are separate. Implementation and a PR to `main` were
 authorized on 2026-10-01 in the originating AI panel conversation. This plan was
 adopted from the coordinator's unmerged AI worktree as a new Framework task;
@@ -338,9 +338,11 @@ The regression passes: Render and Layers agree before sealing and after Undo/Red
 
 ## Framework acceptance
 
-Factory (283), Reactive Events (67), Core (255), Scene Tree (206) and Preset
+Factory (283), Reactive Events (68), Core (255), Scene Tree (207) and Preset
 (174) unit/integration cases pass. Source-bound Transaction flow proof covers
-nine cases. Real browser acceptance covers finite-member visibility before seal,
+nine cases. The complete headless Design suite passes 191 cases with 12 existing
+opt-in skips. The explicit pointer-down/drag previews pass without delaying
+Layers creation or duplicating commit delivery. Real browser acceptance covers finite-member visibility before seal,
 exact document and image restoration after one Undo/Redo, existing Group
 interaction (9 browser cases), and remote Group Undo/Redo with and without
 tombstones (3 collaboration cases). One earlier hover setup run lost its second
@@ -351,9 +353,54 @@ The target assessment is completed and eligible on the reviewed projection
 contract; all nine source-bound obligations pass. The original allocation lacked
 an executable verification-source pin and is superseded by the source-pinned
 allocation. Public package artifacts and clean-consumer validation are recorded
-in the PR; no package publication is authorized.
+in the PR (19 packages, all four clean-consumer phases pass); no package
+publication is authorized. The full Inspector package passes 12 React and 100
+contract cases; Design API inventory and server-response validation pass
+(428 cases, one existing opt-in skip). These results include the corrections below.
 
 The originating AI execution plan remains active in its own worktree. Its
 request enrollment, interaction unlock and warning UI are not implemented here.
 This plan stays active until that downstream integration is completed; do not
 close the entire plan merely because this Framework PR is ready for review.
+
+### Public API consumer inventory correction
+
+The existing Design public-API coverage test detects four unclassified new Core
+methods (local red confirmed). Its direct consumer metadata is part of facade
+admission: classify the opaque-handle/callback history lifecycle as host-owned,
+using the existing disposition registry. This does not add model actions or App
+request enrollment. No Inspector runtime step changes: this file is a coverage
+inventory, not an execution allowlist. Allowed edit is the disposition metadata
+and this plan; gates are the unchanged coverage test, server-response suite,
+App declared typecheck, naming and scoped lint.
+
+### Inspector reference and generated catalog correction
+
+The full Inspector package contract suite detects an invalid cross-document
+step anchor and a stale generated workspace catalog. The owner remains
+`finalize-transaction-state`: its references must resolve within the Inspector's
+declared specification. Add the history-group contract link under that spec's
+existing Undo section, retain its local `#undo` reference, and regenerate the
+catalog using the official generator. This repairs contract delivery only; no
+Inspector runner changes. Gates: full Inspector package tests, transaction
+contract proof and generated-catalog equality.
+
+### Revised projection iteration - explicit preview delivery
+
+The real create-on-pointer-down E2E fails because UI deferral removed the existing
+explicit `sharedDelivery: immediate` preview contract (Inspector
+`choose-session-outcome` condition). Replace the assumption that all structural
+UI waits with: default waits; explicit preview flushes its same-Scene-Tree local
+projection sequence in canonical order. Render still applies once immediately.
+Owner step: `finalize-transaction-state`, with Reactive Events local boundary as
+contributor. Inputs: completed projection events, instance scope, explicit
+immediate intent. Outputs: immediate ordered preview or one deferred delivery;
+no committed echo. Keep scope-indexed pending event references and delivered
+identities per finite transaction; clear on end/rollback. Never flush another
+owner, mutation commands, or unrelated computed events. No document scans or
+repeated scan of all pending events per preview. Self-review: preserves current
+preview and deferred UI contracts and fixes the ordering owner instead of App
+rendering. Files: existing app/publish.ts, scene-tree/publish.ts, publisher tests,
+current specs/Inspector and generated catalog. Gates: source-level test-first
+preview/order/isolation/rollback, existing element-creation E2E, pending-group
+E2E, Preset/Reactive/Factory/Core, collaboration, and final 7076 milestone.

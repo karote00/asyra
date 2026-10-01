@@ -104,7 +104,13 @@ Provide typed cross-package event communication.
 `publishLocalSceneTreeChanges` publishes the owner's completed immutable batch
 under the existing `SCENE_TREE_CHANGED` event identity, with an instance-local
 `projectionOwner` symbol for consumer isolation. Applied subscribers see
-it immediately; ordinary observers wait for the outer commit. It has no shared
+it immediately; ordinary observers wait for the outer commit by default.
+Explicit immediate Scene Tree preview uses a scoped local projection queue:
+flush earlier same-instance projection events with the new preview, preserve
+order, and omit those identities from commit delivery. Other scopes, command
+events and ordinary computed events stay deferred. Scope queues retain event
+references only and are cleared at transaction end/rollback; each preview visits
+only its scope, not the whole pending event list. It has no shared
 channel, persistence or Undo ownership and is not a mutation command. Scene Tree
 publishes only accepted canonical changes; rejected preparations never enter
 this route. Replay and rollback publish from the same Scene Tree owner.

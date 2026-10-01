@@ -161,7 +161,8 @@ recovery policy.
   events use the existing local route. Shared-channel echoes do not render again.
   Both local structural consumers filter the Scene Tree instance-local
   `projectionOwner` symbol. UI receives that same ordered evidence at the outer
-  transaction end and flushes once; shared echoes cannot reorder its hierarchy.
+  transaction end by default; explicit immediate previews flush the same scoped
+  sequence once before outer completion. Shared echoes cannot reorder hierarchy.
   ADD and REMOVE forward canonical `parentId` and sibling `index`
   unchanged so Render can maintain exact parent membership and order. Scalar and
   batch routes preserve each canonical `raw` or `computed` owner together with
