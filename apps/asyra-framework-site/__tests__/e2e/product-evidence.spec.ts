@@ -718,6 +718,140 @@ test('desktop center image opens a layered, selectable preview and locks page sc
   await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden')
 })
 
+test('preview animates the selected image for every adjacent and non-adjacent jump', async ({
+  page
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 960 })
+  await page.goto('/')
+  const carousel = page.getByRole('region', { name: 'FieldScope image slider' })
+  await carousel.scrollIntoViewIfNeeded()
+  await carousel
+    .getByRole('button', { name: /Open FieldScope image preview/u })
+    .click()
+  const dialog = page.getByRole('dialog', { name: /FieldScope image preview/u })
+  await expect(dialog).toBeVisible()
+
+  // Cover all directed pairs, including first-to-last and last-to-first.
+  for (const targetIndex of [2, 0, 1, 0, 2, 1, 2]) {
+    const motion = await dialog.evaluate(async (element, index) => {
+      const slide = element.querySelector<HTMLElement>(
+        `[data-testid="preview-slide"][data-slide-index="${index}"]`
+      )
+      if (!slide) throw new Error(`Missing preview image ${index}`)
+      const thumbnail = element.querySelectorAll<HTMLButtonElement>(
+        '[data-testid="preview-thumbnail"]'
+      )[index]
+      const before = slide.getBoundingClientRect()
+      thumbnail.click()
+      const samples = []
+      for (let frame = 0; frame < 12; frame += 1) {
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve())
+        )
+        const box = slide.getBoundingClientRect()
+        samples.push({
+          x: box.x,
+          width: box.width,
+          centerY: box.y + box.height / 2
+        })
+      }
+      await Promise.all(
+        slide.getAnimations().map((animation) => animation.finished)
+      )
+      const after = slide.getBoundingClientRect()
+      return {
+        before: { x: before.x, width: before.width },
+        after: { x: after.x, width: after.width },
+        samples,
+        retained:
+          slide ===
+          element.querySelector(
+            `[data-testid="preview-slide"][data-slide-index="${index}"]`
+          )
+      }
+    }, targetIndex)
+    expect(motion.retained).toBe(true)
+    expect(motion.after.width).toBeGreaterThan(motion.before.width + 10)
+    expect(
+      motion.samples.some(
+        (sample) =>
+          sample.width > motion.before.width + 1 &&
+          sample.width < motion.after.width - 1
+      ),
+      `Selected image ${targetIndex} must have intermediate scale, not jump to the center`
+    ).toBe(true)
+    expect(
+      new Set(motion.samples.map(({ x }) => Math.round(x))).size
+    ).toBeGreaterThan(2)
+    expect(
+      Math.max(...motion.samples.map(({ centerY }) => centerY)) -
+        Math.min(...motion.samples.map(({ centerY }) => centerY))
+    ).toBeLessThan(1)
+    await expect(
+      dialog.locator('[data-testid="preview-slide"][data-active="true"]')
+    ).toHaveAttribute('data-slide-index', String(targetIndex))
+  }
+  await dialog.screenshot({
+    path: testInfo.outputPath('preview-cross-image-selection.png')
+  })
+
+  const interrupted = await dialog.evaluate(async (element) => {
+    const thumbnails = element.querySelectorAll<HTMLButtonElement>(
+      '[data-testid="preview-thumbnail"]'
+    )
+    const returningSlide = element.querySelector<HTMLElement>(
+      '[data-testid="preview-slide"][data-slide-index="2"]'
+    )
+    if (!returningSlide) throw new Error('Missing returning preview image')
+    thumbnails[0].click()
+    for (let frame = 0; frame < 4; frame += 1)
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      )
+    const before = returningSlide.getBoundingClientRect().width
+    thumbnails[2].click()
+    const widths = []
+    for (let frame = 0; frame < 8; frame += 1) {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      )
+      widths.push(returningSlide.getBoundingClientRect().width)
+    }
+    await Promise.all(
+      returningSlide.getAnimations().map((animation) => animation.finished)
+    )
+    return {
+      before,
+      widths,
+      after: returningSlide.getBoundingClientRect().width
+    }
+  })
+  expect(interrupted.before).toBeLessThan(interrupted.after - 1)
+  expect(
+    interrupted.widths.some(
+      (width) => width > interrupted.before + 1 && width < interrupted.after - 1
+    )
+  ).toBe(true)
+  await expect(
+    dialog.locator('[data-testid="preview-slide"][data-active="true"]')
+  ).toHaveAttribute('data-slide-index', '2')
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await dialog.locator('[data-testid="preview-thumbnail"]').nth(0).click()
+  const selected = dialog.locator(
+    '[data-testid="preview-slide"][data-active="true"]'
+  )
+  await expect(selected).toHaveAttribute('data-slide-index', '0')
+  const reducedMotion = await selected.evaluate((element) => ({
+    duration: Number.parseFloat(getComputedStyle(element).transitionDuration),
+    animations: element.getAnimations().length
+  }))
+  expect(reducedMotion.duration).toBeLessThanOrEqual(0.001)
+  expect(reducedMotion.animations).toBe(0)
+  await dialog.getByRole('button', { name: /Close preview/u }).click()
+  await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden')
+})
+
 test('tablet center image keeps the inline slider without opening a preview', async ({
   page
 }) => {
