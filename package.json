@@ -106,7 +106,9 @@
     "test:agent-safety": "node --test scripts/__tests__/agent-safety-hook.test.mjs",
     "agent:eval": "node scripts/agent-evals/cli.mjs",
     "test:agent-evals": "node --test scripts/agent-evals/__tests__/engine.test.mjs",
-    "test:workspace-builds": "node --test --test-concurrency=1 scripts/__tests__/workspace-build-turbo-local.test.mjs scripts/__tests__/workspace-build-direct-local.test.mjs scripts/__tests__/workspace-build-turbo-ci.test.mjs scripts/__tests__/workspace-build-direct-ci.test.mjs"
+    "test:workspace-builds": "node --test --test-concurrency=1 scripts/__tests__/workspace-build-turbo-local.test.mjs scripts/__tests__/workspace-build-direct-local.test.mjs scripts/__tests__/workspace-build-turbo-ci.test.mjs scripts/__tests__/workspace-build-direct-ci.test.mjs",
+    "start:asyra-office": "yarn workspace @asyra/asyra-office dev",
+    "test:asyra-office": "yarn workspace @asyra/asyra-office test:local"
   },
   "workspaces": [
     "apps/*",
