@@ -1845,3 +1845,45 @@ Both 16-item real-browser collaboration cases pass (45.5 seconds), including
 per-member publication, one Undo entry and ordinary two-actor convergence.
 Focused lint, naming and diff checks pass. These CI corrections preserve the
 verified runtime and native drawing; exact updated-head CI remains pending.
+
+### PR #281 - bounded integration-oracle replan
+
+The full control-plane gate detects 18 failures from the accepted Framework
+history-group flow growing the canonical inventory from six cases/two flows to
+nine cases/three flows. Earlier focused gates did not cover these direct
+consumers. Current product semantics and runtime are unchanged.
+
+Owner slice: transaction proof admission and negative evidence for
+`finalize-transaction-state`, consuming the existing journal, outcome request and
+history-group membership. Its ordered inverse replay must continue to restore
+members, and the inverse corruption must fail both cancellation and history-group
+replay/snapshot obligations. The Inspector conditions and Factory history-group
+spec already require this. Update only the Factory proof manifest's exact
+inverse-negative inventory and its direct control-plane test fixtures/oracles.
+Derive baseline totals from the declared contract; preserve explicit expected
+failure identities and rejection of missing/extra evidence. No runtime, CLI
+policy, fallback, user flow or geometry changes are authorized by this correction.
+Existing CI is the formal red proof. Run the complete control-plane command from
+CI, all registered negative scenarios, baseline recovery, CLI prove/ci-trial,
+focused lint/naming, and the impacted board case before the next push. A failure
+outside these stale consumers requires renewed bounded analysis, not weakening
+verification. The successful native drawing remains valid.
+
+The next focused gate isolates a CLI projection mismatch: a current captured
+candidate passes, while accepted-base CI evidence is correctly unknown because
+the verifier contract changed. `ci-trial` promises behavioral proof but chooses
+the accepted-base status. Bounded extension of the same gate correction: the CLI
+trial result consumes the existing candidate evidence; protected `ci` and
+`ci-demo` keep the existing delivery decision. Add a deterministic transport-level
+regression for passed/failed/unknown/missing candidate evidence and retained
+protected-CI blocking before changing that one CLI return. Keep the real-service
+case and CI evidence tests. No baseline acceptance or provenance checks change.
+
+The complete CI control-plane command passes locally: 469 passed, two
+platform-condition skips, zero failures. Current-contract macOS candidate and
+composition consumers now derive their totals from the retained contract too.
+The exact nine-obligation/three-flow proof passes all five negative scenarios
+and recovery; CLI trial, the real board case, public-doc generation check,
+focused lint and naming pass. Protected CI remains blocked by independent
+accepted-base/protection requirements; a passing trial does not waive them.
+This closes the bounded local correction; updated-head remote CI is pending.

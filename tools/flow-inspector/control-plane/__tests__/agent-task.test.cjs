@@ -316,12 +316,15 @@ test(
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      ['cancel.delivery', 'cancel.outcome']
+      f.contract.negativeCaseIds.slice().sort()
     )
     correction = true
     const passed = await f.owner.wait(f.owner.resume(id, 'task', 'human'))
     assert.equal(passed.verificationStatus, 'passed')
-    assert.equal(passed.attempts[1].verdict.evidence.passedCount, 6)
+    assert.equal(
+      passed.attempts[1].verdict.evidence.passedCount,
+      f.contract.cases.length
+    )
     assert.equal(passed.providerRequests.length, 6)
     assert.equal(passed.deliveryStatus, 'not-delivered')
     assert.deepEqual(fs.readFileSync(path.join(root, sourceFile)), original)
@@ -819,7 +822,7 @@ test(
       result.snapshot.runtimeSource.digest
     )
     assert.deepEqual(verdict.runtimeAuthority, result.snapshot.runtimeAuthority)
-    assert.equal(verdict.evidence.passedCount, 6)
+    assert.equal(verdict.evidence.passedCount, contract.cases.length)
     assert.equal(
       verdict.runner.identity.configurationDigest,
       verdict.executionSource.digest

@@ -152,7 +152,10 @@ for (const [githubActions, provider] of [
         const request = { mode: 'ci', requestId: randomUUID() }
         const id = service.start(request, LOCAL_ACTOR),
           record = await service.wait(id)
-        assert.equal(record.evidence.cases.length, 6)
+        assert.equal(
+          record.evidence.cases.length,
+          service.contract().cases.length
+        )
         assert.ok(record.ci.blockers.length)
         assert.equal(record.ci.deliveryStatus, 'blocked')
         assert.equal(service.start(request, LOCAL_ACTOR), id)
@@ -233,9 +236,15 @@ test(
         /authorized/
       )
       const imported = service.ingestCI({ envelope }, LOCAL_ACTOR)
-      assert.equal(imported.result.evidence.cases.length, 6)
+      assert.equal(
+        imported.result.evidence.cases.length,
+        service.contract().cases.length
+      )
       assert.equal(service.shared().verificationStatus, 'unknown')
-      assert.equal(service.shared().remaining.length, 6)
+      assert.equal(
+        service.shared().remaining.length,
+        service.contract().cases.length
+      )
       assert.deepEqual(service.ingestCI({ envelope }, LOCAL_ACTOR), imported)
       assert.equal(service.state().ci.deliveries.length, 1)
       const conflict = structuredClone(envelope)
@@ -318,7 +327,7 @@ test('reported work completion is independent of verification and shared snapsho
 })
 
 test(
-  'actual runtime violation is rejected by CI and a baseline correction restores all six obligations',
+  'actual runtime violation is rejected by CI and a baseline correction restores all declared obligations',
   { timeout: 30000 },
   async (t) => {
     const service = createService(root, { directory: directory(t) })
@@ -338,15 +347,19 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        ['cancel.delivery', 'cancel.outcome']
+        service.contract().negativeCaseIds.slice().sort()
       )
       assert.equal(negative.evidence.flows[0].status, 'passed')
       assert.deepEqual(negative.evidence.issues, [])
       const corrected = await service.wait(
         service.start({ mode: 'ci' }, LOCAL_ACTOR)
       )
-      assert.equal(corrected.ci.evidence.status, 'passed')
-      assert.equal(corrected.ci.evidence.passedCount, 6)
+      assert.equal(corrected.evidence.status, 'passed')
+      assert.equal(corrected.ci.deliveryStatus, 'blocked')
+      assert.equal(
+        corrected.evidence.passedCount,
+        service.contract().cases.length
+      )
       assert.equal(corrected.snapshot.digest, negative.snapshot.digest)
       assert.notEqual(corrected.id, negative.id)
     } finally {
@@ -683,7 +696,10 @@ test(
       )
       const corrected = await service.waitTask(id)
       assert.equal(corrected.verificationStatus, 'passed')
-      assert.equal(corrected.attempts.at(-1).verdict.evidence.cases.length, 6)
+      assert.equal(
+        corrected.attempts.at(-1).verdict.evidence.cases.length,
+        service.contract().cases.length
+      )
       assert.equal(corrected.attempts[0].verdict.evidence.status, 'failed')
       const result = service.getTarget(target.id)
       assert.equal(result.works[0].assessment.status, 'passed')

@@ -510,7 +510,10 @@ async function main(
                 await client.artifact(record.id, 'ci-envelope')
               ).toString('base64')
           )
-        return record.ci?.evidence.status === 'passed' ? 0 : 1
+        return record.phase === 'completed' &&
+          record.evidence?.status === 'passed'
+          ? 0
+          : 1
       }
       if (command === 'ci' || command === 'ci-demo')
         return record.ci?.deliveryStatus === 'eligible' ? 0 : 1
