@@ -287,3 +287,22 @@ it('supports parameterless APIs without allowing undeclared model arguments', ()
     additionalProperties: false
   })
 })
+
+it('explains computed projections versus canonical value and record mutations', () => {
+  const description = (name: string) =>
+    basicApiContracts.find((contract) => contract.name === name)?.description
+  expect(description('api_core_getElementComputedData')).toContain(
+    'not a canonical write payload'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'reference IDs'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'patchElementProperties'
+  )
+  expect(description('api_core_patchElementProperties')).toContain('records')
+  expect(description('api_core_patchElementProperties')).toContain('gradient')
+  expect(description('api_core_updatePropertyComponents')).toContain(
+    'propertyId'
+  )
+})

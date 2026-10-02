@@ -45,7 +45,10 @@ against the current admitted descriptors. Matching returns a complete compact
 index; exact names retrieve full current schemas. Search and names are mutually
 exclusive. No match means no lexical match, never an unavailable capability; the
 complete compact catalog remains available without arguments. Search does not
-expand execution permissions or infer target identities.
+expand execution permissions or infer target identities. Registered descriptions
+distinguish computed projections from canonical values and linked property
+records. Expanded computed records are not canonical reference lists; existing
+plural record-patch APIs update referenced records without replacing their IDs.
 
 ## Preparation and execution
 
