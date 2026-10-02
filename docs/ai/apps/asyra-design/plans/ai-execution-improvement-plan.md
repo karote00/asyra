@@ -75,7 +75,9 @@ and local environment files intact. Record any unachieved acceptance honestly.
 
 - Recording stage: completed locally in `a02c4e608`.
 - Deterministic report stage: completed locally in `c0087f44b`.
-- Optional isolated assessment and saved opinions: local gates passed; see the
-  evaluation plan for source-bound evidence and remaining live acceptance.
-- Retrieval, execution efficiency and local affected validation remain planned.
+- Optional isolated assessment and saved opinions: completed locally in
+  `8d667fdfb`; final live acceptance remains.
+- Retrieval: registry discovery and batched evidence repaired; nine existing
+  target/query/preparation suites passed 154 tests. No speculative cache added.
+- Execution efficiency and local affected validation remain planned.
 - Final Taipei 101 headless recorded acceptance has not started. No remote push.
