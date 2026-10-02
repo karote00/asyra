@@ -50,6 +50,68 @@ const query = (callId: string, args: unknown, revision?: string) => [
 ]
 
 describe('execution evaluation', () => {
+  it('projects actual retained batch selectors without mutation values', () => {
+    const lines: string[] = []
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    try {
+      const usage = createLocalAiUsage(
+        { intent: 'private', context: {}, actions: [], attempt: 1 },
+        'gpt-6-astra',
+        {
+          sink: {
+            write: (entry) => {
+              lines.push(JSON.stringify(entry))
+            },
+            flush: async () => ({ status: 'saved', path: null })
+          }
+        }
+      )
+      usage.trace('tool_started', {
+        tool: 'execute_design_batch',
+        callId: 'batch',
+        arguments: {
+          operations: [
+            {
+              name: 'read_design_context',
+              arguments: {
+                scope: 'children',
+                parentId: 'parent',
+                offset: 20,
+                limit: 10,
+                fields: ['x'],
+                fillColor: 'PRIVATE_VALUE'
+              }
+            }
+          ]
+        }
+      })
+      usage.trace('tool_completed', {
+        tool: 'execute_design_batch',
+        callId: 'batch'
+      })
+      usage.finish('completed')
+      const report = evaluateExecution(parseExecutionRecord(lines.join('\n')))
+      expect(report.toolCalls[0]).toMatchObject({
+        selectors: {
+          operations: [
+            {
+              name: 'read_design_context',
+              arguments: {
+                scope: 'children',
+                parentId: 'parent',
+                offset: 20,
+                limit: 10,
+                fields: ['x']
+              }
+            }
+          ]
+        }
+      })
+      expect(JSON.stringify(report.toolCalls)).not.toContain('PRIVATE_VALUE')
+    } finally {
+      log.mockRestore()
+    }
+  })
   it('keeps an earlier visual opinion but does not reuse it after later tool work', () => {
     const review = [
       {

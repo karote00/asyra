@@ -36,7 +36,6 @@ current-data invalidation. Record supported before/after work counts. Sync tools
 prompt guidance and their exact Inspector owner boundaries, then run focused
 provider/operation/context tests, App type/build/lint and final live acceptance.
 
-
 ## Active step card - compose registry lookup
 
 Spec: Capability discovery and composition. Inspector: compose. Input is the
@@ -60,7 +59,6 @@ reduction and unchanged capability access. Gates: operation/provider/proof,
 App typecheck/build, lint/naming and source-bound contract review. Target maps,
 query execution and reference analysis are separate later owner segments.
 
-
 ## Discovery checkpoint
 
 The admitted basic-API registry now supports optional lexical name/purpose lookup,
@@ -76,3 +74,27 @@ Source-bound candidate `2c2cadfa-b803-4109-8df7-eb41314792c5` and contract revie
 Target/query/reuse proof and final live acceptance remain. Direct caller review
 also identified a recording gap: batched operation selectors are currently
 omitted by the diagnostic allowlist; repair at observe before final acceptance.
+
+## Active step card - observe batched selectors
+
+Current recording contract requires exact bounded query selectors. The real
+execute_design_batch caller puts them under operations; the allowlist currently
+drops that key and query scope/pagination. Owner observe will retain bounded
+operation names/selectors and explicit array truncation, plus discovery counts.
+Report JSON exposes only the selector projection. Optional model assessment
+continues to receive compact call summaries, not full nested operation arguments.
+Inputs: actual tool arguments/results; outputs: sanitized evidence and read-only
+report selectors. No scene read, cache, permissions change or renderer contributor.
+Files: local-ai-usage.ts, local-ai-evaluation.ts, local-ai-assessment.ts and direct
+formal tests already declared by observe. Test actual writer -> reader -> report
+before implementation; preserve raw-payload exclusion and prove model-summary
+size does not grow with nested operation payloads. Existing source-bound observe
+proof, typecheck, lint and naming remain gates. Stop on any unbounded/raw payload.
+
+Observe checkpoint: actual writer/reader/report regressions reproduced the
+missing batch selectors and passed after the allowlist/projection repair.
+Optional assessment excludes those nested selectors. Five focused suites passed
+123 tests (three existing live opt-ins skipped); typecheck, scoped lint and naming
+passed. Source candidate `788ef8fe-c9e0-4f71-9260-11b7abb1032f` passed; contract
+review `bf6d5d05f179f0df56520a3e94e0fa84f1d09bf6616cef9ebf3c07a43658470b`
+has no blockers. Existing two console warnings remain unchanged.

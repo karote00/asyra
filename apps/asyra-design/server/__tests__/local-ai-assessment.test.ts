@@ -53,7 +53,16 @@ describe('post-run assessment', () => {
       }
     }))
     let time = 5
-    const result = await assessExecution(report(), {
+    const input = report()
+    Object.assign(input.toolCalls[0], {
+      selectors: {
+        operations: Array.from({ length: 1000 }, () => ({
+          name: 'read_design_context',
+          arguments: { elementIds: ['many-targets'] }
+        }))
+      }
+    })
+    const result = await assessExecution(input, {
       criteria: ['Match an intentionally ugly drawing'],
       purpose: 'process',
       provider,
@@ -66,6 +75,10 @@ describe('post-run assessment', () => {
       calls: [{ callId: 'one' }]
     })
     expect(JSON.stringify(provider.mock.calls[0][0])).not.toContain('records')
+    expect(JSON.stringify(provider.mock.calls[0][0])).not.toContain('selectors')
+    expect(JSON.stringify(provider.mock.calls[0][0])).not.toContain(
+      'many-targets'
+    )
     expect(result).toMatchObject({
       status: 'recorded',
       sourceRequestId: 'drawing-1',
