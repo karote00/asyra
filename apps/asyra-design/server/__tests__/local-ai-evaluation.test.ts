@@ -50,6 +50,35 @@ const query = (callId: string, args: unknown, revision?: string) => [
 ]
 
 describe('execution evaluation', () => {
+  it('keeps an earlier visual opinion but does not reuse it after later tool work', () => {
+    const review = [
+      {
+        stage: 'tool_started',
+        tool: 'record_design_review',
+        callId: 'review',
+        elapsedMs: 1,
+        evidence: {
+          arguments: {
+            phase: 'visual',
+            inspectionIds: ['i'],
+            checks: [{ requirement: 'Rough', status: 'pass', evidence: 'i' }]
+          }
+        }
+      },
+      {
+        stage: 'tool_completed',
+        tool: 'record_design_review',
+        callId: 'review',
+        elapsedMs: 2
+      }
+    ]
+    expect(evaluateExecution(run('a', review)).modelReview.current).toBe(true)
+    expect(
+      evaluateExecution(
+        run('a', [...review, ...query('later', { fields: ['id'] })])
+      ).modelReview
+    ).toMatchObject({ status: 'recorded', current: false })
+  })
   it('distinguishes an unavailable tool result from a successful transport call', () => {
     const result = evaluateExecution(
       run('a', [

@@ -22,12 +22,20 @@ import {
 import { createLocalAiUsage } from '../local-ai-usage'
 import { parseExecutionRecord, type ExecutionRecord } from '../local-ai-records'
 import { evaluateExecution } from '../local-ai-evaluation'
+import { assessExecution } from '../local-ai-assessment'
 import { createLocalDesignReview } from '../local-design-review'
 import { requestLocalAiActionBatch } from '../local-ai-provider'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
+vi.mock('../local-ai-records', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../local-ai-records')>()),
+  createExecutionRecordSink: () => ({
+    write: () => undefined,
+    flush: async () => ({ status: 'saved', path: null })
+  })
+}))
 
 it('execution proof preserves registered native capability envelopes', async ({
   onTestFinished
@@ -611,7 +619,7 @@ it('execution proof retains partial progress when a successor makes no change', 
   }
 })
 
-it('execution proof accounts observed spans without private payloads or invented model timing', () => {
+it('execution proof accounts observed spans without private payloads or invented model timing', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const clock = vi.spyOn(performance, 'now')
   const retained: ExecutionRecord[] = []
@@ -676,6 +684,21 @@ it('execution proof accounts observed spans without private payloads or invented
     expect(evaluated.toolCalls).toHaveLength(2)
     expect(evaluated.findings).toEqual([])
     expect(evaluated.modelReview.status).toBe('unavailable')
+    const assess = vi.fn(async () => ({
+      requestId: 'assessment-only',
+      value: { overall: 'Unattributed time stays unknown.', findings: [] }
+    }))
+    const assessment = await assessExecution(evaluated, {
+      purpose: 'process',
+      criteria: ['Find redundant work without changing the requested result'],
+      provider: assess
+    })
+    expect(assess).toHaveBeenCalledTimes(1)
+    expect(assessment).toMatchObject({
+      status: 'recorded',
+      sourceRequestId: persisted.requestId,
+      assessmentRequestId: 'assessment-only'
+    })
   } finally {
     clock.mockRestore()
     log.mockRestore()

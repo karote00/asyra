@@ -69,3 +69,13 @@ Completion requires all five plans' focused gates, affected type/build/lint and
 integration gates, bounded review, and the successful live evidence. No remote
 CI is run or claimed because push is prohibited. Keep generated evidence ignored
 and local environment files intact. Record any unachieved acceptance honestly.
+
+
+## Current local progress
+
+- Recording stage: completed locally in `a02c4e608`.
+- Deterministic report stage: completed locally in `c0087f44b`.
+- Optional isolated assessment and saved opinions: local gates passed; see the
+  evaluation plan for source-bound evidence and remaining live acceptance.
+- Retrieval, execution efficiency and local affected validation remain planned.
+- Final Taipei 101 headless recorded acceptance has not started. No remote push.

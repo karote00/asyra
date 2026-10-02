@@ -1,6 +1,6 @@
 # AI execution evaluation and periodic reports
 
-Status: implementing deterministic reports; recording owner stage is complete.
+Status: local evaluation stages complete; final live report acceptance remains in the parent plan.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome and boundary
@@ -76,3 +76,44 @@ warning). Naming and Inspector contracts passed. Source-bound candidate
 `d7aad7477f6a84a91515673bb9660dc05cdba66a5c8db4ddf2073f04e3a95ba7` accepted.
 Optional separate post-run model assessment remains for the next segment;
 final live report acceptance remains in the parent plan. No push.
+
+
+## Active step card - observe optional model assessment
+
+The next observation segment reuses the native provider transport for one
+explicitly requested post-run assessment. This is a separate diagnostic request,
+not another drawing composition: it has no App tools, web search, Code Mode,
+canvas executor or document context. Input is a bounded report projection and
+explicit requested criteria; output is attributed opinion with known call IDs,
+separate duration/usage references, or a recorded unavailable/failure status.
+Existing adequate visual-review opinion is reused when visual assessment is the
+requested purpose; process-efficiency assessment is distinct. No per-step model
+calls. Missing evidence remains unknown. Failure belongs to observe.
+Allowed files: provider transport, recording metadata, evaluation owner/CLI and
+direct tests already in observe, plus a dedicated assessment projection helper.
+No new dependencies, model change, canonical writes, cache or implicit execution.
+Gates: native envelope proves no capabilities; one-call/zero-call reuse tests,
+invalid citations, model failure, separate-record metadata and CLI tests; existing
+provider tests, typecheck, naming, scoped lint and source-bound proof. Stop on any
+need for canvas access or hidden reasoning.
+
+
+## Optional assessment checkpoint
+
+Implemented one explicit capability-free local-model assessment, separate usage
+records, persisted version-1 opinions and period-report inclusion. Current visual
+opinions can be reused when they cover the requested criteria; later tool work
+makes them ineligible for automatic reuse. Unknown citations, unavailable model,
+failed assessment and malformed saved opinion remain explicit. Failed native
+requests retain their own diagnostic ID. Request metadata cannot spoof recording
+purpose. Provider/proof fixtures now use memory sinks so test invocations do not
+populate runtime drawing reports.
+
+Seven focused suites passed 126 tests, with three existing opt-in live tests
+skipped. App typecheck, App build, report CLI build, naming and Inspector contract
+tests passed. Scoped lint: no errors, two existing diagnostic console warnings.
+Source-bound candidate `7ed1da54-8dd6-4bd3-9c04-8ec5e986bd8c` passed; review
+`01883427911d559f28f4c3225cd565eb8f6b2945b98b360641376a8fd2f77efa` accepted.
+Formal assessment tests use a provider double; no new live drawing or live model
+assessment is claimed. Final parent acceptance will generate the new evidence.
+No push.

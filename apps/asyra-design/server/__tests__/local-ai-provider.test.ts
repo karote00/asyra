@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createLocalAiUsage } from '../local-ai-usage'
 import {
   checkLocalAiProvider,
+  requestLocalAiAssessment,
   requestLocalAiActionBatch
 } from '../local-ai-provider'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -19,7 +20,17 @@ import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
 import { AiImageToolIds } from '../ai-domain-prompt'
 
-const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
+const { spawn, retainedRecords } = vi.hoisted(() => ({
+  spawn: vi.fn(),
+  retainedRecords: [] as unknown[]
+}))
+vi.mock('../local-ai-records', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../local-ai-records')>()),
+  createExecutionRecordSink: () => ({
+    write: (record: unknown) => retainedRecords.push(record),
+    flush: async () => ({ status: 'saved', path: null })
+  })
+}))
 vi.mock('node:child_process', () => ({ spawn }))
 vi.mock('../../vtracer-tool-server.mjs', () => ({
   convertVTracerBuffer: vi.fn(
@@ -377,12 +388,59 @@ const untilTurn = async (packets: Packet[]) => {
 }
 
 afterEach(() => {
+  retainedRecords.length = 0
   vi.useRealTimers()
   vi.resetAllMocks()
   vi.restoreAllMocks()
 })
 
 describe('local subscription AI backend', () => {
+  it.each([{ research: true }, { toolCall: true }])(
+    'rejects unexpected tool activity in an assessment: %j',
+    async (activity) => {
+      const server = fakeServer(activity)
+      spawn.mockReturnValue(server.child)
+      await expect(
+        requestLocalAiAssessment(
+          { sourceRequestId: 'drawing-1', criteria: ['Find avoidable work'] },
+          { model: 'selected-model', executable: 'codex' }
+        )
+      ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_RESPONSE' })
+    }
+  )
+  it('isolates one diagnostic assessment from drawing tools and records its own identity', async () => {
+    const result = { overall: 'No visual proof supplied', findings: [] }
+    const server = fakeServer({ output: JSON.stringify(result) })
+    spawn.mockReturnValue(server.child)
+    const assessment = await requestLocalAiAssessment(
+      {
+        sourceRequestId: 'drawing-1',
+        criteria: ['Find avoidable work'],
+        calls: []
+      },
+      {
+        model: 'selected-model',
+        executable: 'codex'
+      }
+    )
+    expect(assessment.value).toEqual(result)
+    const params = server.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params
+    expect(params?.dynamicTools).toEqual([])
+    expect(params?.config).toMatchObject({
+      web_search: 'disabled',
+      'features.code_mode': false,
+      model_reasoning_effort: 'medium'
+    })
+    expect(params?.baseInstructions).not.toContain('Canvas changes')
+    expect(retainedRecords[0]).toMatchObject({
+      requestId: assessment.requestId,
+      purpose: 'execution-assessment',
+      sourceRequestId: 'drawing-1'
+    })
+    expect(assessment.requestId).not.toBe('drawing-1')
+  })
   it('overlaps independent preparation and API description through owner declarations', async () => {
     let signalEntered!: () => void
     const entered = new Promise<void>((resolve) => {

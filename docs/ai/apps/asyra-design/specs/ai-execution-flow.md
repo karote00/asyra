@@ -184,6 +184,12 @@ than silently counted; duplicate request identities are excluded and reported.
 Group runs by known provider/model/effort/source identities, keeping unknown
 metadata explicit. Interrupted and malformed records remain visibly incomplete.
 Feedback is kept separate and never substitutes for tool or visual evidence.
+An explicit post-run assessment may reuse the native provider transport once,
+with a compact report and named criteria only. It advertises no App tools and
+disables web search and Code Mode; no canvas executor or document is attached.
+Assessment duration, usage and record identity remain separate from drawing.
+Unknown call citations or malformed responses are failed assessments, not
+findings. The report stores the opinion separately; it cannot approve completion.
 An existing final visual review can supply model opinion without a second call;
 absence is unavailable, not a positive assessment. These reports do not mutate
 canvas state, approve a drawing or automatically change prompts.

@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises'
+import {
+  mkdir,
+  mkdtemp,
+  writeFile,
+  rm,
+  readdir,
+  readFile
+} from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { runExecutionReportCli } from '../execution-report-cli'
@@ -57,6 +64,56 @@ describe('execution report CLI', () => {
       expect(single.output).toContain('run-1')
       expect(single.output).toContain('Unattributed')
       expect(single.output).toContain('unavailable')
+      const assessed = await runExecutionReportCli(
+        [
+          '--directory',
+          directory,
+          '--request',
+          'run-1',
+          '--assess',
+          'process',
+          '--criterion',
+          'Avoid repeated lookups',
+          '--json'
+        ],
+        {},
+        {
+          provider: async () => ({
+            requestId: 'assessment-1',
+            value: { overall: 'No calls to evaluate', findings: [] }
+          })
+        }
+      )
+      expect(assessed.code).toBe(0)
+      expect(JSON.parse(assessed.output).assessment).toMatchObject({
+        status: 'recorded',
+        assessmentRequestId: 'assessment-1'
+      })
+      const opinions = (await readdir(join(directory, 'assessments'))).filter(
+        (name) => name.endsWith('.json')
+      )
+      expect(opinions).toHaveLength(1)
+      expect(
+        JSON.parse(
+          await readFile(join(directory, 'assessments', opinions[0]), 'utf8')
+        )
+      ).toMatchObject({ sourceRequestId: 'run-1', status: 'recorded' })
+      const period = await runExecutionReportCli([
+        '--directory',
+        directory,
+        '--from',
+        '2026-10-01',
+        '--to',
+        '2026-10-03',
+        '--json'
+      ])
+      expect(JSON.parse(period.output).assessments).toEqual([
+        expect.objectContaining({
+          sourceRequestId: 'run-1',
+          status: 'recorded',
+          purpose: 'process'
+        })
+      ])
       expect(
         (
           await runExecutionReportCli([

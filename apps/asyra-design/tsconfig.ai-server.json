@@ -17,6 +17,7 @@
     "server/execution-report-cli.ts",
     "server/__tests__/local-ai-records.test.ts",
     "server/__tests__/local-ai-evaluation.test.ts",
+    "server/__tests__/local-ai-assessment.test.ts",
     "server/__tests__/execution-report-cli.test.ts",
     "server/__tests__/ai-model-provider.test.ts",
     "server/__tests__/local-ai-provider.test.ts",

@@ -436,7 +436,8 @@
               "observed provider lifecycle events",
               "tool queue and execution spans",
               "receipt summaries",
-              "saved execution records, explicit period filters and optional user feedback"
+              "saved execution records, explicit period filters and optional user feedback",
+              "explicit post-run assessment request and named criteria"
             ],
             "outputs": [
               "artifact:execution-trace"
@@ -455,12 +456,14 @@
             "allowedContributors": [
               "usage instrumentation",
               "bounded receipt timings",
-              "read-only record projection and separately attributed feedback"
+              "read-only record projection and separately attributed feedback",
+              "isolated native provider transport for an explicit post-run assessment"
             ],
             "forbiddenContributors": [
               "private reasoning inference",
               "raw prompts or credentials",
-              "diagnostics controlling output"
+              "diagnostics controlling output",
+              "App tools or web access in post-run assessment"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
@@ -469,6 +472,8 @@
               "apps/asyra-design/server/local-ai-usage.ts",
               "apps/asyra-design/server/local-ai-records.ts",
               "apps/asyra-design/server/local-ai-evaluation.ts",
+              "apps/asyra-design/server/local-ai-assessment.ts",
+              "apps/asyra-design/server/__tests__/local-ai-assessment.test.ts",
               "apps/asyra-design/server/execution-report-cli.ts",
               "apps/asyra-design/server/__tests__/execution-report-cli.test.ts",
               "apps/asyra-design/vite.execution-report.config.ts",

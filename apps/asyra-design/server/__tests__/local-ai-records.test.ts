@@ -14,6 +14,32 @@ const workspace = async () => {
 }
 
 describe('local execution records', () => {
+  it('takes diagnostic purpose from the recorder owner rather than user request metadata', () => {
+    const retained: unknown[] = []
+    createLocalAiUsage(
+      {
+        intent: 'private',
+        context: {},
+        actions: [],
+        attempt: 1,
+        metadata: {
+          purpose: 'execution-assessment',
+          sourceRequestId: 'other-request'
+        }
+      },
+      'gpt-6-astra',
+      {
+        sink: {
+          write: (record) => retained.push(record),
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
+    )
+    expect(retained[0]).toMatchObject({
+      purpose: 'drawing',
+      sourceRequestId: null
+    })
+  })
   it('persists ordered isolated requests and drains the terminal outcome', async () => {
     const directory = await workspace()
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)

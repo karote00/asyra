@@ -673,7 +673,7 @@ yarn workspace @asyra/asyra-design ai:report --from 2026-10-01T00:00:00+08:00 --
 
 The command loads the App's local `.env`. `--directory` overrides record storage
 for inspection. Default selection is the last seven days, with the ending instant
-excluded. It does not start the App or call a model. Missing directories, ambiguous
+excluded. By default it does not start the App or call a model. Missing directories, ambiguous
 request IDs or invalid arguments exit unsuccessfully with an explanation.
 Malformed or interrupted files remain visible as unclassified/incomplete records.
 JSON includes per-step call/sequence references, timings, byte counts, issues,
@@ -686,3 +686,28 @@ Feedback remains separate from measured findings and retained model visual revie
 Configuration grouping does not establish equivalent drawing tasks. A repeated
 query candidate is not a proven unnecessary call, and unknown time is not measured
 model reasoning. Accepted model review evidence is not independent visual proof.
+
+
+An optional explicit assessment reuses the configured local model at medium effort:
+
+```sh
+yarn workspace @asyra/asyra-design ai:report --request REQUEST_ID --assess process --criterion "Reduce repeated tool and data work while meeting the requested result"
+```
+
+Use `--assess visual` with the exact requested criteria to reuse an adequate
+current model visual review, without a new call. Otherwise one isolated assessment
+call may read the report projection; no App tools, web search, Code Mode or canvas
+executor is supplied. No images are supplied, so this is opinion about available
+evidence, never visual certification. Provider absence/failure and invalid call
+citations are saved as unavailable/failed assessment, with no automatic retry.
+
+Assessment JSON sidecars (schema version 1) and separately identified provider
+JSONL records live in `assessments/` under the selected record directory. Their
+source request ID, criteria, purpose, duration, opinion and assessment request ID
+are distinct from drawing records. A period report includes saved assessment
+opinions for its selected drawing requests, plus malformed-sidecar diagnostics.
+A new `--assess` invocation is explicit new work, not an automatic periodic job.
+The diagnostic model projection includes up to 40 calls ranked by unresolved
+status and observed duration, states the omitted count, and leaves the complete
+record untouched. This bound never limits drawing tools or execution. User
+criteria govern evaluation; it does not impose a high-detail drawing style.
