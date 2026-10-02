@@ -56,6 +56,11 @@ None.
   - Includes grouped replay, batch publication ordering and advisory counts.
     AI product integration and object editing locks remain downstream work.
 
+## Local affected validation
+
+- [Local affected validation](plans/local-affected-validation-plan.md) - reuse
+  CI impact selection for local lint, test and E2E execution.
+
 ## Completed CI Workflow Split
 
 - The repository-wide CI routing, workspace build-before-test, app-purpose

@@ -9,6 +9,7 @@ import type { LocalActionPreparation } from './local-operation-tools'
 import { AiResearchActivityIds } from '../src/constants/ai-research'
 import { createLocalReferenceTools } from './local-reference-tools'
 import { createLocalAiUsage } from './local-ai-usage'
+import { createExecutionRecordSink } from './local-ai-records'
 import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -360,7 +361,7 @@ const runLocalAiProvider = async (
         ...(message ? { message } : {})
       })
       toolCalls.add(params.callId)
-      const toolStartedAt = Date.now()
+      const toolStartedAt = performance.now()
       let executionStartedAt: number | undefined
       usage?.trace('tool_started', {
         tool: toolName,
@@ -381,7 +382,7 @@ const runLocalAiProvider = async (
               params.arguments.plan.strategy === 'separate-background')))
       const selectedOwner = binding.owner
       const task = schedule(binding.access, async () => {
-        executionStartedAt = Date.now()
+        executionStartedAt = performance.now()
         usage?.trace('tool_execution_started', {
           tool: toolName,
           callId: params.callId,
@@ -413,12 +414,12 @@ const runLocalAiProvider = async (
           usage?.trace('tool_completed', {
             tool: toolName,
             callId: params.callId,
-            durationMs: Date.now() - toolStartedAt,
-            queueMs: (executionStartedAt ?? Date.now()) - toolStartedAt,
+            durationMs: performance.now() - toolStartedAt,
+            queueMs: (executionStartedAt ?? performance.now()) - toolStartedAt,
             executionMs:
               executionStartedAt === undefined
                 ? 0
-                : Date.now() - executionStartedAt,
+                : performance.now() - executionStartedAt,
             responseTextBytes: contentItems.reduce(
               (total, item) =>
                 total +
@@ -458,12 +459,12 @@ const runLocalAiProvider = async (
           usage?.trace('tool_failed', {
             tool: toolName,
             callId: params.callId,
-            durationMs: Date.now() - toolStartedAt,
-            queueMs: (executionStartedAt ?? Date.now()) - toolStartedAt,
+            durationMs: performance.now() - toolStartedAt,
+            queueMs: (executionStartedAt ?? performance.now()) - toolStartedAt,
             executionMs:
               executionStartedAt === undefined
                 ? 0
-                : Date.now() - executionStartedAt,
+                : performance.now() - executionStartedAt,
             reason:
               error instanceof LocalOperationPreparationError ||
               error instanceof DesignReferenceError
@@ -565,6 +566,24 @@ const runLocalAiProvider = async (
     }
     if (turnId && params.turnId && params.turnId !== turnId)
       return protocolFailure()
+    if (
+      (value.method === 'item/started' || value.method === 'item/completed') &&
+      isRecord(params.item) &&
+      typeof params.item.id === 'string' &&
+      ['reasoning', 'agentMessage', 'plan', 'functionCallOutput'].includes(
+        String(params.item.type)
+      )
+    ) {
+      usage?.trace(
+        value.method === 'item/started'
+          ? 'provider_item_started'
+          : 'provider_item_completed',
+        {
+          callId: `item:${params.item.id}`,
+          kind: params.item.type
+        }
+      )
+    }
     if (
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
@@ -690,9 +709,10 @@ const runLocalAiProvider = async (
     if (terminalError) throw terminalError
     const id = ++sequence
     const wire = JSON.stringify({ id, method, params }) + '\n'
-    const startedAt = Date.now()
+    const startedAt = performance.now()
     const requestBytes = Buffer.byteLength(wire, 'utf8')
     usage?.trace('provider_request_started', {
+      callId: `rpc-${id}`,
       method,
       requestBytes
     })
@@ -702,14 +722,16 @@ const runLocalAiProvider = async (
         writeProtocol(wire, requestBytes)
       })
       usage?.trace('provider_request_completed', {
+        callId: `rpc-${id}`,
         method,
-        durationMs: Math.max(0, Date.now() - startedAt)
+        durationMs: Math.max(0, performance.now() - startedAt)
       })
       return result
     } catch (error) {
       usage?.trace('provider_request_failed', {
+        callId: `rpc-${id}`,
         method,
-        durationMs: Math.max(0, Date.now() - startedAt)
+        durationMs: Math.max(0, performance.now() - startedAt)
       })
       throw error
     }
@@ -840,6 +862,8 @@ const runLocalAiProvider = async (
 interface LocalAiProviderOptions {
   readonly model: string
   readonly executable: string
+  readonly recordDirectory?: string
+  readonly sourceRevision?: string
   readonly onProgress?: (event: AiToolProgress) => void
   readonly executeBatch?: ExecuteAiBatch
   readonly signal?: AbortSignal
@@ -849,7 +873,13 @@ export const requestLocalAiActionBatch = async (
   input: AiProviderInput,
   options: LocalAiProviderOptions
 ): Promise<unknown> => {
-  const usage = createLocalAiUsage(input, options.model)
+  const sink = createExecutionRecordSink(
+    options.recordDirectory ?? 'tmp/ai-executions'
+  )
+  const usage = createLocalAiUsage(input, options.model, {
+    sink,
+    sourceRevision: options.sourceRevision
+  })
   let outcome: Parameters<typeof usage.finish>[0] = 'failed'
   let resultEvidence: unknown
   try {
@@ -866,6 +896,7 @@ export const requestLocalAiActionBatch = async (
   } finally {
     usage.trace('settlement', { outcome, result: resultEvidence })
     usage.finish(outcome)
+    await sink.flush()
   }
 }
 

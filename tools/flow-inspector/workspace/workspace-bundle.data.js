@@ -443,7 +443,9 @@
             "conditions": [
               "Keep missing time unattributed",
               "Use interval unions for overlapping spans",
-              "Distinguish wire bytes, eager schema bytes and reported usage"
+              "Distinguish wire bytes, eager schema bytes and reported usage",
+              "Persist ordered sanitized records locally; incomplete streams never imply success",
+              "Retain exact bounded query selectors and explicit truncation without raw payloads"
             ],
             "bypasses": [
               "Missing provider fields remain unavailable"
@@ -462,10 +464,15 @@
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/local-ai-usage.ts",
+              "apps/asyra-design/server/local-ai-records.ts",
+              "apps/asyra-design/server/__tests__/local-ai-records.test.ts",
+              "apps/asyra-design/server/ai-model-provider.ts",
+              "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts"
             ],
             "specRefs": [
-              "#ownership-and-diagnostics"
+              "#ownership-and-diagnostics",
+              "#execution-recording"
             ],
             "failureOwnerStepId": "observe"
           }

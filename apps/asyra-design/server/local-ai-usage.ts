@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
+import type { ExecutionRecord, ExecutionRecordSink } from './local-ai-records'
 
 type UsageOutcome = 'completed' | 'failed' | 'cancelled' | 'timed_out'
 const tokenFields = [
@@ -22,6 +23,12 @@ const correlationId = (value: unknown): string | undefined =>
 const evidenceKeys = new Set([
   'tool',
   'namespace',
+  'names',
+  'fields',
+  'keyPrefix',
+  'keys',
+  'field',
+  'target',
   'callId',
   'arguments',
   'updates',
@@ -154,16 +161,18 @@ const summarizeEvidence = (
   if (depth > 6) return '[nested evidence omitted]'
   if (typeof value === 'string') {
     if (/data:|base64|<svg|Bearer\s/i.test(value)) return '[payload omitted]'
-    return value
-      .replace(/https?:\/\/[^\s"<>]+/g, (address) => {
-        try {
-          const url = new URL(address)
-          return url.origin + url.pathname
-        } catch {
-          return '[invalid URL]'
-        }
-      })
-      .slice(0, 500)
+    return (
+      value
+        .replace(/https?:\/\/[^\s"<>]+/g, (address) => {
+          try {
+            const url = new URL(address)
+            return url.origin + url.pathname
+          } catch {
+            return '[invalid URL]'
+          }
+        })
+        .slice(0, 500) + (value.length > 500 ? ' [truncated]' : '')
+    )
   }
   if (typeof value === 'boolean' || typeof value === 'number' || value === null)
     return value
@@ -183,10 +192,34 @@ const summarizeEvidence = (
   )
 }
 
+// Persist the structured diagnostic projection, not echoed briefs or arbitrary
+// exception text. Console compatibility remains separate from local retention.
+const persistedEvidence = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(persistedEvidence)
+  if (!isRecord(value)) return value
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      ['brief', 'message', 'error'].includes(key) && typeof item === 'string'
+        ? '[free text omitted]'
+        : persistedEvidence(item)
+    ])
+  )
+}
+
 /** One bounded accumulator per provider invocation; provider totals are snapshots, not deltas. */
-export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
+export const createLocalAiUsage = (
+  input: AiProviderInput,
+  model: string,
+  options: {
+    sink?: ExecutionRecordSink
+    now?: () => number
+    sourceRevision?: string
+  } = {}
+) => {
+  const now = options.now ?? (() => performance.now())
   const requestId = randomUUID()
-  const startedAt = Date.now()
+  const startedAt = now()
   const metadata = isRecord(input.metadata) ? input.metadata : {}
   const conversationId = correlationId(metadata.conversationId)
   const turnId = correlationId(metadata.turnId)
@@ -201,6 +234,30 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
   const activeIntervals = new Set<string>()
   let intervalStartedAt = 0
   let observedToolAndResearchMs = 0
+  const persist = (record: ExecutionRecord) => {
+    try {
+      options.sink?.write({
+        ...record,
+        evidence: persistedEvidence(record.evidence)
+      })
+    } catch {
+      // A diagnostic sink cannot change the drawing outcome.
+    }
+  }
+  persist({
+    event: 'ai_request_started',
+    schemaVersion: 2,
+    requestId,
+    sequence: 0,
+    startedAt: new Date().toISOString(),
+    model,
+    effort: 'medium',
+    provider: 'local-codex',
+    sourceRevision: correlationId(options.sourceRevision) ?? null,
+    conversationId,
+    turnId,
+    replyToTurnId
+  })
   return {
     recordTransport(direction: 'sent' | 'received', bytes: number): void {
       if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
@@ -221,7 +278,9 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
         | 'capabilities_advertised'
         | 'provider_request_started'
         | 'provider_request_completed'
-        | 'provider_request_failed',
+        | 'provider_request_failed'
+        | 'provider_item_started'
+        | 'provider_item_completed',
       evidence: unknown
     ): void {
       if (finished) return
@@ -230,7 +289,7 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
           const research = stage.startsWith('research_')
           const key = `${research ? 'research' : 'tool'}:${evidence.callId}`
           if (stage === 'tool_started' || stage === 'research_started') {
-            if (!activeIntervals.size) intervalStartedAt = Date.now()
+            if (!activeIntervals.size) intervalStartedAt = now()
             activeIntervals.add(key)
           } else if (
             stage === 'tool_completed' ||
@@ -240,37 +299,38 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
             if (activeIntervals.delete(key) && !activeIntervals.size)
               observedToolAndResearchMs += Math.max(
                 0,
-                Date.now() - intervalStartedAt
+                now() - intervalStartedAt
               )
           }
         }
         const summarized = summarizeEvidence(evidence)
         const serialized = JSON.stringify(summarized)
-        console.info(
-          JSON.stringify({
-            event: 'ai_request_trace',
-            schemaVersion: 1,
-            requestId,
-            conversationId,
-            turnId,
-            sequence: ++sequence,
-            stage,
-            tool: isRecord(evidence)
-              ? summarizeEvidence(evidence.tool)
-              : undefined,
-            callId: isRecord(evidence)
-              ? summarizeEvidence(evidence.callId)
-              : undefined,
-            elapsedMs: Math.max(0, Date.now() - startedAt),
-            evidence:
-              serialized.length <= 12000
-                ? summarized
-                : {
-                    truncated: true,
-                    reason: 'Evidence exceeded the per-event log budget.'
-                  }
-          })
-        )
+        const record = {
+          event: 'ai_request_trace',
+          schemaVersion: 2,
+          requestId,
+          conversationId,
+          turnId,
+          sequence: ++sequence,
+          stage,
+          tool: isRecord(evidence)
+            ? summarizeEvidence(evidence.tool)
+            : undefined,
+          callId: isRecord(evidence)
+            ? summarizeEvidence(evidence.callId)
+            : undefined,
+          elapsedMs: Math.max(0, now() - startedAt),
+          recordedAt: new Date().toISOString(),
+          evidence:
+            serialized.length <= 12000
+              ? summarized
+              : {
+                  truncated: true,
+                  reason: 'Evidence exceeded the per-event log budget.'
+                }
+        }
+        persist(record)
+        console.info(JSON.stringify(record))
       } catch {
         // A diagnostic sink must not alter execution or settlement.
       }
@@ -316,18 +376,17 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
         usageStatus =
           outcome === 'completed' && !invalidSnapshot ? 'reported' : 'partial'
       }
-      const durationMs = Math.max(0, Date.now() - startedAt)
+      const durationMs = Math.max(0, now() - startedAt)
       const observedMs = Math.min(
         durationMs,
         observedToolAndResearchMs +
-          (activeIntervals.size
-            ? Math.max(0, Date.now() - intervalStartedAt)
-            : 0)
+          (activeIntervals.size ? Math.max(0, now() - intervalStartedAt) : 0)
       )
       const report = {
         event: 'ai_request_usage',
-        schemaVersion: 1,
+        schemaVersion: 2,
         requestId,
+        sequence: ++sequence,
         provider: 'local-codex',
         model,
         conversationId,
@@ -349,6 +408,7 @@ export const createLocalAiUsage = (input: AiProviderInput, model: string) => {
         tokens
       }
       // Diagnostics must never change the drawing request's settlement.
+      persist(report)
       try {
         console.info(JSON.stringify(report))
       } catch {

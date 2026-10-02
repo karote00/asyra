@@ -2184,6 +2184,10 @@ it('exposes review planning to the model and traces the operation without certif
   })
   const records = log.mock.calls.map(([value]) => JSON.parse(String(value)))
   const trace = records.filter((entry) => entry.event === 'ai_request_trace')
+  for (const entry of trace.filter((event) =>
+    event.stage.startsWith('provider_request_')
+  ))
+    expect(entry.callId).toEqual(expect.any(String))
   expect(
     trace
       .filter(
@@ -2389,7 +2393,7 @@ it.each([
 
 it('attributes overlapping tool intervals once and leaves provider gaps unattributed', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const clock = vi.spyOn(Date, 'now')
+  const clock = vi.spyOn(performance, 'now')
   try {
     clock.mockReturnValue(0)
     const usage = createLocalAiUsage(input, 'selected-model')
@@ -2410,6 +2414,67 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
     })
   } finally {
     clock.mockRestore()
+    log.mockRestore()
+  }
+})
+
+it('records reported provider item intervals without retaining reasoning content', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  try {
+    const completion = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    for (const method of ['item/started', 'item/completed'])
+      server.notify(method, {
+        item: {
+          id: 'reasoning-1',
+          type: 'reasoning',
+          content: 'PRIVATE REASONING',
+          summary: ['PRIVATE REASONING']
+        }
+      })
+    server.finish()
+    await completion
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+    expect(
+      records.filter((entry) => entry.stage?.startsWith('provider_item_'))
+    ).toEqual([
+      expect.objectContaining({
+        stage: 'provider_item_started',
+        callId: 'item:reasoning-1',
+        evidence: expect.objectContaining({ kind: 'reasoning' })
+      }),
+      expect.objectContaining({
+        stage: 'provider_item_completed',
+        callId: 'item:reasoning-1'
+      })
+    ])
+    expect(JSON.stringify(records)).not.toContain('PRIVATE REASONING')
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('retains exact bounded discovery and field selectors for execution diagnosis', () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  try {
+    createLocalAiUsage(input, 'selected-model').trace('tool_started', {
+      callId: 'query',
+      tool: 'describe_design_apis',
+      arguments: {
+        names: ['api_core_getElementComputedData'],
+        fields: ['bounds'],
+        password: 'must-not-be-recorded'
+      }
+    })
+    const record = JSON.parse(log.mock.calls[0][0])
+    expect(record.evidence.arguments.names.items).toEqual([
+      'api_core_getElementComputedData'
+    ])
+    expect(record.evidence.arguments.fields.items).toEqual(['bounds'])
+    expect(JSON.stringify(record)).not.toContain('must-not-be-recorded')
+  } finally {
     log.mockRestore()
   }
 })
