@@ -1,6 +1,6 @@
 # AI execution improvement
 
-Created: 2026-10-03. Status: implementation stages verified locally; final live acceptance pending.
+Created: 2026-10-03. Status: completed locally; no push or remote CI claimed.
 Owner and whole-plan closeout: this conversation. Continue
 `.worktrees/ai-execution-flow`, branch `codex/ai-execution-flow`, from
 `d0b2d213f41f6c10bbd98a3ccb5fdf5bbb8714ac`. Local commits are permitted;
@@ -70,16 +70,20 @@ integration gates, bounded review, and the successful live evidence. No remote
 CI is run or claimed because push is prohibited. Keep generated evidence ignored
 and local environment files intact. Record any unachieved acceptance honestly.
 
-## Current local progress
+## Completed local result
 
-- Recording stage: completed locally in `a02c4e608`.
-- Deterministic report stage: completed locally in `c0087f44b`.
-- Optional isolated assessment and saved opinions: completed locally in
-  `8d667fdfb`; final live acceptance remains.
-- Retrieval: registry discovery and batched evidence repaired; nine existing
-  target/query/preparation suites passed 154 tests. No speculative cache added.
-- Execution efficiency: coherent-stage review guidance and owner profiling
-  completed in `a990c21bd`; final realistic creation-cost observation remains.
-- Local affected validation: completed locally; nine selected checks passed with
-  unchanged source identity. The real-subscription case remains a separate gate.
-- Final Taipei 101 headless recorded acceptance has not started. No remote push.
+All five linked plans are complete locally. Recording was implemented first;
+reporting, isolated assessment, precise registry discovery, measured execution
+guidance and local affected validation followed. The first live attempt exposed
+a canonical-versus-computed property contract ambiguity; a native regression and
+registry semantic correction preceded the successful repeat.
+
+The final headless run passed, preserved the requested editable detail and scale
+contract, and retained ten seconds after completion. It took 15m27s; the 1–2 minute
+aspiration is **not achieved**, and this single run does not prove a speedup.
+See [results and evidence](ai-execution-improvement-results.md) for timings,
+visual limitations, validation, exact brief, replay artifacts and report commands.
+No shared renderer or speculative RAG/cache was added without owner evidence.
+
+Local records, recordings and `.env` are retained. Task-owned test servers were
+closed. No push, PR update or remote CI was performed.

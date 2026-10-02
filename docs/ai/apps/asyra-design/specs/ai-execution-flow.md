@@ -203,6 +203,8 @@ An explicit post-run assessment may reuse the native provider transport once,
 with a compact report and named criteria only. It advertises no App tools and
 disables web search and Code Mode; no canvas executor or document is attached.
 Assessment duration, usage and record identity remain separate from drawing.
+Assessment diagnostics use stderr so the report CLI's stdout remains a single
+machine-readable payload. Drawing diagnostics retain their existing channel.
 Unknown call citations or malformed responses are failed assessments, not
 findings. The report stores the opinion separately; it cannot approve completion.
 An existing final visual review can supply model opinion without a second call;

@@ -409,6 +409,10 @@ describe('local subscription AI backend', () => {
     }
   )
   it('isolates one diagnostic assessment from drawing tools and records its own identity', async () => {
+    const stdout = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const stderr = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
     const result = { overall: 'No visual proof supplied', findings: [] }
     const server = fakeServer({ output: JSON.stringify(result) })
     spawn.mockReturnValue(server.child)
@@ -424,6 +428,13 @@ describe('local subscription AI backend', () => {
       }
     )
     expect(assessment.value).toEqual(result)
+    expect(stdout).not.toHaveBeenCalled()
+    expect(stderr.mock.calls.map(([line]) => JSON.parse(line))).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ event: 'ai_request_trace' }),
+        expect.objectContaining({ event: 'ai_request_usage' })
+      ])
+    )
     const params = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
