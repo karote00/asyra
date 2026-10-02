@@ -1,6 +1,6 @@
 # AI precise retrieval and work reuse
 
-Status: implementing registry discovery; recording is locally complete.
+Status: local retrieval stage validated; parent live acceptance pending.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome and scope
@@ -98,3 +98,38 @@ Optional assessment excludes those nested selectors. Five focused suites passed
 passed. Source candidate `788ef8fe-c9e0-4f71-9260-11b7abb1032f` passed; contract
 review `bf6d5d05f179f0df56520a3e94e0fa84f1d09bf6616cef9ebf3c07a43658470b`
 has no blockers. Existing two console warnings remain unchanged.
+
+## Existing owner proof - targets and immutable preparation
+
+Validation-only segment: request/prepare/apply contracts in the execution flow
+remain unchanged. Run existing formal callers for continuity, target resolution,
+plural operations, canonical narrow reads/edits and immutable image preparation.
+No production edits or new cache are authorized by this proof segment. Inputs
+are current IDs/fields, current canonical records and invocation-local handles;
+outputs are exact query values, canonical edit results and reused admitted
+preparation. Verify deleted targets and locks at the canonical owner, stale
+continuity at request, and artifact release/request isolation at prepare.
+Stop and write a separate owner correction only if a formal case fails.
+
+Validation: nine existing owner suites passed 154 tests. Known-ID context queries
+return 250 targets in one call, read only named fields and make zero computed
+reads for metadata-only requests. A subsequent canonical deletion/rename is
+visible on the next query; inherited locks and missing ancestors reject edits.
+Prepared prefix targets resolve once into one exchange containing three actions;
+canonical failures propagate, and cancellation prevents dispatch. Continuity
+drops deleted compositions and stale reply targets. Prepared keys require no
+canvas reads, disappear after explicit release, and repeated semantic edits
+reuse the original identities rather than rebuilding covering layers.
+
+Image preparation tests prove one conversion and one geometric analysis feed
+two prepared sizes; foreign invocation receipts, stale sources and cancelled
+work are rejected. Reference import already retains the decoded receipt by URL
+within one request and its formal test proves one download. These are existing
+reuse paths, not new optimizations. The observed historical trace does not prove
+material redundant reference decode/analysis beyond these paths, so no new
+cache or cross-request retention was added. Different source/configuration or
+refinement artifacts still require their declared owner work.
+
+Local changes are registry name/purpose discovery and repaired batched-selector
+recording. Target/query/preparation paths remain unchanged because their formal
+work-count and invalidation cases pass. Logs: `tmp/ai-retrieval-owner-tests.log`.
