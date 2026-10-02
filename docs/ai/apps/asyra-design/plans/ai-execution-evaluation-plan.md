@@ -1,6 +1,6 @@
 # AI execution evaluation and periodic reports
 
-Status: local evaluation stages complete; final live report acceptance remains in the parent plan.
+Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome and boundary
@@ -59,7 +59,6 @@ new provider assessment protocol; that is a separate compose segment.
 Gates: no-data/partial/overlap/revision/truncation/date/duplicate tests, scoped
 lint, App typecheck, source-bound observe proof and report CLI integration.
 
-
 ## Deterministic report checkpoint
 
 Implemented saved-record run and period reports, separate feedback/model opinions,
@@ -76,7 +75,6 @@ warning). Naming and Inspector contracts passed. Source-bound candidate
 `d7aad7477f6a84a91515673bb9660dc05cdba66a5c8db4ddf2073f04e3a95ba7` accepted.
 Optional separate post-run model assessment remains for the next segment;
 final live report acceptance remains in the parent plan. No push.
-
 
 ## Active step card - observe optional model assessment
 
@@ -97,7 +95,6 @@ invalid citations, model failure, separate-record metadata and CLI tests; existi
 provider tests, typecheck, naming, scoped lint and source-bound proof. Stop on any
 need for canvas access or hidden reasoning.
 
-
 ## Optional assessment checkpoint
 
 Implemented one explicit capability-free local-model assessment, separate usage
@@ -117,3 +114,22 @@ Source-bound candidate `7ed1da54-8dd6-4bd3-9c04-8ec5e986bd8c` passed; review
 Formal assessment tests use a provider double; no new live drawing or live model
 assessment is claimed. Final parent acceptance will generate the new evidence.
 No push.
+
+## Final acceptance correction - observe output channel
+
+The real optional assessment completed, but its provider diagnostics preceded the
+CLI JSON on stdout. The bounded correction stays in observe usage output and its
+native-provider regression: assessment diagnostics go to stderr, the saved
+records remain unchanged, and drawing diagnostics retain their existing channel.
+No new provider call, canvas capability or evaluation criterion is introduced.
+Gate: the native assessment test must fail on stdout contamination first, then
+pass with trace and terminal usage still present on stderr; report/parser and
+provider tests, typecheck, lint and source-bound proof follow.
+
+## Final acceptance
+
+See [parent results](ai-execution-improvement-results.md). The successful live
+request, period report, independent post-run process opinion, zero-call reuse of
+current visual-review opinion, native detail screenshots and full recording are
+retained locally. Speed and visual limitations remain explicit; model opinion is
+not user approval. No push.

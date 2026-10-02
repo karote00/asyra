@@ -227,6 +227,11 @@ export const createLocalAiUsage = (
   } = {}
 ) => {
   const now = options.now ?? (() => performance.now())
+  // Assessment CLI stdout is the report payload; keep diagnostics separate.
+  const log = (line: string) =>
+    options.purpose === 'execution-assessment'
+      ? console.error(line)
+      : console.info(line)
   const requestId = randomUUID()
   const startedAt = now()
   const metadata = isRecord(input.metadata) ? input.metadata : {}
@@ -342,7 +347,7 @@ export const createLocalAiUsage = (
                 }
         }
         persist(record)
-        console.info(JSON.stringify(record))
+        log(JSON.stringify(record))
       } catch {
         // A diagnostic sink must not alter execution or settlement.
       }
@@ -422,7 +427,7 @@ export const createLocalAiUsage = (
       // Diagnostics must never change the drawing request's settlement.
       persist(report)
       try {
-        console.info(JSON.stringify(report))
+        log(JSON.stringify(report))
       } catch {
         // The process log sink may already be closed during shutdown.
       }

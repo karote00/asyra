@@ -1,6 +1,6 @@
 # AI precise retrieval and work reuse
 
-Status: local retrieval stage validated; parent live acceptance pending.
+Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome and scope
@@ -166,3 +166,10 @@ source candidate `39ab4173-e1e5-4c30-84e1-9dd3f6a5cdf4` passed; contract review
 Only discovery descriptions changed; native validation and failure propagation
 remain intact. Failed run and video remain under `tmp/ai-final-acceptance-20261003`.
 A fresh full acceptance remains required.
+
+## Final acceptance
+
+Completed locally. The corrected canonical property descriptors passed the native
+regression and successful final drawing. See [parent results](ai-execution-improvement-results.md).
+Remaining recovered argument failures and large responses are recorded as
+observations, not concealed or treated as proven redundant queries. No push.

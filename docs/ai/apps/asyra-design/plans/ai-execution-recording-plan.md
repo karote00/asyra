@@ -1,6 +1,6 @@
 # AI execution recording
 
-Status: local owner stage complete; final live acceptance remains in the parent plan.
+Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome
@@ -83,3 +83,11 @@ canonical mutation, unavailable semantic input, or unproven payload privacy.
   passed all seven owner cases. App typecheck/build, naming (12 checks),
   Inspector contracts (27 tests), scoped lint (no errors; three diagnostic
   console warnings) and diff whitespace checks passed. No push occurred.
+
+## Final acceptance
+
+See [parent results](ai-execution-improvement-results.md). The successful live
+request, period report, independent post-run process opinion, zero-call reuse of
+current visual-review opinion, native detail screenshots and full recording are
+retained locally. Speed and visual limitations remain explicit; model opinion is
+not user approval. No push.

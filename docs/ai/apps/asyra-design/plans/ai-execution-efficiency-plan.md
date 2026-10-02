@@ -1,6 +1,6 @@
 # AI execution efficiency
 
-Status: local slices validated; realistic creation attribution and final live acceptance pending.
+Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome
@@ -117,3 +117,11 @@ naming and live-test collection passed. Candidate
 No Framework/render optimization is justified by the small profile so far.
 The real run must retain App owner phases to investigate any recurring expensive
 creation before this plan is closed. No wall-clock improvement is claimed yet.
+
+## Final acceptance
+
+See [parent results](ai-execution-improvement-results.md). The successful live
+request, period report, independent post-run process opinion, zero-call reuse of
+current visual-review opinion, native detail screenshots and full recording are
+retained locally. Speed and visual limitations remain explicit; model opinion is
+not user approval. No push.
