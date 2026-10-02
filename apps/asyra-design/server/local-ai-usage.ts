@@ -215,6 +215,8 @@ export const createLocalAiUsage = (
     sink?: ExecutionRecordSink
     now?: () => number
     sourceRevision?: string
+    purpose?: 'drawing' | 'execution-assessment'
+    sourceRequestId?: string
   } = {}
 ) => {
   const now = options.now ?? (() => performance.now())
@@ -256,9 +258,12 @@ export const createLocalAiUsage = (
     sourceRevision: correlationId(options.sourceRevision) ?? null,
     conversationId,
     turnId,
-    replyToTurnId
+    replyToTurnId,
+    purpose: options.purpose ?? 'drawing',
+    sourceRequestId: correlationId(options.sourceRequestId) ?? null
   })
   return {
+    requestId,
     recordTransport(direction: 'sent' | 'received', bytes: number): void {
       if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
       const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'

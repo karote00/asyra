@@ -196,6 +196,7 @@ export const evaluateExecution = (
       const end = events.find((entry) => entry.stage === 'tool_completed')
       return {
         callId: step.callId,
+        endedMs: step.endedMs,
         sequence: start?.sequence ?? null,
         args: object(retainedValue(object(start?.evidence).arguments)),
         result: object(object(end?.evidence).result)
@@ -225,6 +226,17 @@ export const evaluateExecution = (
     toolCalls,
     modelReview: {
       status: visual ? 'recorded' : 'unavailable',
+      current: Boolean(
+        visual &&
+        run.complete &&
+        visual.endedMs !== null &&
+        run.steps.every(
+          (step) =>
+            step.kind === 'provider' ||
+            (step.endedMs !== null &&
+              step.endedMs <= (visual.endedMs as number))
+        )
+      ),
       certifiesVisuals: false,
       callId: visual?.callId ?? null,
       sequence: visual?.sequence ?? null,
@@ -295,10 +307,9 @@ export const createExecutionPeriodReport = (
   >()
   for (const run of runs) {
     const configuration = Object.fromEntries(
-      ['provider', 'model', 'effort', 'sourceRevision'].map((key) => [
-        key,
-        text(run.metadata[key])
-      ])
+      ['provider', 'model', 'effort', 'sourceRevision', 'purpose'].map(
+        (key) => [key, text(run.metadata[key])]
+      )
     )
     const key = stable(configuration)
     const group = groups.get(key) ?? { configuration, requestIds: [] }
