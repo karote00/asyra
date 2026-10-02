@@ -145,6 +145,29 @@ bytes, eager tool schema bytes and reported token usage are distinct quantities.
 Retain bounded summaries, not prompts, credentials, raw geometry or private
 reasoning. Diagnostics cannot control output or certify rendered correctness.
 
+## Execution recording
+
+The App provider emits a versioned, append-only local record per invocation in
+addition to existing console diagnostics. The record includes request/call and
+sequence identities, observed timestamps, model/effort, bounded tool selectors,
+artifact references and terminal outcome. Source identity is optional and marked
+unavailable when not supplied. No prompt, image, raw geometry, credential or
+private reasoning is persisted by this owner. Truncation is explicit.
+
+The App-server recording sink queues events in order and drains at request
+settlement. Recording errors are reported separately and cannot reject, roll
+back or modify drawing results. Interrupted records have no terminal success;
+readers retain malformed/partial evidence and classify unresolved calls as
+incomplete. Overlapping tool intervals count once. Provider request intervals
+can overlap tool work and are not labelled exclusive model reasoning.
+
+Records are project-local diagnostics, not public document state or provider
+input. Loading a record cannot mutate the canvas. Existing log format 1 remains
+readable with unavailable fields; new diagnostic records use version 2. Log
+files and local environment values never enter Git. Runtime storage does not
+silently delete earlier evidence. Periodic evaluation consumes records as a
+separate projection, not as completion authority.
+
 ## Product cases and definition of done
 
 Permanent executable cases must cover:

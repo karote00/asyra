@@ -20,6 +20,7 @@ import {
   prepareDesign
 } from '../design-preparation'
 import { createLocalAiUsage } from '../local-ai-usage'
+import { parseExecutionRecord, type ExecutionRecord } from '../local-ai-records'
 import { createLocalDesignReview } from '../local-design-review'
 import { requestLocalAiActionBatch } from '../local-ai-provider'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
@@ -611,12 +612,21 @@ it('execution proof retains partial progress when a successor makes no change', 
 
 it('execution proof accounts observed spans without private payloads or invented model timing', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const clock = vi.spyOn(Date, 'now')
+  const clock = vi.spyOn(performance, 'now')
+  const retained: ExecutionRecord[] = []
   try {
     clock.mockReturnValue(0)
     const usage = createLocalAiUsage(
       { actions: [], attempt: 1, context: {}, intent: 'private user brief' },
-      'gpt-6-astra'
+      'gpt-6-astra',
+      {
+        sink: {
+          write: (record) => {
+            retained.push(record)
+          },
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
     )
     clock.mockReturnValue(100)
     usage.trace('tool_started', {
@@ -653,6 +663,13 @@ it('execution proof accounts observed spans without private payloads or invented
     expect(serialized).not.toContain('private user brief')
     expect(serialized).not.toContain('secret-test-payload')
     expect(serialized).toContain('operationCount')
+    const persisted = parseExecutionRecord(
+      retained.map((record) => JSON.stringify(record)).join('\n')
+    )
+    expect(persisted.complete).toBe(true)
+    expect(persisted.metadata.effort).toBe('medium')
+    expect(persisted.timing).toMatchObject(report.timing)
+    expect(persisted.steps).toHaveLength(2)
   } finally {
     clock.mockRestore()
     log.mockRestore()

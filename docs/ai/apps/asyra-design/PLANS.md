@@ -4,6 +4,8 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active: [AI execution improvement](plans/ai-execution-improvement-plan.md) -
+  recording first, then evaluation, retrieval, efficiency and local validation.
 - Active preparation: [AI Design Execution Flow](plans/ai-execution-flow-plan.md).
   Continues the merged AI panel with intent-driven orchestration and work reuse;
   see its preparation prerequisite before starting production implementation.

@@ -606,6 +606,30 @@ orchestration; it is never reported as measured private reasoning. Per-call timi
 and summaries contain no image bytes, private reasoning or raw generated code.
 These diagnostics do not change request execution or introduce a time limit.
 
+Local invocations also retain one version-2 JSONL execution record under
+`AI_EXECUTION_RECORD_DIR` (default `tmp/ai-executions`, relative to the server
+working directory). Each file is named by the request ID, created exclusively
+and never silently overwritten. `AI_EXECUTION_SOURCE_REVISION` optionally names
+the tested source; absent metadata is null, not an inferred current checkout.
+Keep both settings in `.env.example`; actual local `.env` files remain private.
+
+The header records the configured model and medium effort. Ordered lifecycle
+events retain bounded API names/field selectors, artifact references, explicit
+truncation and observed durations. Elapsed time uses a monotonic clock. Native
+reasoning/message/plan item boundaries may be observed without retaining their
+contents; their reported lifetime is not proof of exclusive model compute time.
+RPC call identities pair starts and ends independently of tool identities.
+Persisted evidence omits echoed briefs and free-form exception/message text.
+The existing allowlist also excludes raw code, image/geometry data and credentials.
+
+Queued file writes drain at request settlement. A sink failure emits a separate
+`ai_recording_failed` diagnostic and cannot alter the drawing outcome. A process
+interruption can leave a partial file; readers must expose missing terminal,
+sequence or call evidence. `local-ai-records.ts` supplies the pure reader and
+overlap accounting, including historical version-1 logs with unavailable fields.
+Diagnostic outcome records provider settlement; visual acceptance still belongs
+to the existing review owner. Logs are ignored local evidence, not document data.
+
 Prepared semantic artifacts support explicit grouped release through
 release_design_artifacts; the ordinary tool scheduler owns ordering and cancellation.
 Released IDs become unavailable without replaying or deleting canvas mutations.
