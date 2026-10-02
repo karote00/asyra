@@ -1,6 +1,6 @@
 # AI execution improvement
 
-Created: 2026-10-03. Status: planning complete; recording implementation first.
+Created: 2026-10-03. Status: implementation stages verified locally; final live acceptance pending.
 Owner and whole-plan closeout: this conversation. Continue
 `.worktrees/ai-execution-flow`, branch `codex/ai-execution-flow`, from
 `d0b2d213f41f6c10bbd98a3ccb5fdf5bbb8714ac`. Local commits are permitted;
@@ -70,7 +70,6 @@ integration gates, bounded review, and the successful live evidence. No remote
 CI is run or claimed because push is prohibited. Keep generated evidence ignored
 and local environment files intact. Record any unachieved acceptance honestly.
 
-
 ## Current local progress
 
 - Recording stage: completed locally in `a02c4e608`.
@@ -79,5 +78,8 @@ and local environment files intact. Record any unachieved acceptance honestly.
   `8d667fdfb`; final live acceptance remains.
 - Retrieval: registry discovery and batched evidence repaired; nine existing
   target/query/preparation suites passed 154 tests. No speculative cache added.
-- Execution efficiency and local affected validation remain planned.
+- Execution efficiency: coherent-stage review guidance and owner profiling
+  completed in `a990c21bd`; final realistic creation-cost observation remains.
+- Local affected validation: completed locally; nine selected checks passed with
+  unchanged source identity. The real-subscription case remains a separate gate.
 - Final Taipei 101 headless recorded acceptance has not started. No remote push.

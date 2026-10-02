@@ -38,6 +38,7 @@
       "tools/flow-inspector/inspectors/group-interaction-mvp-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/layer-tree-reparent-reorder-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/network-collaboration-transport-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/preset-composition-flow-inspector.data.cjs",
@@ -21937,6 +21938,244 @@
             "summary": "Required current-head gates pass and the authorized release train continues without intermediate approval."
           }
         ]
+      }
+    },
+    {
+      "id": "local-affected-validation",
+      "slug": "local-affected-validation",
+      "title": "Local Affected Validation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "local-affected-validation",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "local-affected-validation",
+          "kind": "feature",
+          "title": "Local Affected Validation",
+          "subtitle": "Shared CI selection with owned local execution"
+        },
+        "authority": {
+          "specPath": "docs/ai/workflows/local-affected-validation.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
+          "semanticOwner": "Repository local validation",
+          "inspectorOwner": "Repository local validation"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "local",
+            "title": "Local validation",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "collect",
+            "order": 1,
+            "laneId": "local",
+            "title": "Collect local inputs",
+            "ownerPackage": "Repository local validation",
+            "purpose": "git-input-owner",
+            "inputs": [
+              "explicit base or origin/main",
+              "HEAD, index and working files"
+            ],
+            "outputs": [
+              "artifact:local-inputs"
+            ],
+            "conditions": [
+              "Resolve commits and union committed, staged, unstaged and untracked paths",
+              "Retain removals and fingerprint without file contents"
+            ],
+            "bypasses": [
+              "An unchanged checkout has an explicit empty path set"
+            ],
+            "allowedContributors": [
+              "Git read commands",
+              "filesystem input fingerprints"
+            ],
+            "forbiddenContributors": [
+              "remote operations",
+              "ignored environment contents",
+              "dependency classification"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/__tests__/local-validation.test.mjs"
+            ],
+            "specRefs": [
+              "#local-inputs"
+            ],
+            "failureOwnerStepId": "collect",
+            "cacheDimensions": []
+          },
+          {
+            "id": "select",
+            "order": 2,
+            "laneId": "local",
+            "title": "Select affected owners",
+            "ownerPackage": "Repository CI scope",
+            "purpose": "shared-impact-owner",
+            "inputs": [
+              "artifact:local-inputs",
+              "current and base workspace manifests",
+              "CI relationship map"
+            ],
+            "outputs": [
+              "artifact:local-plan"
+            ],
+            "conditions": [
+              "Reuse the CI classifier and related/full-owner contracts",
+              "Unknown relations and missing local command contracts are unresolved"
+            ],
+            "bypasses": [
+              "Not-defined E2E and unselected owners are explicit"
+            ],
+            "allowedContributors": [
+              "ci-scope.mjs",
+              "ci-relationships.json",
+              "local input adapter"
+            ],
+            "forbiddenContributors": [
+              "second dependency graph",
+              "workspace name whitelist",
+              "execution during preview"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/ci-relationships.json",
+              "scripts/__tests__/local-validation.test.mjs"
+            ],
+            "specRefs": [
+              "#shared-selection"
+            ],
+            "failureOwnerStepId": "select",
+            "cacheDimensions": []
+          },
+          {
+            "id": "execute",
+            "order": 3,
+            "laneId": "local",
+            "title": "Run owned local checks",
+            "ownerPackage": "Repository local validation",
+            "purpose": "local-process-owner",
+            "inputs": [
+              "artifact:local-plan",
+              "explicit run flag"
+            ],
+            "outputs": [
+              "artifact:local-result"
+            ],
+            "conditions": [
+              "Retain CI build prerequisites and owner test guards",
+              "Require actual selected results and nonzero test evidence",
+              "Stop owned children on cancellation and reject changed source identity"
+            ],
+            "bypasses": [
+              "Preview never creates child check processes"
+            ],
+            "allowedContributors": [
+              "existing CI check runners",
+              "declared owner E2E commands",
+              "owned process/log storage"
+            ],
+            "forbiddenContributors": [
+              "remote CI claims",
+              "global process cleanup",
+              "successful missing or zero-test results"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/local-validation-runner.mjs",
+              "scripts/run-workspace-checks.mjs",
+              "scripts/__tests__/local-validation.test.mjs",
+              "scripts/__tests__/local-validation-runner.test.mjs",
+              "package.json"
+            ],
+            "specRefs": [
+              "#owned-execution"
+            ],
+            "failureOwnerStepId": "execute",
+            "cacheDimensions": []
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:local-inputs",
+            "title": "local-inputs",
+            "ownerStepId": "collect",
+            "consumerStepIds": [
+              "select"
+            ],
+            "terminal": false,
+            "description": "Detached local validation contract; no product state or remote authority."
+          },
+          {
+            "id": "artifact:local-plan",
+            "title": "local-plan",
+            "ownerStepId": "select",
+            "consumerStepIds": [
+              "execute"
+            ],
+            "terminal": false,
+            "description": "Detached local validation contract; no product state or remote authority."
+          },
+          {
+            "id": "artifact:local-result",
+            "title": "local-result",
+            "ownerStepId": "execute",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Detached local validation contract; no product state or remote authority."
+          }
+        ],
+        "routes": [
+          {
+            "id": "inputs-to-selection",
+            "from": "collect",
+            "to": "select",
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-inputs"
+            ],
+            "predicate": "Git inputs resolved"
+          },
+          {
+            "id": "plan-to-execution",
+            "from": "select",
+            "to": "execute",
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-plan"
+            ],
+            "predicate": "Explicit run and all obligations resolved"
+          },
+          {
+            "id": "result",
+            "from": "execute",
+            "to": null,
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-result"
+            ],
+            "predicate": "Preserve passed, failed, cancelled and unverified outcomes"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": []
       }
     },
     {
