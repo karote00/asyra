@@ -1810,3 +1810,38 @@ App/server types, generated parity and template artifact regressions pass.
 Earlier unchanged Framework, Runtime, browser, 7076, build and release-consumer
 milestones remain applicable. Implementation is ready for the authorized PR;
 remote exact-head CI and user review are the remaining delivery steps.
+
+### PR #281 - integration gate correction
+
+CI exposed stale direct-consumer artifacts omitted from the local gate set:
+public package/source reference digests after Core/Factory contract changes,
+the release-template test's exact exclusion list, and the board regression's
+hardcoded six-check expectation after Framework history groups added three
+canonical proof cases. The existing formal checks detect all three failures.
+Bounded correction: regenerate public docs through the official owner, synchronize
+the exclusion oracle, and derive full-board check totals from the admitted
+contract. No runtime or drawing behavior changes. Run the affected docs/release
+suites, real board case, generated-source lint and website/artifact build before
+pushing the correction; retain the successful native drawing evidence.
+
+The synchronized documentation/release suite passes 59 tests. The board's full
+baseline count now follows the admitted case inventory, and its failure summary
+matches actual failures while still requiring the declared negative cases and
+explicit cancellation-flow navigation. Its real browser case passes. All three
+production Apps build (22 tasks), and their artifact browser checks pass.
+
+The collaboration integration consumer also retained the old single physical
+transaction publication oracle. CI formally reports nine `action` publications
+followed by `undo` and `redo`. This agrees with the accepted `apply` contract
+(Preparation and execution): each prepared member publishes, while the request
+seals one history entry. Bounded test-only correction consumes the existing
+prepared artifact, derives member count from group plus slices, verifies ordered
+minimal publications and one history increment, and retains complete Undo/Redo
+and two-actor convergence checks. Runtime, fixtures, batching and source owner
+boundaries remain unchanged. Gate: both 16-item browser cases and focused lint;
+a semantic discrepancy would stop this oracle-only correction.
+
+Both 16-item real-browser collaboration cases pass (45.5 seconds), including
+per-member publication, one Undo entry and ordinary two-actor convergence.
+Focused lint, naming and diff checks pass. These CI corrections preserve the
+verified runtime and native drawing; exact updated-head CI remains pending.

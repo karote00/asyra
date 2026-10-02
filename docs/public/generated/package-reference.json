@@ -13,7 +13,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13",
+        "contract": "1f6596208c6318944e788242c1adc8c7590330fc4a98c92c691fbccb9988331a",
         "guide": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
         "manifest": "f37c81e2ff86cc8ba78990080f397d8f903a11c512ba9fa6b0dc3a2f06978b9d"
       },
@@ -70,7 +70,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638",
+        "contract": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -114,7 +114,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a",
+        "contract": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3",
         "guide": "f3135c07050bec8d0c4949166149dff46755e6c4daf7254480044ed3ac6d77a2",
         "manifest": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
       },

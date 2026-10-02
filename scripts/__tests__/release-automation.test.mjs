@@ -293,7 +293,10 @@ test('release template excludes local runtime data directories', () => {
     'src/ai/__tests__/detailed-tabby.test.ts',
     'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
     'e2e/ai-conversation-flow.spec.ts',
-    'server/__tests__/basic-api-contracts.test.ts'
+    'server/__tests__/basic-api-contracts.test.ts',
+    'flow-contracts.json',
+    'server/__tests__/execution-flow.config.ts',
+    'server/__tests__/execution-flow-proof.test.ts'
   ])
 
   const releaseTemplate = readFileSync(
