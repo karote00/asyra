@@ -86,7 +86,7 @@ export const assessExecution = async (
     outcome: report.outcome,
     timing: report.timing,
     usage: report.usage,
-    calls,
+    calls: calls.map(({ selectors: _selectors, ...summary }) => summary),
     omittedCallCount: report.toolCalls.length - calls.length,
     findings: report.findings.filter(
       (finding) => finding.callId === null || includedIds.has(finding.callId)

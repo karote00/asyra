@@ -14,6 +14,72 @@ const workspace = async () => {
 }
 
 describe('local execution records', () => {
+  it('retains bounded batched query selectors and discovery counts without geometry', () => {
+    const retained: Record<string, unknown>[] = []
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    try {
+      const usage = createLocalAiUsage(
+        { intent: 'private', context: {}, actions: [], attempt: 1 },
+        'gpt-6-astra',
+        {
+          sink: {
+            write: (record) => retained.push(record),
+            flush: async () => ({ status: 'saved', path: null })
+          }
+        }
+      )
+      usage.trace('tool_started', {
+        tool: 'execute_design_batch',
+        callId: 'batch',
+        arguments: {
+          operations: Array.from({ length: 20 }, (_, index) => ({
+            name: 'read_design_context',
+            arguments: {
+              scope: 'ids',
+              elementIds: [`item-${index}`],
+              fields: ['x'],
+              points: 'PRIVATE_GEOMETRY'
+            }
+          }))
+        }
+      })
+      usage.trace('tool_completed', {
+        tool: 'describe_design_apis',
+        callId: 'discovery',
+        result: { complete: true, count: 0, catalogSize: 100 }
+      })
+      expect(retained[1]).toMatchObject({
+        evidence: {
+          arguments: {
+            operations: {
+              count: 20,
+              truncated: true,
+              items: expect.arrayContaining([
+                expect.objectContaining({
+                  name: 'read_design_context',
+                  arguments: {
+                    scope: 'ids',
+                    elementIds: {
+                      count: 1,
+                      items: ['item-0'],
+                      truncated: false
+                    },
+                    fields: { count: 1, items: ['x'], truncated: false }
+                  }
+                })
+              ])
+            }
+          }
+        }
+      })
+      expect(retained[2]).toMatchObject({
+        evidence: { result: { complete: true, count: 0, catalogSize: 100 } }
+      })
+      expect(JSON.stringify(retained)).not.toContain('PRIVATE_GEOMETRY')
+    } finally {
+      log.mockRestore()
+    }
+  })
   it('takes diagnostic purpose from the recorder owner rather than user request metadata', () => {
     const retained: unknown[] = []
     createLocalAiUsage(

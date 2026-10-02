@@ -53,6 +53,42 @@ const omitted = (value: unknown): boolean => {
   return false
 }
 
+// Report query identity, never mutation values or arbitrary retained evidence.
+// Array summary markers stay intact when the writer could not retain all items.
+const selectorKeys = new Set([
+  'operations',
+  'name',
+  'arguments',
+  'names',
+  'query',
+  'scope',
+  'parentId',
+  'elementIds',
+  'elementId',
+  'fields',
+  'field',
+  'keys',
+  'keyPrefix',
+  'artifactId',
+  'analysisId',
+  'compositionId',
+  'revision',
+  'offset',
+  'limit',
+  'count',
+  'items',
+  'truncated'
+])
+const querySelectors = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(querySelectors)
+  if (value === null || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => selectorKeys.has(key))
+      .map(([key, child]) => [key, querySelectors(child)])
+  )
+}
+
 export interface ExecutionFinding {
   requestId: string | null
   sequence: number | null
@@ -172,6 +208,7 @@ export const evaluateExecution = (
       return {
         ...identity,
         tool: step.tool,
+        selectors: querySelectors(args),
         status: step.status,
         durationMs:
           step.startedMs !== null && step.endedMs !== null
