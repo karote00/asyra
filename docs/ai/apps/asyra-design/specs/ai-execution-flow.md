@@ -40,6 +40,13 @@ input diagnostic and recoverability; it must not label the capability unavailabl
 Unavailable external references remain distinguishable. The model can correct
 the request in the same turn; the provider does not automatically replay it.
 
+The existing API discovery tool supports optional lexical name/purpose search
+against the current admitted descriptors. Matching returns a complete compact
+index; exact names retrieve full current schemas. Search and names are mutually
+exclusive. No match means no lexical match, never an unavailable capability; the
+complete compact catalog remains available without arguments. Search does not
+expand execution permissions or infer target identities.
+
 ## Preparation and execution
 
 Preparation consumes validated parameters or existing immutable handles and

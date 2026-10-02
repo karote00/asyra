@@ -190,6 +190,15 @@ it('execution proof preserves registered native capability envelopes', async ({
     })
   const names = new Set(definitions.map(({ name }) => name))
   expect(names.has(AiDesignToolIds.DESCRIBE_DESIGN_APIS)).toBe(true)
+  expect(
+    definitions.find(
+      ({ name }) => name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
+    )
+  ).toMatchObject({
+    inputSchema: {
+      properties: { query: { type: 'string' }, names: { type: 'array' } }
+    }
+  })
   expect(names.has(AiDesignToolIds.EXECUTE_DESIGN_BATCH)).toBe(true)
   const discovery = packets.find(
     (packet) => packet.id === 100 && packet.result

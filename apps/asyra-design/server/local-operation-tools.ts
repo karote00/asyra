@@ -403,12 +403,18 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover public Core and App APIs. With no arguments returns a compact API index. Supply names to retrieve exact input schemas and coordinate semantics, then call these actions in execute_design_batch. Prefer plural APIs for ready data; basic vector APIs edit existing anchors/handles without replacing the vector.',
+                'Discover public Core and App APIs. With no arguments returns the complete compact API index. Supply query to search current names and descriptions by purpose, or names to retrieve exact input schemas and coordinate semantics, then call these actions in execute_design_batch. Do not combine query with names. No lexical match does not mean a capability is unavailable: use the complete index. Prefer plural APIs for ready data; basic vector APIs edit existing anchors/handles without replacing the vector.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
-                  names: { type: 'array', items: { type: 'string' } }
+                  names: { type: 'array', items: { type: 'string' } },
+                  query: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                      'Lexical name or purpose terms, matched against current registered descriptors. Mutually exclusive with names.'
+                  }
                 }
               }
             }
@@ -518,13 +524,17 @@ export const createLocalOperationTools = (
       if (name === AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
         if (
           !isRecord(args) ||
-          Object.keys(args).some((key) => key !== 'names') ||
+          Object.keys(args).some((key) => !['names', 'query'].includes(key)) ||
+          (args.query !== undefined &&
+            (typeof args.query !== 'string' ||
+              !args.query.trim() ||
+              args.names !== undefined)) ||
           (args.names !== undefined &&
             (!Array.isArray(args.names) ||
               args.names.some((v) => typeof v !== 'string')))
         )
           throw new LocalOperationPreparationError(
-            'Expected optional API names array'
+            'Expected optional API names array or nonempty purpose query, not both'
           )
         const apis = registered.filter((action) =>
           getBasicApiContract(action.name)
@@ -545,15 +555,48 @@ export const createLocalOperationTools = (
             )
           })
         }
+        const normalizeApiLookupText = (value: string) =>
+          value
+            .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+            .normalize('NFKC')
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]+/gu, ' ')
+            .trim()
+        const terms =
+          typeof args.query === 'string'
+            ? normalizeApiLookupText(args.query).split(' ').filter(Boolean)
+            : []
+        const matches = terms.length
+          ? apis.filter((api) => {
+              const descriptor = normalizeApiLookupText(
+                `${api.name} ${api.description}`
+              )
+              return terms.every((term) => descriptor.includes(term))
+            })
+          : apis
         return JSON.stringify({
-          apis: apis.map(({ name }) => {
+          complete: true,
+          count: matches.length,
+          catalogSize: apis.length,
+          ...(args.query !== undefined && matches.length === 0
+            ? {
+                message:
+                  'No lexical match; this is not evidence of an unavailable capability. Read the complete compact catalog without arguments or try other terms.',
+                recovery: {
+                  tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+                  arguments: {}
+                }
+              }
+            : {}),
+          apis: matches.map(({ name, description }) => {
             const contract = getBasicApiContract(name)
             if (!contract) throw new Error('Missing API contract')
             return {
               name,
               owner: contract.owner,
               method: contract.method,
-              effect: contract.effect
+              effect: contract.effect,
+              ...(args.query !== undefined ? { description } : {})
             }
           })
         })

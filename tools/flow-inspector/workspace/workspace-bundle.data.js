@@ -164,6 +164,7 @@
             ],
             "conditions": [
               "Preserve all registered capabilities and exact tool identities",
+              "Search current admitted descriptions without losing exact schemas or treating no lexical match as unavailable",
               "Use native discovery and Code Mode; configured model and effort remain unchanged",
               "Initial decisions need no execution or inspection receipt; later decisions consume only receipts actually produced"
             ],
@@ -184,6 +185,8 @@
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
               "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
               "apps/asyra-design/server/__tests__/basic-api-contracts.test.ts",
               "apps/asyra-design/e2e/local-ai-provider.spec.ts",

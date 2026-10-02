@@ -711,3 +711,16 @@ The diagnostic model projection includes up to 40 calls ranked by unresolved
 status and observed duration, states the omitted count, and leaves the complete
 record untouched. This bound never limits drawing tools or execution. User
 criteria govern evaluation; it does not impose a high-detail drawing style.
+
+
+### Narrow API discovery
+
+`describe_design_apis({query: "vector anchors"})` searches current admitted API
+names and descriptions using case-insensitive terms, including camel-case names.
+It returns all lexical matches with compact owner/method/effect metadata and a
+current description, `count`, `catalogSize` and `complete`. It does not retrieve
+scene data. Use exact `names` for full schemas; required schema fields are never
+truncated. Search is a discovery convenience, not semantic authority. Empty
+matches include recovery to `describe_design_apis({})`, which retains the entire
+compact catalog. Query and exact names cannot be combined. Registration and
+mutation permission checks remain unchanged.
