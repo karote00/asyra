@@ -1,6 +1,6 @@
 # AI execution efficiency
 
-Status: planned; depends on recording and precise retrieval.
+Status: local slices validated; realistic creation attribution and final live acceptance pending.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
 ## Outcome
@@ -38,3 +38,82 @@ parent plan's one successful full live recording. Report observed quality/time
 without claiming causal or universal 1–2 minute performance from one sample.
 If profiling does not support a suspected optimization, record evidence and keep
 that owner unchanged; this is preferable to inventing a cache or renderer.
+
+## Active step card - apply cost attribution
+
+Inspector apply / spec Preparation and execution. Inputs: a deterministic small
+editable vector draft prepared by the existing server owner, ordinary AI action
+transport and canonical App runtime. Output: ordered canonical identities, one
+history group, and existing diagnostic phase/count evidence. Add an opt-in formal
+case to the already-owned `e2e/ai-conversation-flow.spec.ts`, with 16, 320 and 1280
+repeated visible vectors. These isolate owner scaling without model/network work;
+they are not the final live AI acceptance or evidence of photographic quality.
+Keep cancellation, resource guards and existing transaction/slice policy. Use
+existing runtime-access/profile reads only; do not change renderers, delivery or
+bulk creation based on intuition. Record observed timings, no machine-speed
+assertions. Stop on failed canonical correctness or missing owner phases, then
+identify the first failing owner before changing it. Headless only, App URL from
+local `.env`; generated evidence stays under ignored test output. A later measured
+framework correction requires its own bounded owner card and regression first.
+
+Apply checkpoint: three formal headless cases passed. The repeated-pattern input
+uses the existing deterministic expander; an initial 1280 raw-child fixture was
+rejected before App execution by the existing source-input guard and is retained
+as failed test evidence, not a product timing. Corrected 16/320/1280 cases have
+17/321/1281 canonical entities, exactly one computed-mirror seed and one render
+projection admission per entity, and one Undo entry. Development observations:
+91/238/685 ms accepted-to-settled; scene commit spans 9.9/42.9/156.1 ms. Spans nest
+and must not be added as exclusive time. These simple repeated faces do not
+reproduce or explain the earlier 8161-element realistic run's 96.8 s creation.
+Do not infer a renderer/shared-component rewrite from this evidence. Preserve
+owner instrumentation in the final realistic run to resolve the difference.
+Evidence: `tmp/ai-efficiency-pattern-e2e`, three passed; scoped lint/naming passed;
+existing source proof `6721328f-a162-49ce-9c54-bffb7314f431` passed. Test-owned
+servers 53595/53603/53605 and subsequent runs were stopped by Playwright; ports
+3000/4101/4201 have no listener after completion. Screenshot inspection of the
+320-vector App fixture confirms visible individual shapes, not live-AI quality.
+
+## Active step card - compose coherent stage guidance
+
+Inspector compose / spec Capability discovery and composition plus Preparation
+and execution. Input is the original requested result and existing tool receipts;
+output is domain guidance consumed through the unchanged native provider. Current
+instructions ambiguously require a visual comparison after every acknowledged
+operation while later allowing stage-level inspection. Clarify receipt checks
+per operation versus actual visual review per coherent stage, preserving earlier
+inspection when a decision depends on the image. For expensive repeated detail,
+advise validating a representative motif before expansion only when appearance
+is uncertain; reuse it and batch ready work, without an extra checkpoint on every
+instance or changing requested detail. Production boundary: ai-domain-prompt.ts;
+tests: existing prompt/provider/operation/proof. Formal prompt regression first;
+no executable behavior, quota, renderer or additional model-call owner change.
+Completion requires focused tests, lint/type checks and current source proof.
+
+Compose acceptance proof also retains the existing passive App performance profile
+in the formal live-provider test (`e2e/local-ai-provider.spec.ts`, already in the
+compose boundary). Enable the existing aiPerformance query, reset just before
+Send, and save its snapshot plus returned action timing in final evidence even
+on failure. No new subscription/runtime instrument, private data inference or
+model call is introduced. Browser diagnostics and overlapping spans remain
+separate from provider timing. The final real run will prove this evidence path.
+
+## Existing owner proof - inspection validity
+
+Validation-only inspect segment: re-read the Inspector inspect owner and Evidence
+and completion contract. Existing canonical generation, containment, mutation
+and document-load observations own validity; no target-local cache is proposed.
+Run current review-action, inspection-evidence, inspection and local review tests
+to prove same-generation reuse plus mixed-generation, unknown/external edit and
+document-reset invalidation. No production edit; failure returns to this owner.
+
+Inspection checkpoint: 30 tests passed in the declared browser-like environment.
+The initial Node-only invocation could not load browser context (`window` absent);
+no production change was needed. Existing validity/reuse remains unchanged.
+Compose regression failed on the prior per-operation visual instruction, then
+174 tests passed (three existing live opt-ins skipped). Typecheck, scoped lint,
+naming and live-test collection passed. Candidate
+`283e98f1-0e39-48b7-8ad4-21bd3fcd7912` passed and review
+`9f0a8b6365c9965b62daa132d21c5adc54a52e3a232c19e140b8f48489cac14a` was accepted.
+No Framework/render optimization is justified by the small profile so far.
+The real run must retain App owner phases to investigate any recurring expensive
+creation before this plan is closed. No wall-clock improvement is claimed yet.

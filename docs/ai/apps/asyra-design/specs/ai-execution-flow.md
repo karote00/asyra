@@ -70,6 +70,11 @@ Meaningful stages appear as soon as ready;
 there is no requirement to finish all detail before the first stage. Likely
 hidden details may be deferred by the model and reconsidered during overall
 review; the backend does not automatically delete, simplify or cull artwork.
+Guidance checks returned identities/failures after each operation and visual
+appearance at coherent stage boundaries, earlier only when the next decision
+requires an image. Uncertain repeated motifs can be validated before expansion;
+already validated motifs need no additional per-instance checkpoint. Requested
+detail and final overall review remain unchanged.
 
 Only work with proven independent access may overlap. Reads of mutable artifacts,
 canonical writes, read-after-write dependencies and unknown effects retain safe

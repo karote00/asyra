@@ -1884,7 +1884,7 @@ test.describe('live execution acceptance recording', () => {
     captureBrowserErrors(page)
     const brief =
       'Draw only Taipei 101’s two uppermost large bamboo-shaped sections, plus the full crown and spire above them, as a highly detailed, realistic 2D illustration from one fixed oblique view. Use editable shapes, preserve visible façade details, and scale at 1 cm = 1 px.'
-    const identity = createTestDocumentIdentity()
+    const identity = createTestDocumentIdentity('aiPerformance=profile')
     await captureProviderFrames(
       page,
       testInfo.outputPath('action-batch.ndjson')
@@ -1903,6 +1903,7 @@ test.describe('live execution acceptance recording', () => {
           status: entry.status,
           available: entry.result?.available,
           current: entry.result?.current,
+          timing: entry.result?.timing,
           evidence: entry.result?.evidence
         })
         if (
@@ -1927,6 +1928,13 @@ test.describe('live execution acceptance recording', () => {
         timeout: 30_000
       })
       await page.getByLabel('Message Agent').fill(brief)
+      await page.evaluate(async () => {
+        const profile = (
+          await import('../src/testing/runtime-access')
+        ).getActiveAiDrawingPerformanceProfile()
+        if (!profile) throw new Error('Missing live App performance profile')
+        profile.reset()
+      })
       await page.getByRole('button', { name: 'Send', exact: true }).click()
       await focusRecordedCanvas(page)
       const message = page.getByTestId('ai-agent-message').last()
@@ -1960,6 +1968,17 @@ test.describe('live execution acceptance recording', () => {
           JSON.stringify(
             await page.evaluate(async () =>
               (await import('../src/testing/runtime-access')).core.save()
+            )
+          )
+        )
+        await writeFile(
+          testInfo.outputPath('owner-profile.json'),
+          JSON.stringify(
+            await page.evaluate(
+              async () =>
+                (await import('../src/testing/runtime-access'))
+                  .getActiveAiDrawingPerformanceProfile()
+                  ?.snapshot() ?? null
             )
           )
         )

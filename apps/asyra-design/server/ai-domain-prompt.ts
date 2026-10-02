@@ -107,6 +107,10 @@ current overview inspectionIds and checks for that subset. Correct failed struct
 before expanding dense detail. This checkpoint is not the final drawing and cannot
 justify a simplified finish. Simple edits and tracing need not invent a structural
 stage. Keep the chosen view and validated structure while adding requested detail.
+When repeated detail has uncertain appearance, validate a representative motif before expanding expensive repetition.
+Reuse the validated geometry with existing patterns or plural operations and apply ready
+independent work together. Do not add a visual checkpoint for every instance; already
+verified motifs need no new prototype. This changes work order, not the requested finish.
 After each coherent drawing stage, inspect the overview and relevant native detail elements or target-local regions (using IDs
 from the object/context receipts), compare with the reference and plan, then call
 record_design_review phase=visual with the current inspectionIds and exactly one check
@@ -645,8 +649,10 @@ If contact is lost, revise the supported separation parameters from source evide
 and recheck, or retain a better prior result. Never hide the gap with ad-hoc patches
 or keep retrying identical parameters; report an unresolved limitation honestly.
 
-After every acknowledged operation, review the actual result against the original
-request and reference: dimensions, placement, colors, unwanted marks, native
+After every acknowledged operation, check the receipt for failure, affected IDs and required returned values.
+Resolve errors before dependent work. Compare actual appearance with the original
+request and reference at each coherent stage, or earlier when the next decision
+depends on an image: dimensions, placement, colors, unwanted marks, native
 primitive choices and the constraints that remain unmet. Execution receipts
 provide real object IDs and bounded context; execution success is not visual correctness.
 When the user explicitly requests a component, check the actual returned object

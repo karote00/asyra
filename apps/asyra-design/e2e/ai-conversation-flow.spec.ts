@@ -1,4 +1,5 @@
 import { createServer, type ServerResponse } from 'node:http'
+import { writeFile } from 'node:fs/promises'
 import { prepareDesign } from '../server/design-preparation'
 import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
@@ -12,6 +13,139 @@ import {
   redo,
   waitForAppReady
 } from './test-utils'
+
+for (const count of [16, 320, 1280]) {
+  test(`profiles canonical prepared vector application with ${count} items`, async ({
+    page
+  }, testInfo) => {
+    test.skip(
+      process.env.RUN_AI_DRAWING_PERFORMANCE !== '1',
+      'explicit owner profiling'
+    )
+    test.setTimeout(120_000)
+    const design = prepareDesign(
+      {
+        type: 'frame',
+        name: 'Repeated visible vectors',
+        width: 640,
+        height: Math.max(500, Math.ceil(count / 20) * 28),
+        projection: {
+          azimuth: 0,
+          elevation: 0,
+          scale: 1,
+          originX: 0,
+          originY: 24
+        },
+        children: [
+          {
+            type: 'pattern',
+            key: 'panels',
+            name: 'Panels',
+            origin: { x: 0, y: 0, z: 0 },
+            axes: [
+              { count: Math.min(count, 20), step: { x: 30, y: 0, z: 0 } },
+              { count: Math.ceil(count / 20), step: { x: 0, y: 0, z: -28 } }
+            ],
+            faces: [
+              {
+                key: 'pane',
+                name: 'Pane',
+                fill: '#008877',
+                vertices: [
+                  { x: 0, y: 0, z: 0 },
+                  { x: 24, y: 0, z: 0 },
+                  { x: 24, y: 0, z: 24 },
+                  { x: 0, y: 0, z: 24 }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      `owner-profile-${count}`
+    )
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) =>
+      route.fulfill({
+        json: {
+          batchId: 'prepared-profile',
+          actions: [
+            {
+              id: 'apply',
+              name: 'apply_prepared_design',
+              arguments: { design, response: 'compact' },
+              summary: 'Create repeated visible vectors'
+            }
+          ]
+        }
+      })
+    )
+    await page.goto(createTestDocumentIdentity('aiPerformance=profile').url)
+    await waitForAppReady(page)
+    const depth = await getUndoHistoryDepth(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page.evaluate(async () => {
+      const profile = (
+        await import('../src/testing/runtime-access')
+      ).getActiveAiDrawingPerformanceProfile()
+      if (!profile) throw new Error('Missing App performance owner')
+      profile.reset()
+    })
+    await page
+      .getByLabel('Message Agent')
+      .fill('Create the prepared owner profiling fixture')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+      'data-outcome',
+      'success',
+      { timeout: 90_000 }
+    )
+    const result = await page.evaluate(async () => {
+      const profile = (
+        await import('../src/testing/runtime-access')
+      ).getActiveAiDrawingPerformanceProfile()
+      if (!profile) throw new Error('Missing App performance owner')
+      return {
+        snapshot: profile.snapshot(),
+        canonical: profile
+          .readCanonicalElements()
+          .filter((element) => element.type !== 'workspace')
+          .map((element) => ({
+            id: element.id,
+            type: element.type,
+            rendered: element.rendered
+          })),
+        settlement: profile.readLatestTurnSettlement()
+      }
+    })
+    const profilePath = testInfo.outputPath('prepared-owner-profile.json')
+    await writeFile(profilePath, JSON.stringify(result))
+    await testInfo.attach('prepared-owner-profile.json', {
+      path: profilePath,
+      contentType: 'application/json'
+    })
+    expect(result.canonical).toHaveLength(count + 1)
+    expect(new Set(result.canonical.map((element) => element.id)).size).toBe(
+      count + 1
+    )
+    expect(
+      result.canonical.filter((element) => element.type === 'vector')
+    ).toHaveLength(count)
+    const totalCounter = (name: string) =>
+      result.snapshot.counters
+        .filter((counter) => counter.name === name)
+        .reduce((total, counter) => total + counter.value, 0)
+    expect(totalCounter('computed-mirror-seed')).toBe(count + 1)
+    expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
+    const names = new Set(result.snapshot.phases.map((phase) => phase.name))
+    expect(names.has('scene-tree:element-batch:materialize')).toBe(true)
+    expect(names.has('scene-tree:element-batch:commit-scene')).toBe(true)
+    expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+    await page.screenshot({ path: testInfo.outputPath('prepared-owner.png') })
+  })
+}
 
 test('retains drawing after a failed refinement with one undo and redo', async ({
   page
