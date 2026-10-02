@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, URL, Response */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -183,6 +183,45 @@ test(
   }
 )
 
+test('CI trial uses captured candidate proof while protected CI retains its accepted-base blocker', async (t) => {
+  const originalFetch = globalThis.fetch
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+  for (const status of ['passed', 'failed', 'unknown', undefined]) {
+    const record = {
+      id: 'trial-candidate',
+      phase: 'completed',
+      evidence:
+        status === undefined
+          ? undefined
+          : { status, cases: [], flows: [], issues: [] },
+      ci: {
+        evidence: { status: 'unknown' },
+        deliveryStatus: 'blocked',
+        blockers: ['Candidate differs from accepted supported obligations']
+      }
+    }
+    globalThis.fetch = async (input) => {
+      const pathname = new URL(input).pathname
+      if (pathname === '/api/session')
+        return Response.json({ capability: 'test' })
+      if (pathname === '/api/runs') return Response.json({ id: record.id })
+      assert.equal(pathname, '/api/runs/' + record.id)
+      return Response.json(record)
+    }
+    const messages = []
+    const options = { write: (value) => messages.push(value) }
+    assert.equal(
+      await main(['--url', 'http://127.0.0.1:1', 'ci-trial'], options),
+      status === 'passed' ? 0 : 1,
+      String(status)
+    )
+    assert.match(messages.join('\n'), /blocked/)
+    assert.equal(await main(['--url', 'http://127.0.0.1:1', 'ci'], options), 1)
+  }
+})
+
 test(
   'CI trial reports behavioral results separately from mandatory delivery enforcement',
   { timeout: 30000 },
@@ -222,12 +261,7 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        [
-          'cancel.delivery',
-          'cancel.outcome',
-          'history-group.ordered-replay',
-          'history-group.snapshot'
-        ]
+        server.service.contract().negativeCaseIds.slice().sort()
       )
       assert.equal(
         await main(['--url', server.origin, 'ci-trial'], {
@@ -237,7 +271,10 @@ test(
         messages.join('\n')
       )
       const recovery = server.service.get(server.service.state().runs[0].id)
-      assert.equal(recovery.ci.evidence.passedCount, 9)
+      assert.equal(
+        recovery.ci.evidence.passedCount,
+        server.service.contract().cases.length
+      )
       assert.equal(recovery.snapshot.digest, negative.snapshot.digest)
     } finally {
       await server.close()

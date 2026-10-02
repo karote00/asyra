@@ -63,10 +63,10 @@ function result() {
   }
 }
 const assess = (runner) => assessEvidence(contract, snapshot, runner, flowIds)
-test('accepts only the complete registered baseline', () => {
+test('accepts only the complete declared baseline', () => {
   const evidence = assess(result())
   assert.equal(evidence.status, 'passed')
-  assert.equal(evidence.passedCount, 9)
+  assert.equal(evidence.passedCount, contract.cases.length)
   assert.deepEqual(evidence.issues, [])
 })
 for (const [name, corrupt] of [
@@ -1422,7 +1422,7 @@ test(
       )
       assert.deepEqual(
         changed.evidence.flows.map((flow) => flow.status),
-        ['failed', 'failed', 'failed']
+        contract.flows.map(() => 'failed')
       )
     } finally {
       restore(factoryFile)

@@ -457,6 +457,13 @@ Zero-match, skipped, missing, malformed, cancelled, timed-out and unknown result
 all prevent acceptance. A failing assertion remains a confirmed violation even
 when provenance errors also block delivery.
 
+`ci-trial` reports current captured-source behavioral proof: its exit status is
+successful only for a completed attempt with passing candidate evidence. It also
+prints the accepted-base CI assessment, which may remain unknown/blocked when
+contracts or verifier inputs differ. A successful trial neither accepts that
+baseline nor authorizes delivery. Protected `ci` and `ci-demo` continue to use the
+accepted-base delivery decision, including every provenance and protection check.
+
 A protected GitHub check requires live verification of the effective rules,
 required check identity, strict/up-to-date integration policy and executed
 revision. A workflow file or locally green aggregate is insufficient. Missing

@@ -59,7 +59,7 @@ for (const selectedManifestPath of [
       )
       const result = prepareCIContext(repository, 'origin/main', captured)
       assert.equal(result.accepted.manifestPath, selectedManifestPath)
-      assert.equal(result.accepted.cases.length, 9)
+      assert.equal(result.accepted.cases.length, contract.cases.length)
       assert.equal(result.expected.sourceDigest, captured.digest)
       assert.match(result.expected.base, /^[a-f0-9]{40}$/)
       assert.equal(result.expected.integration, captured.head)
