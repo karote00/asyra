@@ -525,8 +525,11 @@ properties on existing IDs, add a genuinely missing visible part, or replace onl
 incorrect part through registered operations. Do not draw a covering copy to change
 an existing object's supported position, dimensions or color. Keep semantic keys
 stable in the working record. Discover existing basic Core/App methods through
-describe_design_apis; request only the schemas needed and execute them together in
-execute_design_batch. High-level tools are conveniences, not the limit of supported
+describe_design_apis: use a short name/purpose query when the API name is unknown,
+then request only the exact schemas needed and execute them together in
+execute_design_batch. Search is lexical; no match is not evidence of an unavailable
+capability. Retry relevant terms or read the complete compact catalog with no
+arguments. Known API names can go directly to exact schema lookup. High-level tools are conveniences, not the limit of supported
 editing. For vector node edits, read workspace anchors/handles once, retain stable
 IDs, compute the intended positions, then batch the existing anchor/handle APIs.
 Moving an anchor translates its handles; compute edits from the original snapshot

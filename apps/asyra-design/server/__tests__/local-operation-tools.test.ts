@@ -1942,6 +1942,60 @@ it('discovers every basic API without publishing hundreds of native tools', asyn
   expect(details.apis[0].inputSchema).toEqual(basicApiContracts[0].inputSchema)
 })
 
+it('searches current API descriptions and names without loading every schema or losing no-match recovery', async () => {
+  const custom = {
+    ...basicApiContracts[0],
+    description: 'Adjust quasar handles using the active App contract',
+    inputSchema: {
+      type: 'object',
+      required: ['quasar'],
+      properties: { quasar: { type: 'number' } }
+    }
+  }
+  const actions = [custom, ...basicApiContracts.slice(1)]
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    actions,
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    execute
+  )
+  const signal = new AbortController().signal
+  const call = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(AiDesignToolIds.DESCRIBE_DESIGN_APIS, args, signal)
+    )
+  const full = await call({})
+  const found = await call({ query: 'Quasar HANDLES' })
+  expect(found).toMatchObject({
+    complete: true,
+    count: 1,
+    catalogSize: actions.length,
+    apis: [{ name: custom.name, description: custom.description }]
+  })
+  expect(found.apis[0]).not.toHaveProperty('inputSchema')
+  expect(JSON.stringify(found).length).toBeLessThan(JSON.stringify(full).length)
+  expect((await call({ names: [custom.name] })).apis).toEqual([custom])
+  expect((await call({ query: 'getVectorAnchorPoints' })).apis).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ name: 'api_element_getVectorAnchorPoints' })
+    ])
+  )
+  const empty = await call({ query: 'unmatched-quasar-blueprint' })
+  expect(empty).toMatchObject({
+    complete: true,
+    count: 0,
+    apis: [],
+    recovery: { arguments: {} }
+  })
+  expect(empty.message).toContain('not evidence')
+  expect((await call({})).apis).toHaveLength(actions.length)
+  expect(execute).not.toHaveBeenCalled()
+  await expect(
+    call({ query: 'quasar', names: [custom.name] })
+  ).rejects.toThrow()
+  await expect(call({ query: '   ' })).rejects.toThrow()
+})
+
 it('executes discovered APIs in a batch and rejects unknown lookup names', async () => {
   const execute = vi.fn(async (_batch: AiActionBatch) => ({
     actionResults: [],
