@@ -434,7 +434,8 @@
             "inputs": [
               "observed provider lifecycle events",
               "tool queue and execution spans",
-              "receipt summaries"
+              "receipt summaries",
+              "saved execution records, explicit period filters and optional user feedback"
             ],
             "outputs": [
               "artifact:execution-trace"
@@ -444,14 +445,16 @@
               "Use interval unions for overlapping spans",
               "Distinguish wire bytes, eager schema bytes and reported usage",
               "Persist ordered sanitized records locally; incomplete streams never imply success",
-              "Retain exact bounded query selectors and explicit truncation without raw payloads"
+              "Retain exact bounded query selectors and explicit truncation without raw payloads",
+              "Project evidence-linked reports without certifying visuals or inferring missing facts"
             ],
             "bypasses": [
               "Missing provider fields remain unavailable"
             ],
             "allowedContributors": [
               "usage instrumentation",
-              "bounded receipt timings"
+              "bounded receipt timings",
+              "read-only record projection and separately attributed feedback"
             ],
             "forbiddenContributors": [
               "private reasoning inference",
@@ -464,6 +467,11 @@
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/local-ai-usage.ts",
               "apps/asyra-design/server/local-ai-records.ts",
+              "apps/asyra-design/server/local-ai-evaluation.ts",
+              "apps/asyra-design/server/execution-report-cli.ts",
+              "apps/asyra-design/server/__tests__/execution-report-cli.test.ts",
+              "apps/asyra-design/vite.execution-report.config.ts",
+              "apps/asyra-design/server/__tests__/local-ai-evaluation.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-records.test.ts",
               "apps/asyra-design/server/ai-model-provider.ts",
               "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
@@ -471,7 +479,8 @@
             ],
             "specRefs": [
               "#ownership-and-diagnostics",
-              "#execution-recording"
+              "#execution-recording",
+              "#execution-evaluation"
             ],
             "failureOwnerStepId": "observe"
           }

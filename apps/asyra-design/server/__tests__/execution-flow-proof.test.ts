@@ -21,6 +21,7 @@ import {
 } from '../design-preparation'
 import { createLocalAiUsage } from '../local-ai-usage'
 import { parseExecutionRecord, type ExecutionRecord } from '../local-ai-records'
+import { evaluateExecution } from '../local-ai-evaluation'
 import { createLocalDesignReview } from '../local-design-review'
 import { requestLocalAiActionBatch } from '../local-ai-provider'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
@@ -670,6 +671,11 @@ it('execution proof accounts observed spans without private payloads or invented
     expect(persisted.metadata.effort).toBe('medium')
     expect(persisted.timing).toMatchObject(report.timing)
     expect(persisted.steps).toHaveLength(2)
+    const evaluated = evaluateExecution(persisted)
+    expect(evaluated.timing.unattributedMs).toBe(400)
+    expect(evaluated.toolCalls).toHaveLength(2)
+    expect(evaluated.findings).toEqual([])
+    expect(evaluated.modelReview.status).toBe('unavailable')
   } finally {
     clock.mockRestore()
     log.mockRestore()
