@@ -133,3 +133,36 @@ refinement artifacts still require their declared owner work.
 Local changes are registry name/purpose discovery and repaired batched-selector
 recording. Target/query/preparation paths remain unchanged because their formal
 work-count and invalidation cases pass. Logs: `tmp/ai-retrieval-owner-tests.log`.
+
+## Live failure correction - compose property semantics
+
+Run `d993ee8b-8db6-44a2-98e2-abb61264507a` stopped during a 2310-target
+Core property update. Its saved arguments copy computed fill objects into the
+canonical `fills` reference list. The canonical document retains string IDs.
+Confirm the distinction with the formal App runtime before changing guidance.
+
+Step card: compose; Capability discovery and composition. Inputs are registered
+API descriptors and current canonical/computed query results; output is accurate
+discovery guidance with existing plural record-patch alternatives. Canonical
+validation remains authoritative; no automatic payload conversion, swallowed
+exception, new operation, renderer change or subject-specific workaround.
+Allowlist: basic-core-api-contracts.ts (the registered Core descriptor owner),
+basic-api-contracts.test.ts and local-ai-provider.spec.ts, plus corresponding
+compose contract/spec documentation. First add a failing descriptor-contract
+test and a native App case proving invalid expanded values do not mutate while
+plural record patches preserve identities and update gradient values. Then
+clarify read/value/record meanings and batching guidance. Gates: focused catalog,
+provider and native App cases, type/lint/naming, source proof and a fresh live
+recording. Stop if canonical behavior differs; do not modify Framework based on
+this input-shape observation. Failure owner is compose metadata.
+
+Correction validation: the native App reproduced the exact PropsManager invalid
+`fills` array rejection with unchanged prior state; plural `records` patches
+updated gradient values while retaining fill IDs. Descriptor regression failed
+before the correction; four suites now pass 153 tests (three existing live
+opt-ins skipped), and the native E2E passes. Typecheck, scoped lint/naming and
+source candidate `39ab4173-e1e5-4c30-84e1-9dd3f6a5cdf4` passed; contract review
+`44f83fcc44eafe4174b98646ac2c09198cc4b379fc0873b1a02889cbf3eac3b0` has no blockers.
+Only discovery descriptions changed; native validation and failure propagation
+remain intact. Failed run and video remain under `tmp/ai-final-acceptance-20261003`.
+A fresh full acceptance remains required.

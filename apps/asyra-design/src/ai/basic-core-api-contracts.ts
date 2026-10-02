@@ -145,7 +145,7 @@ const getElementComputedDataApi = defineBasicApi({
     { name: 'fields', schema: apiIds, optional: true }
   ],
   description:
-    'Read only requested fields when possible; includes computed properties.'
+    'Read only requested fields when possible. This is a computed projection, not a canonical write payload: linked records such as fills/strokes are expanded objects. Keep their IDs and use patchElementProperties records to edit them; do not write expanded records back through updateElementProperties.'
 })
 
 const getAllElementDataApi = defineBasicApi({
@@ -321,7 +321,7 @@ const updateElementPropertiesApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Plural canonical property updates. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
@@ -348,7 +348,7 @@ const patchElementPropertiesApi = defineBasicApi({
     }
   ],
   description:
-    'Patch canonical property records without replacing unrelated records.'
+    'Plural patches of canonical property records without replacing unrelated records or relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; current fillId comes from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
 })
 
 const updatePropertyComponentsApi = defineBasicApi({
@@ -360,7 +360,9 @@ const updatePropertyComponentsApi = defineBasicApi({
       name: 'updates',
       schema: apiArray(apiObject({ propertyId: apiString, values: apiRecord }))
     }
-  ]
+  ],
+  description:
+    'Plural updates of existing canonical property components by propertyId (not elementId). Use current component IDs; preserve relationship reference lists and patch linked records with patchElementProperties rather than copying computed projections.'
 })
 
 const updateElementDataApi = defineBasicApi({

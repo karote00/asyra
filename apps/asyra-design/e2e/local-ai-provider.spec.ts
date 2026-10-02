@@ -2015,3 +2015,74 @@ test.describe('live execution acceptance recording', () => {
     }
   })
 })
+
+test('canonical fill reference edits and plural record patches have distinct contracts', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  const evidence = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const elementId = core.getSelectedElementIds()[0]
+    const before = core.getElementComputedData(elementId, ['fills'])
+    const fill = (before.fills as { id: string; color: string }[])[0]
+    if (!fill) throw new Error('Missing rectangle fill')
+    let rejected = ''
+    try {
+      core.updateElementProperties([{ elementId, values: { fills: [fill] } }])
+    } catch (error) {
+      rejected = error instanceof Error ? error.message : String(error)
+    }
+    const afterRejection = core.getElementComputedData(elementId, ['fills'])
+    const ids = core.patchElementProperties([
+      {
+        elementId,
+        records: [
+          {
+            key: 'fills',
+            set: {
+              [fill.id]: {
+                kind: 'gradient',
+                gradient: {
+                  gradientType: 'linear',
+                  gradientHandles: [
+                    { x: 0, y: 0 },
+                    { x: 0.08, y: 1 }
+                  ],
+                  gradientStops: [
+                    { position: 0, color: '#1c3d46', opacity: 1 },
+                    { position: 1, color: '#1b3c45', opacity: 1 }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ])
+    return {
+      rejected,
+      before,
+      afterRejection,
+      ids,
+      elementId,
+      fillId: fill.id,
+      after: core.getElementComputedData(elementId, ['fills'])
+    }
+  })
+  await writeFile(
+    testInfo.outputPath('property-semantics.json'),
+    JSON.stringify(evidence, null, 2)
+  )
+  expect(evidence.rejected).toContain('fills')
+  expect(evidence.afterRejection).toEqual(evidence.before)
+  expect(evidence.ids).toEqual([evidence.elementId])
+  expect(evidence.after.fills).toEqual([
+    expect.objectContaining({
+      id: evidence.fillId,
+      kind: 'gradient',
+      gradient: expect.objectContaining({ gradientType: 'linear' })
+    })
+  ])
+})
