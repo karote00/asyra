@@ -266,7 +266,8 @@ explicitGroupElementIds)` receives the caller-resolved official Group target
   inputs fail before mutation;
 - failed apply leaves no stale registration, property, event, selection,
   channel, observer, subscription, layer, or provider;
-- no 3D/Hybrid runtime is imported or bundled.
+- the root entry and 2D composition do not import the optional spatial runtime;
+  reserved 3D/Hybrid profiles remain unavailable.
 
 ## Pure Group bounds entrypoint
 
@@ -276,3 +277,26 @@ used by ordinary Preset Group operations and server-side design preparation.
 The runtime root export remains available. Empty input returns zero bounds;
 nonfinite rectangle values are rejected. This helper measures rectangles only;
 it does not apply transactions, normalize hierarchy or register components.
+
+## Optional shared spatial foundation
+
+Preset also owns intentionally shared App defaults/foundations through the
+side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
+spatial descriptor admission, graphics/resource lifecycle and common instancing
+mechanisms extracted from Sim and FieldScope. CUSTOM composition selects this
+provider explicitly; default 2D composition remains unchanged. Apps own scene
+contents, lighting choices, domain validation, movement and interaction policy.
+This shared warehouse boundary does not transfer canonical runtime ownership
+from Core or introduce Office domain semantics into Framework.
+
+## Shared agent activity contract
+
+`@asyra/preset/agent-activity` exposes version-1 semantic activity admission and
+entity-scoped read projections. A connection declares structured, local,
+cooperative or synthetic evidence. The archive adapter acknowledges the whole
+validated batch before projection; a rejected write publishes no state.
+Source sequence deduplicates replay, attempt numbers protect newer work, and
+bounded presentation flushes notify only changed agents. The module creates no
+provider connection, credential, task execution, reward grant or React state.
+Apps own authorized transport, durable history, retention, source permissions
+and scene policy. This optional subpath does not load a rendering engine.
