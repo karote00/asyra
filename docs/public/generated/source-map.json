@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -228,7 +228,7 @@
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         }
       ]
     },
@@ -256,7 +256,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "1f6596208c6318944e788242c1adc8c7590330fc4a98c92c691fbccb9988331a"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "1f6596208c6318944e788242c1adc8c7590330fc4a98c92c691fbccb9988331a"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -326,7 +326,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "1f6596208c6318944e788242c1adc8c7590330fc4a98c92c691fbccb9988331a"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "packages/core/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         },
         {
           "path": "packages/factory/package.json",
