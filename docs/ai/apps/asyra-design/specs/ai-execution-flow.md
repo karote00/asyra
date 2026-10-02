@@ -168,6 +168,26 @@ files and local environment values never enter Git. Runtime storage does not
 silently delete earlier evidence. Periodic evaluation consumes records as a
 separate projection, not as completion authority.
 
+## Execution evaluation
+
+The observe owner projects saved records into read-only run and period reports.
+Reports separate deterministic observations, retained model review opinions and
+optional user feedback. Each finding links to request, call and sequence when
+available. No missing or truncated input is reconstructed. Only identical
+untruncated read selectors at an explicitly equal revision are repeat-query
+candidates; even then, repetition is not proof of waste. Time and payload ranks
+identify investigation candidates, never machine-speed pass/fail criteria.
+
+Period selection uses startedAt in a half-open [from, to) interval, defaulting
+to the recent seven days. Unknown timestamps are reported as unclassified rather
+than silently counted; duplicate request identities are excluded and reported.
+Group runs by known provider/model/effort/source identities, keeping unknown
+metadata explicit. Interrupted and malformed records remain visibly incomplete.
+Feedback is kept separate and never substitutes for tool or visual evidence.
+An existing final visual review can supply model opinion without a second call;
+absence is unavailable, not a positive assessment. These reports do not mutate
+canvas state, approve a drawing or automatically change prompts.
+
 ## Product cases and definition of done
 
 Permanent executable cases must cover:

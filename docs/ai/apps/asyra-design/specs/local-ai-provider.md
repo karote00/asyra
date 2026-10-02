@@ -658,3 +658,31 @@ therefore phase-only branches cannot advertise the real input contract. Ordinary
 server validation and phase-specific required fields remain authoritative. The
 permanent offline alternative-validation test and opt-in native review probe cover
 both schema validation and actual deferred tool discovery.
+
+
+### Inspecting execution records locally
+
+Build the read-only reporting command once after source changes:
+
+```sh
+yarn workspace @asyra/asyra-design ai:report:build
+yarn workspace @asyra/asyra-design ai:report
+yarn workspace @asyra/asyra-design ai:report --request REQUEST_ID
+yarn workspace @asyra/asyra-design ai:report --from 2026-10-01T00:00:00+08:00 --to 2026-10-04T00:00:00+08:00 --json
+```
+
+The command loads the App's local `.env`. `--directory` overrides record storage
+for inspection. Default selection is the last seven days, with the ending instant
+excluded. It does not start the App or call a model. Missing directories, ambiguous
+request IDs or invalid arguments exit unsuccessfully with an explanation.
+Malformed or interrupted files remain visible as unclassified/incomplete records.
+JSON includes per-step call/sequence references, timings, byte counts, issues,
+configuration groups and finding frequencies. The readable summary shows the ten
+longest observed calls and states how many were omitted; `--json` includes all.
+
+Optional `--feedback path/to/feedback.json` reads a local object mapping request
+IDs to user-authored feedback strings. Keep this file in ignored runtime storage.
+Feedback remains separate from measured findings and retained model visual reviews.
+Configuration grouping does not establish equivalent drawing tasks. A repeated
+query candidate is not a proven unnecessary call, and unknown time is not measured
+model reasoning. Accepted model review evidence is not independent visual proof.

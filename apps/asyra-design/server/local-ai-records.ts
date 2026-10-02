@@ -230,7 +230,7 @@ export const parseExecutionRecord = (text: string) => {
     end = Math.max(end, finish)
   }
   return {
-    requestId,
+    requestId: requestId as string | null,
     outcome,
     metadata,
     records,
