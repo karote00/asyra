@@ -17,8 +17,8 @@ Any implementation decision must preserve:
 
 - Framework packages provide orchestration and primitives.
 - App-level defines domain behavior, aggregation, and workflows.
-- Preset provides optional official defaults and preset profile policy only
-  (not app-domain owner, not framework-runtime owner).
+- Preset provides optional official defaults, intentionally shared App foundations,
+  and preset profile policy (not app-domain owner or canonical runtime owner).
 
 2. Deterministic Data Flow
 
@@ -109,3 +109,14 @@ The framework guarantees:
 - preserve load validation/fallback semantics
 - remove stale pre-release branches instead of keeping them as compatibility fallbacks
 - update framework docs when contracts change
+
+## Optional shared spatial foundation
+
+Preset also owns intentionally shared App defaults/foundations through the
+side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
+spatial descriptor admission, graphics/resource lifecycle and common instancing
+mechanisms extracted from Sim and FieldScope. CUSTOM composition selects this
+provider explicitly; default 2D composition remains unchanged. Apps own scene
+contents, lighting choices, domain validation, movement and interaction policy.
+This shared warehouse boundary does not transfer canonical runtime ownership
+from Core or introduce Office domain semantics into Framework.

@@ -105,7 +105,8 @@
 - Pixi imports and concrete SDK behavior stay in
   `@asyra/render-engine-pixi`; it must not import `@asyra/render`.
 - Concrete engines and `@asyra/render` meet only through
-  `@asyra/render-engine`.
+  `@asyra/render-engine`. The optional `@asyra/preset/spatial` subpath is the
+  shared Three.js concrete adapter boundary; Apps retain scene and domain policy.
 - UI and render are outputs of data/system state updates, not authoritative sources.
 
 ## App Runtime Boundary

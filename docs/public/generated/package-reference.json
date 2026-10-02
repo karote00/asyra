@@ -203,12 +203,14 @@
       "name": "@asyra/preset",
       "publicEntries": [
         ".",
-        "./group-bounds"
+        "./agent-activity",
+        "./group-bounds",
+        "./spatial"
       ],
       "sourceDigests": {
-        "contract": "0982c7a42c3d9547d774efd85f11a36a5b360043c565e63562ae12a50a35d959",
+        "contract": "ead17802010d823fb77a71c26c8799b6ca417f8db17b5e14bd9a28216dffc56b",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
-        "manifest": "13920c798bd85010d6d7e144bf67def7a9a7babb3ad7c8314786a432c23d38a6"
+        "manifest": "c23748d886dbff1a51569feb6c2dc069cebb9c6c9b1307baef2ac64c1211b4b4"
       },
       "version": "0.5.8"
     },
