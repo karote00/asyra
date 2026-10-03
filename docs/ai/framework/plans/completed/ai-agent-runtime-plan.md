@@ -44,6 +44,18 @@ Current successor:
 
 ### Supported Behavior
 
+Current extension - finite mutation scopes: a host may provide an invocation-local
+`AiMutationExecutor` through its single `AiTransactionRunner` callback. Registered
+actions enroll synchronous writes through `runAiMutation`; asynchronous work
+stays outside those members. Atomic hosts omit this executor and retain the
+ordinary complete rollback contract below. Grouped hosts use Factory history
+groups and preserve already committed members on Stop or failure, sealing them
+into one Undo entry. The runtime owns neither journals nor grouping. An explicit
+`AiTransactionSettlementError` carries the original callback cause and known
+settlement outcome; unknown settlement must never claim retained or reverted work.
+This extension supersedes first-release whole-invocation rollback statements
+only for hosts explicitly supplying grouped execution.
+
 - An app-owned Feature receives natural-language intent and invokes one
   app-composed AI runtime instance with the Feature lifecycle `AbortSignal`.
 - The Feature uses the Feature System's programmatic task lifecycle for this

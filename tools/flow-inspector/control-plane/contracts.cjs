@@ -5,8 +5,76 @@ const { createHash } = require('node:crypto')
 
 const MANIFEST_PATH = 'packages/factory/flow-contracts.json'
 const nonempty = (value) => typeof value === 'string' && value.trim().length > 0
+const canonicalRelativePath = (value) =>
+  nonempty(value) &&
+  !value.includes('\\') &&
+  !value.includes('\0') &&
+  !path.posix.isAbsolute(value) &&
+  value === path.posix.normalize(value) &&
+  !value.split('/').some((part) => !part || part === '.' || part === '..')
 const requireCondition = (condition, message) => {
   if (!condition) throw new Error('Invalid proof contract: ' + message)
+}
+const workspaceName = (value) =>
+  typeof value === 'string' &&
+  /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(value)
+const matchesSourceInput = (file, input) =>
+  input.endsWith('/**') ? file.startsWith(input.slice(0, -2)) : file === input
+
+function validateWorkspaceSources(sources) {
+  const valid = (condition) =>
+    requireCondition(condition, 'invalid workspace sources')
+  valid(Array.isArray(sources) && sources.length > 0)
+  const names = new Set()
+  for (const source of sources) {
+    valid(
+      source &&
+        typeof source === 'object' &&
+        Object.keys(source).length === 3 &&
+        ['name', 'inputs', 'entry'].every((key) =>
+          Object.hasOwn(source, key)
+        ) &&
+        workspaceName(source.name) &&
+        !names.has(source.name)
+    )
+    names.add(source.name)
+    valid(Array.isArray(source.inputs) && source.inputs.length > 0)
+    for (const input of source.inputs) {
+      const root =
+        typeof input === 'string' && input.endsWith('/**')
+          ? input.slice(0, -3)
+          : input
+      valid(
+        canonicalRelativePath(root) &&
+          !/[?*[\]{}]/.test(root) &&
+          !root
+            .split('/')
+            .some((part) => part.startsWith('.') || part === '__tests__')
+      )
+    }
+    valid(
+      !source.inputs.some((input, index) =>
+        source.inputs.some(
+          (other, otherIndex) =>
+            index !== otherIndex &&
+            (input === other || matchesSourceInput(input, other))
+        )
+      )
+    )
+    valid(
+      source.entry === null ||
+        (canonicalRelativePath(source.entry) &&
+          !/[?*[\]{}]/.test(source.entry) &&
+          !source.entry
+            .split('/')
+            .some((part) => part.startsWith('.') || part === '__tests__') &&
+          !/\.(test|spec)\.[cm]?[jt]sx?$/.test(source.entry) &&
+          source.inputs.some((input) =>
+            matchesSourceInput(source.entry, input)
+          ))
+    )
+  }
+  return structuredClone(sources)
 }
 const unique = (values, label) => {
   requireCondition(
@@ -30,6 +98,13 @@ const freeze = (value) => {
 
 function admitContract(manifest, architecture) {
   requireCondition(manifest?.version === 2, 'unsupported mapping version')
+  const manifestPath = Object.hasOwn(manifest, 'manifestPath')
+    ? manifest.manifestPath
+    : MANIFEST_PATH
+  requireCondition(
+    canonicalRelativePath(manifestPath) && manifestPath.endsWith('.json'),
+    'invalid manifest path'
+  )
   requireCondition(
     architecture?.schema?.version === 2 &&
       architecture.target.id === manifest.targetId,
@@ -240,6 +315,19 @@ function admitContract(manifest, architecture) {
     manifest.scenarios?.map((scenario) => scenario.id),
     'scenario ids'
   )
+  const selectedStepIds = new Set(
+    manifest.flows.flatMap((flow) => flow.stepIds)
+  )
+  const selectedBoundaries = [...selectedStepIds].flatMap(
+    (id) => steps.get(id).implementationBoundary
+  )
+  const verificationPaths = new Set([
+    manifestPath,
+    manifest.architecturePath,
+    manifest.specPath,
+    manifest.testFile,
+    manifest.configFile
+  ])
   const scenarios = manifest.scenarios.map((scenario) => {
     requireCondition(
       nonempty(scenario.title) && Array.isArray(scenario.expectedFailedCaseIds),
@@ -258,8 +346,19 @@ function admitContract(manifest, architecture) {
         ),
         'unknown scenario obligations'
       )
+      const mutationFile = scenario.mutation?.file
       requireCondition(
-        scenario.mutation?.file === 'packages/factory/src/data-transact.ts' &&
+        canonicalRelativePath(mutationFile) &&
+          /\.[cm]?[jt]sx?$/.test(mutationFile) &&
+          !mutationFile.split('/').includes('__tests__') &&
+          !/\.(test|spec)\.[cm]?[jt]sx?$/.test(mutationFile) &&
+          !verificationPaths.has(mutationFile) &&
+          selectedBoundaries.some(
+            (boundary) =>
+              boundary === mutationFile ||
+              (boundary.endsWith('/**') &&
+                mutationFile.startsWith(boundary.slice(0, -2)))
+          ) &&
           nonempty(scenario.mutation.from) &&
           nonempty(scenario.mutation.to) &&
           scenario.mutation.from !== scenario.mutation.to,
@@ -287,18 +386,10 @@ function admitContract(manifest, architecture) {
     'architecturePath',
     'specPath'
   ]) {
-    requireCondition(
-      nonempty(manifest[key]) &&
-        !path.isAbsolute(manifest[key]) &&
-        !manifest[key].split('/').includes('..'),
-      'invalid ' + key
-    )
+    requireCondition(canonicalRelativePath(manifest[key]), 'invalid ' + key)
   }
-  const selectedStepIds = new Set(
-    manifest.flows.flatMap((flow) => flow.stepIds)
-  )
   const runtimeScope = {
-    format: 1,
+    format: Object.hasOwn(manifest, 'workspaceSources') ? 2 : 1,
     steps: architecture.steps
       .filter((step) => selectedStepIds.has(step.id))
       .map((step) => ({
@@ -307,6 +398,10 @@ function admitContract(manifest, architecture) {
         implementationBoundary: [...step.implementationBoundary]
       }))
   }
+  if (runtimeScope.format === 2)
+    runtimeScope.workspaceSources = validateWorkspaceSources(
+      manifest.workspaceSources
+    )
   return freeze({
     version: manifest.version,
     definition: structuredClone(manifest),
@@ -317,7 +412,7 @@ function admitContract(manifest, architecture) {
     defaultNegativeScenario: manifest.defaultNegativeScenario,
     negativeCaseIds: [...manifest.negativeCaseIds],
     targetId: manifest.targetId,
-    manifestPath: MANIFEST_PATH,
+    manifestPath,
     architecturePath: manifest.architecturePath,
     specPath: manifest.specPath,
     testFile: manifest.testFile,
@@ -360,12 +455,28 @@ function mappingDiff(accepted, candidate) {
   })
 }
 
-function loadContract(repositoryRoot, acceptedDefinition) {
+function loadContract(
+  repositoryRoot,
+  acceptedDefinition,
+  selectedManifestPath = acceptedDefinition?.manifestPath ?? MANIFEST_PATH
+) {
+  requireCondition(
+    canonicalRelativePath(selectedManifestPath),
+    'invalid manifest path'
+  )
   const manifest =
     acceptedDefinition ??
     JSON.parse(
-      fs.readFileSync(path.join(repositoryRoot, MANIFEST_PATH), 'utf8')
+      fs.readFileSync(path.join(repositoryRoot, selectedManifestPath), 'utf8')
     )
+  requireCondition(
+    (manifest.manifestPath ?? MANIFEST_PATH) === selectedManifestPath,
+    'manifest path differs from selected proof'
+  )
+  requireCondition(
+    canonicalRelativePath(manifest.architecturePath),
+    'invalid architecturePath'
+  )
   // This proof executes trusted repository-owned contracts, never uploaded code.
   const inspector = path.resolve(repositoryRoot, manifest.architecturePath)
   requireCondition(
@@ -376,4 +487,13 @@ function loadContract(repositoryRoot, acceptedDefinition) {
   return admitContract(manifest, require(inspector))
 }
 
-module.exports = { admitContract, loadContract, mappingDiff, MANIFEST_PATH }
+module.exports = {
+  admitContract,
+  loadContract,
+  mappingDiff,
+  MANIFEST_PATH,
+  canonicalRelativePath,
+  workspaceName,
+  matchesSourceInput,
+  validateWorkspaceSources
+}

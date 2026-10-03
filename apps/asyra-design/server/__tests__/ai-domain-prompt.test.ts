@@ -6,6 +6,21 @@ import {
   AI_OPERATION_INSTRUCTIONS
 } from '../ai-domain-prompt'
 
+it('checks receipts per operation and visual quality at coherent stages without mandatory per-instance review', () => {
+  expect(AI_OPERATION_INSTRUCTIONS).not.toContain(
+    'After every acknowledged operation, review the actual result against the original'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'check the receipt for failure, affected IDs and required returned values'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'representative motif before expanding expensive repetition'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Do not add a visual checkpoint for every instance'
+  )
+})
+
 it('separates a requested visual style from medium and recoverable review findings', () => {
   expect(AI_APP_PROMPT).toContain(
     'A style reference describes visible appearance'

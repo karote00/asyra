@@ -12,6 +12,7 @@
     "candidatePaths": [
       "tools/flow-inspector/inspectors/ai-agent-runtime-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/ai-conversational-drawing-performance-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/app-level-migration-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-executable-examples-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
@@ -37,6 +38,7 @@
       "tools/flow-inspector/inspectors/group-interaction-mvp-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/layer-tree-reparent-reorder-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/network-collaboration-transport-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/preset-composition-flow-inspector.data.cjs",
@@ -61,6 +63,649 @@
     }
   ],
   "entries": [
+    {
+      "id": "ai-execution-flow",
+      "slug": "ai-execution-flow",
+      "title": "AI Design Execution",
+      "kind": "flow-v2",
+      "group": "Apps",
+      "subgroup": "Asyra Design",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "ai-execution",
+        "Apps",
+        "Asyra Design",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "ai-execution-flow",
+          "kind": "feature",
+          "title": "AI Design Execution",
+          "subtitle": "Brief to registered operations and verified outcome"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+          "semanticOwner": "Asyra Design execution",
+          "inspectorOwner": "Asyra Design orchestration"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "execution",
+            "title": "Design execution",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "request",
+            "order": 1,
+            "laneId": "execution",
+            "title": "Request and continuity",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "request-adapter",
+            "inputs": [
+              "brief and attachments",
+              "bounded canonical context",
+              "conversation target references"
+            ],
+            "outputs": [
+              "artifact:request-context"
+            ],
+            "conditions": [
+              "Resolve references against current document identity"
+            ],
+            "bypasses": [
+              "New conversations omit prior targets"
+            ],
+            "allowedContributors": [
+              "conversation lifecycle",
+              "public canonical observations"
+            ],
+            "forbiddenContributors": [
+              "renderer state as authority",
+              "cross-request geometry cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/src/ai/conversation.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/action-batch-protocol.ts"
+            ],
+            "specRefs": [
+              "#request-and-continuity"
+            ],
+            "failureOwnerStepId": "request"
+          },
+          {
+            "id": "compose",
+            "order": 2,
+            "laneId": "execution",
+            "title": "Discover and compose",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "provider",
+            "inputs": [
+              "artifact:request-context",
+              "registered capability definitions",
+              "artifact:inspection-evidence",
+              "artifact:execution-receipt"
+            ],
+            "outputs": [
+              "artifact:tool-program"
+            ],
+            "conditions": [
+              "Preserve all registered capabilities and exact tool identities",
+              "Search current admitted descriptions without losing exact schemas or treating no lexical match as unavailable",
+              "Distinguish computed projections from canonical value and record mutations in registered descriptors",
+              "Use native discovery and Code Mode; configured model and effort remain unchanged",
+              "Initial decisions need no execution or inspection receipt; later decisions consume only receipts actually produced"
+            ],
+            "bypasses": [
+              "Simple edits and advice omit research and preparation"
+            ],
+            "allowedContributors": [
+              "native app-server protocol",
+              "registered tool schemas",
+              "domain guidance"
+            ],
+            "forbiddenContributors": [
+              "App evaluation of generated code",
+              "fixed subject or style classifier"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+              "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+              "apps/asyra-design/server/__tests__/basic-api-contracts.test.ts",
+              "apps/asyra-design/e2e/local-ai-provider.spec.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts"
+            ],
+            "specRefs": [
+              "#capability-discovery-and-composition"
+            ],
+            "failureOwnerStepId": "compose"
+          },
+          {
+            "id": "prepare",
+            "order": 3,
+            "laneId": "execution",
+            "title": "Prepare deterministic artifacts",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "artifact-owners",
+            "inputs": [
+              "artifact:tool-program",
+              "validated semantic parameters",
+              "request-local immutable handles"
+            ],
+            "outputs": [
+              "artifact:prepared-artifact"
+            ],
+            "conditions": [
+              "Use existing preparation owners and retain original resolution",
+              "No cross-request retention without measured reuse and equivalence"
+            ],
+            "bypasses": [
+              "Advice and direct edits require no prepared artifact"
+            ],
+            "allowedContributors": [
+              "design preparation",
+              "image artifact owner",
+              "public pure geometry APIs"
+            ],
+            "forbiddenContributors": [
+              "model calls inside geometry expansion",
+              "canonical writes",
+              "automatic detail removal"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/local-design-tools.ts",
+              "apps/asyra-design/server/local-image-tools.ts",
+              "apps/asyra-design/server/design-preparation.ts"
+            ],
+            "specRefs": [
+              "#preparation-and-execution"
+            ],
+            "failureOwnerStepId": "prepare"
+          },
+          {
+            "id": "apply",
+            "order": 4,
+            "laneId": "execution",
+            "title": "Schedule and apply",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "operation-adapter",
+            "inputs": [
+              "artifact:tool-program",
+              "artifact:prepared-artifact",
+              "registered action effects",
+              "registered tool-owner access declarations",
+              "current canonical permissions"
+            ],
+            "outputs": [
+              "artifact:execution-receipt"
+            ],
+            "conditions": [
+              "Overlap only proven independent access",
+              "Preserve ordered writes and read-after-write dependencies",
+              "Cancelled queued work cannot write",
+              "Compact native receipts aggregate only successful valueless basic mutations; retain query data, returned identities and uncertain results, with explicit full receipts available",
+              "The App owns one lazy Factory history group per invocation. Every synchronous member publishes normally; research and waits hold no transaction or interaction lock. Admission observes the Core instance idle boundary and rechecks after settlement; user and remote edits are not enrolled. Stop/failure seals successful members, and only a nonempty own seal is correlated as AI history.",
+              "Prepared artifacts are required only for prepared operations; direct registered edits use their own admitted parameters"
+            ],
+            "bypasses": [
+              "Read-only requests do not mutate"
+            ],
+            "allowedContributors": [
+              "tool scheduler",
+              "tool factories and provider dispatch",
+              "operation adapter",
+              "registered Feature and common APIs"
+            ],
+            "forbiddenContributors": [
+              "tool-name concurrency whitelist",
+              "direct renderer writes",
+              "second transaction manager"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/local-tool-scheduler.ts",
+              "apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/local-image-tools.ts",
+              "apps/asyra-design/server/local-design-tools.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-operation-batch.ts",
+              "apps/asyra-design/server/local-design-workflow.ts",
+              "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+              "apps/asyra-design/server/batch-exchange.ts",
+              "apps/asyra-design/src/ai/actions.ts",
+              "apps/asyra-design/src/ai/__tests__/actions.test.ts",
+              "apps/asyra-design/src/ai/basic-api-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/basic-api-actions.test.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/design-actions.test.ts",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts",
+              "apps/asyra-design/src/ai/organization-action.ts",
+              "apps/asyra-design/src/ai/__tests__/organization-action.test.ts",
+              "apps/asyra-design/src/ai/arrangement-action.ts",
+              "apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts",
+              "apps/asyra-design/src/ai/__tests__/composition-actions.test.ts",
+              "apps/asyra-design/src/ai/transaction.ts",
+              "apps/asyra-design/src/ai/__tests__/transaction.test.ts",
+              "apps/asyra-design/src/ai/__tests__/runtime-integration.test.ts",
+              "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/src/common-apis/transaction.ts"
+            ],
+            "specRefs": [
+              "#preparation-and-execution"
+            ],
+            "failureOwnerStepId": "apply"
+          },
+          {
+            "id": "inspect",
+            "order": 5,
+            "laneId": "execution",
+            "title": "Inspect current stage",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "review-coordinator",
+            "inputs": [
+              "artifact:execution-receipt",
+              "canonical change observations",
+              "current rendered evidence",
+              "requested requirements"
+            ],
+            "outputs": [
+              "artifact:inspection-evidence"
+            ],
+            "conditions": [
+              "Coalesce intermediate checks only within a coherent stage",
+              "Reject mixed-generation evidence and conservatively invalidate unknown effects",
+              "Validate request-owned scope against current canonical containment; regrouping must neither lose scope nor accept unrelated overview targets",
+              "Require final overall inspection before completion"
+            ],
+            "bypasses": [
+              "Read-only advice has no drawing inspection"
+            ],
+            "allowedContributors": [
+              "existing App inspection and measurement",
+              "public Scene Tree and Props observations",
+              "document load lifecycle"
+            ],
+            "forbiddenContributors": [
+              "receipt success as visual proof",
+              "server-local revision as external-change proof",
+              "unproven target-local cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/local-design-review.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/ai/inspection.ts",
+              "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
+              "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+              "apps/asyra-design/src/common-apis/__tests__/inspection-evidence.test.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/src/ai/inspection-evidence.ts",
+              "apps/asyra-design/src/ai/__tests__/inspection.test.ts",
+              "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
+            ],
+            "specRefs": [
+              "#evidence-and-completion"
+            ],
+            "failureOwnerStepId": "inspect"
+          },
+          {
+            "id": "settle",
+            "order": 6,
+            "laneId": "execution",
+            "title": "Settle and explain",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "conversation-lifecycle",
+            "inputs": [
+              "artifact:inspection-evidence",
+              "artifact:execution-receipt",
+              "clarification or classified failure"
+            ],
+            "outputs": [
+              "artifact:visible-outcome"
+            ],
+            "conditions": [
+              "Preserve successful work and intended Undo commits",
+              "Questions pause a segment; answers start the next",
+              "Accurately report partial work and unresolved failure",
+              "Read-only answers and clarification bypass visual evidence; mutated outcomes require current review or explicit partial/failure status"
+            ],
+            "bypasses": [
+              "A pending question is not completed drawing work"
+            ],
+            "allowedContributors": [
+              "provider result adapter",
+              "conversation presentation"
+            ],
+            "forbiddenContributors": [
+              "raw provider dumps",
+              "activity spam",
+              "silent rollback of successful work"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/src/ai/conversation.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
+              "apps/asyra-design/src/ai/__tests__/document-interaction-lock.integration.test.ts"
+            ],
+            "specRefs": [
+              "#evidence-and-completion"
+            ],
+            "failureOwnerStepId": "settle"
+          },
+          {
+            "id": "observe",
+            "order": 7,
+            "laneId": "execution",
+            "title": "Observe execution",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "trace-owner",
+            "inputs": [
+              "observed provider lifecycle events",
+              "tool queue and execution spans",
+              "receipt summaries",
+              "saved execution records, explicit period filters and optional user feedback",
+              "explicit post-run assessment request and named criteria"
+            ],
+            "outputs": [
+              "artifact:execution-trace"
+            ],
+            "conditions": [
+              "Keep missing time unattributed",
+              "Use interval unions for overlapping spans",
+              "Distinguish wire bytes, eager schema bytes and reported usage",
+              "Persist ordered sanitized records locally; incomplete streams never imply success",
+              "Retain exact bounded query selectors and explicit truncation without raw payloads",
+              "Project evidence-linked reports without certifying visuals or inferring missing facts"
+            ],
+            "bypasses": [
+              "Missing provider fields remain unavailable"
+            ],
+            "allowedContributors": [
+              "usage instrumentation",
+              "bounded receipt timings",
+              "read-only record projection and separately attributed feedback",
+              "isolated native provider transport for an explicit post-run assessment"
+            ],
+            "forbiddenContributors": [
+              "private reasoning inference",
+              "raw prompts or credentials",
+              "diagnostics controlling output",
+              "App tools or web access in post-run assessment"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/local-ai-usage.ts",
+              "apps/asyra-design/server/local-ai-records.ts",
+              "apps/asyra-design/server/local-ai-evaluation.ts",
+              "apps/asyra-design/server/local-ai-assessment.ts",
+              "apps/asyra-design/server/__tests__/local-ai-assessment.test.ts",
+              "apps/asyra-design/server/execution-report-cli.ts",
+              "apps/asyra-design/server/__tests__/execution-report-cli.test.ts",
+              "apps/asyra-design/vite.execution-report.config.ts",
+              "apps/asyra-design/server/__tests__/local-ai-evaluation.test.ts",
+              "apps/asyra-design/server/__tests__/local-ai-records.test.ts",
+              "apps/asyra-design/server/ai-model-provider.ts",
+              "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
+              "apps/asyra-design/server/local-ai-provider.ts"
+            ],
+            "specRefs": [
+              "#ownership-and-diagnostics",
+              "#execution-recording",
+              "#execution-evaluation"
+            ],
+            "failureOwnerStepId": "observe"
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:request-context",
+            "ownerStepId": "request",
+            "consumerStepIds": [
+              "compose"
+            ],
+            "terminal": false,
+            "title": "request context",
+            "channel": "App execution",
+            "description": "Owned by request and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:tool-program",
+            "ownerStepId": "compose",
+            "consumerStepIds": [
+              "prepare",
+              "apply"
+            ],
+            "terminal": false,
+            "title": "tool program",
+            "channel": "App execution",
+            "description": "Owned by compose and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:prepared-artifact",
+            "ownerStepId": "prepare",
+            "consumerStepIds": [
+              "apply"
+            ],
+            "terminal": false,
+            "title": "prepared artifact",
+            "channel": "App execution",
+            "description": "Owned by prepare and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:execution-receipt",
+            "ownerStepId": "apply",
+            "consumerStepIds": [
+              "compose",
+              "inspect",
+              "settle"
+            ],
+            "terminal": false,
+            "title": "execution receipt",
+            "channel": "App execution",
+            "description": "Owned by apply and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:inspection-evidence",
+            "ownerStepId": "inspect",
+            "consumerStepIds": [
+              "compose",
+              "settle"
+            ],
+            "terminal": false,
+            "title": "inspection evidence",
+            "channel": "App execution",
+            "description": "Owned by inspect and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:visible-outcome",
+            "ownerStepId": "settle",
+            "consumerStepIds": [],
+            "terminal": true,
+            "title": "visible outcome",
+            "channel": "App execution",
+            "description": "Owned by settle and consumed only through the declared route."
+          },
+          {
+            "id": "artifact:execution-trace",
+            "ownerStepId": "observe",
+            "consumerStepIds": [],
+            "terminal": true,
+            "title": "execution trace",
+            "channel": "App execution",
+            "description": "Owned by observe and consumed only through the declared route."
+          }
+        ],
+        "routes": [
+          {
+            "id": "request-to-compose",
+            "to": "compose",
+            "producedArtifacts": [
+              "artifact:request-context"
+            ],
+            "predicate": "A valid brief and current context are ready.",
+            "from": "request",
+            "kind": "feedback"
+          },
+          {
+            "id": "compose-to-prepare",
+            "to": "prepare",
+            "producedArtifacts": [
+              "artifact:tool-program"
+            ],
+            "predicate": "The selected method needs deterministic preparation.",
+            "from": "compose",
+            "kind": "handoff"
+          },
+          {
+            "id": "compose-to-apply",
+            "to": "apply",
+            "producedArtifacts": [
+              "artifact:tool-program"
+            ],
+            "predicate": "A registered direct edit/read or admitted prepared operation is ready.",
+            "from": "compose",
+            "kind": "bypass"
+          },
+          {
+            "id": "prepare-to-apply",
+            "to": "apply",
+            "producedArtifacts": [
+              "artifact:prepared-artifact"
+            ],
+            "predicate": "Preparation succeeds and the chosen operation consumes its handle.",
+            "from": "prepare",
+            "kind": "handoff"
+          },
+          {
+            "id": "apply-to-compose",
+            "to": "compose",
+            "producedArtifacts": [
+              "artifact:execution-receipt"
+            ],
+            "predicate": "A receipt supplies the next decision or recoverable correction.",
+            "from": "apply",
+            "kind": "feedback"
+          },
+          {
+            "id": "apply-to-inspect",
+            "to": "inspect",
+            "producedArtifacts": [
+              "artifact:execution-receipt"
+            ],
+            "predicate": "The coherent stage requires inspection or an explicit inspection was requested.",
+            "from": "apply",
+            "kind": "handoff"
+          },
+          {
+            "id": "apply-to-settle",
+            "to": "settle",
+            "producedArtifacts": [
+              "artifact:execution-receipt"
+            ],
+            "predicate": "Execution failed, was cancelled, or completed a read-only request.",
+            "from": "apply",
+            "kind": "handoff"
+          },
+          {
+            "id": "inspect-to-compose",
+            "to": "compose",
+            "producedArtifacts": [
+              "artifact:inspection-evidence"
+            ],
+            "predicate": "Requirements remain unresolved and supported correction can continue.",
+            "from": "inspect",
+            "kind": "feedback"
+          },
+          {
+            "id": "inspect-to-settle",
+            "to": "settle",
+            "producedArtifacts": [
+              "artifact:inspection-evidence"
+            ],
+            "predicate": "Current overall evidence permits completion, or unresolved issues must be reported.",
+            "from": "inspect",
+            "kind": "handoff"
+          },
+          {
+            "id": "settle-to-result",
+            "to": null,
+            "producedArtifacts": [
+              "artifact:visible-outcome"
+            ],
+            "predicate": "Emit the independent answer, question or accurate retained-progress outcome.",
+            "from": "settle",
+            "kind": "handoff"
+          },
+          {
+            "id": "observe-to-result",
+            "to": null,
+            "producedArtifacts": [
+              "artifact:execution-trace"
+            ],
+            "predicate": "Deliver bounded diagnostic evidence without controlling product execution.",
+            "from": "observe",
+            "kind": "handoff"
+          }
+        ],
+        "invariants": [
+          {
+            "id": "canonical-ownership",
+            "title": "Canonical ownership",
+            "stepIds": [
+              "apply"
+            ],
+            "specRefs": [
+              "#preparation-and-execution"
+            ],
+            "statement": "All mutations use registered App operations and existing transactions.",
+            "artifactIds": [
+              "artifact:execution-receipt"
+            ]
+          }
+        ],
+        "acceptanceContracts": []
+      }
+    },
     {
       "id": "asyra-design-ai-conversational-drawing-performance",
       "slug": "ai-drawing-performance",
@@ -12751,9 +13396,9 @@
             "id": "run-plan-transaction",
             "order": 10,
             "laneId": "execution",
-            "title": "Open one app-owned transaction for the accepted plan",
+            "title": "Open one app-owned invocation scope",
             "ownerPackage": "app AiTransactionRunner adapter",
-            "purpose": "Map one confirmed plan to one intended undo transaction and delegate rollback/commit semantics to the app Factory boundary.",
+            "purpose": "Map one confirmed plan to one invocation scope and delegate finite mutation, history and settlement semantics to the app Factory boundary.",
             "inputs": [
               "artifact:confirmed-plan",
               "app-owned transaction runner",
@@ -12764,22 +13409,22 @@
             ],
             "conditions": [
               "The runner is invoked exactly once for one accepted plan by default.",
-              "The runner executes the complete ordered action callback and commits only after it resolves.",
-              "Throw, rejection, timeout, or abort after transaction start must roll back all rollbackable writes through the existing Factory contract.",
+              "The runner executes the complete ordered callback once; atomic hosts commit after it resolves, while grouped hosts supply an invocation-local finite synchronous mutation executor backed by Factory history groups.",
+              "Atomic hosts roll back their transaction on callback failure; grouped hosts preserve prior successful finite commits and seal their group on Stop or failure. The runner reports explicit settlement with the original cause; Runtime owns no journal.",
               "Cleanup owner: settle-plan-transaction closes transaction state; cleanup-feature-invocation releases request listeners after settlement."
             ],
             "bypasses": [
               "No transaction opens for planning, validation, permission, or confirmation terminal results.",
-              "Explicit transaction groups are unsupported in this bounded first release."
+              "Read-only invocations need no physical transaction or history entry."
             ],
             "allowedContributors": [
               "artifact:confirmed-plan",
               "app transaction adapter",
-              "public runTransaction-compatible boundary"
+              "public Factory transaction or history-group boundary"
             ],
             "forbiddenContributors": [
               "runtime-owned undo/history implementation",
-              "one transaction per action",
+              "ambient or shared invocation mutation membership",
               "mutation before the runner callback",
               "retry of an action transaction"
             ],
@@ -12787,6 +13432,7 @@
             "implementationBoundary": [
               "packages/ai-agent-runtime/src/runtime.ts",
               "packages/ai-agent-runtime/src/__tests__/transaction.test.ts",
+              "packages/ai-agent-runtime/src/types.ts",
               "packages/ai-agent-runtime/src/index.ts",
               "apps/asyra-design/src/ai/transaction.ts",
               "apps/asyra-design/src/ai/__tests__/transaction.test.ts",
@@ -12820,7 +13466,7 @@
             ],
             "conditions": [
               "Actions execute in prepared plan order and check abort after awaited work before the next mutation.",
-              "Each executor receives only its validated typed arguments and app execution context.",
+              "Each executor receives only its validated typed arguments, signal and optional invocation-local host mutation executor. Synchronous writes use that boundary; asynchronous preparation does not hold it. Atomic hosts omit the executor and retain their enclosing transaction.",
               "Action results are detached summaries and never canonical state authority.",
               "Cleanup owner: settle-plan-transaction owns rollback/commit; cleanup-feature-invocation owns request-local executor result storage."
             ],
@@ -12844,7 +13490,20 @@
               "packages/ai-agent-runtime/src/runtime.ts",
               "packages/ai-agent-runtime/src/redaction.ts",
               "packages/ai-agent-runtime/src/__tests__/execution.test.ts",
+              "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts",
+              "packages/ai-agent-runtime/src/types.ts",
               "packages/ai-agent-runtime/src/index.ts",
+              "apps/asyra-design/src/ai/basic-api-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/basic-api-actions.test.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/design-actions.test.ts",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts",
+              "apps/asyra-design/src/ai/organization-action.ts",
+              "apps/asyra-design/src/ai/__tests__/organization-action.test.ts",
+              "apps/asyra-design/src/ai/arrangement-action.ts",
+              "apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts",
+              "apps/asyra-design/src/ai/__tests__/composition-actions.test.ts",
               "apps/asyra-design/src/ai/actions.ts",
               "apps/asyra-design/src/ai/__tests__/actions.test.ts",
               "apps/asyra-design/src/common-apis"
@@ -12911,14 +13570,14 @@
             "id": "settle-plan-transaction",
             "order": 13,
             "laneId": "execution",
-            "title": "Settle one transaction, undo commit, and publication batch",
+            "title": "Settle the invocation and its intended Undo entry",
             "ownerPackage": "@asyra/factory through app transaction adapter",
-            "purpose": "Commit one accepted plan as one intended undo entry or roll back its complete rollbackable journal with no accepted canonical prefix.",
+            "purpose": "Settle one intended Undo entry using the host contract: atomic rollback or grouped retention of completed finite members.",
             "inputs": [
               "artifact:action-result-batch",
               "artifact:executor-failure",
               "artifact:canonical-mutation-failure",
-              "active Factory transaction journal"
+              "active Factory transaction journal or request-owned history group"
             ],
             "outputs": [
               "artifact:transaction-outcome",
@@ -12928,8 +13587,8 @@
               "artifact:no-collaboration-bypass"
             ],
             "conditions": [
-              "Successful completion validates and commits the existing Factory transaction exactly once.",
-              "Failure, abort, or timeout rolls back the complete rollbackable journal and creates no normal undo entry.",
+              "Successful completion settles the existing Factory transaction or seals the request-owned history group exactly once; each grouped member has already published through normal settlement.",
+              "Atomic failure rolls back its complete journal; grouped failure or Stop rolls back only an active failed member and seals earlier successful members. An explicit host settlement error carries the original cause and committed, rolled-back or unknown outcome; missing receipts cannot prove no retained writes.",
               "A successful accepted plan creates one intended undo commit by default.",
               "Shared changes settle through the same Factory publication path and options as ordinary app actions.",
               "Cleanup owner: settle-plan-transaction closes Factory transaction state; cleanup-feature-invocation performs only request-local cleanup afterward."
@@ -12947,12 +13606,15 @@
             ],
             "forbiddenContributors": [
               "runtime-owned transaction journal or history",
-              "partial commit after executor failure",
+              "invented settlement outcome from action receipts",
               "Collaboration-owned rollback or undo",
               "provider retry after transaction start"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "packages/ai-agent-runtime/src/runtime.ts",
+              "packages/ai-agent-runtime/src/index.ts",
+              "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts",
               "apps/asyra-design/src/ai/transaction.ts",
               "apps/asyra-design/src/common-apis/transaction.ts",
               "packages/factory/src"
@@ -13946,7 +14608,7 @@
           {
             "id": "one-plan-one-undo",
             "title": "One accepted plan maps to one intended undo commit",
-            "statement": "One transaction runner callback contains the ordered executors and Factory commits or rolls back that complete journal.",
+            "statement": "One invocation runner contains ordered executors. Atomic hosts settle one journal; grouped hosts publish finite members and seal their successful entries together without capturing user or remote edits.",
             "stepIds": [
               "run-plan-transaction",
               "execute-app-actions",
@@ -14112,10 +14774,10 @@
           },
           {
             "id": "transaction-and-no-prefix",
-            "title": "One accepted plan, one transaction, no rejected prefix",
+            "title": "One accepted plan, explicit host settlement",
             "assertions": [
               "A valid multi-action plan invokes one transaction runner and executors in plan order.",
-              "Executor/canonical failure rolls back all rollbackable writes and creates no accepted canonical prefix or normal undo commit."
+              "Atomic executor/canonical failure rolls back all rollbackable writes with no accepted canonical prefix; grouped failure rolls back its failed member and retains prior successful members in one sealed Undo entry."
             ],
             "stepIds": [
               "run-plan-transaction",
@@ -21281,6 +21943,244 @@
       }
     },
     {
+      "id": "local-affected-validation",
+      "slug": "local-affected-validation",
+      "title": "Local Affected Validation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "local-affected-validation",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "local-affected-validation",
+          "kind": "feature",
+          "title": "Local Affected Validation",
+          "subtitle": "Shared CI selection with owned local execution"
+        },
+        "authority": {
+          "specPath": "docs/ai/workflows/local-affected-validation.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
+          "semanticOwner": "Repository local validation",
+          "inspectorOwner": "Repository local validation"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "local",
+            "title": "Local validation",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "collect",
+            "order": 1,
+            "laneId": "local",
+            "title": "Collect local inputs",
+            "ownerPackage": "Repository local validation",
+            "purpose": "git-input-owner",
+            "inputs": [
+              "explicit base or origin/main",
+              "HEAD, index and working files"
+            ],
+            "outputs": [
+              "artifact:local-inputs"
+            ],
+            "conditions": [
+              "Resolve commits and union committed, staged, unstaged and untracked paths",
+              "Retain removals and fingerprint without file contents"
+            ],
+            "bypasses": [
+              "An unchanged checkout has an explicit empty path set"
+            ],
+            "allowedContributors": [
+              "Git read commands",
+              "filesystem input fingerprints"
+            ],
+            "forbiddenContributors": [
+              "remote operations",
+              "ignored environment contents",
+              "dependency classification"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/__tests__/local-validation.test.mjs"
+            ],
+            "specRefs": [
+              "#local-inputs"
+            ],
+            "failureOwnerStepId": "collect",
+            "cacheDimensions": []
+          },
+          {
+            "id": "select",
+            "order": 2,
+            "laneId": "local",
+            "title": "Select affected owners",
+            "ownerPackage": "Repository CI scope",
+            "purpose": "shared-impact-owner",
+            "inputs": [
+              "artifact:local-inputs",
+              "current and base workspace manifests",
+              "CI relationship map"
+            ],
+            "outputs": [
+              "artifact:local-plan"
+            ],
+            "conditions": [
+              "Reuse the CI classifier and related/full-owner contracts",
+              "Unknown relations and missing local command contracts are unresolved"
+            ],
+            "bypasses": [
+              "Not-defined E2E and unselected owners are explicit"
+            ],
+            "allowedContributors": [
+              "ci-scope.mjs",
+              "ci-relationships.json",
+              "local input adapter"
+            ],
+            "forbiddenContributors": [
+              "second dependency graph",
+              "workspace name whitelist",
+              "execution during preview"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/ci-relationships.json",
+              "scripts/__tests__/local-validation.test.mjs"
+            ],
+            "specRefs": [
+              "#shared-selection"
+            ],
+            "failureOwnerStepId": "select",
+            "cacheDimensions": []
+          },
+          {
+            "id": "execute",
+            "order": 3,
+            "laneId": "local",
+            "title": "Run owned local checks",
+            "ownerPackage": "Repository local validation",
+            "purpose": "local-process-owner",
+            "inputs": [
+              "artifact:local-plan",
+              "explicit run flag"
+            ],
+            "outputs": [
+              "artifact:local-result"
+            ],
+            "conditions": [
+              "Retain CI build prerequisites and owner test guards",
+              "Require actual selected results and nonzero test evidence",
+              "Stop owned children on cancellation and reject changed source identity"
+            ],
+            "bypasses": [
+              "Preview never creates child check processes"
+            ],
+            "allowedContributors": [
+              "existing CI check runners",
+              "declared owner E2E commands",
+              "owned process/log storage"
+            ],
+            "forbiddenContributors": [
+              "remote CI claims",
+              "global process cleanup",
+              "successful missing or zero-test results"
+            ],
+            "implementationBoundary": [
+              "scripts/local-validation.mjs",
+              "scripts/local-validation-runner.mjs",
+              "scripts/run-workspace-checks.mjs",
+              "scripts/__tests__/local-validation.test.mjs",
+              "scripts/__tests__/local-validation-runner.test.mjs",
+              "package.json"
+            ],
+            "specRefs": [
+              "#owned-execution"
+            ],
+            "failureOwnerStepId": "execute",
+            "cacheDimensions": []
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:local-inputs",
+            "title": "local-inputs",
+            "ownerStepId": "collect",
+            "consumerStepIds": [
+              "select"
+            ],
+            "terminal": false,
+            "description": "Detached local validation contract; no product state or remote authority."
+          },
+          {
+            "id": "artifact:local-plan",
+            "title": "local-plan",
+            "ownerStepId": "select",
+            "consumerStepIds": [
+              "execute"
+            ],
+            "terminal": false,
+            "description": "Detached local validation contract; no product state or remote authority."
+          },
+          {
+            "id": "artifact:local-result",
+            "title": "local-result",
+            "ownerStepId": "execute",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Detached local validation contract; no product state or remote authority."
+          }
+        ],
+        "routes": [
+          {
+            "id": "inputs-to-selection",
+            "from": "collect",
+            "to": "select",
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-inputs"
+            ],
+            "predicate": "Git inputs resolved"
+          },
+          {
+            "id": "plan-to-execution",
+            "from": "select",
+            "to": "execute",
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-plan"
+            ],
+            "predicate": "Explicit run and all obligations resolved"
+          },
+          {
+            "id": "result",
+            "from": "execute",
+            "to": null,
+            "kind": "handoff",
+            "producedArtifacts": [
+              "artifact:local-result"
+            ],
+            "predicate": "Preserve passed, failed, cancelled and unverified outcomes"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": []
+      }
+    },
+    {
       "id": "network-collaboration-transport",
       "slug": "collaboration-transport",
       "title": "Network Collaboration Transport Inspector",
@@ -27750,6 +28650,7 @@
               "Commit-current interruption finalizes the latest complete staged bundle, while rollback discards staged History and restores canonical state through the rollback journal.",
               "Rollback replays inverses in reverse order without undo, redo, or user-action-completed effects.",
               "Factory owns explicit start/update/end history groups: each synchronous member closes normally; only successful undoable members are retained, without a pending Undo entry or user-action-completed event. Sealing a nonempty idle group appends one entry and completion identity; empty groups leave stacks unchanged.",
+              "Factory exposes an instance-owned idle-boundary snapshot for finite group admission. Active transactions, replay, settlement, member enrollment and group observers are busy; a pending group alone is idle. The read reserves nothing and cannot bypass shared-evidence restrictions. Callers check and enter synchronously or recheck after awaiting existing settlement notifications.",
               "Pending groups permit separate user commits, ordinary ordered Undo/Redo and remote applies between members. Recorded inverse values apply in order without same-field protection or conflict rebasing. Undo reverses member order, Redo restores it, and a replay failure restores all applied replay work before retaining the original stack position.",
               "New undoable members and nonempty sealing clear Redo; group opening and empty sealing do not. Foreign, closed or reset handles and unrelated active boundaries reject enrollment before mutation. Runtime reset releases group journals and observers.",
               "Group status counts are updated from each newly committed member once; isolated observers receive committed status only. A configured threshold is advisory and never caps mutations or prunes retained history.",
@@ -36676,6 +37577,8 @@
               "artifact:work-admission"
             ],
             "conditions": [
+              "Work allocation uses the admitted format-2 owner step implementation boundary for workspace runtime files, without deriving a packages directory from the owner name. Allocation grants no source or execution authority; captured-source admission still verifies actual workspace ownership and declared inputs. Preserve the explicit format-1 package scope.",
+              "Dependent admission consumes complete source authority format 1 or 2 identities with exact digest links. Unknown versions fail closed; workspace support never bypasses source availability, prerequisites, allocation or retained identity checks.",
               "Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed until an assessment-bound admission and the full target stays pending. Independent admission retains the exact baseline source. Dependent admission instead consumes one exact current completed service-retained target assessment with passing accepted preservation, selected work and prerequisites, matching allocation, actor, target pins and available registered source; persist its assessment/source binding without recomputation and cross-check it on load. Missing, stale, failed or client-supplied evidence rejects before writes. Admitted commitments cannot be removed. Validate dependent task execution against the retained assessment and its still-live exact private source authority; the admission revision alone does not retire that frozen allocation, but source-task revocation or source retirement blocks execution. Neither bounded work nor delivery completes the target or accepts history."
             ],
             "bypasses": [
@@ -36903,7 +37806,7 @@
               "artifact:admitted-agent-task"
             ],
             "conditions": [
-              "Resolve each task primary package from the selected step owner. Every allowed file must be inside both that package source root and the exact step implementation boundary; dependency closure packages never expand mutation authority.",
+              "Resolve each task primary workspace from the selected step owner. For explicit workspace scope, pre-admit canonical runtime files against the exact step boundary, then require the source-owned captured actual workspace directory, source inputs and runtime inventory before candidate effects. Dependency closure workspaces never expand mutation authority. Retained package scope keeps its recorded package source boundary.",
               "Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations. Real provider admission requires matching service-owned authorization, exact model, billing mode, expiry and request ceiling; caller or model data cannot authorize itself."
             ],
             "bypasses": [
@@ -36956,6 +37859,7 @@
               "artifact:admitted-task-source"
             ],
             "conditions": [
+              "Consume source-bound task admission immediately after capture and before candidate writes or adapter dispatch. Retained verification loads the captured manifest role, and demonstrations consume the selected contract negative scenario rather than a Factory scenario name.",
               "A scoped candidate verdict and private task source carry runtimeAuthority in exact deep equality with the baseline and source envelope. Retained records with no own authority use only legacy Factory source validation even when the currently loaded contract has runtimeScope; load and replay never upgrade them.",
               "Publish a private exact task/attempt/repository source artifact only after a controlled source-aware producer result and successful task save, or completed startup source admission. Passed startup retains strict report/evidence checks; completed non-pass startup verifies fixed bytes plus source identity once without reassessing or replacing its historical outcome. Legacy verify-only strategies cannot supply authority. Exact sourceFor reads only the private map; new attempts, noncompleted state, revocation and close retire availability, and failed publication cannot resurrect it. No source hash, IO or history scan occurs on reads/replay, and later composition verifies its own selected bytes.",
               "New task records use format 2; load only formats 1 and 2. Format-2 passing latest verdicts require the exact runtime, runtime-authority, verification and execution descriptor set when scoped; true historical authority absence retains legacy descriptor validation. Upgrade a format-1 task only when an explicit new candidate proof completes and is saved, preserving older attempts. New admission requires fixed last-attempt UUID source/report locations, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Reads and identical replay do no source work.",
@@ -37111,6 +38015,7 @@
             "purpose": "Admission",
             "inputs": [
               "product-owned proof manifest",
+              "trusted selected product manifest path",
               "target architecture Inspector",
               "accepted mapping for explicit candidate comparison"
             ],
@@ -37118,15 +38023,16 @@
               "artifact:admitted-proof-contract"
             ],
             "conditions": [
+              "Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.",
               "Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.",
-              "Publish separately digested runtimeScope format 1 from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. Preserve mapping format 2, Inspector schema 2 and existing contract digest semantics. This step does not read package manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new non-Factory runtime authority."
+              "Publish separately digested runtimeScope from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. A mapping with explicit workspaceSources retains validated unique workspace names, relative runtime inputs and nullable alias entries in scope format 2; genuine historical absence retains scope format 1. Preserve mapping format 2, Inspector schema 2 and contract digest semantics. This step does not read workspace manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new workspace runtime authority."
             ],
             "bypasses": [
               "No missing, ambiguous, empty, or contradictory contract may be bypassed."
             ],
             "allowedContributors": [
-              "packages/factory/flow-contracts.json",
-              "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs"
+              "trusted product-owned proof manifest selected by the service",
+              "the selected product architecture Inspector"
             ],
             "forbiddenContributors": [
               "runtime result guessing",
@@ -37205,6 +38111,7 @@
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
+              "For an explicitly declared workspace scope format 2, resolve owner names from actual root-declared workspace manifests, including private Apps and tools. Capture its declared source inputs and runtime dependency closure in runtimeAuthority format 2 with actual directories, source inputs and nullable alias entries. Reject duplicate or unresolved names, unused declarations, cycles, unsafe paths, symlinks, missing inputs and runtime/verification overlap. One capture-local read/hash map owns discovery and capture work; source admission validates actual bytes and the dependency graph before granting authority. Public exports and directory-derived names are not workspace eligibility conditions. Workspace derived execution uses fixed .flow-proof roles outside workspace runtime roots, supplied by this owner to its runner consumer. Genuine retained format 1 continues through its original source and generated-byte validation.",
               "Preserve runtimeSource format 1 as a bytes-only identity. Separately derive runtimeAuthority format 1 from the admitted contractScopeDigest and actual public workspace manifests: architecture-ordered step closures, sorted canonical package records and package-name union, dependencies-only workspace:* internal closure, regular non-symlink public source entries, and no cycles, spoofing or role overlap. Cache discovery so each unique path is read and hashed once, re-admit cached contract and manifest authority before any output write, and reject mixed legacy/scoped composition. Scoped execution format 2 aliases every validated package to its captured entry with no dist fallback; it accepts only the exact authority object privately admitted in the same process lifetime by capture or complete actual-byte and manifest-graph revalidation, so a serialized or cloned descriptor must repeat admission. Historical authority absence remains fixed legacy Factory and is never reconstructed from a current contract.",
               "Explicit derived composition alone may select a previously full-source-admitted derived runtime tuple; a candidate verdict or client path cannot replace that authority. Both APIs require the exact ordinary verification bundle and reject its execution descriptor presence. Ordinary composition also rejects runtime execution descriptor presence. Recheck selected actual bytes once, generate the fixed two files at the new trusted root with reused entry metadata, preserve runtime/verifier identities and bind a new execution/full identity. Keep all immutable output/alias guards; downstream candidate execution must use containment, and service handoff remains a separate prerequisite.",
               "For retained candidate admission, verify every actual full-manifest entry once through the source-owned safe path, regular file, size and hash boundary at its trusted fixed source root. Write nothing and return no identity or authority flag; descriptor/full-inventory admission remains a separate single direct evidence operation in the same startup lifetime, with neither operation repeated by reads or replay.",
@@ -37227,6 +38134,8 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/snapshot.cjs",
+              "tools/flow-inspector/control-plane/workspace-sources.cjs",
+              "tools/flow-inspector/control-plane/__tests__/workspace-sources.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/snapshot.test.cjs",
               "tools/flow-inspector/control-plane/ci-context.cjs",
               "tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs"
@@ -37267,7 +38176,7 @@
             ],
             "allowedContributors": [
               "installed Vitest",
-              "product-owned Factory proof tests and negative transform"
+              "selected product proof tests and registered negative transform"
             ],
             "forbiddenContributors": [
               "shell command input",
@@ -37278,6 +38187,7 @@
             "implementationBoundary": [
               "packages/factory/src/__tests__/flow-proof.config.ts",
               "tools/flow-inspector/control-plane/runner.cjs",
+              "tools/flow-inspector/control-plane/__tests__/app-runtime-fixture.cjs",
               "tools/flow-inspector/control-plane/__tests__/runner.test.cjs"
             ],
             "specRefs": [
@@ -37369,7 +38279,7 @@
               "artifact:scoped-work-review"
             ],
             "conditions": [
-              "Retain runtimeAuthority only from source-owner capture or complete re-admission, never from current contract reconstruction. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.",
+              "Bind local service creation, fresh candidate loading and restart to one server-selected product manifest. Reject another product at the same store; isolate implicit stores by manifest identity. CLI local selection forwards that path while remote actions consume the running service selection. Retain runtimeAuthority formats 1 and 2 only from source-owner capture or complete re-admission, never from current contract reconstruction; unknown versions reject. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.",
               "For dependent work admission, resolve only the explicitly selected retained assessment and its registered source, then supply that complete immutable owner artifact and a private exact live-source lookup to manage-flow-target. Require matching actor, current target/allocation and retained pins before the target decision; task start rejects retired source authority even though the admission revision makes the assessment projection historical. Do not accept client result/source fields, recompute prerequisite evidence or treat integration eligibility as admission authority. Existing independent baseline-proof admission remains unchanged.",
               "For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require accepted preservation and the assessor work result including prerequisites to pass; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.",
               "Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Internal assessment consumes this exact task-source lifecycle; existing HTTP/CLI forwarding exposes the additive service selection, with exact task/attempt forwarding and service-owned validation; the Board task picker remains a subsequent consumer.",

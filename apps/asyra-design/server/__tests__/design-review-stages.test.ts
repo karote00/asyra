@@ -282,3 +282,32 @@ it('advertises required plan and inspection fields before tool execution', () =>
     ).toBeUndefined()
   }
 })
+
+it('retains field validation when native discovery projects a review alternative', () => {
+  const [planSchema, inspectionSchema] =
+    designReviewDefinition.inputSchema.oneOf
+  expect(operationInputIssue(plan, planSchema)).toBeUndefined()
+  for (const patch of [
+    { method: 42 },
+    { references: [42] },
+    { criteria: [42] },
+    { detailRequired: 'yes' }
+  ]) {
+    expect(operationInputIssue({ ...plan, ...patch }, planSchema)).toBeDefined()
+  }
+  const visual = {
+    phase: 'visual',
+    inspectionIds: ['current'],
+    checks: [check('Viewpoint')]
+  }
+  expect(operationInputIssue(visual, inspectionSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(
+      {
+        ...visual,
+        checks: [{ requirement: 'Viewpoint', status: 'pass', evidence: 42 }]
+      },
+      inspectionSchema
+    )
+  ).toBeDefined()
+})

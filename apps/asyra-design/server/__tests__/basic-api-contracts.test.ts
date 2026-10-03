@@ -9,6 +9,30 @@ import ts from 'typescript'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import { operationInputIssue } from '../operation-input-schema'
+
+it('admits only nonnegative hierarchy insertion indices and explains append semantics', () => {
+  const move = basicApiContracts.find(
+    (contract) => contract.name === 'api_hierarchy_moveElements'
+  )
+  if (!move) throw new Error('Missing hierarchy move contract')
+  const request = { elementIds: ['detail'], targetParentId: 'drawing' }
+  expect(
+    operationInputIssue(
+      { request: { ...request, targetIndex: -1 } },
+      move.inputSchema
+    )
+  ).toContain('targetIndex')
+  expect(
+    operationInputIssue(
+      { request: { ...request, targetIndex: 0 } },
+      move.inputSchema
+    )
+  ).toBeUndefined()
+  expect(move.description).toContain('getElementData')
+  expect(move.description).toContain('excluding the moved elements')
+  expect(move.description).toContain('append')
+})
 
 it('binds every action to the existing public method signature in argument order', () => {
   const root = path.resolve('../..')
@@ -262,4 +286,23 @@ it('supports parameterless APIs without allowing undeclared model arguments', ()
     required: [],
     additionalProperties: false
   })
+})
+
+it('explains computed projections versus canonical value and record mutations', () => {
+  const description = (name: string) =>
+    basicApiContracts.find((contract) => contract.name === name)?.description
+  expect(description('api_core_getElementComputedData')).toContain(
+    'not a canonical write payload'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'reference IDs'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'patchElementProperties'
+  )
+  expect(description('api_core_patchElementProperties')).toContain('records')
+  expect(description('api_core_patchElementProperties')).toContain('gradient')
+  expect(description('api_core_updatePropertyComponents')).toContain(
+    'propertyId'
+  )
 })

@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "ES2023.Array"],
     "types": ["node"],
     "strict": true,
     "noEmit": true,
@@ -14,6 +14,11 @@
     "server/action-batch.ts",
     "server/ai-model-provider.ts",
     "server/local-ai-provider.ts",
+    "server/execution-report-cli.ts",
+    "server/__tests__/local-ai-records.test.ts",
+    "server/__tests__/local-ai-evaluation.test.ts",
+    "server/__tests__/local-ai-assessment.test.ts",
+    "server/__tests__/execution-report-cli.test.ts",
     "server/__tests__/ai-model-provider.test.ts",
     "server/__tests__/local-ai-provider.test.ts",
     "server/__tests__/local-ai-admission.test.ts",
@@ -23,6 +28,9 @@
     "server/__tests__/local-ai-live.test.ts",
     "server/design-preparation.ts",
     "server/__tests__/design-preparation.test.ts",
-    "server/__tests__/local-design-tools.test.ts"
+    "server/__tests__/local-design-tools.test.ts",
+    "server/__tests__/local-tool-scheduler.test.ts",
+    "server/__tests__/local-design-workflow.test.ts",
+    "server/__tests__/execution-flow-proof.test.ts"
   ]
 }

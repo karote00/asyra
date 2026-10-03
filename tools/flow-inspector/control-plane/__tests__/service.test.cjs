@@ -18,6 +18,44 @@ const directory = () => {
   return fs.mkdtempSync(path.join(parent, 'store-'))
 }
 
+test('service selection and restart retain the chosen product and reject another product store', async (t) => {
+  const dir = directory()
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const manifestPath = path.relative(
+    root,
+    path.join(dir, 'flow-contracts.json')
+  )
+  const definition = structuredClone(
+    require('../../../../packages/factory/flow-contracts.json')
+  )
+  definition.manifestPath = manifestPath
+  definition.flows[0].title = 'Selected product flow'
+  fs.writeFileSync(path.join(root, manifestPath), JSON.stringify(definition))
+  const options = { manifestPath, directory: path.join(dir, 'records') }
+  let service = createService(root, options)
+  try {
+    assert.equal(service.state().contract.manifestPath, manifestPath)
+    assert.equal(
+      service.state().contract.flows[0].title,
+      'Selected product flow'
+    )
+  } finally {
+    await service.close()
+  }
+  service = createService(root, options)
+  try {
+    assert.equal(service.state().contract.manifestPath, manifestPath)
+    const review = service.prepareMapping({}, LOCAL_ACTOR)
+    assert.ok(review)
+  } finally {
+    await service.close()
+  }
+  assert.throws(
+    () => createService(root, { directory: options.directory }),
+    /product|manifest/
+  )
+})
+
 test('denied and invalid actions have zero capture and execution effects', async () => {
   const dir = directory()
   let captures = 0
@@ -66,7 +104,7 @@ test('real baseline, precise cross-flow regression, and recovery retain separate
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      ['cancel.delivery', 'cancel.outcome']
+      service.contract().negativeCaseIds.slice().sort()
     )
     assert.deepEqual(negative.evidence.issues, [])
     const recovered = await service.wait(service.start({}, LOCAL_ACTOR))
@@ -1700,6 +1738,47 @@ async function fullRuntimeServiceEvidence() {
     fixture.cleanup()
   }
 }
+
+test('full runtime fixture negative scenarios fail only the declared owner obligations', async () => {
+  const fixture = createFullRuntimeFixture(
+    root,
+    path.join(root, 'tmp/flow-inspector/full-runtime-negative-tests')
+  )
+  try {
+    for (const [kind, ref] of [
+      ['accepted', fixture.refs.base],
+      ['target', fixture.refs.integrated]
+    ]) {
+      fixture.checkout(ref)
+      fixture.installContract(kind)
+      const service = createService(fixture.repository, {
+        directory: path.join(fixture.repository, 'negative-' + kind)
+      })
+      try {
+        const contract = service.state().contract
+        const result = await service.wait(
+          service.start(
+            { scenario: contract.defaultNegativeScenario },
+            LOCAL_ACTOR
+          )
+        )
+        assert.equal(result.evidence.status, 'failed')
+        assert.deepEqual(
+          result.evidence.cases
+            .filter((item) => item.status === 'failed')
+            .map((item) => item.id)
+            .sort(),
+          [...contract.negativeCaseIds].sort()
+        )
+        assert.deepEqual(result.evidence.issues, [])
+      } finally {
+        await service.close()
+      }
+    }
+  } finally {
+    fs.rmSync(fixture.repository, { recursive: true, force: true })
+  }
+})
 
 test(
   'complete offline candidate proof remains eligible until exact authorized target baseline acceptance commits atomically',

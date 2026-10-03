@@ -182,8 +182,21 @@ async function executeWorkspaceChecks(
   return record
 }
 
+function resolveWorkspaceResultDirectory(
+  repositoryRoot,
+  configured = '.ci-workspace-results'
+) {
+  const directory = path.resolve(repositoryRoot, configured)
+  if (!directory.startsWith(`${path.resolve(repositoryRoot)}${path.sep}`))
+    throw new Error('Workspace results must stay inside the repository')
+  return directory
+}
+
 function writeWorkspaceResult(record, artifactId, repositoryRoot) {
-  const directory = path.join(repositoryRoot, '.ci-workspace-results')
+  const directory = resolveWorkspaceResultDirectory(
+    repositoryRoot,
+    process.env.WORKSPACE_CHECK_RESULTS_DIRECTORY
+  )
   fs.mkdirSync(directory, { recursive: true })
   const destination = path.join(directory, `${artifactId}.json`)
   fs.writeFileSync(destination, JSON.stringify(record) + '\n')
@@ -259,9 +272,9 @@ async function main() {
         return { mode: 'related', inputs: selection.inputs }
       }
       if (task === 'test:e2e:ci') {
-        const resultDirectory = path.join(
+        const resultDirectory = resolveWorkspaceResultDirectory(
           repositoryRoot,
-          '.ci-workspace-results'
+          process.env.WORKSPACE_CHECK_RESULTS_DIRECTORY
         )
         fs.mkdirSync(resultDirectory, { recursive: true })
         const reportPath = path.join(
@@ -346,7 +359,11 @@ function playwrightObservations(report) {
   return { testCount, passedCount, failedCount }
 }
 
-export { executeWorkspaceChecks, validateWorkspaceEntry }
+export {
+  executeWorkspaceChecks,
+  validateWorkspaceEntry,
+  resolveWorkspaceResultDirectory
+}
 
 if (
   process.argv[1] &&

@@ -20,10 +20,14 @@ only the Phase 5 entry dependency; the original Phase 4 mandatory-CI DoD,
 independent verifier/issuer and remote refusal/recovery requirements remain open.
 Phase 6, merge, publication, deployment and protection changes are excluded.
 
-Each task selects one admitted architecture step and its primary public
-`@asyra/<name>` owner. Mutations are a nonempty explicit list of existing
-`.ts` runtime files that are both inside that package's `src` root and the
-step's exact implementation boundary. Transitive runtime packages are execution
+Each task selects one admitted architecture step and its primary workspace
+owner. Explicit workspace scope permits a nonempty list of existing JavaScript
+or TypeScript runtime files, including App server modules, inside that owner's
+captured source inputs and exact step implementation boundary. Source-bound
+admission resolves the real directory from captured workspace identity before
+any candidate copy or dispatch; a package name is not a directory convention.
+Retained package scope keeps its recorded `.ts` and `src` boundary.
+Transitive runtime packages are execution
 inputs, not mutation owners. Tests, configuration, mapping, package metadata,
 control-plane code and accepted histories are never candidate-write capabilities.
 No new package or tool is required. Source-writing execution requires macOS's

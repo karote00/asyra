@@ -88,7 +88,7 @@ function validateRecord(value, id) {
     if (
       Object.hasOwn(value.snapshot, 'runtimeAuthority') &&
       (!object(authority) ||
-        authority.format !== 1 ||
+        ![1, 2].includes(authority.format) ||
         !/^[a-f0-9]{64}$/.test(authority.digest ?? '') ||
         !/^[a-f0-9]{64}$/.test(authority.contractScopeDigest ?? '') ||
         value.snapshot.executionSource?.format !== 2 ||

@@ -46,6 +46,63 @@ const setup = () => {
 }
 
 describe('explicit history groups', () => {
+  it('admits finite producers only between complete instance-owned boundaries', () => {
+    const { factory, write } = setup()
+    const other = new Factory()
+    const statuses: boolean[] = []
+    const members: boolean[] = []
+    const group = factory.startHistoryGroup({
+      onChange: () => members.push(factory.isTransactionBoundaryIdle())
+    })
+    factory.subscribeToCommitCapture(() =>
+      statuses.push(factory.isTransactionBoundaryIdle())
+    )
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    factory.startTransaction()
+    factory.startTransaction()
+    expect(factory.isTransactionBoundaryIdle()).toBe(false)
+    expect(other.isTransactionBoundaryIdle()).toBe(true)
+    write('user', 1)
+    factory.endTransaction()
+    expect(factory.isTransactionBoundaryIdle()).toBe(false)
+    factory.endTransaction()
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    factory.updateHistoryGroup(group, () => {
+      expect(factory.isTransactionBoundaryIdle()).toBe(false)
+      write('producer', 2)
+    })
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+    expect(statuses).toEqual([false, false])
+    expect(members).toEqual([false])
+    factory.endHistoryGroup(group)
+    expect(members).toEqual([false, false])
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    expect(factory.getUndoHistoryDepth()).toBe(2)
+  })
+
+  it('returns to idle after a failed member without discarding earlier progress', () => {
+    const { factory, values, write } = setup()
+    const group = factory.startHistoryGroup()
+    factory.updateHistoryGroup(group, () => write('x', 1))
+    expect(() =>
+      factory.updateHistoryGroup(group, () => {
+        write('x', 2)
+        throw new Error('Member failed')
+      })
+    ).toThrow('Member failed')
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    expect(values.get('x')).toBe(1)
+    expect(factory.getHistoryGroupStatus(group).memberCount).toBe(1)
+    factory.endHistoryGroup(group)
+    factory.undo()
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    expect(values.get('x')).toBe(0)
+    factory.redo()
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    expect(values.get('x')).toBe(1)
+  })
+
   it('emits one history completion at seal while physical commits remain independent', () => {
     const factory = new Factory({ bridgeToReactiveEvents: true })
     const completed = vi.fn()

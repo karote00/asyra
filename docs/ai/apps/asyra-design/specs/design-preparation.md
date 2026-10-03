@@ -308,8 +308,8 @@ a completed outcome. Deferring never changes mutation receipts or Undo boundarie
 
 ### Narrow receipts, affected checks and artifact lifetime
 
-Combined preparation/application requests a compact receipt at the canonical action
-source. It retains status, root ID, applied count and timing without constructing
+Direct and combined prepared application default to a compact receipt at the
+canonical action source. It retains status, root ID, applied count and timing without constructing
 ID arrays/role maps for transmission. Explicit full mode preserves the existing
 maps. Runtime still refreshes the context used by permission decisions; this must
 not be replaced with stale model context to save work.
@@ -346,6 +346,11 @@ properties: regrouping retains identity, deletion is validated by canonical acti
 and Undo/Redo follows the actual current document. No cross-request lookup is promised.
 
 The backend validates all expanded arguments and submits one ordinary action batch.
+Its native response defaults to compact: successful basic mutations with a null
+return value and no extra data are counted by action name. Query values, returned
+identities, additional findings and uncertain outcomes stay complete. Explicit
+`response=full` includes every canonical acknowledgement. Review and state tracking
+consume the complete receipt before this transport projection.
 It does not bypass action registration, permission, confirmation, cancellation,
 transaction, or failure semantics. Measurement and inspection run once after the
 batch (or at an explicit deferred stage boundary), not once per expanded edit.

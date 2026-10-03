@@ -33,7 +33,9 @@ import type {
   AiActionDefinition,
   AiActionRegistry,
   AiActionRegistryErrorCode,
-  AiJsonValue
+  AiJsonValue,
+  AiExecutionContext,
+  AiMutationExecutor
 } from './types.js'
 
 export interface AiContextProvider {
@@ -65,7 +67,22 @@ export interface AiConfirmationHandler {
 export interface AiTransactionRunner {
   /** Reject with the original callback error only after successful rollback;
    * reject with a distinct error if transaction settlement itself fails. */
-  run<T>(label: string, execute: () => Promise<T>): Promise<T>
+  run<T>(
+    label: string,
+    execute: (runMutation?: AiMutationExecutor) => Promise<T>,
+    options?: { readonly signal: AbortSignal }
+  ): Promise<T>
+}
+
+/** Explicit host evidence; it never performs rollback or infers retained writes. */
+export class AiTransactionSettlementError extends Error {
+  constructor(
+    readonly cause: unknown,
+    readonly status: 'committed' | 'rolled-back' | 'unknown'
+  ) {
+    super('AI request transaction settlement reported by its host.')
+    this.name = 'AiTransactionSettlementError'
+  }
 }
 
 export const AI_ACTION_BATCH_TRANSACTION_LABEL = 'AI-assisted action'
@@ -217,7 +234,9 @@ export interface AiRuntimeExecutedResult {
 }
 
 export interface AiRuntimeCancelledResult {
-  readonly transaction?: { readonly status: 'rolled-back' | 'unknown' }
+  readonly transaction?: {
+    readonly status: 'committed' | 'rolled-back' | 'unknown'
+  }
   readonly status: 'cancelled'
   readonly reason: 'aborted' | 'confirmation-cancelled'
   readonly preview?: AiActionBatchPreview
@@ -528,16 +547,20 @@ const assertTransactionNotAborted = (signal: AbortSignal): void => {
 export const runAiActionBatchTransaction = async <T>(
   runner: AiTransactionRunner,
   signal: AbortSignal,
-  execute: () => Promise<T>
+  execute: (runMutation?: AiMutationExecutor) => Promise<T>
 ): Promise<T> => {
   assertTransactionNotAborted(signal)
 
-  return runner.run(AI_ACTION_BATCH_TRANSACTION_LABEL, async () => {
-    assertTransactionNotAborted(signal)
-    const result = await execute()
-    assertTransactionNotAborted(signal)
-    return result
-  })
+  return runner.run(
+    AI_ACTION_BATCH_TRANSACTION_LABEL,
+    async (runMutation) => {
+      assertTransactionNotAborted(signal)
+      const result = await execute(runMutation)
+      assertTransactionNotAborted(signal)
+      return result
+    },
+    { signal }
+  )
 }
 
 const assertExecutionNotAborted = (signal: AbortSignal): void => {
@@ -546,14 +569,24 @@ const assertExecutionNotAborted = (signal: AbortSignal): void => {
   }
 }
 
+export const runAiMutation = async <T>(
+  context: AiExecutionContext,
+  mutate: () => T
+): Promise<T> => {
+  assertExecutionNotAborted(context.signal)
+  return context.runMutation ? context.runMutation(mutate) : mutate()
+}
+
 export const executeAiActions = async (
   batch: ConfirmedAiActionBatch,
   signal: AbortSignal,
-  redactionOptions: AiRedactionOptions = {}
+  redactionOptions: AiRedactionOptions = {},
+  runMutation?: AiMutationExecutor
 ): Promise<AiActionExecutionBatch> => {
   const actionResults: AiActionExecutionResult[] = []
   const context = Object.freeze({
-    signal
+    signal,
+    ...(runMutation ? { runMutation } : {})
   })
 
   for (const action of batch.actions) {
@@ -581,7 +614,7 @@ interface AiInvocationEvidence {
   readonly preview?: AiActionBatchPreview
   readonly retryCount: number
   readonly executionStarted?: boolean
-  readonly transactionStatus?: 'rolled-back' | 'unknown'
+  readonly transactionStatus?: 'committed' | 'rolled-back' | 'unknown'
 }
 
 interface AiStableFailure {
@@ -1051,6 +1084,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     let evidence: AiInvocationEvidence = {
       retryCount: 0
     }
+    let runMutation: AiMutationExecutor | undefined
     let failedAction: string | undefined
     let currentStage: AiRuntimeStage = 'context'
     const emitProgress = (update: AiRuntimeProgressUpdate): void =>
@@ -1181,7 +1215,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           const completed = await executeAiActions(
             { ...confirmed, actions: [action] },
             signal,
-            this.redactionOptions
+            this.redactionOptions,
+            runMutation
           )
           allResults.push(...completed.actionResults)
           actionResults.push(...completed.actionResults)
@@ -1195,20 +1230,32 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
       currentStage = 'transaction'
       const executed = await runAiActionBatchTransaction(
         {
-          run: async (label, execute) => {
+          run: async (label, execute, options) => {
             let callbackFailed = false
             let callbackError: unknown
             try {
-              return await this.transactionRunner.run(label, async () => {
-                try {
-                  return await execute()
-                } catch (error) {
-                  callbackFailed = true
-                  callbackError = error
-                  throw error
-                }
-              })
+              return await this.transactionRunner.run(
+                label,
+                async (scope) => {
+                  try {
+                    return await execute(scope)
+                  } catch (error) {
+                    callbackFailed = true
+                    callbackError = error
+                    throw error
+                  }
+                },
+                options
+              )
             } catch (error) {
+              if (error instanceof AiTransactionSettlementError) {
+                evidence = { ...evidence, transactionStatus: error.status }
+                if (error.status === 'unknown') {
+                  currentStage = 'transaction'
+                  providerFailure = undefined
+                }
+                throw error.cause
+              }
               // A conforming runner preserves the callback error only after rollback.
               // A different rejection belongs to the transaction owner itself.
               if (callbackFailed && error === callbackError) {
@@ -1223,7 +1270,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           }
         },
         signal,
-        async () => {
+        async (scope) => {
+          runMutation = scope
           try {
             let finalBatch: AiActionBatch
             while (true) {
@@ -1363,6 +1411,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             })
           } catch (error) {
             if (
+              runMutation ||
               !this.preserveProgress ||
               !evidence.executionStarted ||
               signal.aborted ||
@@ -1443,7 +1492,13 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             }),
         summary: 'Failed'
       })
-      return failed
+      return evidence.transactionStatus === 'committed'
+        ? Object.freeze({
+            ...failed,
+            actionResults: Object.freeze([...allResults]),
+            ...(failedAction ? { failedAction } : {})
+          })
+        : failed
     }
   }
 }

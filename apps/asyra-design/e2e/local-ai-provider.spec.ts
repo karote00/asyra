@@ -5,7 +5,7 @@ import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact
 } from '../server/local-vector-artifact'
-import { readFile, writeFile } from 'node:fs/promises'
+import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import { convertBuffer } from '@visioncortex/vtracer'
 import { convertVTracerBuffer } from '../vtracer-tool-server.mjs'
 import { expect, test, type Page } from '@playwright/test'
@@ -14,6 +14,9 @@ import {
   getCapturedBrowserErrors,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
+  createRectangle,
+  clickCanvas,
+  getZoomLevel,
   undo,
   redo,
   createTestDocumentIdentity,
@@ -40,9 +43,12 @@ test.afterEach(async ({ page }, testInfo) => {
 
 const captureProviderFrames = async (page: Page, outputPath: string) => {
   const frames: string[] = []
-  await page.exposeFunction('recordReviewFrame', async (line: string) => {
+  await writeFile(outputPath, '')
+  let pendingWrite = Promise.resolve()
+  await page.exposeFunction('recordReviewFrame', (line: string) => {
     frames.push(line)
-    await writeFile(outputPath, frames.join(''))
+    pendingWrite = pendingWrite.then(() => appendFile(outputPath, line))
+    return pendingWrite
   })
   await page.addInitScript(() => {
     const original = window.fetch
@@ -1682,4 +1688,401 @@ test('local subscription discovers APIs to reflect and center an existing vector
     fixture.id
   )
   expect(restored).toEqual(fixture.before)
+})
+
+// Only used with an isolated test-owned document; never a general App policy.
+const focusRecordedCanvas = async (page: Page) => {
+  await clickCanvas(page, 0.1, 0.5)
+}
+
+test('recording navigation releases composer focus and fits the drawing', async ({
+  page
+}) => {
+  test.setTimeout(20_000)
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  const initialZoom = await getZoomLevel(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  const composer = page.getByLabel('Message Agent')
+  await composer.fill('Keep this draft')
+  await expect(composer).toBeFocused()
+  page.setDefaultTimeout(3000)
+  await focusRecordedCanvas(page)
+  await expect(composer).not.toBeFocused()
+  await page.keyboard.press('Meta+1')
+  await expect.poll(() => getZoomLevel(page)).not.toBe(initialZoom)
+  await expect(composer).toHaveValue('Keep this draft')
+})
+
+const waitForRecordedDrawing = async (
+  page: Page,
+  timeline: unknown[],
+  started: number,
+  maximumDurationMs = 900_000
+) => {
+  const message = page.getByTestId('ai-agent-message').last()
+  let previousBounds = ''
+  while (true) {
+    if (Date.now() - started > maximumDurationMs)
+      throw new Error('Recording guard reached before settlement')
+    const confirmation = page.getByLabel('AI action confirmation')
+    if (await confirmation.isVisible()) {
+      await expect(confirmation).toContainText('Undoable')
+      await expect(confirmation).toContainText('No external effect')
+      timeline.push({
+        elapsedMs: Date.now() - started,
+        interaction: 'approve',
+        summary: await confirmation.innerText()
+      })
+      await confirmation
+        .getByRole('button', { name: 'Approve', exact: true })
+        .click()
+      await expect(confirmation).toBeHidden()
+    }
+    const bounds = await page.evaluate(async () =>
+      JSON.stringify(
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getAllElementsBounds()
+      )
+    )
+    if (bounds && bounds !== 'null' && bounds !== previousBounds) {
+      await page.keyboard.press('Meta+1')
+      previousBounds = bounds
+      timeline.push({
+        elapsedMs: Date.now() - started,
+        bounds: JSON.parse(bounds)
+      })
+    }
+    const outcome = await message.getAttribute('data-outcome')
+    if (
+      (outcome && outcome !== 'active') ||
+      (await page.getByLabel('Question', { exact: true }).isVisible())
+    )
+      break
+    await page.waitForTimeout(1000)
+  }
+}
+
+test('recording driver completes an undoable confirmation in its isolated document', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(20_000)
+  const frames = await captureProviderFrames(
+    page,
+    testInfo.outputPath('recorded.ndjson')
+  )
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="100" height="100"><path d="M0,0L100,0L100,100L0,100Z" fill="#008800"/></svg>'
+  )
+  const drawing = prepareLocalVectorArtifact(artifact, {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Recording fixture',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    excludePathIds: []
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) => {
+    if (route.request().headers()['x-ai-batch-receipt'])
+      return route.fulfill({ json: { accepted: true } })
+    return route.fulfill({
+      contentType: 'application/x-ndjson',
+      body: [
+        {
+          type: 'batch',
+          receiptToken: '11111111-1111-1111-1111-111111111111',
+          batch: {
+            batchId: 'recording-insert',
+            actions: [
+              {
+                id: 'insert',
+                name: 'insert_vector_composition',
+                arguments: drawing,
+                summary: 'Insert test drawing'
+              }
+            ]
+          }
+        },
+        {
+          type: 'result',
+          batch: {
+            batchId: 'recording-remove',
+            actions: [
+              {
+                id: 'remove',
+                name: 'remove_ai_composition',
+                arguments: { compositionId: drawing.groupDescriptor.id },
+                summary: 'Remove test drawing'
+              }
+            ]
+          }
+        }
+      ]
+        .map((frame) => JSON.stringify(frame))
+        .join('\n')
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByLabel('Message Agent')
+    .fill('Draw, then remove the test drawing.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByLabel('AI action confirmation')).toBeVisible()
+  const timeline: unknown[] = []
+  await waitForRecordedDrawing(page, timeline, Date.now())
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'success'
+  )
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  expect(timeline).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ interaction: 'approve' })
+    ])
+  )
+  await expect
+    .poll(() => frames.join('').includes('recording-remove'))
+    .toBe(true)
+  await expect
+    .poll(() => readFile(testInfo.outputPath('recorded.ndjson'), 'utf8'))
+    .toBe(frames.join(''))
+})
+
+test.describe('live execution acceptance recording', () => {
+  test('local subscription draws the upper two Taipei 101 tiers and spire from one brief', async ({
+    browser
+  }, testInfo) => {
+    test.skip(
+      process.env.E2E_LOCAL_AI !== 'true',
+      'Requires the local subscription opt-in; never use a mock as visual acceptance'
+    )
+    // A harness cleanup guard, not an App request quota or a performance SLA.
+    // Reserve a cleanup minute after the driver guard so failure artifacts survive.
+    const recordingTimeoutMs = 30 * 60 * 1000
+    test.setTimeout(recordingTimeoutMs + 60_000)
+    expect(process.env.AI_PROVIDER_BACKEND).toBe('local-codex')
+    expect(process.env.AI_PROVIDER_MODEL).toBe('gpt-6-astra')
+    const context = await browser.newContext({
+      baseURL: String(testInfo.project.use.baseURL),
+      viewport: { width: 1920, height: 1080 },
+      recordVideo: {
+        dir: testInfo.outputDir,
+        size: { width: 1920, height: 1080 }
+      }
+    })
+    const page = await context.newPage()
+    page.setDefaultTimeout(30_000)
+    captureBrowserErrors(page)
+    const brief =
+      'Draw only Taipei 101’s two uppermost large bamboo-shaped sections, plus the full crown and spire above them, as a highly detailed, realistic 2D illustration from one fixed oblique view. Use editable shapes, preserve visible façade details, and scale at 1 cm = 1 px.'
+    const identity = createTestDocumentIdentity('aiPerformance=profile')
+    await captureProviderFrames(
+      page,
+      testInfo.outputPath('action-batch.ndjson')
+    )
+    const inspections: Promise<void>[] = []
+    const receipts: unknown[] = []
+    const timeline: unknown[] = []
+    const started = Date.now()
+    page.on('request', (request) => {
+      if (!request.headers()['x-ai-batch-receipt']) return
+      const receipt = request.postDataJSON()
+      for (const entry of receipt.actionResults ?? []) {
+        receipts.push({
+          elapsedMs: Date.now() - started,
+          actionName: entry.actionName,
+          status: entry.status,
+          available: entry.result?.available,
+          current: entry.result?.current,
+          timing: entry.result?.timing,
+          evidence: entry.result?.evidence
+        })
+        if (
+          entry.actionName === 'inspect_drawing' &&
+          entry.result?.available === true &&
+          typeof entry.result.image?.dataUrl === 'string'
+        ) {
+          inspections.push(
+            writeFile(
+              testInfo.outputPath(`inspection-${inspections.length}.png`),
+              Buffer.from(entry.result.image.dataUrl.split(',')[1], 'base64')
+            )
+          )
+        }
+      }
+    })
+    try {
+      await page.goto(identity.url)
+      await waitForAppReady(page)
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await expect(page.getByText('Local AI connected')).toBeVisible({
+        timeout: 30_000
+      })
+      await page.getByLabel('Message Agent').fill(brief)
+      await page.evaluate(async () => {
+        const profile = (
+          await import('../src/testing/runtime-access')
+        ).getActiveAiDrawingPerformanceProfile()
+        if (!profile) throw new Error('Missing live App performance profile')
+        profile.reset()
+      })
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      await focusRecordedCanvas(page)
+      const message = page.getByTestId('ai-agent-message').last()
+      await expect(message).toBeVisible()
+      await waitForRecordedDrawing(page, timeline, started, recordingTimeoutMs)
+      await page.keyboard.press('Meta+1')
+      await page.screenshot({ path: testInfo.outputPath('completed-app.png') })
+      await writeFile(
+        testInfo.outputPath('outcome.txt'),
+        await message.innerText()
+      )
+      await writeFile(
+        testInfo.outputPath('document.json'),
+        JSON.stringify(
+          await page.evaluate(async () =>
+            (await import('../src/testing/runtime-access')).core.save()
+          )
+        )
+      )
+      await expect(page.getByLabel('Question', { exact: true })).toHaveCount(0)
+      await expect(message).toHaveAttribute('data-outcome', 'success')
+      expect(inspections.length).toBeGreaterThan(0)
+      // The recording intentionally includes ten seconds of the finished view.
+      await page.waitForTimeout(10_000)
+    } finally {
+      if (!page.isClosed()) {
+        const stop = page.getByRole('button', { name: 'Stop', exact: true })
+        if (await stop.isVisible()) await stop.click()
+        await writeFile(
+          testInfo.outputPath('document.json'),
+          JSON.stringify(
+            await page.evaluate(async () =>
+              (await import('../src/testing/runtime-access')).core.save()
+            )
+          )
+        )
+        await writeFile(
+          testInfo.outputPath('owner-profile.json'),
+          JSON.stringify(
+            await page.evaluate(
+              async () =>
+                (await import('../src/testing/runtime-access'))
+                  .getActiveAiDrawingPerformanceProfile()
+                  ?.snapshot() ?? null
+            )
+          )
+        )
+        await page.screenshot({ path: testInfo.outputPath('last-app.png') })
+      }
+      await Promise.all(inspections)
+      await writeFile(
+        testInfo.outputPath('execution-evidence.json'),
+        JSON.stringify(
+          {
+            brief,
+            documentId: identity.fileId,
+            model: process.env.AI_PROVIDER_MODEL,
+            // The production provider rejects a non-medium thread acknowledgement.
+            requiredEffort: 'medium',
+            timeline,
+            receipts
+          },
+          null,
+          2
+        )
+      )
+      await writeFile(
+        testInfo.outputPath('live-browser-errors.json'),
+        JSON.stringify(getCapturedBrowserErrors(page))
+      )
+      await context.close()
+      const video = page.video()
+      if (video)
+        await testInfo.attach('execution-video', {
+          path: await video.path(),
+          contentType: 'video/webm'
+        })
+    }
+  })
+})
+
+test('canonical fill reference edits and plural record patches have distinct contracts', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  const evidence = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const elementId = core.getSelectedElementIds()[0]
+    const before = core.getElementComputedData(elementId, ['fills'])
+    const fill = (before.fills as { id: string; color: string }[])[0]
+    if (!fill) throw new Error('Missing rectangle fill')
+    let rejected = ''
+    try {
+      core.updateElementProperties([{ elementId, values: { fills: [fill] } }])
+    } catch (error) {
+      rejected = error instanceof Error ? error.message : String(error)
+    }
+    const afterRejection = core.getElementComputedData(elementId, ['fills'])
+    const ids = core.patchElementProperties([
+      {
+        elementId,
+        records: [
+          {
+            key: 'fills',
+            set: {
+              [fill.id]: {
+                kind: 'gradient',
+                gradient: {
+                  gradientType: 'linear',
+                  gradientHandles: [
+                    { x: 0, y: 0 },
+                    { x: 0.08, y: 1 }
+                  ],
+                  gradientStops: [
+                    { position: 0, color: '#1c3d46', opacity: 1 },
+                    { position: 1, color: '#1b3c45', opacity: 1 }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ])
+    return {
+      rejected,
+      before,
+      afterRejection,
+      ids,
+      elementId,
+      fillId: fill.id,
+      after: core.getElementComputedData(elementId, ['fills'])
+    }
+  })
+  await writeFile(
+    testInfo.outputPath('property-semantics.json'),
+    JSON.stringify(evidence, null, 2)
+  )
+  expect(evidence.rejected).toContain('fills')
+  expect(evidence.afterRejection).toEqual(evidence.before)
+  expect(evidence.ids).toEqual([evidence.elementId])
+  expect(evidence.after.fills).toEqual([
+    expect.objectContaining({
+      id: evidence.fillId,
+      kind: 'gradient',
+      gradient: expect.objectContaining({ gradientType: 'linear' })
+    })
+  ])
 })

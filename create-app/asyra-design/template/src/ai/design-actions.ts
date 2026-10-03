@@ -1,4 +1,4 @@
-import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { yieldToCooperativeHost } from '@asyra/core'
 import {
   elementApis,
@@ -56,7 +56,8 @@ export const createPreparedDesignAction = (
       response: { type: 'string', enum: ['compact', 'full'] }
     }
   },
-  execute: async (args, { signal }) => {
+  execute: async (args, context) => {
+    const { signal } = context
     if (
       args.response !== undefined &&
       args.response !== 'compact' &&
@@ -114,9 +115,21 @@ export const createPreparedDesignAction = (
         points += count
         offset++
       }
-      const createStartedAt = now()
-      const ids = apis.create(descriptors, parentId)
-      createMs += now() - createStartedAt
+      const ids = await runAiMutation(context, () => {
+        checkCurrent(parentId)
+        if (
+          descriptors.some(
+            (descriptor) => apis.getElementType(descriptor.id) !== undefined
+          )
+        )
+          throw new Error('A design object already exists.')
+        const createStartedAt = now()
+        try {
+          return apis.create(descriptors, parentId)
+        } finally {
+          createMs += now() - createStartedAt
+        }
+      })
       sliceCount++
       if (
         !ids ||
@@ -133,7 +146,10 @@ export const createPreparedDesignAction = (
       cooperativeYieldMs += now() - yieldStartedAt
     }
     checkCurrent(workspaceId ?? '')
-    apis.select([design.rootId])
+    await runAiMutation(context, () => {
+      checkCurrent(workspaceId)
+      apis.select([design.rootId])
+    })
     return {
       status: 'complete',
       timing: {

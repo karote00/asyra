@@ -7,8 +7,12 @@ export type AiJsonValue =
       readonly [key: string]: AiJsonValue
     }
 
+/** Host-owned finite mutation boundary; asynchronous preparation stays outside. */
+export type AiMutationExecutor = <T>(mutate: () => T) => Promise<T>
+
 export interface AiExecutionContext {
   signal: AbortSignal
+  readonly runMutation?: AiMutationExecutor
 }
 
 export type AiActionResult = unknown

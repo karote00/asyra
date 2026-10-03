@@ -1,4 +1,5 @@
 import { designPreparationExamples } from './design-preparation-examples'
+import { LocalToolAccess } from './local-tool-scheduler'
 import { operationInputIssue } from './operation-input-schema'
 import { designFillSchema } from '../src/ai/design-fill'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -150,7 +151,13 @@ const referenceSchema = {
   required: ['artifactId'],
   properties: {
     artifactId: { type: 'string', minLength: 1 },
-    response: { type: 'string', enum: ['compact', 'full'] }
+    response: {
+      type: 'string',
+      enum: ['compact', 'full'],
+      default: 'compact',
+      description:
+        'Compact receipts keep identity mappings in the prepared artifact. Use artifactId with target keys/keyPrefix for later edits. Request full only when the full mapping is needed.'
+    }
   },
   description: 'Use the artifactId returned by prepare_design in this request.'
 }
@@ -178,6 +185,7 @@ export const createLocalDesignTools = (
           {
             type: 'function',
             name: AiDesignToolIds.PREPARE_DESIGN,
+            executionAccess: LocalToolAccess.INDEPENDENT,
             description:
               'Prepare a native editable design or original illustration without changing the canvas. Decide content/style/layout yourself; send a semantic draft. Backend validates and builds native group/frame/text/rect/oval/vector objects, returns an opaque artifactId and findings. Fix concrete overflow before application; text-metrics-required remains provisional until actual rendering. Include a brief with viewpoint, source notes, assumptions and measurable checks for substantial designs. Use relations for native layout, shared projection for explicit faces, and pattern templates with translation axes for repeated geometry instead of enumerating vertices. Prepare only changed parts; keep valid artifact IDs and unaffected canvas objects. Returns applicable plus measured review; failed checks/overflow block application. No reference image needed. Containers are selected by intent, not depth. Frame supports independent size and solid or gradient fill; layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Never repeat unchanged ineffective inputs.' +
               ` Minimal valid input examples (syntax only, adapt to the request; pattern details still require the existing structure review): ${designPreparationExamples.map((example) => JSON.stringify(example)).join(' ; ')}`,
@@ -285,9 +293,7 @@ export const createLocalDesignTools = (
             ...action,
             arguments: {
               design,
-              ...(args.response === undefined
-                ? {}
-                : { response: args.response })
+              response: args.response ?? 'compact'
             }
           }
         })

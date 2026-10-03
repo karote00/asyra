@@ -43,6 +43,95 @@ function fixture(options = {}) {
   return { owner, request, directory, contract }
 }
 
+test(
+  'private App candidate keeps selected manifest through verification and restart',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const directory = fs.mkdtempSync(path.join(parent, 'app-'))
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+    const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
+    const contract = appRuntimeFixture(root, directory)
+    const options = {
+      directory: path.join(directory, 'tasks'),
+      getBaseline: () => ({ contract, revision: 1 }),
+      available: () => true
+    }
+    let owner = createTaskOwner(root, options)
+    t.after(() => owner.close())
+    const request = {
+      requestId: randomUUID(),
+      stepId: 'validate',
+      objective: 'Exercise captured App candidate verification',
+      allowedFiles: ['apps/asyra-design/src/ai/design-fill.ts'],
+      adapter: 'demonstration',
+      scenario: 'repair',
+      contractDigest: contract.digest,
+      revision: 1,
+      budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+    }
+    const id = owner.start(request, 'human')
+    const completed = await owner.wait(id)
+    assert.equal(
+      completed.verificationStatus,
+      'passed',
+      JSON.stringify(completed.attempts)
+    )
+    const attemptId = completed.attempts.at(-1).id
+    assert.ok(owner.sourceFor(id, attemptId))
+    await owner.close()
+    owner = createTaskOwner(root, options)
+    assert.equal(owner.get(id).verificationStatus, 'passed')
+    assert.ok(owner.sourceFor(id, attemptId))
+  }
+)
+
+test('App task cannot mutate a dependency even when a step boundary includes it', async (t) => {
+  const directory = fs.mkdtempSync(path.join(parent, 'app-denial-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
+  let contract = appRuntimeFixture(root, directory)
+  const architecture = structuredClone(contract.architectureDefinition)
+  const dependencyFile = 'packages/utils/src/propsManager/fills.ts'
+  architecture.steps
+    .find((step) => step.id === 'validate')
+    .implementationBoundary.push(dependencyFile)
+  fs.writeFileSync(
+    path.join(root, contract.architecturePath),
+    'module.exports = ' + JSON.stringify(architecture)
+  )
+  contract = loadContract(root, undefined, contract.manifestPath)
+  const owner = createTaskOwner(root, {
+    directory: path.join(directory, 'tasks'),
+    getBaseline: () => ({ contract, revision: 1 }),
+    available: () => true
+  })
+  t.after(() => owner.close())
+  const id = randomUUID()
+  assert.throws(
+    () =>
+      owner.start(
+        {
+          requestId: id,
+          stepId: 'validate',
+          objective: 'Attempt a dependency write',
+          allowedFiles: [dependencyFile],
+          adapter: 'demonstration',
+          scenario: 'repair',
+          contractDigest: contract.digest,
+          revision: 1,
+          budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+        },
+        'human'
+      ),
+    /captured runtime source owner/
+  )
+  assert.equal(
+    fs.existsSync(path.join(directory, 'tasks', id, 'candidate')),
+    false
+  )
+  assert.equal(owner.list().length, 0)
+})
+
 test('provider reservations precede dispatch and survive failed attempts, handoff and restart', async () => {
   const authorization = providerAuthorization()
   let calls = 0
@@ -227,12 +316,15 @@ test(
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      ['cancel.delivery', 'cancel.outcome']
+      f.contract.negativeCaseIds.slice().sort()
     )
     correction = true
     const passed = await f.owner.wait(f.owner.resume(id, 'task', 'human'))
     assert.equal(passed.verificationStatus, 'passed')
-    assert.equal(passed.attempts[1].verdict.evidence.passedCount, 6)
+    assert.equal(
+      passed.attempts[1].verdict.evidence.passedCount,
+      f.contract.cases.length
+    )
     assert.equal(passed.providerRequests.length, 6)
     assert.equal(passed.deliveryStatus, 'not-delivered')
     assert.deepEqual(fs.readFileSync(path.join(root, sourceFile)), original)
@@ -730,7 +822,7 @@ test(
       result.snapshot.runtimeSource.digest
     )
     assert.deepEqual(verdict.runtimeAuthority, result.snapshot.runtimeAuthority)
-    assert.equal(verdict.evidence.passedCount, 6)
+    assert.equal(verdict.evidence.passedCount, contract.cases.length)
     assert.equal(
       verdict.runner.identity.configurationDigest,
       verdict.executionSource.digest

@@ -449,3 +449,19 @@ test('generated template runner owns install, compile, build, test, smoke, and c
 
   fs.rmSync(evidenceDirectory, { recursive: true, force: true })
 })
+
+test('standalone Design template omits repository-only source-proof registration', () => {
+  const template = path.join(repositoryRoot, 'create-app/asyra-design/template')
+  assert.ok(fs.existsSync(path.join(template, 'server/local-ai-provider.ts')))
+  for (const internal of [
+    'flow-contracts.json',
+    'server/__tests__/execution-flow.config.ts',
+    'server/__tests__/execution-flow-proof.test.ts'
+  ]) {
+    assert.equal(
+      fs.existsSync(path.join(template, internal)),
+      false,
+      `${internal} depends on the repository source-proof owner, which is not distributed with the standalone app`
+    )
+  }
+})

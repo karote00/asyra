@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
+import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
 import {
   createRectangle,
   dragSelectedElementBy,
@@ -1143,18 +1144,21 @@ const expectSelectedElementInteriorToConverge = async (
     .toBe(expected)
 }
 
-test('16-item server response keeps ordered minimal publications through one Action, Undo, and Redo', async ({
+test('16-item server response publishes each finite member with one Undo and Redo entry', async ({
   page
 }, testInfo) => {
   const fileId = `single-actor-fast-${Date.now()}-${testInfo.workerIndex}`
-  await installGeneratedActionBatchInterceptor(page.context(), {
+  const record = await installGeneratedActionBatchInterceptor(page.context(), {
     appUrl: requireAppUrl(testInfo),
     fileId,
     itemCount: 16
   })
+  const artifact = record.batch.actions[0].arguments as PreparedDrawingArtifact
+  const expectedMemberCount = 1 + artifact.slices.length
   await page.goto(collaborationUrl(fileId))
   await waitForAppReady(page)
   await captureFactoryPublicationShapes(page)
+  const undoDepthBefore = await getUndoDepth(page)
 
   await page.getByTestId('ai-agent-toolbar-button').click()
   await expect(page.getByTestId('ai-agent-panel')).toBeVisible()
@@ -1168,6 +1172,7 @@ test('16-item server response keeps ordered minimal publications through one Act
     { timeout: 30_000 }
   )
   await expect.poll(() => getElementCount(page)).toBe(17)
+  expect(await getUndoDepth(page)).toBe(undoDepthBefore + 1)
 
   await undo(page)
   await expect.poll(() => getElementCount(page)).toBe(0)
@@ -1181,15 +1186,19 @@ test('16-item server response keeps ordered minimal publications through one Act
     body: Buffer.from(JSON.stringify(shapes, null, 2)),
     contentType: 'application/json'
   })
-  expect(shapes.map(({ origin }) => origin)).toEqual(['action', 'undo', 'redo'])
+  expect(shapes.map(({ origin }) => origin)).toEqual([
+    ...Array.from({ length: expectedMemberCount }, () => 'action'),
+    'undo',
+    'redo'
+  ])
   expect(JSON.stringify(shapes)).not.toMatch(
     /updateComputedData|updateComputedDataPatch/
   )
 
   expect(await classifyFactoryPublicationsInApp(page)).toEqual([
-    ...Array.from({ length: 9 }, () => ['element-creation']),
-    ...Array.from({ length: 9 }, () => ['element-removal']),
-    ...Array.from({ length: 9 }, () => ['element-creation'])
+    ...Array.from({ length: expectedMemberCount }, () => ['element-creation']),
+    ...Array.from({ length: expectedMemberCount }, () => ['element-removal']),
+    ...Array.from({ length: expectedMemberCount }, () => ['element-creation'])
   ])
 })
 
