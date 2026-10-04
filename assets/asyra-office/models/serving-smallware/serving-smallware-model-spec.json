@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "center of bottom contact plane"
+  },
+  "authority": "Numeric geometry controls dimensions; sheets control appearance. Both components are authored supplementary designs, not recovered source objects.",
+  "assets": [
+    {
+      "id": "wooden-serving-tray",
+      "quantity": 1,
+      "bounds": [
+        0.28,
+        0.18,
+        0.025
+      ],
+      "construction": {
+        "outerBox": {
+          "min": [
+            -0.14,
+            -0.09,
+            0
+          ],
+          "max": [
+            0.14,
+            0.09,
+            0.025
+          ]
+        },
+        "subtractCavity": {
+          "min": [
+            -0.132,
+            -0.082,
+            0.006
+          ],
+          "max": [
+            0.132,
+            0.082,
+            0.03
+          ]
+        },
+        "bevel": 0,
+        "baseThickness": 0.006,
+        "wallThickness": 0.008
+      },
+      "material": "honey-wood",
+      "attachments": []
+    },
+    {
+      "id": "ivory-snack-bowl",
+      "quantity": 1,
+      "bounds": [
+        0.12,
+        0.12,
+        0.055
+      ],
+      "construction": {
+        "method": "revolve closed piecewise-linear radius-z profile about Z",
+        "profile": [
+          [
+            0,
+            0
+          ],
+          [
+            0.03,
+            0
+          ],
+          [
+            0.033,
+            0.003
+          ],
+          [
+            0.04,
+            0.012
+          ],
+          [
+            0.048,
+            0.025
+          ],
+          [
+            0.055,
+            0.04
+          ],
+          [
+            0.06,
+            0.053
+          ],
+          [
+            0.059,
+            0.055
+          ],
+          [
+            0.056,
+            0.055
+          ],
+          [
+            0.051,
+            0.04
+          ],
+          [
+            0.044,
+            0.025
+          ],
+          [
+            0.036,
+            0.012
+          ],
+          [
+            0.029,
+            0.005
+          ],
+          [
+            0,
+            0.005
+          ]
+        ],
+        "segments": 96,
+        "angularOffsetRadians": 0,
+        "axisVertices": "merge each radius-zero ring into one vertex",
+        "shading": "smooth non-planar faces, flat base and interior floor; no subdivision",
+        "nominalRadialWallThickness": 0.004,
+        "baseThickness": 0.005
+      },
+      "material": "ivory-ceramic",
+      "attachments": []
+    }
+  ],
+  "lighting": {
+    "baked": false,
+    "castShadows": false,
+    "ambientOcclusion": false,
+    "highlights": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0002,
+    "closedManifoldShell": true,
+    "modelsProduced": false
+  }
+}
