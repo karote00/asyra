@@ -62,11 +62,13 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.4 local candidate clarifies shared UI computation and optional
-example-overlay composition. The user confirmed desktop reinstallation loaded 0.1.1 without restarting;
-this does not establish automatic update behavior. The 0.1.4 candidate has not
-been installed or independently exercised in product trials. Bundling does not
-modify an installed cache.
+Current status: 0.1.5 is prepared for the first public submission. The user
+confirmed that a fresh desktop conversation loaded the installed 0.1.4 bundle,
+including both composition clarifications. Subsequent feedback-board extension
+and expense-tracker creation trials were reviewed; see [first release](first-release.md)
+for the scoped evidence and limitations. Version 0.1.5 changes release metadata,
+icon and documentation, not Skill instructions or reference-guide bytes.
+Native 0.1.5 installation and public submission remain pending.
 
 ## Responsibility and failure attribution
 

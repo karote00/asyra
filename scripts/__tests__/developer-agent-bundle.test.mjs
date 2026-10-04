@@ -278,3 +278,31 @@ test('CLI rejects unsupported arguments without touching its bundle', () => {
   assert.match(result.stderr, /Usage:/)
   assert.equal(read(ROOT, RECORD), before)
 })
+
+test('release listing includes bounded text, starter prompts and the packaged square icon', () => {
+  const manifest = JSON.parse(read(ROOT, `${PLUGIN}/.codex-plugin/plugin.json`))
+  const listing = manifest.interface
+  assert.ok(listing, 'Missing release listing')
+  for (const key of ['displayName', 'shortDescription'])
+    assert.ok(listing[key]?.length > 0 && listing[key].length <= 30)
+  assert.ok(
+    listing.longDescription?.length > 0 &&
+      listing.longDescription.length <= 4000
+  )
+  assert.ok(
+    listing.developerName?.length > 0 && listing.developerName.length <= 80
+  )
+  assert.equal(listing.category, 'Developer Tools')
+  assert.deepEqual(listing.capabilities, [])
+  assert.ok(
+    listing.defaultPrompt.length > 0 && listing.defaultPrompt.length <= 3
+  )
+  for (const prompt of listing.defaultPrompt) assert.ok(prompt.length <= 128)
+  for (const key of ['logo', 'composerIcon']) {
+    assert.equal(listing[key], './assets/icon.svg')
+    const svg = read(ROOT, `${PLUGIN}/assets/icon.svg`)
+    assert.match(svg, /viewBox="0 0 64 64"/)
+    const record = JSON.parse(read(ROOT, RECORD))
+    assert.ok(record.files['assets/icon.svg'])
+  }
+})
