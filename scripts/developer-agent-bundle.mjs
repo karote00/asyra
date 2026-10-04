@@ -246,9 +246,7 @@ export function checkBundle(root, baseline) {
     if (read(directory, relative) !== expected)
       fail(`Stale bundle: ${relative}; run --write`)
   const marketplace = JSON.parse(read(root, '.agents/plugins/marketplace.json'))
-  const entry = marketplace.plugins?.find(
-    (item) => item.name === 'asyra-agent'
-  )
+  const entry = marketplace.plugins?.find((item) => item.name === 'asyra-agent')
   if (
     marketplace.name !== 'asyra' ||
     entry?.source?.source !== 'local' ||
