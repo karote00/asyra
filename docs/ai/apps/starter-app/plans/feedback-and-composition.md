@@ -106,3 +106,25 @@ current (41 pages, 19 packages); all 24 scoped documentation/task-context/test
 placement contracts pass. Template and Agent freshness checks pass. Both formerly
 failed document checks are resolved. Starter implementation and generated
 artifact inputs are unchanged from the successful App and clean-consumer gates.
+
+## CI integration correction
+
+PR 285 failed in scope classification before product tests ran. The new Agent
+plugin, marketplace and baseline inputs have no registered CI owner. Bound this
+repair to CI input ownership, packaging-test registration, permanent classifier
+regressions and this integration note. Register exact marketplace/baseline paths
+and the developer-Agent distribution tree with its repository test group; unknown
+plugin roots and executable baseline files must remain blocked. Prove red first,
+then run CI classifier tests and the actual PR diff classification, preserve all
+selected checks, validate the committed head before push and inspect remote CI.
+No workflow bypass or product/runtime change is authorized by this correction.
+
+CI correction evidence: new classifier regression failed on the marketplace
+path; the existing full-script registry test also detected the missing bundle
+test registration. After repair, all 65 classifier/bundle tests pass. The actual
+PR diff classifies with zero unknown inputs and only the site/Starter workspaces.
+All 200 selected repository contract tests pass after replacing three inherited
+personal absolute paths in the Agent plan with portable home placeholders.
+Naming (13), scoped ESLint, formatting, document/bundle freshness and whitespace
+checks pass. Public distribution strings are permitted only in the exact CI
+policy/test owners; unknown roots and executable baseline files stay rejected.

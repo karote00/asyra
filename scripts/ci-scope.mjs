@@ -491,6 +491,13 @@ function classifyChanges(
     }
     if (matched) continue
     if (
+      Object.values(relationshipPolicy.repositoryScriptGroups).some(
+        (group) =>
+          group.ownsInputs &&
+          group.patterns.some(
+            (pattern) => matchesPattern(changedPath, pattern).matched
+          )
+      ) ||
       relationshipPolicy.internalDocumentationAssetPatterns.some(
         (pattern) => matchesPattern(changedPath, pattern).matched
       ) ||

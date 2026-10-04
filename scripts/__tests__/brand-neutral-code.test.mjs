@@ -168,7 +168,9 @@ const pluginIdentityOwners = new Set([
   'plugins/asyra-developer/.codex-plugin/plugin.json',
   'plugins/asyra-developer/skills/asyra-developer/bundle.json',
   'scripts/developer-agent-bundle.mjs',
-  'scripts/__tests__/developer-agent-bundle.test.mjs'
+  'scripts/__tests__/developer-agent-bundle.test.mjs',
+  'scripts/ci-relationships.json',
+  'scripts/__tests__/ci-scope.test.mjs'
 ])
 
 const isAllowedPublicIdentity = (token, line, filePath) => {

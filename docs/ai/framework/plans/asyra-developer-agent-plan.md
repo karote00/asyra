@@ -289,7 +289,7 @@ fixtures except Codex's own installation/session state. Record actual host and
 product evidence here; do not replace native acceptance with a packaging check.
 
 Preflight found `codex-cli 0.40.0` at
-`/Users/asa/.npm-global/bin/codex`; it has no plugin subcommand. The computer-use
+`$HOME/.npm-global/bin/codex`; it has no plugin subcommand. The computer-use
 tool explicitly rejects access to `com.openai.codex` for safety reasons. No UI
 workaround was attempted. Installation has not occurred. The user is being
 asked to choose explicit official CLI upgrade authorization or manual desktop
@@ -305,7 +305,7 @@ versions were not changed.
 Native commands successfully registered this worktree as marketplace `asyra`
 and installed `asyra-developer@asyra` version 0.1.0. `codex plugin list
 --marketplace asyra --json` reports installed and enabled. The installed copy at
-`/Users/asa/.codex/plugins/cache/asyra/asyra-developer/0.1.0` passes the independent
+`$HOME/.codex/plugins/cache/asyra/asyra-developer/0.1.0` passes the independent
 bundle inspector: 19 hashed files, matching the source content digest.
 
 Desktop App acceptance is a separate required result, explicitly requested by
@@ -327,7 +327,7 @@ This proves native CLI discovery only; desktop and product trials remain open.
 Evidence source: the user reported `asyra-developer` appearing in the desktop
 Plugins page, then pasted the response from the requested fresh desktop chat.
 That response reports reading the installed `SKILL.md` and `bundle.json` under
-`/Users/asa/.codex/plugins/cache/asyra/asyra-developer/0.1.0/skills/asyra-developer/`.
+`$HOME/.codex/plugins/cache/asyra/asyra-developer/0.1.0/skills/asyra-developer/`.
 It reports pluginVersion 0.1.0, reference versions Core 0.5.7 and Feature System
 0.5.4, and distinguishes those reference versions from target-project API
 compatibility. It reports no file mutations and no project-local substitute.
