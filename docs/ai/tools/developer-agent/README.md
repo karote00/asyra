@@ -62,9 +62,9 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.3 local candidate includes Starter operation-feedback and
-composition guidance. The user confirmed desktop reinstallation loaded 0.1.1 without restarting;
-this does not establish automatic update behavior. The 0.1.3 candidate has not
+Current status: 0.1.4 local candidate clarifies shared UI computation and optional
+example-overlay composition. The user confirmed desktop reinstallation loaded 0.1.1 without restarting;
+this does not establish automatic update behavior. The 0.1.4 candidate has not
 been installed or independently exercised in product trials. Bundling does not
 modify an installed cache.
 

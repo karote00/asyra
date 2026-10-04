@@ -1,5 +1,10 @@
 # Asyra Agent releases
 
+## 0.1.4 - Local candidate
+
+- Clarify shared derived UI results and optional example-overlay composition in
+  the Starter architecture guide. Framework behavior and Skill rules are unchanged.
+
 ## 0.1.3 - Local candidate
 
 - Refresh Starter guidance distinguishing last-operation feedback from document
