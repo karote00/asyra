@@ -12,6 +12,8 @@ export const createBoardController = (
   storage: ReturnType<typeof createStorageApis>,
   projection: StarterProjectionStore
 ) => {
+  let draft: { commit: () => boolean } | null = null
+  let committingDraft = false
   let disposed = false
   let requestedSelection: string | null = null
   const status = (value: AppStatus): void => {
@@ -22,7 +24,25 @@ export const createBoardController = (
       tone: 'error',
       message: error instanceof Error ? error.message : String(error)
     })
-  const selectItem = (id: string): void => {
+  const prepareAction = (): boolean => {
+    if (
+      disposed ||
+      !core.getUIProperty(UIProperties.ready) ||
+      core.getUIProperty(UIProperties.pending)
+    )
+      return false
+    if (committingDraft || !draft) return true
+    committingDraft = true
+    try {
+      return draft.commit()
+    } catch (error) {
+      reportError(error)
+      return false
+    } finally {
+      committingDraft = false
+    }
+  }
+  const applySelection = (id: string): void => {
     if (disposed) return
     if (!projection.getItem(id)) {
       requestedSelection = id
@@ -33,15 +53,10 @@ export const createBoardController = (
   }
   const unsubscribe = projection.subscribeChanges(() => {
     if (requestedSelection && projection.getItem(requestedSelection))
-      selectItem(requestedSelection)
+      applySelection(requestedSelection)
   })
   const edit = (command: () => unknown, message: string): boolean => {
-    if (
-      disposed ||
-      !core.getUIProperty(UIProperties.ready) ||
-      core.getUIProperty(UIProperties.pending)
-    )
-      return false
+    if (!prepareAction()) return false
     try {
       const result = command()
       if (Array.isArray(result) && result.length === 0) return true
@@ -53,12 +68,7 @@ export const createBoardController = (
     }
   }
   const run = async (command: () => Promise<void>): Promise<void> => {
-    if (
-      disposed ||
-      !core.getUIProperty(UIProperties.ready) ||
-      core.getUIProperty(UIProperties.pending)
-    )
-      return
+    if (!prepareAction()) return
     core.setUIProperty(UIProperties.pending, true)
     try {
       await command()
@@ -71,11 +81,21 @@ export const createBoardController = (
   return {
     status,
     reportError,
-    selectItem,
+    prepareAction,
+    registerDraft: (commit: () => boolean): (() => void) => {
+      const participant = { commit }
+      if (!disposed) draft = participant
+      return () => {
+        if (draft === participant) draft = null
+      }
+    },
+    selectItem: (id: string): void => {
+      if (prepareAction()) applySelection(id)
+    },
     addItem: (): void => {
       edit(
         () =>
-          selectItem(
+          applySelection(
             itemActions.addItem({
               title: 'Item ' + (projection.getSnapshot().length + 1),
               status: 'todo'
@@ -116,6 +136,7 @@ export const createBoardController = (
       }),
     dispose: (): void => {
       disposed = true
+      draft = null
       requestedSelection = null
       unsubscribe()
     }

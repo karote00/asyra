@@ -1,20 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { ItemProjection } from '../domain/item-domain.js'
 import { ITEM_STATUSES } from '../domain/item-domain.js'
 import { statusLabels } from '../config/item-labels.js'
 import { useApp } from '../contexts/app.js'
-import { useItem, useSelectedId } from '../providers/properties.js'
+import {
+  useItem,
+  useSelectedId,
+  useReady,
+  usePending
+} from '../providers/properties.js'
 
 const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
   const { controller } = useApp()
-  const [title, setTitle] = useState(item.title)
-
-  useEffect(() => {
-    setTitle(item.title)
-  }, [item.id, item.title])
-
-  const commitTitle = (): void => {
-    if (title === item.title) return
+  const ready = useReady()
+  const pending = usePending()
+  const [draft, setDraft] = useState<string | null>(null)
+  const draftRef = useRef<string | null>(null)
+  const updateDraft = (value: string | null): void => {
+    draftRef.current = value
+    setDraft(value)
+  }
+  const commitTitle = (): boolean => {
+    const title = draftRef.current
+    if (title === null) return true
     if (
       !controller.editItem(
         item.id,
@@ -22,7 +30,14 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
         'Updated title - unsaved changes'
       )
     )
-      setTitle(item.title)
+      return false
+    updateDraft(null)
+    return true
+  }
+  useLayoutEffect(() => controller.registerDraft(commitTitle))
+  const cancelTitle = (): void => {
+    updateDraft(null)
+    controller.status({ tone: 'ok', message: 'Title edit cancelled' })
   }
 
   return (
@@ -37,20 +52,30 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
       <input
         id="selected-item-title"
         aria-label="Title"
-        value={title}
-        onBlur={commitTitle}
-        onChange={(event) => setTitle(event.target.value)}
+        value={draft ?? item.title}
+        disabled={!ready || pending}
+        onChange={(event) => updateDraft(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur()
+          if (event.key === 'Enter') controller.prepareAction()
+          if (event.key === 'Escape') cancelTitle()
         }}
       />
-      <p className="field-help">Press Enter to apply a title edit</p>
+      <p className="field-help">Press Enter to apply - Escape to cancel</p>
+      <button
+        type="button"
+        className="cancel-edit"
+        disabled={!ready || pending || draft === null}
+        onClick={cancelTitle}
+      >
+        Cancel edit
+      </button>
       <div className="field-label">Status</div>
       <div className="status-control" role="group" aria-label="Status">
         {ITEM_STATUSES.map((status) => (
           <button
             key={status}
             type="button"
+            disabled={!ready || pending}
             aria-pressed={status === item.status}
             className={status === item.status ? 'active' : undefined}
             onClick={() => {

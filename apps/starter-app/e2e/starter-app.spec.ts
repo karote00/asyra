@@ -259,25 +259,60 @@ test('commits a title draft before canvas selection and preserves edit then drag
   ).toBeVisible()
 })
 
-test('rejects an invalid title draft on canvas selection', async ({ page }) => {
+test('preserves rejected input across Save and canvas actions until correction or cancellation', async ({
+  page
+}, testInfo) => {
   await page.goto('/')
   await expect(page.getByText('Ready')).toBeVisible()
   await page.getByRole('button', { name: 'Add item' }).click()
   await page.getByRole('button', { name: 'Add item' }).click()
   const title = page.getByRole('textbox', { name: 'Title' })
+  const first = page.getByRole('button', { name: 'Item 1', exact: true })
   await expect(title).toHaveValue('Item 2')
   await title.fill('   ')
-  await page.getByRole('button', { name: 'Item 1', exact: true }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('status')).toContainText(
     'Item title is required.'
   )
+  expect(
+    await page.evaluate(() => localStorage.getItem('starter-app.document.v1'))
+  ).toBeNull()
+  await first.click()
+  await expect(title).toHaveValue('   ')
   await expect(
-    page.getByRole('button', { name: 'Select Item 2' })
+    page.getByRole('button', { name: 'Item 2', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true')
+  const before = await first.boundingBox()
+  await first.dragTo(page.locator('.render-stage'), {
+    targetPosition: { x: 140, y: 280 }
+  })
+  expect((await first.boundingBox())?.x).toBe(before?.x)
+  expect((await first.boundingBox())?.y).toBe(before?.y)
+  await expect(title).toHaveValue('   ')
+  await page.screenshot({
+    path: testInfo.outputPath('rejected-draft.png'),
+    fullPage: true
+  })
+  await page.getByRole('button', { name: 'Cancel edit' }).click()
+  await expect(title).toHaveValue('Item 2')
+  await first.click()
+  await expect(title).toHaveValue('Item 1')
+  await title.fill('Saved focused draft')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('Saved at')
+  await page.getByRole('button', { name: 'Reload', exact: true }).click()
+  await expect(title).toHaveValue('Saved focused draft')
+  await title.fill(' ')
+  await title.press('Enter')
+  await expect(title).toHaveValue(' ')
+  await title.fill('Corrected draft')
+  await title.press('Enter')
+  await expect(
+    page.getByRole('button', { name: 'Select Corrected draft' })
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Select Item 2' }).click()
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
-    'Item 2'
-  )
+  await title.fill('Cancelled with keyboard')
+  await title.press('Escape')
+  await expect(title).toHaveValue('Corrected draft')
 })
 
 test('touch drag commits once and pointer cancellation restores the last position', async ({

@@ -46,7 +46,9 @@ forwarding modules only to reproduce a folder tree.
 - **UI properties:** ready, pending, status, selected ID, Item IDs and canvas width
   are transient and live under `UIProperties`. They are not persisted Item fields.
 - **Local drafts:** the title input and in-progress drag may retain unfinished
-  input. Commit through the controller; discard/reset on cancellation or failure.
+  input. The title editor registers a synchronous commit participant with the
+  controller for its mounted lifetime. Rejected title drafts remain visible;
+  only explicit Cancel/Escape discards them. Drag cancellation resets preview.
 
 The Feature scheduling priority is unrelated to the opt-in Item priority field.
 Persisted identities remain centralized in `domain/item-domain.ts`; do not rename
@@ -87,6 +89,21 @@ One intended edit runs in one transaction in `common-apis/items.ts`. Drag previe
 only updates presentation; pointer release commits offsets once. Selection is UI
 state and creates no history entry. Retained editing callbacks send a partial
 update, so they do not overwrite newer unrelated fields.
+
+The controller admits Save, selection, creation, status/position, history and
+reload only after the active title draft commits successfully. Enter also requests
+admission; blur alone preserves the draft. Invalid input blocks the action and
+retains validation feedback. Never infer admission from status messages or rely on
+DOM blur/click ordering. Canvas checks admission before starting drag preview.
+
+The editor owns only an optional unfinished title, not a canonical title copy.
+After acceptance it clears that draft synchronously and renders the projection;
+this also handles commit followed by immediate Undo before publication. Partial
+updates preserve unrelated fields. Cancel creates no history. Valid draft then
+Undo commits that edit and invokes exactly one Undo; Reload deliberately restores
+the saved document after admission. Async actions disable the editor and reject
+new actions until completion. Registration cleanup uses identity so an older
+editor cannot clear its replacement; controller disposal releases the participant.
 
 Undo/Redo calls perform exactly one operation through Factory's supported render
 policy API. Factory owns empty stacks and redo invalidation. There is no UI depth,

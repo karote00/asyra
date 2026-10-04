@@ -68,7 +68,7 @@ const CanvasItemView = ({
         height: bounds.height
       }}
       onPointerDown={(event) => {
-        if (event.button !== 0) return
+        if (event.button !== 0 || !controller.prepareAction()) return
         drag.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
