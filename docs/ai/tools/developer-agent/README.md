@@ -3,8 +3,8 @@
 ## Purpose and boundaries
 
 The Codex plugin helps users build products with Asyra. Its public entry is
-[installation and usage](../../../../plugins/asyra-developer/README.md).
-Its instruction owner is the plugin's `skills/asyra-developer/SKILL.md`.
+[installation and usage](../../../../plugins/asyra-agent/README.md).
+Its instruction owner is the plugin's `skills/asyra-agent/SKILL.md`.
 Canonical Framework and App documentation stays authoritative.
 
 The [persistent scope exception](../../workflows/task-context.md#asyra-developer-agent-scope-exception)
@@ -17,7 +17,7 @@ dependency upgrades or writes outside the project.
 ## Source and packaging owners
 
 - `.agents/plugins/marketplace.json` registers the local plugin with Codex.
-- `plugins/asyra-developer/.codex-plugin/plugin.json` owns the plugin version.
+- `plugins/asyra-agent/.codex-plugin/plugin.json` owns the plugin version.
 - `bundle.config.json` lists the exact public guides to distribute.
 - `scripts/developer-agent-bundle.mjs` produces references and `bundle.json`.
 - `bundle.json` records source hashes, file hashes and reference package versions.
@@ -62,13 +62,11 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.5 is prepared for the first public submission. The user
-confirmed that a fresh desktop conversation loaded the installed 0.1.4 bundle,
-including both composition clarifications. Subsequent feedback-board extension
-and expense-tracker creation trials were reviewed; see [first release](first-release.md)
-for the scoped evidence and limitations. Version 0.1.5 changes release metadata,
-icon and documentation, not Skill instructions or reference-guide bytes.
-Native 0.1.5 installation and public submission remain pending.
+Current status: 0.1.5 was published on GitHub and its installed desktop bundle
+was verified by the user. Version 0.1.6 prepares the unified Asyra Agent name
+and `asyra-agent` identity. Publication and native discovery of the renamed
+plugin remain pending. See the plugin README for replacement instructions;
+historical first-release evidence is retained unchanged.
 
 ## Responsibility and failure attribution
 

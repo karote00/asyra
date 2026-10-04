@@ -13,8 +13,8 @@ import {
 } from '../developer-agent-bundle.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const PLUGIN = 'plugins/asyra-developer'
-const SKILL = 'skills/asyra-developer'
+const PLUGIN = 'plugins/asyra-agent'
+const SKILL = 'skills/asyra-agent'
 const RECORD = `${PLUGIN}/${SKILL}/bundle.json`
 const scratch = path.join(ROOT, 'tmp/developer-agent-tests')
 fs.mkdirSync(scratch, { recursive: true })
@@ -305,4 +305,23 @@ test('release listing includes bounded text, starter prompts and the packaged sq
     const record = JSON.parse(read(ROOT, RECORD))
     assert.ok(record.files['assets/icon.svg'])
   }
+})
+
+test('public plugin and Skill share the Asyra Agent installation identity', () => {
+  const manifest = JSON.parse(read(ROOT, `${PLUGIN}/.codex-plugin/plugin.json`))
+  const market = JSON.parse(read(ROOT, '.agents/plugins/marketplace.json'))
+  const entry = market.plugins.find((item) => item.name === manifest.name)
+  assert.equal(manifest.name, 'asyra-agent')
+  assert.equal(manifest.interface.displayName, 'Asyra Agent')
+  assert.equal(entry.source.path, `./${PLUGIN}`)
+  assert.deepEqual(fs.readdirSync(path.join(ROOT, PLUGIN, 'skills')), [
+    manifest.name
+  ])
+  assert.ok(
+    read(ROOT, `${PLUGIN}/${SKILL}/SKILL.md`).startsWith(
+      `---\nname: ${manifest.name}\n`
+    )
+  )
+  const record = inspectPlugin(path.join(ROOT, PLUGIN))
+  assert.ok(record.files[`${SKILL}/SKILL.md`])
 })

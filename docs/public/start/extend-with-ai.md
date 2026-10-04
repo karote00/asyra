@@ -14,7 +14,7 @@ it already exists.
 The repository includes an initial Codex plugin with a developer Skill and
 selected build guides. Describe your desired product; the Skill helps identify
 the owners, public APIs and tests needed to implement it. Follow the
-[local candidate installation guide](../../../plugins/asyra-developer/README.md).
+[Asyra Agent installation guide](../../../plugins/asyra-agent/README.md).
 This candidate has not been publicly released. It runs in your coding tool and
 is separate from the optional in-app `@asyra/ai-agent-runtime`.
 

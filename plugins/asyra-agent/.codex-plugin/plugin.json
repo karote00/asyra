@@ -1,6 +1,6 @@
 {
-  "name": "asyra-developer",
-  "version": "0.1.5",
+  "name": "asyra-agent",
+  "version": "0.1.6",
   "description": "Build and extend products with Asyra using its public APIs, ownership patterns and formal verification. Includes versioned reference guides.",
   "author": {
     "name": "Asa Tsai"
@@ -8,7 +8,7 @@
   "license": "MIT",
   "skills": "./skills/",
   "interface": {
-    "displayName": "Asyra Developer",
+    "displayName": "Asyra Agent",
     "shortDescription": "Build products with Asyra",
     "longDescription": "Build and extend Asyra products from your requirements. Includes the maintained Starter architecture and offline guides for Features, canonical state, UI subscriptions, transactions, persistence and verification. Works in Codex with your existing model and project permissions. This skills-only plugin provides development guidance; it does not host an AI service, upgrade project dependencies, or guarantee generated code is correct. Review and test your product before use.",
     "developerName": "Asa Tsai",

@@ -165,8 +165,8 @@ const capitalizedBrandIdentifierPattern = new RegExp(
 const pluginIdentityOwners = new Set([
   'scripts/__tests__/brand-neutral-code.test.mjs',
   '.agents/plugins/marketplace.json',
-  'plugins/asyra-developer/.codex-plugin/plugin.json',
-  'plugins/asyra-developer/skills/asyra-developer/bundle.json',
+  'plugins/asyra-agent/.codex-plugin/plugin.json',
+  'plugins/asyra-agent/skills/asyra-agent/bundle.json',
   'scripts/developer-agent-bundle.mjs',
   'scripts/__tests__/developer-agent-bundle.test.mjs',
   'scripts/ci-relationships.json',
@@ -178,7 +178,13 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   const relativePath = path.relative(repositoryRoot, filePath)
   if (
     pluginIdentityOwners.has(relativePath) &&
-    (token === 'asyra-developer' ||
+    (token === 'asyra-agent' ||
+      (token === 'asyra-developer' &&
+        [
+          'scripts/__tests__/brand-neutral-code.test.mjs',
+          'scripts/ci-relationships.json',
+          'scripts/__tests__/ci-scope.test.mjs'
+        ].includes(relativePath)) ||
       (token === repositoryBrand &&
         [
           '.agents/plugins/marketplace.json',
@@ -253,7 +259,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
 }
 
 test('plugin distribution identities remain scoped to quoted owner data', () => {
-  const token = `${repositoryBrand}-developer`
+  const token = `${repositoryBrand}-agent`
   const owner = path.join(repositoryRoot, 'scripts/developer-agent-bundle.mjs')
   assert.equal(
     isAllowedPublicIdentity(token, `const name = '${token}'`, owner),
@@ -279,6 +285,36 @@ test('plugin distribution identities remain scoped to quoted owner data', () => 
     ),
     false
   )
+})
+
+test('previous plugin identity is retained only for CI diff input classification', () => {
+  const token = `${repositoryBrand}-developer`
+  for (const relative of [
+    'scripts/ci-relationships.json',
+    'scripts/__tests__/ci-scope.test.mjs'
+  ]) {
+    assert.equal(
+      isAllowedPublicIdentity(
+        token,
+        `const path = '${token}'`,
+        path.join(repositoryRoot, relative)
+      ),
+      true
+    )
+  }
+  for (const relative of [
+    'scripts/developer-agent-bundle.mjs',
+    'apps/example.ts'
+  ]) {
+    assert.equal(
+      isAllowedPublicIdentity(
+        token,
+        `const path = '${token}'`,
+        path.join(repositoryRoot, relative)
+      ),
+      false
+    )
+  }
 })
 
 test('Official display names remain distinct from branded code identifiers', () => {

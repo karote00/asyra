@@ -1,5 +1,12 @@
 # Asyra Agent releases
 
+## 0.1.6 - Unified product name
+
+- Rename the display name to Asyra Agent and Plugin/Skill identity to `asyra-agent`.
+- Update marketplace, packaging and CI paths together.
+- Document explicit replacement of the previous installation; preserve product data.
+- Preserve development guidance; this candidate has not yet been published.
+
 ## 0.1.5 - First public release candidate
 
 - Prepare Codex directory listing text, starter prompts and the existing Asyra icon.

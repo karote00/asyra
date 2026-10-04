@@ -547,3 +547,56 @@ are prepared. All 27 selected packaging/naming checks, baseline freshness and
 archive round-trip inspection passed. Native installation and portal submission
 remain pending; this task does not close public publication or the wider plan.
 See `docs/ai/tools/developer-agent/first-release.md`.
+
+## Task 5 - Unify the public product as Asyra Agent
+
+Requested on 2026-10-05; base e9809b674a13a7eb016ec9c9ad8e2489a6c5ae6f.
+Reuse the clean agent-github-release worktree. Public distribution and Skill
+identity become `asyra-agent`; display name becomes `Asyra Agent`. Version 0.1.6
+distinguishes the rename from the immutable published 0.1.5 artifact. Existing
+installation is replaced explicitly, with no alias or automatic cache migration.
+
+Plan: rename plugin/Skill directories and their manifest, marketplace, bundler,
+CI and naming consumers; update current installation docs; retain the 0.1.5
+baseline and regenerate references. Preserve historical plans and release evidence.
+Scope excludes Framework/App behavior, skill behavioral instructions, dependencies,
+installed cache and rewriting published tags/assets. Flow Inspector exemption applies.
+Checks: existing packaging, naming, CI scope and public-doc freshness gates,
+0.1.5 baseline comparison and bounded diff review. Stop after a locally validated
+change; remote publication and native installation are separate delivery steps.
+
+Task 5 local result: renamed Plugin/Skill, marketplace, packaging and CI owners;
+version 0.1.6 with explicit replacement instructions. All 80 selected packaging,
+naming and CI scope tests passed; baseline freshness, Skill validation and diff
+whitespace checks passed. Public documentation check reports a stale API index,
+also reproduced in the unchanged agent-first-release worktree. Its unrelated
+three-field regeneration was excluded. No remote push, new release or installed
+cache modification occurred. Native renamed-plugin discovery remains unverified.
+
+Task 5 CI correction: the PR diff contains removed `asyra-developer` paths,
+which the renamed relationship map no longer classified. Scope failed before
+product gates ran. Bound the correction to the CI input map, its regression
+test and exact naming guard exceptions for these historical diff inputs.
+The regression failed on the removed manifest path before the fix. Retain the
+old path as an input owner alongside the new path, not as an installed alias.
+
+Task 5 validation replan: CI scope now passes; shared validation exposed a
+formatting error in the shortened plugin-name predicate. The evidence gap was
+omitting the selected ESLint files from local validation. Restrict this iteration
+to formatting the bundler and validating all four PR-selected script files,
+then run the same packaging/naming/scope contracts and follow remote CI.
+Self-review: this preserves all runtime and package bytes and needs no Inspector
+contract change. Existing ESLint reproduced the exact CI failure before editing.
+
+Local CI parity follow-up: after installing locked dependencies and building all
+19 selected Framework declaration tasks, public documentation freshness passes
+without changing the API index. The earlier stale-index diagnosis was incomplete:
+the local declaration prerequisite was missing. Full selected shared validation
+now passes (266 repository tests, 14 naming tests, and all selected lint files).
+
+Local completion before push: selected shared checks passed; Website lint/build
+and tests passed (25 contracts, 99 other tests with 15 opt-in skips); browser
+suite passed 97 cases with 5 configured skips. Website production artifact proof
+and all 5 resource-evidence tests passed. Changeset, Turbo synchronization, bundle
+freshness and public documentation freshness passed. These runs used the local
+working candidate and the PR-selected execution plan, not a remote CI receipt.
