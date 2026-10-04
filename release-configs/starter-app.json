@@ -7,7 +7,7 @@
     "react:build": "yarn build",
     "start": "vite dev"
   },
-  "removeScripts": ["build:dependencies", "test:e2e"],
+  "removeScripts": ["build:dependencies", "test:e2e", "test:e2e:ci"],
   "standaloneVitestConfig": true,
   "packableGitignore": true,
   "cleanFiles": [

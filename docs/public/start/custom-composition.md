@@ -374,3 +374,24 @@ Prove the exact composition you claim:
 
 - [Learn information models](../learn/information-models.md)
 - [Build a custom schema](../build/custom-schema.md)
+
+## Use Starter as the complete App reference
+
+Starter is the maintained executable reference for new Apps. Its architecture
+follows the established ownership boundaries in Asyra Design: Core context,
+explicit initialization, registered Features, common APIs, controllers, semantic
+property providers, composed UI and render layers. The distributed Starter
+includes `docs/ARCHITECTURE.md`, explaining why every part exists and connects.
+
+This includes UI observation and lifecycle, not only API calls. Register fixed
+UI properties before Core starts; read them through `getUIProperty` and
+`onUIPropertyChange` with a lifetime-owned React external-store adapter. Dynamic
+entity rows use keyed projection subscriptions because Core's definition graph
+closes at startup. Subscribe at the actual consuming component; keep unchanged
+rows stable and test reads/notifications as well as renders.
+
+Factory owns Undo/Redo stacks. Call one operation per user action; never derive
+history from translated messages or maintain a UI redo counter. Controllers own
+structured feedback and pending state; the document owner keeps canonical data.
+Starter's permanent tests cover localization-independent state, per-Item update
+boundaries, lifetime cleanup, saved-data admission and the field extension path.

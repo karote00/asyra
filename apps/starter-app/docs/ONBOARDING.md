@@ -5,13 +5,13 @@ The default screen starts with an empty document. Add an Item, select it on the
 inspector. Drag a canvas Item to move it. It uses React as a
 shell and a supported 2D provider, while Core and its registered owners hold
 the document. Start with `src/domain/item-domain.ts` for Item values, schema,
-and saved-data admission. Trace `src/runtime/starter-runtime.ts` before editing
+and saved-data admission. Read `docs/ARCHITECTURE.md`, then trace `src/init/init-app.ts` before editing
 the UI.
 
 ## Canonical edit path
 
-`src/ui/StarterApp.tsx` calls `runtime.feature.addItem`, `editItem`, or
-`moveItem`. The registered Feature delegates to the App command API. The API
+`src/app/index.tsx` composes views whose controller calls the registered
+`itemActions.addItem`, `editItem`, or `moveItem` API. The registered Feature delegates to the App command API. The API
 validates input,
 wraps one intended action in `runTransaction`, and calls
 `core.createElementsInParentFromCanonicalData` or
@@ -20,9 +20,9 @@ Undo journal. The Feature registration keeps its existing priority and
 exclusive behavior; the Item's `priority` data field is unrelated to that
 Feature scheduling priority.
 
-`src/runtime/projection-store.ts` derives read-only Item rows from Core. It
+`src/derived-state/item-projection.ts` derives read-only Item rows from Core. It
 handles shared publications for add/edit/Undo/Redo and refreshes from Core on
-accepted Reload. React subscribes to those rows; it must not become a second
+accepted Reload. Semantic providers subscribe to fixed UI properties or individual rows; it must not become a second
 editable Item source. A text input may temporarily hold incomplete text until
 its Feature command commits. The App-owned overlay layer paints cards from
 the same projection, while selection remains transient UI state and does not
@@ -33,7 +33,7 @@ one drag creates one Undo entry. Both the Core overlay and React card use the
 same position projection. Missing offsets in a legacy saved Item mean zero;
 present invalid offsets are rejected before load.
 
-`src/runtime/storage.ts` writes an explicit versioned Core snapshot. Reload
+`src/persistence/storage.ts` writes an explicit versioned Core snapshot. Reload
 parses the wrapper, validates App Item fields, then uses Core preflight and
 load. The App handles compatibility for its own fields. Missing legacy data
 must be distinguished from a present invalid value before Core applies the
@@ -43,7 +43,7 @@ document.
 
 `src/examples/priority/priority-item-field.ts` defines an optional Item field:
 `low`, `normal`, or `high`, with default `normal`. Passing
-`itemField: priorityItemField` to `createStarterRuntime` activates it for that
+`itemField: priorityItemField` to `initApp` activates it for that
 runtime. Commands use `fields: { priority: ... }`; the authoritative Props
 record saves `priority` directly, while the read-only Item projection exposes
 it under `fields.priority`. The default screen does not pass this option and

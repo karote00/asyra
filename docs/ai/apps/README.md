@@ -5,6 +5,8 @@ This folder contains app-level implementation contexts.
 Current apps:
 
 - `asyra-design/`
+- [Starter App](starter-app/README.md) - maintained complete App standard for new
+  products and developer-Agent guidance.
 
 - [Asyra Sim](asyra-sim/README.md) - free, pluggable simulation and experiment
   workbench; first product slice: local robot-workcell collision and clearance

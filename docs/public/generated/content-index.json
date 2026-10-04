@@ -257,7 +257,7 @@
       "wordCount": 476
     },
     {
-      "contentSha256": "bcc96b18ed83c5ca17294200538946fcefbbb26123b1df0e402bff261ca43784",
+      "contentSha256": "eafb4e9115bf0ee7eecf128f400fe48000ace79ea9fbe401f4c65b8ea59ce0bb",
       "description": "Build a Core App with transaction publications, incremental persistence, scoped subscriptions, computation reuse and explicit lifecycle ownership.",
       "headings": [
         {
@@ -331,6 +331,10 @@
         {
           "depth": 2,
           "title": "Next"
+        },
+        {
+          "depth": 2,
+          "title": "Use Starter as the complete App reference"
         }
       ],
       "id": "start/custom-composition",
@@ -341,7 +345,7 @@
       "path": "start/custom-composition.md",
       "section": "Customize",
       "title": "Compose only the infrastructure you need",
-      "wordCount": 2500
+      "wordCount": 2669
     },
     {
       "contentSha256": "e636a8f65ffb1b0e0f5c1f40b5eca93e0e7833ad7224c61253ac570c20fa4621",

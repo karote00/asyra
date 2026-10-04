@@ -4,6 +4,18 @@ This is the project-wide policy for AI-assisted local commits and remote Git
 operations. It applies to framework, app, documentation, plan, and workflow
 tasks.
 
+## Project and GitHub Language
+
+Follow the project language rule in `AGENTS.md`: write commit messages and all
+GitHub content in English, including PR titles, descriptions, issues, reviews,
+and comments. A Traditional Chinese conversation does not authorize Traditional
+Chinese project or GitHub prose. The only Traditional Chinese exceptions are
+required i18n parameters/resources and test data that genuinely needs it to
+verify behavior; explanatory prose remains English.
+
+Before submitting or updating GitHub content, review its language as well as
+its technical accuracy.
+
 ## Branch Safety
 
 - Never modify or commit on `main`.

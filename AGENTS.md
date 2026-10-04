@@ -17,7 +17,15 @@ command. Read-only questions keep the Level 0 path below.
 
 These rules apply to every task without requiring additional document reads:
 
-- Use Traditional Chinese (Taiwan usage) or English only. Never use Simplified Chinese.
+- User-facing conversation may use Traditional Chinese (Taiwan usage) or English.
+  Never use Simplified Chinese.
+- Write all project-authored content in English, including source code, comments,
+  identifiers, documentation, plans, scripts, test names, commit messages, and
+  GitHub content (PR titles/descriptions, issues, reviews, and comments).
+  Traditional Chinese is allowed only for required i18n parameters/resources
+  or test data that genuinely needs Traditional Chinese to verify the behavior.
+  These exceptions do not apply to surrounding documentation or test descriptions.
+  The conversation language never overrides the project language requirement.
 - Do not write, move, copy, or delete files outside the project. Read-only access outside the project is allowed.
 - External links in project-authored websites and rendered Markdown must open
   in a new tab. Use an HTML anchor with `target="_blank"` and
