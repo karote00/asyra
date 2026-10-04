@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom footprint centre",
+  "dimensionTolerance": 0.001,
+  "objects": [
+    {
+      "id": "square-column",
+      "size": [
+        0.27,
+        0.27,
+        2.5
+      ],
+      "primitive": "closed-box",
+      "min": [
+        -0.135,
+        -0.135,
+        0
+      ],
+      "max": [
+        0.135,
+        0.135,
+        2.5
+      ],
+      "material": "plaster"
+    },
+    {
+      "id": "horizontal-beam",
+      "size": [
+        2,
+        0.27,
+        0.27
+      ],
+      "primitive": "closed-box",
+      "min": [
+        -1,
+        -0.135,
+        0
+      ],
+      "max": [
+        1,
+        0.135,
+        0.27
+      ],
+      "material": "plaster"
+    }
+  ],
+  "construction": {
+    "verticesPerObject": 8,
+    "quadFacesPerObject": 6,
+    "trianglesPerObject": 12,
+    "bevel": 0,
+    "subdivision": 0,
+    "holes": false,
+    "outwardNormals": true,
+    "flatFaceNormals": true,
+    "uvRequired": false
+  },
+  "materials": {
+    "plaster": {
+      "baseColor": "#E4D9C4",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "ior": 1.5,
+      "coat": 0,
+      "transmission": 0,
+      "subsurface": 0,
+      "anisotropy": 0,
+      "emission": 0,
+      "normalMap": false,
+      "displacement": 0
+    }
+  },
+  "surface": "Uniform intrinsic color, no texture or baked lighting. Drawing contours are not textures.",
+  "placementExample": {
+    "beamOrigin": [
+      0,
+      0,
+      2.5
+    ],
+    "columnOrigins": [
+      [
+        -0.865,
+        0,
+        0
+      ],
+      [
+        0.865,
+        0,
+        0
+      ]
+    ],
+    "topZ": 2.77,
+    "clearSpan": 1.46,
+    "meaning": "Optional example only; no assembly or runtime placement implementation."
+  },
+  "authority": "Numeric geometry defines exact dimensions and hidden surfaces. Images are non-calibrated appearance references.",
+  "exclusions": [
+    "models",
+    "runtime implementation",
+    "joints",
+    "fasteners",
+    "stairs",
+    "structural simulation",
+    "LOD meshes"
+  ]
+}
