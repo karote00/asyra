@@ -161,9 +161,31 @@ const capitalizedBrandIdentifierPattern = new RegExp(
   'u'
 )
 
+// Public Codex distribution identities are data only, in their exact owners.
+const pluginIdentityOwners = new Set([
+  'scripts/__tests__/brand-neutral-code.test.mjs',
+  '.agents/plugins/marketplace.json',
+  'plugins/asyra-developer/.codex-plugin/plugin.json',
+  'plugins/asyra-developer/skills/asyra-developer/bundle.json',
+  'scripts/developer-agent-bundle.mjs',
+  'scripts/__tests__/developer-agent-bundle.test.mjs'
+])
+
 const isAllowedPublicIdentity = (token, line, filePath) => {
   const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const relativePath = path.relative(repositoryRoot, filePath)
+  if (
+    pluginIdentityOwners.has(relativePath) &&
+    (token === 'asyra-developer' ||
+      (token === repositoryBrand &&
+        [
+          '.agents/plugins/marketplace.json',
+          'scripts/developer-agent-bundle.mjs'
+        ].includes(relativePath))) &&
+    new RegExp(`(['"])[^'"\\n]*${escapedToken}[^'"\\n]*\\1`, 'u').test(line)
+  ) {
+    return true
+  }
   if (
     retainedWireIdentityOwnerPaths.has(relativePath) &&
     retainedWireIdentities.has(token) &&
@@ -227,6 +249,35 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
 
   return false
 }
+
+test('plugin distribution identities remain scoped to quoted owner data', () => {
+  const token = `${repositoryBrand}-developer`
+  const owner = path.join(repositoryRoot, 'scripts/developer-agent-bundle.mjs')
+  assert.equal(
+    isAllowedPublicIdentity(token, `const name = '${token}'`, owner),
+    true
+  )
+  assert.equal(
+    isAllowedPublicIdentity(token, `const ${token} = true`, owner),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(
+      `${token}-state`,
+      `const name = '${token}-state'`,
+      owner
+    ),
+    false
+  )
+  assert.equal(
+    isAllowedPublicIdentity(
+      token,
+      `const name = '${token}'`,
+      path.join(repositoryRoot, 'apps/example.ts')
+    ),
+    false
+  )
+})
 
 test('Official display names remain distinct from branded code identifiers', () => {
   const fixturePath = path.join(repositoryRoot, 'apps/example.ts')

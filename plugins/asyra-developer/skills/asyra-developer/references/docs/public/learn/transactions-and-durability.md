@@ -1,0 +1,93 @@
+<!-- Generated from docs/public/learn/transactions-and-durability.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# One user intent, one transaction
+
+A transaction is the durability boundary for one intended product action. It
+groups canonical writes so success commits one coherent result and failure
+restores the previous result. The same boundary gives undo/redo, collaboration
+publication, and persistence a stable unit to observe.
+
+Factory owns transaction execution, rollback, history, and replay. Reactive
+Events carries typed coordination and transaction-owner routes; it does not
+authorize UI or transport code to open unrelated nested commits.
+
+## Where this runs
+
+The app opens and closes the transaction inside the Feature or common API that
+owns one product decision. Pointer listeners, React effects, collaboration
+providers, persistence adapters, and AI providers call that owner route; they
+do not create competing transactions.
+
+## Maintained implementation path
+
+Product code should enter this boundary through the Feature or common API that
+already owns the action. Follow
+[Build a transaction-safe Feature session](../build/feature-session.md) for the
+complete start, update, commit, cancellation, rollback, and replay path.
+
+The <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/factory.md" target="_blank" rel="noopener noreferrer">Factory package guide</a> documents the
+transaction owner API for Framework composition. It is not a second product
+recipe to duplicate beside every Feature. Keep event inversion and replay
+registered with the canonical owner that applies the corresponding state.
+
+## Flow
+
+```text
+Feature/session starts
+→ app opens one transaction
+→ canonical owners validate and apply writes
+→ success commits once
+→ observers project, publish, or persist the commit
+```
+
+On failure, the transaction restores prior canonical state and does not append
+a history item. Undo and Redo replay the committed action through the declared
+owner route. One drag, one group command, or one approved AI action should not
+be split into several accidental undo steps.
+
+## Expected result
+
+One successful bounded action produces one committed history unit. If a write
+throws, rollback restores the previous value and adds no history item. Undo and
+Redo replay through the registered owner handler, so visual output and remote
+publication remain downstream consequences of the same decision.
+
+## Durability is broader than storage
+
+Persistence stores a validated representation of canonical state.
+Collaboration carries canonical changes between actors. Undo/redo replays one
+committed intent. AI actions invoke registered app operations. These systems
+share the transaction unit, but each retains its own owner:
+
+- Factory owns commit and replay;
+- the app owns command meaning and remote/history policy;
+- Collaboration owns deterministic replication adapters, not network policy;
+- Persistence owns its adapter boundary, not app document migration meaning;
+- canonical packages own the data they validate and mutate.
+
+## Avoid split ownership
+
+Do not commit once per pointer move when the product defines one drag. Do not
+create one local commit and a different “collaboration commit” for the same
+action. Do not let a backend response bypass the owner transaction. Do not hide
+partial failure by rendering the desired final output.
+
+## Validate a transaction
+
+- one intended action creates one expected history entry;
+- failure restores all touched canonical owners;
+- undo and redo reach the same owner instances;
+- publication occurs only for accepted committed changes;
+- repeated replay is deterministic; and
+- cleanup closes every session and temporary owner override.
+
+## Canonical sources
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/factory.md" target="_blank" rel="noopener noreferrer">Factory contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/reactive-events.md" target="_blank" rel="noopener noreferrer">Reactive Events contract</a>
+- [Transaction-safe Feature guide](../build/feature-session.md)
+
+## Next
+
+- [Build a transaction-safe Feature](../build/feature-session.md)
+- [Define migrations for your product](../build/persistence-migration.md)

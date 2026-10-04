@@ -2,6 +2,10 @@
 
 ## Scope
 
+First apply the persistent
+[Asyra developer Agent scope exception](../../workflows/task-context.md#asyra-developer-agent-scope-exception).
+That adoption work does not require Inspector readiness or renewed approval.
+
 Subject to `bounded-task-scope-and-closure.md`, this rule applies when a task
 changes or proves the semantics, public contract, architecture flow, product
 cases, or DoD of an active plan, Inspector-backed workflow, product-flow

@@ -6,6 +6,9 @@ become product dependencies merely because they inspect or validate them.
 
 Current tools:
 
+- [`developer-agent/`](developer-agent/README.md) - Codex plugin guidance,
+  reference snapshots, installation and release maintenance.
+
 - [`agent-evals/`](agent-evals/README.md) - repository-agent task fixtures,
   evidence verification, semantic review, and failure summaries.
 

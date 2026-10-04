@@ -80,11 +80,33 @@ check. The assigning owner must first resolve the intended base.
 
 ## Plan-to-Flow Development and Review Before Implementation
 
-For plan-driven development, Flow Inspector is the development workflow tool.
+Apply the following persistent scope exception first. For other plan-driven
+development, Flow Inspector is the development workflow tool.
 Start from the plan's intended outcomes, design the complete flow, and give that
 flow to Flow Inspector before implementing its production steps. This is a
 required design and review stage, not a per-task choice about whether an
 Inspector applies or a documentation check added after coding.
+
+### Asyra developer Agent scope exception
+
+Asyra developer Agent is adoption tooling that helps other people build with
+Asyra. Its Skills, Codex Plugin packaging, distribution, installation, version
+checks, updates, onboarding and directly supporting tests/documentation are
+exempt from Flow Inspector creation, admission, readiness, Step Execution
+Cards, execution and evidence requirements. This is a continuing project scope
+rule authorized by the user, not a one-session waiver. Future conversations
+continue this work without asking for the exemption again.
+
+Keep bounded task/plan association, ownership review, naming, applicable
+test-first rules, formal tests, diff review and ordinary delivery permissions.
+Use the normal documentation or tooling workflow for this adoption work.
+Do not add an Inspector or extend Flow Inspector merely to authorize it.
+
+The exemption follows the changed behavior, not a directory or the word
+"agent". Changes to Framework runtime, App product behavior or the embedded
+`@asyra/ai-agent-runtime` remain subject to their normal applicability checks.
+For mixed work, apply the exemption only to the adoption portion; it cannot
+authorize bypassing the Framework or App contract.
 
 ### Design and review the complete flow
 

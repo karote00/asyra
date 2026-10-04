@@ -1,3 +1,5 @@
+<!-- Generated from docs/public/start/extend-with-ai.md; edit the source and regenerate. External links may describe a newer revision. -->
+
 # Extend Asyra with an AI coding agent
 
 Asyra is designed so a product owner and an AI coding agent can work together:
@@ -14,7 +16,7 @@ it already exists.
 The repository includes an initial Codex plugin with a developer Skill and
 selected build guides. Describe your desired product; the Skill helps identify
 the owners, public APIs and tests needed to implement it. Follow the
-[local candidate installation guide](../../../plugins/asyra-developer/README.md).
+<a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-developer/README.md" target="_blank" rel="noopener noreferrer">local candidate installation guide</a>.
 This candidate has not been publicly released. It runs in your coding tool and
 is separate from the optional in-app `@asyra/ai-agent-runtime`.
 
@@ -111,7 +113,7 @@ one intended transaction. That keeps the result editable, reversible,
 collaborative, and persistable through the ordinary owner model.
 
 See [Build registered AI actions](../build/ai-actions.md) and
-[Build app-owned retrieval and action](../build/app-retrieval-action.md). Do not
+<a href="https://github.com/karote00/asyra/blob/main/docs/public/build/app-retrieval-action.md" target="_blank" rel="noopener noreferrer">Build app-owned retrieval and action</a>. Do not
 send provider keys to the browser or let generated code call an unregistered
 mutation surface.
 
@@ -130,9 +132,9 @@ Before accepting an AI-authored change, verify:
 
 ## Canonical sources
 
-- [Framework workflow](../../ai/framework/WORKFLOW.md)
-- [Asyra Design golden paths](../../ai/apps/asyra-design/golden-paths/README.md)
-- [Generated Feature registry](../../../create-app/asyra-design/template/src/features/index.ts)
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/WORKFLOW.md" target="_blank" rel="noopener noreferrer">Framework workflow</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/apps/asyra-design/golden-paths/README.md" target="_blank" rel="noopener noreferrer">Asyra Design golden paths</a>
+- <a href="https://github.com/karote00/asyra/blob/main/create-app/asyra-design/template/src/features/index.ts" target="_blank" rel="noopener noreferrer">Generated Feature registry</a>
 
 ## Next
 
