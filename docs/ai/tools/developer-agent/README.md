@@ -2,7 +2,8 @@
 
 ## Purpose and boundaries
 
-The Codex plugin helps users build products with Asyra. Its public entry is
+The shared Agent Skill helps users build products with Asyra in Codex,
+Claude Code and Grok Build. Plugins provide host-specific installation. Its public entry is
 [installation and usage](../../../../plugins/asyra-agent/README.md).
 Its instruction owner is the plugin's `skills/asyra-agent/SKILL.md`.
 Canonical Framework and App documentation stays authoritative.
@@ -17,7 +18,9 @@ dependency upgrades or writes outside the project.
 ## Source and packaging owners
 
 - `.agents/plugins/marketplace.json` registers the local plugin with Codex.
-- `plugins/asyra-agent/.codex-plugin/plugin.json` owns the plugin version.
+- `plugins/asyra-agent/bundle.config.json` owns the shared release identity.
+- Codex and Claude plugin manifests are generated from that identity.
+- `.claude-plugin/marketplace.json` exposes the same plugin tree to Claude Code.
 - `bundle.config.json` lists the exact public guides to distribute.
 - `scripts/developer-agent-bundle.mjs` produces references and `bundle.json`.
 - `bundle.json` records source hashes, file hashes and reference package versions.
@@ -40,7 +43,7 @@ show newer content. Always inspect the consumer's installed public APIs.
    and run `node scripts/developer-agent-bundle.mjs --check --baseline <path>`.
    Changed plugin contents require a higher three-part plugin version. Ordinary
    development checks do not imply a release comparison was performed.
-6. Update the changelog, test native Codex discovery and both product scenarios
+6. Update the changelog, test discovery in each claimed host and both product scenarios
    below, and record the client version, source revision, package versions and
    actual results. Obtain the ordinary publication authorization before release.
 
@@ -62,11 +65,17 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.5 was published on GitHub and its installed desktop bundle
-was verified by the user. Version 0.1.6 prepares the unified Asyra Agent name
-and `asyra-agent` identity. Publication and native discovery of the renamed
-plugin remain pending. See the plugin README for replacement instructions;
-historical first-release evidence is retained unchanged.
+Current status: 0.1.6 was published on GitHub. Candidate 0.1.7 adds shared
+packaging and standalone export. See [phase-one scope and evidence](phase-one.md).
+Native candidate acceptance is tracked separately for each host; format and
+relocation checks do not close those trials.
+
+The standalone export uses the exact same Skill bytes and bundle record.
+`inspectSkill` verifies only the record's Skill subtree; `inspectPlugin` verifies
+the full distribution. `pluginVersion` remains the shared release version for
+compatibility with existing version-check prompts. A standalone Skill does not
+need sibling plugin metadata. Export to a new project-relative directory with
+`--export-skill dist/asyra-agent`; the command never writes host settings.
 
 ## Responsibility and failure attribution
 

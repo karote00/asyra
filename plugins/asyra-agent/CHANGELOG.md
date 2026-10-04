@@ -1,5 +1,13 @@
 # Asyra Agent releases
 
+## 0.1.7 - Portable Skill candidate
+
+- Share one Skill and release identity across Codex, Claude Code and Grok Build.
+- Generate Codex and Claude plugin manifests from host-neutral metadata.
+- Export the standalone Skill with offline references and verifiable identity.
+- Add installation and update paths with explicit native acceptance status.
+- Candidate only; no new public release or native Claude/Grok acceptance claim.
+
 ## 0.1.6 - Unified product name
 
 - Rename the display name to Asyra Agent and Plugin/Skill identity to `asyra-agent`.

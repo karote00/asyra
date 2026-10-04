@@ -8,6 +8,8 @@ import {
   checkBundle,
   createBundle,
   inspectPlugin,
+  inspectSkill,
+  exportSkill,
   renderReference,
   writeBundle
 } from '../developer-agent-bundle.mjs'
@@ -34,15 +36,16 @@ function fixture() {
   for (const file of [
     ...documents,
     'docs/public/generated/package-reference.json',
-    '.agents/plugins/marketplace.json'
+    '.agents/plugins/marketplace.json',
+    '.claude-plugin/marketplace.json'
   ])
     write(root, file, read(ROOT, file))
   return root
 }
 function changeVersion(root, version) {
-  const file = `${PLUGIN}/.codex-plugin/plugin.json`
+  const file = `${PLUGIN}/bundle.config.json`
   const value = JSON.parse(read(root, file))
-  value.version = version
+  value.identity.version = version
   saveJson(root, file, value)
 }
 
@@ -182,6 +185,7 @@ test('unlisted files and secrets never enter a deliverable', () => {
 test('source traversal and symlinked destinations cannot escape the checkout', () => {
   const root = fixture()
   saveJson(root, `${PLUGIN}/bundle.config.json`, {
+    ...JSON.parse(read(root, `${PLUGIN}/bundle.config.json`)),
     documents: ['docs/public/../../.env.md']
   })
   assert.throws(() => writeBundle(root), /Unsafe bundle path/)
@@ -324,4 +328,103 @@ test('public plugin and Skill share the Asyra Agent installation identity', () =
   )
   const record = inspectPlugin(path.join(ROOT, PLUGIN))
   assert.ok(record.files[`${SKILL}/SKILL.md`])
+})
+
+test('both host manifests are generated from one neutral release identity', () => {
+  const root = fixture()
+  changeVersion(root, '1.2.3')
+  writeBundle(root)
+  const identity = JSON.parse(
+    read(root, `${PLUGIN}/bundle.config.json`)
+  ).identity
+  for (const host of ['codex', 'claude']) {
+    const file = `${PLUGIN}/.${host}-plugin/plugin.json`
+    const manifest = JSON.parse(read(root, file))
+    for (const [key, value] of Object.entries(identity))
+      assert.deepEqual(manifest[key], value)
+    manifest.version = '1.2.2'
+    saveJson(root, file, manifest)
+    assert.throws(() => checkBundle(root), /identity|stale/)
+    writeBundle(root)
+  }
+  assert.equal(checkBundle(root).pluginVersion, '1.2.3')
+})
+
+test('standalone Skill is byte-identical across documented host locations', () => {
+  const root = fixture()
+  const record = checkBundle(root)
+  for (const location of ['.agents/skills', '.claude/skills', '.grok/skills']) {
+    const relative = path.posix.join('consumer', location, 'asyra-agent')
+    exportSkill(root, relative)
+    const destination = path.join(root, relative)
+    assert.deepEqual(inspectSkill(destination), record)
+    for (const file of Object.keys(record.files).filter((file) =>
+      file.startsWith(`${SKILL}/`)
+    ))
+      assert.equal(
+        read(root, `${relative}/${file.slice(SKILL.length + 1)}`),
+        read(root, `${PLUGIN}/${file}`)
+      )
+    assert.equal(read(root, `${relative}/bundle.json`), read(root, RECORD))
+    assert.ok(!fs.existsSync(path.join(destination, '.codex-plugin')))
+  }
+  // No source checkout or plugin manifest is needed to verify the relocated Skill.
+  fs.rmSync(path.join(root, PLUGIN), { recursive: true })
+  assert.deepEqual(
+    inspectSkill(path.join(root, 'consumer/.grok/skills/asyra-agent')),
+    record
+  )
+})
+
+test('standalone inspection rejects changed, missing, extra and symlinked resources', () => {
+  for (const mutation of ['changed', 'missing', 'extra', 'symlink']) {
+    const root = fixture()
+    exportSkill(root, 'consumer/asyra-agent')
+    const destination = path.join(root, 'consumer/asyra-agent')
+    const resource = 'references/apps/starter-app/docs/ARCHITECTURE.md'
+    if (mutation === 'changed') write(destination, resource, 'changed')
+    if (mutation === 'missing') fs.unlinkSync(path.join(destination, resource))
+    if (mutation === 'extra')
+      write(destination, 'private.txt', 'not distributable')
+    if (mutation === 'symlink') {
+      fs.renameSync(
+        path.join(destination, resource),
+        path.join(root, 'original.md')
+      )
+      fs.symlinkSync(
+        path.join(root, 'original.md'),
+        path.join(destination, resource)
+      )
+    }
+    assert.throws(
+      () => inspectSkill(destination),
+      /stale|ENOENT|Unexpected|Symlink/
+    )
+  }
+})
+
+test('Skill export refuses overwrites, traversal, symlinks and stale sources', () => {
+  const root = fixture()
+  write(root, 'existing/keep.txt', 'user data')
+  for (const destination of [
+    'existing',
+    '../outside',
+    '/outside',
+    'consumer/../outside'
+  ])
+    assert.throws(() => exportSkill(root, destination), /must not exist|Unsafe/)
+  assert.equal(read(root, 'existing/keep.txt'), 'user data')
+  fs.symlinkSync(path.join(root, 'existing'), path.join(root, 'linked'), 'dir')
+  assert.throws(() => exportSkill(root, 'linked/skill'), /Symlink/)
+  assert.throws(
+    () => exportSkill(root, `${PLUGIN}/${SKILL}/nested`),
+    /inside its source/
+  )
+  assert.throws(
+    () => exportSkill(root, `${PLUGIN}/exported-skill`),
+    /inside its source/
+  )
+  write(root, `${PLUGIN}/${SKILL}/SKILL.md`, 'stale')
+  assert.throws(() => exportSkill(root, 'new-skill'), /stale/)
+  assert.ok(!fs.existsSync(path.join(root, 'new-skill')))
 })

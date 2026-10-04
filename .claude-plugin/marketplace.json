@@ -1,0 +1,13 @@
+{
+  "name": "asyra",
+  "owner": {
+    "name": "Asa Tsai"
+  },
+  "plugins": [
+    {
+      "name": "asyra-agent",
+      "source": "./plugins/asyra-agent",
+      "description": "Build and extend products with Asyra using its public APIs, ownership patterns and formal verification. Includes versioned reference guides."
+    }
+  ]
+}

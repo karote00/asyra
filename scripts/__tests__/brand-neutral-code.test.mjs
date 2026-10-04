@@ -161,11 +161,14 @@ const capitalizedBrandIdentifierPattern = new RegExp(
   'u'
 )
 
-// Public Codex distribution identities are data only, in their exact owners.
+// Public Agent distribution identities are data only, in their exact owners.
 const pluginIdentityOwners = new Set([
   'scripts/__tests__/brand-neutral-code.test.mjs',
   '.agents/plugins/marketplace.json',
+  '.claude-plugin/marketplace.json',
   'plugins/asyra-agent/.codex-plugin/plugin.json',
+  'plugins/asyra-agent/.claude-plugin/plugin.json',
+  'plugins/asyra-agent/bundle.config.json',
   'plugins/asyra-agent/skills/asyra-agent/bundle.json',
   'scripts/developer-agent-bundle.mjs',
   'scripts/__tests__/developer-agent-bundle.test.mjs',
@@ -188,6 +191,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
       (token === repositoryBrand &&
         [
           '.agents/plugins/marketplace.json',
+          '.claude-plugin/marketplace.json',
           'scripts/developer-agent-bundle.mjs'
         ].includes(relativePath))) &&
     new RegExp(`(['"])[^'"\\n]*${escapedToken}[^'"\\n]*\\1`, 'u').test(line)
@@ -622,5 +626,39 @@ test('Programmatic code and configuration use brand-neutral identifiers', () => 
       .slice(0, 50)
       .map(({ file, line, token }) => `${file}:${line} ${token}`)
       .join('\n')}`
+  )
+})
+
+// These are public distribution names, not new internal namespaces.
+test('portable distribution identities remain limited to exact owners', () => {
+  for (const owner of [
+    '.claude-plugin/marketplace.json',
+    'plugins/asyra-agent/.claude-plugin/plugin.json',
+    'plugins/asyra-agent/bundle.config.json'
+  ]) {
+    assert.equal(
+      isAllowedPublicIdentity(
+        'asyra-agent',
+        '"name": "asyra-agent"',
+        path.join(repositoryRoot, owner)
+      ),
+      true
+    )
+    assert.equal(
+      isAllowedPublicIdentity(
+        'asyra-agent',
+        'asyra-agent',
+        path.join(repositoryRoot, owner)
+      ),
+      false
+    )
+  }
+  assert.equal(
+    isAllowedPublicIdentity(
+      'asyra-agent',
+      '"name": "asyra-agent"',
+      path.join(repositoryRoot, 'packages/core/src/internal.ts')
+    ),
+    false
   )
 })
