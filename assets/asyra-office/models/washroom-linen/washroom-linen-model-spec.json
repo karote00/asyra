@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "source": "Supplementary authored washroom objects; not clearly identifiable in approved office reference.",
+  "assets": [
+    {
+      "id": "sage-hand-towel",
+      "unit": "one cloth object, no rod",
+      "origin": "center of virtual horizontal rod axis",
+      "width": 0.24,
+      "unfoldedMidSurfaceLength": 0.5,
+      "thickness": 0.002,
+      "fold": {
+        "axis": "+X",
+        "midSurfaceRadius": 0.011,
+        "innerRadius": 0.01,
+        "outerRadius": 0.012,
+        "arcRadians": 3.141592653589793,
+        "arcSegments": 48,
+        "frontPanelLength": 0.23,
+        "rearPanelLength": 0.2354424808105123
+      },
+      "construction": "Extrude a closed U-shaped YZ cross-section along X from -0.12 to +0.12. Front leg y=-0.011, back leg y=+0.011 at mid-surface. Legs start at z=0 and run down. Upper fold y=r*cos(t), z=r*sin(t), t=0..pi. Thickness 0.002 normal to cross-section midline; close hem ends and X ends. No subdivision.",
+      "bounds": {
+        "x": [
+          -0.12,
+          0.12
+        ],
+        "y": [
+          -0.012,
+          0.012
+        ],
+        "z": [
+          -0.2354424808105123,
+          0.012
+        ]
+      },
+      "seam": {
+        "type": "intrinsic color line, not geometry",
+        "inset": 0.008,
+        "width": 0.0004,
+        "color": "#768A72",
+        "coordinates": "unfolded u in [0,0.24], s in [0,0.50]; distance to sheet boundary = 0.008 within +/-0.0002"
+      },
+      "material": {
+        "baseColor": "#899B85",
+        "roughness": 0.95,
+        "metallic": 0
+      }
+    },
+    {
+      "id": "toilet-paper-roll",
+      "unit": "one roll, paper and core as separate solids",
+      "origin": "center of cylinder axis",
+      "axis": "+X",
+      "width": 0.1,
+      "outerRadius": 0.055,
+      "paperInnerRadius": 0.019,
+      "coreOuterRadius": 0.019,
+      "coreInnerRadius": 0.017,
+      "segments": 96,
+      "construction": "Two concentric annular cylinders from X=-0.05 to +0.05; closed annular ends, open through bore. No bevel, loose tail, spiral geometry, embossed pattern, perforations, spindle or holder.",
+      "materials": {
+        "paper": {
+          "baseColor": "#EEE9DB",
+          "roughness": 0.95,
+          "metallic": 0
+        },
+        "core": {
+          "baseColor": "#B38B64",
+          "roughness": 0.9,
+          "metallic": 0
+        }
+      },
+      "bounds": [
+        0.1,
+        0.11,
+        0.11
+      ]
+    }
+  ],
+  "surfaces": {
+    "unlitReview": true,
+    "castShadows": false,
+    "ao": false,
+    "highlights": false,
+    "normalMaps": false,
+    "displacement": false,
+    "reflection": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0002,
+    "modelsProduced": false,
+    "animation": "app-owned; no cloth or paper simulation delivered"
+  }
+}
