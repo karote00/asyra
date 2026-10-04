@@ -13,7 +13,9 @@ exercise.
   and calls the Core facade. Do not write Core state directly from React.
 - Treat `src/derived-state/item-projection.ts` and the React views as readers.
   The UI may hold unfinished input text, but it must not own another editable
-  Item document.
+  Item document. Preserve rejected drafts and gate product actions through the
+  controller's draft admission. Never use blur ordering or status text as an
+  admission result. Explicit cancellation discards a draft without history.
 - Keep explicit Save/Reload in `src/persistence/storage.ts` and `src/common-apis/storage.ts`. Validate App data before `core.preflightLoad()` and `core.load()`.
 - Keep the entire App standard: initialization/lifetime, controller, registered
   Feature, common API, canonical projection, semantic providers and composed UI.

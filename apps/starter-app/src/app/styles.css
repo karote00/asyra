@@ -158,7 +158,8 @@ input:focus-visible {
   align-items: center;
   gap: 7px;
 }
-.toolbar-actions button {
+.toolbar-actions button,
+.cancel-edit {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +174,8 @@ input:focus-visible {
   font-weight: 680;
   white-space: nowrap;
 }
-.toolbar-actions button:hover:not(:disabled) {
+.toolbar-actions button:hover:not(:disabled),
+.cancel-edit:hover:not(:disabled) {
   border-color: #277b70;
 }
 .toolbar-actions button.primary {
@@ -441,6 +443,9 @@ input:focus-visible {
   color: #213c37;
   background: #fff;
   font-size: 13px;
+}
+.cancel-edit {
+  margin-bottom: 14px;
 }
 .field-help {
   margin: 7px 0 22px;

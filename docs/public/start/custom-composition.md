@@ -395,3 +395,13 @@ history from translated messages or maintain a UI redo counter. Controllers own
 structured feedback and pending state; the document owner keeps canonical data.
 Starter's permanent tests cover localization-independent state, per-Item update
 boundaries, lifetime cleanup, saved-data admission and the field extension path.
+
+Editors retain rejected drafts. Starter registers the active editor's synchronous
+commit participant with the controller; Save, navigation and other product
+actions proceed only when draft admission succeeds. Enter commits; blur alone
+preserves input; Cancel/Escape deliberately discards it. Do not infer success from
+translated messages or DOM event order. Clear an accepted draft immediately and
+render canonical projections, including after same-tick Undo. Pending async
+operations block new actions and disable editing; dispose registrations with the
+editor and App. See Starter's architecture guide and permanent draft-action tests
+for validation failure, persistence failure, cancellation and async ordering.
