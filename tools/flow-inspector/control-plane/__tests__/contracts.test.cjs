@@ -94,10 +94,10 @@ test('mapping review prepares exact test-name changes while preserving every obl
   )
 })
 
-test('resolves two real flows and six obligations using architecture-owned steps', () => {
+test('resolves three real flows and nine obligations using architecture-owned steps', () => {
   const contract = admit()
-  assert.equal(contract.flows.length, 2)
-  assert.equal(contract.cases.length, 6)
+  assert.equal(contract.flows.length, 3)
+  assert.equal(contract.cases.length, 9)
   assert.equal(contract.flows[0].steps[0].ownerPackage, '@asyra/factory')
   assert.equal(contract.flows[0].steps[0].title, architecture.steps[1].title)
   assert.equal(

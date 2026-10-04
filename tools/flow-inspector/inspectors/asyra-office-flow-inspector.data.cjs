@@ -377,8 +377,9 @@
     acceptanceContracts: [
       {
         id: 'office-path',
-        statement:
-          'A retained semantic event updates only its agent; one validated layout edit supports Undo, save/load; scene motion never becomes document state.',
+        assertions: [
+          'A retained semantic event updates only its agent; one validated layout edit supports Undo, save/load; scene motion never becomes document state.'
+        ],
         stepIds: [
           'admit-source',
           'project-agent',

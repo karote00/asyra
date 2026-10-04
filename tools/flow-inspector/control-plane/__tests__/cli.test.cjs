@@ -6,6 +6,9 @@ const path = require('node:path')
 const test = require('node:test')
 const { startServer } = require('../server.cjs')
 const { main } = require('../cli.cjs')
+const {
+  createAcceptedRepository
+} = require('./accepted-repository-fixture.cjs')
 const root = path.resolve(__dirname, '../../../..')
 
 test('offline provider contract uses identical CLI, HTTP and service task evidence', async () => {
@@ -152,9 +155,10 @@ test(
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'trial-'))
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
-    const server = await startServer(root, {
+    const repository = createAcceptedRepository(root, directory)
+    const server = await startServer(repository, {
       url: 'http://127.0.0.1:0',
-      serviceOptions: { directory }
+      serviceOptions: { directory: path.join(repository, 'tmp/store') }
     })
     const messages = []
     try {
@@ -162,7 +166,8 @@ test(
         await main(['--url', server.origin, 'ci-trial'], {
           write: (v) => messages.push(v)
         }),
-        0
+        0,
+        messages.join('\n')
       )
       assert.match(messages.join('\n'), /trial.*not.*required/i)
       assert.match(messages.join('\n'), /blocked/)
@@ -181,16 +186,22 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        ['cancel.delivery', 'cancel.outcome']
+        [
+          'cancel.delivery',
+          'cancel.outcome',
+          'history-group.ordered-replay',
+          'history-group.snapshot'
+        ]
       )
       assert.equal(
         await main(['--url', server.origin, 'ci-trial'], {
           write: (v) => messages.push(v)
         }),
-        0
+        0,
+        messages.join('\n')
       )
       const recovery = server.service.get(server.service.state().runs[0].id)
-      assert.equal(recovery.ci.evidence.passedCount, 6)
+      assert.equal(recovery.ci.evidence.passedCount, 9)
       assert.equal(recovery.snapshot.digest, negative.snapshot.digest)
     } finally {
       await server.close()

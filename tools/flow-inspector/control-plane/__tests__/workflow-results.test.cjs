@@ -1842,3 +1842,19 @@ test('local evidence stays local and never enters a GitHub rerun', () => {
     'passed'
   )
 })
+
+test('workflow validates candidate behavior without claiming accepted-base delivery', () => {
+  const workflow = fs.readFileSync(
+    path.resolve(__dirname, '../../../../.github/workflows/main.yml'),
+    'utf8'
+  )
+  const job = workflow
+    .split('  flow-inspector-validation:')[1]
+    .split('  fieldscope-profile-heavy:')[0]
+  assert.match(
+    job,
+    /node tools\/flow-inspector\/control-plane\/cli\.cjs candidate/
+  )
+  assert.doesNotMatch(job, /cli\.cjs ci(?:-trial)?(?:\s|$)/)
+  assert.doesNotMatch(job, /FLOW_CI_BASE|FLOW_CI_ADMISSION/)
+})

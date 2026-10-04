@@ -14,6 +14,7 @@
       "tools/flow-inspector/inspectors/ai-conversational-drawing-performance-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/app-level-migration-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-executable-examples-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-public-readme-and-entrypoint-alignment-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/asyra-runtime-atlas-flow-inspector.data.cjs",
@@ -15347,6 +15348,496 @@
             ],
             "assertions": [
               "Direct and provider load have identical ordering, Core registrations are isolated, and diagnostics failure does not change success."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asyra-office",
+      "slug": "asyra-office",
+      "title": "Asyra Office interaction flow",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "asyra-office",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "asyra-office",
+          "kind": "application",
+          "title": "Asyra Office interaction flow",
+          "subtitle": "Source evidence, canonical layout, transient spatial presentation"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-office/implementation.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+          "semanticOwner": "Asyra Office and Preset owners",
+          "inspectorOwner": "Flow Inspector"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "product",
+            "title": "Office owners",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "admit-source",
+            "order": 1,
+            "laneId": "product",
+            "title": "Validate source evidence and retain accepted activity",
+            "purpose": "Validate source evidence and retain accepted activity",
+            "ownerPackage": "@asyra/preset",
+            "inputs": [
+              "versioned provider events",
+              "connection fidelity",
+              "archive acknowledgement"
+            ],
+            "outputs": [
+              "artifact:activity"
+            ],
+            "conditions": [
+              "Reject invalid batches atomically; source sequence deduplicates replay; archive failure publishes no state."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/preset"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/agent-activity.ts"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+            ],
+            "failureOwnerStepId": "admit-source"
+          },
+          {
+            "id": "project-agent",
+            "order": 2,
+            "laneId": "product",
+            "title": "Publish bounded per-agent semantic projections",
+            "purpose": "Publish bounded per-agent semantic projections",
+            "ownerPackage": "@asyra/preset",
+            "inputs": [
+              "artifact:activity"
+            ],
+            "outputs": [
+              "artifact:agent-projection"
+            ],
+            "conditions": [
+              "New attempts supersede old attempts; unrelated agents receive zero notifications; history remains retained."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/preset"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/agent-activity.ts"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+            ],
+            "failureOwnerStepId": "project-agent"
+          },
+          {
+            "id": "validate-layout",
+            "order": 3,
+            "laneId": "product",
+            "title": "Admit attributed human or agent layout proposal",
+            "purpose": "Admit attributed human or agent layout proposal",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "user intent",
+              "expected revision",
+              "canonical room"
+            ],
+            "outputs": [
+              "artifact:layout-intent"
+            ],
+            "conditions": [
+              "Use one Feature/API path; invalid placement or stale proposal rejects before mutation."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/domain/layout.ts",
+              "apps/asyra-office/src/runtime/layout-controller.ts"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
+            ],
+            "failureOwnerStepId": "validate-layout"
+          },
+          {
+            "id": "commit-layout",
+            "order": 4,
+            "laneId": "product",
+            "title": "Commit canonical layout and project publication",
+            "purpose": "Commit canonical layout and project publication",
+            "ownerPackage": "@asyra/core",
+            "inputs": [
+              "artifact:layout-intent"
+            ],
+            "outputs": [
+              "artifact:layout"
+            ],
+            "conditions": [
+              "One accepted finite edit has one Undo boundary; load and history use canonical apply."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/core"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/core/src/core.ts",
+              "apps/asyra-office/src/runtime/layout-controller.ts"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
+            ],
+            "failureOwnerStepId": "commit-layout"
+          },
+          {
+            "id": "retain-layout",
+            "order": 5,
+            "laneId": "product",
+            "title": "Acknowledge versioned local layout checkpoint",
+            "purpose": "Acknowledge versioned local layout checkpoint",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "artifact:layout"
+            ],
+            "outputs": [
+              "artifact:saved-layout"
+            ],
+            "conditions": [
+              "Explicit snapshot storage; reject malformed load and failed writes without claiming saved."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/runtime/layout-controller.ts"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
+            ],
+            "failureOwnerStepId": "retain-layout"
+          },
+          {
+            "id": "compose-office",
+            "order": 6,
+            "laneId": "product",
+            "title": "Compose room, chibi, pet and waypoint presentation",
+            "purpose": "Compose room, chibi, pet and waypoint presentation",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "artifact:layout",
+              "artifact:agent-projection",
+              "camera and waypoint intent"
+            ],
+            "outputs": [
+              "artifact:spatial-scene"
+            ],
+            "conditions": [
+              "Camera and interpolation never write layout; task working returns to anchor; ambient movement remains simulated."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/scene/office-scene.ts",
+              "apps/asyra-office/src/ui/OfficeApp.tsx"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#office-interaction"
+            ],
+            "failureOwnerStepId": "compose-office"
+          },
+          {
+            "id": "render-spatial",
+            "order": 7,
+            "laneId": "product",
+            "title": "Render shared spatial scene through CUSTOM provider",
+            "purpose": "Render shared spatial scene through CUSTOM provider",
+            "ownerPackage": "@asyra/preset",
+            "inputs": [
+              "artifact:spatial-scene"
+            ],
+            "outputs": [
+              "artifact:visible-office"
+            ],
+            "conditions": [
+              "Optional shared Three.js adapter retains lifecycle, resource disposal and app-selected lighting/capability."
+            ],
+            "bypasses": [
+              "No unvalidated input may bypass the owner."
+            ],
+            "allowedContributors": [
+              "@asyra/preset"
+            ],
+            "forbiddenContributors": [
+              "React editable copies",
+              "raw provider tokens in scene",
+              "renderer-owned document writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/spatial/"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#foundation"
+            ],
+            "failureOwnerStepId": "render-spatial"
+          }
+        ],
+        "routes": [
+          {
+            "id": "admit-source-to-project-agent",
+            "from": "admit-source",
+            "to": "project-agent",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:activity"
+            ]
+          },
+          {
+            "id": "project-agent-to-compose-office",
+            "from": "project-agent",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:agent-projection"
+            ]
+          },
+          {
+            "id": "validate-layout-to-commit-layout",
+            "from": "validate-layout",
+            "to": "commit-layout",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:layout-intent"
+            ]
+          },
+          {
+            "id": "commit-layout-to-retain-layout",
+            "from": "commit-layout",
+            "to": "retain-layout",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:layout"
+            ]
+          },
+          {
+            "id": "commit-layout-to-compose-office",
+            "from": "commit-layout",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:layout"
+            ]
+          },
+          {
+            "id": "retain-layout-complete",
+            "from": "retain-layout",
+            "kind": "terminal",
+            "predicate": "The exact output is available; no broader completion is implied.",
+            "producedArtifacts": [
+              "artifact:saved-layout"
+            ]
+          },
+          {
+            "id": "compose-office-to-render-spatial",
+            "from": "compose-office",
+            "to": "render-spatial",
+            "kind": "required",
+            "predicate": "The producing owner has admitted the input and completed its output.",
+            "producedArtifacts": [
+              "artifact:spatial-scene"
+            ]
+          },
+          {
+            "id": "render-spatial-complete",
+            "from": "render-spatial",
+            "kind": "terminal",
+            "predicate": "The exact output is available; no broader completion is implied.",
+            "producedArtifacts": [
+              "artifact:visible-office"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:activity",
+            "ownerStepId": "admit-source",
+            "channel": "projection",
+            "consumerStepIds": [
+              "project-agent"
+            ]
+          },
+          {
+            "id": "artifact:agent-projection",
+            "ownerStepId": "project-agent",
+            "channel": "projection",
+            "consumerStepIds": [
+              "compose-office"
+            ]
+          },
+          {
+            "id": "artifact:layout-intent",
+            "ownerStepId": "validate-layout",
+            "channel": "projection",
+            "consumerStepIds": [
+              "commit-layout"
+            ]
+          },
+          {
+            "id": "artifact:layout",
+            "ownerStepId": "commit-layout",
+            "channel": "projection",
+            "consumerStepIds": [
+              "retain-layout",
+              "compose-office"
+            ]
+          },
+          {
+            "id": "artifact:saved-layout",
+            "ownerStepId": "retain-layout",
+            "channel": "projection",
+            "consumerStepIds": [],
+            "terminal": true
+          },
+          {
+            "id": "artifact:spatial-scene",
+            "ownerStepId": "compose-office",
+            "channel": "projection",
+            "consumerStepIds": [
+              "render-spatial"
+            ]
+          },
+          {
+            "id": "artifact:visible-office",
+            "ownerStepId": "render-spatial",
+            "channel": "projection",
+            "consumerStepIds": [],
+            "terminal": true
+          }
+        ],
+        "invariants": [
+          {
+            "id": "independent-authority",
+            "statement": "Runtime task evidence, canonical layout and transient movement have separate owners.",
+            "stepIds": [
+              "admit-source",
+              "project-agent",
+              "validate-layout",
+              "commit-layout",
+              "retain-layout",
+              "compose-office",
+              "render-spatial"
+            ],
+            "artifactIds": [
+              "artifact:activity",
+              "artifact:agent-projection",
+              "artifact:layout-intent",
+              "artifact:layout",
+              "artifact:saved-layout",
+              "artifact:spatial-scene",
+              "artifact:visible-office"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+            ]
+          }
+        ],
+        "acceptanceContracts": [
+          {
+            "id": "office-path",
+            "assertions": [
+              "A retained semantic event updates only its agent; one validated layout edit supports Undo, save/load; scene motion never becomes document state."
+            ],
+            "stepIds": [
+              "admit-source",
+              "project-agent",
+              "validate-layout",
+              "commit-layout",
+              "retain-layout",
+              "compose-office",
+              "render-spatial"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#cases-and-verification"
             ]
           }
         ]
@@ -36740,6 +37231,7 @@
             "conditions": [
               "Derive changed paths from Git base/head and classify them against discovered first-level apps/packages/tools workspace manifests, their declared dependency edges, manifest canonical build/test scripts, and the versioned CI relationship policy. Derive affected consumers transitively from the union of base and head dependency edges so deletions and renames preserve old consumers. Root shared inputs select every discovered workspace. Public documentation selects its configured site workspace; docs under app/package/tool roots select their matching workspace when defined, and other discovered documentation roots require shared validation. Never infer workspace ownership from a fixed workspace-name category list. Unknown paths, missing build/test tasks, or unclassified consumers invalidate scope and fail the total even if conservative jobs ran.",
               "Use one derived execution plan for repository lint, repository script tests, naming, per-workspace lint/build/test, standard E2E tasks discovered from each manifest test:e2e:ci script, specialized E2E suites, dynamic matrix scheduling, specialized gates, and final aggregation. Full validation selects every declared check and owner. Incremental validation selects changed applicable lint files, repository script tests for their declared owner inputs, workspace related tests only for supported source changes with existing test inputs, and E2E owners from their manifest scripts and declared suite input paths; configs, fixtures, deleted or renamed files, unsupported runners, shared inputs, and unknown paths use full owner checks or remain blockers. For each selected workspace, run lint, then its canonical build task to completion, then its declared test preflight and test:ci, followed by its selected test:e2e:ci; never schedule tests alongside builds. Bind every result to the plan and map digests plus the same repository/base/head/integration/run identity and an admitted producer attempt. Require exact selected success and declared unselected skips; missing, duplicate, unexpected, stale, failed, zero-tests, zero-evidence, or omitted outcomes cannot pass. Run Framework release readiness when Framework workspaces or release-validation owner inputs are affected. create-app CLI packages remain outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects its control-plane validation suite.",
+              "Flow Inspector validation runs its control-plane contracts, prove and candidate commands against the candidate. This producer never selects a new accepted base or grants protected delivery; accepted-base admission and its policy mismatch blockers remain separate.",
               "Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.",
               "Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision and run id. Partial reruns may reuse successful evidence from earlier positive integer attempts with unchanged plan/map digests; preserve the original producer attempt and reject future or malformed attempts. Local evidence requires the exact local run/attempt pair. Latest GitHub dependency outcomes must succeed: an older successful receipt cannot override a later failed, cancelled, missing or skipped selected job.",
               "One canonical aggregate consumes scope evidence, the complete execution plan, run-bound selected-check results, exact dynamic workspace lint/build/test/E2E result records, selected Flow Inspector and release results, specialized per-suite E2E outcomes, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected producer must be skipped. Missing, failed, cancelled, unknown, empty, zero-test or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected suites must report success and selected Design suites must provide exact case evidence.",

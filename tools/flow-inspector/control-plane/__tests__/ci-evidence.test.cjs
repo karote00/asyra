@@ -27,8 +27,8 @@ function fixture() {
   snapshot.digest = hash(JSON.stringify(snapshot.files))
   const report = {
     success: true,
-    numTotalTests: 6,
-    numPassedTests: 6,
+    numTotalTests: contract.cases.length,
+    numPassedTests: contract.cases.length,
     numFailedTests: 0,
     numRuntimeErrorTestSuites: 0,
     testResults: [
@@ -92,8 +92,8 @@ test('aggregate assesses every supported flow and exposes absent external protec
   const result = assess(fixture())
   assert.equal(result.verificationStatus, 'passed')
   assert.equal(result.deliveryStatus, 'blocked')
-  assert.equal(result.evidence.cases.length, 6)
-  assert.equal(result.evidence.flows.length, 2)
+  assert.equal(result.evidence.cases.length, 9)
+  assert.equal(result.evidence.flows.length, 3)
   assert.match(result.blockers.join(' '), /required-check/)
 })
 test('provider green cannot mask real failing or skipped observations', () => {

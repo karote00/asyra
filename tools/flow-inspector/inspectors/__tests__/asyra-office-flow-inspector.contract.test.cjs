@@ -51,5 +51,15 @@ test('Office static architecture retains one owner per artifact and complete han
       .get('render-spatial')
       .implementationBoundary.includes('packages/preset/src/spatial/')
   )
+  for (const contract of data.acceptanceContracts) {
+    assert.ok(Array.isArray(contract.assertions), contract.id)
+    assert.ok(contract.assertions.length > 0, contract.id)
+    assert.ok(
+      contract.assertions.every(
+        (assertion) => typeof assertion === 'string' && assertion.length > 0
+      ),
+      contract.id
+    )
+  }
   assert.ok(!JSON.stringify(data).includes('test-results'))
 })

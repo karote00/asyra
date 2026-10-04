@@ -66,7 +66,12 @@ test('real baseline, precise cross-flow regression, and recovery retain separate
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      ['cancel.delivery', 'cancel.outcome']
+      [
+        'cancel.delivery',
+        'cancel.outcome',
+        'history-group.ordered-replay',
+        'history-group.snapshot'
+      ]
     )
     assert.deepEqual(negative.evidence.issues, [])
     const recovered = await service.wait(service.start({}, LOCAL_ACTOR))

@@ -43,7 +43,9 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     fullPage: true,
     animations: 'disabled'
   })
-  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: '收合圖層面板', exact: true })
+  ).toBeVisible()
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   await expect(page.getByLabel('塑膠覆膜', { exact: true })).not.toBeChecked()
   await page.getByRole('button', { name: '端面', exact: true }).click()
