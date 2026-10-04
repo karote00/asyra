@@ -1281,6 +1281,9 @@ test('internal BDD specifications and reference images are document inputs, whil
 test('developer Agent inputs select their packaging contract without product builds', () => {
   for (const file of [
     '.agents/plugins/marketplace.json',
+    // Git diffs retain the previous identity as deleted paths during the rename.
+    'plugins/asyra-developer/.codex-plugin/plugin.json',
+    'plugins/asyra-developer/skills/asyra-developer/SKILL.md',
     'plugins/asyra-agent/.codex-plugin/plugin.json',
     'plugins/asyra-agent/skills/asyra-agent/SKILL.md',
     'plugins/asyra-agent/skills/asyra-agent/bundle.json',

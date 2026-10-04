@@ -179,6 +179,12 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   if (
     pluginIdentityOwners.has(relativePath) &&
     (token === 'asyra-agent' ||
+      (token === 'asyra-developer' &&
+        [
+          'scripts/__tests__/brand-neutral-code.test.mjs',
+          'scripts/ci-relationships.json',
+          'scripts/__tests__/ci-scope.test.mjs'
+        ].includes(relativePath)) ||
       (token === repositoryBrand &&
         [
           '.agents/plugins/marketplace.json',
@@ -279,6 +285,36 @@ test('plugin distribution identities remain scoped to quoted owner data', () => 
     ),
     false
   )
+})
+
+test('previous plugin identity is retained only for CI diff input classification', () => {
+  const token = `${repositoryBrand}-developer`
+  for (const relative of [
+    'scripts/ci-relationships.json',
+    'scripts/__tests__/ci-scope.test.mjs'
+  ]) {
+    assert.equal(
+      isAllowedPublicIdentity(
+        token,
+        `const path = '${token}'`,
+        path.join(repositoryRoot, relative)
+      ),
+      true
+    )
+  }
+  for (const relative of [
+    'scripts/developer-agent-bundle.mjs',
+    'apps/example.ts'
+  ]) {
+    assert.equal(
+      isAllowedPublicIdentity(
+        token,
+        `const path = '${token}'`,
+        path.join(repositoryRoot, relative)
+      ),
+      false
+    )
+  }
 })
 
 test('Official display names remain distinct from branded code identifiers', () => {

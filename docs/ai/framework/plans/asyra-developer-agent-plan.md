@@ -572,3 +572,10 @@ whitespace checks passed. Public documentation check reports a stale API index,
 also reproduced in the unchanged agent-first-release worktree. Its unrelated
 three-field regeneration was excluded. No remote push, new release or installed
 cache modification occurred. Native renamed-plugin discovery remains unverified.
+
+Task 5 CI correction: the PR diff contains removed `asyra-developer` paths,
+which the renamed relationship map no longer classified. Scope failed before
+product gates ran. Bound the correction to the CI input map, its regression
+test and exact naming guard exceptions for these historical diff inputs.
+The regression failed on the removed manifest path before the fix. Retain the
+old path as an input owner alongside the new path, not as an installed alias.
