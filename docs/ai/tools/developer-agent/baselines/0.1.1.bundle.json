@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.1.2",
+  "pluginVersion": "0.1.1",
   "inputs": {
-    "apps/starter-app/docs/ARCHITECTURE.md": "3a355b6f3abb7dcbfbd23a6b723f01df2f3547847b49884b976a91f2324abf3b",
+    "apps/starter-app/docs/ARCHITECTURE.md": "bf6b7aa0031b1ad4ec35a715f9b53b808c319ed5519d64dbb571e35c437f7a4d",
     "apps/starter-app/docs/ONBOARDING.md": "4b26fcecca29027c2cba3a5756914b495019368459704f8756a8a43cb5618242",
     "docs/public/build/ai-actions.md": "bbc0b535f8841bb3e58c076ce64e03c25510d65cc97bdc643619f900b423416b",
     "docs/public/build/collaboration.md": "1186b98542d1e962add2968b9d471df34d14e67da641dadfa3731601ea13c887",
@@ -15,7 +15,7 @@
     "docs/public/learn/transactions-and-durability.md": "d47c6347b43489b2b77ee20fe939364a4922390e52f55b5b3ca30f82563641da",
     "docs/public/reference/support-release.md": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
-    "docs/public/start/custom-composition.md": "2d2f0dbb4146904df01fa8aa65621e555a6913d9cc5548694e857bb7951d17cc",
+    "docs/public/start/custom-composition.md": "eafb4e9115bf0ee7eecf128f400fe48000ace79ea9fbe401f4c65b8ea59ce0bb",
     "docs/public/start/extend-with-ai.md": "ad13eeb888de45bed4b525c85128345c0878e3bbbb7a1a199d56d7293ba70b6a",
     "docs/public/generated/package-reference.json": "5f68a3c8c113b88159c08acb85a5d288209360b1b53ff3298153e9519feff479"
   },
@@ -41,12 +41,12 @@
     "@asyra/utils": "0.5.2"
   },
   "files": {
-    ".codex-plugin/plugin.json": "af81c299c98b635d3dc34a14d00fb142cd91b096b8375460818c31c981b58eb9",
+    ".codex-plugin/plugin.json": "82ea54de3d736870f7524c2994b9aeab6ee4d702a33638c9a0492224b5a02d14",
     "bundle.config.json": "d5c477e371f339479bb7a644476ef8f265215b3582ea4ba3b4f9ee40bb1b556d",
     "README.md": "3bd33409cf9058e96c4a4ff2f89e35268c1907e21b17360077bc3e70eb6d731c",
-    "CHANGELOG.md": "f62c67646dd60d5aab44ab5826b2ed390429cd09acd6047afea2a528ea2720c3",
+    "CHANGELOG.md": "53fd0dc49748aae9d13811b20f67828cc8a2ddd5307d755a9ea3a6f52787595a",
     "skills/asyra-developer/SKILL.md": "a21dcc0e2e8987153b34400f3aa08fa912fa475be8714103a74149c21f583917",
-    "skills/asyra-developer/references/apps/starter-app/docs/ARCHITECTURE.md": "62731f9066784c608fefcbff110431b69db8fea7385a02bcd582776deccdd993",
+    "skills/asyra-developer/references/apps/starter-app/docs/ARCHITECTURE.md": "aedf624615312510ce7fde45bc4302250953a42bbd680c069783d483ef99dc8d",
     "skills/asyra-developer/references/apps/starter-app/docs/ONBOARDING.md": "ed9e7222f984500c1b8926fed2630f2dcb794a92a75b767457e422abeda5a139",
     "skills/asyra-developer/references/docs/public/build/ai-actions.md": "c6fab72ef1e400809aa177c8ba0b42dce5c17a556314bb5f37106f210efc5a5f",
     "skills/asyra-developer/references/docs/public/build/collaboration.md": "508aab66460e75f62d276c9b0ad1c99eafb39df94c6aad5334cef1f4926e8264",
@@ -59,8 +59,8 @@
     "skills/asyra-developer/references/docs/public/learn/transactions-and-durability.md": "39eeb87892f902cb7fada818aaa42f96c02847cb5fe735c4737b98cf8e21c34e",
     "skills/asyra-developer/references/docs/public/reference/support-release.md": "b8803f90c73570c2acbb21745911ab734b8d2aa421381654493e567bb7b90005",
     "skills/asyra-developer/references/docs/public/start/create-design-app.md": "6db8168e500abd07ff6dfd7d32491268b0410b8dbaa3e168932f1cade8ba9944",
-    "skills/asyra-developer/references/docs/public/start/custom-composition.md": "33a1f049a6ec10242b806949ca61f365737f375a19e9ff431b167e6644d8989e",
+    "skills/asyra-developer/references/docs/public/start/custom-composition.md": "2a4e0f411dd672ce10c07a1a6df33dffa2c860fcda5eba15ff0a32ea5fbdba2c",
     "skills/asyra-developer/references/docs/public/start/extend-with-ai.md": "5a4a403f50659a1c7f8718e098e95ff5099d814a56b6b2b2a855c56e11e4d795"
   },
-  "contentDigest": "f6af4d3612e622ff78f3ff16ae6779ac57754698c507578058c3a89f29ea1f2b"
+  "contentDigest": "59cbb49d629aa7eebf45c9440430522b1891c75743ad24672ed9f4747c98d3e0"
 }

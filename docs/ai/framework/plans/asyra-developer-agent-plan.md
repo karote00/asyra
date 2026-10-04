@@ -6,12 +6,12 @@ Implementation requested on 2026-10-04. The user has persistently excluded
 Asyra developer Agent adoption work from Flow Inspector. This scope rule is
 recorded in `AGENTS.md` and
 `docs/ai/workflows/task-context.md#asyra-developer-agent-scope-exception`.
-Codex V1 local candidate is implemented. Task 2 below updates the local
-candidate to 0.1.1 with the merged complete Starter standard; packaging checks
-pass, while fresh 0.1.1 product trials remain pending. CLI
-installation and desktop discovery/Skill loading are confirmed. Fresh
-product-task acceptance remains pending; ordinary
-ownership review, formal verification and delivery permissions continue to apply.
+Codex V1 local candidate is implemented. Task 3 refreshes the candidate to 0.1.2
+from the merged Starter draft/action fix. The user confirmed 0.1.1 desktop
+reinstallation and actual Skill loading without restarting. Fresh 0.1.2 product
+trials and independent review remain pending; packaging success does not prove
+model improvement. Ordinary ownership review, verification and delivery
+permissions continue to apply.
 
 This document defines a developer-facing assistant that helps people build
 Asyra products in the established Asyra way. It does not
@@ -48,18 +48,18 @@ not create a parallel architecture or duplicate the source documentation.
 
 ## Existing Sources to Reuse
 
-| Existing source | Current responsibility | Use in this plan |
-| --- | --- | --- |
-| Root `AGENTS.md` and generated App `AGENTS.md` | Repository and generated-project guardrails | Keep as the project's local policy entrypoints. |
-| `docs/ai/framework/GETTING_STARTED.md` and `docs/ai/apps/README.md` | Route work to Framework or App owners | Use as the architecture and documentation map. |
-| `docs/ai/workflows/agent-task.md` and task workflows | Route requests, bound work, and define delivery | Reuse rather than creating a second task lifecycle. |
-| `docs/ai/skills/` | On-demand specialist procedures | Keep specialist guidance modular and load it only when relevant. |
-| `docs/ai/tools/agent-evals/` and `agent-improvement-eval` | Capture and assess recurring agent failures | Use for representative workflow evaluation when changing agent guidance. |
-| `docs/public/start/extend-with-ai.md` | Explain how to ask an AI coding agent to extend Asyra | Keep as the public product-building guide and link it from the installer entry. |
-| `docs/ai/framework/plans/adoption-entry-and-onboarding-program-plan.md` | Own the wider adoption journey and retain the completed Starter coding-agent verification | Reference its completed evidence; do not reopen its bounded remaining website work. |
-| `scripts/install-skills.sh` | Copy repository Skills into the local Codex skills directory | Treat as a Codex-specific local installer, not a cross-tool distribution or update system. |
+| Existing source                                                         | Current responsibility                                                                    | Use in this plan                                                                           |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Root `AGENTS.md` and generated App `AGENTS.md`                          | Repository and generated-project guardrails                                               | Keep as the project's local policy entrypoints.                                            |
+| `docs/ai/framework/GETTING_STARTED.md` and `docs/ai/apps/README.md`     | Route work to Framework or App owners                                                     | Use as the architecture and documentation map.                                             |
+| `docs/ai/workflows/agent-task.md` and task workflows                    | Route requests, bound work, and define delivery                                           | Reuse rather than creating a second task lifecycle.                                        |
+| `docs/ai/skills/`                                                       | On-demand specialist procedures                                                           | Keep specialist guidance modular and load it only when relevant.                           |
+| `docs/ai/tools/agent-evals/` and `agent-improvement-eval`               | Capture and assess recurring agent failures                                               | Use for representative workflow evaluation when changing agent guidance.                   |
+| `docs/public/start/extend-with-ai.md`                                   | Explain how to ask an AI coding agent to extend Asyra                                     | Keep as the public product-building guide and link it from the installer entry.            |
+| `docs/ai/framework/plans/adoption-entry-and-onboarding-program-plan.md` | Own the wider adoption journey and retain the completed Starter coding-agent verification | Reference its completed evidence; do not reopen its bounded remaining website work.        |
+| `scripts/install-skills.sh`                                             | Copy repository Skills into the local Codex skills directory                              | Treat as a Codex-specific local installer, not a cross-tool distribution or update system. |
 
-The Design App's generated local Codex adapter and the Framework's
+Asyra Design's generated local Codex adapter and the Framework's
 `@asyra/ai-agent-runtime` are separate in-app AI product capabilities. Their
 provider, conversation, and action-execution work is outside this plan.
 
@@ -200,12 +200,12 @@ user's home directory under the current filesystem constraint.
 
 ### Proposed complete flow
 
-| Step and owner | Inputs and conditions | Outputs and next consumer | Failure and bypass | Implementation boundary |
-| --- | --- | --- | --- | --- |
-| Assemble guidance - bundle script | Explicit public-document allowlist, canonical Skill, plugin version and package manifests from one checkout | Self-contained plugin with source record, consumed by Codex discovery | Missing sources or mismatched generated bytes reject; no latest-document fallback | `scripts/developer-agent-bundle.mjs`, `plugins/asyra-developer/` |
-| Discover and update - Codex host | Valid plugin and explicit marketplace setup/update request | Installed plugin available to Skill invocation | Host installation errors are reported; no Asyra service or home-directory writes by the bundle script | `.agents/plugins/marketplace.json`, plugin metadata, installation guide; host implementation is external |
-| Route product work - developer Skill | User outcome, project instructions, installed package facts and relevant reference snapshot | A bounded owner/API/test plan consumed by the coding task | Missing version evidence or unavailable API requires a concrete resolution before API-dependent edits; read-only questions bypass edits | Plugin Skill |
-| Implement and verify - coding task | Bounded plan and target project's current public APIs/tests | Product change plus actual test evidence and limitations | Failed checks remain failed; unsupported framework work is reported rather than hidden by private imports | User-selected product project, governed by its own instructions; no product changes during plugin packaging |
+| Step and owner                       | Inputs and conditions                                                                                       | Outputs and next consumer                                             | Failure and bypass                                                                                                                      | Implementation boundary                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Assemble guidance - bundle script    | Explicit public-document allowlist, canonical Skill, plugin version and package manifests from one checkout | Self-contained plugin with source record, consumed by Codex discovery | Missing sources or mismatched generated bytes reject; no latest-document fallback                                                       | `scripts/developer-agent-bundle.mjs`, `plugins/asyra-developer/`                                            |
+| Discover and update - Codex host     | Valid plugin and explicit marketplace setup/update request                                                  | Installed plugin available to Skill invocation                        | Host installation errors are reported; no Asyra service or home-directory writes by the bundle script                                   | `.agents/plugins/marketplace.json`, plugin metadata, installation guide; host implementation is external    |
+| Route product work - developer Skill | User outcome, project instructions, installed package facts and relevant reference snapshot                 | A bounded owner/API/test plan consumed by the coding task             | Missing version evidence or unavailable API requires a concrete resolution before API-dependent edits; read-only questions bypass edits | Plugin Skill                                                                                                |
+| Implement and verify - coding task   | Bounded plan and target project's current public APIs/tests                                                 | Product change plus actual test evidence and limitations              | Failed checks remain failed; unsupported framework work is reported rather than hidden by private imports                               | User-selected product project, governed by its own instructions; no product changes during plugin packaging |
 
 For every step, only the stated inputs and declared project tools may
 contribute; model-provider credentials, private consumer state mutation,
@@ -433,3 +433,85 @@ no release or installed-version update is implied.
 
 Task 2's local guidance and packaging slice is ready for review. Product-trial
 acceptance remains open; this does not close the wider plan or authorize release.
+
+## Task 3 - Refresh Starter knowledge and separate evaluation responsibilities
+
+### Bounded plan - 2026-10-04
+
+Owner: primary agent, single writer. Use the merged Starter fix at `bab1c2f6e`
+and the retained local Agent candidate at `0b8cbde9a` in the new
+`codex/developer-agent-starter-sync` worktree. The Agent candidate had not been
+merged with the Starter PR; preserve it through a local cherry-pick.
+
+Objective: distribute the corrected canonical Starter guidance and prepare
+ordinary product prompts that distinguish source defects, missing Asyra knowledge,
+model execution failures and missing verification. Model reasoning, planning and
+review remain model responsibilities. Do not append general-purpose rules for
+individual mistakes.
+
+Scope: plugin version/changelog/generated references, retained 0.1.1 baseline,
+Developer Agent maintenance/acceptance documents and this plan. Preserve the
+Skill instructions, bundle allowlist, generator and Framework/App implementations.
+No installed-cache writes, dependency upgrades, remote push or publication.
+The persistent Developer Agent Inspector exception applies.
+
+Steps and fixed gates:
+
+1. Preserve the exact 0.1.1 bundle identity; record the current stale-reference
+   failure before regeneration. Existing freshness tests already detect this
+   mismatch; no new evaluator is needed for the packaging change.
+2. Bump the local candidate to 0.1.2 and regenerate from current canonical docs.
+   Run bundle tests, standalone inspection, release comparison with 0.1.1,
+   naming and public-document freshness checks.
+3. Replace engineering-heavy product prompts with normal user requests. Keep
+   version/source capture and review oracles outside those prompts. Define
+   observations and attribution criteria before obtaining new outcomes.
+4. Retain the already observed 0.1.1 installation and Starter failure separately
+   from hypotheses. Prepare fresh creation and extension trials. A fresh model
+   context and distinct reviewer are required before any agent-improvement claim;
+   this informed session may only verify packaging or replay mechanics.
+
+The existing eval catalog has routing/range/display-ownership fixtures, not an
+Asyra product creation case. Do not use their scores as a proxy or expand this
+sync into a new evaluator implementation. Product trials follow the maintained
+acceptance scenarios. Missing independent trials remain pending, with no invented
+success rate, causal attribution or automatic agent dispatch.
+
+Pre-change evidence: `node scripts/developer-agent-bundle.mjs --check` rejects
+the stale bundled `apps/starter-app/docs/ARCHITECTURE.md`. This is a verified
+source-synchronization defect, not evidence that the model lacks general skills.
+
+### Task 3 local result - 2026-10-04
+
+The local candidate is 0.1.2, digest
+`f6af4d3612e622ff78f3ff16ae6779ac57754698c507578058c3a89f29ea1f2b`.
+Only the two changed canonical guides, manifest and changelog differ in the
+bundle. The Skill instruction hash and reference package versions are unchanged.
+The retained 0.1.1 bundle was read-only compared with the installed cache and
+matches exactly. The candidate does not include executable Starter source;
+Starter source/template delivery remains owned by the merged App/CLI work.
+
+Validation:
+
+- The pre-change freshness check rejected the stale architecture reference.
+- Bundle generation, freshness and version comparison against 0.1.1 passed.
+- All 13 packaging tests passed, including relocated standalone reference
+  resolution; all 13 current naming tests passed.
+- Skill quick validation and public-document freshness passed (41 pages,
+  19 packages). `git diff --check` passed.
+- The inherited plan used the generic phrase "Design App"; the naming gate
+  detected it, and its existing source reference now says "Asyra Design".
+
+The maintenance and acceptance guides now separate model responsibility from
+Asyra knowledge/source/verification responsibilities. Ordinary product prompts
+are separate from operator identity capture and reviewer oracles. No general
+instruction was added to the Skill, no new evaluator was implemented, and no
+installed cache, external product or remote branch was changed.
+
+Independent comparison status: zero baseline trials, zero candidate trials,
+zero independent semantic reviews. Creation and extension outcomes are pending;
+there is no pass-rate or measured model-improvement result. The evaluation skill
+requires fresh contexts and a distinct reviewer and explicitly does not authorize
+agent dispatch. A fresh desktop conversation using the actual 0.1.2 installation
+is the next product trial; the informed maintenance session cannot replace it.
+This completes source synchronization and trial preparation only.

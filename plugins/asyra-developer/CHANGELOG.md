@@ -1,6 +1,16 @@
 # Asyra Agent releases
 
-## 0.1.1 - Unreleased
+## 0.1.2 - Local candidate
+
+- Refresh the bundled Starter architecture and composition guide after the
+  merged draft/action fix: rejected input, explicit cancellation, action
+  admission, pending operations and canonical update ownership.
+- Keep the Skill instructions unchanged. This is a canonical knowledge refresh,
+  not a claim that general model reasoning or review has improved.
+- Compare against the retained 0.1.1 identity; fresh product acceptance remains
+  separate from bundle generation. No installed plugin is changed automatically.
+
+## 0.1.1 - Local installation baseline
 
 - Bundle the complete maintained Starter architecture and refreshed public guides.
 - Route both new products and later extensions through the full App standard,
@@ -13,7 +23,9 @@
 
 This is a local candidate. Version comparison with the installed 0.1.0 snapshot
 passes only after the declared packaging checks; it does not publish or update
-an installed plugin. Fresh 0.1.1 product trials are still required.
+an installed plugin. The user confirmed desktop reinstallation loaded 0.1.1 without restarting.
+Product trials exposed a Starter draft/action defect, subsequently fixed in
+PR #284; successful loading does not establish product acceptance.
 
 ## 0.1.0 - Local installation baseline
 

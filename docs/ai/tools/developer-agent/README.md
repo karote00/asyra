@@ -62,19 +62,35 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.1 local candidate aligned with the merged Starter standard.
-The 0.1.0 CLI installation and desktop discovery/explicit Skill loading were
-confirmed in the active plan. Those results do not prove 0.1.1 update acceptance
-or successful fresh product trials. No installed cache is modified by bundling.
+Current status: 0.1.2 local candidate refreshed from the merged Starter draft/action
+fix. The user confirmed desktop reinstallation loaded 0.1.1 without restarting;
+this does not establish automatic update behavior. The 0.1.2 candidate has not
+been installed or independently exercised in product trials. Bundling does not
+modify an installed cache.
 
-The retained `baselines/0.1.0.bundle.json` is the local installed-candidate
+## Responsibility and failure attribution
+
+The model owns requirement interpretation, implementation choices and review.
+The plugin supplies Asyra-specific contracts and routes to maintained Starter
+and verification resources. Starter and Framework owners supply correct source
+behavior. Keep generic development advice out of the Skill unless an observed
+failure demonstrates a missing Asyra-specific decision aid.
+
+Use the acceptance protocol to separate source defects, stale knowledge, model
+execution and verification gaps. Preserve uncertainty when evidence cannot
+identify the cause. Synchronizing a reference proves freshness; it does not prove
+better model decisions. Exposed product scenarios are acceptance exercises, not
+independent holdout evidence. Do not substitute the eval tool's unrelated toy
+cases for real Asyra product trials or add new infrastructure for this sync.
+
+The retained `baselines/0.1.1.bundle.json` is the local installed-candidate
 identity, not a public release claim. Compare a candidate with:
 
 ```sh
-node scripts/developer-agent-bundle.mjs --check --baseline docs/ai/tools/developer-agent/baselines/0.1.0.bundle.json
+node scripts/developer-agent-bundle.mjs --check --baseline docs/ai/tools/developer-agent/baselines/0.1.1.bundle.json
 ```
 
-For the approved standard and current evidence, see Task 2 in
+For the approved standard and current evidence, see Tasks 2 and 3 in
 `docs/ai/framework/plans/asyra-developer-agent-plan.md`. Required sources include
 `apps/starter-app/docs/ARCHITECTURE.md` and `ONBOARDING.md`; update those canonical
 owners first when App behavior changes, then regenerate the plugin. Never edit
