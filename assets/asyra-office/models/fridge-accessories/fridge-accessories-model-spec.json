@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "status": "approved-for-commit",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y"
+  },
+  "note": {
+    "origin": "Centre of rear mounting face",
+    "boundsMin": [
+      -0.0275,
+      -0.0002,
+      -0.035
+    ],
+    "boundsMax": [
+      0.0275,
+      0,
+      0.035
+    ],
+    "primitive": "box",
+    "size": [
+      0.055,
+      0.0002,
+      0.07
+    ],
+    "center": [
+      0,
+      -0.0001,
+      0
+    ],
+    "bevel": 0,
+    "material": "paper"
+  },
+  "magnet": {
+    "origin": "Centre of rear mounting face",
+    "axis": "Y",
+    "angularSegments": 96,
+    "profileCoordinates": [
+      "radius",
+      "Y"
+    ],
+    "closedProfile": [
+      [
+        0,
+        -0.005
+      ],
+      [
+        0.0087,
+        -0.005
+      ],
+      [
+        0.009,
+        -0.0047
+      ],
+      [
+        0.009,
+        -0.0011
+      ],
+      [
+        0.0087,
+        -0.0008
+      ],
+      [
+        0.007,
+        -0.0008
+      ],
+      [
+        0.007,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "materialRule": "Charcoal for profile segments 5->6 and 6->7; sage for all other segments",
+    "boundsMin": [
+      -0.009,
+      -0.005,
+      -0.009
+    ],
+    "boundsMax": [
+      0.009,
+      0,
+      0.009
+    ]
+  },
+  "materials": {
+    "paper": {
+      "baseColorSRGB": "#F5EDB1",
+      "roughness": 0.95,
+      "metallic": 0
+    },
+    "sage": {
+      "baseColorSRGB": "#9EAF8D",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "charcoal": {
+      "baseColorSRGB": "#393B38",
+      "roughness": 0.85,
+      "metallic": 0.3
+    }
+  },
+  "commonSurface": {
+    "opacity": 1,
+    "emission": 0,
+    "textures": [],
+    "bakedLighting": false
+  }
+}
