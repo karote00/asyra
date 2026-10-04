@@ -1,0 +1,452 @@
+{
+  "specVersion": "1.0.0",
+  "status": "Approved by the user for commit; drawings and documents only; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "ground-level footprint centre",
+    "sizeOrder": "X,Y,Z"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "wood": {
+      "baseColorSRGB": "#B68050",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "wood-grain": {
+      "baseColorSRGB": "#95683E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "metal": {
+      "baseColorSRGB": "#343633",
+      "roughness": 0.85,
+      "metallic": 0.5,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "board": {
+      "baseColorSRGB": "#34332F",
+      "roughness": 0.98,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "chalk": {
+      "baseColorSRGB": "#EBE6D6",
+      "roughness": 0.98,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "park-bench",
+      "name": "Park bench - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-park-bench-v1.png",
+      "nominalSize": [
+        1.2,
+        0.49,
+        0.73
+      ],
+      "seatTop": 0.36,
+      "components": [
+        {
+          "partId": "seat-slats",
+          "primitive": "four rounded boxes",
+          "size": [
+            1.1,
+            0.1,
+            0.035
+          ],
+          "centresY": [
+            -0.165,
+            -0.055,
+            0.055,
+            0.165
+          ],
+          "centreX": 0,
+          "centreZ": 0.3425,
+          "bevel": 0.006,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "back-slats",
+          "primitive": "three rounded boxes in tilted frame",
+          "width": 1.14,
+          "normalThickness": 0.03,
+          "localHeight": 0.09,
+          "centresZ": [
+            0.45,
+            0.55,
+            0.65
+          ],
+          "centreYFormula": "0.18+(Z-0.31)*tan(7deg)-0.025",
+          "basisWidth": [
+            1,
+            0,
+            0
+          ],
+          "basisUp": "(0,sin(7deg),cos(7deg))",
+          "basisFront": "(0,-cos(7deg),sin(7deg))",
+          "bevel": 0.005,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "seat-supports",
+          "primitive": "two boxes",
+          "size": [
+            0.065,
+            0.43,
+            0.025
+          ],
+          "centres": [
+            [
+              -0.575,
+              0,
+              0.3125
+            ],
+            [
+              0.575,
+              0,
+              0.3125
+            ]
+          ],
+          "bevel": 0.003,
+          "bevelSegments": 3,
+          "material": "metal"
+        },
+        {
+          "partId": "front-legs",
+          "primitive": "two cylinders",
+          "axis": "Z",
+          "centresXY": [
+            [
+              -0.575,
+              -0.18
+            ],
+            [
+              0.575,
+              -0.18
+            ]
+          ],
+          "radius": 0.0225,
+          "zMin": 0,
+          "zMax": 0.46,
+          "radialSegments": 48,
+          "material": "metal"
+        },
+        {
+          "partId": "rear-posts",
+          "primitive": "two capped circular tube sweeps",
+          "xValues": [
+            -0.575,
+            0.575
+          ],
+          "pathYZ": [
+            [
+              0.18,
+              0
+            ],
+            [
+              0.18,
+              0.31
+            ],
+            [
+              0.23035,
+              0.72
+            ]
+          ],
+          "radius": 0.0225,
+          "radialSegments": 48,
+          "joint": "continuous mitered bend, no added fitting",
+          "groundCutZ": 0,
+          "material": "metal"
+        },
+        {
+          "partId": "arms",
+          "primitive": "two cubic circular tube sweeps",
+          "xValues": [
+            -0.575,
+            0.575
+          ],
+          "controlPointsYZ": [
+            [
+              -0.18,
+              0.46
+            ],
+            [
+              -0.18,
+              0.52
+            ],
+            [
+              -0.08,
+              0.52
+            ],
+            [
+              0.20455,
+              0.51
+            ]
+          ],
+          "radius": 0.0225,
+          "pathIntervals": 32,
+          "radialSegments": 24,
+          "material": "metal"
+        }
+      ],
+      "sourceLocation": "lower-right park bench; obscured slat counts/supports are authored completions"
+    },
+    {
+      "moduleId": "entry-chalkboard",
+      "name": "Entry chalkboard - one open A-frame unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-entry-chalkboard-v1.png",
+      "nominalSize": [
+        0.416,
+        0.37,
+        0.69
+      ],
+      "fixedOpenPose": true,
+      "frameCoordinates": {
+        "frontOrigin": [
+          0,
+          -0.17,
+          0
+        ],
+        "rearOrigin": [
+          0,
+          0.17,
+          0
+        ],
+        "widthAxis": [
+          1,
+          0,
+          0
+        ],
+        "frontUp": "(0,sin(14deg),cos(14deg))",
+        "rearUp": "(0,-sin(14deg),cos(14deg))",
+        "frontOut": "(0,-cos(14deg),sin(14deg))",
+        "rearOut": "(0,cos(14deg),sin(14deg))",
+        "localOrder": "width, up, outward normal"
+      },
+      "components": [
+        {
+          "partId": "side-posts",
+          "primitive": "two boxes per leaning frame",
+          "localCentres": [
+            [
+              -0.1825,
+              0.35,
+              0
+            ],
+            [
+              0.1825,
+              0.35,
+              0
+            ]
+          ],
+          "sizeWidthUpNormal": [
+            0.035,
+            0.7,
+            0.024
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "groundCutZ": 0,
+          "material": "wood"
+        },
+        {
+          "partId": "rails",
+          "primitive": "two boxes per leaning frame",
+          "localCentres": [
+            [
+              0,
+              0.155,
+              0
+            ],
+            [
+              0,
+              0.665,
+              0
+            ]
+          ],
+          "sizeWidthUpNormal": [
+            0.33,
+            0.035,
+            0.024
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "panels",
+          "primitive": "one box per leaning frame",
+          "localCentre": [
+            0,
+            0.41,
+            0.004
+          ],
+          "sizeWidthUpNormal": [
+            0.33,
+            0.475,
+            0.008
+          ],
+          "frontFaceNormalCoordinate": 0.008,
+          "material": "board"
+        },
+        {
+          "partId": "hinges",
+          "primitive": "two cylinders",
+          "axis": "X",
+          "centres": [
+            [
+              -0.1825,
+              0,
+              0.679207
+            ],
+            [
+              0.1825,
+              0,
+              0.679207
+            ]
+          ],
+          "radius": 0.008,
+          "length": 0.03,
+          "radialSegments": 32,
+          "material": "metal"
+        },
+        {
+          "partId": "side-spreaders",
+          "primitive": "two boxes",
+          "centres": [
+            [
+              -0.203,
+              0,
+              0.3
+            ],
+            [
+              0.203,
+              0,
+              0.3
+            ]
+          ],
+          "size": [
+            0.01,
+            0.198,
+            0.026
+          ],
+          "material": "wood",
+          "note": "outside side posts; contact ends, no articulation in this asset",
+          "bevel": 0.002,
+          "bevelSegments": 3
+        },
+        {
+          "partId": "front-lettering",
+          "primitive": "flat vector stroke mask on front panel only",
+          "textLines": [
+            "Good",
+            "Ideas",
+            "Live",
+            "Here"
+          ],
+          "glyphPaths": {
+            "G": "M 43 15 C 6 -5 -6 71 30 70 L 43 64 L 43 40 L 26 40",
+            "o": "M 23 29 C -2 25 -1 72 23 71 C 48 72 47 27 23 29",
+            "d": "M 36 6 L 36 70 M 36 37 C 1 12 -1 79 26 68 Q 36 65 36 45",
+            "I": "M 8 6 L 40 6 M 24 6 L 24 70 M 8 70 L 40 70",
+            "e": "M 5 48 L 38 48 C 37 16 1 21 4 53 C 6 77 29 74 39 63",
+            "a": "M 35 36 C 2 16 -2 74 23 69 Q 36 65 35 44 M 35 32 L 36 70",
+            "s": "M 38 33 C 3 17 -1 46 23 48 C 52 52 35 84 5 66",
+            "L": "M 7 6 L 7 70 L 43 70",
+            "i": "M 12 31 L 12 70 M 12 13 L 12 15",
+            "v": "M 5 31 L 22 70 L 40 31",
+            "H": "M 7 6 L 7 70 M 42 6 L 42 70 M 7 37 L 42 37",
+            "r": "M 7 70 L 7 30 M 7 44 Q 18 22 34 32"
+          },
+          "glyphCellWidth": 50,
+          "tracking": 8,
+          "strokeWidth": 3,
+          "strokeCaps": "round",
+          "strokeJoins": "round",
+          "fill": "none",
+          "fontDependency": null,
+          "scaleMetresPerGlyphUnit": 0.00075,
+          "lineTopLocalUp": [
+            0.585,
+            0.485,
+            0.385,
+            0.285
+          ],
+          "alignment": "centre each advance box; total=50*N+8*(N-1)",
+          "mapping": "localWidth=(offset+glyphX-total/2)*scale; localUp=lineTop-glyphY*scale; normal=0.008",
+          "arrow": {
+            "line": [
+              [
+                -0.07,
+                0.19
+              ],
+              [
+                0.07,
+                0.19
+              ]
+            ],
+            "head": [
+              [
+                0.045,
+                0.21
+              ],
+              [
+                0.07,
+                0.19
+              ],
+              [
+                0.045,
+                0.17
+              ]
+            ],
+            "strokeWidth": 0.0025
+          },
+          "material": "chalk"
+        }
+      ],
+      "sourceLocation": "central office entrance A-frame with Good / Ideas / Live / Here and right arrow",
+      "rearPanel": "blank charcoal, no lettering"
+    }
+  ],
+  "omissions": [
+    "people",
+    "pets",
+    "cups",
+    "plants",
+    "floor",
+    "wall",
+    "electrical lights",
+    "bench cushions",
+    "animated folding"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "nominalDimensionTolerance": 0.002,
+    "seatSlats": 4,
+    "backSlats": 3,
+    "benchLegs": 4,
+    "signFeet": 4,
+    "bakedLighting": false
+  }
+}
