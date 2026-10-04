@@ -1,0 +1,406 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no verified model",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "angles": "degrees clockwise from +Z in the front X/Z plane",
+    "wallPlane": "Y=0; objects extend into Y<0",
+    "clockOrigin": "centre of rear mounting plane",
+    "wallpaperOrigin": "bottom centre of rear mounting plane"
+  },
+  "source": "../architecture/review/approved-office-reference.jpg",
+  "authority": {
+    "appearance": "Central office clock and tea-point wallpaper in the source image",
+    "dimensions": "This JSON and GEOMETRY-SUPPLEMENT.md",
+    "hiddenGeometry": "Authored simple completions, explicitly not recovered from the source",
+    "drawings": "Appearance references; not calibrated projections; never use sheet lighting as texture"
+  },
+  "materials": {
+    "rim": {
+      "baseColorSRGB": "#494039",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "dial": {
+      "baseColorSRGB": "#EADCC4",
+      "roughness": 0.88,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "ink": {
+      "baseColorSRGB": "#39332D",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "sage": {
+      "baseColorSRGB": "#89977A",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "cream": {
+      "baseColorSRGB": "#E7D7B4",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "wall-clock",
+      "name": "Wall clock - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-wall-clock-v2.png",
+      "overallSize": [
+        0.6,
+        0.055,
+        0.6
+      ],
+      "bounds": {
+        "min": [
+          -0.3,
+          -0.055,
+          -0.3
+        ],
+        "max": [
+          0.3,
+          0,
+          0.3
+        ]
+      },
+      "origin": "centre of rear mounting plane",
+      "components": [
+        {
+          "partId": "housing",
+          "primitive": "cylinder",
+          "axis": "Y",
+          "radius": 0.3,
+          "yMin": -0.04,
+          "yMax": 0,
+          "radialSegments": 128,
+          "material": "rim",
+          "bevel": {
+            "width": 0.002,
+            "segments": 3,
+            "outerCircularEdgesOnly": true
+          }
+        },
+        {
+          "partId": "front-rim",
+          "primitive": "annular-cylinder",
+          "axis": "Y",
+          "outerRadius": 0.3,
+          "innerRadius": 0.273,
+          "yMin": -0.055,
+          "yMax": -0.038,
+          "radialSegments": 128,
+          "material": "rim",
+          "bevel": {
+            "width": 0.002,
+            "segments": 3,
+            "circularEdgesOnly": true
+          }
+        },
+        {
+          "partId": "dial",
+          "primitive": "cylinder",
+          "axis": "Y",
+          "radius": 0.274,
+          "yMin": -0.043,
+          "yMax": -0.039,
+          "radialSegments": 128,
+          "material": "dial",
+          "bevel": null
+        },
+        {
+          "partId": "hour-indices",
+          "primitive": "radial-array-of-capsules",
+          "count": 12,
+          "angleStart": 0,
+          "angleStep": 30,
+          "centreRadius": 0.239,
+          "radialLength": 0.029,
+          "tangentialWidth": 0.008,
+          "yMin": -0.045,
+          "yMax": -0.043,
+          "capSegments": 8,
+          "material": "ink"
+        },
+        {
+          "partId": "hour-hand",
+          "primitive": "extruded-planar-polygon",
+          "localCoordinates": "[tangent,radial] before clockwise rotation",
+          "vertices": [
+            [
+              -0.01,
+              -0.014
+            ],
+            [
+              0.01,
+              -0.014
+            ],
+            [
+              0.011,
+              0.035
+            ],
+            [
+              0.005,
+              0.147
+            ],
+            [
+              0,
+              0.158
+            ],
+            [
+              -0.005,
+              0.147
+            ],
+            [
+              -0.011,
+              0.035
+            ]
+          ],
+          "angle": 47.5,
+          "yMin": -0.048,
+          "yMax": -0.046,
+          "edgeBevel": 0.0005,
+          "bevelSegments": 2,
+          "material": "ink",
+          "pivot": [
+            0,
+            -0.047,
+            0
+          ]
+        },
+        {
+          "partId": "minute-hand",
+          "primitive": "extruded-planar-polygon",
+          "localCoordinates": "[tangent,radial] before clockwise rotation",
+          "vertices": [
+            [
+              -0.006,
+              -0.012
+            ],
+            [
+              0.006,
+              -0.012
+            ],
+            [
+              0.005,
+              0.192
+            ],
+            [
+              0,
+              0.205
+            ],
+            [
+              -0.005,
+              0.192
+            ]
+          ],
+          "angle": 210,
+          "yMin": -0.051,
+          "yMax": -0.049,
+          "edgeBevel": 0.0005,
+          "bevelSegments": 2,
+          "material": "ink",
+          "pivot": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        {
+          "partId": "centre-pin",
+          "primitive": "cylinder",
+          "axis": "Y",
+          "radius": 0.012,
+          "yMin": -0.053,
+          "yMax": -0.043,
+          "radialSegments": 48,
+          "bevel": {
+            "width": 0.001,
+            "segments": 3
+          },
+          "material": "ink"
+        }
+      ],
+      "omissions": [
+        "glass",
+        "second hand",
+        "numerals",
+        "logo",
+        "battery compartment",
+        "wall",
+        "screws",
+        "mounting hooks"
+      ],
+      "authoredCompletions": [
+        "diameter and depth",
+        "flat rear",
+        "exact hand and index geometry",
+        "palette sampled approximately by eye"
+      ]
+    },
+    {
+      "moduleId": "vertical-wallpaper-strip",
+      "name": "Vertical wallpaper - single strip",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-vertical-wallpaper-v1.png",
+      "overallSize": [
+        0.4,
+        0.001,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -0.2,
+          -0.001,
+          0
+        ],
+        "max": [
+          0.2,
+          0,
+          1.2
+        ]
+      },
+      "origin": "bottom centre of rear mounting plane",
+      "components": [
+        {
+          "partId": "paper",
+          "primitive": "box",
+          "size": [
+            0.4,
+            0.001,
+            1.2
+          ],
+          "centre": [
+            0,
+            -0.0005,
+            0.6
+          ],
+          "bevel": null,
+          "backAndEdgesMaterial": "cream",
+          "frontMaterial": "analytic two-color bands",
+          "frontUV": {
+            "u": "(X + width/2)/width",
+            "v": "Z/height"
+          },
+          "sageMask": {
+            "coordinate": "u",
+            "interval": "[0.25,0.75)"
+          },
+          "outsideMaskMaterial": "cream",
+          "insideMaskMaterial": "sage"
+        }
+      ],
+      "authoredCompletions": [
+        "single strip boundary",
+        "exact dimensions",
+        "plain back",
+        "phase of the repeating stripe"
+      ],
+      "omissions": [
+        "wall",
+        "backing board",
+        "frame",
+        "curl",
+        "adhesive geometry",
+        "cast shadow",
+        "preset strip array"
+      ]
+    },
+    {
+      "moduleId": "horizontal-wallpaper-strip",
+      "name": "Horizontal wallpaper - single strip",
+      "unitCount": 1,
+      "reviewDrawing": "review/03-horizontal-wallpaper-v1.png",
+      "overallSize": [
+        1.2,
+        0.001,
+        0.4
+      ],
+      "bounds": {
+        "min": [
+          -0.6,
+          -0.001,
+          0
+        ],
+        "max": [
+          0.6,
+          0,
+          0.4
+        ]
+      },
+      "origin": "bottom centre of rear mounting plane",
+      "components": [
+        {
+          "partId": "paper",
+          "primitive": "box",
+          "size": [
+            1.2,
+            0.001,
+            0.4
+          ],
+          "centre": [
+            0,
+            -0.0005,
+            0.2
+          ],
+          "bevel": null,
+          "backAndEdgesMaterial": "cream",
+          "frontMaterial": "analytic two-color bands",
+          "frontUV": {
+            "u": "(X + width/2)/width",
+            "v": "Z/height"
+          },
+          "sageMask": {
+            "coordinate": "v",
+            "interval": "[0.25,0.75)"
+          },
+          "outsideMaskMaterial": "cream",
+          "insideMaskMaterial": "sage"
+        }
+      ],
+      "authoredCompletions": [
+        "single strip boundary",
+        "exact dimensions",
+        "plain back",
+        "horizontal orientation"
+      ],
+      "omissions": [
+        "wall",
+        "backing board",
+        "frame",
+        "curl",
+        "adhesive geometry",
+        "cast shadow",
+        "preset strip array"
+      ]
+    }
+  ],
+  "futureAcceptance": {
+    "clockDimensionTolerance": 0.001,
+    "wallpaperDimensionTolerance": 0.0001,
+    "clockIndexCount": 12,
+    "clockHandCount": 2,
+    "wallpaperPanelsPerUnit": 1,
+    "noBakedLighting": true,
+    "modelsVerified": false
+  }
+}
