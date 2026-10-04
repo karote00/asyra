@@ -1,0 +1,20 @@
+{
+  "name": "asyra",
+  "interface": {
+    "displayName": "Asyra"
+  },
+  "plugins": [
+    {
+      "name": "asyra-developer",
+      "source": {
+        "source": "local",
+        "path": "./plugins/asyra-developer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

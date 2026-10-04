@@ -1,0 +1,146 @@
+<!-- Generated from docs/public/index.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# Asyra Framework
+
+Asyra is infrastructure for building products around app-owned information and
+rules. A product may project that information as a design tool, whiteboard,
+BIM environment, simulation system, or another domain product. The Framework
+does not own the meaning of a building, manufacturing rule, chemical
+constraint, design object, or AI task. That meaning remains in your product.
+
+The same separation points toward future non-visible, machine-facing
+information products. That direction is documented as a roadmap, not as a
+supported Headless Core API in the current release.
+
+## Choose your path
+
+Begin with the small Generic Starter source if you want one editable Item path,
+use the complete Design product when you want a working design tool, or move
+to advanced composition when your product needs a different Framework assembly.
+The remaining Concepts, Extend, and Reference sections explain the owners
+behind each path.
+
+### Generic Starter source
+
+The <a href="https://github.com/karote00/asyra/blob/main/apps/starter-app/README.md" target="_blank" rel="noopener noreferrer">Starter source</a> is a small App-owned Item
+example with title/status editing, Undo/Redo, and explicit Save/Reload. Its
+[onboarding guide](../../apps/starter-app/docs/ONBOARDING.md) and
+<a href="https://github.com/karote00/asyra/blob/main/apps/starter-app/docs/PRIORITY_EXERCISE.md" target="_blank" rel="noopener noreferrer">opt-in priority exercise</a>
+show a coding agent changing App source through the existing Feature, API,
+transaction, projection, and persistence owners. The App does not include an AI
+runtime or provider for that exercise.
+
+Create a fresh project with the published
+<a href="https://www.npmjs.com/package/create-asyra-app" target="_blank" rel="noopener noreferrer">create-asyra-app package</a>
+using Node.js 24 and npm or Yarn:
+
+```bash
+npx create-asyra-app@0.1.0 my-app --package-manager=npm
+cd my-app
+npm run start
+```
+
+The CLI installs the generated project's dependencies. Its template pins the
+published Framework packages; the <a href="https://github.com/karote00/asyra/blob/main/apps/starter-app/README.md" target="_blank" rel="noopener noreferrer">Starter source</a>
+and onboarding material remain available for inspection and extension.
+
+### Complete Design product
+
+Use [create-asyra-design-app](start/create-design-app.md) for an immediately
+editable design tool whose App-owned behavior you can replace. The
+<a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Asyra Design case study</a> identifies the Framework,
+Preset, App, and backend owners of that product.
+
+### Advanced composition
+
+Use [custom composition](start/custom-composition.md#build-one-complete-data-path)
+when you deliberately need a different Core App assembly. That guide covers
+transaction publications, persistence, scoped UI subscriptions, computation
+reuse, and runtime lifecycle. The <a href="https://github.com/karote00/asyra/blob/main/docs/public/start/preset-2d.md" target="_blank" rel="noopener noreferrer">official 2D Preset</a>
+is a selectable baseline, not a universal product behavior.
+
+The public documentation also uses five sections so readers can find the
+architecture, app extensions, and exact package contracts after choosing a
+starting path.
+
+### Start
+
+Use the source-available Generic Starter above for a small editable example,
+or [create-asyra-design-app](start/create-design-app.md) for a published,
+complete design-tool product. Use the
+<a href="https://github.com/karote00/asyra/blob/main/docs/public/start/preset-2d.md" target="_blank" rel="noopener noreferrer">official 2D Preset</a> when you are building a visual product
+from Framework packages and want Asyra's maintained baseline. Read the
+<a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Asyra Design case study</a> to see how the official app
+uses Framework owners without becoming the only supported product shape.
+
+### Concepts
+
+Concepts explain how Asyra works before asking you to write implementation
+code. Begin with <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/information-models.md" target="_blank" rel="noopener noreferrer">information models</a>, then learn
+how Features accept intent, canonical owners settle state, transactions stay
+durable, load boundaries validate data, and projections remain separate from
+providers. Concept pages describe the architecture and link to the appropriate
+implementation path instead of mixing both levels in one guide.
+
+### Extend
+
+Extend is the normal path for adding app-owned product behavior. It covers
+schemas, Feature sessions, hierarchy and Group policy, persistence migration,
+collaboration, AI actions, and app-owned retrieval. Use it when the Framework
+composition is correct and your product needs more domain meaning or behavior.
+The [custom schema guide](build/custom-schema.md) is a practical first step.
+
+### Customize
+
+Customize is the advanced path for changing the Framework composition itself.
+Use [custom composition](start/custom-composition.md) to construct only the
+current owners your runtime needs, or the
+[custom render-boundary guide](build/render-boundary.md) to replace a provider
+through its public contract. These guides assume you deliberately need a
+different lower-level composition, not merely another product feature.
+
+### Reference
+
+Reference documents each public package, supported entrypoint, lifecycle,
+replacement behavior, and disabled state. Use it after choosing a path when you
+need the exact contract for a package or API. See
+[Support and release boundaries](reference/support-release.md) before making
+environment or roadmap claims.
+
+## The owner model
+
+Asyra stays extensible by assigning each concern one owner:
+
+- your app owns domain schemas, product rules, commands, permissions, migration
+  meaning, retrieval, and service policy;
+- Core coordinates public Framework capabilities and lifecycle;
+- canonical packages own state, transactions, hierarchy, validation, and
+  typed communication within their declared boundaries;
+- Preset optionally installs an official, selectable design-tool baseline;
+- Render projects canonical information without becoming its owner; and
+- optional Collaboration and AI packages participate only when the app
+  composes and configures them.
+
+The website presents these Markdown sources rather than maintaining a second
+documentation owner. Every implementation guide links back to canonical
+Framework contracts and forward to the next maintained path.
+
+## Current support
+
+The initial release supports the current browser/Core composition and the
+official `2D` Preset profile. Production `3D`, `HYBRID`, auto layout,
+unit-aware aggregation, a public `createHeadlessCore()`, and an independent
+Core Kernel are not current capabilities. See
+<a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/runtime-boundaries-roadmap.md" target="_blank" rel="noopener noreferrer">Current runtime and future Core Kernel</a>
+for the researched direction and present boundary.
+
+Runtime Atlas lets you operate six current owner flows in the browser. Concepts
+explain why those boundaries exist, Extend guides show how app-owned behavior
+enters them, Customize guides cover intentional provider or composition
+replacement, and Reference pages state the exact public package contracts.
+
+## Canonical sources
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/FRAMEWORK_ESSENTIALS.md" target="_blank" rel="noopener noreferrer">Framework Essentials</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">Framework Architecture</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/WORKFLOW.md" target="_blank" rel="noopener noreferrer">Framework Workflow</a>

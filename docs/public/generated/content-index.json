@@ -141,12 +141,16 @@
       "wordCount": 682
     },
     {
-      "contentSha256": "fe0dc685c5f70631bfabd32ae2594b9fb5da59959821ad2df46d1361de0394c4",
+      "contentSha256": "ad13eeb888de45bed4b525c85128345c0878e3bbbb7a1a199d56d7293ba70b6a",
       "description": "Give an AI agent bounded ownership, canonical APIs, and executable proof while you retain product decisions.",
       "headings": [
         {
           "depth": 1,
           "title": "Extend Asyra with an AI coding agent"
+        },
+        {
+          "depth": 2,
+          "title": "Use Asyra Agent in Codex"
         },
         {
           "depth": 2,
@@ -198,7 +202,7 @@
       "path": "start/extend-with-ai.md",
       "section": "Extend",
       "title": "Extend Asyra with an AI coding agent",
-      "wordCount": 704
+      "wordCount": 772
     },
     {
       "contentSha256": "556962323fbe71309c0e639fe71489fa926334c223c845d42642790749ea50cc",

@@ -1,0 +1,19 @@
+{
+  "documents": [
+    "docs/public/index.md",
+    "docs/public/start/custom-composition.md",
+    "docs/public/start/create-design-app.md",
+    "docs/public/start/extend-with-ai.md",
+    "docs/public/learn/canonical-state.md",
+    "docs/public/learn/transactions-and-durability.md",
+    "docs/public/build/feature-session.md",
+    "docs/public/build/custom-schema.md",
+    "docs/public/build/persistence-migration.md",
+    "docs/public/build/render-boundary.md",
+    "docs/public/build/collaboration.md",
+    "docs/public/build/ai-actions.md",
+    "docs/public/reference/support-release.md",
+    "apps/starter-app/docs/ONBOARDING.md",
+    "apps/starter-app/docs/ARCHITECTURE.md"
+  ]
+}

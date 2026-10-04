@@ -1,0 +1,148 @@
+<!-- Generated from docs/public/build/persistence-migration.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# Define migrations for your product
+
+Asyra provides the migration integration point and load lifecycle. Extend your
+product by supplying its version history and deterministic transforms, then let
+Core and the canonical packages validate the migrated candidate before
+activation.
+
+## Prerequisites
+
+- `@asyra/core` load/save composition
+- `@asyra/persistence` contracts or a compatible app provider
+- app-owned document versions and a connected migration chain
+- current property and hierarchy schemas
+
+## Ownership
+
+Persistence owns `DocumentLoadSource`, `IPersistenceProvider`, load/save hook
+types, and reference providers. Core owns migration hook ordering, result
+enforcement, and package-owner validation/apply. Props Manager and Scene Tree
+validate their canonical data. The app owns migration meaning, supported
+versions, domain transforms, storage selection, scheduling, authentication,
+retention, and backend topology.
+
+## Public APIs
+
+- `core.registerLoadHook(...)`
+- `core.save()` and the Core load lifecycle
+- `DocumentLoadSource` and `IPersistenceProvider`
+- `MemoryPersistence`, `IndexedDbPersistence`, and
+  `LocalStoragePersistence`
+- `SaveHook` and `LoadHook`
+
+The transition registry below is product code built on the Framework migration
+lifecycle. It supplies domain meaning without replacing Core's migration and
+load orchestration.
+
+## Where this runs
+
+Install migration hooks in the app's document composition before Core starts.
+The provider returns untrusted data to the load source; migration happens
+before canonical package apply. Keep backend selection, retries, retention, and
+credentials in app/server adapters rather than the browser document model.
+
+## Implementation
+
+```ts
+type AppDocument = {
+  version: string
+  [key: string]: unknown
+}
+
+type DocumentEnvelope = {
+  version?: unknown
+}
+
+type Migration = (document: AppDocument) => AppDocument
+
+const migrations = new Map<string, Migration>([
+  [
+    'v1',
+    (document) => {
+      const { legacyTitle, ...rest } = document
+      return { ...rest, version: 'v2', title: legacyTitle ?? '' }
+    }
+  ],
+  [
+    'v2',
+    (document) => ({
+      ...document,
+      version: 'v3',
+      metadata: { schema: 'v3' }
+    })
+  ]
+])
+
+core.registerLoadHook((rawDocument) => {
+  if (!rawDocument || typeof rawDocument !== 'object') {
+    throw new Error('Invalid document envelope')
+  }
+  if (typeof (rawDocument as DocumentEnvelope).version !== 'string') {
+    throw new Error('Document version is required')
+  }
+  let document = rawDocument as AppDocument
+  const visited = new Set<string>()
+  while (migrations.has(document.version)) {
+    if (visited.has(document.version)) throw new Error('Migration cycle')
+    visited.add(document.version)
+    document = migrations.get(document.version)!(document)
+  }
+  if (document.version !== 'v3') {
+    throw new Error(`Unsupported document version: ${document.version}`)
+  }
+  return document
+})
+```
+
+Production registration should validate the entire transition batch up front:
+one head, no duplicate input/output versions, no disconnected components, and
+no asynchronous step results.
+
+## Flow
+
+1. Register one complete, connected app migration batch.
+2. Read an untrusted document from the selected source.
+3. Require an explicit string version.
+4. Apply synchronous migration steps in deterministic order.
+5. Require each step to return exactly its declared next version.
+6. Return the migrated candidate to Core.
+7. Let package owners validate the complete candidate before apply.
+8. Activate the document only after all owners accept it.
+
+## Expected result
+
+The implementation migrates a `v1` document through one connected chain to
+`v3`. Missing versions, disconnected/cyclic chains, duplicate registration,
+asynchronous results, malformed results, and wrong output versions fail before
+canonical apply.
+
+If Persistence is not composed, no storage I/O occurs. If a provider fails,
+that failure cannot redefine whether an already settled runtime transaction
+committed. The app decides retry and recovery policy.
+
+## Validate
+
+Add round-trip, invalid-document, unsupported-version, partial-owner failure,
+prior-document preservation, and provider-failure tests for your app schema.
+
+## Forbidden shortcuts
+
+- no package-owned app version table
+- no asynchronous migration hidden inside a synchronous load hook
+- no apply before full migration and owner validation
+- no defaulting an explicitly invalid value
+- no automatic save scheduling claimed by Persistence or Core
+- no treating browser reference providers as production backend policy
+
+## Canonical sources
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/persistence.md" target="_blank" rel="noopener noreferrer">Persistence contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/props-manager.md" target="_blank" rel="noopener noreferrer">Props Manager contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Validation and load boundaries</a>
+
+## Next
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Understand versioned loading and migration</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/persistence.md" target="_blank" rel="noopener noreferrer">Read the Persistence guide</a>

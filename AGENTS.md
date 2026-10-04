@@ -126,7 +126,13 @@ These rules apply to every task without requiring additional document reads:
   handoffs and PRs. Workers verify the selected plan/task before editing;
   missing context is not an implicit standalone task. Follow
   `docs/ai/workflows/task-context.md`.
-- For plan-driven development, design the complete flow and review every step,
+- Asyra developer Agent adoption work (Skills, Codex Plugin packaging,
+  installation, updates, and user onboarding) is persistently exempt from
+  Flow Inspector requirements. Apply the scope boundary in
+  `docs/ai/workflows/task-context.md#asyra-developer-agent-scope-exception`;
+  later conversations do not need renewed approval. Framework runtime and
+  App-embedded `@asyra/ai-agent-runtime` work retain their ordinary rules.
+- For other plan-driven development, design the complete flow and review every step,
   its handoffs, whole-flow feasibility and accepted-behavior preservation before
   production implementation. Use Flow Inspector's supported admission and
   evidence paths, preserve the reviewed contract in worker handoffs, and verify
@@ -202,7 +208,8 @@ Required context:
 5. **[docs/ai/tools/README.md](docs/ai/tools/README.md)** and the relevant tool docs when the task changes project-owned development tooling.
 6. Relevant files under **[docs/ai/framework/rules/](docs/ai/framework/rules/)**, **[docs/ai/skills/](docs/ai/skills/)**, or **[docs/ai/workflows/](docs/ai/workflows/)**.
 
-After the bounded-task applicability check, work that changes or proves an
+After the bounded-task applicability check and the developer Agent exception
+above, work that changes or proves an
 active plan or Inspector contract must re-read and follow the INSPECTOR FLOW
 HIGHEST PRINCIPLE before starting and before advancing each work segment.
 
@@ -350,6 +357,10 @@ yarn workspace @package/name build  # Package-specific build
 - **Quality Gates**: Tests pass + lint clean + build succeeds
 
 ## Critical Rules
+
+The persistent Asyra developer Agent scope exception in
+`docs/ai/workflows/task-context.md#asyra-developer-agent-scope-exception`
+applies before all Inspector rules below, including readiness and step execution.
 
 - **🚨 NAMING BEFORE IMPLEMENTATION**: Choose identifier ownership, neutral names, and persisted/wire compatibility before implementation. Run the formal naming gate before propagating new names and at completed stage boundaries; do not defer naming review until PR creation. Follow `docs/ai/framework/rules/naming-and-persisted-identities.md`.
 - **🚨 BOUNDED TASK SCOPE AND CLOSURE RULE**: Before editing, freeze the objective, authorized mutation scope, fixed discovery methods for audits/reviews, required gates, exclusions, and stop conditions. Project rules may block, require evidence, or stop in-scope work, but they cannot independently authorize out-of-scope implementation. After editing begins, final review is limited to the diff, direct consumers, regressions caused by the diff, and the frozen gates; do not open new repository-wide discovery. Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.

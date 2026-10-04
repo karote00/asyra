@@ -1,5 +1,10 @@
 # Inspector Step Execution Rule
 
+First apply the persistent
+[Asyra developer Agent scope exception](../../workflows/task-context.md#asyra-developer-agent-scope-exception).
+That adoption work does not require Inspector steps, Step Execution Cards or
+renewed approval.
+
 Subject to `bounded-task-scope-and-closure.md`, this rule applies when a task
 changes or proves an active plan or Inspector step's governed semantics,
 owner, handoff, product cases, or DoD. Merely editing an unrelated internal

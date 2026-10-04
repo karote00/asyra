@@ -90,7 +90,7 @@ input:focus-visible {
   line-height: 1.1;
   letter-spacing: -0.025em;
 }
-.save-state {
+.operation-feedback {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -99,23 +99,20 @@ input:focus-visible {
   font-size: 12px;
   text-align: right;
 }
-.save-state i {
+.operation-feedback i {
   flex: none;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #237b69;
 }
-.save-state.loading i {
+.operation-feedback.loading i {
   background: #8d9d93;
 }
-.save-state.unsaved i {
-  background: #cc914a;
-}
-.save-state.error {
+.operation-feedback.error {
   color: #9c4c3e;
 }
-.save-state.error i {
+.operation-feedback.error i {
   background: #ba594a;
 }
 
@@ -516,10 +513,10 @@ input:focus-visible {
     margin-top: 2px;
     font-size: 13px;
   }
-  .save-state {
+  .operation-feedback {
     flex: none;
   }
-  .save-state span {
+  .operation-feedback span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -528,7 +525,7 @@ input:focus-visible {
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .save-state.error span {
+  .operation-feedback.error span {
     position: static;
     width: auto;
     height: auto;

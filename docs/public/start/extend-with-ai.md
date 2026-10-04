@@ -9,6 +9,15 @@ second state store, mutate a package owner directly, bypass a Feature or
 transaction, expose a server credential, or treat a future roadmap API as if
 it already exists.
 
+## Use Asyra Agent in Codex
+
+The repository includes an initial Codex plugin with a developer Skill and
+selected build guides. Describe your desired product; the Skill helps identify
+the owners, public APIs and tests needed to implement it. Follow the
+[local candidate installation guide](../../../plugins/asyra-developer/README.md).
+This candidate has not been publicly released. It runs in your coding tool and
+is separate from the optional in-app `@asyra/ai-agent-runtime`.
+
 ## Give the agent a bounded task contract
 
 Include these facts in each request:

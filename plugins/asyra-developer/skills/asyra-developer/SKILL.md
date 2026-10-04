@@ -1,0 +1,171 @@
+---
+name: asyra-developer
+description: Build or extend an Asyra product, turn a product idea into an Asyra App, or diagnose Asyra integration and ownership problems. Use for Asyra development requests; exclude unrelated development and operating the in-app AI chat.
+---
+
+# Asyra Developer
+
+Help the user turn a product outcome into a working Asyra implementation.
+Determine the technical owners yourself from the project; the user should not
+need to know Framework internals to describe their idea.
+
+## Trigger Signals
+
+Use for creating an Asyra App, extending an existing Asyra project, integrating
+its public packages, or repairing an Asyra-specific behavior.
+
+## Do Not Use When
+
+The task is unrelated to Asyra, or the user only wants to operate an App's
+embedded AI conversation. `@asyra/ai-agent-runtime` is an App capability,
+not this developer Skill.
+
+## Required Inputs
+
+The desired product outcome and target project. Infer constraints, package
+manager, existing owners and tests from that project. Ask only for missing
+product choices that materially affect the result; do not ask the user to
+supply package names or an architecture design you can establish yourself.
+
+## Preflight
+
+1. Read the target project's instructions and current changes. Establish the
+   authorized task boundary and preserve unrelated work.
+2. Resolve this Skill from the exact location supplied by the host's Skill
+   catalog. Resolve `bundle.json` and `references/` relative to that loaded
+   `SKILL.md`; never reconstruct a cache path from a marketplace or version.
+   An independent product is not expected to contain these plugin files. If the
+   supplied path is missing, report that lookup failure and use the host's
+   plugin inventory to locate the installed Skill; a missing path alone is not
+   evidence of a version mismatch. Read [bundle identity](bundle.json). Its
+   `referenceVersions` identify the
+   package versions used by these guides, not a promise of compatibility with
+   every project. Inspect the target's installed versions, public exports and
+   declarations before using an API. If versions differ, confirm the needed
+   API against that installation; resolve unavailable APIs before dependent
+   edits. Do not upgrade dependencies just to match the bundle.
+3. Distinguish an Asyra contributor checkout from an independent consumer.
+   In a checkout with `docs/ai/workflows/agent-task.md`, use that workflow and
+   current owner documents. In a consumer, use its own instructions and the
+   bundled public guides below. Do not require monorepo tools or Flow Inspector
+   in someone else's product. Project and user instructions retain precedence.
+
+## Deterministic Procedure
+
+1. Translate the request into an observable product behavior. Identify what
+   data must be saved, who can change it and the interactions to support.
+   State a short implementation plan and proceed within existing authorization.
+2. Select the starting path. For a new product, read the bundled
+   [public entry](references/docs/public/index.md) for the Generic Starter.
+   Read the bundled [complete App architecture](references/apps/starter-app/docs/ARCHITECTURE.md)
+   and [composition guide](references/docs/public/start/custom-composition.md)
+   before the first implementation slice. Starter is the maintained App standard;
+   Asyra Design supplies its architectural lineage, not a product to copy and
+   strip down. Use the complete Design starter only when its existing product fits;
+   use [custom composition](references/docs/public/start/custom-composition.md)
+   when the required runtime composition calls for it. Honor an existing
+   project or a user-selected starting point. Confirm a documented CLI version
+   is available before invoking it; a source snapshot is not registry proof.
+   Inspect the generated App's architecture: a published CLI may still contain
+   an older template. For a new product, include any required standard alignment
+   in the plan and implement it using verified installed APIs. Do not assume
+   that installing the newest Agent also updates the CLI or product packages.
+3. For existing work, first read the complete App architecture above and the
+   target's architecture guide, then trace the closest maintained Feature,
+   App common API,
+   schema and projection. Read only the relevant guides:
+
+   | Need                                          | Guide                                                                                                                                   |
+   | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+   | Canonical data and ownership                  | [Canonical state](references/docs/public/learn/canonical-state.md)                                                                      |
+   | Intent, transaction, cancel and Undo          | [Feature](references/docs/public/build/feature-session.md), [transactions](references/docs/public/learn/transactions-and-durability.md) |
+   | Domain values and loading                     | [Schema](references/docs/public/build/custom-schema.md), [migration](references/docs/public/build/persistence-migration.md)             |
+   | Views, subscriptions and engines              | [Composition](references/docs/public/start/custom-composition.md), [render](references/docs/public/build/render-boundary.md)            |
+   | Collaboration or in-app AI, only if requested | [Collaboration](references/docs/public/build/collaboration.md), [AI actions](references/docs/public/build/ai-actions.md)                |
+   | Generated Starter Item extension              | [Starter onboarding](references/apps/starter-app/docs/ONBOARDING.md)                                                                    |
+   | Complete Design product extension             | [Design starter](references/docs/public/start/create-design-app.md)                                                                     |
+
+4. Assign each concern to Framework mechanics, optional Preset defaults,
+   App domain or backend policy. Reuse the existing owner and supported public
+   API. Product intent enters a Feature, then the App/Core API and intended
+   transaction. Views read canonical data; incomplete UI drafts remain local.
+   Apply the whole-App boundaries below and consult the architecture guide for
+   their rationale. Preserve an existing product's owner contracts; do not turn
+   a feature request into an unrequested architecture migration.
+5. Implement a bounded behavior with its formal proof. For a bug, first confirm
+   an existing test detects it, or add a permanent regression and demonstrate
+   failure before changing runtime behavior. Follow the target's commands and
+   conventions. Include failure, Undo/Redo and saved-data cases when those
+   contracts are affected. Do not turn every small task into a framework audit.
+6. Review the diff and run applicable target tests, types, lint and build.
+   Report unavailable checks accurately and leave the product ready for review.
+
+## Whole-App Standard
+
+- Compose Core context, initialization, registered Features, common APIs,
+  controllers, semantic providers/hooks, views and render layers as separate
+  responsibilities. Expose readable named actions; avoid `runtime.feature.xxx`
+  call chains and forwarding-only modules. Initialization owns their wiring.
+- Register fixed UI properties before Core startup. Read them through Core's
+  observation facade and a lifecycle-owned adapter. Dynamic entities use keyed
+  projection subscriptions and stable snapshots; subscribe in the component that
+  consumes the value. Prove canonical reads and notification/render counts, not
+  only component splitting. Do not use `React.memo` to conceal broad updates.
+- Keep canonical document data in its Core owners, read-only rows in projections,
+  transient selection/pending/feedback in UI properties, and incomplete input in
+  local drafts. Controllers coordinate actions and structured outcomes; never
+  infer success or history changes from display text, including translations.
+- Undo/Redo performs one supported operation per request. Factory owns stacks
+  and redo invalidation. Use availability/count queries only if the installed
+  public API supports them; do not maintain UI depths, mirror stacks, invent
+  `canUndo`/`canRedo`, or introduce multi-step replay controls.
+- Admit saved data before canonical load and preserve documented persisted
+  identities. Own subscriptions, projections, rendering and async work for one
+  App lifetime. Await startup settlement and complete teardown before replacement;
+  repeated disposal shares completion, and retired callbacks cannot mutate the
+  next session. Follow the architecture guide's lifecycle and extension paths.
+
+## Validation Matrix
+
+- New App: supported composition starts and one meaningful product interaction
+  crosses the intended canonical route; affected persistence/history works.
+- New App architecture: identify each owner in the delivered source, inspect
+  UI-property subscriptions and update scopes, and verify startup/unmount/remount
+  cleanup. An API demonstration or a folder tree alone is insufficient.
+- Existing feature: new behavior and its rejected-input path pass, existing
+  behavior remains covered, one intended edit retains its history boundary.
+- Bug: the same regression fails before and passes after the owner correction.
+- Visual claim: inspect the actual rendered result at the relevant scale;
+  a build or screenshot file existing is not a visual review.
+- Unsupported API/version: report the missing public contract and a bounded
+  next step rather than inventing an API or importing private package source.
+
+## Required Output Format
+
+Use the user's language for conversation. Author project files, documentation,
+commit messages and GitHub content in English; Traditional Chinese is limited to
+required i18n resources/parameters and genuinely necessary test data. Explain
+what the product now does, which owner changed,
+checks actually run, and remaining limitations. Give local artifact links when
+useful. Keep implementation details out of the product's own user interface.
+
+## Guardrails
+
+Keep canonical state, transaction, load and projection owners intact. Use
+public `@asyra/*` imports. Do not add a second editable document store or patch
+output to conceal an owner bug. Optional capabilities stay optional. Preserve
+user data and project instructions. This Skill grants no publishing, remote
+push, dependency-upgrade, installation or multi-agent permissions.
+
+The included references are generated from maintained Asyra documents. Links
+between bundled guides work offline. External source links provide provenance
+or further reading and may describe a different revision; inspect installed
+APIs before relying on them. For maintenance, update the plugin through its
+marketplace; do not rewrite the installed reference snapshot during a task.
+
+## Failure Policy
+
+Report the first unresolved owner/API/check failure with concrete evidence.
+Continue independent in-scope work, but do not claim completed product behavior
+from failed or skipped checks. If the solution needs an unsupported Framework
+change, explain that boundary rather than silently expanding the task.

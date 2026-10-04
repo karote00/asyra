@@ -32,6 +32,17 @@ or unsupported capability claims.
     production deployment and page acceptance.
   - The independent Root README evidence plan remains completed.
 
+## Active Developer Agent Work
+
+- [Asyra Developer Agent Distribution and Maintenance](
+  plans/asyra-developer-agent-plan.md)
+  - Codex 0.1.1 local candidate includes the complete Starter App standard;
+    packaging and scoped validation pass. CLI installation and desktop Skill
+    loading were confirmed for 0.1.0; 0.1.1 update and fresh product-task
+    acceptance remain pending.
+    The permanent Flow Inspector adoption-work exception is in project rules.
+    Hosted service is deferred.
+
 ## Active Pre-Release Blockers
 
 None.

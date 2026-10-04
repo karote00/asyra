@@ -87,6 +87,18 @@
   ],
   "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector",
   "repositoryScriptGroups": {
+    "developerAgent": {
+      "ownsInputs": true,
+      "patterns": [
+        ".agents/plugins/marketplace.json",
+        "plugins/asyra-developer/**",
+        "docs/ai/tools/developer-agent/*.md",
+        "docs/ai/tools/developer-agent/baselines/*.bundle.json",
+        "scripts/developer-agent-bundle.mjs"
+      ],
+      "tests": ["scripts/__tests__/developer-agent-bundle.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
     "plans": {
       "patterns": [
         "docs/ai/**/plans/**",
@@ -382,6 +394,7 @@
     "scripts/__tests__/ci-scope.test.mjs",
     "scripts/__tests__/create-app-cli.test.mjs",
     "scripts/__tests__/deps-validate.test.mjs",
+    "scripts/__tests__/developer-agent-bundle.test.mjs",
     "scripts/__tests__/display-name-separators.test.mjs",
     "scripts/__tests__/framework-release-artifacts.test.mjs",
     "scripts/__tests__/framework-release-publisher.test.mjs",

@@ -92,10 +92,10 @@ test('supports canonical item editing and responsive layout', async ({
 
   await titleField.fill('Inspectable starter item')
   await titleField.press('Enter')
-  await expect(page.getByText(/^Updated title/)).toBeVisible()
+  await expect(page.getByText(/^Title accepted/)).toBeVisible()
 
   await firstStatus.getByRole('button', { name: 'Doing' }).click()
-  await expect(page.getByText(/^Updated status/)).toBeVisible()
+  await expect(page.getByText(/^Status accepted/)).toBeVisible()
   await expect(firstStatus.getByRole('button', { name: 'Doing' })).toHaveClass(
     /active/
   )
@@ -183,7 +183,7 @@ test('drags an Item as one action and restores its position', async ({
   await item.dragTo(page.locator('.render-stage'), {
     targetPosition: { x: 140, y: 280 }
   })
-  await expect(page.getByText(/^Moved item/)).toBeVisible()
+  await expect(page.getByText(/^Position accepted/)).toBeVisible()
   const moved = await item.boundingBox()
   expect(moved).not.toBeNull()
   expect(Math.abs((moved?.x ?? 0) - (original?.x ?? 0))).toBeGreaterThan(10)
@@ -344,7 +344,7 @@ test('touch drag commits once and pointer cancellation restores the last positio
     type: 'touchEnd',
     touchPoints: []
   })
-  await expect(page.getByText(/^Moved item/)).toBeVisible()
+  await expect(page.getByText(/^Position accepted/)).toBeVisible()
   const moved = await item.boundingBox()
   expect(Math.abs((moved?.x ?? 0) - (start?.x ?? 0))).toBeGreaterThan(10)
 

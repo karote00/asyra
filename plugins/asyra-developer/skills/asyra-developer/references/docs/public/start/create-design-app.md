@@ -1,0 +1,177 @@
+<!-- Generated from docs/public/start/create-design-app.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# Create a complete design app
+
+`create-asyra-design-app` is the product-first entry. It gives you a standalone
+copy of the complete Asyra Design product so you can use or extend a working
+design tool instead of assembling every capability first.
+
+## Prerequisites
+
+- Node.js `24.x`
+- Yarn, npm, or pnpm
+- a single new directory name for the project
+
+## Create and start
+
+```shell
+npx create-asyra-design-app my-project
+cd my-project
+yarn start
+```
+
+For non-interactive setup, select the package manager explicitly:
+
+```shell
+npx create-asyra-design-app my-project --package-manager=yarn
+```
+
+Valid values are `yarn`, `npm`, and `pnpm`. Absolute output paths and parent
+directory traversal are rejected. Use the start command printed by the CLI
+when you select npm or pnpm.
+
+Open `http://localhost:3000/?fileId=my-design`. The non-empty `fileId` is the
+document-session identity.
+
+## What you receive
+
+The generated app demonstrates the current public Core and Preset `2D`
+composition, app-owned Features, common APIs, canonical transactions,
+undo/redo, hierarchy, validated load, optional collaboration, and optional AI
+actions. Its Framework dependencies resolve from public package entrypoints;
+the clean-consumer release gate verifies the generated copy outside the
+monorepo.
+
+The template is a product, not a new Framework default. Its drawing behavior,
+document-session policy, panels, shortcuts, server adapters, and AI domain
+prompt belong to Asyra Design and may be replaced by your app.
+
+## Where this runs
+
+Product extensions live inside the generated app, not in Framework packages.
+For a new behavior, create a folder such as `src/features/review-queue/`, export
+its registration from `src/features/index.ts`, and let the existing startup
+import register it with the rest of the app Features.
+
+## Implementation
+
+This small queue is app-owned information. It uses the public Feature boundary
+for registration and disposal while keeping review meaning inside the app:
+
+```ts
+import { defineFeature } from '@asyra/core'
+
+type ReviewRecord = Readonly<{
+  id: string
+  title: string
+  status: 'pending'
+}>
+
+type ReviewInput = Readonly<{
+  id: string
+  title: string
+}>
+
+const records = new Map<string, ReviewRecord>()
+
+export const reviewQueue = defineFeature('app.reviewQueue', undefined, {
+  priority: 20,
+  exclusive: true,
+  api: {
+    add(input: ReviewInput) {
+      if (!input.id.trim() || !input.title.trim()) {
+        throw new Error('Review records require an id and title')
+      }
+      if (records.has(input.id)) {
+        throw new Error(`Review record already exists: ${input.id}`)
+      }
+      const record = Object.freeze({ ...input, status: 'pending' as const })
+      records.set(record.id, record)
+      return record
+    },
+    list: () => [...records.values()]
+  }
+})
+```
+
+Import the module once from `src/features/index.ts`. UI code calls
+`reviewQueue.api.add(...)`; disposal belongs to the app lifecycle that owns the
+registration.
+
+## Flow
+
+1. The generated startup composes Preset and Core exactly as maintained.
+2. Importing the extension registers one app-owned Feature.
+3. A product surface calls the Feature API with user intent.
+4. The API validates review-domain input before storing it.
+5. The returned record drives UI, persistence, or later actions chosen by the
+   app.
+
+## Expected result
+
+One valid call adds one immutable pending record. A missing field or duplicate
+id throws before another record appears. Removing the extension registration
+also removes its public API without changing Core, Preset, or the generated
+document model.
+
+## Extend one bounded behavior
+
+Use the pattern above without forking canonical state: register app-owned
+meaning, route intent through public APIs, and verify the product result. If
+the behavior changes the generated document, replace the local `Map` with the
+existing generated common API and transaction route rather than adding a
+second document store.
+
+When working with an AI coding agent, continue with
+[Extend Asyra with an AI coding agent](extend-with-ai.md). Ask for one product
+behavior at a time and provide the generated app's own tests and architecture
+as constraints.
+
+## Optional local services
+
+The generated environment points its collaboration endpoint at the bundled
+local service. Run these commands in separate terminals for the complete Asyra
+Design document-session composition:
+
+```shell
+yarn document:backend
+yarn collaboration:server
+yarn start
+```
+
+If the service is unavailable, the app enters its declared disconnected state;
+local editing uses the provisional document and app-owned recovery outbox. This
+is Asyra Design policy, not Collaboration package fallback behavior.
+
+## Optional local AI subscription
+
+The generated App includes a server adapter for a locally installed Codex CLI.
+After signing in to Codex with your own ChatGPT account, set
+`AI_PROVIDER_BACKEND=local-codex` and `AI_PROVIDER_MODEL` in the App's private
+`.env`. Start the App on a loopback URL and submit an Agent request. The generated
+README documents compatible protocol versions and an optional native executable
+path. Each developer supplies their own login; no account or credential is
+included in the template. The existing HTTP adapter remains available.
+
+## Validate before extending further
+
+```shell
+yarn typecheck
+yarn react:build
+yarn test:asyra-design
+```
+
+Do not edit generated Framework packages, import package-private files, or move
+app behavior into Core. Change app-owned code and keep canonical writes behind
+the generated common APIs and transaction boundaries.
+
+## Canonical sources
+
+- <a href="https://github.com/karote00/asyra/blob/main/create-app/asyra-design/README.md" target="_blank" rel="noopener noreferrer">CLI contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/create-app/asyra-design/template/README.md" target="_blank" rel="noopener noreferrer">Generated template contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/create-app/asyra-design/template/src/features/index.ts" target="_blank" rel="noopener noreferrer">Asyra Design Feature registrations</a>
+
+## Next
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/intent-and-features.md" target="_blank" rel="noopener noreferrer">Understand intent and Features</a>
+- <a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Study the complete Asyra Design product</a>

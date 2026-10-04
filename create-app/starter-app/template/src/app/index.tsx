@@ -12,8 +12,9 @@ const Status = () => {
   const status = useStatus()
   return (
     <p
-      className={'save-state ' + status?.tone}
+      className={'operation-feedback ' + status?.tone}
       role="status"
+      aria-label="Last operation"
       title={status?.message}
     >
       <i aria-hidden="true" />

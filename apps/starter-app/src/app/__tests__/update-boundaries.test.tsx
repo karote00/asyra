@@ -177,7 +177,7 @@ describe('App property and entity update boundaries', () => {
       )
       await settle()
       expect(app.core.getUIProperty(UIProperties.status)).toEqual({
-        tone: 'unsaved',
+        tone: 'ok',
         message: '已更新'
       })
       await app.controller.redo()

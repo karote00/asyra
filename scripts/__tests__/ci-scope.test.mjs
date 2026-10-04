@@ -1277,3 +1277,38 @@ test('internal BDD specifications and reference images are document inputs, whil
     ['docs/ai/apps/fieldscope/references/execute.cjs']
   )
 })
+
+test('developer Agent inputs select their packaging contract without product builds', () => {
+  for (const file of [
+    '.agents/plugins/marketplace.json',
+    'plugins/asyra-developer/.codex-plugin/plugin.json',
+    'plugins/asyra-developer/skills/asyra-developer/SKILL.md',
+    'plugins/asyra-developer/skills/asyra-developer/bundle.json',
+    'plugins/asyra-developer/skills/asyra-developer/references/docs/public/index.md',
+    'docs/ai/tools/developer-agent/baselines/0.1.1.bundle.json',
+    'scripts/developer-agent-bundle.mjs'
+  ]) {
+    const result = classifyChanges([file], manifests)
+    assert.deepEqual(result.unknownPaths, [], file)
+    assert.deepEqual(names(result), [], file)
+    assert.equal(result.frameworkReleaseRequired, false, file)
+    assert.equal(
+      result.executionPlan.checks.repositoryScripts.mode,
+      'files',
+      file
+    )
+    assert.ok(
+      result.executionPlan.checks.repositoryScripts.tests.includes(
+        'scripts/__tests__/developer-agent-bundle.test.mjs'
+      ),
+      file
+    )
+  }
+  for (const file of [
+    'plugins/unknown-plugin/run.mjs',
+    '.agents/unknown.json',
+    'docs/ai/tools/developer-agent/baselines/run.mjs'
+  ]) {
+    assert.deepEqual(classifyChanges([file], manifests).unknownPaths, [file])
+  }
+})
