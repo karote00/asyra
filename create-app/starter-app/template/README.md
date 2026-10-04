@@ -31,3 +31,9 @@ yarn lint
 yarn react:build
 yarn start
 ```
+
+## App architecture standard
+
+Read [the complete App architecture](docs/ARCHITECTURE.md) for ownership, UI
+property subscriptions, update boundaries, history, persistence and lifecycle.
+Starter is the maintained implementation reference for new Apps.

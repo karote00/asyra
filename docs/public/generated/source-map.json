@@ -58,7 +58,7 @@
     },
     {
       "id": "start/custom-composition",
-      "pageSha256": "bcc96b18ed83c5ca17294200538946fcefbbb26123b1df0e402bff261ca43784",
+      "pageSha256": "eafb4e9115bf0ee7eecf128f400fe48000ace79ea9fbe401f4c65b8ea59ce0bb",
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",

@@ -6,11 +6,8 @@ import {
   createItemPropertySchema,
   createStarterDocumentWrapper
 } from '../../../domain/item-domain.js'
-import {
-  createStarterRuntime,
-  type StarterRuntime
-} from '../../../runtime/starter-runtime.js'
-import type { StarterStorage } from '../../../runtime/storage.js'
+import { initApp, type AppSession } from '../../../init/init-app.js'
+import type { StarterStorage } from '../../../persistence/storage.js'
 import { priorityItemField } from '../priority-item-field.js'
 
 class MemoryStorage implements StarterStorage {
@@ -43,7 +40,7 @@ const itemProperty = (core: CoreRawData): Record<string, unknown> => {
   return property as Record<string, unknown>
 }
 
-const priorityOf = (runtime: StarterRuntime, id: string): unknown =>
+const priorityOf = (runtime: AppSession, id: string): unknown =>
   runtime.projection.getSnapshot().find((item) => item.id === id)?.fields
     ?.priority
 
@@ -58,7 +55,7 @@ describe('opt-in priority Item extension exercise', () => {
   })
 
   it('writes through Feature and Core, then projects one edit and its Undo/Redo', async () => {
-    const runtime = createStarterRuntime({
+    const runtime = initApp({
       itemField: priorityItemField,
       storage: new MemoryStorage()
     })
@@ -67,7 +64,7 @@ describe('opt-in priority Item extension exercise', () => {
         width: 320,
         height: 240
       })
-      const id = runtime.feature.addItem({
+      const id = runtime.itemActions.addItem({
         title: 'First item',
         status: 'todo',
         fields: { priority: 'low' }
@@ -76,7 +73,7 @@ describe('opt-in priority Item extension exercise', () => {
       expect(priorityOf(runtime, id)).toBe('low')
       expect(itemProperty(await runtime.core.save()).priority).toBe('low')
 
-      const otherId = runtime.feature.addItem({ title: 'Other item' })
+      const otherId = runtime.itemActions.addItem({ title: 'Other item' })
       await settleProjection()
       expect(priorityOf(runtime, otherId)).toBe('normal')
       const otherProjection = runtime.projection
@@ -86,7 +83,7 @@ describe('opt-in priority Item extension exercise', () => {
       const beforeRefresh = runtime.projection.refreshCount
       const beforeDepth = runtime.core.getUndoHistoryDepth()
 
-      runtime.feature.editItem(id, {
+      runtime.itemActions.editItem(id, {
         title: 'Edited item',
         status: 'doing',
         fields: { priority: 'high' }
@@ -106,7 +103,7 @@ describe('opt-in priority Item extension exercise', () => {
       ).toBe(otherProjection)
       expect(fullRead).not.toHaveBeenCalled()
 
-      await runtime.undo()
+      await runtime.historyApis.undo()
       await settleProjection()
       expect(runtime.projection.refreshCount).toBe(beforeRefresh + 2)
       expect(
@@ -116,7 +113,7 @@ describe('opt-in priority Item extension exercise', () => {
         status: 'todo',
         fields: { priority: 'low' }
       })
-      await runtime.redo()
+      await runtime.historyApis.redo()
       await settleProjection()
       expect(runtime.projection.refreshCount).toBe(beforeRefresh + 3)
       expect(
@@ -134,7 +131,7 @@ describe('opt-in priority Item extension exercise', () => {
 
   it('saves priority, admits legacy missing priority, and rejects invalid data before load', async () => {
     const storage = new MemoryStorage()
-    const runtime = createStarterRuntime({
+    const runtime = initApp({
       itemField: priorityItemField,
       storage
     })
@@ -143,21 +140,21 @@ describe('opt-in priority Item extension exercise', () => {
         width: 320,
         height: 240
       })
-      const id = runtime.feature.addItem({
+      const id = runtime.itemActions.addItem({
         title: 'Persisted item',
         status: 'done',
         fields: { priority: 'high' }
       })
       await settleProjection()
-      expect((await runtime.save()).ok).toBe(true)
+      expect((await runtime.storageApis.save()).ok).toBe(true)
       expect(itemProperty(await runtime.core.save()).priority).toBe('high')
 
-      runtime.feature.editItem(id, {
+      runtime.itemActions.editItem(id, {
         status: 'doing',
         fields: { priority: 'low' }
       })
       await settleProjection()
-      expect((await runtime.reload()).ok).toBe(true)
+      expect((await runtime.storageApis.reload()).ok).toBe(true)
       expect(
         runtime.projection.getSnapshot().find((item) => item.id === id)
       ).toMatchObject({
@@ -177,7 +174,7 @@ describe('opt-in priority Item extension exercise', () => {
       )
       const preflight = vi.spyOn(runtime.core, 'preflightLoad')
       const load = vi.spyOn(runtime.core, 'load')
-      const invalidResult = await runtime.reload()
+      const invalidResult = await runtime.storageApis.reload()
       expect(invalidResult.ok).toBe(false)
       expect(invalidResult.message).toContain('priority')
       expect(preflight).not.toHaveBeenCalled()
@@ -188,7 +185,7 @@ describe('opt-in priority Item extension exercise', () => {
 
       const beforeInvalidWrite = await runtime.core.save()
       expect(() =>
-        runtime.feature.editItem(id, { fields: { priority: 'urgent' } })
+        runtime.itemActions.editItem(id, { fields: { priority: 'urgent' } })
       ).toThrow('priority')
       expect(await runtime.core.save()).toEqual(beforeInvalidWrite)
       expect(runtime.core.getUndoHistoryDepth()).toBe(acceptedDepth)
@@ -199,7 +196,7 @@ describe('opt-in priority Item extension exercise', () => {
         STARTER_STORAGE_SLOT,
         JSON.stringify(createStarterDocumentWrapper(legacyCore))
       )
-      expect((await runtime.reload()).ok).toBe(true)
+      expect((await runtime.storageApis.reload()).ok).toBe(true)
       expect(priorityOf(runtime, id)).toBe('normal')
       expect(
         runtime.projection.getSnapshot().find((item) => item.id === id)

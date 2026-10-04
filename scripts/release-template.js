@@ -374,7 +374,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    setupFiles: ['./src/runtime/__tests__/setup-canvas.ts']
+    setupFiles: ['./src/test-support/setup-canvas.ts']
   }
 })
 `
