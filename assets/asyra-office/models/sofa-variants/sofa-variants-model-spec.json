@@ -1,0 +1,520 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "origin": "centre of unrounded overall XY bounds on ground Z=0",
+    "bevelRule": "inward edge bevel; no bounding-box expansion"
+  },
+  "references": {
+    "primaryStyle": "../furniture/review/03-sofa-v1.png",
+    "originalOffice": "../architecture/review/approved-office-reference.jpg",
+    "existingMaterialAuthority": "../furniture/furniture-model-spec.json",
+    "sourceLimit": "Neither L-shaped nor curved sofa exists in the original; these are user-requested style extensions"
+  },
+  "materials": {
+    "sage": {
+      "baseColorSRGB": "#78836A",
+      "roughness": 0.93,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    },
+    "dark-wood": {
+      "baseColorSRGB": "#584333",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "l-shaped-sofa",
+      "name": "L-shaped sofa - right chaise single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-l-shaped-sofa-v1.png",
+      "overallSize": [
+        1.8,
+        1.15,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          -0.575,
+          0
+        ],
+        "max": [
+          0.9,
+          0.575,
+          0.7
+        ]
+      },
+      "seatTop": 0.34,
+      "handedness": "chaise on +X; viewer right in front view",
+      "components": [
+        {
+          "partId": "base",
+          "primitive": "L-polygon extrusion",
+          "polygonXY": [
+            [
+              -0.9,
+              -0.075
+            ],
+            [
+              0,
+              -0.075
+            ],
+            [
+              0,
+              -0.575
+            ],
+            [
+              0.9,
+              -0.575
+            ],
+            [
+              0.9,
+              0.575
+            ],
+            [
+              -0.9,
+              0.575
+            ]
+          ],
+          "zMin": 0.07,
+          "zMax": 0.235,
+          "bevel": 0.018,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "rear-shell",
+          "primitive": "rounded-box",
+          "size": [
+            1.58,
+            0.12,
+            0.39
+          ],
+          "centre": [
+            0,
+            0.515,
+            0.415
+          ],
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "left-arm",
+          "primitive": "rounded-box",
+          "size": [
+            0.11,
+            0.65,
+            0.47
+          ],
+          "centre": [
+            -0.845,
+            0.25,
+            0.325
+          ],
+          "bevel": 0.045,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "right-arm",
+          "primitive": "rounded-box",
+          "size": [
+            0.11,
+            0.65,
+            0.47
+          ],
+          "centre": [
+            0.845,
+            0.25,
+            0.325
+          ],
+          "bevel": 0.045,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "left-seat",
+          "primitive": "rounded-box",
+          "size": [
+            0.78,
+            0.445,
+            0.105
+          ],
+          "centre": [
+            -0.395,
+            0.1675,
+            0.2875
+          ],
+          "bevel": 0.035,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "chaise-seat",
+          "primitive": "closed polygon extrusion with bevel",
+          "polygonXY": [
+            [
+              0.005,
+              -0.555
+            ],
+            [
+              0.88,
+              -0.555
+            ],
+            [
+              0.88,
+              -0.075
+            ],
+            [
+              0.785,
+              -0.075
+            ],
+            [
+              0.785,
+              0.39
+            ],
+            [
+              0.005,
+              0.39
+            ]
+          ],
+          "zMin": 0.235,
+          "zMax": 0.34,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "left-back-cushion",
+          "primitive": "rounded-box",
+          "size": [
+            0.78,
+            0.15,
+            0.35
+          ],
+          "centre": [
+            -0.395,
+            0.465,
+            0.525
+          ],
+          "bevel": 0.045,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "right-back-cushion",
+          "primitive": "rounded-box",
+          "size": [
+            0.78,
+            0.15,
+            0.35
+          ],
+          "centre": [
+            0.395,
+            0.465,
+            0.525
+          ],
+          "bevel": 0.045,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "feet",
+          "primitive": "six cylinders",
+          "axis": "Z",
+          "radius": 0.025,
+          "zMin": 0,
+          "zMax": 0.09,
+          "centresXY": [
+            [
+              -0.82,
+              0.49
+            ],
+            [
+              0,
+              0.49
+            ],
+            [
+              0.82,
+              0.49
+            ],
+            [
+              -0.82,
+              0
+            ],
+            [
+              0.08,
+              -0.49
+            ],
+            [
+              0.82,
+              -0.49
+            ]
+          ],
+          "radialSegments": 48,
+          "bevel": 0.005,
+          "bevelSegments": 3,
+          "material": "dark-wood"
+        }
+      ]
+    },
+    {
+      "moduleId": "curved-sofa",
+      "name": "Curved sofa - single 120-degree unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-curved-sofa-v1.png",
+      "nominalOverallSize": [
+        1.7320508075688772,
+        0.825,
+        0.7
+      ],
+      "nominalBounds": {
+        "min": [
+          -0.8660254037844386,
+          -0.4125,
+          0
+        ],
+        "max": [
+          0.8660254037844386,
+          0.4125,
+          0.7
+        ]
+      },
+      "seatTop": 0.34,
+      "polarCoordinates": {
+        "formula": "X=r*sin(theta); Y=r*cos(theta)-0.5875; Z unchanged",
+        "angleZero": "+Y",
+        "rangeDegrees": [
+          -60,
+          60
+        ],
+        "angularTessellation": "at most 1 degree per interval, include exact endpoints"
+      },
+      "components": [
+        {
+          "partId": "base",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.35,
+          "outerRadius": 1,
+          "angleDegrees": [
+            -60,
+            60
+          ],
+          "zMin": 0.07,
+          "zMax": 0.235,
+          "bevel": 0.018,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "rear-shell",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.9,
+          "outerRadius": 1,
+          "angleDegrees": [
+            -60,
+            60
+          ],
+          "zMin": 0.22,
+          "zMax": 0.61,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "left-arm",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.35,
+          "outerRadius": 1,
+          "angleDegrees": [
+            -60,
+            -53
+          ],
+          "zMin": 0.09,
+          "zMax": 0.56,
+          "bevel": 0.012,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "right-arm",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.35,
+          "outerRadius": 1,
+          "angleDegrees": [
+            53,
+            60
+          ],
+          "zMin": 0.09,
+          "zMax": 0.56,
+          "bevel": 0.012,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "seat-1",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.36,
+          "outerRadius": 0.84,
+          "angleDegrees": [
+            -52.8,
+            -17.866666666666664
+          ],
+          "zMin": 0.235,
+          "zMax": 0.34,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "back-cushion-1",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.835,
+          "outerRadius": 0.965,
+          "angleDegrees": [
+            -52.8,
+            -17.866666666666664
+          ],
+          "zMin": 0.35,
+          "zMax": 0.7,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "seat-2",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.36,
+          "outerRadius": 0.84,
+          "angleDegrees": [
+            -17.466666666666665,
+            17.466666666666672
+          ],
+          "zMin": 0.235,
+          "zMax": 0.34,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "back-cushion-2",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.835,
+          "outerRadius": 0.965,
+          "angleDegrees": [
+            -17.466666666666665,
+            17.466666666666672
+          ],
+          "zMin": 0.35,
+          "zMax": 0.7,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "seat-3",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.36,
+          "outerRadius": 0.84,
+          "angleDegrees": [
+            17.86666666666667,
+            52.8
+          ],
+          "zMin": 0.235,
+          "zMax": 0.34,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "back-cushion-3",
+          "primitive": "annular-sector extrusion",
+          "innerRadius": 0.835,
+          "outerRadius": 0.965,
+          "angleDegrees": [
+            17.86666666666667,
+            52.8
+          ],
+          "zMin": 0.35,
+          "zMax": 0.7,
+          "bevel": 0.025,
+          "bevelSegments": 4,
+          "material": "sage"
+        },
+        {
+          "partId": "feet",
+          "primitive": "six cylinders",
+          "axis": "Z",
+          "radius": 0.023,
+          "zMin": 0,
+          "zMax": 0.09,
+          "radialSegments": 48,
+          "bevel": 0.005,
+          "bevelSegments": 3,
+          "polarCentres": [
+            {
+              "radius": 0.46,
+              "angleDegrees": -48
+            },
+            {
+              "radius": 0.46,
+              "angleDegrees": 0
+            },
+            {
+              "radius": 0.46,
+              "angleDegrees": 48
+            },
+            {
+              "radius": 0.89,
+              "angleDegrees": -48
+            },
+            {
+              "radius": 0.89,
+              "angleDegrees": 0
+            },
+            {
+              "radius": 0.89,
+              "angleDegrees": 48
+            }
+          ],
+          "material": "dark-wood"
+        }
+      ]
+    }
+  ],
+  "omissions": [
+    "loose pillows",
+    "room",
+    "floor",
+    "rug",
+    "users",
+    "buttons",
+    "tufting",
+    "cables",
+    "sleep mechanism",
+    "individual movable chaise"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "nominalSizeTolerance": 0.002,
+    "seatCounts": {
+      "l-shaped-sofa": 2,
+      "curved-sofa": 3
+    },
+    "footCountPerUnit": 6,
+    "noBakedLighting": true
+  }
+}
