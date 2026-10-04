@@ -21,3 +21,20 @@ The first sheet showed an oblique view under RIGHT. It was not included in this 
 ```text
 Edit the supplied laptop multiview sheet, preserving the laptop style, materials, white rear emblem, empty dark screen, text labels and layout. REQUIRED geometric corrections: the panel labelled RIGHT must be a TRUE ORTHOGRAPHIC RIGHT-SIDE PROFILE, camera along +X looking toward -X, showing a thin horizontal base and a thin lid leaning backward by 20 degrees from vertical, 110-degree interior opening angle. In that RIGHT panel no broad keyboard or display face can be seen, just their narrow edges; front of laptop points to image LEFT and back/hinge to image RIGHT, upper lid tip extends further RIGHT than hinge. The panel labelled TOP must be a TRUE overhead view, camera along +Z: base is a rectangle and the leaning lid projects as a shallow band extending past its rear, not an eye-level view of the whole screen. Keep FRONT front-facing, BACK with emblem, THREE-QUARTER as existing oblique view. Maintain ONE same open laptop, no closed variants, no ports or extra accessories. Six simplified key rows with a broad spacebar. Pure white background, neutral flat materials, NO cast/contact shadows or baked gradients. Add no text beyond existing labels. The provided office reference remains the source for the silver laptop appearance.
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-laptop-v2.png`
+- `02-ceramic-mug-v1.png`
+
+Submitted prompt:
+
+Edit only the lighting in this exact design sheet. Keep every object, silhouette, view, part, label and colour family unchanged. Remove cast/contact shadows, ambient occlusion, dark seam halos, specular highlights and directional light gradients. Use UNLIT FLAT BASE COLOURS with existing intrinsic texture and thin contour lines. No darkened side faces or interiors caused by lighting; retain naturally dark materials. No redesign, new props, cropping or new text. White background unchanged. Scene lighting will be added later in 3D.
+
+The mug required a second edit using its first revision as input:
+
+Keep this exact mug reference sheet geometry, dimensions, five views, labels, handle and rim shapes. Remove ALL shading. Use uniform flat cream fill on every ceramic surface including inner cavity, handle, underside, rim and exterior. No darker interior, no highlights, no gradients, no ambient occlusion, no cast shadows. Explain openings, rim thickness and handle boundaries ONLY with fine contour lines, like a flat-colour technical diagram. White background. Do not redesign or change any lettering.

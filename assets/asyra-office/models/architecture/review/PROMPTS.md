@@ -25,3 +25,20 @@ Create a 2D multiview architectural COMPONENT DESIGN SHEET. Use the supplied app
 ## 06-window
 
 Create a 2D multiview architectural COMPONENT DESIGN SHEET. Use the supplied approved office scene as visual authority: central office first, neighboring shop only for the window. Match its warm miniature proportions and understated material detail. One independently placeable component per view, not an assembled room or array. Four views of the SAME consistent item with small English labels: FRONT, SIDE, TOP, THREE-QUARTER. Orthographic front/side/top, one oblique diagram. Uniform off-white sheet, neutral UNLIT base colors with intrinsic texture and fine geometric outlines only: NO cast shadows, ground/contact shadows, AO, directional shading, highlights, glow or vignette. No ground slab/backing wall except when that itself is the requested component. No characters, pets, furniture, plants, posters, signage or dimension numbers. Keep view consistency. Title WINDOW - ONE UNIT. ONE standalone simple chalk-cream rectangular timber window frame with exactly one vertical and one horizontal mullion dividing FOUR muted blue-grey glass panes. Secondary inspiration is neighboring shop windows in approved image, not an invented feature of central office. Outerwidth1.82m height1.28m framedepth.10m, slim .08m members, plain projecting .18m-deep sill. NO attached wall, shutters, curtains, decorations, brickwork, backing board or room visible through glass. Neutral solid blue-grey glass no painted reflections/highlights/shadows. Four identical panes arrangement front and opposite face, orthographic side/top show frame and sill. Same single window in all views.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-wall-v2.png`
+- `02-floor-v2.png`
+- `03-partition-v2.png`
+- `04-stair-v2.png`
+- `05-door-v2.png`
+- `06-window-v2.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

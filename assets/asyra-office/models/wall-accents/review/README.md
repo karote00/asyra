@@ -6,3 +6,9 @@ Status: approved by the user for commit; drawings and specifications only, with 
 2. [Framed print](02-framed-print-v1.png): narrow wooden frame with the three lines A / Brighter / Day from the left work area.
 
 Each has five views; the sconce oblique view also exposes the shade interior. Review source silhouette, colour, print wording and independent unit boundaries. Hidden construction and dimensions are explicit authored completions in the [geometry supplement](../GEOMETRY-SUPPLEMENT.md) and [JSON](../wall-accents-model-spec.json). Generated views are not calibrated engineering projections. Highlights and soft face shading are illustrative, never baked materials.
+
+## Lighting revision - 2026-10-04
+
+The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
+
+See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.

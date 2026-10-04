@@ -11,3 +11,9 @@ Each sheet has front, right, back, top and oblique views. Shapes and colours fol
 Review the clock silhouette and face, the paper-like thickness, the sage/cream palette and each unit's independent boundary. Any soft illumination visible in a generated sheet is illustrative only; it must not become a texture, shadow mesh or added geometry. These sheets are not calibrated engineering projections.
 
 Clock revision 2 restores the two omitted front indices. The top-profile pin silhouette and apparent rim depth are illustrative: numeric geometry keeps the pin behind the front rim, and fixes total depth at 0.055 m. Wallpaper side thickness is magnified for readability, not a thicker construction.
+
+## Lighting revision - 2026-10-04
+
+The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
+
+See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.

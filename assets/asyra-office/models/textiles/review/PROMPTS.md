@@ -19,3 +19,15 @@ Use case: stylized-concept. Create a clean five-view design sheet of ONE standal
 ```text
 Use case: stylized-concept. Create a five-view asset design sheet for ONE mustard-yellow THROW PILLOW matching the yellow cushions on the green sofa in the CENTRAL OFFICE of the supplied reference. Cozy miniature simple softly inflated square cushion, no complex tailoring. Size 0.32 m wide, 0.32 m high, 0.11 m thick. Warm muted mustard yellow fabric #D4AC57, a subtle self-colored perimeter seam located midway through the thickness, softly rounded square corners and gently convex broad front and back. No button, tuft, tassel, piping cord, zipper, label, print, accessory, sofa or wall. Back is plain same yellow as front. FIVE views FRONT, RIGHT (thin rounded lens-like side profile), BACK, TOP (thin rounded lens-like profile), THREE-QUARTER. Same single square cushion with consistent thickness and proportions. White sheet, English title 'THROW PILLOW - SINGLE UNIT', footer '0.32 x 0.11 x 0.32 m'. Flat neutral colors with barely perceptible woven fabric; NO cast/contact shadow, ambient occlusion, directional highlights or painted gradients. Show surface curvature by silhouette only as much as possible, not dramatic lighting. This is a standalone cushion, not an upholstered seat or chair back. Source image governs color and silhouette; unseen back and exact dimensions are authored completions.
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `03-throw-pillow-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

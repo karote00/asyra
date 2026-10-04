@@ -17,3 +17,18 @@ Use case stylized-concept. Create one furniture/appliance component MODELING REF
 ## 04-coffee-machine
 
 Use case stylized-concept. Create one furniture/appliance component MODELING REFERENCE SHEET closely following supplied approved image's UPPER RIGHT CENTRAL OFFICE PANTRY. Five consistent views of ONE identical unit: FRONT, RIGHT SIDE, BACK, TOP, THREE-QUARTER, clear small English labels. Orthographic front/right/back/top; last oblique. Cozy miniature simple rounded forms, soft cream and warm wood palette FROM REFERENCE. Flat unlit intrinsic color, fine geometry outlines, white background. NO cast shadows, contact shadows, ambient occlusion, reflections, highlights, glow, directional gradients. No environment, people, wall, floor, shelf, plant, mug, loose object or branding. Same geometry across views. Hidden rear surfaces plain and simplified. Title COFFEE MACHINE - ONE UNIT. Reference the small compact rounded cream/dark coffee appliance on the pantry worktop to the LEFT of sink and below the open shelf. Simplify faithfully into ONE small cream coffee machine with dark inset front brewing bay, single short centered outlet above dark drip tray, two tiny round front buttons, rounded housing and flat top. Width.20m depth.25m height.29m. No mug, coffee pot, beans, external grinder, steam cloud, chrome shine, countertop or cord. Plain dark-grey rear inset panel, concealed water tank. Do not invent a large professional espresso machine. Front gap is real geometry, same single outlet in all views.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-fridge-v1.png`
+- `02-water-dispenser-v1.png`
+- `03-sink-cabinet-v1.png`
+- `04-coffee-machine-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

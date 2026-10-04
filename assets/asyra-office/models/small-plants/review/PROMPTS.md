@@ -13,3 +13,20 @@ Use case: stylized-concept. Create a clean five-view sheet for ONE SMALL POTTED 
 ```text
 Use case: stylized-concept. Create a five-view design sheet for ONE SMALL POTTED CACTUS in the cozy simple miniature style of the supplied central office image. No distinct cactus is clearly visible in that image: this is an authored matching-style new design, not a copied source object. Warm matte terracotta tapered pot with softly rounded thick rim, flat dark brown soil inset below rim. One upright rounded cylindrical cactus trunk with six shallow vertical ribs, one short upward-curved branch on the VIEWER'S LEFT and one on the VIEWER'S RIGHT, attached at different heights. Small cream dash-like areoles, no sharp projecting spines, flowers, fruit or extra stems. Muted sage cactus body. Compact total height 0.30 m, pot top diameter 0.13 m, pot height 0.11 m. Exactly one trunk and two branches, consistent handedness from view to view. Five labelled views FRONT, RIGHT, BACK, TOP, THREE-QUARTER, same single cactus. No saucer, gravel, grass, roots, table, wall, room or background scene. White sheet, English title 'POTTED CACTUS - SINGLE UNIT'; no numeric labels needed. Flat neutral colors, no cast/contact shadows, ambient occlusion, gloss streaks or baked gradients. Matte terracotta and simple green geometry, not detailed realistic cactus. One pot-soil-plant assembly, no duplication of objects except the five views.
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-potted-leaf-plant-v1.png`
+- `02-potted-cactus-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.
+
+The small tree or cactus required a second edit using its first revision as input:
+
+Preserve this exact five-view asset sheet: all silhouettes, leaf or cactus shapes, part counts, view layouts, text and colour palette. Flatten ALL material lighting into flat colour fills. Especially remove dark blurry bands under pot rims, around soil edges, under overlapping leaves and inside cactus grooves. No highlights or gradients on rounded surfaces. Use thin contour lines to express pot lips, leaf boundaries and cactus ribs instead. Keep intrinsic different leaf colours and brown soil; same material has equal brightness everywhere. No ground or cast shadows. Do not redesign any parts.

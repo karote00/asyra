@@ -33,3 +33,9 @@ See parent specifications for dimensions, origins, unit counts, and hidden struc
 - [Unit and transparency corrections](UNIT-CORRECTIONS.md)
 
 Created with built-in image_gen. Historical revisions cannot replace the latest single-unit specification.
+
+## Lighting revision - 2026-10-04
+
+The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
+
+See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.

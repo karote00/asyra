@@ -13,3 +13,9 @@ The [original reference](../../architecture/review/approved-office-reference.jpg
 Images are not calibrated projections: some front/side views are slightly elevated, and coffee-table leg projections/top circle have generation deviations. Reconstruct one numeric geometry and compare appearance, rather than turning inconsistent views into different parts. Sheet shading, outlines, and dimensions are not materials and must not be baked.
 
 No movable tabletop objects, throw pillows, rugs, or plants are included. Other Group 4 items remain later batches in the [main document](../README.md).
+
+## Lighting revision - 2026-10-04
+
+The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
+
+See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.

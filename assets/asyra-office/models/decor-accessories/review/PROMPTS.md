@@ -13,3 +13,16 @@ Create a five-view reference sheet of ONE CLOSED BLUE HARDCOVER BOOK. Primary ap
 ## Fabric hanging - top projection correction
 
 Keep this entire five-view fabric hanging sheet unchanged except the small TOP view. Correct the TOP view to a true straight-down edge-on projection: one thin horizontal oak dowel with ivory sleeve covering the middle. The suspension cord lies in the same vertical plane as the rod, so from directly overhead it projects into a straight horizontal line along the rod, NOT a visible triangular peak. Remove the triangle above the small top-view rod. Preserve front, right, back, three-quarter, labels, white background, cloth pattern and colours. No additional shadows.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-fabric-hanging-v1.png`
+- `02-blue-book-v1.png`
+
+Submitted prompt:
+
+Edit only the lighting in this exact design sheet. Keep every object, silhouette, view, part, label and colour family unchanged. Remove cast/contact shadows, ambient occlusion, dark seam halos, specular highlights and directional light gradients. Use UNLIT FLAT BASE COLOURS with existing intrinsic texture and thin contour lines. No darkened side faces or interiors caused by lighting; retain naturally dark materials. No redesign, new props, cropping or new text. White background unchanged. Scene lighting will be added later in 3D.

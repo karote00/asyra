@@ -1,0 +1,315 @@
+{
+  "specVersion": "1.0.0",
+  "status": "user-authorized-reference-commit",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "bottom contact centre",
+    "sizeOrder": "X,Y,Z"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "revolution": {
+    "axis": "Z",
+    "angularIntervals": 96,
+    "profileOrder": "radius,Z",
+    "closeProfile": true,
+    "collapseAxisVertices": true
+  },
+  "materials": {
+    "ceramic": {
+      "baseColorSRGB": "#B7BEA4",
+      "roughness": 0.85,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    },
+    "wood": {
+      "baseColorSRGB": "#B68050",
+      "roughness": 0.85,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    },
+    "wood-grain": {
+      "baseColorSRGB": "#95683E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    },
+    "paper": {
+      "baseColorSRGB": "#EEE7D8",
+      "roughness": 0.95,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    },
+    "lid": {
+      "baseColorSRGB": "#E8E4DA",
+      "roughness": 0.82,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    },
+    "kraft": {
+      "baseColorSRGB": "#B99468",
+      "roughness": 0.98,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1,
+      "clearcoat": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "pantry-canister",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-pantry-canister-v1.png",
+      "size": [
+        0.09,
+        0.09,
+        0.125
+      ],
+      "source": "Central office pantry shelf jars; exact parts and hidden geometry authored",
+      "components": [
+        {
+          "partId": "body",
+          "primitive": "revolved closed profile",
+          "profile": [
+            [
+              0,
+              0
+            ],
+            [
+              0.039,
+              0
+            ],
+            [
+              0.042,
+              0.001
+            ],
+            [
+              0.043,
+              0.004
+            ],
+            [
+              0.043,
+              0.114
+            ],
+            [
+              0.041,
+              0.117
+            ],
+            [
+              0.039,
+              0.117
+            ],
+            [
+              0.039,
+              0.006
+            ],
+            [
+              0,
+              0.006
+            ]
+          ],
+          "material": "ceramic"
+        },
+        {
+          "partId": "lid",
+          "primitive": "revolved closed profile",
+          "profile": [
+            [
+              0,
+              0.116
+            ],
+            [
+              0.0385,
+              0.116
+            ],
+            [
+              0.0385,
+              0.117
+            ],
+            [
+              0.044,
+              0.117
+            ],
+            [
+              0.045,
+              0.118
+            ],
+            [
+              0.045,
+              0.124
+            ],
+            [
+              0.044,
+              0.125
+            ],
+            [
+              0,
+              0.125
+            ]
+          ],
+          "material": "wood"
+        }
+      ]
+    },
+    {
+      "moduleId": "takeaway-cup",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-takeaway-cup-v1.png",
+      "size": [
+        0.08,
+        0.08,
+        0.12
+      ],
+      "source": "Small park seating drinks; exact lid and sleeve authored",
+      "components": [
+        {
+          "partId": "body",
+          "primitive": "revolved closed profile",
+          "profile": [
+            [
+              0,
+              0
+            ],
+            [
+              0.0245,
+              0
+            ],
+            [
+              0.026,
+              0.0015
+            ],
+            [
+              0.037,
+              0.108
+            ],
+            [
+              0.037,
+              0.112
+            ],
+            [
+              0.0355,
+              0.112
+            ],
+            [
+              0.0355,
+              0.108
+            ],
+            [
+              0.0245,
+              0.004
+            ],
+            [
+              0,
+              0.004
+            ]
+          ],
+          "material": "paper"
+        },
+        {
+          "partId": "sleeve",
+          "primitive": "open conical band",
+          "zBounds": [
+            0.035,
+            0.075
+          ],
+          "innerRadiusFormula": "0.026+0.011*(z-0.0015)/0.1065",
+          "radialThickness": 0.001,
+          "material": "kraft"
+        },
+        {
+          "partId": "lid",
+          "primitive": "revolved closed profile",
+          "profile": [
+            [
+              0,
+              0.111
+            ],
+            [
+              0.038,
+              0.111
+            ],
+            [
+              0.04,
+              0.113
+            ],
+            [
+              0.04,
+              0.116
+            ],
+            [
+              0.038,
+              0.118
+            ],
+            [
+              0.036,
+              0.12
+            ],
+            [
+              0.034,
+              0.12
+            ],
+            [
+              0.0335,
+              0.119
+            ],
+            [
+              0,
+              0.119
+            ]
+          ],
+          "material": "lid"
+        },
+        {
+          "partId": "sip-opening",
+          "operation": "subtract elliptical prism from lid only",
+          "centreXY": [
+            0,
+            -0.026
+          ],
+          "semiAxesXY": [
+            0.007,
+            0.0025
+          ],
+          "zBounds": [
+            0.11,
+            0.121
+          ],
+          "perimeterSegments": 48,
+          "cutFaceMaterial": "lid"
+        }
+      ]
+    }
+  ],
+  "geometryAuthority": "GEOMETRY-SUPPLEMENT.md",
+  "surfaceAuthority": "SURFACE-RECIPES.md",
+  "reviewLighting": "flat colours only; no cast/contact shadows, AO, highlights or lighting gradients",
+  "bakedLighting": false,
+  "modelsVerified": false,
+  "omissions": [
+    "liquid",
+    "contents",
+    "straw",
+    "shelf",
+    "table",
+    "labels",
+    "animation",
+    "manufacturing fit"
+  ]
+}

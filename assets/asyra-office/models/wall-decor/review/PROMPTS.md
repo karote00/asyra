@@ -27,3 +27,15 @@ The first clock sheet omitted two front indices and was not copied into the deli
 ```text
 Edit the supplied wall clock multi-view sheet. Keep its composition, all English labels, dark rounded narrow rim, warm ivory dial, plain flat rear, dimensions and five views. Correct the front and three-quarter dial to show EXACTLY TWELVE short capsule hour indices, uniformly spaced at ALL 12 clock positions, one every 30 degrees; the previous front view accidentally omitted indices at approximately 1 o'clock and 10 o'clock. Every index must be visibly separate from the hands, which must end inside the inner edge of the indices. Keep exactly two tapered hands, hour hand at 47.5 degrees clockwise from 12, minute at 210 degrees, center pin. Front dial appearance is same as the CENTRAL OFFICE clock in the second reference. Remove cast shadows and dark contact-shading around the marks and hands; flat neutral ivory and brown materials without baked shadows, no gloss gradients. No extra dots, numerals, ticks, hands, borders, text changes, wall or props. Side and top remain thin clock profiles. This is an asset sheet, not a scene.
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-wall-clock-v2.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

@@ -13,3 +13,16 @@ Use case: stylized-concept. Create a clean multi-view sheet for ONE wall-mounted
 ```text
 Use case: stylized-concept. Create a clean five-view asset sheet of ONE framed wall print matching the poster on the left interior wall beside the laptop worker in the CENTRAL OFFICE of the supplied reference. Slender warm light-oak rectangular frame, portrait orientation, warm ivory paper, simple black handwritten-style words EXACTLY 'A' then 'Brighter' then 'Day', on three centered stacked lines. Preserve the understated cozy miniature look from the reference, no invented illustration or slogan. Single framed print unit, outer width 0.34 m and height 0.46 m, depth 0.022 m; frame border width 0.018 m. Plain light-tan closed back; no easel leg, hook, nail, cable, screw or bracket. Five clearly labelled views FRONT (full legible three-line print), RIGHT (true thin profile), BACK (plain tan backing framed in wood, NO text), TOP (thin profile), THREE-QUARTER (same print and frame). No glass reflections, no mat border, no double frames, no room wall, desk, person, plants or furniture. Clean white sheet, English title 'FRAMED PRINT - SINGLE UNIT'. No shadows, ambient occlusion, light gradients or baked lighting. Light oak intrinsic grain may be subtle, paper is uniform ivory. Keep lettering identical in both front and oblique view, exact three lines, no other text on the object. Reference image is source for appearance; unseen back and dimensions are simple authored completions.
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-wall-sconce-v1.png`
+- `02-framed-print-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

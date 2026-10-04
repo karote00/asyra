@@ -19,3 +19,9 @@ The user approved committing all six revision-2 sheets on 2026-10-04. Each shows
 Sheets support appearance review. See the [main document](../README.md) for dimensions, backs, materials, and component relationships. Backgrounds, text, and outlines are not assets. Do not bake face shading into textures; use shadow-free surface recipes. The window takes cues from secondary shops, not a required matching central-office window.
 
 [Actual prompts](PROMPTS.md) are generation history only. Old overviews and orthoviews are outside this revision's approval. This document claims no model, export, or verified reconstruction.
+
+## Lighting revision - 2026-10-04
+
+The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
+
+See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.

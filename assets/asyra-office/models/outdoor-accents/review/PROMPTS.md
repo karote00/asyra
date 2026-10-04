@@ -21,3 +21,16 @@ Edit this asset sheet. Preserve FRONT, RIGHT, BACK and THREE-QUARTER exactly. Re
 The first edit incorrectly tapered rectangular boards into an hourglass. The following correction restores constant-width board projections.
 
 Correct ONLY the TOP drawing in this sheet. It is geometrically wrong: the rectangular boards must NEVER taper into triangles or an hourglass. Replace TOP with a simple technical top orthographic projection: ONE SQUARE outline, four perfectly parallel straight vertical wooden rails at the left and right edges (front/rear halves share alignment). TWO DARK RECTANGLES stacked vertically, each SAME CONSTANT WIDTH. A full-width horizontal wooden hinge ridge across the exact middle. Horizontal wood bottom rails across the top and bottom outer edges of the square. NO diagonal lines, NO triangles, NO taper, NO central vertical barrel. The two rectangular board projections meet along a horizontal full-width ridge. Top view fills a 180 by 166 pixel rectangle. Preserve other four drawings and all text unchanged. White background, no cast shadows.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-park-bench-v1.png`
+- `02-entry-chalkboard-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

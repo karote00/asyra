@@ -17,3 +17,17 @@ Create a furniture MODELING REFERENCE SHEET, cozy simplified miniature style mat
 ## Snack Cabinet Revision 2 Correction
 
 Edit this same SNACK CABINET modeling sheet. Preserve all five furniture views, shapes, colors, shelf count, doors, handles and layout EXACTLY. Remove ALL dimension numbers, dimension captions and measurement arrow lines throughout the sheet, including W0.70m D0.34m H1.00m header and ALL side/under-view annotations. Keep ONLY title SNACK CABINET - ONE UNIT and view labels FRONT, RIGHT SIDE, BACK, TOP, THREE-QUARTER. Clean white background where annotations were. Do not change furniture. No extra shadows.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-snack-cabinet-v2.png`
+- `02-bookcase-v1.png`
+- `03-wall-shelf-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.

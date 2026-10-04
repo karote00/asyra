@@ -38,3 +38,26 @@ Historical generation inputs, preserved verbatim. Not a modeling specification.
   ]
 }
 ```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-asphalt-v2.png`
+- `02-road-dash-single-v4.png`
+- `02-road-line-single-v4.png`
+- `03-crossing-single-v4.png`
+- `04-pavement-curb-v2.png`
+- `05-manhole-cover-v2.png`
+- `06-street-tree-v2.png`
+- `07-street-lantern-v2.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.
+
+The three straight/dashed/crossing transparent markings used this separate prompt instead:
+
+Remove ONLY the broad blurred glow/halo surrounding this single road-paint stripe. Preserve stripe exact silhouette, orientation, dimensions in frame, original paint colour, intrinsic chipped paint pattern. Output genuine transparent alpha background with NO halo, NO shadow, NO emission, NO glow, NO ground and NO black rectangle. The stripe is flat painted material, not a light. Only stripe pixels and narrow antialiased edges should be visible; outside is fully transparent. Do not add labels, views or any objects.

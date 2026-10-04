@@ -21,3 +21,19 @@ Create a five-view furniture component modeling sheet, reference-image-faithful 
 ## 05-coffee-table
 
 Create a five-view furniture component modeling sheet, reference-image-faithful stylized-concept. Supplied image is approved visual authority: isolate furniture from CENTRAL OFFICE, not street shop. One SINGLE independently placeable furniture unit repeated consistently in FRONT, RIGHT SIDE, BACK, TOP, THREE-QUARTER views with simple English labels. True orthographic front/right/back/top, oblique last. Preserve cozy simple rounded miniature forms and reference colors. White background, flat UNLIT base colors, fine intrinsic wood grain if wood, subtle form outlines only. NO cast/contact shadows, AO, directional shading, highlights, vignette or ground. No humans, plants, props, cushions, mugs, computers, rugs, attached walls or other furnishings. No design variants. Title COFFEE TABLE - ONE UNIT. Isolate the small honey oak ROUND LOW TABLE in front of green sofa INSIDE central office. Single circular thin wood tabletop, diameter.62m thickness.035m at totalheight.32m. Three dark brown wooden subtly splayed tapered legs in triangular placement 120 degrees apart. No shelf or central pedestal. Top true circle, not oval; three legs in EVERY view, hidden legs naturally occluded. No mugs/books/vases/props. Preserve simple low warm wood miniature styling.
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-desk-v1.png`
+- `02-work-chair-v1.png`
+- `03-sofa-v1.png`
+- `04-armchair-v1.png`
+- `05-coffee-table-v1.png`
+
+Submitted prompt:
+
+Edit only the lighting in this exact design sheet. Keep every object, silhouette, view, part, label and colour family unchanged. Remove cast/contact shadows, ambient occlusion, dark seam halos, specular highlights and directional light gradients. Use UNLIT FLAT BASE COLOURS with existing intrinsic texture and thin contour lines. No darkened side faces or interiors caused by lighting; retain naturally dark materials. No redesign, new props, cropping or new text. White background unchanged. Scene lighting will be added later in 3D.
