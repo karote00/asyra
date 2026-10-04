@@ -1,5 +1,12 @@
 # Asyra Agent releases
 
+## 0.1.5 - First public release candidate
+
+- Prepare Codex directory listing text, starter prompts and the existing Asyra icon.
+- Document desktop installation, installed-version verification and update recovery.
+- Preserve the tested 0.1.4 Skill and reference-guide bytes without new behavior rules.
+- Local packaging only; submission, approval and public availability are pending.
+
 ## 0.1.4 - Local candidate
 
 - Clarify shared derived UI results and optional example-overlay composition in

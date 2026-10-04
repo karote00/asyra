@@ -14,6 +14,7 @@ const STATIC_FILES = [
   'bundle.config.json',
   'README.md',
   'CHANGELOG.md',
+  'assets/icon.svg',
   `${SKILL}/SKILL.md`
 ]
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex')

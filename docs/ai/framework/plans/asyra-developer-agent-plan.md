@@ -6,12 +6,12 @@ Implementation requested on 2026-10-04. The user has persistently excluded
 Asyra developer Agent adoption work from Flow Inspector. This scope rule is
 recorded in `AGENTS.md` and
 `docs/ai/workflows/task-context.md#asyra-developer-agent-scope-exception`.
-Codex V1 local candidate is implemented. Task 3 refreshes the candidate to 0.1.2
-from the merged Starter draft/action fix. The user confirmed 0.1.1 desktop
-reinstallation and actual Skill loading without restarting. Fresh 0.1.2 product
-trials and independent review remain pending; packaging success does not prove
-model improvement. Ordinary ownership review, verification and delivery
-permissions continue to apply.
+Codex V1 has completed local 0.1.4 installation and two reviewed product trials.
+Task 4 prepares the first public candidate, 0.1.5, with the same Skill and guide
+bytes. Local release preparation is separate from native 0.1.5 installation,
+portal validation, approval and publication. See the developer-agent first-release
+record for evidence and remaining steps. Ordinary ownership review, verification
+and delivery permissions continue to apply.
 
 This document defines a developer-facing assistant that helps people build
 Asyra products in the established Asyra way. It does not
@@ -515,3 +515,35 @@ requires fresh contexts and a distinct reviewer and explicitly does not authoriz
 agent dispatch. A fresh desktop conversation using the actual 0.1.2 installation
 is the next product trial; the informed maintenance session cannot replace it.
 This completes source synchronization and trial preparation only.
+
+## Task 4 - First public release preparation
+
+Requested on 2026-10-05. Base: `46c7d8f19c1ff9418c551654181ebbbfc4138579`.
+Branch: `codex/agent-first-release`; worktree: `.worktrees/agent-first-release`.
+The primary agent owns this bounded preparation task.
+
+Plan: retain the tested 0.1.4 Skill and reference bytes, prepare version 0.1.5
+with Codex directory metadata and the existing Asyra website icon, refresh
+installation/update documentation and acceptance evidence, then validate and
+produce a project-local ZIP with SHA-256 and an exact file inventory.
+
+Mutation scope: plugin metadata/docs/generated bundle, its existing bundler and
+formal packaging tests (only for the added icon), developer-agent maintenance
+docs/baseline/release notes, this plan, and ignored local release artifacts.
+The public identity stays `asyra-developer`; the display name is Asyra Developer.
+No runtime, Skill instruction, reference-guide behavior, dependency, external App,
+installed cache, or other product changes are included.
+
+Gates: packaging contracts, source freshness, version comparison with retained
+0.1.4 identity, naming checks, archive round-trip/standalone inspection, exact
+archive inventory and diff review. Existing product trials are reviewed evidence,
+not new executions or proof of every model outcome. Directory upload, verified
+publisher selection, policy attestations, remote push, tags and publication remain
+pending explicit authorization. Missing publisher access is a submission boundary,
+not a reason to defer local packaging. The Agent Inspector exception applies.
+
+Task 4 local preparation result: 0.1.5 listing, icon, documentation and archive
+are prepared. All 27 selected packaging/naming checks, baseline freshness and
+archive round-trip inspection passed. Native installation and portal submission
+remain pending; this task does not close public publication or the wider plan.
+See `docs/ai/tools/developer-agent/first-release.md`.
