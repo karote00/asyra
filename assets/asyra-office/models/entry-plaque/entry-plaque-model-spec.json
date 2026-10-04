@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom centre of plate depth",
+  "tolerance": 0.0002,
+  "object": {
+    "id": "entry-wall-plaque",
+    "primitive": "closed-box",
+    "min": [
+      -0.09,
+      -0.0075,
+      0
+    ],
+    "max": [
+      0.09,
+      0.0075,
+      0.2
+    ],
+    "size": [
+      0.18,
+      0.015,
+      0.2
+    ]
+  },
+  "frontMarks": {
+    "representation": "intrinsic color mask only",
+    "faceY": -0.0075,
+    "rectanglesXZ": [
+      {
+        "min": [
+          -0.04,
+          0.117
+        ],
+        "max": [
+          0.04,
+          0.133
+        ]
+      },
+      {
+        "min": [
+          -0.04,
+          0.067
+        ],
+        "max": [
+          0.04,
+          0.083
+        ]
+      }
+    ]
+  },
+  "construction": {
+    "vertices": 8,
+    "quadFaces": 6,
+    "triangles": 12,
+    "bevel": 0,
+    "subdivision": 0,
+    "flatFaceNormals": true,
+    "outwardNormals": true
+  },
+  "materials": {
+    "plate": {
+      "baseColor": "#52677C",
+      "roughness": 0.85
+    },
+    "marks": {
+      "baseColor": "#EEE4D2",
+      "roughness": 0.85
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Door close-up guides silhouette and color family. Dimensions, unseen surfaces and two simplified bars are authored completions; original lettering is unreadable.",
+  "exclusions": [
+    "model",
+    "app implementation",
+    "wall",
+    "mounting hardware",
+    "readable source text",
+    "editable text system"
+  ]
+}
