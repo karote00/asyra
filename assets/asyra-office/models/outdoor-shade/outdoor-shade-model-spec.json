@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of component bottom"
+  },
+  "source": "Supplementary authored outdoor designs, not identified source-image objects.",
+  "assets": [
+    {
+      "id": "open-garden-parasol",
+      "bounds": [
+        1.8,
+        1.8,
+        2.05
+      ],
+      "canopy": {
+        "method": "closed vertically thickened octagonal pyramid shell",
+        "vertexCount": 8,
+        "radius": 0.9,
+        "startDegrees": 0,
+        "edgeZ": 1.75,
+        "apexZ": 2.05,
+        "verticalThickness": 0.004,
+        "material": "terracotta"
+      },
+      "pole": {
+        "method": "Z cylinder",
+        "radius": 0.0175,
+        "zRange": [
+          0,
+          2.05
+        ],
+        "segments": 48,
+        "material": "charcoal"
+      },
+      "ribs": {
+        "count": 8,
+        "method": "closed cylinders",
+        "radius": 0.005,
+        "segments": 16,
+        "start": [
+          0,
+          0,
+          2.044
+        ],
+        "endRadius": 0.895,
+        "endZ": 1.7456666666666667,
+        "startDegrees": 0,
+        "material": "charcoal"
+      },
+      "state": "open static only"
+    },
+    {
+      "id": "parasol-base",
+      "bounds": [
+        0.42,
+        0.42,
+        0.24
+      ],
+      "disk": {
+        "method": "Z cylinder",
+        "radius": 0.21,
+        "zRange": [
+          0,
+          0.055
+        ],
+        "segments": 96
+      },
+      "socket": {
+        "method": "Z cylinder",
+        "radius": 0.035,
+        "zRange": [
+          0.055,
+          0.24
+        ],
+        "segments": 64
+      },
+      "bore": {
+        "method": "subtract Z cylinder from both disk and socket",
+        "radius": 0.0185,
+        "zRange": [
+          0.015,
+          0.241
+        ],
+        "segments": 64
+      },
+      "material": "charcoal",
+      "assemblyReference": {
+        "parasolBottomZ": 0.015,
+        "radialClearance": 0.001,
+        "combinedApexZ": 2.065,
+        "placementImplemented": false
+      }
+    }
+  ],
+  "construction": {
+    "bevel": 0,
+    "subdivision": false,
+    "shading": "flat canopy faces and cylinder caps; smooth cylinder sides",
+    "parts": "separate named closed solids; disk/socket shared boundary may be welded"
+  },
+  "materials": {
+    "terracotta": {
+      "baseColor": "#C77D59",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "charcoal": {
+      "baseColor": "#414647",
+      "roughness": 0.8,
+      "metallic": 0.15
+    }
+  },
+  "surfacePolicy": {
+    "uniformColors": true,
+    "textures": false,
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.001,
+    "modelsProduced": false
+  }
+}
