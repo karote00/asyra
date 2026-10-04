@@ -1,0 +1,15 @@
+# Generation Prompts
+
+Tool: built-in imagegen, one text-only call per component. No reference image was passed. These supplementary designs use the established palette.
+
+## Desk lamp
+
+Use case: stylized-concept. Five-view component sheet plus small BOTTOM detail for ONE small sage desk lamp, supplementary design for cozy miniature office. White background, flat UNLIT colors and fine outlines only. NO light emission, glow, shadows, AO, gradients, reflections or highlights. FRONT RIGHT BACK TOP THREE-QUARTER plus bottom detail. Simple rotationally symmetric lamp with round sage base diameter0.14m thickness0.018m, straight centered dark charcoal stem diameter0.012m, shallow sage cone shade centered above stem. Totalheight0.30m. Shade lower openingdiameter0.18m atheight0.22m, flat CLOSED small topdiameter0.06m atheight0.30m. Thin shade wall0.003m, open bottom, ivory unlit inner surface. Stem extends up into shade to closed top, with small ivory UNLIT spherical bulb radius0.018m centeredheight0.248m on stem; BOTTOM view reveals bulb and stem inside opening. No side arm, hinge, cord, switch, desk, props or room. All views consistent. Title SAGE DESK LAMP - SINGLE UNIT. Caption SHADE DIAMETER 0.18 m - HEIGHT 0.30 m. Shade is a conical frustum, not hemisphere or dome.
+
+## Floor lamp
+
+Use case: stylized-concept. Five-view component sheet plus small BOTTOM detail for ONE simple floor lamp, supplementary design for cozy miniature office. White background, flat UNLIT solid colors and fine outlines only. NO emission, glow, shadows, AO, gradients, reflections, highlights, ground or room. FRONT RIGHT BACK TOP THREE-QUARTER plus bottom detail. Rotationally symmetric straight lamp: charcoal circular base diameter0.30m thickness0.025m; centered charcoal vertical stem diameter0.022m. Ivory cylindrical drum shade diameter0.36m fromheight1.12m to1.40m, wallthickness0.004m, open TOP and BOTTOM. Two thin charcoal perpendicular horizontal support bars just inside top atheight1.37m connect inner shade to central stem. Ivory UNLIT bulb sphere radius0.035m centeredheight1.24m. Stem ends1.375m. Drum has no taper, no top lid, no fabric pleats or pattern. TOP shows real open circular rim, crossed supports and center stem; no opaque disk. No cord, switch, people or furniture. Title IVORY FLOOR LAMP - SINGLE UNIT. Caption SHADE DIAMETER 0.36 m - HEIGHT 1.40 m.
+
+## Inspection notes
+
+Both sheets include labeled views and an underside detail, without projected shadows or emitted light. The desk-lamp BOTTOM detail omits the opaque base to expose the shade interior; it is an explanatory cutaway, not a true assembled bottom projection. Its illustrated stem should not become a radial support: the real stem is vertical and centered. The floor-lamp TOP detail omits the lower base to show crossed supports and bulb; a real top projection would also show the base through the open shade. Its bottom inset has a center contour; the numeric base underside is flat and has no inset, screw or hole. Numeric stem height ends below the shade top. Small diagram contours and apparent light/dark variations are not extra geometry or lighting maps.

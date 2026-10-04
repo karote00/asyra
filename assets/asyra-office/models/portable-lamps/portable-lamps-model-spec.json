@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of bottom contact plane"
+  },
+  "source": "Supplementary authored lamp designs, not clearly identifiable source-image objects.",
+  "assets": [
+    {
+      "id": "sage-desk-lamp",
+      "bounds": [
+        0.18,
+        0.18,
+        0.3
+      ],
+      "parts": {
+        "base": {
+          "method": "Z cylinder",
+          "radius": 0.07,
+          "zRange": [
+            0,
+            0.018
+          ],
+          "material": "sage"
+        },
+        "stem": {
+          "method": "Z cylinder",
+          "radius": 0.006,
+          "zRange": [
+            0.018,
+            0.298
+          ],
+          "material": "charcoal"
+        },
+        "shade": {
+          "method": "closed radius-z profile revolution",
+          "profile": [
+            [
+              0,
+              0.3
+            ],
+            [
+              0.03,
+              0.3
+            ],
+            [
+              0.09,
+              0.22
+            ],
+            [
+              0.087,
+              0.22
+            ],
+            [
+              0.02925,
+              0.297
+            ],
+            [
+              0,
+              0.297
+            ]
+          ],
+          "outerMaterial": "sage",
+          "innerMaterial": "ivory",
+          "radialWallThickness": 0.003,
+          "topThickness": 0.003
+        },
+        "bulb": {
+          "method": "sphere",
+          "center": [
+            0,
+            0,
+            0.248
+          ],
+          "radius": 0.018,
+          "material": "ivory"
+        }
+      },
+      "lightAnchor": [
+        0,
+        0,
+        0.248
+      ]
+    },
+    {
+      "id": "ivory-floor-lamp",
+      "bounds": [
+        0.36,
+        0.36,
+        1.4
+      ],
+      "parts": {
+        "base": {
+          "method": "Z cylinder",
+          "radius": 0.15,
+          "zRange": [
+            0,
+            0.025
+          ],
+          "material": "charcoal"
+        },
+        "stem": {
+          "method": "Z cylinder",
+          "radius": 0.011,
+          "zRange": [
+            0.025,
+            1.375
+          ],
+          "material": "charcoal"
+        },
+        "shade": {
+          "method": "annular Z cylinder, open through top and bottom",
+          "outerRadius": 0.18,
+          "innerRadius": 0.176,
+          "zRange": [
+            1.12,
+            1.4
+          ],
+          "material": "ivory"
+        },
+        "supportX": {
+          "method": "box",
+          "min": [
+            -0.176,
+            -0.003,
+            1.367
+          ],
+          "max": [
+            0.176,
+            0.003,
+            1.373
+          ],
+          "material": "charcoal"
+        },
+        "supportY": {
+          "method": "box",
+          "min": [
+            -0.003,
+            -0.176,
+            1.367
+          ],
+          "max": [
+            0.003,
+            0.176,
+            1.373
+          ],
+          "material": "charcoal"
+        },
+        "bulb": {
+          "method": "sphere",
+          "center": [
+            0,
+            0,
+            1.24
+          ],
+          "radius": 0.035,
+          "material": "ivory"
+        }
+      },
+      "lightAnchor": [
+        0,
+        0,
+        1.24
+      ]
+    }
+  ],
+  "construction": {
+    "angularSegments": 96,
+    "spheres": {
+      "longitudeSegments": 48,
+      "latitudeSegments": 24
+    },
+    "bevel": 0,
+    "subdivision": false,
+    "shading": "smooth curved faces; flat caps and support faces",
+    "parts": "separate closed solids per named part; deliberate stem/bulb and support intersections"
+  },
+  "materials": {
+    "sage": {
+      "baseColor": "#899B85",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "charcoal": {
+      "baseColor": "#414647",
+      "roughness": 0.7,
+      "metallic": 0.2
+    }
+  },
+  "lighting": {
+    "allEmission": 0,
+    "referenceUnlit": true,
+    "bakedShadows": false,
+    "ao": false,
+    "glow": false,
+    "reflections": false,
+    "appOwnsLights": true
+  },
+  "excluded": [
+    "cord",
+    "switch",
+    "electrical internals",
+    "scene lighting",
+    "props"
+  ],
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0005,
+    "modelsProduced": false
+  }
+}
