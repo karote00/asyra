@@ -1,6 +1,6 @@
-# Asyra Developer for Codex
+# Asyra Agent for Codex
 
-Describe the product you want to build. Asyra Developer helps Codex choose an
+Describe the product you want to build. Asyra Agent helps Codex choose an
 Asyra starting point, apply the maintained Starter architecture, implement changes
 and verify behavior. It bundles one Skill and offline guides for canonical data,
 Features, UI subscriptions, transactions, persistence and lifecycle ownership.
@@ -9,22 +9,23 @@ service, API key or additional model subscription is supplied by this plugin.
 
 ## Release status
 
-Version 0.1.5 is the first public release candidate. It retains the tested 0.1.4
-Skill and guide contents. Directory submission, approval and publication are
-pending; no public listing URL is available yet.
+Version 0.1.6 prepares the unified **Asyra Agent** name and `asyra-agent`
+Plugin/Skill identity. The previous 0.1.5 GitHub release used Asyra Developer.
+This rename is not yet published. Official directory submission remains deferred.
 
 ## Install and start in Codex desktop
 
-After publication, find **Asyra Developer** in the Plugins Directory and install
-it. Open or select your intended product folder and start a new conversation.
+From a checkout containing this version, register its marketplace using the local
+command below, then select **Asyra Agent** in the desktop Plugins browser.
+Open or select your intended product folder and start a new conversation.
 For a new project, specify the complete destination path in your request.
 
-> Use Asyra Developer to build an expense tracker in my chosen project folder.
+> Use Asyra Agent to build an expense tracker in my chosen project folder.
 > Include monthly filters, exact totals, Undo/Redo and browser storage.
 
 For an existing product:
 
-> Use Asyra Developer to add tags and combined filters to this App. Preserve
+> Use Asyra Agent to add tags and combined filters to this App. Preserve
 > existing data and history, and test the affected behavior.
 
 You can describe the product in ordinary language. Technical diagnostic prompts
@@ -41,10 +42,20 @@ codex plugin marketplace add .
 ```
 
 Then use the desktop plugin browser, select the **Asyra** marketplace and install
-**asyra-developer**. Installation writes Codex-managed files and is a user action.
-In Codex CLI, explicitly invoke `$asyra-developer`. A Git marketplace is another
+**asyra-agent**. Installation writes Codex-managed files and is a user action.
+In Codex CLI, explicitly invoke `$asyra-agent`. A Git marketplace is another
 distribution source; it is separate from the public directory. This candidate has
-not been pushed or assigned a public release ref.
+not been assigned a public release ref.
+
+## Replace the previous installation
+
+Version 0.1.5 was published with Plugin/Skill identity `asyra-developer` and
+label **Asyra Developer**. Version 0.1.6 uses `asyra-agent` and **Asyra Agent**.
+This is a different plugin identity, not an automatic update of the old entry.
+Uninstall **Asyra Developer** in the desktop Plugins page, select a marketplace
+source containing this version, and install **Asyra Agent**. Start a fresh
+conversation and verify version 0.1.6 with the prompt below. Product files and
+saved data require no migration. Do not manually edit the installed cache.
 
 ## Verify and update
 
@@ -54,11 +65,11 @@ identify the reference snapshot, not universal API compatibility.
 
 After installing or updating, start a new conversation and ask:
 
-> Load the installed Asyra Developer Skill. Read bundle.json beside that exact
+> Load the installed Asyra Agent Skill. Read bundle.json beside that exact
 > SKILL.md and report both full paths and pluginVersion. Do not read an Asyra
 > development checkout or change any files.
 
-The result for this candidate must report **0.1.5**. A version displayed on the
+The result for this candidate must report **0.1.6**. A version displayed on the
 plugin page alone does not establish which Skill an existing conversation loaded.
 If a fresh conversation still loads an old local copy, use the desktop plugin
 page to uninstall and reinstall from the updated source, then verify again. This

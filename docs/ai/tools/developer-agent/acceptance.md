@@ -34,7 +34,7 @@ proposals, save my work and reopen it later. Include Undo and Redo. Keep the app
 simple, without accounts, collaboration or AI chat.
 ```
 
-Select the Asyra Developer skill through the host if automatic discovery does
+Select the Asyra Agent skill through the host if automatic discovery does
 not load it; record that separately as discovery evidence. Do not rewrite the
 product request into an architecture checklist. Supply the workspace location
 in project context when it is not already available.

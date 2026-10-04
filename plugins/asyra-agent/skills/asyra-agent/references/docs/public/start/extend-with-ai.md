@@ -16,7 +16,7 @@ it already exists.
 The repository includes an initial Codex plugin with a developer Skill and
 selected build guides. Describe your desired product; the Skill helps identify
 the owners, public APIs and tests needed to implement it. Follow the
-<a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-developer/README.md" target="_blank" rel="noopener noreferrer">local candidate installation guide</a>.
+<a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md" target="_blank" rel="noopener noreferrer">Asyra Agent installation guide</a>.
 This candidate has not been publicly released. It runs in your coding tool and
 is separate from the optional in-app `@asyra/ai-agent-runtime`.
 

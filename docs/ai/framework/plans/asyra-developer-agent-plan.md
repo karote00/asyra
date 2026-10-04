@@ -547,3 +547,28 @@ are prepared. All 27 selected packaging/naming checks, baseline freshness and
 archive round-trip inspection passed. Native installation and portal submission
 remain pending; this task does not close public publication or the wider plan.
 See `docs/ai/tools/developer-agent/first-release.md`.
+
+## Task 5 - Unify the public product as Asyra Agent
+
+Requested on 2026-10-05; base e9809b674a13a7eb016ec9c9ad8e2489a6c5ae6f.
+Reuse the clean agent-github-release worktree. Public distribution and Skill
+identity become `asyra-agent`; display name becomes `Asyra Agent`. Version 0.1.6
+distinguishes the rename from the immutable published 0.1.5 artifact. Existing
+installation is replaced explicitly, with no alias or automatic cache migration.
+
+Plan: rename plugin/Skill directories and their manifest, marketplace, bundler,
+CI and naming consumers; update current installation docs; retain the 0.1.5
+baseline and regenerate references. Preserve historical plans and release evidence.
+Scope excludes Framework/App behavior, skill behavioral instructions, dependencies,
+installed cache and rewriting published tags/assets. Flow Inspector exemption applies.
+Checks: existing packaging, naming, CI scope and public-doc freshness gates,
+0.1.5 baseline comparison and bounded diff review. Stop after a locally validated
+change; remote publication and native installation are separate delivery steps.
+
+Task 5 local result: renamed Plugin/Skill, marketplace, packaging and CI owners;
+version 0.1.6 with explicit replacement instructions. All 80 selected packaging,
+naming and CI scope tests passed; baseline freshness, Skill validation and diff
+whitespace checks passed. Public documentation check reports a stale API index,
+also reproduced in the unchanged agent-first-release worktree. Its unrelated
+three-field regeneration was excluded. No remote push, new release or installed
+cache modification occurred. Native renamed-plugin discovery remains unverified.

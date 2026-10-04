@@ -1,9 +1,9 @@
 ---
-name: asyra-developer
+name: asyra-agent
 description: Build or extend an Asyra product, turn a product idea into an Asyra App, or diagnose Asyra integration and ownership problems. Use for Asyra development requests; exclude unrelated development and operating the in-app AI chat.
 ---
 
-# Asyra Developer
+# Asyra Agent
 
 Help the user turn a product outcome into a working Asyra implementation.
 Determine the technical owners yourself from the project; the user should not

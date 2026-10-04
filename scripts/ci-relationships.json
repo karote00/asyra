@@ -91,7 +91,7 @@
       "ownsInputs": true,
       "patterns": [
         ".agents/plugins/marketplace.json",
-        "plugins/asyra-developer/**",
+        "plugins/asyra-agent/**",
         "docs/ai/tools/developer-agent/*.md",
         "docs/ai/tools/developer-agent/baselines/*.bundle.json",
         "scripts/developer-agent-bundle.mjs"

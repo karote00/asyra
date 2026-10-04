@@ -4,8 +4,8 @@ import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-const PLUGIN = 'plugins/asyra-developer'
-const SKILL = 'skills/asyra-developer'
+const PLUGIN = 'plugins/asyra-agent'
+const SKILL = 'skills/asyra-agent'
 const RECORD = `${SKILL}/bundle.json`
 const MANIFEST = '.codex-plugin/plugin.json'
 const INVENTORY = 'docs/public/generated/package-reference.json'
@@ -79,7 +79,7 @@ function manifestAt(directory) {
   const manifest = JSON.parse(read(directory, MANIFEST))
   version(manifest.version)
   if (
-    manifest.name !== 'asyra-developer' ||
+    manifest.name !== 'asyra-agent' ||
     manifest.skills !== './skills/' ||
     !manifest.author?.name ||
     !manifest.description
@@ -247,7 +247,7 @@ export function checkBundle(root, baseline) {
       fail(`Stale bundle: ${relative}; run --write`)
   const marketplace = JSON.parse(read(root, '.agents/plugins/marketplace.json'))
   const entry = marketplace.plugins?.find(
-    (item) => item.name === 'asyra-developer'
+    (item) => item.name === 'asyra-agent'
   )
   if (
     marketplace.name !== 'asyra' ||
