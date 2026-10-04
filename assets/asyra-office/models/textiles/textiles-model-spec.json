@@ -1,0 +1,410 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no verified models",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "rugOrigin": "footprint centre on bottom plane Z=0",
+    "pillowOrigin": "lowest point directly below its centre at Z=0"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "sage": {
+      "baseColorSRGB": "#758074",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "sage-binding": {
+      "baseColorSRGB": "#606B5B",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "lavender": {
+      "baseColorSRGB": "#858393",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "lavender-binding": {
+      "baseColorSRGB": "#706D7E",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "backing": {
+      "baseColorSRGB": "#B8AD96",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "mustard": {
+      "baseColorSRGB": "#D4AC57",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "mustard-seam": {
+      "baseColorSRGB": "#C49D4E",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "rectangular-rug",
+      "name": "Rectangular rug - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-rectangular-rug-v1.png",
+      "overallSize": [
+        1.4,
+        0.95,
+        0.008
+      ],
+      "bounds": {
+        "min": [
+          -0.7,
+          -0.475,
+          0
+        ],
+        "max": [
+          0.7,
+          0.475,
+          0.008
+        ]
+      },
+      "geometry": {
+        "primitive": "rounded-rectangle extrusion",
+        "width": 1.4,
+        "depth": 0.95,
+        "height": 0.008,
+        "planCornerRadius": 0.025,
+        "segmentsPerCorner": 12,
+        "topBottomEdgeBevel": 0.001,
+        "bevelSegments": 3,
+        "bevelExpandsBounds": false
+      },
+      "surfaceRegions": {
+        "top": "sage",
+        "topBinding": {
+          "width": 0.012,
+          "material": "sage-binding",
+          "mask": "top points outside centred inner rounded rectangle of width 1.376, depth 0.926 and corner radius 0.013"
+        },
+        "sidesAndBevels": "sage-binding",
+        "bottom": "backing",
+        "bottomBinding": {
+          "width": 0.012,
+          "material": "sage-binding",
+          "mask": "bottom points outside centred inner rounded rectangle of width 1.376, depth 0.926 and corner radius 0.013"
+        }
+      },
+      "authoredCompletions": [
+        "dimensions",
+        "plain tan backing",
+        "thin edge binding",
+        "corner radius"
+      ]
+    },
+    {
+      "moduleId": "round-rug",
+      "name": "Round rug - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-round-rug-v1.png",
+      "overallSize": [
+        1.2,
+        1.2,
+        0.008
+      ],
+      "bounds": {
+        "min": [
+          -0.6,
+          -0.6,
+          0
+        ],
+        "max": [
+          0.6,
+          0.6,
+          0.008
+        ]
+      },
+      "geometry": {
+        "primitive": "cylinder",
+        "axis": "Z",
+        "radius": 0.6,
+        "zMin": 0,
+        "zMax": 0.008,
+        "radialSegments": 192,
+        "topBottomEdgeBevel": 0.001,
+        "bevelSegments": 3,
+        "bevelExpandsBounds": false
+      },
+      "surfaceRegions": {
+        "top": "lavender",
+        "topBinding": {
+          "width": 0.025,
+          "material": "lavender-binding",
+          "mask": "top points with sqrt(X*X+Y*Y) >= 0.575"
+        },
+        "sidesAndBevels": "lavender-binding",
+        "bottom": "backing",
+        "bottomBinding": {
+          "width": 0.025,
+          "material": "lavender-binding",
+          "mask": "bottom points with sqrt(X*X+Y*Y) >= 0.575"
+        }
+      },
+      "authoredCompletions": [
+        "diameter",
+        "plain tan backing",
+        "exact border width"
+      ]
+    },
+    {
+      "moduleId": "throw-pillow",
+      "name": "Throw pillow - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/03-throw-pillow-v1.png",
+      "overallSize": [
+        0.32,
+        0.11,
+        0.32
+      ],
+      "bounds": {
+        "min": [
+          -0.16,
+          -0.055,
+          0
+        ],
+        "max": [
+          0.16,
+          0.055,
+          0.32
+        ]
+      },
+      "geometry": {
+        "primitive": "two inflated radial patches sharing one closed Bezier seam",
+        "centre": [
+          0,
+          0,
+          0.16
+        ],
+        "outlineCoordinates": "X and Z relative to centre",
+        "outlineCubicSegments": [
+          [
+            [
+              -0.142,
+              0.16
+            ],
+            [
+              -0.072,
+              0.148
+            ],
+            [
+              0.072,
+              0.148
+            ],
+            [
+              0.142,
+              0.16
+            ]
+          ],
+          [
+            [
+              0.142,
+              0.16
+            ],
+            [
+              0.155,
+              0.16
+            ],
+            [
+              0.16,
+              0.155
+            ],
+            [
+              0.16,
+              0.142
+            ]
+          ],
+          [
+            [
+              0.16,
+              0.142
+            ],
+            [
+              0.148,
+              0.072
+            ],
+            [
+              0.148,
+              -0.072
+            ],
+            [
+              0.16,
+              -0.142
+            ]
+          ],
+          [
+            [
+              0.16,
+              -0.142
+            ],
+            [
+              0.16,
+              -0.155
+            ],
+            [
+              0.155,
+              -0.16
+            ],
+            [
+              0.142,
+              -0.16
+            ]
+          ],
+          [
+            [
+              0.142,
+              -0.16
+            ],
+            [
+              0.072,
+              -0.148
+            ],
+            [
+              -0.072,
+              -0.148
+            ],
+            [
+              -0.142,
+              -0.16
+            ]
+          ],
+          [
+            [
+              -0.142,
+              -0.16
+            ],
+            [
+              -0.155,
+              -0.16
+            ],
+            [
+              -0.16,
+              -0.155
+            ],
+            [
+              -0.16,
+              -0.142
+            ]
+          ],
+          [
+            [
+              -0.16,
+              -0.142
+            ],
+            [
+              -0.148,
+              -0.072
+            ],
+            [
+              -0.148,
+              0.072
+            ],
+            [
+              -0.16,
+              0.142
+            ]
+          ],
+          [
+            [
+              -0.16,
+              0.142
+            ],
+            [
+              -0.16,
+              0.155
+            ],
+            [
+              -0.155,
+              0.16
+            ],
+            [
+              -0.142,
+              0.16
+            ]
+          ]
+        ],
+        "bezierFormula": "B(t)=(1-t)^3*P0+3*(1-t)^2*t*P1+3*(1-t)*t^2*P2+t^3*P3, t in [0,1]",
+        "patchFormula": "X=r*Bx(t); Z=0.16+r*Bz(t); Y=sign*0.055*sqrt(1-r*r), r in [0,1], sign=-1 for front and +1 for back",
+        "segmentsPerOutlineCurve": 24,
+        "radialIntervals": 32,
+        "radialSampling": "r=sin(pi*j/64), j=0..32",
+        "weld": "one centre vertex per side at r=0; one shared seam ring at r=1; shared adjacent curve endpoints",
+        "smoothNormals": true
+      },
+      "surfaceRegions": {
+        "body": "mustard",
+        "seam": {
+          "mask": "abs(Y) <= 0.00075 on existing outer surface",
+          "material": "mustard-seam",
+          "raisedGeometry": false
+        }
+      },
+      "authoredCompletions": [
+        "symmetric back",
+        "exact cushion volume",
+        "mid-thickness seam",
+        "no zipper"
+      ]
+    }
+  ],
+  "surfaceRecipe": {
+    "weaveCellMetres": 0.002,
+    "lineWidthMetres": 0.00012,
+    "linearColorMultiplier": 0.9,
+    "seed": null,
+    "geometryDisplacement": 0,
+    "normalMap": false,
+    "bakedLighting": false
+  },
+  "omissions": [
+    "floor",
+    "furniture",
+    "characters",
+    "shadow planes",
+    "fringes",
+    "tassels",
+    "shag fibres",
+    "pillows attached to sofas",
+    "wrinkles",
+    "zipper",
+    "buttons",
+    "labels"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "rugDimensionTolerance": 0.0005,
+    "pillowDimensionTolerance": 0.001,
+    "unitsPerAsset": 1
+  }
+}
