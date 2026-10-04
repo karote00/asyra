@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "assets": [
+    {
+      "id": "wooden-meeting-table",
+      "source": "Meeting room thumbnail supplies broad silhouette; central office supplies wood palette. Dimensions and concealed structure are authored.",
+      "origin": "center of floor footprint",
+      "bounds": [
+        1.4,
+        0.75,
+        0.74
+      ],
+      "parts": {
+        "top": {
+          "method": "XY rounded rectangle extrusion",
+          "width": 1.4,
+          "depth": 0.75,
+          "cornerRadius": 0.025,
+          "zRange": [
+            0.7,
+            0.74
+          ],
+          "segmentsPerCorner": 16
+        },
+        "legs": {
+          "method": "square box",
+          "centersXY": [
+            [
+              -0.58,
+              -0.255
+            ],
+            [
+              0.58,
+              -0.255
+            ],
+            [
+              -0.58,
+              0.255
+            ],
+            [
+              0.58,
+              0.255
+            ]
+          ],
+          "crossSection": [
+            0.055,
+            0.055
+          ],
+          "zRange": [
+            0,
+            0.7
+          ]
+        },
+        "longAprons": {
+          "method": "box",
+          "xRange": [
+            -0.5525,
+            0.5525
+          ],
+          "centerY": [
+            -0.255,
+            0.255
+          ],
+          "thicknessY": 0.022,
+          "zRange": [
+            0.62,
+            0.7
+          ]
+        },
+        "shortAprons": {
+          "method": "box",
+          "yRange": [
+            -0.2275,
+            0.2275
+          ],
+          "centerX": [
+            -0.58,
+            0.58
+          ],
+          "thicknessX": 0.022,
+          "zRange": [
+            0.62,
+            0.7
+          ]
+        }
+      },
+      "material": "honey-wood"
+    },
+    {
+      "id": "blank-whiteboard",
+      "source": "Authored supplementary design, not a clearly identifiable object in the approved reference.",
+      "origin": "center of frame rear plane on wall Y=0",
+      "bounds": {
+        "x": [
+          -0.45,
+          0.45
+        ],
+        "y": [
+          -0.06,
+          0
+        ],
+        "z": [
+          -0.312,
+          0.3
+        ]
+      },
+      "parts": {
+        "frame": {
+          "method": "rectangular ring extrusion in XZ",
+          "outer": [
+            0.9,
+            0.6
+          ],
+          "inner": [
+            0.85,
+            0.55
+          ],
+          "yRange": [
+            -0.025,
+            0
+          ]
+        },
+        "writingPanel": {
+          "method": "box",
+          "min": [
+            -0.425,
+            -0.021,
+            -0.275
+          ],
+          "max": [
+            0.425,
+            -0.017,
+            0.275
+          ]
+        },
+        "backing": {
+          "method": "box",
+          "min": [
+            -0.425,
+            -0.005,
+            -0.275
+          ],
+          "max": [
+            0.425,
+            0,
+            0.275
+          ]
+        },
+        "tray": {
+          "method": "box",
+          "min": [
+            -0.3,
+            -0.06,
+            -0.312
+          ],
+          "max": [
+            0.3,
+            0,
+            -0.3
+          ]
+        }
+      },
+      "materials": {
+        "frame": "honey-wood",
+        "backing": "honey-wood",
+        "tray": "honey-wood",
+        "writingPanel": "ivory"
+      }
+    }
+  ],
+  "construction": {
+    "bevel": "none beyond stated tabletop plan corners",
+    "shading": "flat planar faces; smooth tabletop corner side normals",
+    "subdivision": false,
+    "components": "keep structural parts as separate closed solids within each placeable assembly"
+  },
+  "materials": {
+    "honey-wood": {
+      "baseColor": "#B9864E",
+      "grainColor": "#A77945",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.75,
+      "metallic": 0
+    }
+  },
+  "lighting": {
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.001,
+    "modelsProduced": false
+  }
+}
