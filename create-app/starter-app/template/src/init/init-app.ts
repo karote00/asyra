@@ -36,6 +36,7 @@ export const initApp = (options: AppOptions = {}) => {
   const core = getCore()
   let disposed = false
   let starting: Promise<void> | undefined
+  let disposing: Promise<void> | undefined
   const historyApis = createHistoryApis(() => !disposed)
   const storage = options.storage ?? defaultStorage()
   registerStarterSchema(
@@ -112,17 +113,22 @@ export const initApp = (options: AppOptions = {}) => {
     ): void {
       if (!disposed) renderLayer.setPreview(id, offset)
     },
-    async dispose(): Promise<void> {
-      if (disposed) return
+    dispose(): Promise<void> {
+      if (disposing) return disposing
       disposed = true
       controller.dispose()
       releaseProjection()
-      renderLayer.dispose()
       ui.dispose()
-      releaseChannels()
-      projection.dispose()
-      feature.dispose()
-      await resetCore()
+      disposing = resetCore(async () => {
+        // The start caller retains its rejection; teardown must proceed after
+        // either outcome, because Core forbids resetting during startup.
+        await starting?.catch(() => undefined)
+        renderLayer.dispose()
+        releaseChannels()
+        projection.dispose()
+        feature.dispose()
+      })
+      return disposing
     }
   }
 }

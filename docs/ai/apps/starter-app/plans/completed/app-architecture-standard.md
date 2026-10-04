@@ -171,3 +171,35 @@ Remaining distribution work is a separate release: this local refactor does not
 publish create-asyra-app or update the installed developer-Agent bundle. Existing
 CSS was retained as planned; adopting a new styling dependency needs its own
 approved change. All work in this bounded plan is complete.
+
+## Authorized review repair - 2026-10-04
+
+The user authorized fixing the two formally reproduced disposal findings.
+Mutation scope is limited to App `contexts/core.ts`, `init/init-app.ts`, their
+permanent lifecycle tests, the App architecture guide and generated copies.
+The Core package is read-only. The existing plan-first/direct-execution decision
+remains in effect; no Flow Inspector or global workflow change is included.
+
+The Core context owns the complete teardown barrier; `initApp` owns startup
+settlement and resource cleanup. A shared `disposing` Promise is transient
+App-lifetime state, with no persisted identity or package API change. Tests must
+cover early unmount, rejected startup, next mounting while closing, and repeated
+close calls. Gates: App suite, naming, types/lint/build, template freshness and
+readiness tests, isolated consumer and existing browser regressions. Stop after
+these bounded gates and diff review; no new architecture audit.
+
+### Review repair result
+
+Completed in the same worktree. Four lifecycle cases failed before the repair;
+all now pass. The App closes command/subscription access immediately, publishes
+the complete teardown barrier before awaiting startup, waits for success or
+failure of startup, releases remaining resources and resets Core. Every disposal
+caller observes the same Promise; a new mounting caller waits for the complete
+old lifetime. Startup errors are preserved for the start caller.
+
+Final evidence: 28 App tests, 17 CLI/template tests, 12 naming tests, App types,
+lint and build passed. Browser suite: 11 passed, 1 existing desktop touch skip;
+its server exited and port 5192 was released. Generated template freshness and
+isolated install/type/lint/build/test/startup (6 phases) passed. The architecture
+guide and generated copies describe the new ordering. Scoped diff review passed;
+no Framework package change, dependency addition, push or publication.

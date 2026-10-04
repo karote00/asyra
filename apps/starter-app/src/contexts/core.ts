@@ -1,13 +1,18 @@
 import initialCore, { type Core } from '@asyra/core'
 
-// Core reset returns the next lifetime. Mounts wait for in-flight teardown.
+// Publish the complete teardown barrier before waiting for startup or cleanup.
+// A new mount must never acquire the Core that is about to be retired.
 let core: Core = initialCore
 let resetting: Promise<void> = Promise.resolve()
 export const getCore = (): Core => core
 export const waitForCore = (): Promise<void> => resetting
-export const resetCore = (): Promise<void> => {
-  resetting = core.resetRuntime().then((next) => {
-    core = next
-  })
+export const resetCore = (beforeReset?: () => Promise<void>): Promise<void> => {
+  const retiring = core
+  resetting = Promise.resolve()
+    .then(beforeReset)
+    .then(() => retiring.resetRuntime())
+    .then((next) => {
+      core = next
+    })
   return resetting
 }

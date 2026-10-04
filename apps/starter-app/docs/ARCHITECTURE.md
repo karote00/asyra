@@ -112,10 +112,14 @@ priority exercise for field extension examples.
 
 The render host owns its DOM ref and ResizeObserver. The App owns registrations,
 publication timers, load subscriptions, projection, Feature and overlay. Disposal
-first closes UI operations, then stops notifications/rendering, releases resources
-and resets Core. Await disposal before direct `initApp()` reuse. React's App entry
-coordinates asynchronous teardown before mounting another session. Startup and
-storage failures remain visible instead of leaving a blank screen.
+first closes UI operations and subscriptions, and immediately publishes the full
+teardown Promise through the Core context. It waits for any in-progress startup
+to settle before releasing renderer/Feature resources and resetting Core. Startup
+failure remains an error for the start caller; it does not prevent teardown.
+Repeated `dispose()` calls return the same completion Promise. Await disposal
+before direct `initApp()` reuse. React's App entry waits for the entire teardown,
+including startup settlement, before mounting another session. Startup and storage
+failures remain visible instead of leaving a blank screen.
 
 ## UI and extension discipline
 
