@@ -1,0 +1,1564 @@
+{
+  "specVersion": "1.0.0",
+  "status": "user approved commit on 2026-10-04; drawings and documents only; no model verification",
+  "units": "metres",
+  "coordinateSystem": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "midpoint between soles on ground Z=0"
+  },
+  "source": "../architecture/review/approved-office-reference.jpg",
+  "sourceInterpretation": {
+    "man": "round-glasses worker seated at rear circular table",
+    "woman": "black-haired worker seated at left laptop",
+    "newDesignDecisions": [
+      "standing neutral pose",
+      "hidden trouser and shoe geometry",
+      "rear hair silhouette",
+      "shirt collar and seam details",
+      "all metric dimensions"
+    ]
+  },
+  "sharedAnatomy": [
+    {
+      "partId": "head",
+      "primitive": "ellipsoid",
+      "centre": [
+        0,
+        0,
+        0.91
+      ],
+      "radii": [
+        0.25,
+        0.205,
+        0.245
+      ],
+      "material": "skin"
+    },
+    {
+      "partId": "neck",
+      "primitive": "ellipsoid",
+      "centre": [
+        0,
+        0,
+        0.656
+      ],
+      "radii": [
+        0.05,
+        0.045,
+        0.07
+      ],
+      "material": "skin"
+    },
+    {
+      "partId": "ear-left",
+      "primitive": "ellipsoid",
+      "centre": [
+        -0.244,
+        0,
+        0.866
+      ],
+      "radii": [
+        0.042,
+        0.027,
+        0.059
+      ],
+      "material": "skin"
+    },
+    {
+      "partId": "hand-left",
+      "primitive": "ellipsoid",
+      "centre": [
+        -0.266,
+        0,
+        0.343
+      ],
+      "radii": [
+        0.048,
+        0.044,
+        0.064
+      ],
+      "material": "skin"
+    },
+    {
+      "partId": "ear-right",
+      "primitive": "ellipsoid",
+      "centre": [
+        0.244,
+        0,
+        0.866
+      ],
+      "radii": [
+        0.042,
+        0.027,
+        0.059
+      ],
+      "material": "skin"
+    },
+    {
+      "partId": "hand-right",
+      "primitive": "ellipsoid",
+      "centre": [
+        0.266,
+        0,
+        0.343
+      ],
+      "radii": [
+        0.048,
+        0.044,
+        0.064
+      ],
+      "material": "skin"
+    }
+  ],
+  "sharedClothing": [
+    {
+      "partId": "shirt-body",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0.35,
+          0,
+          0,
+          0.147,
+          0.086
+        ],
+        [
+          0.39,
+          0,
+          0,
+          0.15,
+          0.087
+        ],
+        [
+          0.52,
+          0,
+          0,
+          0.143,
+          0.082
+        ],
+        [
+          0.61,
+          0,
+          0,
+          0.115,
+          0.07
+        ],
+        [
+          0.645,
+          0,
+          0,
+          0.054,
+          0.045
+        ]
+      ],
+      "material": "shirt"
+    },
+    {
+      "partId": "sleeve-left",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0.365,
+          -0.249,
+          0,
+          0.045,
+          0.044
+        ],
+        [
+          0.4,
+          -0.237,
+          0,
+          0.052,
+          0.049
+        ],
+        [
+          0.5,
+          -0.194,
+          0,
+          0.059,
+          0.053
+        ],
+        [
+          0.582,
+          -0.137,
+          0,
+          0.059,
+          0.057
+        ]
+      ],
+      "material": "shirt"
+    },
+    {
+      "partId": "trouser-left",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0.055,
+          -0.077,
+          0,
+          0.06,
+          0.063
+        ],
+        [
+          0.09,
+          -0.077,
+          0,
+          0.065,
+          0.067
+        ],
+        [
+          0.2,
+          -0.077,
+          0,
+          0.069,
+          0.069
+        ],
+        [
+          0.33,
+          -0.073,
+          0,
+          0.076,
+          0.08
+        ],
+        [
+          0.375,
+          -0.067,
+          0,
+          0.078,
+          0.083
+        ]
+      ],
+      "material": "trousers"
+    },
+    {
+      "partId": "shoe-left",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0,
+          -0.077,
+          -0.018,
+          0.058,
+          0.083
+        ],
+        [
+          0.009,
+          -0.077,
+          -0.018,
+          0.064,
+          0.089
+        ],
+        [
+          0.045,
+          -0.077,
+          -0.025,
+          0.066,
+          0.09
+        ],
+        [
+          0.07,
+          -0.077,
+          -0.012,
+          0.056,
+          0.071
+        ],
+        [
+          0.08,
+          -0.077,
+          0,
+          0.043,
+          0.054
+        ]
+      ],
+      "material": "shoes"
+    },
+    {
+      "partId": "sleeve-right",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0.365,
+          0.249,
+          0,
+          0.045,
+          0.044
+        ],
+        [
+          0.4,
+          0.237,
+          0,
+          0.052,
+          0.049
+        ],
+        [
+          0.5,
+          0.194,
+          0,
+          0.059,
+          0.053
+        ],
+        [
+          0.582,
+          0.137,
+          0,
+          0.059,
+          0.057
+        ]
+      ],
+      "material": "shirt"
+    },
+    {
+      "partId": "trouser-right",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0.055,
+          0.077,
+          0,
+          0.06,
+          0.063
+        ],
+        [
+          0.09,
+          0.077,
+          0,
+          0.065,
+          0.067
+        ],
+        [
+          0.2,
+          0.077,
+          0,
+          0.069,
+          0.069
+        ],
+        [
+          0.33,
+          0.073,
+          0,
+          0.076,
+          0.08
+        ],
+        [
+          0.375,
+          0.067,
+          0,
+          0.078,
+          0.083
+        ]
+      ],
+      "material": "trousers"
+    },
+    {
+      "partId": "shoe-right",
+      "primitive": "elliptical-loft",
+      "rings": [
+        [
+          0,
+          0.077,
+          -0.018,
+          0.058,
+          0.083
+        ],
+        [
+          0.009,
+          0.077,
+          -0.018,
+          0.064,
+          0.089
+        ],
+        [
+          0.045,
+          0.077,
+          -0.025,
+          0.066,
+          0.09
+        ],
+        [
+          0.07,
+          0.077,
+          -0.012,
+          0.056,
+          0.071
+        ],
+        [
+          0.08,
+          0.077,
+          0,
+          0.043,
+          0.054
+        ]
+      ],
+      "material": "shoes"
+    }
+  ],
+  "collar": {
+    "leftVertices": [
+      [
+        -0.053,
+        -0.043,
+        0.648
+      ],
+      [
+        -0.012,
+        -0.074,
+        0.627
+      ],
+      [
+        -0.052,
+        -0.092,
+        0.579
+      ],
+      [
+        -0.087,
+        -0.068,
+        0.626
+      ]
+    ],
+    "mirrorRightX": true,
+    "thickness": 0.003,
+    "bevel": 0.002,
+    "backBand": {
+      "zRange": [
+        0.626,
+        0.644
+      ],
+      "radiiXY": [
+        0.057,
+        0.048
+      ],
+      "thickness": 0.003
+    }
+  },
+  "cuffs": {
+    "height": 0.026,
+    "surfaceOffset": 0.002,
+    "lowerZ": 0.365
+  },
+  "shirtDetails": {
+    "manButtons": {
+      "centresZ": [
+        0.536,
+        0.471
+      ],
+      "radius": 0.008,
+      "depth": 0.002
+    },
+    "womanFrontSeam": {
+      "x": 0,
+      "zRange": [
+        0.365,
+        0.617
+      ],
+      "radius": 0.0008
+    },
+    "backYokeSeam": {
+      "z": 0.574,
+      "xRange": [
+        -0.122,
+        0.122
+      ],
+      "radius": 0.0008
+    }
+  },
+  "waistband": {
+    "zRange": [
+      0.35,
+      0.377
+    ],
+    "radiiXY": [
+      0.149,
+      0.087
+    ],
+    "thickness": 0.002
+  },
+  "characters": [
+    {
+      "moduleId": "office-man",
+      "name": "Man - office worker",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-man-v1.png",
+      "height": 1.2,
+      "materialBindings": {
+        "hair": "brown-hair",
+        "trousers": "taupe-trousers",
+        "shoes": "brown-shoes",
+        "collar": "shirt"
+      },
+      "hair": {
+        "scalpCentre": [
+          0,
+          0,
+          0.935
+        ],
+        "scalpRadii": [
+          0.262,
+          0.218,
+          0.255
+        ],
+        "thetaLimitRadians": {
+          "front": 1.36,
+          "side": 1.95,
+          "back": 2.04
+        },
+        "shellThickness": 0.008,
+        "locks": [
+          {
+            "id": "fringe-left",
+            "points": [
+              [
+                -0.04,
+                -0.1,
+                1.178
+              ],
+              [
+                -0.15,
+                -0.17,
+                1.15
+              ],
+              [
+                -0.235,
+                -0.205,
+                1.01
+              ],
+              [
+                -0.218,
+                -0.176,
+                0.975
+              ]
+            ],
+            "width": 0.11,
+            "depth": 0.042
+          },
+          {
+            "id": "fringe-centre-left",
+            "points": [
+              [
+                0.025,
+                -0.1,
+                1.18
+              ],
+              [
+                -0.02,
+                -0.19,
+                1.15
+              ],
+              [
+                -0.1,
+                -0.222,
+                1.025
+              ],
+              [
+                -0.132,
+                -0.197,
+                0.958
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.044
+          },
+          {
+            "id": "fringe-centre",
+            "points": [
+              [
+                0.08,
+                -0.09,
+                1.18
+              ],
+              [
+                0.065,
+                -0.205,
+                1.14
+              ],
+              [
+                0.027,
+                -0.225,
+                1.018
+              ],
+              [
+                -0.01,
+                -0.205,
+                0.965
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.043
+          },
+          {
+            "id": "fringe-right",
+            "points": [
+              [
+                0.085,
+                -0.09,
+                1.18
+              ],
+              [
+                0.2,
+                -0.16,
+                1.145
+              ],
+              [
+                0.25,
+                -0.184,
+                1.06
+              ],
+              [
+                0.216,
+                -0.174,
+                0.992
+              ]
+            ],
+            "width": 0.1,
+            "depth": 0.042
+          },
+          {
+            "id": "crown-tuft",
+            "points": [
+              [
+                0.04,
+                0,
+                1.169
+              ],
+              [
+                0.07,
+                -0.005,
+                1.196
+              ],
+              [
+                0.102,
+                -0.015,
+                1.193
+              ],
+              [
+                0.11,
+                -0.022,
+                1.173
+              ]
+            ],
+            "width": 0.04,
+            "depth": 0.008
+          },
+          {
+            "id": "back-lock--125",
+            "points": [
+              [
+                -0.098298245314679,
+                0.06309340799861508,
+                1.16
+              ],
+              [
+                -0.196596490629358,
+                0.11471528727020924,
+                1.09
+              ],
+              [
+                -0.20069225085080297,
+                0.11471528727020924,
+                0.91
+              ],
+              [
+                -0.1679261690792433,
+                0.09464011199792262,
+                0.827
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.025
+          },
+          {
+            "id": "back-lock--65",
+            "points": [
+              [
+                -0.10875693444439799,
+                -0.04648800879147694,
+                1.16
+              ],
+              [
+                -0.21751386888879598,
+                -0.0845236523481399,
+                1.09
+              ],
+              [
+                -0.22204540782397922,
+                -0.0845236523481399,
+                0.91
+              ],
+              [
+                -0.18579309634251323,
+                -0.0697320131872154,
+                0.827
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.025
+          },
+          {
+            "id": "back-lock-65",
+            "points": [
+              [
+                0.10875693444439799,
+                -0.04648800879147694,
+                1.16
+              ],
+              [
+                0.21751386888879598,
+                -0.0845236523481399,
+                1.09
+              ],
+              [
+                0.22204540782397922,
+                -0.0845236523481399,
+                0.91
+              ],
+              [
+                0.18579309634251323,
+                -0.0697320131872154,
+                0.827
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.025
+          },
+          {
+            "id": "back-lock-125",
+            "points": [
+              [
+                0.098298245314679,
+                0.06309340799861508,
+                1.16
+              ],
+              [
+                0.196596490629358,
+                0.11471528727020924,
+                1.09
+              ],
+              [
+                0.20069225085080297,
+                0.11471528727020924,
+                0.91
+              ],
+              [
+                0.1679261690792433,
+                0.09464011199792262,
+                0.827
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.025
+          },
+          {
+            "id": "back-lock-180",
+            "points": [
+              [
+                1.4695761589768237e-17,
+                0.11,
+                1.16
+              ],
+              [
+                2.9391523179536474e-17,
+                0.2,
+                1.09
+              ],
+              [
+                3.0003846579110155e-17,
+                0.2,
+                0.91
+              ],
+              [
+                2.510525938252074e-17,
+                0.165,
+                0.827
+              ]
+            ],
+            "width": 0.105,
+            "depth": 0.025
+          }
+        ],
+        "normalizeCombinedHairTopTo": 1.2,
+        "normalizeCombinedHairBottomFixedAt": 0.7
+      },
+      "facialGraphics": {
+        "eyes": [
+          {
+            "centreXZ": [
+              -0.09,
+              0.881
+            ],
+            "radiiXZ": [
+              0.023,
+              0.032
+            ]
+          },
+          {
+            "centreXZ": [
+              0.09,
+              0.881
+            ],
+            "radiiXZ": [
+              0.023,
+              0.032
+            ]
+          }
+        ],
+        "eyebrows": [
+          [
+            [
+              -0.128,
+              0.963
+            ],
+            [
+              -0.103,
+              0.972
+            ],
+            [
+              -0.078,
+              0.969
+            ],
+            [
+              -0.062,
+              0.959
+            ]
+          ],
+          [
+            [
+              0.062,
+              0.959
+            ],
+            [
+              0.078,
+              0.969
+            ],
+            [
+              0.103,
+              0.972
+            ],
+            [
+              0.128,
+              0.963
+            ]
+          ]
+        ],
+        "eyebrowRadius": 0.0035,
+        "mouth": [
+          [
+            -0.023,
+            0.821
+          ],
+          [
+            -0.012,
+            0.809
+          ],
+          [
+            0.012,
+            0.809
+          ],
+          [
+            0.023,
+            0.821
+          ]
+        ],
+        "mouthRadius": 0.002,
+        "noseCentreXZ": [
+          0,
+          0.852
+        ],
+        "noseRadii": [
+          0.01,
+          0.011,
+          0.009
+        ],
+        "cheeks": []
+      },
+      "glasses": {
+        "ringCentres": [
+          [
+            -0.099,
+            -0.224,
+            0.884
+          ],
+          [
+            0.099,
+            -0.224,
+            0.884
+          ]
+        ],
+        "ringRadius": 0.081,
+        "wireRadius": 0.005,
+        "ringPlane": "XZ",
+        "bridge": [
+          [
+            -0.018,
+            -0.224,
+            0.895
+          ],
+          [
+            -0.01,
+            -0.231,
+            0.908
+          ],
+          [
+            0.01,
+            -0.231,
+            0.908
+          ],
+          [
+            0.018,
+            -0.224,
+            0.895
+          ]
+        ],
+        "templePaths": [
+          [
+            [
+              -0.18,
+              -0.224,
+              0.897
+            ],
+            [
+              -0.242,
+              -0.217,
+              0.91
+            ],
+            [
+              -0.265,
+              -0.1,
+              0.909
+            ],
+            [
+              -0.265,
+              0.016,
+              0.887
+            ]
+          ],
+          [
+            [
+              0.18,
+              -0.224,
+              0.897
+            ],
+            [
+              0.242,
+              -0.217,
+              0.91
+            ],
+            [
+              0.265,
+              -0.1,
+              0.909
+            ],
+            [
+              0.265,
+              0.016,
+              0.887
+            ]
+          ]
+        ],
+        "lenses": false,
+        "material": "spectacle"
+      }
+    },
+    {
+      "moduleId": "office-woman",
+      "name": "Woman - office worker",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-woman-v1.png",
+      "height": 1.2,
+      "materialBindings": {
+        "hair": "black-hair",
+        "trousers": "charcoal-trousers",
+        "shoes": "dark-shoes",
+        "collar": "collar"
+      },
+      "hair": {
+        "scalpCentre": [
+          0,
+          0,
+          0.935
+        ],
+        "scalpRadii": [
+          0.262,
+          0.218,
+          0.255
+        ],
+        "thetaLimitRadians": {
+          "front": 1.36,
+          "side": 2.27,
+          "back": 2.32
+        },
+        "shellThickness": 0.008,
+        "locks": [
+          {
+            "id": "fringe-left",
+            "points": [
+              [
+                0.012,
+                -0.09,
+                1.18
+              ],
+              [
+                -0.11,
+                -0.16,
+                1.14
+              ],
+              [
+                -0.235,
+                -0.207,
+                1.006
+              ],
+              [
+                -0.194,
+                -0.187,
+                0.967
+              ]
+            ],
+            "width": 0.115,
+            "depth": 0.04
+          },
+          {
+            "id": "fringe-middle",
+            "points": [
+              [
+                0.058,
+                -0.09,
+                1.18
+              ],
+              [
+                0.035,
+                -0.2,
+                1.13
+              ],
+              [
+                -0.04,
+                -0.222,
+                1.0
+              ],
+              [
+                -0.067,
+                -0.2,
+                0.963
+              ]
+            ],
+            "width": 0.14,
+            "depth": 0.045
+          },
+          {
+            "id": "fringe-right",
+            "points": [
+              [
+                0.072,
+                -0.09,
+                1.18
+              ],
+              [
+                0.17,
+                -0.17,
+                1.14
+              ],
+              [
+                0.238,
+                -0.202,
+                1.025
+              ],
+              [
+                0.205,
+                -0.183,
+                0.972
+              ]
+            ],
+            "width": 0.115,
+            "depth": 0.04
+          },
+          {
+            "id": "bob-lock--125",
+            "points": [
+              [
+                -0.09420248509323405,
+                0.05735764363510462,
+                1.175
+              ],
+              [
+                -0.20478801107224792,
+                0.12045105163371969,
+                1.1
+              ],
+              [
+                -0.21052207538227086,
+                0.12102462807007074,
+                0.83
+              ],
+              [
+                -0.16383040885779834,
+                0.08890434763441216,
+                0.742
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.025
+          },
+          {
+            "id": "bob-lock--65",
+            "points": [
+              [
+                -0.10422539550921475,
+                -0.04226182617406995,
+                1.175
+              ],
+              [
+                -0.22657694675916248,
+                -0.08874983496554688,
+                1.1
+              ],
+              [
+                -0.23292110126841903,
+                -0.08917245322728758,
+                0.83
+              ],
+              [
+                -0.18126155740733,
+                -0.06550583056980841,
+                0.742
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.025
+          },
+          {
+            "id": "bob-lock-65",
+            "points": [
+              [
+                0.10422539550921475,
+                -0.04226182617406995,
+                1.175
+              ],
+              [
+                0.22657694675916248,
+                -0.08874983496554688,
+                1.1
+              ],
+              [
+                0.23292110126841903,
+                -0.08917245322728758,
+                0.83
+              ],
+              [
+                0.18126155740733,
+                -0.06550583056980841,
+                0.742
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.025
+          },
+          {
+            "id": "bob-lock-125",
+            "points": [
+              [
+                0.09420248509323405,
+                0.05735764363510462,
+                1.175
+              ],
+              [
+                0.20478801107224792,
+                0.12045105163371969,
+                1.1
+              ],
+              [
+                0.21052207538227086,
+                0.12102462807007074,
+                0.83
+              ],
+              [
+                0.16383040885779834,
+                0.08890434763441216,
+                0.742
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.025
+          },
+          {
+            "id": "bob-lock-180",
+            "points": [
+              [
+                1.408343819019456e-17,
+                0.1,
+                1.175
+              ],
+              [
+                3.061616997868383e-17,
+                0.21,
+                1.1
+              ],
+              [
+                3.1473422738086976e-17,
+                0.211,
+                0.83
+              ],
+              [
+                2.4492935982947065e-17,
+                0.155,
+                0.742
+              ]
+            ],
+            "width": 0.125,
+            "depth": 0.025
+          }
+        ],
+        "normalizeCombinedHairTopTo": 1.2,
+        "normalizeCombinedHairBottomFixedAt": 0.7
+      },
+      "facialGraphics": {
+        "eyes": [
+          {
+            "centreXZ": [
+              -0.09,
+              0.881
+            ],
+            "radiiXZ": [
+              0.023,
+              0.032
+            ]
+          },
+          {
+            "centreXZ": [
+              0.09,
+              0.881
+            ],
+            "radiiXZ": [
+              0.023,
+              0.032
+            ]
+          }
+        ],
+        "eyebrows": [
+          [
+            [
+              -0.128,
+              0.963
+            ],
+            [
+              -0.103,
+              0.972
+            ],
+            [
+              -0.078,
+              0.969
+            ],
+            [
+              -0.062,
+              0.959
+            ]
+          ],
+          [
+            [
+              0.062,
+              0.959
+            ],
+            [
+              0.078,
+              0.969
+            ],
+            [
+              0.103,
+              0.972
+            ],
+            [
+              0.128,
+              0.963
+            ]
+          ]
+        ],
+        "eyebrowRadius": 0.0035,
+        "mouth": [
+          [
+            -0.023,
+            0.821
+          ],
+          [
+            -0.012,
+            0.809
+          ],
+          [
+            0.012,
+            0.809
+          ],
+          [
+            0.023,
+            0.821
+          ]
+        ],
+        "mouthRadius": 0.002,
+        "noseCentreXZ": [
+          0,
+          0.852
+        ],
+        "noseRadii": [
+          0.01,
+          0.011,
+          0.009
+        ],
+        "cheeks": [
+          {
+            "centreXZ": [
+              -0.146,
+              0.836
+            ],
+            "radiiXZ": [
+              0.031,
+              0.027
+            ]
+          },
+          {
+            "centreXZ": [
+              0.146,
+              0.836
+            ],
+            "radiiXZ": [
+              0.031,
+              0.027
+            ]
+          }
+        ]
+      },
+      "glasses": null
+    }
+  ],
+  "materials": {
+    "skin": {
+      "baseColorSRGB": "#F3C8A4",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "blush": {
+      "baseColorSRGB": "#ECA88E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "eye": {
+      "baseColorSRGB": "#241F1A",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "mouth": {
+      "baseColorSRGB": "#986550",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "brown-hair": {
+      "baseColorSRGB": "#443329",
+      "roughness": 0.88,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "black-hair": {
+      "baseColorSRGB": "#292827",
+      "roughness": 0.88,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "shirt": {
+      "baseColorSRGB": "#EEE7DB",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "collar": {
+      "baseColorSRGB": "#CBCBC6",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "taupe-trousers": {
+      "baseColorSRGB": "#776958",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "charcoal-trousers": {
+      "baseColorSRGB": "#53524F",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "brown-shoes": {
+      "baseColorSRGB": "#42332A",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "dark-shoes": {
+      "baseColorSRGB": "#302E2B",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "spectacle": {
+      "baseColorSRGB": "#252724",
+      "roughness": 0.75,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "button": {
+      "baseColorSRGB": "#C2B6A4",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "seam": {
+      "baseColorSRGB": "#8A847C",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "construction": {
+    "recipe": "GEOMETRY-SUPPLEMENT.md",
+    "ellipsoidSegments": {
+      "longitude": 32,
+      "latitude": 20
+    },
+    "loftSegments": {
+      "circumference": 32,
+      "subdivisionsPerInterval": 4
+    },
+    "hairTubeSegments": {
+      "length": 24,
+      "circumference": 12
+    },
+    "curveSegments": 32,
+    "surfaceOffset": 0.001,
+    "lights": false,
+    "bakedLighting": false,
+    "normalMaps": false
+  },
+  "landmarks": {
+    "headCentre": [
+      0,
+      0,
+      0.91
+    ],
+    "neck": [
+      0,
+      0,
+      0.651
+    ],
+    "shoulders": [
+      [
+        -0.137,
+        0,
+        0.582
+      ],
+      [
+        0.137,
+        0,
+        0.582
+      ]
+    ],
+    "wrists": [
+      [
+        -0.249,
+        0,
+        0.365
+      ],
+      [
+        0.249,
+        0,
+        0.365
+      ]
+    ],
+    "hips": [
+      [
+        -0.073,
+        0,
+        0.33
+      ],
+      [
+        0.073,
+        0,
+        0.33
+      ]
+    ],
+    "knees": [
+      [
+        -0.077,
+        0,
+        0.2
+      ],
+      [
+        0.077,
+        0,
+        0.2
+      ]
+    ],
+    "ankles": [
+      [
+        -0.077,
+        0,
+        0.075
+      ],
+      [
+        0.077,
+        0,
+        0.075
+      ]
+    ]
+  },
+  "verification": {
+    "modelBuilt": false,
+    "dimensionTolerance": 0.002,
+    "views": [
+      "front -Y",
+      "right +X",
+      "back +Y",
+      "top +Z",
+      "three-quarter (1,-1,.8)"
+    ],
+    "topImage": "illustrative tilted top view, not a measurement authority",
+    "mustPreserve": [
+      "one complete person per unit",
+      "large head and compact clothed body",
+      "same face and haircut in all views",
+      "man round glasses and short brown hair",
+      "woman black bob and three front locks",
+      "empty hands",
+      "no base, pet, furniture or status dot"
+    ],
+    "scope": "document checks only; future model needs visual review"
+  }
+}
