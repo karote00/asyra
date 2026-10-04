@@ -162,6 +162,17 @@ projection and the consuming editor; it must not require unrelated panels to rea
 all Items. A new derived value needs an explicit owner, invalidation inputs and
 lifetime, with work-count evidence if reused.
 
+Using UI properties does not automatically share computation: a lane count and
+its empty-state hint should consume the same derived result, rather than each
+scanning every Item. Verify scans and recomputation as well as Core reads and
+component renders, including edits that do not affect that result.
+
+Reuse Starter's ownership boundaries while choosing the presentation your product
+needs. An HTML-only board should omit the example Item overlay and its projection
+subscription from composition; hiding its canvas with CSS does not stop its work.
+Keep any renderer initialization required by the installed public Core contract;
+that requirement does not make the example overlay mandatory.
+
 Existing shared visual styles are retained in `app/styles.css` during this
 architecture migration. Dynamic card coordinates remain explicit style values.
 Tailwind migration is separate because Starter does not currently declare that
