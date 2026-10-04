@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "centre of bottom tip disk",
+  "tolerance": 0.0002,
+  "object": {
+    "id": "mini-spinning-top",
+    "diameter": 0.06,
+    "height": 0.07,
+    "angularSegments": 64,
+    "profileRZ": [
+      [
+        0.001,
+        0
+      ],
+      [
+        0.03,
+        0.025
+      ],
+      [
+        0.03,
+        0.03
+      ],
+      [
+        0.006,
+        0.03
+      ],
+      [
+        0.006,
+        0.07
+      ]
+    ],
+    "bottomCap": {
+      "radius": 0.001,
+      "z": 0
+    },
+    "topCap": {
+      "radius": 0.006,
+      "z": 0.07
+    },
+    "materialByProfileSegment": [
+      "sage",
+      "sage",
+      "sage",
+      "wood"
+    ],
+    "capMaterials": {
+      "bottom": "sage",
+      "top": "wood"
+    }
+  },
+  "construction": {
+    "oneClosedMesh": true,
+    "bevel": 0,
+    "subdivision": 0,
+    "hollow": false,
+    "flatPlanarFaces": true,
+    "smoothAroundAxis": true,
+    "sharpProfileBoundaries": true
+  },
+  "materials": {
+    "sage": {
+      "baseColor": "#8B9B7A",
+      "roughness": 0.85
+    },
+    "wood": {
+      "baseColor": "#D5B587",
+      "roughness": 0.85
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numeric profile defines exact geometry; images are uncalibrated appearance references.",
+  "exclusions": [
+    "model",
+    "app implementation",
+    "spin animation",
+    "physics",
+    "separate handle asset",
+    "packaging",
+    "stand"
+  ]
+}
