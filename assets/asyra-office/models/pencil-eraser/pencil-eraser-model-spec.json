@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom footprint centre",
+  "tolerance": 0.0001,
+  "object": {
+    "id": "pencil-eraser",
+    "size": [
+      0.05,
+      0.02,
+      0.012
+    ],
+    "bounds": {
+      "min": [
+        -0.025,
+        -0.01,
+        0
+      ],
+      "max": [
+        0.025,
+        0.01,
+        0.012
+      ]
+    },
+    "centre": [
+      0,
+      0,
+      0.006
+    ],
+    "halfExtents": [
+      0.025,
+      0.01,
+      0.006
+    ],
+    "chamferOffset": 0.001,
+    "chamferSegments": 1,
+    "cornerPatch": "triangle",
+    "verticesConstruction": "For each sign triple, generate (a,b-d,c-d), (a-d,b,c-d), (a-d,b-d,c), apply signs, then add centre.",
+    "vertices": 24,
+    "polygonFaces": 26,
+    "triangles": 44
+  },
+  "material": {
+    "baseColor": "#EEE4D2",
+    "roughness": 0.95,
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numerical geometry controls reconstruction; the image is an uncalibrated appearance reference.",
+  "exclusions": [
+    "model",
+    "app implementation",
+    "paper sleeve",
+    "logo",
+    "smudges",
+    "wear states",
+    "eraser crumbs"
+  ]
+}
