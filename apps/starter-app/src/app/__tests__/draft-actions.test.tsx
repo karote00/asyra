@@ -67,6 +67,109 @@ async function fixture() {
 }
 
 describe('draft admission before product actions', () => {
+  it.each([
+    { key: 'Enter', isComposing: true, keyCode: 13 },
+    { key: 'Escape', isComposing: true, keyCode: 27 },
+    { key: 'Enter', isComposing: false, keyCode: 229 },
+    { key: 'Escape', isComposing: false, keyCode: 229 }
+  ])(
+    'preserves composing text for $key ($isComposing, $keyCode)',
+    async (event) => {
+      const f = await fixture()
+      const reads = vi.spyOn(f.app.core, 'getElementData')
+      const fullReads = vi.spyOn(f.app.core, 'getAllElementData')
+      const changed = vi.fn()
+      const unsubscribe = f.app.projection.subscribeChanges(changed)
+      try {
+        const depth = f.app.core.getUndoHistoryDepth()
+        await f.type('輸入中的草稿')
+        await act(async () => {
+          f.input().dispatchEvent(
+            new KeyboardEvent('keydown', { ...event, bubbles: true })
+          )
+          await settle()
+        })
+        expect(f.input().value).toBe('輸入中的草稿')
+        expect(f.app.core.getUndoHistoryDepth()).toBe(depth)
+        expect(f.app.projection.getItem(f.first)?.title).toBe('First')
+        expect(reads).not.toHaveBeenCalled()
+        expect(fullReads).not.toHaveBeenCalled()
+        expect(changed).not.toHaveBeenCalled()
+        await act(async () => {
+          f.input().dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+          )
+          await settle()
+        })
+        expect(f.app.projection.getItem(f.first)?.title).toBe('輸入中的草稿')
+        expect(f.app.core.getUndoHistoryDepth()).toBe(depth + 1)
+        await f.type('Another draft')
+        await act(async () => {
+          f.input().dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+          )
+        })
+        expect(f.input().value).toBe('輸入中的草稿')
+        expect(f.app.core.getUndoHistoryDepth()).toBe(depth + 1)
+      } finally {
+        unsubscribe()
+        reads.mockRestore()
+        fullReads.mockRestore()
+        await f.close()
+      }
+    }
+  )
+
+  it('reports accepted edits as operations, including no-ops after Save', async () => {
+    const f = await fixture()
+    try {
+      await act(async () => {
+        await f.app.controller.save()
+      })
+      await f.type('Temporary draft')
+      await f.type('First')
+      await act(async () => {
+        f.app.controller.prepareAction()
+      })
+      expect(f.app.core.getUIProperty(UIProperties.status)).toEqual({
+        tone: 'ok',
+        message: 'Title accepted'
+      })
+      expect(
+        f.host.querySelector('[role="status"]')?.getAttribute('aria-label')
+      ).toBe('Last operation')
+      expect(f.host.querySelector('[role="status"]')?.className).toBe(
+        'operation-feedback ok'
+      )
+      await f.type('Changed')
+      await act(async () => {
+        f.app.controller.prepareAction()
+        await settle()
+      })
+      expect(f.host.querySelector('[role="status"]')?.textContent).toBe(
+        'Title accepted'
+      )
+      await act(async () => {
+        await f.app.controller.undo()
+        await settle()
+      })
+      expect(f.input().value).toBe('First')
+      expect(f.host.querySelector('[role="status"]')?.textContent).toBe(
+        'Undo requested'
+      )
+      await act(async () => {
+        await f.app.controller.redo()
+        await settle()
+      })
+      expect(f.input().value).toBe('Changed')
+      expect(f.host.querySelector('[role="status"]')?.textContent).toBe(
+        'Redo requested'
+      )
+    } finally {
+      await f.close()
+    }
+  })
+
   it('preserves a rejected draft and blocks Save, selection, creation, history, reload and movement', async () => {
     const f = await fixture()
     try {

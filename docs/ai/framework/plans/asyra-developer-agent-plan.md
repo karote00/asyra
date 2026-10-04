@@ -499,7 +499,7 @@ Validation:
   resolution; all 13 current naming tests passed.
 - Skill quick validation and public-document freshness passed (41 pages,
   19 packages). `git diff --check` passed.
-- The inherited plan used the generic phrase "Design App"; the naming gate
+- The inherited plan used an obsolete product alias; the naming gate
   detected it, and its existing source reference now says "Asyra Design".
 
 The maintenance and acceptance guides now separate model responsibility from

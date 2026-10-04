@@ -50,7 +50,7 @@ forwarding modules only to reproduce a folder tree.
 - **Local drafts:** the title input and in-progress drag may retain unfinished
   input. The title editor registers a synchronous commit participant with the
   controller for its mounted lifetime. Rejected title drafts remain visible;
-  only explicit Cancel/Escape discards them. Drag cancellation resets preview.
+  only explicit Cancel/Escape outside IME composition discards them. Drag cancellation resets preview.
 
 The Feature scheduling priority is unrelated to the opt-in Item priority field.
 Persisted identities remain centralized in `domain/item-domain.ts`; do not rename
@@ -94,7 +94,7 @@ update, so they do not overwrite newer unrelated fields.
 
 The controller admits Save, selection, creation, status/position, history and
 reload only after the active title draft commits successfully. Enter also requests
-admission; blur alone preserves the draft. Invalid input blocks the action and
+admission outside IME composition; blur alone preserves the draft. Invalid input blocks the action and
 retains validation feedback. Never infer admission from status messages or rely on
 DOM blur/click ordering. Canvas checks admission before starting drag preview.
 
@@ -116,8 +116,24 @@ Feedback says that the history operation was requested; an empty stack must not
 produce a false claim that a document edit happened. History callbacks are scoped to the App lifetime, since the underlying public
 function addresses the active Factory.
 
-Feedback is `{ tone, message }`; success/error state never parses human-readable
-text. Translation cannot change history, error styling or command routing.
+Feedback is `{ tone, message }`, with `loading`, `ok` or `error` tones. The
+controller owns the latest operation result; the UI labels it "Last operation".
+It is not a document saved/dirty indicator. An accepted edit may be a no-op;
+Undo, Redo and cancellation can succeed without acknowledging persistence.
+Save success means that particular storage write succeeded, not that later
+edits or drafts have been saved. Starter deliberately offers explicit Save/Reload
+without a persistent dirty-state indicator. Products adding one must separately
+own document changes, unfinished drafts and acknowledgement of the saved document;
+never infer it from feedback tone, translated text or mirrored history stacks.
+Do not put an unconditional "Saved" label beside operation feedback.
+
+The title editor leaves Enter/Escape to the IME during composition (including
+native keyCode 229 compatibility events). After composition, ordinary Enter
+admits the draft and Escape cancels it. This handler reads only native event
+metadata; it performs no document reads or publication during composition.
+This is Starter's input behavior, not a Framework input-method guarantee.
+
+Success/error state never parses human-readable text. Translation cannot change history, error styling or command routing.
 Pending commands are serialized by the controller. Its disposed guard suppresses
 late async feedback, and Core rejects writes through retired runtime references.
 

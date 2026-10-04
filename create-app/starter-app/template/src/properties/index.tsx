@@ -23,14 +23,7 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
   const commitTitle = (): boolean => {
     const title = draftRef.current
     if (title === null) return true
-    if (
-      !controller.editItem(
-        item.id,
-        { title },
-        'Updated title - unsaved changes'
-      )
-    )
-      return false
+    if (!controller.editItem(item.id, { title }, 'Title accepted')) return false
     updateDraft(null)
     return true
   }
@@ -56,6 +49,11 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
         disabled={!ready || pending}
         onChange={(event) => updateDraft(event.target.value)}
         onKeyDown={(event) => {
+          if (
+            event.nativeEvent.isComposing ||
+            event.nativeEvent.keyCode === 229
+          )
+            return
           if (event.key === 'Enter') controller.prepareAction()
           if (event.key === 'Escape') cancelTitle()
         }}
@@ -80,11 +78,7 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
             className={status === item.status ? 'active' : undefined}
             onClick={() => {
               if (status === item.status) return
-              controller.editItem(
-                item.id,
-                { status },
-                'Updated status - unsaved changes'
-              )
+              controller.editItem(item.id, { status }, 'Status accepted')
             }}
           >
             {statusLabels[status]}

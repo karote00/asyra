@@ -1,5 +1,13 @@
 # Asyra Agent releases
 
+## 0.1.3 - Local candidate
+
+- Refresh Starter guidance distinguishing last-operation feedback from document
+  persistence state, and document Starter's composition-safe title editor.
+- Keep Skill instructions unchanged; consumer App implementation and input
+  testing remain the responsibility of its developer/model.
+- Local packaging only; installed plugins and external Apps are not modified.
+
 ## 0.1.2 - Local candidate
 
 - Refresh the bundled Starter architecture and composition guide after the

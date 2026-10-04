@@ -9,6 +9,6 @@ export const UIProperties = {
 } as const
 
 export interface AppStatus {
-  readonly tone: 'loading' | 'ok' | 'unsaved' | 'error'
+  readonly tone: 'loading' | 'ok' | 'error'
   readonly message: string
 }

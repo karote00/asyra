@@ -58,9 +58,8 @@ export const createBoardController = (
   const edit = (command: () => unknown, message: string): boolean => {
     if (!prepareAction()) return false
     try {
-      const result = command()
-      if (Array.isArray(result) && result.length === 0) return true
-      status({ tone: 'unsaved', message })
+      command()
+      status({ tone: 'ok', message })
       return true
     } catch (error) {
       reportError(error)
@@ -101,7 +100,7 @@ export const createBoardController = (
               status: 'todo'
             })
           ),
-        'Added item - unsaved changes'
+        'Added item'
       )
     },
     editItem: (
@@ -110,10 +109,7 @@ export const createBoardController = (
       message: string
     ): boolean => edit(() => itemActions.editItem(id, update), message),
     moveItem: (id: string, offset: { x: number; y: number }): boolean =>
-      edit(
-        () => itemActions.moveItem(id, offset),
-        'Moved item - unsaved changes'
-      ),
+      edit(() => itemActions.moveItem(id, offset), 'Position accepted'),
     undo: (): Promise<void> =>
       run(async () => {
         await history.undo()
