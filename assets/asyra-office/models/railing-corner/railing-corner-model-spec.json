@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "intersection of the two arm centre lines at the bottom plane",
+  "tolerance": 0.0005,
+  "object": {
+    "id": "level-handrail-corner",
+    "xyPolygon": [
+      [
+        -0.02,
+        -0.02
+      ],
+      [
+        0.3,
+        -0.02
+      ],
+      [
+        0.3,
+        0.02
+      ],
+      [
+        0.02,
+        0.02
+      ],
+      [
+        0.02,
+        0.3
+      ],
+      [
+        -0.02,
+        0.3
+      ]
+    ],
+    "extrusionZ": [
+      0,
+      0.04
+    ],
+    "bounds": {
+      "min": [
+        -0.02,
+        -0.02,
+        0
+      ],
+      "max": [
+        0.3,
+        0.3,
+        0.04
+      ]
+    },
+    "size": [
+      0.32,
+      0.32,
+      0.04
+    ],
+    "section": [
+      0.04,
+      0.04
+    ],
+    "ports": [
+      {
+        "centre": [
+          0.3,
+          0,
+          0.02
+        ],
+        "outwardNormal": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "centre": [
+          0,
+          0.3,
+          0.02
+        ],
+        "outwardNormal": [
+          0,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "construction": {
+    "closed": true,
+    "vertices": 12,
+    "polygonFaces": 8,
+    "triangles": 20,
+    "bevel": 0,
+    "subdivision": 0,
+    "internalSeams": false,
+    "outwardNormals": true,
+    "flatFaceNormals": true
+  },
+  "material": {
+    "baseColor": "#383A38",
+    "metallic": 0.15,
+    "roughness": 0.8,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "placementExample": {
+    "cornerOrigin": [
+      0,
+      0,
+      0.9
+    ],
+    "landingPostOrigin": [
+      0,
+      0,
+      0
+    ],
+    "straightRails": [
+      {
+        "origin": [
+          0.3,
+          0,
+          0.9
+        ],
+        "rotationZDegrees": 0
+      },
+      {
+        "origin": [
+          0,
+          0.3,
+          0.9
+        ],
+        "rotationZDegrees": 90
+      }
+    ],
+    "topZ": 0.94
+  },
+  "authority": "Numeric polygon defines geometry; images are non-calibrated appearance references.",
+  "exclusions": [
+    "models",
+    "app implementation",
+    "sloped corners",
+    "posts bundled with rail",
+    "physical building certification"
+  ]
+}
