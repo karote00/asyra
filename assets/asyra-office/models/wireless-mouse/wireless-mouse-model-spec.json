@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom footprint centre",
+  "tolerance": 0.0002,
+  "object": {
+    "id": "minimal-wireless-mouse",
+    "size": [
+      0.06,
+      0.1,
+      0.03
+    ],
+    "dome": {
+      "radii": [
+        0.03,
+        0.05,
+        0.026
+      ],
+      "centre": [
+        0,
+        0,
+        0.004
+      ],
+      "half": "upper",
+      "azimuthSegments": 64,
+      "quarterMeridianIntervals": 12
+    },
+    "base": {
+      "ellipseRadii": [
+        0.03,
+        0.05
+      ],
+      "zRange": [
+        0,
+        0.004
+      ]
+    }
+  },
+  "construction": {
+    "oneClosedExterior": true,
+    "internalJunctionCaps": false,
+    "bevel": 0,
+    "subdivision": 0,
+    "outwardNormals": true,
+    "smoothCurvedSurfaces": true,
+    "flatBottom": true
+  },
+  "materials": {
+    "shell": {
+      "baseColor": "#F0ECE3",
+      "roughness": 0.7
+    },
+    "base": {
+      "baseColor": "#B8BCBE",
+      "roughness": 0.8
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numeric surfaces define geometry; drawings are uncalibrated appearance references.",
+  "exclusions": [
+    "models",
+    "app implementation",
+    "brand logo",
+    "wheel",
+    "sensor",
+    "buttons",
+    "cable",
+    "mousepad",
+    "click animation"
+  ]
+}
