@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "status": "approved-for-commit",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y"
+  },
+  "materials": {
+    "ceramic": {
+      "baseColorSRGB": "#EEE9DB",
+      "metallic": 0,
+      "roughness": 0.8
+    },
+    "spoonMetal": {
+      "baseColorSRGB": "#B8B8B4",
+      "metallic": 0.8,
+      "roughness": 0.65
+    }
+  },
+  "commonMaterial": {
+    "opacity": 1,
+    "emission": 0,
+    "bakedLighting": false
+  },
+  "saucer": {
+    "origin": "axis at bottom contact plane",
+    "bounds": [
+      0.13,
+      0.13,
+      0.012
+    ],
+    "segments": 96,
+    "closedRadialProfile": [
+      [
+        0,
+        0
+      ],
+      [
+        0.0325,
+        0
+      ],
+      [
+        0.046,
+        0.003
+      ],
+      [
+        0.061,
+        0.008
+      ],
+      [
+        0.065,
+        0.01
+      ],
+      [
+        0.065,
+        0.011
+      ],
+      [
+        0.064,
+        0.012
+      ],
+      [
+        0.061,
+        0.011
+      ],
+      [
+        0.045,
+        0.0055
+      ],
+      [
+        0.0325,
+        0.003
+      ],
+      [
+        0,
+        0.003
+      ]
+    ],
+    "extraBevel": 0
+  },
+  "spoon": {
+    "origin": "plan bounding box centre at lowest exterior Z",
+    "bounds": [
+      0.025,
+      0.12,
+      0.005
+    ],
+    "stationsFormat": [
+      "Y",
+      "halfWidth",
+      "topCentreZ"
+    ],
+    "stations": [
+      [
+        -0.06,
+        0,
+        0.005
+      ],
+      [
+        -0.057,
+        0.0065,
+        0.0038
+      ],
+      [
+        -0.052,
+        0.0105,
+        0.0022
+      ],
+      [
+        -0.047,
+        0.012,
+        0.0012
+      ],
+      [
+        -0.042,
+        0.0125,
+        0.001
+      ],
+      [
+        -0.037,
+        0.012,
+        0.0012
+      ],
+      [
+        -0.032,
+        0.0105,
+        0.0022
+      ],
+      [
+        -0.027,
+        0.0065,
+        0.0038
+      ],
+      [
+        -0.024,
+        0.004,
+        0.005
+      ],
+      [
+        -0.02,
+        0.0035,
+        0.005
+      ],
+      [
+        0.0565,
+        0.0035,
+        0.005
+      ]
+    ],
+    "edgeTopZ": 0.005,
+    "verticalThickness": 0.001,
+    "sectionFormula": "topZ=topCentreZ+(edgeTopZ-topCentreZ)*(x/halfWidth)^2; bottomZ=topZ-verticalThickness",
+    "stationInterpolation": "linear",
+    "crossSectionSegments": 24,
+    "longitudinalMaxStep": 0.001,
+    "handleEnd": {
+      "centerY": 0.0565,
+      "radius": 0.0035,
+      "arcSegments": 16,
+      "topZ": 0.005
+    },
+    "tipRule": "collapse each zero-width top/bottom row to a separate vertex",
+    "extraBevel": 0
+  }
+}
