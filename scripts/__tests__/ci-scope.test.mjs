@@ -26,6 +26,34 @@ const createAppManifests = readCreateAppManifests(repositoryRoot)
 const names = (scope) =>
   scope.relationshipMap.workspaceMatrix.map(({ name }) => name)
 
+test('model reference documents and images are recognized without runtime selection', () => {
+  const result = classifyChanges(
+    [
+      'assets/asyra-office/models/README.md',
+      'assets/asyra-office/models/animals/review/01-cat.png',
+      'assets/asyra-office/models/architecture/review/reference.jpg',
+      'assets/another-app/models/chair/chair-model-spec.json'
+    ],
+    manifests
+  )
+  assert.deepEqual(result.unknownPaths, [])
+  assert.deepEqual(names(result), [])
+  assert.equal(result.designE2ERequired, false)
+  assert.equal(result.frameworkReleaseRequired, false)
+})
+
+test('model reference classification does not admit executable or unrelated assets', () => {
+  for (const input of [
+    'assets/asyra-office/models/generate.py',
+    'assets/asyra-office/models/runtime.js',
+    'assets/asyra-office/models/package.json',
+    'assets/asyra-office/runtime/config.json',
+    'assets/asyra-office/models/scene.glb'
+  ]) {
+    assert.ok(classifyChanges([input], manifests).unknownPaths.includes(input))
+  }
+})
+
 test('an app change selects its package scripts and dependent workspace consumers', () => {
   const result = classifyChanges(['apps/asyra-design/src/main.tsx'], manifests)
   assert.deepEqual(names(result), ['@asyra/asyra-design'])
