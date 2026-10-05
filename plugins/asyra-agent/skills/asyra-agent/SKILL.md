@@ -3,11 +3,14 @@ name: asyra-agent
 description: Build or extend an Asyra product, turn a product idea into an Asyra App, or diagnose Asyra integration and ownership problems. Use for Asyra development requests; exclude unrelated development and operating the in-app AI chat.
 ---
 
-# Asyra Agent
+# Asyra Skill
 
 Help the user turn a product outcome into a working Asyra implementation.
 Determine the technical owners yourself from the project; the user should not
 need to know Framework internals to describe their idea.
+
+This Skill supplies Asyra-specific knowledge and procedures to the host agent.
+The host remains responsible for reasoning, execution and general product quality.
 
 ## Trigger Signals
 
@@ -42,7 +45,7 @@ supply package names or an architecture design you can establish yourself.
    evidence of a version mismatch. A host without filesystem/tool access cannot
    implement or verify a local product; state the limitation rather than claim
    files or checks were completed. Read [bundle identity](bundle.json). Its
-   `pluginVersion` is the shared Agent release version, including standalone
+   `pluginVersion` is the shared Skill release version, including standalone
    Skill installs. Its `referenceVersions` identify the package versions used by these guides, not a promise of compatibility with
    every project. Inspect the target's installed versions, public exports and
    declarations before using an API. If versions differ, confirm the needed
@@ -59,6 +62,9 @@ supply package names or an architecture design you can establish yourself.
 1. Translate the request into an observable product behavior. Identify what
    data must be saved, who can change it and the interactions to support.
    State a short implementation plan and proceed within existing authorization.
+   When a reference requests a bounded task contract, derive its technical
+   owner, route and proof fields yourself; do not require the user to supply
+   them before describing a product in ordinary language.
 2. Select the starting path. For a new product, read the bundled
    [public entry](references/docs/public/index.md) for the Generic Starter.
    Read the bundled [complete App architecture](references/apps/starter-app/docs/ARCHITECTURE.md)
@@ -73,7 +79,7 @@ supply package names or an architecture design you can establish yourself.
    Inspect the generated App's architecture: a published CLI may still contain
    an older template. For a new product, include any required standard alignment
    in the plan and implement it using verified installed APIs. Do not assume
-   that installing the newest Agent also updates the CLI or product packages.
+   that installing the newest Skill also updates the CLI or product packages.
 3. For existing work, first read the complete App architecture above and the
    target's architecture guide, then trace the closest maintained Feature,
    App common API,
@@ -103,6 +109,29 @@ supply package names or an architecture design you can establish yourself.
    contracts are affected. Do not turn every small task into a framework audit.
 6. Review the diff and run applicable target tests, types, lint and build.
    Report unavailable checks accurately and leave the product ready for review.
+
+## Project Continuity
+
+For a new product, retain the Starter's project-local `AGENTS.md` and architecture
+and onboarding guides. Adapt their owner paths and validation commands to the
+actual delivered product; remove obsolete example-specific guidance when those
+owners are replaced. Keep one authoritative project entry rather than copying
+this entire Skill into the product. Do not embed installed Skill/cache paths.
+
+At handoff, record only durable product decisions, real owner locations and
+available verification commands in the project's existing instruction/docs
+structure. For an existing product, preserve user rules and update missing
+Asyra context only within the authorized change. Never overwrite instructions
+or add a second competing architecture guide. A Skill update does not migrate
+product code or project instructions automatically.
+
+A fresh conversation starts by reading those project instructions and actual
+installed packages. If the host does not discover the project entry, ask it to
+read that file explicitly; do not promise universal automatic loading. Missing
+Skill installation does not justify silently installing extensions. Select
+existing project tests for affected Asyra contracts; add a permanent regression
+only when needed. Report checks actually executed separately from suggested
+checks and host capability limitations.
 
 ## Whole-App Standard
 

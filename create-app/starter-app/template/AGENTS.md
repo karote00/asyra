@@ -1,7 +1,7 @@
 # Starter App agent guide
 
-This project is a small App-owned Item example. Read `docs/ONBOARDING.md`
-and `docs/ARCHITECTURE.md` before changing Item behavior or App structure. `docs/PRIORITY_AGENT_PROMPT.md` is a ready-to-use
+This project is a small App-owned Item example. Read [onboarding](docs/ONBOARDING.md)
+and [architecture](docs/ARCHITECTURE.md) before changing Item behavior or App structure. `docs/PRIORITY_AGENT_PROMPT.md` is a ready-to-use
 extension request, and `docs/PRIORITY_EXERCISE.md` records the included opt-in
 exercise.
 
@@ -39,3 +39,18 @@ handing off changes:
 
 The default App owns title, status and position offsets; the priority example is
 opt-in.
+
+## Continuing in a new conversation
+
+Start from this guide, the linked architecture and the installed versions in
+`package.json`. These are project-local instructions; they do not depend on an
+installed Skill's cache location. A host that does not discover `AGENTS.md`
+needs an explicit request to read it. Asyra Skill is an optional source of
+framework guidance, while the host agent implements and verifies the product.
+
+When the product evolves, maintain the actual owner paths and validation commands
+here and the durable architecture decisions in `docs/ARCHITECTURE.md`. Replace
+obsolete Item-example guidance when its owners are replaced. Preserve existing
+user instructions; do not copy the whole Skill or its reference snapshot here.
+Before handoff, report affected behavior, checks actually run and any remaining
+limits. Updating a Skill alone does not migrate this product or its guides.

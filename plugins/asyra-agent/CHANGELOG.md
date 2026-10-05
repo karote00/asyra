@@ -1,4 +1,12 @@
-# Asyra Agent releases
+# Asyra Skill releases
+
+## 0.1.8 - Skill delivery candidate
+
+- Present the shared capability as Asyra Skill; retain `asyra-agent` install IDs.
+- Add project-local continuity guidance and distinguish host execution duties.
+- Separate public installation sources, local candidates and native evidence.
+- Preserve one Skill tree and existing plugin adapters; no hosted service added.
+- Local candidate only; fresh native product trials and publication are pending.
 
 ## 0.1.7 - Portable Skill candidate
 

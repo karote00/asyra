@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.1.8",
+  "pluginVersion": "0.1.7",
   "inputs": {
     "apps/starter-app/docs/ARCHITECTURE.md": "ab6b259b417ebf36d7c37012aeaa5b522025746a818996088bd6dda43433cbb8",
     "apps/starter-app/docs/ONBOARDING.md": "4b26fcecca29027c2cba3a5756914b495019368459704f8756a8a43cb5618242",
@@ -41,13 +41,13 @@
     "@asyra/utils": "0.5.2"
   },
   "files": {
-    ".codex-plugin/plugin.json": "3c2fdb4e92c0a6d8475945fe68c372145227d20c4f1b75cdeb805e0a1537f448",
-    ".claude-plugin/plugin.json": "3bb0881aad36b66dcacf2756d0eed6b1d975f8b3bd35d9b9c43f87f034f22597",
-    "bundle.config.json": "ae82c3771a536eff6adce5490abde7716e5cd91e9e276ab2b0ba2e4d91c2c1ce",
-    "README.md": "dfee156311e9a8e8283fbb57745c935b441f8e592bf46dd4c26e99de7673cf60",
-    "CHANGELOG.md": "bd2d1b09405c8f88100973b2d3dbce8947b763139fa23844e866d5a249346f4e",
+    ".codex-plugin/plugin.json": "739cbdaf8e021e641cd8251041c4b0662e2d3e37747a3ea4fe414b2cd2a34f2b",
+    ".claude-plugin/plugin.json": "d584a2c69b6cb5bdc1bf41f1585721fc098d286edb34fac2ef96619df5123bf8",
+    "bundle.config.json": "dd576bbb86773b91488b888760e8eb5073cf1be270dee222645fc5b0909a645b",
+    "README.md": "f88deffeaa6ae5005a1c237e072e25955e02fca3a4e7f0f69913d55113e7cf5e",
+    "CHANGELOG.md": "7d12492c3fd589d87596ffdeac644acafe9c3f6f9123077e288e6494f6c64ebd",
     "assets/icon.svg": "a7fd594de4944f6cc1daf3ef674efeb10a66e839084bebcbca0414591d96fb82",
-    "skills/asyra-agent/SKILL.md": "9eb9e3b20b13411a8abd17d5f0d0664efe2f8be79116f811f7d658514e6eba46",
+    "skills/asyra-agent/SKILL.md": "8ffd2941d8ef7212c93f1b1f7c755ae778c80caf5004a54522bd94c8ca2110c0",
     "skills/asyra-agent/references/apps/starter-app/docs/ARCHITECTURE.md": "02e64d33b75092dade4e7682c4ee08927371af45b402c100db95ccade5962244",
     "skills/asyra-agent/references/apps/starter-app/docs/ONBOARDING.md": "ed9e7222f984500c1b8926fed2630f2dcb794a92a75b767457e422abeda5a139",
     "skills/asyra-agent/references/docs/public/build/ai-actions.md": "c6fab72ef1e400809aa177c8ba0b42dce5c17a556314bb5f37106f210efc5a5f",
@@ -64,5 +64,5 @@
     "skills/asyra-agent/references/docs/public/start/custom-composition.md": "33a1f049a6ec10242b806949ca61f365737f375a19e9ff431b167e6644d8989e",
     "skills/asyra-agent/references/docs/public/start/extend-with-ai.md": "9627c60212c588d9f4d5451d1f57ef5f16e167f1d5396eaca449baca093cb925"
   },
-  "contentDigest": "ca352be52374b4335a4ecf96ae92ea0e6e0c1a2b297a080126a21c891ab4a05f"
+  "contentDigest": "312d533def69aa60922510d17911be1ae29b4ea9f6ee9bbe2a64da3ecd6dc8c4"
 }

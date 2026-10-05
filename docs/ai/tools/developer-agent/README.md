@@ -1,8 +1,8 @@
-# Developer Agent maintenance
+# Asyra Skill maintenance
 
 ## Purpose and boundaries
 
-The shared Agent Skill helps users build products with Asyra in Codex,
+Asyra Skill helps users build products with Asyra in Codex,
 Claude Code and Grok Build. Plugins provide host-specific installation. Its public entry is
 [installation and usage](../../../../plugins/asyra-agent/README.md).
 Its instruction owner is the plugin's `skills/asyra-agent/SKILL.md`.
@@ -65,10 +65,11 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current status: 0.1.6 was published on GitHub. Candidate 0.1.7 adds shared
-packaging and standalone export. See [phase-one scope and evidence](phase-one.md).
-Native candidate acceptance is tracked separately for each host; format and
-relocation checks do not close those trials.
+Current candidate: 0.1.8, with public display name **Asyra Skill** and retained
+installation identity `asyra-agent`. See the [delivery plan](skill-delivery-plan.md)
+and [support evidence](support-evidence.md). Previous native loading trials are
+versioned historical observations, not acceptance of this candidate. A plugin
+is an installation wrapper; the host agent owns execution and product quality.
 
 The standalone export uses the exact same Skill bytes and bundle record.
 `inspectSkill` verifies only the record's Skill subtree; `inspectPlugin` verifies
