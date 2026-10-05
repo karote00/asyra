@@ -183,3 +183,31 @@ manual discovery assistance; record that separately. A correct generated file
 alone is not evidence that the next conversation loaded it.
 
 See [support evidence](support-evidence.md) for version-scoped observations.
+
+## Documentation responsibility review
+
+Review both the public `start/extend-with-ai.md` and its bundled copy as the
+instructions available to a first-time product owner. Use this fixed request:
+
+```text
+Add a review status to each proposal. Keep my saved proposals working and let
+me undo and redo status changes. I do not know the framework internals.
+```
+
+Pass only when both documents let the user supply product behavior, constraints
+and acceptance expectations while the host derives technical owners, canonical
+routes, optional composition and verification commands from the target project.
+Fail if either document requires the user to name those internals before work
+can begin, including in implementation instructions or the numbered flow.
+Checking matching words or headings is not a semantic pass. Packaging tests
+separately verify that the reviewed canonical document reaches the bundle.
+
+Review record: on `4ce34b38c`, this oracle fails. The public guide and bundled
+copy require technical fields in every request, a user-provided App boundary
+before implementation, and a user-provided mutation owner in Flow step 1.
+
+Correction review: both the canonical page and generated reference now assign
+owner/route/composition/proof discovery to the agent, including Implementation
+and Flow. The user-facing example contains only product needs and constraints.
+The page's discovery summary uses the same responsibility split. The bounded
+semantic review passes; this is document evidence, not a native model trial.

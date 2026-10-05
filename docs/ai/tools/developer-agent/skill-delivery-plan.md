@@ -135,3 +135,28 @@ available quota. See `support-evidence.md` and `acceptance.md`. These are separa
 behavioral acceptance stages, not passing results inferred from local checks.
 Publication, remote push and PR creation are separate actions. This plan closes
 only the authorized local implementation and validation.
+
+## Follow-up review correction
+
+The user authorized correction of the documentation responsibility mismatch.
+Scope: canonical `docs/public/start/extend-with-ai.md`, its page description in `content-manifest.json`, generated public
+indexes and Skill reference, plus this plan and the permanent acceptance oracle.
+Keep 0.1.8 as the unpublished candidate; do not change runtime, installation IDs,
+other guides or host settings. Run public documentation, bundle, formatting and
+selected shared checks. Review only this correction and its generated consumers.
+
+Before correction, existing package checks pass but do not detect contradictory
+prose. The permanent documentation responsibility oracle in `acceptance.md`
+records the semantic failure on `4ce34b38c`; do not substitute phrase-matching
+tests for that review or claim model compliance from a document check.
+
+Correction complete: canonical page and its content-manifest description now
+assign technical discovery to the host. Regenerated public indexes, both
+`llms.txt` discovery outputs and the bundled reference through existing owners.
+The fixed semantic oracle passes for both document surfaces. All 56 selected
+repository tests pass, along with public/bundle freshness, the 0.1.7 version
+comparison, authored-source formatting and diff checks. Generated JSON uses the
+public generator's canonical serialization rather than a separate Prettier rewrite.
+This remains an unpublished 0.1.8
+candidate; no runtime or installed copies changed and no native model trial is
+inferred from these results.

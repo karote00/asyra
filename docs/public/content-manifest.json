@@ -30,7 +30,7 @@
       "path": "start/extend-with-ai.md",
       "section": "Extend",
       "title": "Extend Asyra with an AI coding agent",
-      "description": "Give an AI agent bounded ownership, canonical APIs, and executable proof while you retain product decisions.",
+      "description": "Describe product needs while the coding agent derives Asyra ownership, public API routes, and verification.",
       "sources": [
         "docs/ai/framework/WORKFLOW.md",
         "docs/ai/apps/asyra-design/golden-paths/README.md"
