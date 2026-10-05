@@ -459,6 +459,7 @@ export const createAPIs = (
     ...createUIContextAPIs(),
     ...createSystemPropertyAPIs(),
     applyCanonicalChanges,
+    isTransactionBoundaryIdle: () => factory.isTransactionBoundaryIdle(),
     startHistoryGroup: (options) => factory.startHistoryGroup(options),
     updateHistoryGroup: (handle, mutate) =>
       factory.updateHistoryGroup(handle, mutate),

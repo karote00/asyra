@@ -392,3 +392,73 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+it('delivers a real browser failure through HTTP before closing the execution stream', async () => {
+  const { AiActionExecutionError } = await import('@asyra/ai-agent-runtime')
+  const { createServerActionBatchProvider } =
+    await import('../../src/ai/server-action-batch-provider')
+  const { recordActionFailure } = await import('../../src/ai/action-failure')
+  const { BrowserBatchExecutionError } = await import('../batch-exchange')
+  let received: unknown
+  const prepared = {
+    batchId: 'failed-batch',
+    actions: [
+      { id: 'a', name: 'apply_prepared_design', arguments: {}, summary: 'Draw' }
+    ]
+  }
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (_input, options) => {
+      if (!options.executeBatch) throw new Error('Missing execution transport')
+      try {
+        await options.executeBatch(prepared)
+      } catch (error) {
+        received = error
+        throw error
+      }
+      throw new Error('Failed batch incorrectly succeeded')
+    }
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => response.end())
+  })
+  let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+  try {
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    provider = createServerActionBatchProvider({
+      fetch: (async (url, init) =>
+        fetch(origin + String(url), {
+          ...init,
+          headers: { ...init.headers, origin }
+        })) as never
+    })
+    const error = new AiActionExecutionError('Prepared design is invalid.')
+    const controller = new AbortController()
+    await expect(
+      provider.requestActionBatch(
+        { intent: 'Draw', context: {}, actions: [], attempt: 1 },
+        {
+          signal: controller.signal,
+          executeBatch: async () => {
+            recordActionFailure(error, 'apply_prepared_design', 17)
+            throw error
+          }
+        }
+      )
+    ).rejects.toBeDefined()
+    expect(controller.signal.aborted).toBe(false)
+    expect(received).toBeInstanceOf(BrowserBatchExecutionError)
+    expect(received).toMatchObject({
+      failure: {
+        batchId: 'failed-batch',
+        actionName: 'apply_prepared_design',
+        handlerMs: 17,
+        message: error.message
+      }
+    })
+  } finally {
+    provider?.dispose()
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})

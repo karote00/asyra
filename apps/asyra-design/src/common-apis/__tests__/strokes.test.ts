@@ -345,20 +345,77 @@ describe('stroke common API primary-color boundary', () => {
     expect(mocks.runTransaction).not.toHaveBeenCalled()
   })
 
-  it('patches canonical stroke fields without forwarding UI aggregation metadata', () => {
-    const currentStroke = {
-      ...mocks.getElementById('whisker-1').getAllComputedData().strokes[0],
-      ids: ['stroke-1']
-    }
+  it('does not publish old unrelated Stroke fields when changing width', () => {
+    strokeApis.updateStrokeFields('whisker-1', 'stroke-1', { width: 8 })
+    expect(
+      mocks.patchElementProperties.mock.calls[0][0][0].records[0].set
+    ).toEqual({
+      'stroke-1': { width: 8 }
+    })
+  })
 
-    strokeApis.updateStrokeField(
-      'whisker-1',
-      'stroke-1',
-      currentStroke,
-      'width',
-      5,
-      { undoable: true }
+  it('admits all targets before applying a multi-owner Stroke patch', () => {
+    mocks.getElementById.mockImplementation((id: string) =>
+      id === 'missing'
+        ? undefined
+        : {
+            get: () => 'rect',
+            getAllComputedData: () => ({ strokes: [{ id: 'stroke-1' }] })
+          }
     )
+    expect(() =>
+      strokeApis.updateStrokeFieldsBatch([
+        { elementId: 'valid', strokeId: 'stroke-1', patch: { width: 8 } },
+        { elementId: 'missing', strokeId: 'stroke-1', patch: { width: 8 } }
+      ])
+    ).toThrow('Missing Stroke')
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+
+  it('prepares repeated targets once and emits all patches in one transaction', () => {
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'a', strokeId: 'stroke-1', patch: { width: 5 } },
+      { elementId: 'a', strokeId: 'stroke-1', patch: { dash: 8 } },
+      { elementId: 'b', strokeId: 'stroke-1', patch: { width: 9 } }
+    ])
+    expect(mocks.runTransaction).toHaveBeenCalledOnce()
+    expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+    expect(
+      mocks.patchElementProperties.mock.calls[0][0].map(
+        (p: { elementId: string }) => p.elementId
+      )
+    ).toEqual(['a', 'a', 'b'])
+    // Target read + type + geometry per distinct owner, not per update.
+    expect(mocks.getElementById).toHaveBeenCalledTimes(6)
+    mocks.getElementById.mockClear()
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'a', strokeId: 'stroke-1', patch: { width: 10 } }
+    ])
+    expect(mocks.getElementById).toHaveBeenCalledTimes(3)
+  })
+
+  it('ignores empty patches and rejects unknown fields before a write', () => {
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'missing', strokeId: 'absent', patch: { width: undefined } }
+    ])
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(() =>
+      strokeApis.updateStrokeFieldsBatch([
+        { elementId: 'a', strokeId: 'stroke-1', patch: { width: 5 } },
+        {
+          elementId: 'b',
+          strokeId: 'stroke-1',
+          patch: { id: 'other' } as never
+        }
+      ])
+    ).toThrow('Invalid Stroke patch field')
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+
+  it('patches canonical stroke fields without forwarding UI aggregation metadata', () => {
+    strokeApis.updateStrokeField('whisker-1', 'stroke-1', 'width', 5, {
+      undoable: true
+    })
 
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -370,22 +427,7 @@ describe('stroke common API primary-color boundary', () => {
               key: 'strokes',
               set: {
                 'stroke-1': {
-                  style: 'solid',
-                  position: 'center',
-                  width: 5,
-                  dash: 20,
-                  gap: 20,
-                  fill: {
-                    color: '#5B3A29',
-                    colorFormat: 'hex',
-                    id: 'stroke-1',
-                    opacity: 1,
-                    type: 'fill',
-                    visible: true
-                  },
-                  joinType: 'miter',
-                  capType: 'butt',
-                  miterAngle: 28.96
+                  width: 5
                 }
               }
             }
@@ -408,6 +450,7 @@ describe('stroke common API primary-color boundary', () => {
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
       getAllComputedData: () => ({
+        strokes: [currentStroke],
         height: 999,
         networks: {
           network: {
@@ -434,7 +477,6 @@ describe('stroke common API primary-color boundary', () => {
     strokeApis.updateStrokeFields(
       'whisker-1',
       'stroke-1',
-      currentStroke as never,
       {
         width: 5
       },

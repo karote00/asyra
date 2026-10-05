@@ -50,11 +50,16 @@ None.
 ## Transaction History Groups
 
 - [Transaction History Groups](plans/transaction-history-group-plan.md)
-  - Active design preparation for an independent Framework PR to `main`.
+  - Framework APIs and batch publication ordering merged in PR #280.
   - Explicitly enroll committed batches without capturing intervening user or
     remote actions; seal one Undo entry when the producer completes or stops.
   - Includes grouped replay, batch publication ordering and advisory counts.
     AI product integration and object editing locks remain downstream work.
+
+## Local affected validation
+
+- [Local affected validation](plans/local-affected-validation-plan.md) - reuse
+  CI impact selection for local lint, test and E2E execution.
 
 ## Completed CI Workflow Split
 

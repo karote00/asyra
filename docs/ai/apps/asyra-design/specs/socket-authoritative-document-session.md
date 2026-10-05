@@ -224,6 +224,16 @@ document channels. Selection and other non-document channels may remain local
 transactions or local History behavior, but they do not enter the socket
 document stream and cannot trigger persistence.
 
+Publication payload version 2 stores slice ordering and batch membership once
+per publication, followed by ordered delivery units. Increasing the number of
+deliveries must not repeat the full ordering list per delivery. Encoding and
+decoding preserve the exact publication, including compensation identities;
+malformed counts, order and unknown versions remain errors. Retained payload
+version 1 outbox and persistence frames remain readable through the versioned
+decoder. New encodes use version 2; the outer frame envelope is unchanged.
+This changes representation only, not atomicity, admission, HTTP resource limits
+or the canonical mutation/Undo boundary.
+
 Scene Tree and Props Manager perform semantic data admission for the original
 local mutation. Factory creates a document `SharedPublication` only from the
 successfully committed canonical evidence. The resulting delivery payload is

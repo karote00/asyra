@@ -89,11 +89,12 @@ function fixture() {
 }
 const assess = (f) => assessCI(f.accepted, f.candidate, f.expected, f.envelope)
 test('aggregate assesses every supported flow and exposes absent external protection separately', () => {
-  const result = assess(fixture())
+  const f = fixture()
+  const result = assess(f)
   assert.equal(result.verificationStatus, 'passed')
   assert.equal(result.deliveryStatus, 'blocked')
-  assert.equal(result.evidence.cases.length, 9)
-  assert.equal(result.evidence.flows.length, 3)
+  assert.equal(result.evidence.cases.length, f.accepted.cases.length)
+  assert.equal(result.evidence.flows.length, f.accepted.flows.length)
   assert.match(result.blockers.join(' '), /required-check/)
 })
 test('provider green cannot mask real failing or skipped observations', () => {

@@ -28,6 +28,10 @@ both fill faces and hit testing per strategy invocation; transform-only updates
 continue to reuse the existing Render projection. Single contours, gradients,
 evenodd projection and strokes retain their existing routes.
 
+Fill and Stroke child-record adapters preserve sparse patches. They do not
+expand creation defaults into updates of existing children; component defaults
+supply initial values and canonical setters own change/Undo records.
+
 ## Public Contract
 
 ```ts

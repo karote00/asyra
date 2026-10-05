@@ -228,6 +228,7 @@ class Core implements CoreAPIs {
   updateElementProperties!: CoreAPIs['updateElementProperties']
   patchElementProperties!: CoreAPIs['patchElementProperties']
   applyCanonicalChanges!: CoreAPIs['applyCanonicalChanges']
+  isTransactionBoundaryIdle!: CoreAPIs['isTransactionBoundaryIdle']
   startHistoryGroup!: CoreAPIs['startHistoryGroup']
   updateHistoryGroup!: CoreAPIs['updateHistoryGroup']
   endHistoryGroup!: CoreAPIs['endHistoryGroup']
@@ -687,7 +688,10 @@ class Core implements CoreAPIs {
   }
 
   getViewportPosition(): PositionData {
-    return cloneLoadObservation(this.deps.render.getViewportPosition())
+    const position = this.deps.render.getViewportPosition()
+    // Engine positions may carry callbacks. The public contract is coordinate
+    // data only, detached from the live engine object on every read.
+    return { x: position.x, y: position.y }
   }
 
   getViewportScale(): number {

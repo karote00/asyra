@@ -536,6 +536,11 @@ const getOrCreateRoom = async (fileId: string): Promise<RoomState> => {
       maxPublicationCount: persistenceMaxPublicationCount,
       maxSerializedBytes: persistenceMaxSerializedBytes,
       sendBatch: (batch) => documentPersistenceClient.sendBatch(batch),
+      onFailure: (failure) => {
+        console.error(
+          JSON.stringify({ event: 'document_persistence_failed', ...failure })
+        )
+      },
       onDurableSequenceChange: (durableSequence) => {
         const room = roomReference.current
         if (!room) return

@@ -139,6 +139,136 @@ const createMultiDeliveryPublication = (
 }
 
 describe('collaboration wire protocol', () => {
+  it('decodes retained version 1 publication bytes', () => {
+    const retained = Buffer.from(
+      'QVNZUkFQAgFLAAAASAEAAAAAAAABAAAAAAAAAAEAAAAJAAAADgAAAAAAAAAAAAAAAAAAAAByZXRhaW5lZABwdWJsaWNhdGlvbi1hQVNZVQEAAABgAAAAAQAAAEFTWVJBAQQAAAphcnRpZmFjdElkAAANdHJhbnNhY3Rpb25JZAAABm9yaWdpbgAABG1vZGUIBAAFAAoxOmFydGlmYWN0AQQCAgUABmFjdGlvbgMFAAtwcm9ncmVzc2l2ZdQAAABBU1lSQQELAAAFYmF0Y2gFAAJJZAAAB3NsaWNlSWQAAApvcmRlcmVkSWRzAAAHY2hhbm5lbAAACGRlbGl2ZXJ5CAACSWQAAAlldmVudE5hbWUAAAdwYXlsb2FkAAAFdmFsdWUAAAllbGVtZW50LWEIAgAIBAEFAAkxOmJhdGNoOmECBQAJMTpzbGljZTphAwcBBgoEBQAJc2NlbmVUcmVlBQgEBgUADDE6ZGVsaXZlcnk6YQcFABJ1cGRhdGVDb21wdXRlZERhdGEDBwEGCggIAQkEAg==',
+      'base64'
+    )
+    expect(decodePublicationMessageFrames([retained])).toEqual({
+      type: CollaborationMessageTypes.SEND_PUBLICATION,
+      requestId: 'retained',
+      publication
+    })
+  })
+
+  it('encodes batch ordering once so doubling deliveries has linear wire growth', () => {
+    const encode = (count: number) => {
+      const publication = createMultiDeliveryPublication(
+        Array.from({ length: count }, () => ({
+          id: 'fill',
+          key: 'gradient',
+          before: { color: '#214e5d' },
+          after: { color: '#1f4856' }
+        }))
+      )
+      const message = {
+        type: CollaborationMessageTypes.SEND_PUBLICATION,
+        requestId: 'linear-wire',
+        publication
+      } as const
+      const frames = encodePublicationMessageFrames(message)
+      expect(decodePublicationMessageFrames(frames)).toEqual(message)
+      return frames.reduce((sum, frame) => sum + frame.byteLength, 0)
+    }
+    const small = encode(64)
+    const large = encode(128)
+    expect(large).toBeLessThan(small * 2.5)
+  })
+
+  it('keeps a large atomic property batch below the unchanged persistence limit', () => {
+    const publication = createMultiDeliveryPublication(
+      Array.from({ length: 2176 }, (_, index) => ({
+        id: `fill-${index}`,
+        key: 'gradient',
+        before: {
+          gradientHandles: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0.35 }
+          ]
+        },
+        after: {
+          gradientHandles: [
+            { x: 0.2, y: 0 },
+            { x: 0.63, y: 1 }
+          ]
+        }
+      }))
+    )
+    const message = {
+      type: CollaborationMessageTypes.SEND_PUBLICATION,
+      requestId: 'large-properties',
+      publication: { ...publication, mode: 'atomic' }
+    } as const
+    const frames = encodePublicationMessageFrames(message)
+    expect(
+      frames.reduce(
+        (sum, frame) => sum + Buffer.from(frame).toString('base64').length,
+        0
+      )
+    ).toBeLessThan(8 * 1024 * 1024)
+    expect(decodePublicationMessageFrames(frames)).toEqual(message)
+  })
+
+  it.each([
+    'missing-slices',
+    'duplicate-slice',
+    'duplicate-batch',
+    'duplicate-order',
+    'missing-delivery',
+    'excess-delivery',
+    'unbounded-count'
+  ])('rejects malformed indexed publication layout: %s', (scenario) => {
+    const original = new Uint8Array(
+      encodePublicationMessageFrames({
+        type: CollaborationMessageTypes.SEND_PUBLICATION,
+        requestId: 'layout',
+        publication
+      })[0]
+    )
+    const header = new DataView(original.buffer)
+    const offset = header.getUint32(8, true)
+    const payload = new DataView(original.buffer, offset)
+    const metadataLength = payload.getUint32(8, true)
+    const metadataStart = offset + 16
+    const metadata = decodeCompactBinary(
+      original.subarray(metadataStart, metadataStart + metadataLength)
+    ) as {
+      slices: {
+        sliceId: string
+        orderedIds: string[]
+        batches: { batchId: string; channel: string; deliveryCount: number }[]
+      }[]
+    }
+    const slice = metadata.slices[0]
+    const batch = slice.batches[0]
+    if (scenario === 'missing-slices') metadata.slices = []
+    if (scenario === 'duplicate-slice') metadata.slices.push(slice)
+    if (scenario === 'duplicate-batch') slice.batches.push(batch)
+    if (scenario === 'duplicate-order')
+      slice.orderedIds.push(slice.orderedIds[0])
+    if (scenario === 'missing-delivery') batch.deliveryCount = 0
+    if (scenario === 'excess-delivery') batch.deliveryCount = 2
+    if (scenario === 'unbounded-count') batch.deliveryCount = 0xffff_ffff
+    const encoded = new Uint8Array(encodeCompactBinary(metadata))
+    const changed = new Uint8Array(
+      original.length - metadataLength + encoded.length
+    )
+    changed.set(original.subarray(0, metadataStart))
+    changed.set(encoded, metadataStart)
+    changed.set(
+      original.subarray(metadataStart + metadataLength),
+      metadataStart + encoded.length
+    )
+    const view = new DataView(changed.buffer)
+    view.setUint32(12, changed.length - offset, true)
+    view.setUint32(offset + 8, encoded.length, true)
+    if (scenario === 'unbounded-count')
+      view.setUint32(offset + 12, 0xffff_ffff, true)
+    expect(() => decodePublicationMessageFrames([changed])).toThrow(
+      /publication wire/
+    )
+  })
+
   it('round-trips only the minimal nested publication hierarchy', () => {
     const minimalPublication: SharedPublication = {
       publicationId: 'publication-minimal',

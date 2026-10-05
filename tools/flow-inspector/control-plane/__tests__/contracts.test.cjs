@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
 const { createHash } = require('node:crypto')
 const test = require('node:test')
-const { admitContract, mappingDiff } = require('../contracts.cjs')
+const { admitContract, loadContract, mappingDiff } = require('../contracts.cjs')
 const manifest = require('../../../../packages/factory/flow-contracts.json')
 const architecture = require('../../inspectors/transaction-flow-inspector.data.cjs')
 
@@ -11,6 +13,135 @@ const admit = (change) => {
   change?.(input)
   return admitContract(input.manifest, input.architecture)
 }
+
+test('workspace source declarations bind real names and relative inputs without requiring a public entry', () => {
+  const workspaceSources = [
+    { name: '@example/editor', inputs: ['src/**', 'server/**'], entry: null }
+  ]
+  const contract = admit(({ manifest }) => {
+    manifest.workspaceSources = workspaceSources
+  })
+  assert.equal(contract.runtimeScope.format, 2)
+  assert.deepEqual(contract.runtimeScope.workspaceSources, workspaceSources)
+  assert.ok(Object.isFrozen(contract.runtimeScope.workspaceSources[0].inputs))
+  for (const value of [
+    null,
+    [],
+    [...workspaceSources, ...workspaceSources],
+    [{ name: '../editor', inputs: ['src/**'], entry: null }],
+    [{ name: '@example/editor', inputs: ['../server/**'], entry: null }],
+    [{ name: '@example/editor', inputs: ['**'], entry: null }],
+    [{ name: '@example/editor', inputs: ['src/*.ts'], entry: null }],
+    [{ name: '@example/editor', inputs: ['src/**', 'src/a.ts'], entry: null }],
+    [{ name: '@example/editor', inputs: ['src/**'], entry: 'server/a.ts' }],
+    [{ name: '@example/editor', inputs: ['src/**'], entry: 'src/.env' }],
+    [
+      { name: '@example/editor', inputs: ['src/**'], entry: 'src/view.test.ts' }
+    ],
+    [
+      {
+        name: '@example/editor',
+        inputs: ['src/**'],
+        entry: null,
+        path: 'other'
+      }
+    ]
+  ]) {
+    assert.throws(
+      () =>
+        admit(({ manifest }) => {
+          manifest.workspaceSources = value
+        }),
+      /workspace source/i
+    )
+  }
+})
+
+test('product flow admission retains its declared manifest instead of the Factory path', () => {
+  const contract = admit(({ manifest }) => {
+    manifest.manifestPath = 'apps/example/flow-contracts.json'
+  })
+  assert.equal(contract.manifestPath, 'apps/example/flow-contracts.json')
+  for (const manifestPath of [
+    null,
+    '',
+    '/outside.json',
+    '../outside.json',
+    'apps/../outside.json',
+    'apps//proof.json',
+    'apps\\proof.json'
+  ]) {
+    assert.throws(
+      () =>
+        admit(({ manifest }) => {
+          manifest.manifestPath = manifestPath
+        }),
+      /manifest.*path/i
+    )
+  }
+})
+
+test('explicit product loading reads that manifest and rejects a substituted declared location', (t) => {
+  const root = path.resolve(__dirname, '../../../..')
+  const parent = path.join(root, 'tmp/flow-inspector/contract-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'product-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const selected = path.relative(
+    root,
+    path.join(directory, 'flow-contracts.json')
+  )
+  const input = structuredClone(manifest)
+  input.manifestPath = selected
+  input.flows[0].title = 'Selected App flow'
+  fs.writeFileSync(path.join(root, selected), JSON.stringify(input))
+  const loaded = loadContract(root, undefined, selected)
+  assert.equal(loaded.manifestPath, selected)
+  assert.equal(loaded.definition.flows[0].title, 'Selected App flow')
+  input.manifestPath = 'apps/other/flow-contracts.json'
+  fs.writeFileSync(path.join(root, selected), JSON.stringify(input))
+  assert.throws(
+    () => loadContract(root, undefined, selected),
+    /differs from selected proof/
+  )
+})
+
+test('App negative proof uses its selected runtime boundary without changing verification', () => {
+  const input = structuredClone({ manifest, architecture })
+  const runtimeFile = 'apps/example/server/session.ts'
+  const selected = new Set(input.manifest.flows.flatMap((flow) => flow.stepIds))
+  for (const step of input.architecture.steps.filter((step) =>
+    selected.has(step.id)
+  )) {
+    step.ownerPackage = '@example/editor'
+    step.implementationBoundary = [runtimeFile]
+  }
+  for (const scenario of input.manifest.scenarios.filter(
+    (scenario) => scenario.id !== 'baseline'
+  )) {
+    scenario.mutation.file = runtimeFile
+  }
+  const admitted = admitContract(input.manifest, input.architecture)
+  assert.equal(
+    admitted.definition.scenarios.find((scenario) => scenario.id !== 'baseline')
+      .mutation.file,
+    runtimeFile
+  )
+  for (const file of [
+    'apps/example/server/other.ts',
+    input.manifest.testFile,
+    '../outside.ts'
+  ]) {
+    const invalid = structuredClone(input)
+    invalid.manifest.scenarios.find(
+      (scenario) => scenario.id !== 'baseline'
+    ).mutation.file = file
+    assert.throws(
+      () => admitContract(invalid.manifest, invalid.architecture),
+      /runtime mutation/
+    )
+  }
+})
 
 test('runtime authority retains each selected architecture step once without changing contract identity', () => {
   const input = structuredClone({ manifest, architecture })
@@ -94,10 +225,13 @@ test('mapping review prepares exact test-name changes while preserving every obl
   )
 })
 
-test('resolves three real flows and nine obligations using architecture-owned steps', () => {
+test('resolves every declared flow and obligation using architecture-owned steps', () => {
   const contract = admit()
-  assert.equal(contract.flows.length, 3)
-  assert.equal(contract.cases.length, 9)
+  assert.equal(contract.flows.length, manifest.flows.length)
+  assert.equal(
+    contract.cases.length,
+    manifest.flows.flatMap((flow) => flow.cases).length
+  )
   assert.equal(contract.flows[0].steps[0].ownerPackage, '@asyra/factory')
   assert.equal(contract.flows[0].steps[0].title, architecture.steps[1].title)
   assert.equal(

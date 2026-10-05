@@ -334,7 +334,15 @@ test('transaction, projection, collaboration, and cleanup routes preserve existi
   const cleanup = contractText(step('cleanup-feature-invocation'))
 
   assert.match(transaction, /one intended undo entry/i)
-  assert.match(transaction, /roll back its complete rollbackable journal/i)
+  assert.match(transaction, /Atomic failure rolls back its complete journal/i)
+  assert.match(
+    transaction,
+    /grouped failure or Stop rolls back only an active failed member and seals earlier successful members/i
+  )
+  assert.match(
+    transaction,
+    /settlement error carries the original cause and committed, rolled-back or unknown outcome/i
+  )
   assert.match(transaction, /same Factory publication path/i)
   assert.match(projection, /same canonical state-owner change route/i)
   assert.match(

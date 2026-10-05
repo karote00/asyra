@@ -1,3 +1,4 @@
+import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
 import { isDesignGradient } from './design-fill'
 import { TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
@@ -11,7 +12,7 @@ import {
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 function check(value: unknown): asserts value {
-  if (!value) throw new Error('Prepared design is invalid.')
+  if (!value) throw new AiActionExecutionError('Prepared design is invalid.')
 }
 const finite = (v: unknown, maximum = limits.dimension * (limits.depth + 2)) =>
   typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= maximum
@@ -167,7 +168,8 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
   )
   const parents = new Map<string, { type: string; depth: number }>(),
     semanticKeys = new Set<string>(),
-    identities = new Set<string>()
+    identities = new Set<string>(),
+    fillIds = new Set<string>()
   let pointCount = 0,
     textCount = 0
   const claim = (id: unknown) => {
@@ -220,8 +222,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       check(
         entry.parentId === null &&
           isDesignContainerType(d.type) &&
-          d.id === input.rootId &&
-          entry.key === '$root'
+          d.id === input.rootId
       )
     else {
       check(typeof entry.parentId === 'string')
@@ -258,6 +259,12 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       check(Array.isArray(d.fills) && d.fills.length <= 1)
       if (d.type === 'group') check(d.fills.length === 0)
       for (const f of d.fills) {
+        if (typeof f === 'string') {
+          // Only prior definitions in this artifact may be shared. This admits
+          // canonical child relationships, never duplicate descriptor IDs.
+          check(fillIds.has(f))
+          continue
+        }
         check(
           record(f) &&
             keysOnly(f, [
@@ -289,6 +296,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
               : isDesignGradient(f.gradient))
         )
         claim(f.id)
+        fillIds.add(f.id)
       }
       if (isDesignContainerType(d.type)) {
         fields.push('children')

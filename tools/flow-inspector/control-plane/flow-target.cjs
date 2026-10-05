@@ -35,7 +35,20 @@ const sameSet = (a, b) =>
   Array.isArray(b) &&
   a.length === b.length &&
   a.every((x) => b.includes(x))
-function validateAllocation(state, binding, previousWorks = []) {
+function validateAllocation(state, binding, previousWorks, contract) {
+  const scopeFormat = contract?.runtimeScope?.format
+  requireValue(
+    [1, 2].includes(scopeFormat),
+    'unsupported runtime scope version'
+  )
+  const workspaceScope = scopeFormat === 2
+  const verificationPaths = new Set([
+    contract.definition.manifestPath,
+    contract.definition.architecturePath,
+    contract.definition.specPath,
+    contract.definition.testFile,
+    contract.definition.configFile
+  ])
   object(state, ['objective', 'works', 'pending'])
   requireValue(text(state.objective), 'objective required')
   requireValue(
@@ -70,7 +83,7 @@ function validateAllocation(state, binding, previousWorks = []) {
     requireValue(step, 'unknown step')
     requireValue(
       typeof step.ownerPackage === 'string' &&
-        step.ownerPackage.startsWith('@asyra/'),
+        (workspaceScope || step.ownerPackage.startsWith('@asyra/')),
       'unsupported primary package owner'
     )
     const primarySourcePrefix =
@@ -98,9 +111,13 @@ function validateAllocation(state, binding, previousWorks = []) {
     for (const file of work.allowedFiles)
       requireValue(
         canonicalFile(file) &&
-          file.startsWith(primarySourcePrefix) &&
-          file.endsWith('.ts') &&
+          (workspaceScope || file.startsWith(primarySourcePrefix)) &&
+          (workspaceScope
+            ? /\.[cm]?[jt]sx?$/.test(file)
+            : file.endsWith('.ts')) &&
           !file.includes('/__tests__/') &&
+          !/\.(test|spec)\.[cm]?[jt]sx?$/.test(file) &&
+          !verificationPaths.has(file) &&
           step.implementationBoundary.some(
             (b) =>
               b === file ||
@@ -284,7 +301,7 @@ function createTargetOwner({
         /^[a-f0-9]{64}$/.test(source.runtimeSourceDigest ?? '') &&
         (authorityPresent.length === 0 ||
           (authorityPresent.length === authorityKeys.length &&
-            source.runtimeAuthorityFormat === 1 &&
+            [1, 2].includes(source.runtimeAuthorityFormat) &&
             /^[a-f0-9]{64}$/.test(source.runtimeAuthorityDigest ?? '') &&
             /^[a-f0-9]{64}$/.test(source.contractScopeDigest ?? ''))) &&
         assessment.result.source?.repository === source.repository &&
@@ -471,7 +488,7 @@ function createTargetOwner({
               entry.state.works.some((w) => w.id === older.admission.workId),
               'admitted commitment cannot be removed'
             )
-        validateAllocation(entry.state, record, previousWorks)
+        validateAllocation(entry.state, record, previousWorks, contract)
         previousWorks = [...previousWorks, ...entry.state.works]
       })
     }
@@ -946,7 +963,14 @@ function createTargetOwner({
             state.works.some((w) => w.id === entry.admission.workId),
             'admitted commitment cannot be removed'
           )
-      validateAllocation(state, record, previousWorks)
+      validateAllocation(
+        state,
+        record,
+        previousWorks,
+        getContracts().find(
+          (contract) => contract.digest === record.targetRevision
+        )
+      )
       if (request.action !== 'link')
         for (const work of state.works)
           for (const runtimeFile of work.allowedFiles) {

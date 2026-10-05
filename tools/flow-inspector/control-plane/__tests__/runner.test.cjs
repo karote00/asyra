@@ -290,13 +290,45 @@ test('runner carries producer runtime identity without traversing its manifest a
   assert.equal(executions, 2)
 })
 
-function derivedRunnerFixture() {
+function derivedRunnerFixture(authorityFormat = 1, createContract) {
   const source = require('../snapshot.cjs')
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/contained-runner-tests')
   fs.mkdirSync(parent, { recursive: true })
   const runDirectory = fs.mkdtempSync(path.join(parent, 'run-'))
-  const contract = loadContract(root)
+  let contract = loadContract(root)
+  if (createContract) {
+    contract = createContract(root, runDirectory)
+  } else if (authorityFormat === 2) {
+    const definition = structuredClone(contract.definition)
+    definition.manifestPath = path.relative(
+      root,
+      path.join(runDirectory, 'flow-contracts.json')
+    )
+    definition.workspaceSources = [
+      { name: '@asyra/factory', inputs: ['src/**'], entry: 'src/index.ts' }
+    ]
+    const configuration = fs.readFileSync(
+      path.join(root, definition.configFile),
+      'utf8'
+    )
+    definition.configFile = path.relative(
+      root,
+      path.join(runDirectory, 'proof-config.ts')
+    )
+    fs.writeFileSync(
+      path.join(root, definition.configFile),
+      configuration.replace(
+        "'packages/factory/flow-contracts.json'",
+        JSON.stringify(definition.manifestPath)
+      )
+    )
+    fs.writeFileSync(
+      path.join(root, definition.manifestPath),
+      JSON.stringify(definition)
+    )
+    contract = loadContract(root, undefined, definition.manifestPath)
+  }
   const snapshot = captureSource(root, runDirectory, contract)
   const generated = source.createDerivedExecution({
     sourceRoot: snapshot.sourceRoot,
@@ -332,111 +364,158 @@ function derivedRunnerFixture() {
   }
 }
 
+for (const authorityFormat of [1, 2])
+  test(
+    `contained derived runner executes authority ${authorityFormat} with real settlement`,
+    { skip: process.platform !== 'darwin', timeout: 30000 },
+    async (t) => {
+      const options = derivedRunnerFixture(authorityFormat)
+      const childProcess = require('node:child_process')
+      const spawnSpy = t.mock.method(childProcess, 'spawn')
+      const hashes = t.mock.method(require('node:crypto'), 'createHash')
+      const reads = t.mock.method(fs, 'readFileSync')
+      const modulePath = require.resolve('../runner.cjs')
+      const saved = require.cache[modulePath]
+      Reflect.deleteProperty(require.cache, modulePath)
+      const { runContainedVerification } = require('../runner.cjs')
+      require.cache[modulePath] = saved
+      let spawned = 0
+      const result = await runContainedVerification({
+        ...options,
+        onSpawn: () => spawned++
+      })
+      assert.equal(result.code, 0, result.output)
+      assert.equal(result.reason, null)
+      assert.equal(spawned, 1)
+      assert.equal(spawnSpy.mock.callCount(), 1)
+      assert.equal(
+        hashes.mock.callCount(),
+        1,
+        'runner hashes only its report, not source descriptors'
+      )
+      for (const entry of options.snapshot.files)
+        assert.equal(
+          reads.mock.calls.filter(
+            (call) =>
+              call.arguments[0] ===
+              path.join(options.snapshot.sourceRoot, entry.path)
+          ).length,
+          0
+        )
+      const [executable, args, actual] = spawnSpy.mock.calls[0].arguments
+      assert.equal(executable, '/usr/bin/sandbox-exec')
+      assert.ok(
+        args.includes(
+          path.join(
+            options.snapshot.sourceRoot,
+            options.snapshot.executionSource.roles.bootstrap
+          )
+        )
+      )
+      assert.ok(
+        args.includes(
+          path.join(
+            options.snapshot.sourceRoot,
+            options.snapshot.executionSource.roles.configuration
+          )
+        )
+      )
+      assert.deepEqual(args.slice(-2), ['--configLoader', 'native'])
+      assert.equal(actual.cwd, options.snapshot.sourceRoot)
+      assert.match(args[1], /\(deny default\)/)
+      assert.match(args[1], /deny file-write/)
+      assert.equal(
+        result.identity.configurationDigest,
+        options.snapshot.executionSource.digest
+      )
+      assert.equal(
+        result.identity.runtimeSourceDigest,
+        options.snapshot.runtimeSource.digest
+      )
+      assert.equal(
+        result.identity.runtimeAuthorityDigest,
+        options.snapshot.runtimeAuthority.digest
+      )
+      assert.equal(
+        assessEvidence(
+          options.contract,
+          options.snapshot,
+          result,
+          options.flowIds,
+          'baseline',
+          undefined,
+          { sourceRoot: options.snapshot.sourceRoot }
+        ).status,
+        'passed'
+      )
+      assert.throws(() => process.kill(result.pid, 0), { code: 'ESRCH' })
+      const controller = new AbortController()
+      const cancelled = await runContainedVerification({
+        ...options,
+        signal: controller.signal,
+        onSpawn: () => controller.abort()
+      })
+      assert.equal(cancelled.reason, 'cancelled')
+      assert.throws(() => process.kill(cancelled.pid, 0), { code: 'ESRCH' })
+      const timedOut = await runContainedVerification({
+        ...options,
+        timeoutMs: 1
+      })
+      assert.equal(timedOut.reason, 'timeout')
+      assert.throws(() => process.kill(timedOut.pid, 0), { code: 'ESRCH' })
+      const count = spawnSpy.mock.callCount()
+      const preAborted = await runContainedVerification({
+        ...options,
+        signal: controller.signal
+      })
+      assert.equal(preAborted.reason, 'cancelled')
+      assert.equal(spawnSpy.mock.callCount(), count)
+    }
+  )
+
 test(
-  'contained derived runner executes the captured bootstrap and native configuration with real settlement',
+  'contained proof executes actual private App server and package integration sources',
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
-    const options = derivedRunnerFixture()
-    const childProcess = require('node:child_process')
-    const spawnSpy = t.mock.method(childProcess, 'spawn')
-    const hashes = t.mock.method(require('node:crypto'), 'createHash')
-    const reads = t.mock.method(fs, 'readFileSync')
-    const modulePath = require.resolve('../runner.cjs')
-    const saved = require.cache[modulePath]
-    Reflect.deleteProperty(require.cache, modulePath)
+    const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
+    const options = derivedRunnerFixture(2, appRuntimeFixture)
+    t.after(() =>
+      fs.rmSync(options.runDirectory, { recursive: true, force: true })
+    )
     const { runContainedVerification } = require('../runner.cjs')
-    require.cache[modulePath] = saved
-    let spawned = 0
-    const result = await runContainedVerification({
+    const baseline = await runContainedVerification(options)
+    assert.equal(baseline.code, 0, baseline.output)
+    const assessment = assessEvidence(
+      options.contract,
+      options.snapshot,
+      baseline,
+      options.flowIds,
+      'baseline',
+      undefined,
+      { sourceRoot: options.snapshot.sourceRoot }
+    )
+    assert.equal(assessment.status, 'passed', JSON.stringify(assessment))
+    const negative = await runContainedVerification({
       ...options,
-      onSpawn: () => spawned++
+      scenario: 'reject-gradient'
     })
-    assert.equal(result.code, 0, result.output)
-    assert.equal(result.reason, null)
-    assert.equal(spawned, 1)
-    assert.equal(spawnSpy.mock.callCount(), 1)
-    assert.equal(
-      hashes.mock.callCount(),
-      1,
-      'runner hashes only its report, not source descriptors'
+    assert.equal(negative.code, 1, negative.output)
+    const rejected = assessEvidence(
+      options.contract,
+      options.snapshot,
+      negative,
+      options.flowIds,
+      'reject-gradient',
+      undefined,
+      { sourceRoot: options.snapshot.sourceRoot }
     )
-    for (const entry of options.snapshot.files)
-      assert.equal(
-        reads.mock.calls.filter(
-          (call) =>
-            call.arguments[0] ===
-            path.join(options.snapshot.sourceRoot, entry.path)
-        ).length,
-        0
-      )
-    const [executable, args, actual] = spawnSpy.mock.calls[0].arguments
-    assert.equal(executable, '/usr/bin/sandbox-exec')
-    assert.ok(
-      args.includes(
-        path.join(
-          options.snapshot.sourceRoot,
-          options.snapshot.executionSource.roles.bootstrap
-        )
-      )
+    assert.deepEqual(
+      rejected.cases
+        .filter((item) => item.status === 'failed')
+        .map((item) => item.id),
+      ['app.gradient']
     )
-    assert.ok(
-      args.includes(
-        path.join(
-          options.snapshot.sourceRoot,
-          options.snapshot.executionSource.roles.configuration
-        )
-      )
-    )
-    assert.deepEqual(args.slice(-2), ['--configLoader', 'native'])
-    assert.equal(actual.cwd, options.snapshot.sourceRoot)
-    assert.match(args[1], /\(deny default\)/)
-    assert.match(args[1], /deny file-write/)
-    assert.equal(
-      result.identity.configurationDigest,
-      options.snapshot.executionSource.digest
-    )
-    assert.equal(
-      result.identity.runtimeSourceDigest,
-      options.snapshot.runtimeSource.digest
-    )
-    assert.equal(
-      result.identity.runtimeAuthorityDigest,
-      options.snapshot.runtimeAuthority.digest
-    )
-    assert.equal(
-      assessEvidence(
-        options.contract,
-        options.snapshot,
-        result,
-        options.flowIds,
-        'baseline',
-        undefined,
-        { sourceRoot: options.snapshot.sourceRoot }
-      ).status,
-      'passed'
-    )
-    assert.throws(() => process.kill(result.pid, 0), { code: 'ESRCH' })
-    const controller = new AbortController()
-    const cancelled = await runContainedVerification({
-      ...options,
-      signal: controller.signal,
-      onSpawn: () => controller.abort()
-    })
-    assert.equal(cancelled.reason, 'cancelled')
-    assert.throws(() => process.kill(cancelled.pid, 0), { code: 'ESRCH' })
-    const timedOut = await runContainedVerification({
-      ...options,
-      timeoutMs: 1
-    })
-    assert.equal(timedOut.reason, 'timeout')
-    assert.throws(() => process.kill(timedOut.pid, 0), { code: 'ESRCH' })
-    const count = spawnSpy.mock.callCount()
-    const preAborted = await runContainedVerification({
-      ...options,
-      signal: controller.signal
-    })
-    assert.equal(preAborted.reason, 'cancelled')
-    assert.equal(spawnSpy.mock.callCount(), count)
+    assert.deepEqual(rejected.issues, [])
   }
 )
 

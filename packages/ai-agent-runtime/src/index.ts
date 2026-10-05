@@ -23,11 +23,13 @@ export {
   AiActionExecutionError,
   AiPermissionError,
   AiTransactionError,
+  AiTransactionSettlementError,
   confirmAiActionBatch,
   createAiAgentRuntime,
   evaluateAiActionBatchPermissions,
   executeAiActions,
-  runAiActionBatchTransaction
+  runAiActionBatchTransaction,
+  runAiMutation
 } from './runtime.js'
 export type {
   AiAuditActionSummary,
@@ -102,6 +104,7 @@ export type {
   AiActionRegistryErrorCode,
   AiActionResult,
   AiExecutionContext,
+  AiMutationExecutor,
   AiJsonPrimitive,
   AiJsonValue
 } from './types.js'

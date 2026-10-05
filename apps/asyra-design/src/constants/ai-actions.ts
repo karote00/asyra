@@ -6,6 +6,7 @@ export const AiActionNames = Object.freeze({
   UPDATE_DESIGN_ELEMENT: 'update_design_element',
   READ_DESIGN_CONTEXT: 'read_design_context',
   INSPECT_DRAWING: 'inspect_drawing',
+  VALIDATE_INSPECTION_EVIDENCE: 'validate_inspection_evidence',
   REPORT_OUTCOME: 'report_outcome',
   REPLACE_VECTOR_COMPOSITION: 'replace_vector_composition',
   REQUEST_CLARIFICATION: 'request_clarification',
@@ -28,3 +29,9 @@ export const AiDrawingDetailSelectionIntents = Object.freeze({
   MAXIMUM_EN: 'draw this image with maximum detail',
   MAXIMUM_REFERENCE: 'draw the reference image with maximum detail'
 } as const)
+
+/** Single-object convenience actions execute only as items of execute_design_batch. */
+export const AiBatchOnlyActionNames: readonly string[] = Object.freeze([
+  AiActionNames.UPDATE_DESIGN_ELEMENT,
+  AiActionNames.SET_ELEMENT_VISIBILITY
+])

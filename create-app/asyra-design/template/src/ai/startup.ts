@@ -54,6 +54,7 @@ export const createAiStartup = (
           [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'allow',
           [AiActionNames.READ_DESIGN_CONTEXT]: 'allow',
           [AiActionNames.INSPECT_DRAWING]: 'allow',
+          [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: 'allow',
           [AiActionNames.REPORT_OUTCOME]: 'allow',
           [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'confirm',
           [AiActionNames.REQUEST_CLARIFICATION]: 'allow',

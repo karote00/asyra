@@ -1380,6 +1380,8 @@ test(
         return canvas.locator('#attempt-id').textContent()
       }
       const baseline = await run('baseline', 'passed')
+      const baselineCheckCount = server.service.contract().cases.length
+      assert.ok(baselineCheckCount > 0)
       await expect(canvas.locator('#mapping-version')).toHaveText(
         server.service.contract().mappingVersion
       )
@@ -1402,7 +1404,7 @@ test(
       await expect(canvas.locator('#mapping-accept')).toBeDisabled()
       await canvas.getByText('Mapping review', { exact: true }).click()
       await expect(canvas.locator('#checks')).toHaveText(
-        `${server.service.contract().cases.length} / ${server.service.contract().cases.length}`
+        `${baselineCheckCount} / ${baselineCheckCount}`
       )
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
@@ -1421,6 +1423,11 @@ test(
       )
       await page.setViewportSize({ width: 1600, height: 720 })
       const negative = await run('inverse-regression', 'failed')
+      const negativeFailures = server.service
+        .get(negative)
+        .evidence.cases.filter((item) => item.status === 'failed')
+      for (const id of server.service.contract().negativeCaseIds)
+        assert.ok(negativeFailures.some((item) => item.id === id))
       assert.ok(
         Number(await viewport.getAttribute('data-zoom-scale')) < 1,
         'short viewports zoom out to fit both failed cards'
@@ -1430,7 +1437,7 @@ test(
       )
       await expect(canvas.locator('#proof-run-failure')).toBeVisible()
       await expect(canvas.locator('#proof-run-failure')).toContainText(
-        `${server.service.contract().scenarios.find((scenario) => scenario.id === 'inverse-regression').expectedFailedCaseIds.length} failed obligations`
+        `${negativeFailures.length} failed obligations`
       )
       await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(2)
       assert.equal(
@@ -1635,7 +1642,7 @@ test(
       const attempts = server.service.state().runs.length
       await page.reload()
       await expect(canvas.locator('#checks')).toHaveText(
-        `${server.service.contract().cases.length} / ${server.service.contract().cases.length}`
+        `${baselineCheckCount} / ${baselineCheckCount}`
       )
       assert.equal(server.service.state().runs.length, attempts)
       // The loaded static canvas is its own immutable architecture snapshot.

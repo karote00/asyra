@@ -120,12 +120,16 @@ interface UseFillInteractionsArgs {
   fill: FillAttrs | null
   fillId: string
   ownerElementId: string | null
+  elementIds: string[]
+  index: number
 }
 
 export const useFillInteractions = ({
   fill,
   fillId,
-  ownerElementId
+  ownerElementId,
+  elementIds,
+  index
 }: UseFillInteractionsArgs) => {
   const isColorPickerOpenRef = useRef(false)
   const colorPickerTransactionRef = useRef(false)
@@ -196,21 +200,15 @@ export const useFillInteractions = ({
     [gradientData]
   )
 
-  const commitFillPatch = (
-    patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs | null
-  ) => {
-    const currentFill = sourceFill ?? fill
-    if (!currentFill || !ownerElementId || !hasFillPatch(patch)) {
+  const commitFillPatch = (patch: FillPatch, options?: EVENT_OPTIONS) => {
+    if (!elementIds.length || !hasFillPatch(patch)) {
       return
     }
 
-    fillApis.updateFillFields(
-      ownerElementId,
-      fillId,
-      currentFill,
-      patch,
+    fillApis.updateFillFieldsBatch(
+      fillApis
+        .getFillTargetsAtIndex(elementIds, index)
+        .map((target) => ({ ...target, patch })),
       options
     )
   }
@@ -221,16 +219,15 @@ export const useFillInteractions = ({
 
   const commitFillInteractionPatch = (
     patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs | null
+    options?: EVENT_OPTIONS
   ) => {
     if (colorPickerTransactionRef.current) {
-      commitFillPatch(patch, options, sourceFill)
+      commitFillPatch(patch, options)
       return
     }
 
     runDiscreteFillInteraction(() => {
-      commitFillPatch(patch, options, sourceFill)
+      commitFillPatch(patch, options)
     })
   }
 
@@ -249,7 +246,7 @@ export const useFillInteractions = ({
     const patch = createPickerPatch(sourceFill, color, opacity)
     const nextFill = applyFillPatch(sourceFill, patch)
     pickerLatestFillRef.current = nextFill
-    commitFillPatch(patch, options, sourceFill)
+    commitFillPatch(patch, options)
     return nextFill
   }
 
@@ -401,10 +398,9 @@ export const useFillInteractions = ({
 
   const handleGradientFillChange = (
     patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs
+    options?: EVENT_OPTIONS
   ) => {
-    commitFillInteractionPatch(patch, options, sourceFill)
+    commitFillInteractionPatch(patch, options)
   }
 
   const handleGradientEditorOpenChange = (open: boolean) => {

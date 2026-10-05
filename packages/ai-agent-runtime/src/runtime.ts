@@ -33,7 +33,9 @@ import type {
   AiActionDefinition,
   AiActionRegistry,
   AiActionRegistryErrorCode,
-  AiJsonValue
+  AiJsonValue,
+  AiExecutionContext,
+  AiMutationExecutor
 } from './types.js'
 
 export interface AiContextProvider {
@@ -65,7 +67,22 @@ export interface AiConfirmationHandler {
 export interface AiTransactionRunner {
   /** Reject with the original callback error only after successful rollback;
    * reject with a distinct error if transaction settlement itself fails. */
-  run<T>(label: string, execute: () => Promise<T>): Promise<T>
+  run<T>(
+    label: string,
+    execute: (runMutation?: AiMutationExecutor) => Promise<T>,
+    options?: { readonly signal: AbortSignal }
+  ): Promise<T>
+}
+
+/** Explicit host evidence; it never performs rollback or infers retained writes. */
+export class AiTransactionSettlementError extends Error {
+  constructor(
+    readonly cause: unknown,
+    readonly status: 'committed' | 'rolled-back' | 'unknown'
+  ) {
+    super('AI request transaction settlement reported by its host.')
+    this.name = 'AiTransactionSettlementError'
+  }
 }
 
 export const AI_ACTION_BATCH_TRANSACTION_LABEL = 'AI-assisted action'
@@ -217,7 +234,9 @@ export interface AiRuntimeExecutedResult {
 }
 
 export interface AiRuntimeCancelledResult {
-  readonly transaction?: { readonly status: 'rolled-back' | 'unknown' }
+  readonly transaction?: {
+    readonly status: 'committed' | 'rolled-back' | 'unknown'
+  }
   readonly status: 'cancelled'
   readonly reason: 'aborted' | 'confirmation-cancelled'
   readonly preview?: AiActionBatchPreview
@@ -528,16 +547,20 @@ const assertTransactionNotAborted = (signal: AbortSignal): void => {
 export const runAiActionBatchTransaction = async <T>(
   runner: AiTransactionRunner,
   signal: AbortSignal,
-  execute: () => Promise<T>
+  execute: (runMutation?: AiMutationExecutor) => Promise<T>
 ): Promise<T> => {
   assertTransactionNotAborted(signal)
 
-  return runner.run(AI_ACTION_BATCH_TRANSACTION_LABEL, async () => {
-    assertTransactionNotAborted(signal)
-    const result = await execute()
-    assertTransactionNotAborted(signal)
-    return result
-  })
+  return runner.run(
+    AI_ACTION_BATCH_TRANSACTION_LABEL,
+    async (runMutation) => {
+      assertTransactionNotAborted(signal)
+      const result = await execute(runMutation)
+      assertTransactionNotAborted(signal)
+      return result
+    },
+    { signal }
+  )
 }
 
 const assertExecutionNotAborted = (signal: AbortSignal): void => {
@@ -546,14 +569,24 @@ const assertExecutionNotAborted = (signal: AbortSignal): void => {
   }
 }
 
+export const runAiMutation = async <T>(
+  context: AiExecutionContext,
+  mutate: () => T
+): Promise<T> => {
+  assertExecutionNotAborted(context.signal)
+  return context.runMutation ? context.runMutation(mutate) : mutate()
+}
+
 export const executeAiActions = async (
   batch: ConfirmedAiActionBatch,
   signal: AbortSignal,
-  redactionOptions: AiRedactionOptions = {}
+  redactionOptions: AiRedactionOptions = {},
+  runMutation?: AiMutationExecutor
 ): Promise<AiActionExecutionBatch> => {
   const actionResults: AiActionExecutionResult[] = []
   const context = Object.freeze({
-    signal
+    signal,
+    ...(runMutation ? { runMutation } : {})
   })
 
   for (const action of batch.actions) {
@@ -581,7 +614,7 @@ interface AiInvocationEvidence {
   readonly preview?: AiActionBatchPreview
   readonly retryCount: number
   readonly executionStarted?: boolean
-  readonly transactionStatus?: 'rolled-back' | 'unknown'
+  readonly transactionStatus?: 'committed' | 'rolled-back' | 'unknown'
 }
 
 interface AiStableFailure {
@@ -1051,7 +1084,10 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     let evidence: AiInvocationEvidence = {
       retryCount: 0
     }
+    let runMutation: AiMutationExecutor | undefined
     let failedAction: string | undefined
+    let failedActionId: string | null = null
+    let actionStartedAt: number | undefined
     let currentStage: AiRuntimeStage = 'context'
     const emitProgress = (update: AiRuntimeProgressUpdate): void =>
       emitAiRuntimeProgress(
@@ -1094,9 +1130,25 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         ),
         this.redactionOptions
       )
+      let contextStale = false
+      const refreshContext = async () => {
+        currentStage = 'context'
+        context = redactAiValue(
+          await runAbortable(signal, () =>
+            this.contextProvider.getContext({ intent, signal })
+          ),
+          this.redactionOptions
+        )
+        contextStale = false
+        return context
+      }
       currentStage = 'registry'
       const actions = this.registry.list()
       const executePrepared = async (actionBatch: AiActionBatch) => {
+        failedAction = undefined
+        failedActionId = null
+        actionStartedAt = undefined
+        if (contextStale) await refreshContext()
         currentStage = 'resolution'
         emitProgress({
           attempt,
@@ -1178,10 +1230,13 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                 : 'Preparing the drawing'
           })
           failedAction = action.name
+          failedActionId = action.id
+          actionStartedAt = performance.now()
           const completed = await executeAiActions(
             { ...confirmed, actions: [action] },
             signal,
-            this.redactionOptions
+            this.redactionOptions,
+            runMutation
           )
           allResults.push(...completed.actionResults)
           actionResults.push(...completed.actionResults)
@@ -1195,20 +1250,32 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
       currentStage = 'transaction'
       const executed = await runAiActionBatchTransaction(
         {
-          run: async (label, execute) => {
+          run: async (label, execute, options) => {
             let callbackFailed = false
             let callbackError: unknown
             try {
-              return await this.transactionRunner.run(label, async () => {
-                try {
-                  return await execute()
-                } catch (error) {
-                  callbackFailed = true
-                  callbackError = error
-                  throw error
-                }
-              })
+              return await this.transactionRunner.run(
+                label,
+                async (scope) => {
+                  try {
+                    return await execute(scope)
+                  } catch (error) {
+                    callbackFailed = true
+                    callbackError = error
+                    throw error
+                  }
+                },
+                options
+              )
             } catch (error) {
+              if (error instanceof AiTransactionSettlementError) {
+                evidence = { ...evidence, transactionStatus: error.status }
+                if (error.status === 'unknown') {
+                  currentStage = 'transaction'
+                  providerFailure = undefined
+                }
+                throw error.cause
+              }
               // A conforming runner preserves the callback error only after rollback.
               // A different rejection belongs to the transaction owner itself.
               if (callbackFailed && error === callbackError) {
@@ -1223,7 +1290,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           }
         },
         signal,
-        async () => {
+        async (scope) => {
+          runMutation = scope
           try {
             let finalBatch: AiActionBatch
             while (true) {
@@ -1262,27 +1330,56 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                         batchSettlement = new Promise<void>((resolve) => {
                           settle = resolve
                         })
+                        const resultOffset = allResults.length
                         try {
                           const { execution } = await executePrepared(batch)
-                          currentStage = 'context'
-                          const updatedContext = redactAiValue(
-                            await runAbortable(signal, () =>
-                              this.contextProvider.getContext({
-                                intent,
-                                signal
-                              })
-                            ),
-                            this.redactionOptions
-                          )
-                          context = updatedContext
+                          contextStale = true
+                          const updatedContext = await refreshContext()
                           currentStage = 'provider'
                           return Object.freeze({
                             actionResults: execution.actionResults,
                             context: updatedContext
                           })
                         } catch (error) {
-                          callbackFailure = error
-                          throw error
+                          if (signal.aborted || error === INVOCATION_ABORTED)
+                            throw INVOCATION_ABORTED
+                          const stage = currentStage
+                          const actionExecutionMs =
+                            stage === 'execution' &&
+                            actionStartedAt !== undefined
+                              ? Math.max(0, performance.now() - actionStartedAt)
+                              : null
+                          const actionName = failedAction ?? null
+                          const failure = stableFailure(error, {
+                            code: 'AI_EXECUTION_FAILED',
+                            message: 'The batch could not complete.',
+                            stage
+                          })
+                          contextStale = true
+                          try {
+                            await refreshContext()
+                          } catch {
+                            if (signal.aborted) throw INVOCATION_ABORTED
+                          }
+                          currentStage = 'provider'
+                          return Object.freeze({
+                            actionResults: allResults.slice(resultOffset),
+                            context,
+                            failure: {
+                              code: failure.code,
+                              message: failure.message,
+                              stage,
+                              actionName,
+                              actionId:
+                                stage === 'execution' ? failedActionId : null,
+                              actionExecutionMs,
+                              settlement:
+                                stage === 'execution' || stage === 'context'
+                                  ? ('unknown' as const)
+                                  : ('not-started' as const),
+                              contextFresh: !contextStale
+                            }
+                          })
                         } finally {
                           batchPending = false
                           settle()
@@ -1363,6 +1460,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             })
           } catch (error) {
             if (
+              runMutation ||
               !this.preserveProgress ||
               !evidence.executionStarted ||
               signal.aborted ||
@@ -1443,7 +1541,13 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             }),
         summary: 'Failed'
       })
-      return failed
+      return evidence.transactionStatus === 'committed'
+        ? Object.freeze({
+            ...failed,
+            actionResults: Object.freeze([...allResults]),
+            ...(failedAction ? { failedAction } : {})
+          })
+        : failed
     }
   }
 }

@@ -3,8 +3,7 @@
 ;(function () {
   'use strict'
 
-  const specPath =
-    'docs/ai/framework/plans/completed/ai-agent-runtime-plan.md'
+  const specPath = 'docs/ai/framework/plans/completed/ai-agent-runtime-plan.md'
   const inspectorPath =
     'tools/flow-inspector/inspectors/ai-agent-runtime-flow-inspector.data.cjs'
 
@@ -528,10 +527,10 @@
       id: 'run-plan-transaction',
       order: 10,
       laneId: 'execution',
-      title: 'Open one app-owned transaction for the accepted plan',
+      title: 'Open one app-owned invocation scope',
       ownerPackage: 'app AiTransactionRunner adapter',
       purpose:
-        'Map one confirmed plan to one intended undo transaction and delegate rollback/commit semantics to the app Factory boundary.',
+        'Map one confirmed plan to one invocation scope and delegate finite mutation, history and settlement semantics to the app Factory boundary.',
       inputs: [
         'artifact:confirmed-plan',
         'app-owned transaction runner',
@@ -540,22 +539,22 @@
       outputs: ['artifact:transaction-execution-scope'],
       conditions: [
         'The runner is invoked exactly once for one accepted plan by default.',
-        'The runner executes the complete ordered action callback and commits only after it resolves.',
-        'Throw, rejection, timeout, or abort after transaction start must roll back all rollbackable writes through the existing Factory contract.',
+        'The runner executes the complete ordered callback once; atomic hosts commit after it resolves, while grouped hosts supply an invocation-local finite synchronous mutation executor backed by Factory history groups.',
+        'Atomic hosts roll back their transaction on callback failure; grouped hosts preserve prior successful finite commits and seal their group on Stop or failure. The runner reports explicit settlement with the original cause; Runtime owns no journal.',
         'Cleanup owner: settle-plan-transaction closes transaction state; cleanup-feature-invocation releases request listeners after settlement.'
       ],
       bypasses: [
         'No transaction opens for planning, validation, permission, or confirmation terminal results.',
-        'Explicit transaction groups are unsupported in this bounded first release.'
+        'Read-only invocations need no physical transaction or history entry.'
       ],
       allowedContributors: [
         'artifact:confirmed-plan',
         'app transaction adapter',
-        'public runTransaction-compatible boundary'
+        'public Factory transaction or history-group boundary'
       ],
       forbiddenContributors: [
         'runtime-owned undo/history implementation',
-        'one transaction per action',
+        'ambient or shared invocation mutation membership',
         'mutation before the runner callback',
         'retry of an action transaction'
       ],
@@ -563,6 +562,7 @@
       implementationBoundary: [
         'packages/ai-agent-runtime/src/runtime.ts',
         'packages/ai-agent-runtime/src/__tests__/transaction.test.ts',
+        'packages/ai-agent-runtime/src/types.ts',
         'packages/ai-agent-runtime/src/index.ts',
         'apps/asyra-design/src/ai/transaction.ts',
         'apps/asyra-design/src/ai/__tests__/transaction.test.ts',
@@ -597,7 +597,7 @@
       ],
       conditions: [
         'Actions execute in prepared plan order and check abort after awaited work before the next mutation.',
-        'Each executor receives only its validated typed arguments and app execution context.',
+        'Each executor receives only its validated typed arguments, signal and optional invocation-local host mutation executor. Synchronous writes use that boundary; asynchronous preparation does not hold it. Atomic hosts omit the executor and retain their enclosing transaction.',
         'Action results are detached summaries and never canonical state authority.',
         'Cleanup owner: settle-plan-transaction owns rollback/commit; cleanup-feature-invocation owns request-local executor result storage.'
       ],
@@ -621,7 +621,20 @@
         'packages/ai-agent-runtime/src/runtime.ts',
         'packages/ai-agent-runtime/src/redaction.ts',
         'packages/ai-agent-runtime/src/__tests__/execution.test.ts',
+        'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts',
+        'packages/ai-agent-runtime/src/types.ts',
         'packages/ai-agent-runtime/src/index.ts',
+        'apps/asyra-design/src/ai/basic-api-actions.ts',
+        'apps/asyra-design/src/ai/__tests__/basic-api-actions.test.ts',
+        'apps/asyra-design/src/ai/design-actions.ts',
+        'apps/asyra-design/src/ai/__tests__/design-actions.test.ts',
+        'apps/asyra-design/src/ai/design-edit-action.ts',
+        'apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts',
+        'apps/asyra-design/src/ai/organization-action.ts',
+        'apps/asyra-design/src/ai/__tests__/organization-action.test.ts',
+        'apps/asyra-design/src/ai/arrangement-action.ts',
+        'apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts',
+        'apps/asyra-design/src/ai/__tests__/composition-actions.test.ts',
         'apps/asyra-design/src/ai/actions.ts',
         'apps/asyra-design/src/ai/__tests__/actions.test.ts',
         'apps/asyra-design/src/common-apis'
@@ -687,15 +700,15 @@
       id: 'settle-plan-transaction',
       order: 13,
       laneId: 'execution',
-      title: 'Settle one transaction, undo commit, and publication batch',
+      title: 'Settle the invocation and its intended Undo entry',
       ownerPackage: '@asyra/factory through app transaction adapter',
       purpose:
-        'Commit one accepted plan as one intended undo entry or roll back its complete rollbackable journal with no accepted canonical prefix.',
+        'Settle one intended Undo entry using the host contract: atomic rollback or grouped retention of completed finite members.',
       inputs: [
         'artifact:action-result-batch',
         'artifact:executor-failure',
         'artifact:canonical-mutation-failure',
-        'active Factory transaction journal'
+        'active Factory transaction journal or request-owned history group'
       ],
       outputs: [
         'artifact:transaction-outcome',
@@ -705,8 +718,8 @@
         'artifact:no-collaboration-bypass'
       ],
       conditions: [
-        'Successful completion validates and commits the existing Factory transaction exactly once.',
-        'Failure, abort, or timeout rolls back the complete rollbackable journal and creates no normal undo entry.',
+        'Successful completion settles the existing Factory transaction or seals the request-owned history group exactly once; each grouped member has already published through normal settlement.',
+        'Atomic failure rolls back its complete journal; grouped failure or Stop rolls back only an active failed member and seals earlier successful members. An explicit host settlement error carries the original cause and committed, rolled-back or unknown outcome; missing receipts cannot prove no retained writes.',
         'A successful accepted plan creates one intended undo commit by default.',
         'Shared changes settle through the same Factory publication path and options as ordinary app actions.',
         'Cleanup owner: settle-plan-transaction closes Factory transaction state; cleanup-feature-invocation performs only request-local cleanup afterward.'
@@ -724,12 +737,15 @@
       ],
       forbiddenContributors: [
         'runtime-owned transaction journal or history',
-        'partial commit after executor failure',
+        'invented settlement outcome from action receipts',
         'Collaboration-owned rollback or undo',
         'provider retry after transaction start'
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'packages/ai-agent-runtime/src/runtime.ts',
+        'packages/ai-agent-runtime/src/index.ts',
+        'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts',
         'apps/asyra-design/src/ai/transaction.ts',
         'apps/asyra-design/src/common-apis/transaction.ts',
         'packages/factory/src'
@@ -1599,7 +1615,7 @@
       id: 'one-plan-one-undo',
       title: 'One accepted plan maps to one intended undo commit',
       statement:
-        'One transaction runner callback contains the ordered executors and Factory commits or rolls back that complete journal.',
+        'One invocation runner contains ordered executors. Atomic hosts settle one journal; grouped hosts publish finite members and seal their successful entries together without capturing user or remote edits.',
       stepIds: [
         'run-plan-transaction',
         'execute-app-actions',
@@ -1738,10 +1754,10 @@
     },
     {
       id: 'transaction-and-no-prefix',
-      title: 'One accepted plan, one transaction, no rejected prefix',
+      title: 'One accepted plan, explicit host settlement',
       assertions: [
         'A valid multi-action plan invokes one transaction runner and executors in plan order.',
-        'Executor/canonical failure rolls back all rollbackable writes and creates no accepted canonical prefix or normal undo commit.'
+        'Atomic executor/canonical failure rolls back all rollbackable writes with no accepted canonical prefix; grouped failure rolls back its failed member and retains prior successful members in one sealed Undo entry.'
       ],
       stepIds: [
         'run-plan-transaction',

@@ -120,6 +120,8 @@ const data = {
       ],
       outputs: ['artifact:flow-target-state', 'artifact:work-admission'],
       conditions: [
+        'Work allocation uses the admitted format-2 owner step implementation boundary for workspace runtime files, without deriving a packages directory from the owner name. Allocation grants no source or execution authority; captured-source admission still verifies actual workspace ownership and declared inputs. Preserve the explicit format-1 package scope.',
+        'Dependent admission consumes complete source authority format 1 or 2 identities with exact digest links. Unknown versions fail closed; workspace support never bypasses source availability, prerequisites, allocation or retained identity checks.',
         'Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed until an assessment-bound admission and the full target stays pending. Independent admission retains the exact baseline source. Dependent admission instead consumes one exact current completed service-retained target assessment with passing accepted preservation, selected work and prerequisites, matching allocation, actor, target pins and available registered source; persist its assessment/source binding without recomputation and cross-check it on load. Missing, stale, failed or client-supplied evidence rejects before writes. Admitted commitments cannot be removed. Validate dependent task execution against the retained assessment and its still-live exact private source authority; the admission revision alone does not retire that frozen allocation, but source-task revocation or source retirement blocks execution. Neither bounded work nor delivery completes the target or accepts history.'
       ],
       bypasses: [
@@ -338,7 +340,7 @@ const data = {
       ],
       outputs: ['artifact:admitted-agent-task'],
       conditions: [
-        'Resolve each task primary package from the selected step owner. Every allowed file must be inside both that package source root and the exact step implementation boundary; dependency closure packages never expand mutation authority.',
+        'Resolve each task primary workspace from the selected step owner. For explicit workspace scope, pre-admit canonical runtime files against the exact step boundary, then require the source-owned captured actual workspace directory, source inputs and runtime inventory before candidate effects. Dependency closure workspaces never expand mutation authority. Retained package scope keeps its recorded package source boundary.',
         'Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations. Real provider admission requires matching service-owned authorization, exact model, billing mode, expiry and request ceiling; caller or model data cannot authorize itself.'
       ],
       bypasses: [
@@ -391,6 +393,7 @@ const data = {
         'artifact:admitted-task-source'
       ],
       conditions: [
+        'Consume source-bound task admission immediately after capture and before candidate writes or adapter dispatch. Retained verification loads the captured manifest role, and demonstrations consume the selected contract negative scenario rather than a Factory scenario name.',
         'A scoped candidate verdict and private task source carry runtimeAuthority in exact deep equality with the baseline and source envelope. Retained records with no own authority use only legacy Factory source validation even when the currently loaded contract has runtimeScope; load and replay never upgrade them.',
         'Publish a private exact task/attempt/repository source artifact only after a controlled source-aware producer result and successful task save, or completed startup source admission. Passed startup retains strict report/evidence checks; completed non-pass startup verifies fixed bytes plus source identity once without reassessing or replacing its historical outcome. Legacy verify-only strategies cannot supply authority. Exact sourceFor reads only the private map; new attempts, noncompleted state, revocation and close retire availability, and failed publication cannot resurrect it. No source hash, IO or history scan occurs on reads/replay, and later composition verifies its own selected bytes.',
         'New task records use format 2; load only formats 1 and 2. Format-2 passing latest verdicts require the exact runtime, runtime-authority, verification and execution descriptor set when scoped; true historical authority absence retains legacy descriptor validation. Upgrade a format-1 task only when an explicit new candidate proof completes and is saved, preserving older attempts. New admission requires fixed last-attempt UUID source/report locations, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Reads and identical replay do no source work.',
@@ -545,20 +548,22 @@ const data = {
       purpose: 'Admission',
       inputs: [
         'product-owned proof manifest',
+        'trusted selected product manifest path',
         'target architecture Inspector',
         'accepted mapping for explicit candidate comparison'
       ],
       outputs: ['artifact:admitted-proof-contract'],
       conditions: [
+        'Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.',
         'Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.',
-        'Publish separately digested runtimeScope format 1 from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. Preserve mapping format 2, Inspector schema 2 and existing contract digest semantics. This step does not read package manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new non-Factory runtime authority.'
+        'Publish separately digested runtimeScope from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. A mapping with explicit workspaceSources retains validated unique workspace names, relative runtime inputs and nullable alias entries in scope format 2; genuine historical absence retains scope format 1. Preserve mapping format 2, Inspector schema 2 and contract digest semantics. This step does not read workspace manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new workspace runtime authority.'
       ],
       bypasses: [
         'No missing, ambiguous, empty, or contradictory contract may be bypassed.'
       ],
       allowedContributors: [
-        'packages/factory/flow-contracts.json',
-        'tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs'
+        'trusted product-owned proof manifest selected by the service',
+        'the selected product architecture Inspector'
       ],
       forbiddenContributors: [
         'runtime result guessing',
@@ -629,6 +634,7 @@ const data = {
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
+        'For an explicitly declared workspace scope format 2, resolve owner names from actual root-declared workspace manifests, including private Apps and tools. Capture its declared source inputs and runtime dependency closure in runtimeAuthority format 2 with actual directories, source inputs and nullable alias entries. Reject duplicate or unresolved names, unused declarations, cycles, unsafe paths, symlinks, missing inputs and runtime/verification overlap. One capture-local read/hash map owns discovery and capture work; source admission validates actual bytes and the dependency graph before granting authority. Public exports and directory-derived names are not workspace eligibility conditions. Workspace derived execution uses fixed .flow-proof roles outside workspace runtime roots, supplied by this owner to its runner consumer. Genuine retained format 1 continues through its original source and generated-byte validation.',
         'Preserve runtimeSource format 1 as a bytes-only identity. Separately derive runtimeAuthority format 1 from the admitted contractScopeDigest and actual public workspace manifests: architecture-ordered step closures, sorted canonical package records and package-name union, dependencies-only workspace:* internal closure, regular non-symlink public source entries, and no cycles, spoofing or role overlap. Cache discovery so each unique path is read and hashed once, re-admit cached contract and manifest authority before any output write, and reject mixed legacy/scoped composition. Scoped execution format 2 aliases every validated package to its captured entry with no dist fallback; it accepts only the exact authority object privately admitted in the same process lifetime by capture or complete actual-byte and manifest-graph revalidation, so a serialized or cloned descriptor must repeat admission. Historical authority absence remains fixed legacy Factory and is never reconstructed from a current contract.',
         'Explicit derived composition alone may select a previously full-source-admitted derived runtime tuple; a candidate verdict or client path cannot replace that authority. Both APIs require the exact ordinary verification bundle and reject its execution descriptor presence. Ordinary composition also rejects runtime execution descriptor presence. Recheck selected actual bytes once, generate the fixed two files at the new trusted root with reused entry metadata, preserve runtime/verifier identities and bind a new execution/full identity. Keep all immutable output/alias guards; downstream candidate execution must use containment, and service handoff remains a separate prerequisite.',
         'For retained candidate admission, verify every actual full-manifest entry once through the source-owned safe path, regular file, size and hash boundary at its trusted fixed source root. Write nothing and return no identity or authority flag; descriptor/full-inventory admission remains a separate single direct evidence operation in the same startup lifetime, with neither operation repeated by reads or replay.',
@@ -648,6 +654,8 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/snapshot.cjs',
+        'tools/flow-inspector/control-plane/workspace-sources.cjs',
+        'tools/flow-inspector/control-plane/__tests__/workspace-sources.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/snapshot.test.cjs',
         'tools/flow-inspector/control-plane/ci-context.cjs',
         'tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs'
@@ -686,7 +694,7 @@ const data = {
       ],
       allowedContributors: [
         'installed Vitest',
-        'product-owned Factory proof tests and negative transform'
+        'selected product proof tests and registered negative transform'
       ],
       forbiddenContributors: [
         'shell command input',
@@ -697,6 +705,7 @@ const data = {
       implementationBoundary: [
         'packages/factory/src/__tests__/flow-proof.config.ts',
         'tools/flow-inspector/control-plane/runner.cjs',
+        'tools/flow-inspector/control-plane/__tests__/app-runtime-fixture.cjs',
         'tools/flow-inspector/control-plane/__tests__/runner.test.cjs'
       ],
       specRefs: [
@@ -788,7 +797,7 @@ const data = {
         'artifact:scoped-work-review'
       ],
       conditions: [
-        'Retain runtimeAuthority only from source-owner capture or complete re-admission, never from current contract reconstruction. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.',
+        'Bind local service creation, fresh candidate loading and restart to one server-selected product manifest. Reject another product at the same store; isolate implicit stores by manifest identity. CLI local selection forwards that path while remote actions consume the running service selection. Retain runtimeAuthority formats 1 and 2 only from source-owner capture or complete re-admission, never from current contract reconstruction; unknown versions reject. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.',
         'For dependent work admission, resolve only the explicitly selected retained assessment and its registered source, then supply that complete immutable owner artifact and a private exact live-source lookup to manage-flow-target. Require matching actor, current target/allocation and retained pins before the target decision; task start rejects retired source authority even though the admission revision makes the assessment projection historical. Do not accept client result/source fields, recompute prerequisite evidence or treat integration eligibility as admission authority. Existing independent baseline-proof admission remains unchanged.',
         'For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require accepted preservation and the assessor work result including prerequisites to pass; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.',
         'Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Internal assessment consumes this exact task-source lifecycle; existing HTTP/CLI forwarding exposes the additive service selection, with exact task/attempt forwarding and service-owned validation; the Board task picker remains a subsequent consumer.',

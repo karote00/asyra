@@ -20,6 +20,56 @@ afterEach(() => {
 })
 
 describe('document persistence queue', () => {
+  it('retains the backend rejection and failed batch through retry and recovery', async () => {
+    vi.useFakeTimers()
+    const failure = vi.fn()
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: 'property "fill-a" is missing' })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ durableSequence: 1 })
+      })
+    const client = createHttpDocumentPersistenceClient({
+      baseURL: 'http://127.0.0.1:4317',
+      fetchImplementation
+    })
+    const queue = createDocumentPersistenceQueue({
+      documentId: 'rejection-document',
+      maxPublicationCount: 1,
+      sendBatch: client.sendBatch,
+      onFailure: failure
+    })
+    queue.enqueue(entry(1))
+    await queue.flushNow()
+    expect(failure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentId: 'rejection-document',
+        firstSequence: 1,
+        lastSequence: 1,
+        batchId: expect.any(String),
+        message: expect.stringContaining('property "fill-a" is missing')
+      })
+    )
+    expect(() => queue.enqueue(entry(2))).toThrow(/fill-a/)
+    expect(queue.getState().durableSequence).toBe(0)
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(fetchImplementation.mock.calls[1][1].body).toBe(
+      fetchImplementation.mock.calls[0][1].body
+    )
+    expect(queue.getState()).toMatchObject({
+      editable: true,
+      durableSequence: 1
+    })
+    expect(failure).toHaveBeenCalledOnce()
+    queue.dispose()
+  })
+
   it('flushes on the first fixed three-second dirty deadline without debounce', async () => {
     vi.useFakeTimers()
     const sendBatch = vi.fn().mockResolvedValueOnce({ durableSequence: 2 })

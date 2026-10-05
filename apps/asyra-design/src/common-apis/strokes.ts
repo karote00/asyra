@@ -18,10 +18,15 @@ import type {
 import { STROKE_PATCH_KEYS, type StrokeWritableKey } from '../constants'
 import core from '../contexts'
 import { calculateVectorBounds } from './element/vector-geometry'
-import { getChangedDefinedPatchEntries } from './property-patch'
 import { transactionApis } from './transaction'
 
 export type StrokePatch = Partial<Pick<StrokeAttrs, StrokeWritableKey>>
+
+export interface StrokeFieldsUpdate {
+  readonly elementId: string
+  readonly strokeId: string
+  readonly patch: StrokePatch
+}
 
 export interface PrimaryStrokeColorUpdate {
   readonly color: string
@@ -37,9 +42,6 @@ const createStrokeRecordPatch = (
   fields: Readonly<Record<string, unknown>>,
   values?: Readonly<Record<string, unknown>>
 ): ElementPropertyPatchUpdate => {
-  if (fields.id !== strokeId) {
-    throw new Error(`Stroke record key "${strokeId}" does not match its id`)
-  }
   const recordFields: Record<string, unknown> = {}
   for (const key of STROKE_PATCH_KEYS) {
     const value = fields[key]
@@ -251,60 +253,71 @@ export const strokeApis = {
       options
     )[0] ?? false,
 
+  updateStrokeFieldsBatch: (
+    updates: readonly StrokeFieldsUpdate[],
+    options?: EVENT_OPTIONS
+  ): void => {
+    const targets = new Map<string, Set<string>>()
+    const bounds = new Map<string, Record<string, DataTypes> | null>()
+    const patches: ElementPropertyPatchUpdate[] = []
+    for (const { elementId, strokeId, patch } of updates) {
+      if (
+        !isRecord(patch) ||
+        Object.keys(patch).some(
+          (key) => !(STROKE_PATCH_KEYS as readonly string[]).includes(key)
+        )
+      )
+        throw new Error('Invalid Stroke patch field')
+      if (!Object.values(patch).some((value) => value !== undefined)) continue
+      if (!targets.has(elementId)) {
+        const strokes = core.getElementComputedData(elementId, [
+          'strokes'
+        ])?.strokes
+        targets.set(
+          elementId,
+          new Set(
+            Array.isArray(strokes) ? strokes.map((stroke) => stroke.id) : []
+          )
+        )
+      }
+      if (!strokeId || !targets.get(elementId)?.has(strokeId))
+        throw new Error(`Missing Stroke ${strokeId} on ${elementId}`)
+      let values: Record<string, DataTypes> | undefined
+      if (hasGeometryAffectingStrokePatch(patch) && !bounds.has(elementId)) {
+        const repair = getVectorBoundsRepairPatch(elementId)
+        bounds.set(elementId, repair)
+        values = repair ?? undefined
+      }
+      patches.push(createStrokeRecordPatch(elementId, strokeId, patch, values))
+    }
+    if (!patches.length) return
+    transactionApis.runTransaction(() =>
+      core.patchElementProperties(patches, options)
+    )
+  },
+
   updateStrokeFields: (
     elementId: string,
     strokeId: string,
-    currentStroke: StrokeAttrs,
     patch: StrokePatch,
     options?: EVENT_OPTIONS
-  ) => {
-    const changedEntries = getChangedDefinedPatchEntries(
-      STROKE_PATCH_KEYS,
-      currentStroke,
-      patch
-    )
-    if (changedEntries.length === 0) {
-      return
-    }
-
-    transactionApis.runTransaction(() => {
-      const vectorBoundsRepairPatch = hasGeometryAffectingStrokePatch(patch)
-        ? getVectorBoundsRepairPatch(elementId)
-        : null
-      const nextStroke = {
-        ...currentStroke,
-        ...Object.fromEntries(changedEntries)
-      } as Readonly<Record<string, unknown>>
-      core.patchElementProperties(
-        [
-          createStrokeRecordPatch(
-            elementId,
-            strokeId,
-            nextStroke,
-            vectorBoundsRepairPatch ?? undefined
-          )
-        ],
-        options
-      )
-    })
-  },
+  ): void =>
+    strokeApis.updateStrokeFieldsBatch(
+      [{ elementId, strokeId, patch }],
+      options
+    ),
 
   updateStrokeField: <K extends StrokeWritableKey>(
     elementId: string,
     strokeId: string,
-    currentStroke: StrokeAttrs,
     key: K,
     value: StrokeAttrs[K],
     options?: EVENT_OPTIONS
-  ) => {
+  ) =>
     strokeApis.updateStrokeFields(
       elementId,
       strokeId,
-      currentStroke,
-      {
-        [key]: value
-      } as StrokePatch,
+      { [key]: value } as StrokePatch,
       options
     )
-  }
 }

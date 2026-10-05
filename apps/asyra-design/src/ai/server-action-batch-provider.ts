@@ -13,7 +13,11 @@ import {
   AI_BATCH_RECEIPT_HEADER,
   AI_BATCH_EXECUTION_HEADER
 } from './action-batch-endpoint'
-import type { AiToolProgress } from './action-batch-protocol'
+import type {
+  AiToolProgress,
+  BrowserBatchFailureEnvelope
+} from './action-batch-protocol'
+import { describeBatchFailure } from './action-failure'
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
 
@@ -52,7 +56,10 @@ const readActivityStream = async (
   signal: AbortSignal,
   onProgress?: (event: AiToolProgress) => void,
   executeBatch?: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
-  sendReceipt?: (token: string, receipt: AiBatchReceipt) => Promise<void>
+  sendReceipt?: (
+    token: string,
+    receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
+  ) => Promise<void>
 ): Promise<AiActionBatch> => {
   const reader = response.body?.getReader()
   if (!reader) throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
@@ -65,6 +72,8 @@ const readActivityStream = async (
   let bytes = 0
   let batch: AiActionBatch | undefined
   const consume = async (line: string) => {
+    // Stop can happen between frames already buffered in the same network chunk.
+    signal.throwIfAborted()
     let event: Record<string, unknown>
     try {
       event = JSON.parse(line)
@@ -83,7 +92,21 @@ const readActivityStream = async (
         typeof event.batch !== 'object'
       )
         throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      const receipt = await executeBatch(event.batch as AiActionBatch)
+      const started = performance.now()
+      let receipt: AiBatchReceipt
+      try {
+        receipt = await executeBatch(event.batch as AiActionBatch)
+      } catch (error) {
+        signal.throwIfAborted()
+        await sendReceipt(event.receiptToken, {
+          batchFailure: describeBatchFailure(
+            error,
+            (event.batch as AiActionBatch).batchId,
+            Math.max(0, performance.now() - started)
+          )
+        })
+        return
+      }
       if (signal.aborted) throw backendFailure('ACTION_BATCH_ABORTED')
       await sendReceipt(event.receiptToken, receipt)
       return

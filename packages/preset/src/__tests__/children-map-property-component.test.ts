@@ -182,11 +182,30 @@ describe('stroke child relationship projection', () => {
     expect(strokeAdapter({ width: 4 }, 'stroke-canonical')).toMatchObject({
       id: 'stroke-canonical',
       type: PropertyTypes.STROKE,
-      width: 4,
-      fill: {
-        id: 'stroke-canonical',
-        type: PropertyTypes.FILL
-      }
+      width: 4
+    })
+  })
+
+  it('keeps Stroke updates sparse so width edits cannot reset color or style', () => {
+    const adapter = strokesPropertyComponentDefinition.children?.toChildData
+    expect(adapter?.({ width: 8 }, 'stroke-canonical')).toEqual({
+      id: 'stroke-canonical',
+      type: PropertyTypes.STROKE,
+      width: 8
+    })
+  })
+
+  it('keeps fill record patches sparse so omitted fields retain canonical values', () => {
+    const adapter = fillsPropertyComponentDefinition.children?.toChildData
+    expect(adapter?.({ opacity: 0.35 }, 'fill-canonical')).toEqual({
+      id: 'fill-canonical',
+      type: PropertyTypes.FILL,
+      opacity: 0.35
+    })
+    expect(adapter?.({ gradient: null }, 'fill-canonical')).toEqual({
+      id: 'fill-canonical',
+      type: PropertyTypes.FILL,
+      gradient: null
     })
   })
 

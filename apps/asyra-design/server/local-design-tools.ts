@@ -1,6 +1,15 @@
-import { designPreparationExamples } from './design-preparation-examples'
+import { inspectDesignBudget } from './design-budget'
+import { LocalToolInputError } from './local-tool-invocation'
+import {
+  designPreparationExamples,
+  designRepresentationGuidance
+} from './design-preparation-examples'
+import { LocalToolAccess } from './local-tool-scheduler'
 import { operationInputIssue } from './operation-input-schema'
-import { designFillSchema } from '../src/ai/design-fill'
+import {
+  designFillSchema,
+  designSharedFillsSchema
+} from '../src/ai/design-fill'
 import { AiActionNames } from '../src/constants/ai-actions'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
@@ -28,7 +37,12 @@ const point = {
   type: 'object',
   additionalProperties: false,
   required: ['x', 'y'],
-  properties: { x: coordinate, y: coordinate }
+  properties: {
+    x: { ...coordinate, minimum: -limits.dimension },
+    y: { ...coordinate, minimum: -limits.dimension }
+  },
+  description:
+    'Absolute local Bezier control coordinates, not offsets. Controls may be negative or outside the rectangle; the actual curve must stay within declared bounds.'
 }
 const common = {
   name: { type: 'string', minLength: 1, maxLength: 160 },
@@ -46,7 +60,7 @@ const layout = {
   align: { enum: ['start', 'center', 'end'] },
   children: {
     type: 'array',
-    maxItems: limits.nodes - 1,
+    maxItems: limits.expandedNodes - 1,
     items: { $ref: '#/$defs/node' }
   }
 }
@@ -75,19 +89,29 @@ const draftSchema = {
     ...common,
     ...layout,
     ...designConstructionSchema,
+    sharedFills: designSharedFillsSchema,
+    key: { type: 'string', minLength: 1, maxLength: 160 },
     type: { enum: DesignContainerTypes }
   },
   description:
-    'Choose root type explicitly by intent: group organizes children with content-derived bounds; omit width, height, fill and layout fields for groups. Frame owns positive width/height and optional solid or gradient fill and one-time row/column/grid placement. Either container may nest either type. Children share the whole-request node budget.'
+    'Choose root type explicitly by intent: group organizes children with content-derived bounds; omit width, height, fill and layout fields for groups. Frame owns positive width/height and optional solid or gradient fill and one-time row/column/grid placement. Either container may nest either type. Optional key identifies this root in the prepared target map (if omitted, the generated element ID is used); all keys must be unique. It is not a canonical element ID.' +
+    ` Source work is automatically partitioned into windows of ${limits.nodes} nodes / ${limits.pathCommands} path commands without changing global hierarchy, layout, keys or relations. Per artifact: ${limits.expandedNodes} expanded objects, ${limits.expandedPathCommands} expanded path commands, depth ${limits.depth}. Each indivisible source primitive must fit one window. No detail is omitted.`
 }
 const nodeSchema = {
   anyOf: [
     ...containerConditions,
     ...['rect', 'oval', 'text', 'vector'].map((type) => ({
       properties: { type: { const: type } },
+      ...(type === 'vector'
+        ? {
+            anyOf: [
+              { required: ['width', 'height'] },
+              { properties: { width: false, height: false } }
+            ]
+          }
+        : {}),
       required: [
-        'width',
-        'height',
+        ...(type === 'vector' ? [] : ['width', 'height']),
         ...(type === 'text' ? ['text'] : []),
         ...(type === 'vector' ? ['rings'] : [])
       ]
@@ -133,7 +157,46 @@ const nodeSchema = {
     }
   },
   description:
-    'Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. All other nodes require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields with textColor, not fill. Rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields with textColor, not fill. Rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+}
+const vectorPatternSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['key', 'name', 'type', 'template', 'placements'],
+  properties: {
+    key: { type: 'string', minLength: 1, maxLength: 140 },
+    name: { type: 'string', minLength: 1, maxLength: 140 },
+    type: { const: 'vector-pattern' },
+    template: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['rings'],
+      anyOf: [
+        { required: ['width', 'height'] },
+        { properties: { width: false, height: false } }
+      ],
+      properties: {
+        type: { const: 'vector' },
+        width: size,
+        height: size,
+        fill: designFillSchema,
+        rings: nodeSchema.properties.rings
+      }
+    },
+    placements: {
+      type: 'array',
+      minItems: 1,
+      maxItems: limits.expandedNodes - 1,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['x', 'y'],
+        properties: { x: coordinate, y: coordinate, fill: designFillSchema }
+      }
+    }
+  },
+  description:
+    'Exact repeated 2D vector geometry: supply one template with rings and optional paired width/height and ordered x/y placements (optional fill override). Backend preserves every anchor/control, expands ordinary editable vectors in placement order, keys key-0, key-1 etc. No scaling, rotation, projection or simplified detail. Use absolute-layout containers; bounds and expanded budgets still apply. Template lifetime is this preparation only.'
 }
 const preparationSchema = {
   type: 'object',
@@ -141,7 +204,14 @@ const preparationSchema = {
   required: ['draft'],
   properties: { draft: draftSchema },
   $defs: {
-    node: { anyOf: [nodeSchema, projectedFaceSchema, designPatternSchema] }
+    node: {
+      anyOf: [
+        nodeSchema,
+        projectedFaceSchema,
+        designPatternSchema,
+        vectorPatternSchema
+      ]
+    }
   }
 }
 const referenceSchema = {
@@ -150,15 +220,28 @@ const referenceSchema = {
   required: ['artifactId'],
   properties: {
     artifactId: { type: 'string', minLength: 1 },
-    response: { type: 'string', enum: ['compact', 'full'] }
+    parentId: {
+      type: 'string',
+      minLength: 1,
+      description:
+        'Existing editable container ID. Draft coordinates are local to this parent; omit for workspace insertion.'
+    },
+    response: {
+      type: 'string',
+      enum: ['compact', 'full'],
+      default: 'compact',
+      description:
+        'Compact receipts keep identity mappings in the prepared artifact. Use artifactId with target keys/keyPrefix for later edits. Request full only when the full mapping is needed.'
+    }
   },
   description: 'Use the artifactId returned by prepare_design in this request.'
 }
 
-export class DesignReferenceError extends Error {
+export class DesignReferenceError extends LocalToolInputError {
   constructor() {
     super(
-      'Use a valid artifactId returned by prepare_design in this request. Do not send raw design descriptors. No changes were applied by this operation.'
+      'Use a valid artifactId returned by prepare_design in this request. Do not send raw design descriptors. No changes were applied by this operation.',
+      'REFERENCE_UNAVAILABLE'
     )
     this.name = 'DesignReferenceError'
   }
@@ -166,21 +249,27 @@ export class DesignReferenceError extends Error {
 
 export const createLocalDesignTools = (
   actions: AiProviderInput['actions'],
-  session = createDesignPreparationSession(),
-  getStructureIssue?: () => string | undefined
+  session = createDesignPreparationSession()
 ) => {
   const enabled = actions.some(
     (a) => a.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
   return {
+    explainInputIssue: (name: string, args: unknown) =>
+      enabled && name === AiDesignToolIds.PREPARE_DESIGN && record(args)
+        ? inspectDesignBudget(args.draft)
+        : undefined,
     definitions: enabled
       ? [
           {
             type: 'function',
             name: AiDesignToolIds.PREPARE_DESIGN,
+            executionAccess: LocalToolAccess.INDEPENDENT,
             description:
-              'Prepare a native editable design or original illustration without changing the canvas. Decide content/style/layout yourself; send a semantic draft. Backend validates and builds native group/frame/text/rect/oval/vector objects, returns an opaque artifactId and findings. Fix concrete overflow before application; text-metrics-required remains provisional until actual rendering. Include a brief with viewpoint, source notes, assumptions and measurable checks for substantial designs. Use relations for native layout, shared projection for explicit faces, and pattern templates with translation axes for repeated geometry instead of enumerating vertices. Prepare only changed parts; keep valid artifact IDs and unaffected canvas objects. Returns applicable plus measured review; failed checks/overflow block application. No reference image needed. Containers are selected by intent, not depth. Frame supports independent size and solid or gradient fill; layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Never repeat unchanged ineffective inputs.' +
-              ` Minimal valid input examples (syntax only, adapt to the request; pattern details still require the existing structure review): ${designPreparationExamples.map((example) => JSON.stringify(example)).join(' ; ')}`,
+              designRepresentationGuidance +
+              ' ' +
+              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable.' +
+              ` Minimal valid input examples (syntax only, adapt to the request; ready parts may include repeated geometry; inspect and review each stage): ${designPreparationExamples.map((example) => JSON.stringify(example)).join(' ; ')}`,
             inputSchema: preparationSchema
           },
           {
@@ -229,7 +318,7 @@ export const createLocalDesignTools = (
       )
         throw new DesignReferenceError()
       const design = session.resolve(value.artifactId)
-      let keys = Object.keys(design.keyToId)
+      let keys: string[]
       if (value.keys !== undefined) {
         if (
           !Array.isArray(value.keys) ||
@@ -241,7 +330,7 @@ export const createLocalDesignTools = (
         )
           throw new DesignReferenceError()
         keys = value.keys as string[]
-      }
+      } else keys = Object.keys(design.keyToId)
       if (value.keyPrefix !== undefined) {
         if (typeof value.keyPrefix !== 'string' || !value.keyPrefix)
           throw new DesignReferenceError()
@@ -263,11 +352,13 @@ export const createLocalDesignTools = (
             !enabled ||
             !record(args) ||
             Object.keys(args).some(
-              (key) => !['artifactId', 'response'].includes(key)
+              (key) => !['artifactId', 'response', 'parentId'].includes(key)
             ) ||
             (args.response !== undefined &&
               args.response !== 'compact' &&
               args.response !== 'full') ||
+            (args.parentId !== undefined &&
+              (typeof args.parentId !== 'string' || !args.parentId.trim())) ||
             typeof args.artifactId !== 'string'
           )
             throw new DesignReferenceError()
@@ -285,9 +376,10 @@ export const createLocalDesignTools = (
             ...action,
             arguments: {
               design,
-              ...(args.response === undefined
+              response: args.response ?? 'compact',
+              ...(args.parentId === undefined
                 ? {}
-                : { response: args.response })
+                : { parentId: args.parentId })
             }
           }
         })
@@ -322,22 +414,8 @@ export const createLocalDesignTools = (
         })
       try {
         const draft = args.draft
-        if (
-          record(draft) &&
-          Array.isArray(draft.children) &&
-          draft.children.some(
-            (child) => record(child) && child.type === 'pattern'
-          )
-        ) {
-          const issue = getStructureIssue?.()
-          if (issue)
-            return JSON.stringify({
-              available: false,
-              recovery: 'review_structure',
-              nextTool: AiDesignToolIds.RECORD_DESIGN_REVIEW,
-              message: `${issue} Inspect the existing structure, then record phase=structure with current inspectionIds. Reuse this draft afterwards; do not search for another reference.`
-            })
-        }
+        const budgetIssue = inspectDesignBudget(draft)
+        if (budgetIssue) return JSON.stringify(budgetIssue)
         const inputIssue = operationInputIssue(args, preparationSchema)
         if (inputIssue)
           return JSON.stringify({

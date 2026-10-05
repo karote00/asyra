@@ -1,4 +1,4 @@
-import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
+import { AiActionExecutionError, runAiMutation } from '@asyra/ai-agent-runtime'
 import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
   AiActionDefinition,
@@ -319,9 +319,10 @@ const createCompositionActions = (
         emitDiagnosticCounter('ai-drawing:loading-frame-visible')
         assertNotAborted(context)
 
-        const groupId = measureBrowserDragPhase(
-          'ai-app:create-composition-group',
-          () => apis.createCompositionGroup(groupDescriptor, mutationOptions)
+        const groupId = await runAiMutation(context, () =>
+          measureBrowserDragPhase('ai-app:create-composition-group', () =>
+            apis.createCompositionGroup(groupDescriptor, mutationOptions)
+          )
         )
         if (!groupId || groupId !== groupDescriptor.id) {
           throw new AiCompositionError(
@@ -334,14 +335,14 @@ const createCompositionActions = (
 
         for (const slice of slices) {
           assertNotAborted(context)
-          const createdElementIds = measureBrowserDragPhase(
-            'ai-app:create-composition-batch',
-            () =>
+          const createdElementIds = await runAiMutation(context, () =>
+            measureBrowserDragPhase('ai-app:create-composition-batch', () =>
               apis.createCompositionElements(
                 slice.descriptors,
                 parent,
                 mutationOptions
               )
+            )
           )
           if (
             !createdElementIds ||
@@ -520,13 +521,15 @@ const createCompositionActions = (
               )
               continue
             }
-            measureBrowserDragPhase('ai-app:apply-update-batch', () => {
-              apis.changeElementGeometry(
-                operation.elementId,
-                geometry,
-                mutationOptions
-              )
-            })
+            await runAiMutation(context, () =>
+              measureBrowserDragPhase('ai-app:apply-update-batch', () => {
+                apis.changeElementGeometry(
+                  operation.elementId,
+                  geometry,
+                  mutationOptions
+                )
+              })
+            )
             appliedElementIds.push(operation.elementId)
             await measureBrowserDragAsyncPhase(
               'ai-app:progressive-host-yield',
@@ -548,14 +551,14 @@ const createCompositionActions = (
               )
               continue
             }
-            const applied = measureBrowserDragPhase(
-              'ai-app:apply-update-batch',
-              () =>
+            const applied = await runAiMutation(context, () =>
+              measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.scaleVectorElementGeometry(
                   operation.elementId,
                   vectorScale,
                   mutationOptions
                 )
+              )
             )
             if (applied) {
               appliedElementIds.push(operation.elementId)
@@ -638,12 +641,12 @@ const createCompositionActions = (
               elementId: candidate.elementId
             }
           })
-          const batchResults = measureBrowserDragPhase(
-            'ai-app:apply-update-batch',
-            () =>
+          const batchResults = await runAiMutation(context, () =>
+            measureBrowserDragPhase('ai-app:apply-update-batch', () =>
               isFillBatch
                 ? apis.updateElementFillColors(colorUpdates, mutationOptions)
                 : apis.updateElementStrokeColors(colorUpdates, mutationOptions)
+            )
           )
           if (batchResults.length !== batchOperations.length) {
             throw new AiCompositionError(
@@ -760,7 +763,9 @@ const createCompositionActions = (
           status: 'no-change'
         })
       }
-      const result = apis.removeSubtree(args.compositionId, mutationOptions)
+      const result = await runAiMutation(context, () =>
+        apis.removeSubtree(args.compositionId, mutationOptions)
+      )
       const appliedElementIds = result.removed.map((entry) =>
         typeof entry === 'string' ? entry : entry.elementId
       )
@@ -906,10 +911,8 @@ export const createAiActions = (
         context: AiExecutionContext
       ) => {
         assertNotAborted(context)
-        const changed = apis.setElementVisible(
-          args.elementId,
-          args.visible,
-          mutationOptions
+        const changed = await runAiMutation(context, () =>
+          apis.setElementVisible(args.elementId, args.visible, mutationOptions)
         )
         return Object.freeze({
           action: AiActionNames.SET_ELEMENT_VISIBILITY,
@@ -941,7 +944,9 @@ export const createAiActions = (
     }),
     execute: async (args: SelectElementsArgs, context: AiExecutionContext) => {
       assertNotAborted(context)
-      apis.selectElements([...args.elementIds], mutationOptions)
+      await runAiMutation(context, () =>
+        apis.selectElements([...args.elementIds], mutationOptions)
+      )
       return Object.freeze({
         action: AiActionNames.SELECT_ELEMENTS,
         selectedCount: args.elementIds.length

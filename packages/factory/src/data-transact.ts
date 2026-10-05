@@ -529,15 +529,19 @@ class DataTransact {
     this.onSharedPublication = callbacks?.onSharedPublication
   }
 
+  isTransactionBoundaryIdle(): boolean {
+    return (
+      this.isTransacting === 0 &&
+      this.transactionSettlementDepth === 0 &&
+      !this.inUndo &&
+      !this.inRedo &&
+      !this.enrollingHistoryGroup &&
+      !this.notifyingHistoryGroup
+    )
+  }
+
   private assertHistoryGroupBoundaryIdle(): void {
-    if (
-      this.isTransacting !== 0 ||
-      this.transactionSettlementDepth !== 0 ||
-      this.inUndo ||
-      this.inRedo ||
-      this.enrollingHistoryGroup ||
-      this.notifyingHistoryGroup
-    ) {
+    if (!this.isTransactionBoundaryIdle()) {
       throw new Error(
         'History group lifecycle requires an idle transaction owner'
       )

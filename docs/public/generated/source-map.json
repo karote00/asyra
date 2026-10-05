@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "ead17802010d823fb77a71c26c8799b6ca417f8db17b5e14bd9a28216dffc56b"
+          "sha256": "03cb9a868ded58c1bcb2dcde0f3c98cba0fd1d253db068763933edced3ba59c2"
         }
       ]
     },
@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -82,7 +82,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "ba70df7f42956830d441e964f23f1b2fc302b7500db67e88ea941c52dbb8b53c"
+          "sha256": "622d60d0b19a2b8fff88c23b79f263a40e7b1a1cdd31cb4ea5214125ce6a8efe"
         }
       ]
     },
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
@@ -166,7 +166,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "d658ca0f32a568b3957cadebde42289197c0621a241cf9feabcb7e4ab4e15a47"
+          "sha256": "6c174e0c3d951a62a8c11ec1090e819761f309574fc39aeeb8760692e4629cea"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -228,7 +228,7 @@
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         }
       ]
     },
@@ -238,7 +238,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "d658ca0f32a568b3957cadebde42289197c0621a241cf9feabcb7e4ab4e15a47"
+          "sha256": "6c174e0c3d951a62a8c11ec1090e819761f309574fc39aeeb8760692e4629cea"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -256,7 +256,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "06444d231affe12ec95bdfc0d02ec9b67205bb5f4708b405526494d4ed7e4645"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "06444d231affe12ec95bdfc0d02ec9b67205bb5f4708b405526494d4ed7e4645"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -326,7 +326,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13"
+          "sha256": "06444d231affe12ec95bdfc0d02ec9b67205bb5f4708b405526494d4ed7e4645"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638"
+          "sha256": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c"
         },
         {
           "path": "packages/core/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a"
+          "sha256": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3"
         },
         {
           "path": "packages/factory/package.json",
@@ -438,7 +438,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "ead17802010d823fb77a71c26c8799b6ca417f8db17b5e14bd9a28216dffc56b"
+          "sha256": "03cb9a868ded58c1bcb2dcde0f3c98cba0fd1d253db068763933edced3ba59c2"
         },
         {
           "path": "packages/preset/package.json",
@@ -480,7 +480,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "d658ca0f32a568b3957cadebde42289197c0621a241cf9feabcb7e4ab4e15a47"
+          "sha256": "6c174e0c3d951a62a8c11ec1090e819761f309574fc39aeeb8760692e4629cea"
         },
         {
           "path": "packages/render/package.json",
@@ -508,7 +508,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine-pixi.md",
-          "sha256": "9630ff46abe3e778985d4a67d9de35bbf593e9815e3f8971a068ebf137cc3b67"
+          "sha256": "a301fdf4dea2582ce80a66c21ffe73406218d917980bd463eb0227a0059c0326"
         },
         {
           "path": "packages/render-engine-pixi/package.json",
@@ -608,7 +608,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "7fd02f3de09ba534a7ff9bcd586c9269ae9c3c360a92bec2285c5cdb4fc088a0"
+          "sha256": "11c63f3142180e34ab72b0dd39fff01f5c6e8baadb5d1184ddd52d3459f73f32"
         }
       ]
     },

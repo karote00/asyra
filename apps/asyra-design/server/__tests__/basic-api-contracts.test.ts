@@ -9,6 +9,30 @@ import ts from 'typescript'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import { operationInputIssue } from '../operation-input-schema'
+
+it('admits only nonnegative hierarchy insertion indices and explains append semantics', () => {
+  const move = basicApiContracts.find(
+    (contract) => contract.name === 'api_hierarchy_moveElements'
+  )
+  if (!move) throw new Error('Missing hierarchy move contract')
+  const request = { elementIds: ['detail'], targetParentId: 'drawing' }
+  expect(
+    operationInputIssue(
+      { request: { ...request, targetIndex: -1 } },
+      move.inputSchema
+    )
+  ).toContain('targetIndex')
+  expect(
+    operationInputIssue(
+      { request: { ...request, targetIndex: 0 } },
+      move.inputSchema
+    )
+  ).toBeUndefined()
+  expect(move.description).toContain('getElementData')
+  expect(move.description).toContain('excluding the moved elements')
+  expect(move.description).toContain('append')
+})
 
 it('binds every action to the existing public method signature in argument order', () => {
   const root = path.resolve('../..')
@@ -262,4 +286,220 @@ it('supports parameterless APIs without allowing undeclared model arguments', ()
     required: [],
     additionalProperties: false
   })
+})
+
+it('explains computed projections versus canonical value and record mutations', () => {
+  const description = (name: string) =>
+    basicApiContracts.find((contract) => contract.name === name)?.description
+  expect(description('api_core_getElementComputedData')).toContain(
+    'not a canonical write payload'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'reference IDs'
+  )
+  expect(description('api_core_updateElementProperties')).toContain(
+    'patchElementProperties'
+  )
+  expect(description('api_core_patchElementProperties')).toContain('records')
+  expect(description('api_core_patchElementProperties')).toContain('gradient')
+  expect(description('api_core_updatePropertyComponents')).toContain(
+    'propertyId'
+  )
+})
+
+it('admits Fill updates with target IDs and new values without caller snapshots', () => {
+  const cases = [
+    {
+      name: 'api_fill_updateFillFieldsBatch',
+      parameters: ['updates'],
+      input: {
+        updates: [
+          { elementId: 'rect', fillId: 'fill', patch: { opacity: 0.4 } }
+        ]
+      }
+    }
+  ]
+  for (const { name, parameters, input } of cases) {
+    const contract = basicApiContracts.find(
+      (contract) => contract.name === name
+    )
+    if (!contract) throw new Error(`Missing ${name}`)
+    expect(contract.parameters).toEqual(parameters)
+    expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
+    expect(
+      operationInputIssue({ ...input, currentFill: {} }, contract.inputSchema)
+    ).toBeDefined()
+  }
+})
+
+it('rejects flattened gradient fields and admits the canonical nested Fill patch', () => {
+  const patch = {
+    kind: 'gradient',
+    gradient: {
+      gradientType: 'linear',
+      gradientHandles: [
+        { x: 0, y: 0 },
+        { x: 1, y: 1 }
+      ],
+      gradientStops: [
+        { position: 0, color: '#000000', opacity: 1 },
+        { position: 1, color: '#ffffff', opacity: 1 }
+      ]
+    }
+  }
+  for (const name of ['api_fill_updateFillFieldsBatch']) {
+    const contract = basicApiContracts.find((c) => c.name === name)
+    if (!contract) throw new Error(name)
+    const input = (patch: unknown) =>
+      name.endsWith('Batch')
+        ? { updates: [{ elementId: 'a', fillId: 'fa', patch }] }
+        : { elementId: 'a', fillId: 'fa', patch }
+    expect(
+      operationInputIssue(input(patch), contract.inputSchema)
+    ).toBeUndefined()
+    expect(
+      operationInputIssue(
+        input({ color: '#123456', gradientType: 'linear' }),
+        contract.inputSchema
+      )
+    ).toBeDefined()
+  }
+})
+
+it('never asks callers for prior component snapshots in a public task API', () => {
+  expect(
+    basicApiContracts.flatMap((contract) =>
+      contract.parameters
+        .filter((name) =>
+          ['currentStroke', 'currentFill', 'baseGradient'].includes(name)
+        )
+        .map((parameter) => `${contract.name}.${parameter}`)
+    )
+  ).toEqual([])
+})
+
+it('exposes one mutation route for scalar and plural property edits', () => {
+  const names = basicApiContracts.map(({ name }) => name)
+  for (const name of [
+    'api_fill_updateFillField',
+    'api_fill_updateFillFields',
+    'api_fill_addFill',
+    'api_fill_removeFill',
+    'api_fill_updatePrimaryFillColor',
+    'api_stroke_updateStrokeField',
+    'api_stroke_updateStrokeFields',
+    'api_stroke_updatePrimaryStrokeColor',
+    'api_element_setVectorElementPosition',
+    'api_element_createElement',
+    'api_element_createVectorElement'
+  ])
+    expect(names).not.toContain(name)
+  for (const name of [
+    'api_fill_updateFillFieldsBatch',
+    'api_fill_updateFillsAtIndex',
+    'api_fill_shareFillAtIndex',
+    'api_stroke_updateStrokeFieldsBatch',
+    'api_element_setVectorElementPositions',
+    'api_element_createElements'
+  ])
+    expect(names).toContain(name)
+})
+
+it('keeps every consolidated public method mapped to an executable replacement', () => {
+  for (const disposition of basicApiDispositions) {
+    if ('replacement' in disposition) {
+      expect(
+        basicApiContracts.some((api) => api.name === disposition.replacement)
+      ).toBe(true)
+      expect(disposition.reason.length).toBeGreaterThan(20)
+    }
+  }
+})
+
+it('provides a declared purpose and unique exact identity for every model operation', () => {
+  expect(new Set(basicApiContracts.map((api) => api.operation)).size).toBe(
+    basicApiContracts.length
+  )
+  for (const api of basicApiContracts) {
+    expect(api.description).not.toContain('.  Uses the existing public API')
+    expect(api.category.length).toBeGreaterThan(0)
+  }
+})
+
+it('admits value-only canonical patches without requiring unused record data', () => {
+  const api = basicApiContracts.find(
+    (api) => api.name === 'api_core_patchElementProperties'
+  )
+  if (!api) throw new Error('Missing canonical patch operation')
+  expect(
+    operationInputIssue(
+      { patches: [{ elementId: 'a', values: { width: 12 } }] },
+      api.inputSchema
+    )
+  ).toBeUndefined()
+})
+
+it('rejects malformed Stroke field patches before dispatch without requesting old state', () => {
+  const contract = basicApiContracts.find(
+    (item) => item.name === 'api_stroke_updateStrokeFieldsBatch'
+  )
+  if (!contract) throw new Error('Missing Stroke batch contract')
+  const input = (patch: unknown) => ({
+    updates: [{ elementId: 'rect', strokeId: 'stroke', patch }]
+  })
+  expect(
+    operationInputIssue(input({ width: 4 }), contract.inputSchema)
+  ).toBeUndefined()
+  expect(operationInputIssue(input({}), contract.inputSchema)).toBeUndefined()
+  for (const patch of [
+    { oldWidth: 2 },
+    { width: '4' },
+    { position: 'outside-ish' }
+  ]) {
+    expect(
+      operationInputIssue(input(patch), contract.inputSchema)
+    ).toBeDefined()
+  }
+})
+
+it('exposes the complete structured point selection contract', () => {
+  const contract = basicApiContracts.find(
+    (c) => c.name === 'api_selection_selectVectorPoint'
+  )
+  if (!contract) throw new Error('Missing point selection contract')
+  for (const target of ['anchor', 'inHandle', 'outHandle']) {
+    expect(
+      operationInputIssue(
+        { point: { elementId: 'v', pointId: 'a', target } },
+        contract.inputSchema
+      )
+    ).toBeUndefined()
+  }
+  expect(
+    operationInputIssue(
+      { point: { elementId: 'v', pointId: 'a' } },
+      contract.inputSchema
+    )
+  ).toContain('target')
+  expect(
+    operationInputIssue(
+      { point: { elementId: 'v', pointId: 'a', target: 'segment' } },
+      contract.inputSchema
+    )
+  ).toContain('target')
+})
+
+it('keeps the host render-ready event out of model-readable operations', () => {
+  expect(
+    basicApiContracts.some(
+      (c) => c.owner === 'core' && c.method === 'renderIsReady'
+    )
+  ).toBe(false)
+  expect(
+    basicApiDispositions.some(
+      (c) =>
+        c.owner === 'core' &&
+        (c.methods as readonly string[]).includes('renderIsReady')
+    )
+  ).toBe(true)
 })

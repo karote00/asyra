@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   AiTransactionError,
   runAiActionBatchTransaction,
+  type AiMutationExecutor,
   type AiTransactionRunner
 } from '..'
 
@@ -36,6 +37,30 @@ const transactionRunner = (): RunnerEvidence => {
 }
 
 describe('AI action-batch transaction boundary', () => {
+  it('forwards the invocation signal and host mutation scope without sharing it', async () => {
+    const controller = new AbortController()
+    const mutationCalls = vi.fn()
+    const mutations: AiMutationExecutor = async (write) => {
+      mutationCalls()
+      return write()
+    }
+    const execute = vi.fn(async (scope) => {
+      expect(scope).toBe(mutations)
+      return 'complete'
+    })
+    const runner: AiTransactionRunner = {
+      run: async (_label, callback, options) => {
+        expect(options?.signal).toBe(controller.signal)
+        return callback(mutations)
+      }
+    }
+    await expect(
+      runAiActionBatchTransaction(runner, controller.signal, execute)
+    ).resolves.toBe('complete')
+    expect(execute).toHaveBeenCalledOnce()
+    expect(mutationCalls).not.toHaveBeenCalled()
+  })
+
   it('runs one complete callback inside one app-owned transaction', async () => {
     const evidence = transactionRunner()
     const execute = vi.fn(async () => {

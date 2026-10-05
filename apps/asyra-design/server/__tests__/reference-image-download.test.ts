@@ -6,6 +6,7 @@ vi.mock('node:dns/promises', () => ({ lookup: network.lookup }))
 afterEach(() => vi.resetAllMocks())
 import {
   downloadReferenceImage,
+  downloadReferencePage,
   resolvePublicImageAddress,
   validateReferenceImageUrl
 } from '../reference-image-download'
@@ -80,6 +81,41 @@ describe('bounded image transport', () => {
       return req
     })
   }
+  it('reads bounded HTML and returns its final admitted URL without executing scripts', async () => {
+    network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    reply(302, { location: '/gallery/page' })
+    reply(
+      200,
+      { 'content-type': 'text/html; charset=utf-8' },
+      '<script>throw new Error()</script>'
+    )
+    const page = await downloadReferencePage(
+      'https://example.org/start',
+      new AbortController().signal
+    )
+    expect(page.url).toBe('https://example.org/gallery/page')
+    expect(await page.response.text()).toContain('<script>')
+    expect(network.lookup).toHaveBeenCalledTimes(2)
+    expect(network.request.mock.calls[1][1].headers.Accept).toBe('text/html')
+  })
+  it('rejects oversized HTML and private redirects through the same transport', async () => {
+    network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    reply(200, { 'content-type': 'text/html', 'content-length': '1048577' })
+    await expect(
+      downloadReferencePage(
+        'https://example.org/page',
+        new AbortController().signal
+      )
+    ).rejects.toThrow()
+    reply(302, { location: 'https://127.0.0.1/private' })
+    await expect(
+      downloadReferencePage(
+        'https://example.org/page',
+        new AbortController().signal
+      )
+    ).rejects.toThrow()
+    expect(network.request).toHaveBeenCalledTimes(2)
+  })
   it('pins public DNS once and bounds an admitted raster response', async () => {
     network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
     reply(200, { 'content-type': 'image/png' })

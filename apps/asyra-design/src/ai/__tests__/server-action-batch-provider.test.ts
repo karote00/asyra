@@ -359,3 +359,150 @@ describe('sequential server prepared batch transport', () => {
     provider.dispose()
   })
 })
+
+it('acknowledges a rejected browser batch and keeps the stream open for recovery', async () => {
+  const receiptToken = '12345678-1234-1234-1234-123456789abc'
+  const error = new Error('private canonical exception')
+  const receipts: unknown[] = []
+  const executeBatch = vi.fn(async () => {
+    throw error
+  })
+  const provider = createServerActionBatchProvider({
+    fetch: (async (_url, init) => {
+      if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
+        receipts.push(JSON.parse(String(init.body)))
+        return new Response('{}')
+      }
+      return new Response(
+        JSON.stringify({ type: 'batch', receiptToken, batch }) +
+          '\n' +
+          JSON.stringify({ type: 'result', batch }) +
+          '\n',
+        {
+          headers: { 'content-type': 'application/x-ndjson' }
+        }
+      )
+    }) as never
+  })
+  try {
+    await expect(
+      provider.requestActionBatch(input, {
+        signal: new AbortController().signal,
+        executeBatch
+      })
+    ).resolves.toEqual(batch)
+    expect(executeBatch).toHaveBeenCalledOnce()
+    expect(receipts).toEqual([
+      expect.objectContaining({
+        batchFailure: expect.objectContaining({
+          batchId: batch.batchId,
+          message: expect.any(String),
+          executionMs: expect.any(Number)
+        })
+      })
+    ])
+    expect(JSON.stringify(receipts)).not.toContain(
+      'private canonical exception'
+    )
+  } finally {
+    provider.dispose()
+  }
+})
+
+it.each(['stop', 'lost-ack'])(
+  'preserves execution failure during %s without retrying',
+  async (mode) => {
+    const controller = new AbortController()
+    let posts = 0
+    let executions = 0
+    const provider = createServerActionBatchProvider({
+      fetch: (async (_url, init) => {
+        if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
+          posts++
+          throw new Error('ack transport failed')
+        }
+        return new Response(
+          JSON.stringify({
+            type: 'batch',
+            receiptToken: '12345678-1234-1234-1234-123456789abc',
+            batch
+          }) + '\n',
+          {
+            headers: { 'content-type': 'application/x-ndjson' }
+          }
+        )
+      }) as never
+    })
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: controller.signal,
+          executeBatch: async () => {
+            executions++
+            if (mode === 'stop') controller.abort()
+            throw new Error('executor failed')
+          }
+        })
+      ).rejects.toBeDefined()
+      expect(posts).toBe(mode === 'stop' ? 0 : 1)
+      expect(executions).toBe(1)
+    } finally {
+      provider.dispose()
+    }
+  }
+)
+
+it.each(['activity', 'receipt', 'handoff'])(
+  'does not dispatch buffered batches after Stop during %s',
+  async (phase) => {
+    const controller = new AbortController()
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    let receipts = 0
+    const frame = {
+      type: 'batch',
+      receiptToken: '12345678-1234-1234-1234-123456789abc',
+      batch
+    }
+    const provider = createServerActionBatchProvider({
+      fetch: (async (_url, init) => {
+        if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
+          receipts++
+          if (phase === 'receipt') controller.abort()
+          return new Response('{}')
+        }
+        if (phase === 'handoff') controller.abort()
+        return new Response(
+          [
+            { type: 'activity', tool: 'prepare_design', status: 'running' },
+            frame,
+            frame,
+            { type: 'result', batch }
+          ]
+            .map((value) => JSON.stringify(value))
+            .join('\n') + '\n',
+          {
+            headers: { 'content-type': 'application/x-ndjson' }
+          }
+        )
+      }) as never
+    })
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: controller.signal,
+          executeBatch,
+          onProgress: () => {
+            if (phase === 'activity') controller.abort()
+          }
+        })
+      ).rejects.toMatchObject({ code: 'AI_PROVIDER_ABORTED' })
+      // The HTTP abort race can settle before the buffered parser unwinds.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(executeBatch).toHaveBeenCalledTimes(phase === 'receipt' ? 1 : 0)
+      expect(receipts).toBe(phase === 'receipt' ? 1 : 0)
+    } finally {
+      controller.abort()
+      provider.dispose()
+    }
+  }
+)

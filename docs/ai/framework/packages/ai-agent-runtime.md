@@ -44,9 +44,24 @@ app Feature intent + AbortSignal
 -> detached redacted terminal result
 ```
 
-The invocation transaction encloses provider work and every sequential batch. Provider retries are allowed only before any batch is admitted.
+The invocation runner encloses provider work and every sequential batch. A host
+may supply an invocation-local `AiMutationExecutor` to its callback; Runtime
+passes it to registered actions, whose `runAiMutation` calls admit finite
+synchronous writes. Atomic hosts omit it and retain their outer transaction.
+Grouped hosts delegate finite members and one final Undo entry to Factory,
+without a physical transaction around model/network waits. Provider retries are allowed only before any batch is admitted.
 `AiProvider.requestActionBatch()` is the only provider request contract. It
-may await `options.executeBatch(batch)` to receive actual redacted action results and refreshed context before continuing. Every batch uses the same resolution/permission/execution owners and outer transaction. The final return is one server-prepared `AiActionBatch` with one `batchId`, optional
+may await `options.executeBatch(batch)` to receive actual redacted action results and refreshed context before continuing.
+A callback batch rejection resolves a receipt with `failure` instead of poisoning
+the invocation. It includes code, safe message, stage, exact failed action ID/name,
+measured action execution time, `settlement` and `contextFresh`. Completed actions
+remain in `actionResults`; remaining actions are not executed. The provider must
+inspect `failure`, retain completed work, and choose corrected inputs or another
+operation without replaying the failed batch. The runtime never automatically
+retries these actions. A failed context refresh is marked stale and retried before
+any subsequent permission evaluation. Stop and invalid concurrent callback use
+still reject. A final returned batch has no provider continuation; its rejection
+continues to use the ordinary terminal result contract. Every batch uses the same resolution/permission/execution owners and invocation scope. The final return is one server-prepared `AiActionBatch` with one `batchId`, optional
 explanation, and ordered actions containing execution arguments plus a bounded
 redaction-ready summary. A live backend provider and a test transport return
 that same contract; the response source cannot select a different resolution,
@@ -59,15 +74,17 @@ validate, normalize, clone, or freeze nested arguments. The resulting
 `ResolvedAiActionBatch`, permission policy, and executor preserve the exact
 server-prepared arguments identity. `PermissionReadyAiActionBatch` adds only
 permission decisions; `AiActionBatchPreview` redacts and retains only bounded
-summaries. With the default rollback policy, invalid control envelopes, permission denial, and confirmation
-cancellation apply no prefix from that batch and roll back earlier batches in the invocation. Once execution begins, provider retry
-is forbidden. Executor failure means a rejected/throwing executor or fatal
-canonical consistency failure; it propagates through the one app transaction
-runner so its ordinary rollback contract owns reversal. An app may instead
+summaries. Invalid control envelopes, permission denial and declined confirmation apply no
+prefix from that batch. Callback failures return receipts as described above;
+terminal final-batch or provider failures still propagate through the one App
+transaction runner, whose rollback/failure policy owns settlement. Once execution
+begins, automatic provider-request retry is forbidden. An app may instead
 resolve an executor with detached recoverable partial-item evidence, allowing
 successful sibling mutations to commit in the same intended undo unit.
 
-The transaction runner rejects with the original callback error only after
+An explicit `AiTransactionSettlementError` reports the original callback cause
+and the host-known committed, rolled-back or unknown outcome. Otherwise, the
+transaction runner rejects with the original callback error only after
 successful rollback. A distinct settlement error reports transaction failure and
 an unknown canvas state; consumers must not claim successful rollback or offer
 blind replay. Under the default rollback policy, a normal callback rejection after earlier execution reports

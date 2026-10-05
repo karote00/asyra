@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { prepareDesign } from '../../../server/design-preparation'
+import {
+  prepareDesign,
+  createDesignPreparationSession
+} from '../../../server/design-preparation'
 import {
   createPreparedDesignAction,
   type PreparedDesignApis
@@ -39,6 +42,11 @@ const fixture = () =>
   )
 const apis = (): PreparedDesignApis => ({
   getWorkspaceId: () => 'workspace',
+  getElementData: (id) =>
+    id === 'existing'
+      ? { type: 'custom-container', parentId: 'workspace' }
+      : undefined,
+  isContainerType: (type) => type === 'custom-container',
   isLocked: () => false,
   getElementType: () => undefined,
   create: vi.fn((entries) => entries.map((d) => d.id)),
@@ -48,6 +56,35 @@ const context = () => ({ signal: new AbortController().signal }) as never
 const mutable = () => JSON.parse(JSON.stringify(fixture()))
 
 describe('prepared editable design application', () => {
+  it('enrolls each native write while leaving cooperative work outside the member', async () => {
+    const api = apis()
+    let inMutation = false
+    let members = 0
+    api.create = vi.fn((entries) => {
+      expect(inMutation).toBe(true)
+      return entries.map((d) => d.id)
+    })
+    api.select = vi.fn(() => expect(inMutation).toBe(true))
+    await createPreparedDesignAction(api, async () => {
+      expect(inMutation).toBe(false)
+    }).execute(
+      { design: fixture() },
+      {
+        signal: new AbortController().signal,
+        runMutation: async (mutate) => {
+          members++
+          inMutation = true
+          try {
+            return mutate()
+          } finally {
+            inMutation = false
+          }
+        }
+      }
+    )
+    expect(members).toBe(4)
+  })
+
   it('creates ordered native hierarchy, preserves literal text and returns semantic IDs', async () => {
     const api = apis(),
       paint = vi.fn(async () => undefined)
@@ -451,3 +488,153 @@ it('returns compact identity evidence without constructing full mapping receipts
   expect(result).not.toHaveProperty('keyToId')
   expect(result).not.toHaveProperty('roleToElementIds')
 })
+
+it.each(['frame', 'group'])(
+  'applies a named %s using actual IDs, not a reserved root name',
+  async (type) => {
+    const design = prepareDesign({
+      type,
+      key: 'user-chosen-container',
+      name: 'User drawing',
+      ...(type === 'frame' ? { width: 10, height: 10 } : {}),
+      children: []
+    })
+    const api = apis()
+    await createPreparedDesignAction(api).execute({ design }, context())
+    expect(api.create).toHaveBeenCalledWith(
+      [design.entries[0].descriptor],
+      'workspace'
+    )
+    expect(design.rootId).not.toBe('user-chosen-container')
+  }
+)
+
+it('rejects a forged root identity before any canonical write', async () => {
+  const design = mutable()
+  design.rootId = 'not-the-created-element'
+  const api = apis()
+  await expect(
+    createPreparedDesignAction(api).execute({ design }, context())
+  ).rejects.toThrow()
+  expect(api.create).not.toHaveBeenCalled()
+})
+
+it('appends a ready part to an existing custom container without recreating earlier parts', async () => {
+  const api = apis()
+  const part = fixture()
+  const result = await createPreparedDesignAction(
+    api,
+    async () => undefined
+  ).execute(
+    { design: part, parentId: 'existing', response: 'compact' },
+    context()
+  )
+  expect(api.create).toHaveBeenNthCalledWith(
+    1,
+    [part.entries[0].descriptor],
+    'existing'
+  )
+  expect(api.create).toHaveBeenNthCalledWith(
+    2,
+    [part.entries[1].descriptor],
+    part.rootId
+  )
+  expect(result).toMatchObject({
+    compositionId: part.rootId,
+    appliedElementCount: 3
+  })
+})
+it.each(['missing', 'leaf', 'outside', 'locked', 'cycle'])(
+  'rejects %s continuation parents before writing',
+  async (kind) => {
+    const api = apis()
+    let parentId = 'workspace'
+    if (kind === 'outside') parentId = 'other'
+    if (kind === 'cycle') parentId = 'existing'
+    api.getElementData = (id) =>
+      id === 'existing' && kind !== 'missing'
+        ? {
+            type: kind === 'leaf' ? 'rect' : 'custom-container',
+            parentId
+          }
+        : undefined
+    api.isLocked = (id) => kind === 'locked' && id === 'existing'
+    await expect(
+      createPreparedDesignAction(api).execute(
+        { design: fixture(), parentId: 'existing' },
+        context()
+      )
+    ).rejects.toThrow()
+    expect(api.create).not.toHaveBeenCalled()
+  }
+)
+it('rechecks a continuation parent after each cooperative slice', async () => {
+  const api = apis()
+  await expect(
+    createPreparedDesignAction(api, async () => {
+      api.getElementData = () => undefined
+    }).execute({ design: fixture(), parentId: 'existing' }, context())
+  ).rejects.toThrow()
+  expect(api.create).toHaveBeenCalledTimes(1)
+})
+
+const sharedDesign = () => {
+  const session = createDesignPreparationSession()
+  const receipt = session.prepare({
+    type: 'group',
+    name: 'Shared',
+    sharedFills: { red: '#ff0000' },
+    children: [
+      {
+        key: 'a',
+        name: 'A',
+        type: 'rect',
+        width: 10,
+        height: 10,
+        fill: { shared: 'red' }
+      },
+      {
+        key: 'b',
+        name: 'B',
+        type: 'oval',
+        x: 20,
+        width: 10,
+        height: 10,
+        fill: { shared: 'red' }
+      }
+    ]
+  })
+  return session.resolve(receipt.artifactId)
+}
+it('applies prepared shared child IDs without expanding or redefining them', async () => {
+  const design = sharedDesign(),
+    api = apis()
+  await createPreparedDesignAction(api, async () => undefined).execute(
+    { design },
+    context()
+  )
+  expect(api.create).toHaveBeenLastCalledWith(
+    design.entries.slice(1).map((e) => e.descriptor),
+    design.rootId
+  )
+})
+it.each(['missing', 'element', 'forward', 'duplicate'])(
+  'rejects %s shared references before any canonical writes',
+  async (kind) => {
+    const design = JSON.parse(JSON.stringify(sharedDesign()))
+    const first = design.entries[1].descriptor,
+      second = design.entries[2].descriptor
+    if (kind === 'missing') second.fills = ['unknown-fill']
+    if (kind === 'element') second.fills = [design.rootId]
+    if (kind === 'forward') {
+      second.fills = [{ ...first.fills[0], id: second.id + '-fill' }]
+      first.fills = [second.id + '-fill']
+    }
+    if (kind === 'duplicate') second.fills = structuredClone(first.fills)
+    const api = apis()
+    await expect(
+      createPreparedDesignAction(api).execute({ design }, context())
+    ).rejects.toThrow()
+    expect(api.create).not.toHaveBeenCalled()
+  }
+)

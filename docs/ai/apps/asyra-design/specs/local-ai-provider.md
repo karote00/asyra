@@ -91,9 +91,42 @@ and exact Undo/Redo restoration. Token savings are not claimed without measureme
 Each accepted ordinary request owns one ephemeral app-server thread and one
 child process. No process or model work starts on App startup. The process is
 closed before success or failure settles. Cancellation,
-protocol errors, unavailable login, and malformed output cannot commit an invocation. Ordinary execution failures preserve applied progress; explicit cancellation rolls back intermediate writes.
+protocol errors, unavailable login, and malformed output never execute incomplete batches. Ordinary execution failures and explicit cancellation preserve successful finite members; the App seals them into one request-owned Undo entry. A failed member rolls back only its own writes.
 Parallel turns have independent process, output, cancellation, and configuration.
-No retained cache or cross-turn conversation is introduced.
+Required stdout read failure/EOF or stdin error/finish/close before protocol
+completion closes the affected invocation even if its process has not exited yet.
+Stream or process closure after a complete protocol is normal, including a validated
+readiness-only acknowledgement. Optional stderr read failure is recorded but cannot
+fail the drawing. Thread and turn acknowledgements are validated before admitting
+subsequent tool packets, including packets received together in one chunk; tools
+must match the acknowledged active turn. Progress observer exceptions are recorded
+without private text and cannot interrupt execution or receipt delivery.
+Transport records retain only channel/status/terminal disposition and correlation,
+never raw error text or diagnostic bytes.
+Before thread creation, read effective native configuration once and disable each
+inherited MCP server by name in the request-local thread override. Empty tables
+merge with inherited configuration and do not clear it. Do not modify user config
+or retain server names across requests. Invalid configuration stops admission
+before inference; native App tools and permitted web research remain available.
+No retained cache or cross-turn conversation is introduced. The same isolation
+policy applies at child launch and thread creation: disable native hooks, legacy
+notification commands and both multi-agent variants, in addition to the existing
+App/plugin/shell isolation. User configuration files are never modified.
+
+The local provider explicitly sets medium reasoning effort for both thread
+configuration and turn execution, and checks the thread acknowledgement before
+starting inference. It does not inherit a different personal effort setting.
+The configured model is preserved and model fallback remains disabled.
+
+Native tools are grouped by their existing owners: image analysis, reference
+import, design preparation, workflow composition and canvas operations. Each
+function retains its exact App name and schema with `deferLoading: true` inside
+its native namespace. Empty owners are omitted. A request-local binding map
+routes the exact namespace/name pair to the registered owner; missing, wrong or
+unknown namespaces fail before dispatch. Full schemas remain registered with
+the native service and discoverable for Code Mode; the initial instructions
+contain only namespace and tool-name metadata. This reduces eager schema
+exposure, not registration wire bytes, and does not promise a latency reduction.
 
 Codex may apply the user’s own global `AGENTS.md` or `AGENTS.override.md` from
 its effective home directory. Project instructions and workspace access remain
@@ -127,12 +160,16 @@ and may follow the user request or personal language preferences.
 
 Codex manages its own credentials. The App never reads, copies, serializes,
 returns, or logs credential files, account identity, provider stderr, or raw
-protocol errors. Only the account type is checked in memory. Configuration and
+protocol errors. Only the account type is checked in memory. Native retry/error notifications
+retain public error kinds, retry disposition and numeric HTTP/RPC status with
+thread/turn correlation; unknown kinds are unclassified, and private text/data
+are omitted. Recording a retry never interrupts native recovery or changes turn
+settlement. Configuration and
 credentials are excluded from templates. Authentication and rate limits remain
 with the user's subscription; inference still runs remotely.
 
 Only complete backend-prepared `AiActionBatch` envelopes reach the runtime. Intermediate operations await an execution receipt before AI continuation. Commentary, reasoning, unregistered tool events, failed/interrupted turns, malformed
-JSON, and unknown backend selection cannot become product output. Existing permission, canonical mutation, rendering and collaboration owners remain unchanged. One invocation transaction encloses all batches; each batch repeats permission and confirmation against the latest bounded context. There is no provider retry or fallback in this adapter.
+JSON, and unknown backend selection cannot become product output. Existing permission, canonical mutation, rendering and collaboration owners remain unchanged. One invocation owns one history group containing finite synchronous mutation members; each batch repeats permission and confirmation against the latest bounded context. There is no provider retry or fallback in this adapter.
 
 ## Product cases and completion gates
 
@@ -168,8 +205,9 @@ occur after a batch starts.
 
 The same-origin action-batch route accepts one-use receipt tokens only from the
 owning stream and retires them on acknowledgement, disconnect or settlement.
-A receipt acknowledges provisional execution within the open transaction, not a
-committed or durable document. Final report_outcome is non-mutating and explains
+A receipt acknowledges completed execution with normal canonical publication;
+the request-owned Undo group may still be open. It does not prove remote durability
+or visual correctness. Final report_outcome is non-mutating and explains
 completion or a capability limit; unsupported work is not a retryable error.
 HTTP and exact-sample single-batch providers retain the same ordinary runtime path.
 
@@ -278,7 +316,8 @@ The AI makes the visual assessment; App checks object validity and snapshot
 availability, while the user remains the final judge of satisfaction.
 
 Capture is read-only, keeps camera/selection/document state unchanged, and does
-not add an Undo entry. All edits retain the existing one-request transaction.
+not add an Undo entry. All edits retain one request-owned Undo group; each finite member publishes before
+subsequent read-only inspection.
 Inspections and measurement cycles have no cumulative quota. Cancellation,
 per-call validation and concurrent admission guards remain. Final model batches cannot contain new mutating drawing operations
 that bypass rendered review. Capture failures downgrade a completed report to an explicit visual
@@ -475,6 +514,8 @@ turn. Unknown tool/call identities remain protocol failures.
 
 The App HTTP request and local model turn have no elapsed-time deadline. Stop,
 disposal and client disconnect still abort work and close the owned child process.
+Browser cancellation is checked before consuming each buffered frame; no subsequent
+batch callback or receipt is dispatched after Stop, even within the same chunk.
 The readiness check retains its 10-second deadline; individual network/tool and
 payload/call-count bounds remain unchanged. Generic HTTP providers opt out with
 `timeoutMs: null`; an omitted value retains the Framework default.
@@ -519,11 +560,20 @@ remains separate. Native code-mode output is diagnostic only, never a canvas
 batch. Every nested App call uses the same schema admission, artifact resolver,
 permission, execution receipt and cancellation owner as a direct call.
 
-Concurrent calls are scheduled in arrival order. Only adjacent read-only contour
-analyses may overlap; writes and other tools run exclusively. Cancellation or a
-fatal execution failure prevents queued calls from starting. No automatic retry
-or new transaction boundary is introduced. Intermediate script values may live
-in the native request session; no App cache crosses requests.
+Concurrent calls are scheduled in arrival order using the registered owner's
+internal `executionAccess` declaration. Independent image analysis, new immutable
+design preparation and API catalog queries may overlap admission; existing image
+CPU queues still serialize bounded computation. Missing access is exclusive.
+Artifact release/import, canonical queries with context/review side effects,
+canvas writes and combined prepare/apply remain barriers. A combined workflow
+overrides the preparation definition's independent access because it also writes.
+The provider's once-per-request namespace binding consumes the declaration and
+does not classify by tool names. Internal access metadata is omitted from native
+schemas. Cancellation or a fatal execution failure prevents queued calls from
+starting. The scheduler introduces no automatic retry and delegates canonical
+mutation boundaries to the App history-group adapter.
+Intermediate values live only in the native request session; no App cache crosses
+requests.
 
 When design application is registered, prepare_and_apply_design combines semantic
 preparation and application in one tool call. Invalid preparation never dispatches
@@ -554,6 +604,25 @@ admission, canonical creation and cooperative-host yield milliseconds (`cooperat
 slice/element counts. Cooperative yield is not GPU presentation timing and no longer requires two animation frames per slice. Tool spans
 may include user approval waits and must not be described as pure computation.
 
+The provider also records bounded `provider_request_started`,
+`provider_request_completed` and `provider_request_failed` events for initialize,
+account lookup, thread creation and turn start. Their `durationMs` measures the
+observed RPC wait, not model reasoning. `requestBytes` counts the existing UTF-8
+wire string including its newline. Usage `transport.sentBytes` counts writes
+accepted by the local process pipe; `receivedBytes` counts actual stdout chunks.
+Neither implies remote processing or token consumption. Counting reuses the wire
+string and does not serialize image/document payloads again.
+
+`capabilities_advertised` reports `toolCount`, `toolDefinitionBytes`,
+`eagerToolCount` and `eagerToolDefinitionBytes` for the native tool-definition JSON
+array. These are protocol sizes, not an estimate of the provider's internal prompt
+or token cost. The current catalog registers namespaced deferred functions, so
+eager function count and schema bytes are zero; namespace/name metadata still
+exists and is not a zero-token claim. Total bytes measure the complete registered
+namespace JSON, including all deferred schemas. These numeric fields
+are additive to schema version 1; immutable older records remain unchanged.
+No raw request or response content is added to these diagnostics.
+
 The usage record reports the union of observed tool/research intervals and the
 remaining unattributed wall time. Overlapping calls count only once. Unattributed
 time can include model generation, provider/network waiting and native code-mode
@@ -561,8 +630,118 @@ orchestration; it is never reported as measured private reasoning. Per-call timi
 and summaries contain no image bytes, private reasoning or raw generated code.
 These diagnostics do not change request execution or introduce a time limit.
 
+Local invocations also retain one version-2 JSONL execution record under
+`AI_EXECUTION_RECORD_DIR` (default `tmp/ai-executions`, relative to the server
+working directory). Each file is named by the request ID, created exclusively
+and never silently overwritten. `AI_EXECUTION_SOURCE_REVISION` optionally names
+the tested source; absent metadata is null, not an inferred current checkout.
+Keep both settings in `.env.example`; actual local `.env` files remain private.
+
+The header records the configured model and medium effort. Ordered lifecycle
+events retain bounded API names/field selectors, artifact references, explicit
+truncation and observed durations. Elapsed time uses a monotonic clock. Native
+reasoning/message/plan item boundaries may be observed without retaining their
+contents; their reported lifetime is not proof of exclusive model compute time.
+RPC call identities pair starts and ends independently of tool identities.
+Persisted evidence omits echoed briefs and free-form exception/message text.
+The existing allowlist also excludes raw code, image/geometry data and credentials.
+
+Queued file writes drain at request settlement. A sink failure emits a separate
+`ai_recording_failed` diagnostic and cannot alter the drawing outcome. A process
+interruption can leave a partial file; readers must expose missing terminal,
+sequence or call evidence. `local-ai-records.ts` supplies the pure reader and
+overlap accounting, including historical version-1 logs with unavailable fields.
+Diagnostic outcome records provider settlement; visual acceptance still belongs
+to the existing review owner. Logs are ignored local evidence, not document data.
+
 Prepared semantic artifacts support explicit grouped release through
 release_design_artifacts; the ordinary tool scheduler owns ordering and cancellation.
 Released IDs become unavailable without replaying or deleting canvas mutations.
 Compact combined receipts are requested at the action source; full mode remains
 available for ID selection. Fresh permission context remains a Runtime responsibility.
+
+### Canonical inspection validity
+
+Rendered inspections and deterministic layout reviews share an App-owned,
+runtime-scoped canonical generation. Scene Tree, Props and file-load notices
+invalidate old stamps, including edits made outside the agent. Before a model
+assessment and an accepted final outcome, the provider verifies the captured
+stamp through the registered read-only `validate_inspection_evidence` action.
+It transfers a compact stamp and boolean, not another screenshot. Missing or
+retired evidence cannot approve completion; already applied work is retained.
+The validity service stores no image/geometry, and runtime disposal unsubscribes
+its observers. A measurement/capture generation mismatch requires fresh
+measurement; an unchanged stage does not repeat that computation.
+
+### Native schema alternatives
+
+Review phase alternatives declare their complete object fields and requirements,
+sharing a single property definition at the App owner. Native discovery can
+project a `oneOf` alternative without merging sibling properties from its parent;
+therefore phase-only branches cannot advertise the real input contract. Ordinary
+server validation and phase-specific required fields remain authoritative. The
+permanent offline alternative-validation test and opt-in native review probe cover
+both schema validation and actual deferred tool discovery.
+
+### Inspecting execution records locally
+
+Build the read-only reporting command once after source changes:
+
+```sh
+yarn workspace @asyra/asyra-design ai:report:build
+yarn workspace @asyra/asyra-design ai:report
+yarn workspace @asyra/asyra-design ai:report --request REQUEST_ID
+yarn workspace @asyra/asyra-design ai:report --from 2026-10-01T00:00:00+08:00 --to 2026-10-04T00:00:00+08:00 --json
+```
+
+The command loads the App's local `.env`. `--directory` overrides record storage
+for inspection. Default selection is the last seven days, with the ending instant
+excluded. By default it does not start the App or call a model. Missing directories, ambiguous
+request IDs or invalid arguments exit unsuccessfully with an explanation.
+Malformed or interrupted files remain visible as unclassified/incomplete records.
+JSON includes per-step call/sequence references, timings, byte counts, issues,
+configuration groups and finding frequencies. The readable summary shows the ten
+longest observed calls and states how many were omitted; `--json` includes all.
+
+Optional `--feedback path/to/feedback.json` reads a local object mapping request
+IDs to user-authored feedback strings. Keep this file in ignored runtime storage.
+Feedback remains separate from measured findings and retained model visual reviews.
+Configuration grouping does not establish equivalent drawing tasks. A repeated
+query candidate is not a proven unnecessary call, and unknown time is not measured
+model reasoning. Accepted model review evidence is not independent visual proof.
+
+An optional explicit assessment reuses the configured local model at medium effort:
+
+```sh
+yarn workspace @asyra/asyra-design ai:report --request REQUEST_ID --assess process --criterion "Reduce repeated tool and data work while meeting the requested result"
+```
+
+Use `--assess visual` with the exact requested criteria to reuse an adequate
+current model visual review, without a new call. Otherwise one isolated assessment
+call may read the report projection; no App tools, web search, Code Mode or canvas
+executor is supplied. No images are supplied, so this is opinion about available
+evidence, never visual certification. Provider absence/failure and invalid call
+citations are saved as unavailable/failed assessment, with no automatic retry.
+
+Assessment JSON sidecars (schema version 1) and separately identified provider
+JSONL records live in `assessments/` under the selected record directory. Their
+source request ID, criteria, purpose, duration, opinion and assessment request ID
+are distinct from drawing records. A period report includes saved assessment
+opinions for its selected drawing requests, plus malformed-sidecar diagnostics.
+A new `--assess` invocation is explicit new work, not an automatic periodic job.
+The diagnostic model projection includes up to 40 calls ranked by unresolved
+status and observed duration, states the omitted count, and leaves the complete
+record untouched. This bound never limits drawing tools or execution. User
+criteria govern evaluation; it does not impose a high-detail drawing style.
+
+### Narrow API discovery
+
+`describe_design_apis({query: "vector anchors"})` searches current admitted API
+names and descriptions using case-insensitive terms, including camel-case names.
+It returns all lexical matches with compact owner/method/effect metadata and a
+current description, `count`, `catalogSize` and `complete`. It does not retrieve
+scene data. Use exact `names` for full schemas; required schema fields are never
+truncated. Search is a discovery convenience, not semantic authority. Empty
+matches include recovery to `describe_design_apis({})`, which retains the entire
+compact catalog. Query and exact names cannot be combined. Registration and
+mutation permission checks remain unchanged.

@@ -44,8 +44,11 @@ function describe(record, write) {
   )
 }
 
-function serviceOptions(repositoryRoot) {
-  const options = { acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main' }
+function serviceOptions(repositoryRoot, manifestPath) {
+  const options = {
+    acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main',
+    ...(manifestPath === undefined ? {} : { manifestPath })
+  }
   if (process.env.FLOW_REVIEW_REPOSITORY)
     options.deliveryAdapter = createGitHubDelivery(repositoryRoot, {
       repository: process.env.FLOW_REVIEW_REPOSITORY,
@@ -87,11 +90,11 @@ function serviceOptions(repositoryRoot) {
     )
   return options
 }
-async function connect(repositoryRoot, origin) {
+async function connect(repositoryRoot, origin, manifestPath) {
   if (!origin) {
     const service = createService(
       repositoryRoot,
-      serviceOptions(repositoryRoot)
+      serviceOptions(repositoryRoot, manifestPath)
     )
     return {
       targetAssessments: async () => service.targetAssessments(),
@@ -235,7 +238,11 @@ async function main(
 ) {
   args = args.slice()
   let origin
-  if (args[0] === '--url') {
+  let manifestPath
+  if (args[0] === '--manifest') {
+    manifestPath = args[1]
+    args = args.slice(2)
+  } else if (args[0] === '--url') {
     origin = args[1]
     args = args.slice(2)
     parseLocalUrl(origin)
@@ -293,11 +300,11 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
+      'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
-      serviceOptions: serviceOptions(repositoryRoot)
+      serviceOptions: serviceOptions(repositoryRoot, manifestPath)
     })
     write('Flow Inspector: ' + server.origin)
     write('Local trusted workspace - Ctrl+C stops and settles active work.')
@@ -316,7 +323,7 @@ async function main(
       )
     return 0
   }
-  const client = await connect(repositoryRoot, origin)
+  const client = await connect(repositoryRoot, origin, manifestPath)
   try {
     const inputFile = (filename) => {
       const file = safePath(repositoryRoot, filename)
@@ -503,7 +510,10 @@ async function main(
                 await client.artifact(record.id, 'ci-envelope')
               ).toString('base64')
           )
-        return record.ci?.evidence.status === 'passed' ? 0 : 1
+        return record.phase === 'completed' &&
+          record.evidence?.status === 'passed'
+          ? 0
+          : 1
       }
       if (command === 'ci' || command === 'ci-demo')
         return record.ci?.deliveryStatus === 'eligible' ? 0 : 1
@@ -514,6 +524,7 @@ async function main(
       write(
         JSON.stringify(
           {
+            manifestPath: state.contract.manifestPath,
             tasks: state.tasks,
             activeRunId: state.activeRunId,
             evolution: state.evolution,

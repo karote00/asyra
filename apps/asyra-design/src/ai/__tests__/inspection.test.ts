@@ -54,7 +54,7 @@ it('does not capture after cancellation and preserves explicit unavailable resul
   ).toMatchObject({ available: false })
 })
 
-it('bounds metadata reads and captures once per invocation without reusing old images', () => {
+it('captures fresh images without querying unrelated subtree metadata', () => {
   core.getElementData.mockImplementation((id: string) =>
     id === 'group'
       ? {
@@ -76,12 +76,11 @@ it('bounds metadata reads and captures once per invocation without reusing old i
   const first = inspectionApis.inspect('group')
   expect(first).toMatchObject({
     available: true,
-    elementsTruncated: true,
     imageScope: 'overview',
     image: { dataUrl: 'first' }
   })
-  expect(first.elements).toHaveLength(200)
-  expect(core.getElementComputedData).toHaveBeenCalledTimes(200)
+  expect(first).not.toHaveProperty('elements')
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
   expect(core.captureElementSnapshot).toHaveBeenCalledWith('group', 1024, {
     nativeResolution: false
@@ -90,6 +89,8 @@ it('bounds metadata reads and captures once per invocation without reusing old i
     image: { dataUrl: 'second' }
   })
   expect(core.captureElementSnapshot).toHaveBeenCalledTimes(2)
+  expect(core.getElementData).toHaveBeenCalledTimes(2)
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   core.captureElementSnapshot.mockImplementation(() => {
     throw new Error('Unsupported renderer')
   })
@@ -131,7 +132,6 @@ it('keeps overview and native detail capture separate without mutating source ge
   })
   expect(inspectionApis.inspect('drawing')).toMatchObject({
     imageScope: 'overview',
-    elementsTruncated: false,
     partial: false
   })
   expect(core.captureElementSnapshot).toHaveBeenLastCalledWith(
@@ -149,4 +149,33 @@ it('keeps overview and native detail capture separate without mutating source ge
   expect(core.captureElementSnapshot).toHaveBeenLastCalledWith('window', 1024, {
     nativeResolution: true
   })
+})
+
+it('binds action output to canonical evidence and validates it without another snapshot', async () => {
+  const { createInspectionEvidence } =
+    await import('../../common-apis/inspection-evidence')
+  const { createInspectionValidationAction } = await import('../inspection')
+  let changed: () => void = () => undefined
+  const stop = vi.fn()
+  const evidence = createInspectionEvidence((listener) => {
+    changed = listener
+    return stop
+  })
+  const inspect = vi.fn(() => ({ available: true, image: { dataUrl: 'png' } }))
+  const action = createAiInspectionAction(inspect, evidence)
+  const validate = createInspectionValidationAction(evidence)
+  const context = { signal: new AbortController().signal } as never
+  const result = (await action.execute({ elementId: 'drawing' }, context)) as {
+    evidence: { sessionId: string; revision: number }
+  }
+  expect(
+    await validate.execute({ evidence: result.evidence }, context)
+  ).toEqual({ current: true })
+  changed()
+  expect(
+    await validate.execute({ evidence: result.evidence }, context)
+  ).toEqual({ current: false })
+  expect(inspect).toHaveBeenCalledOnce()
+  evidence.dispose()
+  expect(stop).toHaveBeenCalledOnce()
 })

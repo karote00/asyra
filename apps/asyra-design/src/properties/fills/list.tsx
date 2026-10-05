@@ -4,7 +4,7 @@ import { PlusIcon } from '../icons'
 
 interface FillListProps {
   fills: FillRowAttrs[]
-  ownerElementId: string | null
+  elementIds: string[]
   mixed: boolean
   onAdd: () => void
   onRemoveFill: (index: number) => void
@@ -12,7 +12,7 @@ interface FillListProps {
 
 const FillList = ({
   fills,
-  ownerElementId,
+  elementIds,
   mixed,
   onAdd,
   onRemoveFill
@@ -66,7 +66,7 @@ const FillList = ({
             key={primaryFillId}
             index={index}
             fillId={primaryFillId}
-            ownerElementId={ownerElementId}
+            elementIds={elementIds}
             onRemove={() => onRemoveFill(index)}
           />
         )

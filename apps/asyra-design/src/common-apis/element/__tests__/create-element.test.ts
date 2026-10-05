@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   createElementsInParent: vi.fn(),
   createVectorElement: vi.fn(),
   createVectorElementsInParent: vi.fn(),
+  updateElementData: vi.fn(),
   updateElementProperties: vi.fn(),
   getElementById: vi.fn(),
   getSystemProperty: vi.fn(),
@@ -47,6 +48,7 @@ vi.mock('../../../contexts', () => ({
         return undefined
       }
       return {
+        visible: element.get('visible'),
         children: element.get('children'),
         type: element.get('type')
       }
@@ -54,6 +56,7 @@ vi.mock('../../../contexts', () => ({
     getMousePosInWorkspace: mocks.getMousePosInWorkspace,
     getSystemProperty: mocks.getSystemProperty,
     patchElementProperties: mocks.patchElementProperties,
+    updateElementData: mocks.updateElementData,
     updateElementProperties: mocks.updateElementProperties,
     isContainerType: vi.fn((type: string) => type === 'group'),
     workspaceToElementLocal: mocks.workspaceToElementLocal
@@ -272,6 +275,29 @@ describe('create-element explicit parent and coordinates', () => {
       }
     )
     expect(mocks.createVectorElement).not.toHaveBeenCalled()
+  })
+
+  it('creates vectors across different parents without dropping targets or reordering', () => {
+    const elements = [
+      { type: 'vector', parentId: 'a' },
+      { type: 'vector', parentId: 'a' },
+      { type: 'vector', parentId: 'b' },
+      { type: 'vector', parentId: 'a' }
+    ] as const
+    mocks.createVectorElementsInParent
+      .mockReturnValueOnce(['a1', 'a2'])
+      .mockReturnValueOnce(['b1'])
+      .mockReturnValueOnce(['a3'])
+    expect(elementApis.createElements(elements)).toEqual([
+      'a1',
+      'a2',
+      'b1',
+      'a3'
+    ])
+    expect(
+      mocks.createVectorElementsInParent.mock.calls.map((call) => call[1])
+    ).toEqual(['a', 'b', 'a'])
+    expect(mocks.runTransaction).toHaveBeenCalledOnce()
   })
 
   it('forwards one prepared descriptor batch by identity and returns frozen ordered ids', () => {
@@ -644,4 +670,41 @@ describe('create-element explicit parent and coordinates', () => {
       options
     )
   })
+})
+
+it('sets visibility for a whole target set in one transaction with ordered truthful results', () => {
+  vi.clearAllMocks()
+  mocks.getElementById.mockImplementation((id: string) =>
+    id === 'missing'
+      ? undefined
+      : {
+          get: (key: string) => {
+            if (key === 'type') return id === 'workspace' ? 'workspace' : 'rect'
+            if (key === 'visible') return id !== 'already-hidden'
+            return undefined
+          }
+        }
+  )
+  const result = elementApis.setElementsVisible(
+    ['a', 'already-hidden', 'missing', 'workspace', 'b'],
+    false
+  )
+  expect(result).toEqual([
+    'changed',
+    'unchanged',
+    'unavailable',
+    'unavailable',
+    'changed'
+  ])
+  expect(mocks.runTransaction).toHaveBeenCalledOnce()
+  expect(mocks.updateElementData.mock.calls).toEqual([
+    ['a', { visible: false }, { undoable: true }],
+    ['b', { visible: false }, { undoable: true }]
+  ])
+  vi.clearAllMocks()
+  expect(elementApis.setElementsVisible([], true)).toEqual([])
+  expect(
+    elementApis.setElementsVisible(['already-hidden', 'missing'], false)
+  ).toEqual(['unchanged', 'unavailable'])
+  expect(mocks.runTransaction).not.toHaveBeenCalled()
 })

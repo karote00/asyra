@@ -39,6 +39,17 @@ export interface AiToolProgress {
 }
 
 export interface AiBatchReceipt {
+  /** Failure of this batch only. Completed actions must not be replayed. */
+  readonly failure?: {
+    readonly code: string
+    readonly message: string
+    readonly stage: string
+    readonly actionName: string | null
+    readonly actionId: string | null
+    readonly actionExecutionMs: number | null
+    readonly settlement: 'not-started' | 'unknown'
+    readonly contextFresh: boolean
+  }
   readonly actionResults: readonly {
     readonly actionId: string
     readonly actionName: string
@@ -48,3 +59,17 @@ export interface AiBatchReceipt {
 }
 
 export type ExecuteAiBatch = (batch: AiActionBatch) => Promise<AiBatchReceipt>
+
+/** Failed exchange acknowledgement, not proof of mutation rollback. */
+export interface BrowserBatchFailure {
+  readonly batchId: string
+  readonly actionName: string | null
+  readonly code: 'BROWSER_BATCH_EXECUTION_FAILED'
+  readonly message: string
+  readonly handlerMs: number | null
+  readonly executionMs: number
+}
+
+export interface BrowserBatchFailureEnvelope {
+  readonly batchFailure: BrowserBatchFailure
+}

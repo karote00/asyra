@@ -101,7 +101,11 @@ by `worldTransform`, `toGlobal`, `toLocal`, and the concrete engine adapter.
   recreate the intersection algorithm
 - `createEvenOddFillStyle(...)` and
   `isPointInsidePreparedEvenOddShape(...)` consume that same prepared geometry,
-  keeping visible fill and hit-test parity under one Render-owned contract
+  keeping visible fill and hit-test parity under one Render-owned contract.
+  Gradient type and handle-derived constants are prepared once per rasterization;
+  pixel sampling reuses sampler-local scratch values. This is not a cross-call
+  cache: changed fill/geometry inputs create a new raster. Pixel-center coverage,
+  stop interpolation, transparency, layer order and raster dimensions are unchanged
 - overlays that project authored element bounds during an active interaction must
   use the current precise transform chain; a cached transform from the previous
   render pass is not authoritative after frame-aligned scene updates

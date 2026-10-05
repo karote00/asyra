@@ -1,22 +1,34 @@
 import sharp from 'sharp'
+import { prepareDesign } from '../server/design-preparation'
 import { createLocalImageTools } from '../server/local-image-tools'
 import { AiImageToolIds } from '../server/ai-domain-prompt'
 import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact
 } from '../server/local-vector-artifact'
-import { readFile, writeFile } from 'node:fs/promises'
+import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import { convertBuffer } from '@visioncortex/vtracer'
 import { convertVTracerBuffer } from '../vtracer-tool-server.mjs'
-import { expect, test, type Page } from '@playwright/test'
+import {
+  expect,
+  test,
+  type Page,
+  type Frame,
+  type Request
+} from '@playwright/test'
 import {
   captureBrowserErrors,
   getCapturedBrowserErrors,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
+  createRectangle,
+  clickCanvas,
+  getZoomLevel,
+  getCanvasPosition,
   undo,
   redo,
   createTestDocumentIdentity,
+  getPersistedDocumentDigest,
   waitForAppReady
 } from './test-utils'
 
@@ -40,9 +52,12 @@ test.afterEach(async ({ page }, testInfo) => {
 
 const captureProviderFrames = async (page: Page, outputPath: string) => {
   const frames: string[] = []
-  await page.exposeFunction('recordReviewFrame', async (line: string) => {
+  await writeFile(outputPath, '')
+  let pendingWrite = Promise.resolve()
+  await page.exposeFunction('recordReviewFrame', (line: string) => {
     frames.push(line)
-    await writeFile(outputPath, frames.join(''))
+    pendingWrite = pendingWrite.then(() => appendFile(outputPath, line))
+    return pendingWrite
   })
   await page.addInitScript(() => {
     const original = window.fetch
@@ -842,7 +857,7 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
       result: {
         available: boolean
         image: { dataUrl: string; width: number }
-        elements: { id: string }[]
+        elementId: string
       }
     }[]
   }[] = []
@@ -971,9 +986,8 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
   ])
   for (const [index, inspection] of inspections.entries()) {
     expect(inspection.image.width).toBeLessThanOrEqual(1024)
-    expect(
-      inspection.elements.map((element: { id: string }) => element.id)
-    ).toContain(id)
+    expect(inspection.elementId).toBe(drawing.groupDescriptor.id)
+    expect(inspection).not.toHaveProperty('elements')
     await writeFile(
       testInfo.outputPath(`inspection-${index}.png`),
       Buffer.from(inspection.image.dataUrl.split(',')[1], 'base64')
@@ -1682,4 +1696,1405 @@ test('local subscription discovers APIs to reflect and center an existing vector
     fixture.id
   )
   expect(restored).toEqual(fixture.before)
+})
+
+// Only used with an isolated test-owned document; never a general App policy.
+const focusRecordedCanvas = async (page: Page) => {
+  await clickCanvas(page, 0.1, 0.5)
+}
+
+test('recording navigation releases composer focus and fits the drawing', async ({
+  page
+}) => {
+  test.setTimeout(20_000)
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  const initialZoom = await getZoomLevel(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  const composer = page.getByLabel('Message Agent')
+  await composer.fill('Keep this draft')
+  await expect(composer).toBeFocused()
+  page.setDefaultTimeout(3000)
+  await focusRecordedCanvas(page)
+  await expect(composer).not.toBeFocused()
+  await page.keyboard.press('Meta+1')
+  await expect.poll(() => getZoomLevel(page)).not.toBe(initialZoom)
+  await expect(composer).toHaveValue('Keep this draft')
+})
+
+// Observe a fixed, unobscured canvas region at native screenshot resolution.
+// The existing safe canvas area excludes toolbar/sidebars/footer overlays; the
+// open conversation can cover more of its right edge. Record the region explicitly.
+const captureRecordedCanvas = async (
+  page: Page,
+  clip?: { x: number; y: number; width: number; height: number }
+) => {
+  if (!clip) {
+    const topLeft = await getCanvasPosition(page, 0, 0)
+    const bottomRight = await getCanvasPosition(page, 1, 1)
+    const panelLocator = page.getByTestId('ai-agent-panel')
+    const panel = (await panelLocator.isVisible())
+      ? await panelLocator.boundingBox()
+      : null
+    const right = panel ? Math.min(bottomRight.x, panel.x) : bottomRight.x
+    clip = {
+      x: topLeft.x,
+      y: topLeft.y,
+      width: right - topLeft.x,
+      height: bottomRight.y - topLeft.y
+    }
+  }
+  if (clip.width <= 0 || clip.height <= 0)
+    throw new Error('No unobscured recording canvas region')
+  const captureStartedAt = Date.now()
+  const png = await page.screenshot({ clip, caret: 'hide' })
+  const capturedAt = Date.now()
+  const pixels = await sharp(png).ensureAlpha().raw().toBuffer()
+  return { clip, png, pixels, capturedAt, captureStartedAt }
+}
+
+const waitForRecordedDrawing = async (
+  page: Page,
+  timeline: unknown[],
+  started: number,
+  maximumDurationMs = 900_000,
+  observation?: {
+    baseline?: Awaited<ReturnType<typeof captureRecordedCanvas>>
+    imagePath?: string
+    stopAfterFirstVisibleMs?: number
+  }
+) => {
+  let failure: unknown
+  let interruption: Error | undefined
+  const recordNavigation = (url: string) => {
+    if (interruption) return
+    timeline.push({
+      elapsedMs: Date.now() - started,
+      interaction: 'page-navigation',
+      url
+    })
+    interruption = new Error(
+      'Recording interrupted by page reload or navigation; inspect the navigation and development-reload timeline. This is not drawing completion.'
+    )
+  }
+  const onNavigation = (frame: Frame) => {
+    if (frame === page.mainFrame()) recordNavigation(frame.url())
+  }
+  const onNavigationRequest = (request: Request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+      recordNavigation(request.url())
+  }
+  // A browser RPC can reject before the replacement document commits.
+  page.on('request', onNavigationRequest)
+  page.on('framenavigated', onNavigation)
+  // Browser-local navigation must not wait for a screenshot RPC to finish.
+  // The fixture state is disposed below; ordinary App usage never installs it.
+  const observerKey = `recording-first-fit-${started}`
+  try {
+    const message = page.getByTestId('ai-agent-message').last()
+    const baseline = observation
+      ? (observation.baseline ?? (await captureRecordedCanvas(page)))
+      : undefined
+    let lastUnchangedAtMs = baseline
+      ? Math.max(0, baseline.captureStartedAt - started)
+      : 0
+    let visibleChangeObserved = false
+    if (baseline)
+      timeline.push({
+        interaction: 'canvas-baseline',
+        elapsedMs: lastUnchangedAtMs,
+        region: baseline.clip
+      })
+    const observeCanvas = async () => {
+      if (!baseline || visibleChangeObserved) return
+      const current = await captureRecordedCanvas(page, baseline.clip)
+      const elapsedMs = Math.max(0, current.capturedAt - started)
+      if (current.pixels.equals(baseline.pixels)) {
+        // Screenshot sampling itself has a duration; its start is the safe
+        // lower bound, not the later time when Playwright returns the image.
+        lastUnchangedAtMs = Math.max(0, current.captureStartedAt - started)
+        return
+      }
+      visibleChangeObserved = true
+      timeline.push({
+        interaction: 'first-visible-canvas-change',
+        elapsedMs,
+        lastUnchangedAtMs,
+        region: baseline.clip,
+        evidence: 'screenshot-pixels',
+        quality: 'not-assessed'
+      })
+      if (observation?.imagePath)
+        await writeFile(observation.imagePath, current.png)
+      if (observation?.stopAfterFirstVisibleMs !== undefined) {
+        await page.waitForTimeout(observation.stopAfterFirstVisibleMs)
+        const stop = page.getByRole('button', {
+          name: 'Cancel request',
+          exact: true
+        })
+        // A control may temporarily disappear during a render. Only a terminal
+        // conversation outcome can establish that there is no active request.
+        await expect
+          .poll(
+            async () => {
+              if (await stop.isVisible()) return true
+              const outcome = await message.getAttribute('data-outcome')
+              return !!outcome && outcome !== 'active'
+            },
+            { timeout: 30_000 }
+          )
+          .toBe(true)
+        const outcomeBeforeStop = await message.getAttribute('data-outcome')
+        const active = outcomeBeforeStop === 'active'
+        if (active) await stop.click()
+        await expect(message).not.toHaveAttribute('data-outcome', 'active', {
+          timeout: 30_000
+        })
+        timeline.push({
+          interaction: 'first-output-stop',
+          elapsedMs: Date.now() - started,
+          cancelledActiveRequest: active,
+          settledOutcome: await message.getAttribute('data-outcome')
+        })
+      }
+    }
+    let initiallyFitted = false
+    await page.evaluate(
+      async ({ observerKey, started }) => {
+        const { core, testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        const { viewportApis } = await import('../src/common-apis/viewport')
+        const observer: { frame: number; result?: unknown } = { frame: 0 }
+        const fitWhenReady = () => {
+          const bounds = core.getAllElementsBounds()
+          if (
+            bounds &&
+            bounds.maxX > bounds.minX &&
+            bounds.maxY > bounds.minY
+          ) {
+            viewportApis.zoomFit()
+            observer.result = {
+              elapsedMs: Date.now() - started,
+              interaction: 'fit-zoom',
+              reason: 'first-objects',
+              bounds
+            }
+          } else observer.frame = requestAnimationFrame(fitWhenReady)
+        }
+        testRuntimeState.set(observerKey, observer)
+        fitWhenReady()
+      },
+      { observerKey, started }
+    )
+    const fit = async (reason: 'first-objects' | 'settled') => {
+      if (reason === 'first-objects') {
+        const result = await page.evaluate(async (key) => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          return testRuntimeState.get<{ result?: unknown }>(key)?.result
+        }, observerKey)
+        if (!result) return false
+        timeline.push(result)
+        return true
+      }
+      const bounds = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getAllElementsBounds()
+      )
+      if (!bounds) return false
+      await focusRecordedCanvas(page)
+      await page.keyboard.press('Meta+1')
+      timeline.push({
+        elapsedMs: Date.now() - started,
+        interaction: 'fit-zoom',
+        reason,
+        bounds
+      })
+      return true
+    }
+    while (true) {
+      if (interruption) throw interruption
+      if (Date.now() - started > maximumDurationMs)
+        throw new Error('Recording guard reached before settlement')
+      const confirmation = page.getByLabel('AI action confirmation')
+      if (await confirmation.isVisible()) {
+        await expect(confirmation).toContainText('Undoable')
+        await expect(confirmation).toContainText('No external effect')
+        timeline.push({
+          elapsedMs: Date.now() - started,
+          interaction: 'approve',
+          summary: await confirmation.innerText()
+        })
+        await confirmation
+          .getByRole('button', { name: 'Approve', exact: true })
+          .click()
+        await expect(confirmation).toBeHidden()
+      }
+      if (!initiallyFitted) initiallyFitted = await fit('first-objects')
+      await observeCanvas()
+      if (!initiallyFitted) initiallyFitted = await fit('first-objects')
+      if (
+        visibleChangeObserved &&
+        observation?.stopAfterFirstVisibleMs !== undefined
+      )
+        break
+      // Questions pause a turn; they are not terminal recording milestones.
+      if (await page.getByLabel('Question', { exact: true }).isVisible()) break
+      const outcome = await message.getAttribute('data-outcome', {
+        timeout: 1000
+      })
+      if (outcome && outcome !== 'active') {
+        await fit('settled')
+        await observeCanvas()
+        break
+      }
+      await page.waitForTimeout(1000)
+    }
+  } catch (error) {
+    failure = error
+  } finally {
+    try {
+      if (!interruption && !page.isClosed())
+        await page.evaluate(async (key) => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          const observer = testRuntimeState.get<{ frame: number }>(key)
+          if (observer) cancelAnimationFrame(observer.frame)
+          testRuntimeState.delete(key)
+        }, observerKey)
+    } catch (error) {
+      failure ??= error
+    } finally {
+      page.off('request', onNavigationRequest)
+      page.off('framenavigated', onNavigation)
+    }
+  }
+  if (interruption) throw interruption
+  if (failure !== undefined) throw failure
+}
+
+test('recording does not count conversation changes as canvas output', async ({
+  page
+}) => {
+  test.setTimeout(20_000)
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+  })
+  const timeline: { interaction?: string }[] = []
+  const recording = waitForRecordedDrawing(
+    page,
+    timeline,
+    Date.now(),
+    15_000,
+    {}
+  )
+  try {
+    await expect
+      .poll(() =>
+        timeline.some((entry) => entry.interaction === 'canvas-baseline')
+      )
+      .toBe(true)
+    await page
+      .getByLabel('Message Agent')
+      .fill('This UI update is not drawing output.')
+    await page.waitForTimeout(1200)
+  } finally {
+    await page.evaluate(() => {
+      const message = document.querySelector<HTMLElement>(
+        '[data-testid="ai-agent-message"]'
+      )
+      if (!message) throw new Error('Missing recording fixture')
+      message.dataset.outcome = 'success'
+    })
+    await recording
+  }
+  expect(
+    timeline.some(
+      (entry) => entry.interaction === 'first-visible-canvas-change'
+    )
+  ).toBe(false)
+})
+
+test('recording distinguishes unchanged canvas from newly visible pixels', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(20_000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+  })
+  const timeline: {
+    interaction?: string
+    elapsedMs?: number
+    lastUnchangedAtMs?: number
+  }[] = []
+  const recording = waitForRecordedDrawing(
+    page,
+    timeline,
+    Date.now(),
+    15_000,
+    {}
+  )
+  try {
+    await expect
+      .poll(
+        () => timeline.some((entry) => entry.interaction === 'canvas-baseline'),
+        { timeout: 3000 }
+      )
+      .toBe(true)
+    await page.waitForTimeout(1200)
+    expect(
+      timeline.some(
+        (entry) => entry.interaction === 'first-visible-canvas-change'
+      )
+    ).toBe(false)
+    await createRectangle(page)
+    await expect
+      .poll(() =>
+        timeline.some(
+          (entry) => entry.interaction === 'first-visible-canvas-change'
+        )
+      )
+      .toBe(true)
+    const changed = timeline.find(
+      (entry) => entry.interaction === 'first-visible-canvas-change'
+    )
+    if (!changed || changed.lastUnchangedAtMs === undefined)
+      throw new Error('Missing visible observation')
+    expect(changed.elapsedMs).toBeGreaterThanOrEqual(changed.lastUnchangedAtMs)
+    await page.screenshot({
+      path: testInfo.outputPath('first-visible-canvas.png')
+    })
+  } finally {
+    await page.evaluate(() => {
+      const message = document.querySelector<HTMLElement>(
+        '[data-testid="ai-agent-message"]'
+      )
+      if (!message) throw new Error('Missing recording fixture')
+      message.dataset.outcome = 'success'
+    })
+    await recording
+    await writeFile(
+      testInfo.outputPath('visible-timeline.json'),
+      JSON.stringify(timeline, null, 2)
+    )
+  }
+  expect(
+    timeline.filter(
+      (entry) => entry.interaction === 'first-visible-canvas-change'
+    )
+  ).toHaveLength(1)
+})
+
+test('first-output recording holds visible pixels for ten seconds then stops an active request', async ({
+  page
+}) => {
+  test.setTimeout(25_000)
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', async (route) => {
+    await gate
+    await route.abort().catch(() => undefined)
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page.getByLabel('Message Agent').fill('Draw a shape')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'active'
+  )
+  // Use the actual App control, including its accessible name and cancellation.
+  await expect(
+    page.getByRole('button', { name: 'Cancel request' })
+  ).toBeVisible()
+  await focusRecordedCanvas(page)
+  const timeline: { interaction?: string; elapsedMs?: number }[] = []
+  const recording = waitForRecordedDrawing(page, timeline, Date.now(), 18_000, {
+    stopAfterFirstVisibleMs: 10_000
+  })
+  await expect
+    .poll(() =>
+      timeline.some((entry) => entry.interaction === 'canvas-baseline')
+    )
+    .toBe(true)
+  await createRectangle(page)
+  try {
+    await recording
+  } finally {
+    release()
+  }
+  const first = timeline.find(
+    (entry) => entry.interaction === 'first-visible-canvas-change'
+  )
+  const stopped = timeline.find(
+    (entry) => entry.interaction === 'first-output-stop'
+  )
+  expect(first).toBeDefined()
+  expect(stopped).toBeDefined()
+  expect(
+    Number(stopped?.elapsedMs) - Number(first?.elapsedMs)
+  ).toBeGreaterThanOrEqual(10_000)
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'cancelled'
+  )
+})
+
+test('first-output recording waits for a temporarily absent Stop control and proves cancellation', async ({
+  page
+}) => {
+  test.setTimeout(25_000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+    const stop = document.createElement('button')
+    stop.textContent = 'Stop'
+    stop.setAttribute('aria-label', 'Cancel request')
+    Object.assign(stop.style, {
+      position: 'fixed',
+      right: '10px',
+      bottom: '10px',
+      zIndex: '10000'
+    })
+    stop.addEventListener('click', () => {
+      message.dataset.outcome = 'cancelled'
+      stop.remove()
+    })
+    stop.style.display = 'none'
+    setTimeout(() => {
+      stop.style.display = 'block'
+    }, 13_000)
+    document.body.append(stop)
+  })
+  const timeline: { interaction?: string; elapsedMs?: number }[] = []
+  const recording = waitForRecordedDrawing(page, timeline, Date.now(), 18_000, {
+    stopAfterFirstVisibleMs: 10_000
+  })
+  await expect
+    .poll(() =>
+      timeline.some((entry) => entry.interaction === 'canvas-baseline')
+    )
+    .toBe(true)
+  await createRectangle(page)
+  await recording
+  const first = timeline.find(
+    (entry) => entry.interaction === 'first-visible-canvas-change'
+  )
+  const stopped = timeline.find(
+    (entry) => entry.interaction === 'first-output-stop'
+  )
+  expect(first).toBeDefined()
+  expect(stopped).toBeDefined()
+  expect(
+    Number(stopped?.elapsedMs) - Number(first?.elapsedMs)
+  ).toBeGreaterThanOrEqual(10_000)
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'cancelled'
+  )
+})
+
+test('recording fits new offscreen objects while screenshot capture is pending', async ({
+  page
+}) => {
+  test.setTimeout(25_000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+  })
+  const baseline = await captureRecordedCanvas(page)
+  const originalScreenshot = page.screenshot.bind(page)
+  let release!: () => void
+  const hold = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let entered!: () => void
+  const capturing = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  page.screenshot = async (...args) => {
+    entered()
+    await hold
+    return originalScreenshot(...args)
+  }
+  const recording = waitForRecordedDrawing(page, [], Date.now(), 20_000, {
+    baseline
+  })
+  try {
+    await capturing
+    const initial = await getZoomLevel(page)
+    await page.evaluate(async () => {
+      const { elementApis } = await import('../src/common-apis')
+      const created = elementApis.createElement({
+        type: 'rect',
+        workspacePosition: { x: 20000, y: 20000 },
+        width: 2000,
+        height: 2000
+      })
+      if (!created) throw new Error('Missing offscreen fixture element')
+    })
+    await expect.poll(() => getZoomLevel(page)).not.toBe(initial)
+  } finally {
+    release()
+    page.screenshot = originalScreenshot
+    await page.evaluate(() => {
+      const message = document.querySelector<HTMLElement>(
+        '[data-testid="ai-agent-message"]'
+      )
+      if (!message) throw new Error('Missing recording fixture')
+      message.dataset.outcome = 'success'
+    })
+    await recording
+  }
+})
+
+test('recording fits first objects before any batch receipt and fits again only at settlement', async ({
+  page
+}) => {
+  test.setTimeout(30_000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+  })
+  const timeline: unknown[] = []
+  const navigation = waitForRecordedDrawing(page, timeline, Date.now(), 20_000)
+  try {
+    await expect.poll(() => timeline.length).toBe(1)
+    expect(timeline[0]).toMatchObject({
+      interaction: 'fit-zoom',
+      reason: 'first-objects'
+    })
+    const fittedZoom = await getZoomLevel(page)
+    await createRectangle(page, 0.8, 0.8)
+    await page.waitForTimeout(2200)
+    expect(timeline).toHaveLength(1)
+    expect(await getZoomLevel(page)).toBe(fittedZoom)
+    await page.evaluate(() => {
+      const message = document.querySelector<HTMLElement>(
+        '[data-testid="ai-agent-message"]'
+      )
+      if (!message) throw new Error('Missing recording fixture')
+      message.dataset.outcome = 'success'
+    })
+    await navigation
+    expect(timeline).toHaveLength(2)
+    expect(timeline[1]).toMatchObject({
+      interaction: 'fit-zoom',
+      reason: 'settled'
+    })
+  } finally {
+    await page.evaluate(() => {
+      const message = document.querySelector<HTMLElement>(
+        '[data-testid="ai-agent-message"]'
+      )
+      if (message) message.dataset.outcome = 'success'
+    })
+    await navigation.catch(() => undefined)
+  }
+})
+
+for (const state of ['question', 'success'] as const) {
+  test(`recording with objects handles ${state} without treating questions as completion`, async ({
+    page
+  }) => {
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await createRectangle(page)
+    await page.evaluate((state) => {
+      const message = document.createElement('div')
+      message.dataset.testid = 'ai-agent-message'
+      message.dataset.outcome = state === 'success' ? 'success' : 'active'
+      document.body.append(message)
+      if (state === 'question') {
+        const question = document.createElement('button')
+        question.setAttribute('aria-label', 'Question')
+        question.textContent = 'Choose a view'
+        document.body.append(question)
+      }
+    }, state)
+    const timeline: unknown[] = []
+    await waitForRecordedDrawing(page, timeline, Date.now())
+    expect(timeline).toHaveLength(state === 'success' ? 2 : 1)
+    expect(timeline[0]).toMatchObject({ reason: 'first-objects' })
+    if (state === 'success')
+      expect(timeline[1]).toMatchObject({
+        interaction: 'fit-zoom',
+        reason: 'settled'
+      })
+  })
+}
+
+test('recording driver completes an undoable confirmation in its isolated document', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(20_000)
+  const frames = await captureProviderFrames(
+    page,
+    testInfo.outputPath('recorded.ndjson')
+  )
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="100" height="100"><path d="M0,0L100,0L100,100L0,100Z" fill="#008800"/></svg>'
+  )
+  const drawing = prepareLocalVectorArtifact(artifact, {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Recording fixture',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    excludePathIds: []
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) => {
+    if (route.request().headers()['x-ai-batch-receipt'])
+      return route.fulfill({ json: { accepted: true } })
+    return route.fulfill({
+      contentType: 'application/x-ndjson',
+      body: [
+        {
+          type: 'batch',
+          receiptToken: '11111111-1111-1111-1111-111111111111',
+          batch: {
+            batchId: 'recording-insert',
+            actions: [
+              {
+                id: 'insert',
+                name: 'insert_vector_composition',
+                arguments: drawing,
+                summary: 'Insert test drawing'
+              }
+            ]
+          }
+        },
+        {
+          type: 'result',
+          batch: {
+            batchId: 'recording-remove',
+            actions: [
+              {
+                id: 'remove',
+                name: 'remove_ai_composition',
+                arguments: { compositionId: drawing.groupDescriptor.id },
+                summary: 'Remove test drawing'
+              }
+            ]
+          }
+        }
+      ]
+        .map((frame) => JSON.stringify(frame))
+        .join('\n')
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByLabel('Message Agent')
+    .fill('Draw, then remove the test drawing.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByLabel('AI action confirmation')).toBeVisible()
+  const timeline: unknown[] = []
+  await waitForRecordedDrawing(page, timeline, Date.now())
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'success'
+  )
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  expect(timeline).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ interaction: 'approve' })
+    ])
+  )
+  await expect
+    .poll(() => frames.join('').includes('recording-remove'))
+    .toBe(true)
+  await expect
+    .poll(() => readFile(testInfo.outputPath('recorded.ndjson'), 'utf8'))
+    .toBe(frames.join(''))
+})
+
+for (const mode of ['explicit IDs', 'aligned rows'] as const) {
+  test(`registered Fill actions use new values for multiple targets and one Undo - ${mode}`, async ({
+    page
+  }) => {
+    const identity = createTestDocumentIdentity()
+    await page.goto(identity.url)
+    await waitForAppReady(page)
+    await createRectangle(page, 0.3, 0.3)
+    const firstId = await page.evaluate(
+      async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getSelectedElementIds()[0]
+    )
+    await createRectangle(page, 0.6, 0.6)
+    const state = await page.evaluate(
+      async ({ firstId, mode }) => {
+        const { core } = await import('../src/testing/runtime-access')
+        const { createBasicApiActions } =
+          await import('../src/ai/basic-api-actions')
+        const { transactionApis, fillApis } = await import('../src/common-apis')
+        const ids = [firstId, core.getSelectedElementIds()[0]]
+        const targets = fillApis.getFillTargetsAtIndex(ids, 0)
+        fillApis.updateFillFieldsBatch(
+          targets.map((target, index) => ({
+            ...target,
+            patch: { opacity: index ? 0.7 : 0.3 }
+          }))
+        )
+        const read = () =>
+          ids.map((id) => core.getElementComputedData(id, ['fills'])?.fills)
+        const before = read()
+        const actions = createBasicApiActions()
+        const action = actions.find(
+          (action) =>
+            action.name ===
+            (mode === 'aligned rows'
+              ? 'api_fill_updateFillsAtIndex'
+              : 'api_fill_updateFillFieldsBatch')
+        )
+        if (!action) throw new Error('Missing registered Fill batch action')
+        const result = await action.execute(
+          mode === 'aligned rows'
+            ? {
+                elementIds: ids,
+                index: 0,
+                patch: [{ color: '#125678' }, { color: '#876543' }]
+              }
+            : {
+                updates: targets.map((target) => ({
+                  ...target,
+                  patch: { color: '#125678' }
+                }))
+              },
+          {
+            signal: new AbortController().signal,
+            runMutation: async (mutate) =>
+              transactionApis.runTransaction(mutate)
+          }
+        )
+        return { ids, before, after: read(), result }
+      },
+      { firstId, mode }
+    )
+    expect(state.result.status).toBe('complete')
+    expect(state.after).toEqual(
+      state.before.map((fills, index) =>
+        fills.map((fill) => ({
+          ...fill,
+          color: mode === 'aligned rows' && index === 1 ? '#876543' : '#125678'
+        }))
+      )
+    )
+    await undo(page)
+    const read = () =>
+      page.evaluate(async (ids) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return ids.map(
+          (id) => core.getElementComputedData(id, ['fills'])?.fills
+        )
+      }, state.ids)
+    await expect.poll(read).toEqual(state.before)
+    await redo(page)
+    await expect.poll(read).toEqual(state.after)
+  })
+}
+
+test.describe('live execution acceptance recording', () => {
+  for (const firstOutputOnly of [false, true]) {
+    const title = firstOutputOnly
+      ? 'local subscription records first output of Taipei 101 then stops after ten seconds'
+      : 'local subscription draws the upper two Taipei 101 tiers and spire from one brief'
+    test(title, async ({ browser }, testInfo) => {
+      test.skip(
+        process.env.E2E_LOCAL_AI !== 'true',
+        'Requires the local subscription opt-in; never use a mock as visual acceptance'
+      )
+      // A harness cleanup guard, not an App request quota or a performance SLA.
+      // Reserve a cleanup minute after the driver guard so failure artifacts survive.
+      const recordingTimeoutMs = 30 * 60 * 1000
+      test.setTimeout(recordingTimeoutMs + 60_000)
+      expect(process.env.AI_PROVIDER_BACKEND).toBe('local-codex')
+      expect(process.env.AI_PROVIDER_MODEL).toBe('gpt-6-astra')
+      const context = await browser.newContext({
+        baseURL: String(testInfo.project.use.baseURL),
+        viewport: { width: 1920, height: 1080 },
+        recordVideo: {
+          dir: testInfo.outputDir,
+          size: { width: 1920, height: 1080 }
+        }
+      })
+      const page = await context.newPage()
+      page.setDefaultTimeout(30_000)
+      captureBrowserErrors(page)
+      const brief =
+        'Draw only Taipei 101’s two uppermost large bamboo-shaped sections, plus the full crown and spire above them, as a highly detailed, realistic 2D illustration from a fixed elevated three-quarter view looking down at the building, with clearly visible top surfaces and consistent perspective. Use editable shapes, preserve visible façade details, and scale at 1 cm = 1 px.'
+      const identity = createTestDocumentIdentity('aiPerformance=profile')
+      await captureProviderFrames(
+        page,
+        testInfo.outputPath('action-batch.ndjson')
+      )
+      const inspections: Promise<void>[] = []
+      const receipts: unknown[] = []
+      const timeline: unknown[] = []
+      let started = Date.now()
+      page.on('websocket', (socket) => {
+        if (
+          new URL(socket.url()).port !==
+          new URL(String(testInfo.project.use.baseURL)).port
+        )
+          return
+        socket.on('framereceived', ({ payload }) => {
+          try {
+            const event = JSON.parse(String(payload))
+            if (event.type === 'full-reload')
+              timeline.push({
+                elapsedMs: Date.now() - started,
+                interaction: 'development-reload',
+                path: event.path ?? null
+              })
+          } catch {
+            /* Not a Vite JSON message. */
+          }
+        })
+      })
+      page.on('request', (request) => {
+        if (!request.headers()['x-ai-batch-receipt']) return
+        const receipt = request.postDataJSON()
+        for (const entry of receipt.actionResults ?? []) {
+          receipts.push({
+            elapsedMs: Date.now() - started,
+            actionName: entry.actionName,
+            status: entry.status,
+            available: entry.result?.available,
+            current: entry.result?.current,
+            timing: entry.result?.timing,
+            evidence: entry.result?.evidence
+          })
+          if (
+            entry.actionName === 'inspect_drawing' &&
+            entry.result?.available === true &&
+            typeof entry.result.image?.dataUrl === 'string'
+          ) {
+            inspections.push(
+              writeFile(
+                testInfo.outputPath(`inspection-${inspections.length}.png`),
+                Buffer.from(entry.result.image.dataUrl.split(',')[1], 'base64')
+              )
+            )
+          }
+        }
+      })
+      try {
+        await page.goto(identity.url)
+        await waitForAppReady(page)
+        await page.getByRole('button', { name: 'Open Agent' }).click()
+        await expect(page.getByText('Local AI connected')).toBeVisible({
+          timeout: 30_000
+        })
+        await page.getByLabel('Message Agent').fill(brief)
+        await page.evaluate(async () => {
+          const profile = (
+            await import('../src/testing/runtime-access')
+          ).getActiveAiDrawingPerformanceProfile()
+          if (!profile) throw new Error('Missing live App performance profile')
+          profile.reset()
+        })
+        const canvasBaseline = await captureRecordedCanvas(page)
+        started = Date.now()
+        await page.getByRole('button', { name: 'Send', exact: true }).click()
+        await focusRecordedCanvas(page)
+        const message = page.getByTestId('ai-agent-message').last()
+        await expect(message).toBeVisible()
+        await waitForRecordedDrawing(
+          page,
+          timeline,
+          started,
+          recordingTimeoutMs,
+          {
+            baseline: canvasBaseline,
+            imagePath: testInfo.outputPath('first-visible-canvas.png'),
+            ...(firstOutputOnly ? { stopAfterFirstVisibleMs: 10_000 } : {})
+          }
+        )
+        if (firstOutputOnly) {
+          expect(timeline).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                interaction: 'first-visible-canvas-change'
+              }),
+              expect.objectContaining({ interaction: 'first-output-stop' })
+            ])
+          )
+          await expect(
+            page.getByRole('button', { name: 'Cancel request', exact: true })
+          ).toBeHidden({ timeout: 30_000 })
+          expect(getCapturedBrowserErrors(page)).toEqual([])
+          return
+        }
+        await page.screenshot({
+          path: testInfo.outputPath('completed-app.png')
+        })
+        await writeFile(
+          testInfo.outputPath('outcome.txt'),
+          await message.innerText()
+        )
+        await writeFile(
+          testInfo.outputPath('document.json'),
+          JSON.stringify(
+            await page.evaluate(async () =>
+              (await import('../src/testing/runtime-access')).core.save()
+            )
+          )
+        )
+        await expect(page.getByLabel('Question', { exact: true })).toHaveCount(
+          0
+        )
+        await expect(message).toHaveAttribute('data-outcome', 'success')
+        const canonicalDigest = await getCoreDocumentDigest(page)
+        await expect
+          .poll(() => getPersistedDocumentDigest(identity.fileId), {
+            timeout: 30_000,
+            intervals: [1000],
+            message:
+              'The completed drawing must match its full durable checkpoint'
+          })
+          .toEqual(canonicalDigest)
+        await writeFile(
+          testInfo.outputPath('durable-completion.json'),
+          JSON.stringify(
+            { documentId: identity.fileId, canonicalDigest },
+            null,
+            2
+          )
+        )
+        expect(getCapturedBrowserErrors(page)).toEqual([])
+        expect(inspections.length).toBeGreaterThan(0)
+        // The recording intentionally includes ten seconds of the finished view.
+        await page.waitForTimeout(10_000)
+      } finally {
+        if (!page.isClosed()) {
+          const stop = page.getByRole('button', {
+            name: 'Cancel request',
+            exact: true
+          })
+          if (await stop.isVisible()) await stop.click()
+          await writeFile(
+            testInfo.outputPath('document.json'),
+            JSON.stringify(
+              await page.evaluate(async () =>
+                (await import('../src/testing/runtime-access')).core.save()
+              )
+            )
+          )
+          await writeFile(
+            testInfo.outputPath('owner-profile.json'),
+            JSON.stringify(
+              await page.evaluate(
+                async () =>
+                  (await import('../src/testing/runtime-access'))
+                    .getActiveAiDrawingPerformanceProfile()
+                    ?.snapshot() ?? null
+              )
+            )
+          )
+          await page.screenshot({ path: testInfo.outputPath('last-app.png') })
+        }
+        await Promise.all(inspections)
+        await writeFile(
+          testInfo.outputPath('execution-evidence.json'),
+          JSON.stringify(
+            {
+              brief,
+              documentId: identity.fileId,
+              recordingMode: firstOutputOnly ? 'first-output' : 'full-artwork',
+              model: process.env.AI_PROVIDER_MODEL,
+              // The production provider rejects a non-medium thread acknowledgement.
+              requiredEffort: 'medium',
+              timeline,
+              receipts
+            },
+            null,
+            2
+          )
+        )
+        await writeFile(
+          testInfo.outputPath('live-browser-errors.json'),
+          JSON.stringify(getCapturedBrowserErrors(page))
+        )
+        await context.close()
+        const video = page.video()
+        if (video)
+          await testInfo.attach('execution-video', {
+            path: await video.path(),
+            contentType: 'video/webm'
+          })
+      }
+    })
+  }
+})
+
+test('canonical fill reference edits and plural record patches have distinct contracts', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page)
+  const evidence = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const elementId = core.getSelectedElementIds()[0]
+    const before = core.getElementComputedData(elementId, ['fills'])
+    const fill = (before.fills as { id: string; color: string }[])[0]
+    if (!fill) throw new Error('Missing rectangle fill')
+    let rejected = ''
+    try {
+      core.updateElementProperties([{ elementId, values: { fills: [fill] } }])
+    } catch (error) {
+      rejected = error instanceof Error ? error.message : String(error)
+    }
+    const afterRejection = core.getElementComputedData(elementId, ['fills'])
+    const ids = core.patchElementProperties([
+      {
+        elementId,
+        records: [
+          {
+            key: 'fills',
+            set: {
+              [fill.id]: {
+                kind: 'gradient',
+                gradient: {
+                  gradientType: 'linear',
+                  gradientHandles: [
+                    { x: 0, y: 0 },
+                    { x: 0.08, y: 1 }
+                  ],
+                  gradientStops: [
+                    { position: 0, color: '#1c3d46', opacity: 1 },
+                    { position: 1, color: '#1b3c45', opacity: 1 }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ])
+    return {
+      rejected,
+      before,
+      afterRejection,
+      ids,
+      elementId,
+      fillId: fill.id,
+      after: core.getElementComputedData(elementId, ['fills'])
+    }
+  })
+  await writeFile(
+    testInfo.outputPath('property-semantics.json'),
+    JSON.stringify(evidence, null, 2)
+  )
+  expect(evidence.rejected).toContain('fills')
+  expect(evidence.afterRejection).toEqual(evidence.before)
+  expect(evidence.ids).toEqual([evidence.elementId])
+  expect(evidence.after.fills).toEqual([
+    expect.objectContaining({
+      id: evidence.fillId,
+      kind: 'gradient',
+      gradient: expect.objectContaining({ gradientType: 'linear' })
+    })
+  ])
+})
+
+test('recording identifies page reload as an interruption instead of a missing message', async ({
+  page
+}) => {
+  test.setTimeout(20_000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.evaluate(() => {
+    const message = document.createElement('div')
+    message.dataset.testid = 'ai-agent-message'
+    message.dataset.outcome = 'active'
+    document.body.append(message)
+  })
+  page.setDefaultTimeout(2000)
+  const timeline: unknown[] = []
+  const running = waitForRecordedDrawing(
+    page,
+    timeline,
+    Date.now(),
+    10000,
+    {}
+  ).then(
+    () => null,
+    (error: Error) => error.message
+  )
+  await expect.poll(() => timeline.length).toBe(1)
+  await page.reload()
+  expect(await running).toContain(
+    'Recording interrupted by page reload or navigation'
+  )
+  expect(timeline).toEqual([
+    expect.objectContaining({ interaction: 'canvas-baseline' }),
+    expect.objectContaining({ interaction: 'page-navigation' })
+  ])
+})
+
+test('recording reports navigation during observer setup and removes its listener', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const baseline = await captureRecordedCanvas(page)
+  const timeline: unknown[] = []
+  const listenersBefore = page.listenerCount('framenavigated')
+  const requestsBefore = page.listenerCount('request')
+  const evaluate = page.evaluate.bind(page)
+  let enteredSetup!: () => void
+  const setupEntered = new Promise<void>((resolve) => {
+    enteredSetup = resolve
+  })
+  let firstEvaluation = true
+  page.evaluate = (async (...args: Parameters<Page['evaluate']>) => {
+    if (!firstEvaluation) return evaluate(...args)
+    firstEvaluation = false
+    // Hold a real browser RPC until reload destroys its execution context.
+    const pending = evaluate(
+      () =>
+        new Promise<void>(() => {
+          // Intentionally pending until navigation destroys this document.
+        })
+    )
+    const outcome = pending.then(
+      () => undefined,
+      (error: unknown) => error
+    )
+    await evaluate(() => document.readyState)
+    enteredSetup()
+    const error = await outcome
+    if (error) throw error
+  }) as Page['evaluate']
+  const running = waitForRecordedDrawing(page, timeline, Date.now(), 10000, {
+    baseline
+  }).then(
+    () => null,
+    (error: Error) => error.message
+  )
+  await setupEntered
+  await page.reload()
+  expect(await running).toContain(
+    'Recording interrupted by page reload or navigation'
+  )
+  expect(timeline).toEqual([
+    expect.objectContaining({ interaction: 'canvas-baseline' }),
+    expect.objectContaining({ interaction: 'page-navigation' })
+  ])
+  expect(page.listenerCount('framenavigated')).toBe(listenersBefore)
+  expect(page.listenerCount('request')).toBe(requestsBefore)
+  page.evaluate = evaluate
+})
+
+test('plural AI visibility uses one Undo and preserves target status', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await createRectangle(page, 0.3, 0.3)
+  const firstId = await page.evaluate(
+    async () =>
+      (
+        await import('../src/testing/runtime-access')
+      ).core.getSelectedElementIds()[0]
+  )
+  await createRectangle(page, 0.6, 0.6)
+  const state = await page.evaluate(async (firstId) => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis } = await import('../src/common-apis')
+    const { createBasicApiActions } =
+      await import('../src/ai/basic-api-actions')
+    const ids = [firstId, core.getSelectedElementIds()[0]]
+    const action = createBasicApiActions().find(
+      (entry) => entry.name === 'api_element_setElementsVisible'
+    )
+    if (!action) throw new Error('Missing plural visibility action')
+    const read = () => ids.map((id) => core.getElementData(id)?.visible)
+    const before = read()
+    const result = await action.execute(
+      { elementIds: ids, visible: false },
+      {
+        signal: new AbortController().signal,
+        runMutation: async (mutate) => transactionApis.runTransaction(mutate)
+      }
+    )
+    return { ids, before, after: read(), result }
+  }, firstId)
+  expect(state.result).toMatchObject({
+    status: 'complete',
+    value: ['changed', 'changed']
+  })
+  expect(state.after).toEqual([false, false])
+  const read = () =>
+    page.evaluate(async (ids) => {
+      const { core } = await import('../src/testing/runtime-access')
+      return ids.map((id) => core.getElementData(id)?.visible)
+    }, state.ids)
+  await undo(page)
+  await expect.poll(read).toEqual(state.before)
+  await redo(page)
+  await expect.poll(read).toEqual(state.after)
+})
+
+test('ready design parts continue in an existing container with one undo entry', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getUndoHistoryDepth(page)
+  const first = prepareDesign(
+    {
+      type: 'frame',
+      name: 'Ready surface',
+      x: 500,
+      y: 300,
+      width: 400,
+      height: 400,
+      children: [
+        {
+          type: 'rect',
+          key: 'surface',
+          name: 'Surface',
+          x: 20,
+          y: 20,
+          width: 360,
+          height: 360,
+          fill: '#235678'
+        }
+      ]
+    },
+    'surface'
+  )
+  const second = prepareDesign(
+    {
+      type: 'group',
+      name: 'Later details',
+      children: [
+        {
+          type: 'rect',
+          key: 'detail',
+          name: 'Detail',
+          x: 60,
+          y: 80,
+          width: 40,
+          height: 200,
+          fill: '#aaddff'
+        }
+      ]
+    },
+    'details'
+  )
+  const result = await page.evaluate(
+    async ({ first, second }) => {
+      const { core } = await import('../src/testing/runtime-access')
+      const { createPreparedDesignAction } =
+        await import('../src/ai/design-actions')
+      const { createAiTransactionRunner } =
+        await import('../src/ai/transaction')
+      const { viewportApis } = await import('../src/common-apis/viewport')
+      const action = createPreparedDesignAction()
+      let initialSurface: unknown
+      let finalSurface: unknown
+      await createAiTransactionRunner().run(
+        'Ready parts',
+        async (runMutation) => {
+          const context = { signal: new AbortController().signal, runMutation }
+          const receipt = await action.execute(
+            { design: first, response: 'compact' },
+            context as never
+          )
+          initialSurface = core.getElementComputedData(first.keyToId.surface, [
+            'x',
+            'y',
+            'width',
+            'height'
+          ])
+          await action.execute(
+            {
+              design: second,
+              parentId: receipt.compositionId,
+              response: 'compact'
+            },
+            context as never
+          )
+          finalSurface = core.getElementComputedData(first.keyToId.surface, [
+            'x',
+            'y',
+            'width',
+            'height'
+          ])
+        }
+      )
+      viewportApis.zoomFit()
+      return {
+        initialSurface,
+        finalSurface,
+        parent: core.getElementData(second.rootId)?.parentId
+      }
+    },
+    { first, second }
+  )
+  expect(result.parent).toBe(first.rootId)
+  expect(result.finalSurface).toEqual(result.initialSurface)
+  expect(await getUndoHistoryDepth(page)).toBe(before + 1)
+  const finalDigest = await getCoreDocumentDigest(page)
+  await page.screenshot({ path: testInfo.outputPath('ready-parts.png') })
+  await undo(page)
+  expect(
+    await page.evaluate(
+      async (id) =>
+        (await import('../src/testing/runtime-access')).core.getElementData(
+          id
+        ) ?? null,
+      first.rootId
+    )
+  ).toBeNull()
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(finalDigest)
 })

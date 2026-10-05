@@ -1,4 +1,4 @@
-import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { DEFAULT_TEXT_DATA } from '@asyra/preset'
 import {
   editDesignElement,
@@ -60,8 +60,8 @@ export const createDesignEditAction = (
       { required: ['strokeColor'] }
     ]
   },
-  execute: async (request, { signal }) => {
-    if (signal.aborted) throw new Error('Design edit cancelled.')
-    return edit(request)
+  execute: async (request, context) => {
+    if (context.signal.aborted) throw new Error('Design edit cancelled.')
+    return runAiMutation(context, () => edit(request))
   }
 })

@@ -13,7 +13,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "1f15df1ea54aec7db061bc37b134a27453323e3b907c5d8b462bafa8f706ef13",
+        "contract": "06444d231affe12ec95bdfc0d02ec9b67205bb5f4708b405526494d4ed7e4645",
         "guide": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
         "manifest": "f37c81e2ff86cc8ba78990080f397d8f903a11c512ba9fa6b0dc3a2f06978b9d"
       },
@@ -70,7 +70,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "28a8e835c3da26434a6a762c9b41da30fbec84e152bae14499710599e9f0c638",
+        "contract": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -114,7 +114,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "797c83977c073745be332012311ec3fdf21aa7a6271e87476f721e92fdd98f1a",
+        "contract": "512f1bf17858b108f3f8f85ce13c463f2a893b01f5cbd52ca724c1bcab1c27c3",
         "guide": "f3135c07050bec8d0c4949166149dff46755e6c4daf7254480044ed3ac6d77a2",
         "manifest": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
       },
@@ -208,7 +208,7 @@
         "./spatial"
       ],
       "sourceDigests": {
-        "contract": "ead17802010d823fb77a71c26c8799b6ca417f8db17b5e14bd9a28216dffc56b",
+        "contract": "03cb9a868ded58c1bcb2dcde0f3c98cba0fd1d253db068763933edced3ba59c2",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
         "manifest": "c23748d886dbff1a51569feb6c2dc069cebb9c6c9b1307baef2ac64c1211b4b4"
       },
@@ -279,7 +279,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "d658ca0f32a568b3957cadebde42289197c0621a241cf9feabcb7e4ab4e15a47",
+        "contract": "6c174e0c3d951a62a8c11ec1090e819761f309574fc39aeeb8760692e4629cea",
         "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
         "manifest": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
       },
@@ -320,7 +320,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "9630ff46abe3e778985d4a67d9de35bbf593e9815e3f8971a068ebf137cc3b67",
+        "contract": "a301fdf4dea2582ce80a66c21ffe73406218d917980bd463eb0227a0059c0326",
         "guide": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
         "manifest": "a7c7c847e74f04054de4197b391a844086f120276505272162f6f738724db31e"
       },

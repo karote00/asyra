@@ -6,7 +6,7 @@ const handle = { type: 'number', minimum: -10000, maximum: 10000 }
 const gradientTypes = [FillGradientTypes.LINEAR]
 
 // App wire admission is intentionally narrower than extensible canonical metadata.
-export const designFillSchema = {
+export const designInlineFillSchema = {
   anyOf: [
     color,
     {
@@ -89,5 +89,41 @@ export const isDesignGradient = (v: unknown): v is FillGradientData => {
   })
 }
 
-export const isDesignFill = (v: unknown): v is string | FillGradientData =>
-  isColor(v) || isDesignGradient(v)
+export const isDesignInlineFill = (
+  v: unknown
+): v is string | FillGradientData => isColor(v) || isDesignGradient(v)
+
+export const isDesignSharedFill = (v: unknown): v is { shared: string } =>
+  record(v) &&
+  exact(v, ['shared']) &&
+  typeof v.shared === 'string' &&
+  v.shared.trim().length > 0 &&
+  v.shared.length <= 160
+
+export const isDesignFill = (
+  v: unknown
+): v is string | FillGradientData | { shared: string } =>
+  isDesignInlineFill(v) || isDesignSharedFill(v)
+
+export const designFillSchema = {
+  anyOf: [
+    ...designInlineFillSchema.anyOf,
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['shared'],
+      properties: { shared: { type: 'string', minLength: 1, maxLength: 160 } }
+    }
+  ],
+  description:
+    designInlineFillSchema.description +
+    ' Use {shared: key} to reuse a draft.sharedFills definition. This is a draft-local key, not an existing property ID. Inline equal values remain independent.'
+}
+
+export const designSharedFillsSchema = {
+  type: 'object',
+  propertyNames: { type: 'string', minLength: 1, maxLength: 160 },
+  additionalProperties: designInlineFillSchema,
+  description:
+    'Optional explicit shared Fill definitions keyed by draft-local name. The first use creates a canonical Fill; other uses link its ID. Returned sharedFillIds maps used names to real IDs for later property edits. Definitions cannot reference other definitions. Existing document fills use the public fill linking APIs.'
+}

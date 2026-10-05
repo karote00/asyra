@@ -7,16 +7,12 @@ import { useFillInteractions } from './use-fill-interactions'
 interface FillItemProps {
   index: number
   fillId: string
-  ownerElementId: string | null
+  elementIds: string[]
   onRemove: () => void
 }
 
-const FillItem = ({
-  index,
-  fillId,
-  ownerElementId,
-  onRemove
-}: FillItemProps) => {
+const FillItem = ({ index, fillId, elementIds, onRemove }: FillItemProps) => {
+  const ownerElementId = elementIds.length === 1 ? elementIds[0] : null
   const fill = useFill(fillId)
   const {
     displayColor,
@@ -37,7 +33,9 @@ const FillItem = ({
   } = useFillInteractions({
     fill: fill as unknown as FillAttrs | null,
     fillId,
-    ownerElementId
+    ownerElementId,
+    elementIds,
+    index
   })
 
   if (!fill) {

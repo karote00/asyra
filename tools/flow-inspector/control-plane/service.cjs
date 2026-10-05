@@ -4,7 +4,12 @@ const path = require('node:path')
 const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
 const { isDeepStrictEqual } = require('node:util')
-const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
+const {
+  admitContract,
+  loadContract,
+  mappingDiff,
+  MANIFEST_PATH
+} = require('./contracts.cjs')
 const sourceOwner = require('./snapshot.cjs')
 const targetEvidenceOwner = require('./target-evidence.cjs')
 const { captureSource, safePath, sha256 } = sourceOwner
@@ -66,7 +71,15 @@ const authorize = (actor, capability) => {
 function createService(
   repositoryRoot,
   {
-    directory = path.join(repositoryRoot, 'tmp/flow-inspector/runs'),
+    manifestPath = MANIFEST_PATH,
+    directory = manifestPath === MANIFEST_PATH
+      ? path.join(repositoryRoot, 'tmp/flow-inspector/runs')
+      : path.join(
+          repositoryRoot,
+          'tmp/flow-inspector/products',
+          sha256(manifestPath),
+          'runs'
+        ),
     runner = runVerification,
     capture = captureSource,
     timeoutMs = 30000,
@@ -77,7 +90,9 @@ function createService(
   } = {}
 ) {
   ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
-  let contract = loadContract(repositoryRoot)
+  const loadCurrentContract = () =>
+    loadContract(repositoryRoot, undefined, manifestPath)
+  let contract = loadCurrentContract()
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
@@ -406,6 +421,8 @@ function createService(
     contract = accepted.architectureDefinition
       ? admitContract(accepted.definition, accepted.architectureDefinition)
       : loadContract(repositoryRoot, accepted.definition)
+    if (contract.manifestPath !== manifestPath)
+      throw new Error('Retained product manifest differs from selected service')
     if (contract.digest !== accepted.digest)
       throw new Error(
         'Accepted architecture changed; a new contract activation is required'
@@ -2286,7 +2303,7 @@ function createService(
       if (!candidate) {
         const candidateContract = sourceAware
           ? sourceAdmissions.get(record.id)?.contract
-          : loadContract(repositoryRoot)
+          : loadCurrentContract()
         if (
           !candidateContract ||
           record.contractDigest !== candidateContract.digest
@@ -2359,7 +2376,7 @@ function createService(
       const review = evolution.reviews.find((item) => item.id === request.id)
       if (!review) throw new ActionError(404, 'Contract review not found')
       if (request.decision === 'accept') {
-        const current = loadContract(repositoryRoot)
+        const current = loadCurrentContract()
         const digest = sha256(
           fs.readFileSync(safePath(repositoryRoot, current.testFile))
         )
@@ -2543,7 +2560,7 @@ function createService(
       authorize(actor, 'prepare-mapping')
       objectRequest(request, [])
       requireIdle()
-      const candidate = loadContract(repositoryRoot)
+      const candidate = loadCurrentContract()
       const changes = mappingDiff(contract, candidate)
       if (!changes.length) return { status: 'unchanged', changes: [] }
       const state = store.mapping()
@@ -2602,7 +2619,7 @@ function createService(
           review.baseDigest !== contract.digest
         )
           throw new ActionError(409, 'Mapping review base is stale')
-        accepted = loadContract(repositoryRoot)
+        accepted = loadCurrentContract()
         if (accepted.digest !== review.candidate.digest)
           throw new ActionError(409, 'Mapping candidate changed after review')
         mappingDiff(contract, accepted)
@@ -2782,7 +2799,7 @@ function createService(
       if (mode === 'candidate') authorize(actor, 'preview-contract')
       if (mode === 'ci' || mode === 'ci-demo') authorize(actor, 'ci')
       const requestedContract =
-        mode === 'candidate' ? loadContract(repositoryRoot) : contract
+        mode === 'candidate' ? loadCurrentContract() : contract
       const scenario = request.scenario ?? 'baseline'
       if (!requestedContract.scenarios.some((item) => item.id === scenario))
         throw new ActionError(400, 'Unknown scenario')
@@ -2832,7 +2849,7 @@ function createService(
       }
       requireIdle()
       const current =
-        mode === 'candidate' ? requestedContract : loadContract(repositoryRoot)
+        mode === 'candidate' ? requestedContract : loadCurrentContract()
       if (mode !== 'candidate' && current.digest !== contract.digest)
         throw new ActionError(
           409,

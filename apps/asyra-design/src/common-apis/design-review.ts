@@ -36,21 +36,19 @@ interface ReviewFinding {
   right?: number
   bottom?: number
 }
+export const observeDesignChanges = (listener: () => void): (() => void) => {
+  const stops = [
+    core.observeSharedDataChannel(SharedDataChannelNames.SCENE_TREE, listener),
+    core.observeSharedDataChannel(SharedDataChannelNames.PROPS, listener)
+  ]
+  const fileLoad = subscribeToFileLoadComplete(listener)
+  return () => {
+    stops.forEach((stop) => stop())
+    fileLoad.unsubscribe()
+  }
+}
 const defaultApis: ReviewApis = {
-  observeChanges: (listener) => {
-    const stops = [
-      core.observeSharedDataChannel(
-        SharedDataChannelNames.SCENE_TREE,
-        listener
-      ),
-      core.observeSharedDataChannel(SharedDataChannelNames.PROPS, listener)
-    ]
-    const fileLoad = subscribeToFileLoadComplete(listener)
-    return () => {
-      stops.forEach((stop) => stop())
-      fileLoad.unsubscribe()
-    }
-  },
+  observeChanges: observeDesignChanges,
   read: (id) => core.getElementData(id),
   computed: (id, fields) => core.getElementComputedData(id, fields),
   measure: (ids) => core.measureElementContentBounds(ids)

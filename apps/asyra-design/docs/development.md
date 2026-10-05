@@ -112,12 +112,26 @@ include a `callId`, total duration, queue time, execution time, returned text by
 and image counts; inputs/results are bounded allowlisted summaries. Prepared-design
 receipts separate admission, object creation and cooperative-host yield waits (`cooperativeYieldMs`). The usage
 record's `timing` contains unioned `observedToolAndResearchMs` (overlapping calls
-count once) and `unattributedMs`. The latter includes unobserved provider/model/
-network/orchestration time, not measured thinking. Tool time can include approval
-waits; cooperative-host yield wait is not GPU presentation time.
+count once) and `outsideToolAndResearchMs`; the latter is a coarse complement,
+not an attribution category. Use the report's exclusive `timing.owners` and
+`timing.breakdown` for attribution. `timing.unattributedMs` now consistently means
+a recorded coverage gap, also reported as `owners.recordingGapMs`.
+
+New invocations record an App lifecycle envelope, actual provider delegation and
+return, and timestamped public notification metadata. Provider waiting includes
+unobservable provider internals and must not be labelled measured model thinking.
+Nested visual assessments carry `sourceRequestId`, `parentCallId` and `sourceSpanId`;
+the parent records that wait separately from tool execution. Per-call
+`timing.callDurations` distinguishes inclusive latency from own time after removing
+explicit child intervals. Do not sum inclusive parent and child durations.
+Missing lifecycle boundaries or sequences mark the record incomplete; old records
+keep their original coverage gaps. Cooperative-host yield wait is not GPU time.
 Reference URLs retain origin/path only. Array summaries include total count and
-truncation; they are not complete source data. No raw prompt, private reasoning,
-credentials, image bytes or coordinate arrays are retained. Review observations
+truncation; they are not complete source data. Separate local payload sidecars
+retain sanitized App tool input/output, including structured geometry, with hashes
+and explicit redactions; console summaries omit those coordinate arrays. Raw user
+prompts, private reasoning, credentials and image bytes are not diagnostic payloads.
+Review observations
 may contain design content, so treat local logs as private debugging evidence.
 
 `record_design_review` records the chosen method, sources, criteria and detail

@@ -1,3 +1,4 @@
+import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { randomUUID } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
@@ -8,6 +9,80 @@ const text = (value: unknown): value is string =>
 const strings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.length <= 24 && value.every(text)
 
+const designReviewProperties = {
+  phase: { type: 'string', enum: ['plan', 'structure', 'visual'] },
+  method: { type: 'string', maxLength: 1000 },
+  references: {
+    type: 'array',
+    maxItems: 24,
+    items: { type: 'string', maxLength: 1000 }
+  },
+  criteria: {
+    type: 'array',
+    minItems: 1,
+    maxItems: 24,
+    items: { type: 'string', minLength: 1, maxLength: 1000 }
+  },
+  structureCriteria: {
+    type: 'array',
+    maxItems: 24,
+    items: { type: 'string', minLength: 1, maxLength: 1000 }
+  },
+  deferredDetails: {
+    type: 'array',
+    maxItems: 24,
+    description:
+      'Compact deferred-part descriptions, not geometry. Add on plan, structure or visual review; retained for this request. Use the same id for the same part. Final visual review must resolve all retained parts.',
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'description', 'reason'],
+      properties: {
+        id: { type: 'string', minLength: 1, maxLength: 1000 },
+        description: { type: 'string', minLength: 1, maxLength: 1000 },
+        reason: { type: 'string', minLength: 1, maxLength: 1000 }
+      }
+    }
+  },
+  deferredChecks: {
+    type: 'array',
+    description:
+      'Visual phase only: assess retained deferred parts against current inspectionIds. omit means the final view does not need this detail; restored means it was drawn and checked; pending means more work. Decisions expire after mutation.',
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'status', 'evidence'],
+      properties: {
+        id: { type: 'string', minLength: 1, maxLength: 1000 },
+        status: { type: 'string', enum: ['omit', 'restored', 'pending'] },
+        evidence: { type: 'string', minLength: 1, maxLength: 1000 }
+      }
+    }
+  },
+  detailRequired: { type: 'boolean' },
+  inspectionIds: {
+    type: 'array',
+    minItems: 1,
+    maxItems: 24,
+    items: { type: 'string' }
+  },
+  checks: {
+    type: 'array',
+    minItems: 1,
+    maxItems: 24,
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['requirement', 'status', 'evidence'],
+      properties: {
+        requirement: { type: 'string' },
+        status: { type: 'string', enum: ['pass', 'fail', 'unverified'] },
+        evidence: { type: 'string', minLength: 1, maxLength: 1000 }
+      }
+    }
+  }
+}
+
 export const designReviewDefinition = {
   type: 'function',
   name: AiDesignToolIds.RECORD_DESIGN_REVIEW,
@@ -17,89 +92,34 @@ export const designReviewDefinition = {
     type: 'object',
     additionalProperties: false,
     required: ['phase'],
+    // Each alternative is self-contained so native tool discovery preserves its fields.
     oneOf: [
       {
-        properties: { phase: { const: 'plan' } },
-        required: ['method', 'references', 'criteria', 'detailRequired']
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          ...designReviewProperties,
+          phase: { type: 'string', const: 'plan' }
+        },
+        required: [
+          'phase',
+          'method',
+          'references',
+          'criteria',
+          'detailRequired'
+        ]
       },
       {
-        properties: { phase: { enum: ['structure', 'visual'] } },
-        required: ['inspectionIds', 'checks']
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          ...designReviewProperties,
+          phase: { type: 'string', enum: ['structure', 'visual'] }
+        },
+        required: ['phase', 'inspectionIds', 'checks']
       }
     ],
-    properties: {
-      phase: { type: 'string', enum: ['plan', 'structure', 'visual'] },
-      method: { type: 'string', maxLength: 1000 },
-      references: {
-        type: 'array',
-        maxItems: 24,
-        items: { type: 'string', maxLength: 1000 }
-      },
-      criteria: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 24,
-        items: { type: 'string', minLength: 1, maxLength: 1000 }
-      },
-      structureCriteria: {
-        type: 'array',
-        maxItems: 24,
-        items: { type: 'string', minLength: 1, maxLength: 1000 }
-      },
-      deferredDetails: {
-        type: 'array',
-        maxItems: 24,
-        description:
-          'Compact deferred-part descriptions, not geometry. Add on plan, structure or visual review; retained for this request. Use the same id for the same part. Final visual review must resolve all retained parts.',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['id', 'description', 'reason'],
-          properties: {
-            id: { type: 'string', minLength: 1, maxLength: 1000 },
-            description: { type: 'string', minLength: 1, maxLength: 1000 },
-            reason: { type: 'string', minLength: 1, maxLength: 1000 }
-          }
-        }
-      },
-      deferredChecks: {
-        type: 'array',
-        description:
-          'Visual phase only: assess retained deferred parts against current inspectionIds. omit means the final view does not need this detail; restored means it was drawn and checked; pending means more work. Decisions expire after mutation.',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['id', 'status', 'evidence'],
-          properties: {
-            id: { type: 'string', minLength: 1, maxLength: 1000 },
-            status: { type: 'string', enum: ['omit', 'restored', 'pending'] },
-            evidence: { type: 'string', minLength: 1, maxLength: 1000 }
-          }
-        }
-      },
-      detailRequired: { type: 'boolean' },
-      inspectionIds: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 24,
-        items: { type: 'string' }
-      },
-      checks: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 24,
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['requirement', 'status', 'evidence'],
-          properties: {
-            requirement: { type: 'string' },
-            status: { type: 'string', enum: ['pass', 'fail', 'unverified'] },
-            evidence: { type: 'string', minLength: 1, maxLength: 1000 }
-          }
-        }
-      }
-    }
+    properties: designReviewProperties
   }
 }
 
@@ -124,16 +144,24 @@ export const createLocalDesignReview = () => {
   >()
   let structureAccepted = false
   let accepted = false
+  let acceptedIds: string[] = []
   let issue = 'The drawing has not been checked against the requested result.'
   const inspections = new Map<
     string,
-    { target: string; scope: string; overview: boolean; detail: boolean }
+    {
+      target: string
+      scope: string
+      overview: boolean
+      detail: boolean
+      source?: InspectionEvidenceStamp
+    }
   >()
   return {
     mutate(): void {
       revision++
       accepted = false
       inspections.clear()
+      acceptedIds = []
       issue =
         'The latest changes have not yet been checked against the requested result.'
     },
@@ -142,7 +170,8 @@ export const createLocalDesignReview = () => {
       available: boolean,
       overview: boolean,
       region?: unknown,
-      detail = !overview
+      detail = !overview,
+      source?: InspectionEvidenceStamp
     ): { inspectionId: string; revision: number } | undefined {
       if (!available) return undefined
       const scope = record(region)
@@ -152,7 +181,12 @@ export const createLocalDesignReview = () => {
       // Repeated captures are fresh images of the same revision and scope.
       // Their receipt stays valid; only a mutation retires prior evidence.
       for (const [inspectionId, evidence] of inspections) {
-        if (evidence.target === elementId && evidence.scope === scopedView) {
+        if (
+          evidence.target === elementId &&
+          evidence.scope === scopedView &&
+          evidence.source?.sessionId === source?.sessionId &&
+          evidence.source?.revision === source?.revision
+        ) {
           evidence.overview ||= overview && !region
           return { inspectionId, revision }
         }
@@ -162,10 +196,44 @@ export const createLocalDesignReview = () => {
         target: elementId,
         scope: scopedView,
         overview: overview && !region,
-        detail
+        detail,
+        source
       })
       return { inspectionId, revision }
     },
+    evidenceFor(
+      ids: unknown = acceptedIds
+    ): InspectionEvidenceStamp | undefined {
+      if (!Array.isArray(ids) || !ids.length) return undefined
+      const sources = ids.map((id) =>
+        typeof id === 'string' ? inspections.get(id)?.source : undefined
+      )
+      const first = sources[0]
+      if (
+        !first ||
+        sources.some(
+          (source) =>
+            !source ||
+            source.sessionId !== first.sessionId ||
+            source.revision !== first.revision
+        )
+      )
+        return undefined
+      return first
+    },
+    overviewTargets(ids: unknown = acceptedIds): string[] {
+      if (!Array.isArray(ids)) return []
+      return [
+        ...new Set(
+          ids.flatMap((id) => {
+            const inspection =
+              typeof id === 'string' ? inspections.get(id) : undefined
+            return inspection?.overview ? [inspection.target] : []
+          })
+        )
+      ]
+    },
+    isAccepted: () => accepted,
     record(value: unknown): Record<string, unknown> {
       if (!record(value)) throw new Error('Review arguments must be an object.')
       const additions = value.deferredDetails ?? []
@@ -352,6 +420,7 @@ export const createLocalDesignReview = () => {
       accepted =
         checks.every((check) => check.status === 'pass') &&
         pendingDetails.length === 0
+      acceptedIds = accepted ? [...value.inspectionIds] : []
       const unmet = checks
         .filter((check) => check.status !== 'pass')
         .map((check) => `${check.requirement}: ${check.evidence}`)

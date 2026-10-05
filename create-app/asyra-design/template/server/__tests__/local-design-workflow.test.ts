@@ -3,6 +3,10 @@ import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import {
+  createLocalToolScheduler,
+  LocalToolAccess
+} from '../local-tool-scheduler'
+import {
   createDesignPreparationSession,
   prepareDesign
 } from '../design-preparation'
@@ -66,6 +70,36 @@ const setup = () => {
     execute
   }
 }
+
+it('keeps combined preparation and canvas application behind independent work', async () => {
+  const { workflow, execute } = setup()
+  const controller = new AbortController()
+  const schedule = createLocalToolScheduler(controller.signal)
+  let signalEntered!: () => void
+  const entered = new Promise<void>((resolve) => {
+    signalEntered = resolve
+  })
+  let resume!: () => void
+  const release = new Promise<void>((resolve) => {
+    resume = resolve
+  })
+  const read = schedule(LocalToolAccess.INDEPENDENT, async () => {
+    signalEntered()
+    await release
+  })
+  const combined = schedule(workflow.definitions[0].executionAccess, () =>
+    workflow.call('prepare_and_apply_design', { draft }, controller.signal)
+  )
+  try {
+    await entered
+    await new Promise<void>((resolve) => setImmediate(resolve))
+    expect(execute).not.toHaveBeenCalled()
+  } finally {
+    resume()
+    await Promise.all([read, combined])
+  }
+  expect(execute).toHaveBeenCalledOnce()
+})
 const signal = () => new AbortController().signal
 
 describe('combined design preparation and application', () => {
@@ -149,10 +183,10 @@ describe('combined design preparation and application', () => {
     expect(execute.mock.calls[0][0].actions).toHaveLength(1)
     expect(
       (
-        execute.mock.calls[0][0].actions[0].arguments.design as {
-          entries: unknown[]
+        execute.mock.calls[0][0].actions[0].arguments as {
+          design: { entries: unknown[] }
         }
-      ).entries
+      ).design.entries
     ).toHaveLength(1201)
   })
   it('retains full receipts when code needs IDs, without re-preparing', async () => {

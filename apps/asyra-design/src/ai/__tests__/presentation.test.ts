@@ -36,6 +36,43 @@ const turn = (
 })
 
 describe('Asyra Design AI presentation summaries', () => {
+  it('keeps the sanitized action explanation when no member survives the failed request', () => {
+    const reason =
+      'The original drawing is missing. Select the drawing to revise and try again.'
+    const failed = {
+      ...turn('failed'),
+      result: {
+        status: 'failed',
+        stage: 'execution',
+        code: 'AI_EXECUTION_FAILED',
+        message: reason,
+        transaction: { status: 'rolled-back' }
+      }
+    }
+    expect(summarizeAiTurn(failed).message).toContain(reason)
+    expect(summarizeAiTurn(failed).message).toContain('rolled back')
+    expect(
+      summarizeAiTurn({
+        ...failed,
+        result: { ...failed.result, stage: 'transaction' }
+      }).message
+    ).not.toContain(reason)
+  })
+
+  it('explains retained work after stopping a grouped request without requiring action receipts', () => {
+    const stopped = {
+      ...turn('cancelled'),
+      result: {
+        status: 'cancelled',
+        transaction: { status: 'committed' }
+      }
+    }
+    expect(summarizeAiTurn(stopped).message).toBe(
+      'The request was stopped. Changes already applied have been kept.'
+    )
+    expect(canRetryAiTurn(stopped)).toBe(false)
+  })
+
   it('explains a failed refinement with retained changes without offering replay', () => {
     const failed = {
       ...turn('partial'),
@@ -62,7 +99,7 @@ describe('Asyra Design AI presentation summaries', () => {
       }
     }
     expect(summarizeAiTurn(failed).message).toBe(
-      'The request stopped, but its changes could not be fully rolled back. Review the canvas before continuing.'
+      'The request stopped, but its final change state could not be confirmed. Review the canvas before continuing.'
     )
     expect(canRetryAiTurn(failed)).toBe(false)
   })

@@ -728,3 +728,252 @@ describe('contour review tool integration', () => {
     ).rejects.toThrow()
   })
 })
+
+it('reports an oversized conversion as a bounded result instead of an unavailable tool', async () => {
+  const svg = 'x'.repeat(8 * 1024 * 1024 + 1)
+  const convert = vi.fn(async () => svg)
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: 'data:image/png;base64,YQ==',
+            mediaType: 'image/png',
+            size: 1
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve the selected detail'
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({
+    available: false,
+    code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
+    observedBytes: svg.length,
+    limitBytes: 8 * 1024 * 1024
+  })
+  expect(result.message).toContain('region')
+  expect(result).not.toHaveProperty('imageArtifactId')
+})
+
+it('preserves native region pixels and isolates reuse by selected source region', async () => {
+  const sharp = (await import('sharp')).default
+  const pixels = Buffer.from([
+    255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, 20, 30, 40, 50, 60, 70
+  ])
+  const bytes = await sharp(pixels, {
+    raw: { width: 3, height: 2, channels: 3 }
+  })
+    .png()
+    .toBuffer()
+  const convert = vi.fn(async ({ bytes: selected }) => {
+    const metadata = await sharp(selected).metadata()
+    return `<svg width="${metadata.width}" height="${metadata.height}"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>`
+  })
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+            mediaType: 'image/png',
+            size: bytes.length
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const call = (region: unknown) =>
+    tools
+      .call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Only this visible region is needed',
+            region
+          }
+        },
+        new AbortController().signal
+      )
+      .then(JSON.parse)
+  const region = { x: 1, y: 0, width: 1, height: 2 }
+  const first = await call(region)
+  const repeated = await call({ height: 2, width: 1, y: 0, x: 1 })
+  expect(repeated.imageArtifactId).toBe(first.imageArtifactId)
+  expect(convert).toHaveBeenCalledOnce()
+  expect(first).toMatchObject({ width: 1, height: 2, sourceRegion: region })
+  const cropped = await sharp(convert.mock.calls[0][0].bytes)
+    .removeAlpha()
+    .raw()
+    .toBuffer()
+  expect(cropped).toEqual(Buffer.from([0, 255, 0, 20, 30, 40]))
+  await call({ x: 0, y: 0, width: 1, height: 2 })
+  expect(convert).toHaveBeenCalledTimes(2)
+  for (const bad of [
+    { ...region, x: -1 },
+    { ...region, x: 0.5 },
+    { ...region, width: 0 },
+    { ...region, width: 3 }
+  ])
+    await expect(call(bad)).rejects.toThrow(/region/i)
+  expect(convert).toHaveBeenCalledTimes(2)
+})
+
+it('selects regions in display orientation and rejects cancelled conversion before publishing reuse', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp(
+    Buffer.from([
+      255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, 20, 30, 40, 50, 60, 70
+    ]),
+    { raw: { width: 3, height: 2, channels: 3 } }
+  )
+    .withMetadata({ orientation: 6 })
+    .png()
+    .toBuffer()
+  const controller = new AbortController()
+  let cancel = true
+  const convert = vi.fn(async (_input: { bytes: Uint8Array }) => {
+    if (cancel) controller.abort()
+    return '<svg width="1" height="3"><path d="M0,0L1,0L1,3Z" fill="#000000"/></svg>'
+  })
+  const input = {
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  }
+  const tools = createLocalImageTools(input, convert)
+  const args = {
+    attachmentIndex: 0,
+    plan: {
+      strategy: 'preserve-vectors',
+      reason: 'Use the displayed column',
+      region: { x: 1, y: 0, width: 1, height: 3 }
+    }
+  }
+  await expect(tools.call('vtracer', args, controller.signal)).rejects.toThrow(
+    /abort/i
+  )
+  cancel = false
+  const result = JSON.parse(
+    await tools.call('vtracer', args, new AbortController().signal)
+  )
+  expect(result).toMatchObject({ width: 1, height: 3 })
+  expect(convert).toHaveBeenCalledTimes(2)
+  expect(
+    await sharp(convert.mock.calls[1][0].bytes).removeAlpha().raw().toBuffer()
+  ).toEqual(Buffer.from([255, 0, 0, 0, 255, 0, 0, 0, 255]))
+  expect(input.metadata.imageAttachments[0].dataUrl).toBe(
+    `data:image/png;base64,${bytes.toString('base64')}`
+  )
+})
+
+it('converts a native region through the real worker and artifact parser', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp({
+    create: { width: 32, height: 24, channels: 4, background: '#168ca0' }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  })
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Trace this exact visible region',
+          region: { x: 7, y: 3, width: 16, height: 12 }
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({
+    width: 16,
+    height: 12,
+    sourceRegion: { x: 7, y: 3, width: 16, height: 12 }
+  })
+  expect(result.imageArtifactId).toEqual(expect.any(String))
+})
+
+it('extracts original pixels from a reference above four megapixels', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp({
+    create: { width: 2001, height: 2000, channels: 3, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const convert = vi.fn(async ({ bytes: selected }) => {
+    expect(await sharp(selected).metadata()).toMatchObject({
+      width: 2,
+      height: 3
+    })
+    expect([...(await sharp(selected).raw().toBuffer())]).toEqual(
+      Array(6).fill([18, 52, 86]).flat()
+    )
+    return '<svg width="2" height="3"><path d="M0,0L2,0L2,3Z" fill="#123456"/></svg>'
+  })
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+            mediaType: 'image/png',
+            size: bytes.length
+          }
+        ]
+      }
+    },
+    convert
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Inspect the selected native pixels',
+          region: { x: 1999, y: 1997, width: 2, height: 3 }
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({ width: 2, height: 3 })
+  expect(convert).toHaveBeenCalledOnce()
+})

@@ -148,10 +148,7 @@ test('Scene Tree is canonical and Factory transports ordered changes only', () =
   assert.match(contractText(commit), /sole canonical owner/i)
   assert.match(contractText(commit), /scalar.*before.*after/i)
   assert.match(contractText(commit), /raw.*computed.*owner provenance/i)
-  assert.match(
-    contractText(commit),
-    /replay.*consume.*owner.*never.*infer/i
-  )
+  assert.match(contractText(commit), /replay.*consume.*owner.*never.*infer/i)
   assert.match(contractText(commit), /record patches/i)
   assert.match(
     contractText(commit),
@@ -195,10 +192,7 @@ test('Scene Tree is canonical and Factory transports ordered changes only', () =
   assert.match(contractText(delivery), /journal order/i)
   assert.match(contractText(delivery), /does not own element state/i)
   assert.match(contractText(delivery), /no independent Render revision/i)
-  assert.match(
-    contractText(delivery),
-    /batch replay.*preserves.*owner/i
-  )
+  assert.match(contractText(delivery), /batch replay.*preserves.*owner/i)
   assert.match(
     contractText(delivery),
     /set entry with a before property whose value is undefined.*inverts to a set.*without a before property.*remove/i
@@ -238,10 +232,7 @@ test('Preset routes complete envelopes without creating another snapshot owner',
     contract,
     /rebuild failure.*registration fails.*cleanup rollback/i
   )
-  assert.match(
-    contract,
-    /file-load.*synchronous.*failure.*lifecycle caller/i
-  )
+  assert.match(contract, /file-load.*synchronous.*failure.*lifecycle caller/i)
   assert.ok(observer.inputs.includes('file-load lifecycle event'))
   assert.match(
     observer.bypasses.join(' '),
@@ -276,10 +267,7 @@ test('initial snapshots are explicit complete Scene Tree projections', () => {
     contract,
     /unsuccessful visual add.*strategy failure.*add, reload, or resync.*rebuild failure/i
   )
-  assert.match(
-    contract,
-    /missing add.*pending update.*stale visual.*removed/i
-  )
+  assert.match(contract, /missing add.*pending update.*stale visual.*removed/i)
   assert.match(
     contract,
     /add envelope.*parentId.*sibling index.*parent children mirror.*explicit parent resync/i
@@ -306,10 +294,7 @@ test('scalar, batch, and record patches validate and install atomically', () => 
     contract,
     /comparison is cycle-safe for distinct cyclic records and arrays.*exact sparse-array semantics/i
   )
-  assert.match(
-    contract,
-    /array hole.*own undefined slot.*not equivalent/i
-  )
+  assert.match(contract, /array hole.*own undefined slot.*not equivalent/i)
   assert.match(contract, /top-level record base must be a record/i)
   assert.match(
     contract,
@@ -334,10 +319,7 @@ test('mismatch performs one explicit resync or removes stale output', () => {
     contract,
     /authoritative visual rebuild succeeds.*returns resynced/i
   )
-  assert.match(
-    contract,
-    /strategy rebuild failure.*returns failed/i
-  )
+  assert.match(contract, /strategy rebuild failure.*returns failed/i)
   assert.match(contract, /missing element removes the visual/i)
   assert.match(contract, /clears the visual and returns failed/i)
   assert.match(
@@ -345,10 +327,7 @@ test('mismatch performs one explicit resync or removes stale output', () => {
     /No resync outcome renders the rejected partial delta/i
   )
   assert.match(contract, /stale visual retention after failed resync/i)
-  assert.match(
-    route('mismatch-to-resync').predicate,
-    /incomplete candidate/i
-  )
+  assert.match(route('mismatch-to-resync').predicate, /incomplete candidate/i)
   assert.equal(route('mismatch-to-resync').kind, 'failure')
   assert.equal(route('resync-to-strategy').to, 'execute-render-strategy')
   assert.match(
@@ -407,10 +386,10 @@ test('seed and resync routes carry complete requests before strategy outcomes', 
   assert.deepEqual(route('strategy-result-to-resync').producedArtifacts, [
     'artifact:strategy-rebuild-result'
   ])
-  assert.deepEqual(artifact('artifact:strategy-rebuild-result').consumerStepIds, [
-    'seed-render-snapshot',
-    'resync-render-snapshot'
-  ])
+  assert.deepEqual(
+    artifact('artifact:strategy-rebuild-result').consumerStepIds,
+    ['seed-render-snapshot', 'resync-render-snapshot']
+  )
 })
 
 test('frame coalescing passes complete snapshots and retains direct updates', () => {
@@ -583,7 +562,7 @@ test('cleanup bounds snapshots and pending work across every lifecycle path', ()
   )
 })
 
-test('the product contract and formal oracle lock count and timing budgets', () => {
+test('the product contract and shared oracle enforce work counts and retain timing observations', () => {
   const plan = fs.readFileSync(
     path.resolve(repoRoot, data.authority.specPath),
     'utf8'
@@ -600,7 +579,10 @@ test('the product contract and formal oracle lock count and timing budgets', () 
 
   assert.match(plan, /56 points/i)
   assert.match(plan, /Render full rehydrate count must be 0/i)
-  assert.match(plan, /combined phase p95 budget is 12 ms/i)
+  assert.match(
+    plan,
+    /Elapsed times are observational, not pass\/fail thresholds/i
+  )
   assert.match(
     plan,
     /does not permit a new or expanded\s+vector geometry cache/i
@@ -608,10 +590,23 @@ test('the product contract and formal oracle lock count and timing budgets', () 
   assert.match(plan, /sole cache key is\s+`elementId`/i)
   assert.doesNotMatch(plan, /key-based invalidation/i)
   assert.match(oracle, /DENSE_POINT_COUNT = 56/)
-  assert.match(oracle, /fullRehydrateCallsDuringDelta\)\.toBe\(0\)/)
-  assert.match(oracle, /renderSnapshotDeltaApplies\)\.toBe\(SAMPLE_FRAMES\)/)
-  assert.match(oracle, /CRITICAL_PATH_P95_BUDGET_MS = 12/)
-  assert.match(oracle, /totalMs: 24, p95Ms: 4, maxMs: 6/)
+  assert.match(
+    oracle,
+    /import \{ assertRenderDeltaContracts \} from '\.\/render-contracts\.mjs'/
+  )
+  assert.match(oracle, /assertRenderDeltaContracts\(summary, SAMPLE_FRAMES\)/)
+  assert.match(oracle, /RENDER_DELTA_TIMING_OBSERVATION/)
+  assert.doesNotMatch(oracle, /CRITICAL_PATH_P95_BUDGET_MS/)
+  assert.match(plan, /`element.save\(\)` is bounded to 12 calls/)
+  assert.match(plan, /`getAllComputedData\(\)` to 13 calls/)
+  assert.match(
+    contractText(step('handoff-engine-commands')),
+    /work-count limits.*timing.*observations.*not pass\/fail thresholds/i
+  )
+  assert.match(
+    acceptance('dense-vector-budget').assertions.join(' '),
+    /12 delta applies, 0 Render full rehydrates.*phase count is 12.*observations.*not pass\/fail thresholds/i
+  )
   ;[plan, renderPackageContract].forEach((contract) => {
     const normalizedContract = contract.replace(/\s+/g, ' ')
     assert.match(normalizedContract, /valid mirror.*release failure/i)

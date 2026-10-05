@@ -1,3 +1,5 @@
+import sharp from 'sharp'
+import { LocalToolAccess } from './local-tool-scheduler'
 import {
   ContourReviewLimits,
   CONTOUR_QUALITY_SCHEMA,
@@ -13,7 +15,7 @@ import {
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { LocalComponentAnalysisLimits as limits } from './local-component-analysis-limits'
 import { Buffer } from 'node:buffer'
-import { AiImageToolIds } from './ai-domain-prompt'
+import { AiImageToolIds, AI_IMAGE_TOOL_GUIDANCE } from './ai-domain-prompt'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
 import { analyzeVectorComponents } from './local-vector-component-analysis'
@@ -33,10 +35,74 @@ interface ConversionInput {
 }
 const convertImage = async (input: ConversionInput): Promise<string> => {
   const { convertVTracerBuffer } = await import('../vtracer-tool-server.mjs')
+  input.signal.throwIfAborted()
+  const decoder = sharp(input.bytes, { failOn: 'warning' }).timeout({
+    seconds: 10
+  })
+  const metadata = await decoder.metadata()
+  if (metadata.orientation && metadata.orientation !== 1) {
+    // The native tracer ignores EXIF. Orient only its input, preserving source
+    // bytes and every original pixel; region/layer extraction already does this.
+    const bytes = await decoder.autoOrient().png().toBuffer()
+    input.signal.throwIfAborted()
+    return convertVTracerBuffer({ ...input, bytes, contentType: 'image/png' })
+  }
   return convertVTracerBuffer(input)
 }
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const vectorArtifactByteLimit = 8 * 1024 * 1024
+const oversizedVectorResult = (svg: string, attachmentIndex: number) => {
+  const observedBytes = Buffer.byteLength(svg)
+  return observedBytes > vectorArtifactByteLimit
+    ? JSON.stringify({
+        available: false,
+        recoverable: true,
+        code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
+        attachmentIndex,
+        observedBytes,
+        limitBytes: vectorArtifactByteLimit,
+        message:
+          'Conversion ran, but the vector output exceeds the artifact byte limit. Select a smaller native-pixel region in the preserve-vectors plan, or another suitable source or method. No image was resized and no artifact or canvas changes were created.'
+      })
+    : undefined
+}
+
+const imageRegionSchema = {
+  type: 'object',
+  additionalProperties: false,
+  description:
+    'Optional native-pixel rectangle in the oriented attachment. Extract only the requested visible detail without resampling. The resulting artifact uses region-local coordinates; sourceRegion maps it back to this attachment.',
+  required: ['x', 'y', 'width', 'height'],
+  properties: {
+    x: { type: 'integer', minimum: 0 },
+    y: { type: 'integer', minimum: 0 },
+    width: { type: 'integer', minimum: 1 },
+    height: { type: 'integer', minimum: 1 }
+  }
+}
+const readImageRegion = (value: unknown) => {
+  if (value === undefined) return undefined
+  if (
+    !isRecord(value) ||
+    Object.keys(value).length !== 4 ||
+    !['x', 'y', 'width', 'height'].every(
+      (key) =>
+        Number.isSafeInteger(value[key]) &&
+        Number(value[key]) >= (key === 'x' || key === 'y' ? 0 : 1)
+    )
+  )
+    throw new Error(
+      'Image region must contain integer x, y, width and height within the oriented source image.'
+    )
+  return {
+    x: Number(value.x),
+    y: Number(value.y),
+    width: Number(value.width),
+    height: Number(value.height)
+  }
+}
 
 export const createLocalImageTools = (
   input: Pick<AiProviderInput, 'metadata'>,
@@ -47,8 +113,9 @@ export const createLocalImageTools = (
     isRecord(metadata) && Array.isArray(metadata.imageAttachments)
       ? [...metadata.imageAttachments]
       : []
+  const originalAttachmentCount = attachments.length
   const artifacts = new Map<string, LocalVectorArtifact>()
-  const converted = new Map<number, string>()
+  const converted = new Map<string, string>()
   const analyses = new Map<string, ReturnType<typeof analyzeVectorComponents>>()
   const contourReviews = new Map<
     string,
@@ -69,6 +136,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+      executionAccess: LocalToolAccess.INDEPENDENT,
       description:
         'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths per call. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
       inputSchema: {
@@ -113,14 +181,14 @@ export const createLocalImageTools = (
       type: 'function',
       name: AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
       description:
-        'Separate an AI-selected solid native rect/oval background BEFORE tracing the residual foreground. Specify source-pixel bounds/fill, colorTolerance (0 exact to 32), and clipToBackground (true explicitly discards everything outside that region). Optional foregroundColors explicitly quantizes this region to the selected flat foreground palette plus background (instead of colorTolerance); omit for shading or uncertain colors. Only matching pixels inside that region are replaced by the native base, including matching interior details; this is compositing, not semantic object segmentation. Use only when a solid native base matches the intended design, never gradients/textures. Returns one imageArtifactId carrying background plus foreground; insert/replace it once, do not add another background. Coordinates share the returned sourceBounds, so exclusions never stretch foreground. Up to four calls allow revised parameters. No match fails; review the returned evidence and actual rendered result.',
+        'Separate an AI-selected solid native rect/oval background BEFORE tracing the residual foreground. Specify source-pixel bounds/fill, colorTolerance (0 exact to 32), and clipToBackground (true explicitly discards everything outside that region). Optional foregroundColors explicitly quantizes this region to the selected flat foreground palette plus background (instead of colorTolerance); omit for shading or uncertain colors. Only matching pixels inside that region are replaced by the native base, including matching interior details; this is compositing, not semantic object segmentation. Use only when a solid native base matches the intended design, never gradients/textures. Returns one imageArtifactId carrying background plus foreground; insert/replace it once, do not add another background. Coordinates share the returned sourceBounds, so exclusions never stretch foreground. No match fails; review the returned evidence and actual rendered result.',
       inputSchema: IMAGE_LAYER_SCHEMA
     },
     {
       type: 'function',
       name: AiImageToolIds.VTRACER,
       description:
-        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Review all shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
+        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. A preserve-vectors plan may select a native-pixel region for a local detail or oversized conversion; no resampling occurs and the returned coordinates are local to that region. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Consider relevant shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -134,7 +202,8 @@ export const createLocalImageTools = (
                 required: ['strategy', 'reason'],
                 properties: {
                   strategy: { const: 'preserve-vectors', type: 'string' },
-                  reason: { type: 'string', minLength: 1, maxLength: 500 }
+                  reason: { type: 'string', minLength: 1, maxLength: 500 },
+                  region: imageRegionSchema
                 }
               },
               {
@@ -170,6 +239,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+      executionAccess: LocalToolAccess.INDEPENDENT,
       description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
       inputSchema: {
         type: 'object',
@@ -189,6 +259,22 @@ export const createLocalImageTools = (
     }
   ]
   return {
+    referenceImages: (indexes?: number[]) => {
+      const selected =
+        indexes ??
+        Array.from({ length: originalAttachmentCount }, (_, index) => index)
+      return selected.map((index) => {
+        const attachment = attachments[index]
+        if (
+          !Number.isSafeInteger(index) ||
+          index < 0 ||
+          !isRecord(attachment) ||
+          typeof attachment.dataUrl !== 'string'
+        )
+          throw new Error('Select an existing reference attachment index.')
+        return { role: 'reference' as const, dataUrl: attachment.dataUrl }
+      })
+    },
     addReference: (image: {
       dataUrl: string
       mediaType: string
@@ -197,7 +283,10 @@ export const createLocalImageTools = (
       attachments.push(image)
       return attachments.length - 1
     },
-    definitions,
+    definitions: definitions.map((definition) => ({
+      ...definition,
+      description: `${definition.description} ${AI_IMAGE_TOOL_GUIDANCE[definition.name as keyof typeof AI_IMAGE_TOOL_GUIDANCE] ?? ''}`
+    })),
     modelActions: (actions: AiProviderInput['actions']) =>
       actions.map((action) => {
         if (action.name === AiActionNames.INSERT_VECTOR_COMPOSITION)
@@ -555,7 +644,7 @@ export const createLocalImageTools = (
             (key) =>
               !(
                 plan.strategy === 'preserve-vectors'
-                  ? ['strategy', 'reason']
+                  ? ['strategy', 'reason', 'region']
                   : [
                       'strategy',
                       'reason',
@@ -621,8 +710,12 @@ export const createLocalImageTools = (
             profile: 'photo-faithful',
             signal
           })
-          if (signal.aborted || Buffer.byteLength(svg) > 8 * 1024 * 1024)
-            throw new Error('Image tool unavailable')
+          signal.throwIfAborted()
+          const oversized = oversizedVectorResult(
+            svg,
+            args.attachmentIndex as number
+          )
+          if (oversized) return oversized
           artifact = parseLocalVectorArtifact(svg)
           if (
             artifact.width !== layers.width ||
@@ -643,24 +736,70 @@ export const createLocalImageTools = (
           separation: layers.separation
         })
       }
-      const previous = converted.get(args.attachmentIndex as number)
+      const sourceRegion = readImageRegion(representationPlan?.region)
+      const conversionKey = JSON.stringify([
+        args.attachmentIndex,
+        sourceRegion ?? null
+      ])
+      const previous = converted.get(conversionKey)
       if (previous)
         return JSON.stringify({ ...JSON.parse(previous), representationPlan })
+      let selectedBytes = bytes
+      let selectedContentType = String(attachment.mediaType)
+      if (sourceRegion) {
+        const decoder = sharp(bytes, {
+          failOn: 'warning'
+        }).timeout({ seconds: 10 })
+        const metadata = await decoder.metadata()
+        const { width, height } = metadata.autoOrient
+        if (
+          (metadata.pages ?? 1) !== 1 ||
+          sourceRegion.x + sourceRegion.width > width ||
+          sourceRegion.y + sourceRegion.height > height
+        )
+          throw new Error(
+            'Image region exceeds the oriented source image bounds.'
+          )
+        signal.throwIfAborted()
+        selectedBytes = await decoder
+          .autoOrient()
+          .extract({
+            left: sourceRegion.x,
+            top: sourceRegion.y,
+            width: sourceRegion.width,
+            height: sourceRegion.height
+          })
+          .png()
+          .toBuffer()
+        selectedContentType = 'image/png'
+      }
+      signal.throwIfAborted()
       const svg = await convert({
-        bytes,
-        contentType: String(attachment.mediaType),
+        bytes: selectedBytes,
+        contentType: selectedContentType,
         profile: 'photo-faithful',
         signal
       })
-      if (signal.aborted || Buffer.byteLength(svg) > 8 * 1024 * 1024)
-        throw new Error('Image tool unavailable')
+      signal.throwIfAborted()
+      const oversized = oversizedVectorResult(
+        svg,
+        args.attachmentIndex as number
+      )
+      if (oversized) return oversized
       const artifact = parseLocalVectorArtifact(svg)
+      if (
+        sourceRegion &&
+        (artifact.width !== sourceRegion.width ||
+          artifact.height !== sourceRegion.height)
+      )
+        throw new Error('Image region coordinate frame mismatch')
       const summary = JSON.stringify({
         ...vectorArtifactSummary(artifact),
+        ...(sourceRegion ? { sourceRegion } : {}),
         representationPlan
       })
       artifacts.set(artifact.imageArtifactId, artifact)
-      converted.set(args.attachmentIndex as number, summary)
+      converted.set(conversionKey, summary)
       return summary
     }
   }

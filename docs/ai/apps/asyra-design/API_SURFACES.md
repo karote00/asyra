@@ -626,9 +626,44 @@ Import boundary:
 - `getGradientHandleGeometry(elementId: string, fillId: string): { elementId: string; fillId: string; fill: FillAttrs; width: number; height: number; canvasHandles: [PositionData, PositionData] } | null`
 - `getGradientHandleHitAtClientPos(elementId: string, fillId: string, clientPos: PositionData, hitRadius?: number): { handleIndex: 0 | 1 } | null`
 - `getNextGradientForHandleAtClientPosition(elementId: string, fillId: string, handleIndex: 0 | 1, clientPos: PositionData): FillGradientData | null`
-- `getNextGradientForHandleWithDelta(baseGradient: FillGradientData, handleIndex: 0 | 1, width: number, height: number, delta: PositionData): FillGradientData`
 - `updateGradientHandleAtClientPosition(elementId: string, fillId: string, handleIndex: 0 | 1, clientPos: PositionData, options?: EVENT_OPTIONS): FillGradientData | null`
-- `updateFillFields(...)` / `updateFillField(...)`
+- `getFillTargetsAtIndex(elementIds, index): FillTarget[]`
+  - resolves each current row to its real element/Fill IDs; missing rows reject
+- `addFills(elementIds, options?): string[]`
+- `removeFills(targets: FillTarget[], options?): void`
+- `updateFillsAtIndex(elementIds, index, patch: FillPatch | readonly FillPatch[], options?): void`
+  - resolves each unique element's current row once, then dispatches one canonical
+    new-value batch; callers do not fetch or echo Fill IDs/current values
+  - an array must align exactly with unique input element IDs; repeated mutation targets and invalid length/rows reject before writes
+  - identical input patches do not create persistent shared properties
+- `shareFillAtIndex(sourceElementId, elementIds, index, options?): void`
+  - explicitly links the selected row to the source's canonical Fill property;
+    subsequent property edits propagate to every reference
+  - preserves other rows and skips already shared targets; one Undo restores
+    the previous independent relationships
+- `detachFillsAtIndex(elementIds, index, options?): void`
+  - creates independent canonical Fill children from the selected row's writable
+    fields and changes only those references in one transaction
+  - Undo/Redo restores/replays the relationship, not an App-owned shadow map
+- `updateFillFieldsBatch(updates: FillFieldsUpdate[], options?): void`
+  - one canonical batch for multiple Fill records; each update contains
+    `elementId`, `fillId` and only the requested `patch`
+  - unknown patch fields reject before dispatch; gradient fields belong inside
+    `patch.gradient`, never at patch root
+  - an invalid batch leaves all targets and history unchanged
+  - Property Panel matching Fill rows support multi-selection edits, add/remove
+    and gradient controls with one Undo per action; mixed-row presentation and
+    single-owner canvas gradient handles are unchanged
+- `updateFillFields(elementId, fillId, patch: FillPatch, options?: EVENT_OPTIONS)`
+- `updateFillField(elementId, fillId, key, value, options?: EVENT_OPTIONS)`
+  - consume requested new fields only; callers do not provide current Fill data
+  - existing canonical Fill records preserve all omitted fields; undefined fields
+    are omitted, while explicit `gradient: null` clears the gradient
+  - the registered Fill component supplies defaults on creation, not on updates
+  - canonical Props preparation owns equality checks and before/after evidence;
+    the existing transaction path owns Undo/Redo and publication
+  - gradient/picker interaction baselines are retained only to compute new values,
+    never sent back as unrelated fields in a write
 - `updatePrimaryFillColor(elementId: string, color: string, options?: EVENT_OPTIONS): boolean`
   - reads and updates only the first canonical fill property and returns
     `false` when the target has no fill or already has the requested color
@@ -861,7 +896,7 @@ mutation. Existing Runtime permission, confirmation and transaction boundaries a
 Deletion contracts require confirmation by default.
 
 Each Core, Design and Vector API contract has its own named `const`, declared with
-`defineBasicApi({ owner, method, effect, parameters, description })`. The exported
+`defineBasicApi({ owner, method, effect, parameters, description, category?, resultKind? })`. The exported
 catalogue in each file explicitly lists those constants; do not generate individual
 API declarations through array spreads or `.map()`. Shared schemas keep descriptive
 names and schema helpers retain their original imports rather than aliases like `id`.
@@ -881,10 +916,22 @@ const getElementComputedDataApi = defineBasicApi({
 })
 ```
 
-The local backend exposes `describe_design_apis` for a compact index or requested
-schemas. Execute discovered operations through `execute_design_batch`; do not send
-hundreds of individual schemas on every model request. High-level design tools remain
-compositions/conveniences and do not define the entire capability surface.
+The local backend exposes `describe_design_apis` from the current admitted
+contracts. No arguments returns categories and counts; `category` returns that
+category's purpose/result menu; `operation` resolves an exact `owner.method`
+identity and current schema in one call. `names` resolves exact action names.
+Optional `query` searches descriptions and returns matching schemas immediately.
+Selectors are mutually exclusive. No lexical match returns the category menu,
+not an unavailable capability or a requirement to scan every API. Existing known
+operations may be executed directly without discovery or a preliminary data read.
+
+Execute basic operations through `execute_design_batch`, including one-item edits.
+Redundant scalar aliases have explicit batch replacements in dispositions; UI
+methods remain at their existing owners. Single-object composite editing and
+visibility are also batch items only. Collection preparation/application remains
+available as native tools. Distinct canonical and App-normalized operations remain
+separate, with purpose and coordinate/ownership differences at their declarations.
+Native lookup and dispatch use the same admitted registry, not a second synonym map.
 
 `basic-api-dispositions.ts` explicitly classifies registration, live host resources,
 subscriptions, replay and transient-session entry points. These are not executable
@@ -898,7 +945,36 @@ Object and point identities survive, with one Undo/Redo entry for the operation.
 Accepted canonical batches update local computed projections synchronously so the
 next action reads current coordinates; commit observers remain transaction-buffered.
 
-Basic action receipts preserve the owner return value and include the conversation
-status contract: successful write/delete execution reports `complete`; reads, view
-and selection operations, or writes returning `false`/`null`, report `no-change`.
-Thrown owner errors remain failures; completion is not a visual-quality verdict.
+Basic action receipts preserve the owner return under `value` and interpret only
+the declared return contract. Reads report `execution: complete` and
+`application: read-only` with `status: no-change`. Selection/viewport execution also reports `no-change`
+with `application: transient`, preserving its non-document meaning. Ordered creation results retain
+IDs/nulls and item indices; mixed success is `partial`, all failed is `failed`,
+and empty input is `no-change`. Structural movement/removal uses the owner's
+changed-item list. Boolean application arrays retain each boolean; false can mean
+unchanged or unavailable and is explicitly unresolved, not proof of a valid target.
+Void return is `application: not-reported`, not a measured change; false/null
+owner receipts are `not-confirmed`. Thrown errors remain failures.
+
+Compact batch acknowledgements combine only successful valueless returns and
+retain `application: not-reported`. Identity-bearing, read, failed, partial and
+uncertain receipts remain available in order. Conversation settlement preserves
+failed receipts; confirmed writes alongside failure produce a partial outcome.
+Execution completion is never a visual-quality verdict.
+
+### Stroke new-value batches
+
+`strokeApis.updateStrokeFieldsBatch(updates, options?)` accepts ordered
+`{ elementId, strokeId, patch }` entries, validates targets before any write and
+preserves all omitted fields. Single-field and single-record wrappers consume
+only new fields too; callers never supply `currentStroke`. Canonical setters
+retain before/after data, and existing vector bounds repair remains inside the
+App owner. Repeated targets share validation/bounds work only within that call.
+
+### Plural visibility
+
+`elementApis.setElementsVisible(elementIds, visible, options?)` updates all
+supplied targets in one ordinary transaction. Returns ordered
+`changed | unchanged | unavailable` statuses; missing/workspace targets are
+unavailable. AI exposes this plural method; the scalar public UI helper remains.
+A receipt with unavailable targets is partial/failed, never silent success.

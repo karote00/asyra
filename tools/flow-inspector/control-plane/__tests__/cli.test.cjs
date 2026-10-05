@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, URL, Response */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -10,6 +10,42 @@ const {
   createAcceptedRepository
 } = require('./accepted-repository-fixture.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
+test('local CLI selects a product manifest without retargeting a remote service', async (t) => {
+  const { sha256 } = require('../snapshot.cjs')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'selection-'))
+  const manifestPath = path.relative(
+    root,
+    path.join(directory, 'flow-contracts.json')
+  )
+  const definition = structuredClone(
+    require('../../../../packages/factory/flow-contracts.json')
+  )
+  definition.manifestPath = manifestPath
+  fs.writeFileSync(path.join(root, manifestPath), JSON.stringify(definition))
+  t.after(() => {
+    fs.rmSync(directory, { recursive: true, force: true })
+    fs.rmSync(
+      path.join(root, 'tmp/flow-inspector/products', sha256(manifestPath)),
+      { recursive: true, force: true }
+    )
+  })
+  const output = []
+  assert.equal(
+    await main(['--manifest', manifestPath, 'status'], {
+      repositoryRoot: root,
+      write: (line) => output.push(line)
+    }),
+    0
+  )
+  assert.equal(JSON.parse(output.join('')).manifestPath, manifestPath)
+  await assert.rejects(
+    main(['--manifest', manifestPath, '--url', 'http://127.0.0.1:1', 'status']),
+    /selection|manifest|Usage/
+  )
+})
 
 test('offline provider contract uses identical CLI, HTTP and service task evidence', async () => {
   const { randomUUID } = require('node:crypto')
@@ -147,6 +183,45 @@ test(
   }
 )
 
+test('CI trial uses captured candidate proof while protected CI retains its accepted-base blocker', async (t) => {
+  const originalFetch = globalThis.fetch
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+  for (const status of ['passed', 'failed', 'unknown', undefined]) {
+    const record = {
+      id: 'trial-candidate',
+      phase: 'completed',
+      evidence:
+        status === undefined
+          ? undefined
+          : { status, cases: [], flows: [], issues: [] },
+      ci: {
+        evidence: { status: 'unknown' },
+        deliveryStatus: 'blocked',
+        blockers: ['Candidate differs from accepted supported obligations']
+      }
+    }
+    globalThis.fetch = async (input) => {
+      const pathname = new URL(input).pathname
+      if (pathname === '/api/session')
+        return Response.json({ capability: 'test' })
+      if (pathname === '/api/runs') return Response.json({ id: record.id })
+      assert.equal(pathname, '/api/runs/' + record.id)
+      return Response.json(record)
+    }
+    const messages = []
+    const options = { write: (value) => messages.push(value) }
+    assert.equal(
+      await main(['--url', 'http://127.0.0.1:1', 'ci-trial'], options),
+      status === 'passed' ? 0 : 1,
+      String(status)
+    )
+    assert.match(messages.join('\n'), /blocked/)
+    assert.equal(await main(['--url', 'http://127.0.0.1:1', 'ci'], options), 1)
+  }
+})
+
 test(
   'CI trial reports behavioral results separately from mandatory delivery enforcement',
   { timeout: 30000 },
@@ -186,12 +261,7 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        [
-          'cancel.delivery',
-          'cancel.outcome',
-          'history-group.ordered-replay',
-          'history-group.snapshot'
-        ]
+        server.service.contract().negativeCaseIds.slice().sort()
       )
       assert.equal(
         await main(['--url', server.origin, 'ci-trial'], {
@@ -201,7 +271,10 @@ test(
         messages.join('\n')
       )
       const recovery = server.service.get(server.service.state().runs[0].id)
-      assert.equal(recovery.ci.evidence.passedCount, 9)
+      assert.equal(
+        recovery.ci.evidence.passedCount,
+        server.service.contract().cases.length
+      )
       assert.equal(recovery.snapshot.digest, negative.snapshot.digest)
     } finally {
       await server.close()

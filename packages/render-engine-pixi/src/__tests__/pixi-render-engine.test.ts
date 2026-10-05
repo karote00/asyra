@@ -12,7 +12,16 @@ interface MockStageRecord {
 interface MockApplicationRecord {
   stage: MockStageRecord
   canvas: unknown
-  renderer: { resize: MockFunction; extract: { canvas: MockFunction } }
+  renderer: {
+    resize: MockFunction
+    extract: { canvas: MockFunction }
+    events: {
+      rootBoundary: {
+        rootTarget: MockStageRecord | null
+        hitTest: MockFunction
+      }
+    }
+  }
   ticker: {
     add: MockFunction
     remove: MockFunction
@@ -424,7 +433,16 @@ vi.mock('pixi.js', () => {
       render: vi.fn(),
       events: {
         rootBoundary: {
-          hitTest: vi.fn()
+          rootTarget: null as MockContainer | null,
+          hitTest: vi.fn(function (this: { rootTarget: MockContainer | null }) {
+            // Pixi dereferences rootTarget before traversing interactive children.
+            if (!this.rootTarget) {
+              throw new TypeError(
+                "Cannot read properties of null (reading 'eventMode')"
+              )
+            }
+            return null
+          })
         }
       }
     }
@@ -1081,6 +1099,71 @@ describe('PixiRenderEngine', () => {
       alreadyDestroyed: false
     })
     expect(getLastApplication().destroy).toHaveBeenCalledOnce()
+  })
+
+  it('hit-tests an empty stage before any pointer event without rendering', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 320, height: 240 })
+    const app = getLastApplication()
+    const point = { x: 10, y: 20 }
+
+    expect(engine.query({ type: 'hit-test', point })).toEqual({
+      type: 'hit',
+      target: null,
+      point
+    })
+    expect(app.renderer.events.rootBoundary.rootTarget).toBe(app.stage)
+    expect(app.renderer.events.rootBoundary.hitTest).toHaveBeenCalledWith(
+      10,
+      20
+    )
+    expect(app.render).not.toHaveBeenCalled()
+    engine.destroy()
+  })
+
+  it('hit-tests the owned stage and maps its target after the event root changes', async () => {
+    const engine = new PixiRenderEngine()
+    const { root } = await engine.initialize({
+      host: {},
+      width: 320,
+      height: 240
+    })
+    const app = getLastApplication()
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'hit-target',
+      objectType: 'graphics'
+    })
+    if (!object) throw new Error('Missing graphics handle')
+    engine.execute({ type: 'append-child', parent: root, child: object })
+    const boundary = app.renderer.events.rootBoundary
+    boundary.hitTest.mockImplementation(() => {
+      expect(boundary.rootTarget).toBe(app.stage)
+      return pixiState.graphics[0]
+    })
+    const point = { x: 12, y: 34 }
+    expect(engine.query({ type: 'hit-test', point })).toEqual({
+      type: 'hit',
+      target: object,
+      point
+    })
+
+    // EventSystem may replace its boundary root with the last rendered object.
+    boundary.rootTarget = { emit: vi.fn(), position: { set: vi.fn() } }
+    expect(engine.query({ type: 'hit-test', point })).toEqual({
+      type: 'hit',
+      target: object,
+      point
+    })
+    boundary.rootTarget = null
+    expect(engine.query({ type: 'hit-test', point })).toEqual({
+      type: 'hit',
+      target: object,
+      point
+    })
+    expect(boundary.hitTest).toHaveBeenCalledTimes(3)
+    expect(app.render).not.toHaveBeenCalled()
+    engine.destroy()
   })
 
   it('maps object, draw, viewport, query, resize, frame, and flush commands', async () => {

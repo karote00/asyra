@@ -6,6 +6,7 @@ const { randomUUID } = require('node:crypto')
 const { isDeepStrictEqual } = require('node:util')
 const {
   admitTask,
+  admitTaskSource,
   TASK_POLICY,
   canonicalFile,
   freeze
@@ -222,7 +223,11 @@ function createTaskOwner(
         verdict.sourceDigest !== sha256(JSON.stringify(verdict.files)))
     )
       throw new Error('Invalid task verification evidence')
-    const retainedContract = loadContract(record.snapshot.sourceRoot)
+    const retainedContract = loadContract(
+      record.snapshot.sourceRoot,
+      undefined,
+      record.snapshot.verificationSource?.roles?.manifest
+    )
     if (
       derived &&
       (retainedContract.digest !== record.task.contractDigest ||
@@ -786,6 +791,7 @@ function createTaskOwner(
       fs.mkdirSync(taskRoot, { recursive: true })
       const captureRoot = path.join(taskRoot, 'input-' + randomUUID())
       const snapshot = capture(repositoryRoot, captureRoot, current.contract)
+      admitTaskSource(task, snapshot)
       checkWork(task, snapshot)
       for (const file of task.allowedFiles) {
         if (!snapshot.files.some((entry) => entry.path === file))

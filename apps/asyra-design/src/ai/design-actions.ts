@@ -1,4 +1,4 @@
-import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { yieldToCooperativeHost } from '@asyra/core'
 import {
   elementApis,
@@ -7,6 +7,7 @@ import {
   type PreparedElementDescriptor
 } from '../common-apis'
 import { AiActionNames } from '../constants'
+import core from '../contexts'
 import { admitPreparedDesign } from './prepared-design-admission'
 import type { PreparedDesign } from './prepared-design'
 import {
@@ -17,6 +18,8 @@ import {
 export interface PreparedDesignApis {
   getWorkspaceId(): string | null
   getElementType(id: string): string | undefined
+  getElementData(id: string): { type: string; parentId?: string } | undefined
+  isContainerType(type: string): boolean
   isLocked(id: string): boolean
   create(
     descriptors: readonly PreparedElementDescriptor[],
@@ -31,6 +34,8 @@ const mutationOptions = Object.freeze({
 const defaultApis: PreparedDesignApis = {
   getWorkspaceId: hierarchyApis.getWorkspaceId,
   getElementType: elementApis.getElementType,
+  getElementData: (id) => core.getElementData(id),
+  isContainerType: elementApis.isContainerType,
   isLocked: elementApis.isElementLocked,
   create: (ds, id) =>
     elementApis.createElementsInParent(ds, id, mutationOptions),
@@ -42,6 +47,7 @@ export const createPreparedDesignAction = (
   now: () => number = () => performance.now()
 ): AiActionDefinition<{
   design: PreparedDesign
+  parentId?: string
   response?: 'compact' | 'full'
 }> => ({
   name: AiActionNames.APPLY_PREPARED_DESIGN,
@@ -53,16 +59,23 @@ export const createPreparedDesignAction = (
     required: ['design'],
     properties: {
       design: { type: 'object' },
+      parentId: { type: 'string', minLength: 1 },
       response: { type: 'string', enum: ['compact', 'full'] }
     }
   },
-  execute: async (args, { signal }) => {
+  execute: async (args, context) => {
+    const { signal } = context
     if (
       args.response !== undefined &&
       args.response !== 'compact' &&
       args.response !== 'full'
     )
       throw new Error('Invalid design response mode.')
+    if (
+      args.parentId !== undefined &&
+      (typeof args.parentId !== 'string' || !args.parentId.trim())
+    )
+      throw new Error('Invalid design parent identity.')
     const startedAt = now()
     const design = admitPreparedDesign(args.design)
     const admissionMs = now() - startedAt
@@ -71,7 +84,25 @@ export const createPreparedDesignAction = (
       sliceCount = 0
     const workspaceId = apis.getWorkspaceId()
     if (!workspaceId) throw new Error('The target workspace is unavailable.')
+    const targetParentId = args.parentId ?? workspaceId
+    const checkAttachment = () => {
+      if (args.parentId === undefined || targetParentId === workspaceId) return
+      let id: string | undefined = targetParentId
+      const visited = new Set<string>()
+      while (id !== workspaceId) {
+        if (!id || visited.has(id) || apis.isLocked(id))
+          throw new Error(
+            'The continuation parent is not editable in the current workspace.'
+          )
+        visited.add(id)
+        const element = apis.getElementData(id)
+        if (!element || !apis.isContainerType(element.type))
+          throw new Error('The continuation parent is not a current container.')
+        id = element.parentId
+      }
+    }
     const checkCurrent = (parentId: string) => {
+      checkAttachment()
       if (signal.aborted) throw new Error('Design application cancelled.')
       if (
         !workspaceId ||
@@ -92,7 +123,7 @@ export const createPreparedDesignAction = (
     let appliedElementCount = 0
     let offset = 0
     while (offset < design.entries.length) {
-      const parentId = design.entries[offset].parentId ?? workspaceId
+      const parentId = design.entries[offset].parentId ?? targetParentId
       checkCurrent(parentId)
       const descriptors: PreparedElementDescriptor[] = []
       let points = 0
@@ -101,7 +132,7 @@ export const createPreparedDesignAction = (
         descriptors.length < PREPARED_DRAWING_SLICE_ELEMENT_BUDGET
       ) {
         const entry = design.entries[offset]
-        if ((entry.parentId ?? workspaceId) !== parentId) break
+        if ((entry.parentId ?? targetParentId) !== parentId) break
         const count = Object.keys(entry.descriptor.points ?? {}).length
         if (
           descriptors.length &&
@@ -114,9 +145,21 @@ export const createPreparedDesignAction = (
         points += count
         offset++
       }
-      const createStartedAt = now()
-      const ids = apis.create(descriptors, parentId)
-      createMs += now() - createStartedAt
+      const ids = await runAiMutation(context, () => {
+        checkCurrent(parentId)
+        if (
+          descriptors.some(
+            (descriptor) => apis.getElementType(descriptor.id) !== undefined
+          )
+        )
+          throw new Error('A design object already exists.')
+        const createStartedAt = now()
+        try {
+          return apis.create(descriptors, parentId)
+        } finally {
+          createMs += now() - createStartedAt
+        }
+      })
       sliceCount++
       if (
         !ids ||
@@ -133,7 +176,10 @@ export const createPreparedDesignAction = (
       cooperativeYieldMs += now() - yieldStartedAt
     }
     checkCurrent(workspaceId ?? '')
-    apis.select([design.rootId])
+    await runAiMutation(context, () => {
+      checkCurrent(workspaceId)
+      apis.select([design.rootId])
+    })
     return {
       status: 'complete',
       timing: {

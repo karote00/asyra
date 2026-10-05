@@ -141,8 +141,13 @@ export const createHttpDocumentPersistenceClient = ({
         body: JSON.stringify(batch)
       })
       if (!response.ok) {
+        const rejection = await response.json().catch(() => undefined)
+        const detail =
+          isRecord(rejection) && typeof rejection.error === 'string'
+            ? `: ${rejection.error}`
+            : ''
         throw new Error(
-          `[document-persistence-client] backend rejected persistence batch (${response.status})`
+          `[document-persistence-client] backend rejected persistence batch (${response.status})${detail}`
         )
       }
       const acknowledgement = await response.json()

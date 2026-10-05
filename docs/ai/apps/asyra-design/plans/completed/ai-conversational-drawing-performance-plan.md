@@ -1952,7 +1952,7 @@ intended transaction or history boundary.
   through Actor A publications. Without a socket connection, Actor A executes
   and renders the same response locally and retains the unsent publication in
   the ordinary outbox.
-- Root `dev:all` starts only workspace package watchers and the App dev server.
+- Root `start:asyra-design` starts only the Asyra Design dev server.
   The explicit `collaboration:server` command or collaboration Playwright
   startup separately owns the reference WebSocket server.
 - One connected Actor is classified as single-Actor processing. A second Actor

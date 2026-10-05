@@ -2,8 +2,9 @@
 
 ## Status and scope
 
-Framework implementation and local regression acceptance are complete; latest PR CI, review and
-downstream App integration are separate. Implementation and a PR to `main` were
+Framework PR #280 passed all 33 checks and merged as
+`85e88319f3659c5048966146c039c88ad22142c4`. Downstream App integration remains
+active in the AI Execution Flow plan; this is not whole-plan closeout. Implementation and a PR to `main` were
 authorized on 2026-10-01 in the originating AI panel conversation. This plan was
 adopted from the coordinator's unmerged AI worktree as a new Framework task;
 it is not represented as a prerequisite already integrated in `main`.

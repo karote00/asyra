@@ -317,14 +317,13 @@ it('observes cancellation before and during pixel work without converting or pub
   }
 })
 
-it('rejects forged media and oversized decoded dimensions before tracing', async () => {
+it('rejects forged media and oversized encoded inputs before tracing', async () => {
   for (const bytes of [
     Buffer.from('<svg/>'),
-    await sharp({
-      create: { width: 2001, height: 2000, channels: 3, background: '#008800' }
-    })
-      .png()
-      .toBuffer()
+    Buffer.concat([
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+      Buffer.alloc(16 * 1024 * 1024)
+    ])
   ]) {
     const convert = vi.fn()
     const tools = createLocalImageTools(
@@ -587,4 +586,30 @@ it('real tracing keeps an admitted foreground contact and emits no faint fringe 
     fill: '#FFFFFF',
     bounds: { x: 0, y: 4, width: 6, height: 4 }
   })
+})
+
+it('separates an original reference above four megapixels without resizing', async () => {
+  const bytes = await sharp({
+    create: { width: 2001, height: 2000, channels: 3, background: '#008800' }
+  })
+    .png()
+    .toBuffer()
+  const result = await separateImageBackground(
+    bytes,
+    'image/png',
+    {
+      ...options,
+      background: {
+        componentType: 'rect',
+        bounds: { x: 0, y: 0, width: 2001, height: 2000 },
+        fill: '#008800'
+      }
+    },
+    signal()
+  )
+  expect(await sharp(result.foreground).metadata()).toMatchObject({
+    width: 2001,
+    height: 2000
+  })
+  expect(result.separation.foregroundPixelCount).toBe(0)
 })

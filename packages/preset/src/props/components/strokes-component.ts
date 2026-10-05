@@ -1,5 +1,5 @@
 import type { PropertyComponentDefinition } from '@asyra/core'
-import { PropertyTypes, createDefaultStroke, isRecord } from '@asyra/utils'
+import { PropertyTypes, isRecord } from '@asyra/utils'
 
 export const strokesPropertyComponentDefinition: PropertyComponentDefinition = {
   type: PropertyTypes.STROKES,
@@ -16,10 +16,11 @@ export const strokesPropertyComponentDefinition: PropertyComponentDefinition = {
         return null
       }
 
-      return createDefaultStroke({
+      return {
         id: childId ?? '',
+        type: PropertyTypes.STROKE,
         ...item
-      }) as unknown as Record<string, unknown>
+      }
     },
     toValue: (child, childId) => {
       const fill = child.get('fill')

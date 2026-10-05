@@ -2289,7 +2289,7 @@ test(
         'passed',
         JSON.stringify({ runner: result, issues: evidence.issues })
       )
-      assert.equal(evidence.passedCount, 9)
+      assert.equal(evidence.passedCount, contract.cases.length)
     }
   }
 )

@@ -48,6 +48,35 @@ const context = () => ({ signal: new AbortController().signal }) as never
 const mutable = () => JSON.parse(JSON.stringify(fixture()))
 
 describe('prepared editable design application', () => {
+  it('enrolls each native write while leaving cooperative work outside the member', async () => {
+    const api = apis()
+    let inMutation = false
+    let members = 0
+    api.create = vi.fn((entries) => {
+      expect(inMutation).toBe(true)
+      return entries.map((d) => d.id)
+    })
+    api.select = vi.fn(() => expect(inMutation).toBe(true))
+    await createPreparedDesignAction(api, async () => {
+      expect(inMutation).toBe(false)
+    }).execute(
+      { design: fixture() },
+      {
+        signal: new AbortController().signal,
+        runMutation: async (mutate) => {
+          members++
+          inMutation = true
+          try {
+            return mutate()
+          } finally {
+            inMutation = false
+          }
+        }
+      }
+    )
+    expect(members).toBe(4)
+  })
+
   it('creates ordered native hierarchy, preserves literal text and returns semantic IDs', async () => {
     const api = apis(),
       paint = vi.fn(async () => undefined)

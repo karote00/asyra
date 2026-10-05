@@ -153,6 +153,15 @@ export const formatElapsedTime = (durationMs: number): string => {
 }
 
 export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
+  const executionReason =
+    isPlainObject(turn.result) &&
+    turn.result.stage === 'execution' &&
+    turn.result.code === 'AI_EXECUTION_FAILED' &&
+    typeof turn.result.message === 'string' &&
+    turn.result.message.length <= 1000 &&
+    turn.result.message !== 'AI action execution failed.'
+      ? ` ${turn.result.message}`
+      : ''
   let message = 'The request failed. Review the canvas before trying again.'
   if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
     message = 'Could not complete the AI request. Your drawing is unchanged.'
@@ -180,7 +189,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       message:
-        'The request stopped, but its changes could not be fully rolled back. Review the canvas before continuing.',
+        'The request stopped, but its final change state could not be confirmed. Review the canvas before continuing.',
       outcome: turn.outcome
     })
   }
@@ -194,7 +203,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       message:
         turn.outcome === 'cancelled'
           ? 'The request was stopped. All changes from this request were rolled back.'
-          : 'The request could not be completed. All changes from this request were rolled back.',
+          : `The request could not be completed.${executionReason} All changes from this request were rolled back.`,
       outcome: turn.outcome
     })
   }
@@ -209,18 +218,23 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       Object.hasOwn(activityToolLabels, turn.result.failedAction)
         ? activityToolLabels[turn.result.failedAction]
         : 'The remaining work'
-    const reason =
-      turn.result.stage === 'execution' &&
-      turn.result.code === 'AI_EXECUTION_FAILED' &&
-      typeof turn.result.message === 'string' &&
-      turn.result.message.length <= 1000 &&
-      turn.result.message !== 'AI action execution failed.'
-        ? ` ${turn.result.message}`
-        : ''
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       outcome: turn.outcome,
-      message: `${label} could not be completed.${reason} Changes already applied have been kept.`
+      message: `${label} could not be completed.${executionReason} Changes already applied have been kept.`
+    })
+  }
+  if (
+    isPlainObject(turn.result) &&
+    turn.result.status === 'cancelled' &&
+    isPlainObject(turn.result.transaction) &&
+    turn.result.transaction.status === 'committed'
+  ) {
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      outcome: turn.outcome,
+      message:
+        'The request was stopped. Changes already applied have been kept.'
     })
   }
   const reported =

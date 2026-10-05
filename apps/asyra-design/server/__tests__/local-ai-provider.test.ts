@@ -1,7 +1,17 @@
+import sharp from 'sharp'
+import { toolContractDigest } from '../local-action-observation'
+const reviewCriteria = (names: readonly string[]) =>
+  Object.fromEntries(
+    names.map((id) => [
+      id,
+      { requirement: id, description: id, verification: 'visual' }
+    ])
+  )
 import { designPreparationExamples } from '../design-preparation-examples'
 import type {
   AiProviderInput,
-  AiBatchReceipt
+  AiBatchReceipt,
+  AiActionBatch
 } from '../../src/ai/action-batch-protocol'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -9,12 +19,31 @@ import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createLocalAiUsage } from '../local-ai-usage'
-import { checkLocalAiProvider } from '../local-ai-provider'
+import { parseExecutionRecord } from '../local-ai-records'
+import {
+  checkLocalAiProvider,
+  requestLocalAiAssessment,
+  requestLocalVisualAssessment,
+  requestLocalAiActionBatch
+} from '../local-ai-provider'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import * as designTools from '../local-design-tools'
+import * as referenceTools from '../local-reference-tools'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
 import { AiImageToolIds } from '../ai-domain-prompt'
 
-const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
+const { spawn, retainedRecords } = vi.hoisted(() => ({
+  spawn: vi.fn(),
+  retainedRecords: [] as unknown[]
+}))
+vi.mock('../local-ai-records', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../local-ai-records')>()),
+  createExecutionRecordSink: () => ({
+    write: (record: unknown) => retainedRecords.push(record),
+    flush: async () => ({ status: 'saved', path: null })
+  })
+}))
 vi.mock('node:child_process', () => ({ spawn }))
 vi.mock('../../vtracer-tool-server.mjs', () => ({
   convertVTracerBuffer: vi.fn(
@@ -22,6 +51,19 @@ vi.mock('../../vtracer-tool-server.mjs', () => ({
       '<svg width="1" height="1"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>'
   )
 }))
+
+const rasterAttachment = async () => {
+  const bytes = await sharp({
+    create: { width: 1, height: 1, channels: 3, background: '#000000' }
+  })
+    .png()
+    .toBuffer()
+  return {
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  }
+}
 
 const input = {
   actions: [
@@ -56,13 +98,31 @@ interface Packet {
   method: string
   params: Record<string, unknown>
 }
+const nativeToolDefinitions = (thread?: Record<string, unknown>) =>
+  (
+    thread?.dynamicTools as {
+      tools: {
+        name: string
+        description: string
+        inputSchema: unknown
+        deferLoading: boolean
+      }[]
+    }[]
+  ).flatMap(({ tools }) => tools ?? [])
+
 const fakeServer = (
   options: {
+    effectiveConfig?: unknown
+    holdMethod?: string
+    responseError?: { method: string; error: unknown }
     instructionSources?: unknown
+    reasoningEffort?: string | null
+    toolNamespace?: string | null
     account?: unknown
     output?: string
     status?: string
     hold?: boolean
+    manualToolReplies?: boolean
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
     research?: boolean
@@ -92,8 +152,30 @@ const fakeServer = (
   const packets: Packet[] = []
   let analysisReplies = 0
   let imageReplies = 0
-  const send = (packet: unknown) =>
-    child.stdout.write(JSON.stringify(packet) + '\n')
+  const send = (packet: unknown) => {
+    const request = packet as {
+      method?: string
+      params?: {
+        tool?: string
+        namespace?: string | null
+        item?: { type: string; tool?: string; namespace?: string | null }
+      }
+    }
+    let call = request.method === 'item/tool/call' ? request.params : undefined
+    if (request.params?.item?.type === 'dynamicToolCall')
+      call = request.params.item
+    if (call) {
+      const groups = packets.find(({ method }) => method === 'thread/start')
+        ?.params.dynamicTools as { name: string; tools?: { name: string }[] }[]
+      call.namespace =
+        options.toolNamespace === undefined
+          ? groups?.find(({ tools }) =>
+              tools?.some(({ name }) => name === call.tool)
+            )?.name
+          : options.toolNamespace
+    }
+    return child.stdout.write(JSON.stringify(packet) + '\n')
+  }
   const notify = (method: string, params: Record<string, unknown>) =>
     send({
       method,
@@ -134,6 +216,7 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
+          if (options.manualToolReplies) return
           if (
             options.repeatedImageCalls &&
             ++imageReplies < options.repeatedImageCalls
@@ -260,7 +343,14 @@ const fakeServer = (
         }
         if (packet.id === undefined) return
         options.onRequest?.(packet)
+        if (packet.method === options.holdMethod) return
+        if (packet.method === options.responseError?.method) {
+          send({ id: packet.id, error: options.responseError.error })
+          return
+        }
         let result: unknown = {}
+        if (packet.method === 'config/read')
+          result = options.effectiveConfig ?? { config: {} }
         if (packet.method === 'account/read')
           result = {
             account:
@@ -272,6 +362,10 @@ const fakeServer = (
           result = {
             thread: { id: 'thread-1' },
             model: 'selected-model',
+            reasoningEffort:
+              options.reasoningEffort === undefined
+                ? 'medium'
+                : options.reasoningEffort,
             instructionSources: options.instructionSources ?? [],
             runtimeWorkspaceRoots: []
           }
@@ -330,12 +424,456 @@ const untilTurn = async (packets: Packet[]) => {
 }
 
 afterEach(() => {
+  retainedRecords.length = 0
   vi.useRealTimers()
   vi.resetAllMocks()
   vi.restoreAllMocks()
 })
 
 describe('local subscription AI backend', () => {
+  it.each([{ research: true }, { toolCall: true }])(
+    'rejects unexpected tool activity in an assessment: %j',
+    async (activity) => {
+      const server = fakeServer(activity)
+      spawn.mockReturnValue(server.child)
+      await expect(
+        requestLocalAiAssessment(
+          { sourceRequestId: 'drawing-1', criteria: ['Find avoidable work'] },
+          { model: 'selected-model', executable: 'codex' }
+        )
+      ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_RESPONSE' })
+    }
+  )
+  it('isolates one diagnostic assessment from drawing tools and records its own identity', async () => {
+    const stdout = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const stderr = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    const result = { overall: 'No visual proof supplied', findings: [] }
+    const server = fakeServer({ output: JSON.stringify(result) })
+    spawn.mockReturnValue(server.child)
+    const assessment = await requestLocalAiAssessment(
+      {
+        sourceRequestId: 'drawing-1',
+        criteria: ['Find avoidable work'],
+        calls: []
+      },
+      {
+        model: 'selected-model',
+        executable: 'codex'
+      }
+    )
+    expect(assessment.value).toEqual(result)
+    expect(stdout).not.toHaveBeenCalled()
+    expect(stderr.mock.calls.map(([line]) => JSON.parse(line))).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ event: 'ai_request_trace' }),
+        expect.objectContaining({ event: 'ai_request_usage' })
+      ])
+    )
+    const params = server.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params
+    expect(params?.dynamicTools).toEqual([])
+    expect(params?.config).toMatchObject({
+      web_search: 'disabled',
+      'features.code_mode': false,
+      model_reasoning_effort: 'medium'
+    })
+    expect(params?.baseInstructions).not.toContain('Canvas changes')
+    expect(retainedRecords[0]).toMatchObject({
+      requestId: assessment.requestId,
+      purpose: 'execution-assessment',
+      sourceRequestId: 'drawing-1'
+    })
+    expect(assessment.requestId).not.toBe('drawing-1')
+  })
+  it('overlaps independent preparation and API description through owner declarations', async () => {
+    let signalEntered!: () => void
+    const entered = new Promise<void>((resolve) => {
+      signalEntered = resolve
+    })
+    let resume!: () => void
+    const release = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    const create = designTools.createLocalDesignTools
+    let preparations = 0
+    vi.spyOn(designTools, 'createLocalDesignTools').mockImplementation(
+      (...args) => {
+        const owner = create(...args)
+        return {
+          ...owner,
+          call: async (...params) => {
+            const result = await owner.call(...params)
+            preparations++
+            signalEntered()
+            await release
+            return result
+          }
+        }
+      }
+    )
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    const completion = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'apply_prepared_design',
+            description: 'Apply',
+            inputSchema: {}
+          },
+          ...basicApiContracts.map(({ name, description }) => ({
+            name,
+            description,
+            inputSchema: {}
+          }))
+        ]
+      },
+      { environment, executeBatch }
+    )
+    try {
+      await untilTurn(server.packets)
+      server.send({
+        id: 201,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: 'prepare-independent',
+          tool: 'prepare_design',
+          arguments: {
+            draft: {
+              type: 'frame',
+              name: 'Draft',
+              width: 20,
+              height: 20,
+              children: []
+            }
+          }
+        }
+      })
+      await entered
+      server.send({
+        id: 202,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: 'describe-independent',
+          tool: 'describe_design_apis',
+          arguments: {}
+        }
+      })
+      await vi.waitFor(() =>
+        expect(server.packets).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: 202,
+              result: expect.objectContaining({ success: true })
+            })
+          ])
+        )
+      )
+      expect(
+        server.packets.some((packet) => packet.id === 201 && 'result' in packet)
+      ).toBe(false)
+      expect(preparations).toBe(1)
+      expect(executeBatch).not.toHaveBeenCalled()
+      for (const definition of nativeToolDefinitions(
+        server.packets.find(({ method }) => method === 'thread/start')?.params
+      ))
+        expect(definition).not.toHaveProperty('executionAccess')
+    } finally {
+      resume()
+      server.finish()
+      await completion
+    }
+  })
+
+  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
+    'discovers deferred vector APIs through the real native provider',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      const calls: { tool: string; namespace: string }[] = []
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(...args)
+        children.push(child)
+        let buffer = ''
+        child.stdout?.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString()
+          let newline: number
+          while ((newline = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newline)
+            buffer = buffer.slice(newline + 1)
+            try {
+              const packet = JSON.parse(line)
+              if (packet.method === 'item/tool/call')
+                calls.push({
+                  tool: packet.params.tool,
+                  namespace: packet.params.namespace
+                })
+            } catch {
+              /* Only record native tool identities. */
+            }
+          }
+        })
+        return child
+      })
+      const contract = basicApiContracts.find(
+        ({ method }) => method === 'getVectorAnchorPointAtWorkspacePos'
+      )
+      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+      if (!contract || !executable)
+        throw new Error('Missing native discovery probe configuration')
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      try {
+        const result = await requestLocalAiActionBatch(
+          {
+            intent: `Inspect the API for editing vector nodes: discover and call describe_design_apis for ${contract.name}. Use native discovery and Code Mode as needed. This is a protocol check only; do not execute a canvas operation. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            context: {},
+            actions: [
+              {
+                name: contract.name,
+                description: contract.description,
+                inputSchema:
+                  contract.inputSchema as AiProviderInput['actions'][number]['inputSchema']
+              },
+              { name: 'report_outcome', description: 'Report', inputSchema: {} }
+            ],
+            attempt: 1
+          },
+          {
+            executable,
+            model: 'gpt-6-astra',
+            executeBatch,
+            signal: AbortSignal.timeout(90_000)
+          }
+        )
+        expect(result).toMatchObject({
+          actions: expect.arrayContaining([
+            expect.objectContaining({ name: 'report_outcome' })
+          ])
+        })
+        expect(calls).toContainEqual({
+          tool: 'describe_design_apis',
+          namespace: 'design_operations'
+        })
+        expect(executeBatch).not.toHaveBeenCalled()
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    95_000
+  )
+
+  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
+    'records phase-specific review criteria through real deferred discovery',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      const calls: { tool: string; namespace: string; arguments: unknown }[] =
+        []
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(...args)
+        children.push(child)
+        let buffer = ''
+        child.stdout?.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString()
+          let newline: number
+          while ((newline = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newline)
+            buffer = buffer.slice(newline + 1)
+            try {
+              const packet = JSON.parse(line)
+              if (packet.method === 'item/tool/call')
+                calls.push({
+                  tool: packet.params.tool,
+                  namespace: packet.params.namespace,
+                  arguments: packet.params.arguments
+                })
+            } catch {
+              /* Only record native tool identities. */
+            }
+          }
+        })
+        return child
+      })
+      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+      if (!executable)
+        throw new Error('Missing native discovery probe configuration')
+      const plan = {
+        phase: 'plan',
+        method: 'native-shapes',
+        references: [],
+        criteria: reviewCriteria(['A red square sized 100 by 100 px']),
+        detailRequired: false
+      }
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      try {
+        const result = await requestLocalAiActionBatch(
+          {
+            intent: `Protocol test: discover record_design_review and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            context: {},
+            actions: [
+              {
+                name: 'inspect_drawing',
+                description: 'Inspect drawing',
+                inputSchema: {}
+              },
+              { name: 'report_outcome', description: 'Report', inputSchema: {} }
+            ],
+            attempt: 1
+          },
+          {
+            executable,
+            model: 'gpt-6-astra',
+            executeBatch,
+            signal: AbortSignal.timeout(90_000)
+          }
+        )
+        expect(result).toMatchObject({
+          actions: expect.arrayContaining([
+            expect.objectContaining({ name: 'report_outcome' })
+          ])
+        })
+        expect(calls).toContainEqual({
+          tool: 'record_design_review',
+          namespace: 'design_operations',
+          arguments: plan
+        })
+        expect(executeBatch).not.toHaveBeenCalled()
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    95_000
+  )
+
+  it.skipIf(!process.env.LOCAL_AI_PROTOCOL_EXECUTABLE)(
+    'checks installed native registration without inference',
+    async () => {
+      const native =
+        await vi.importActual<typeof import('node:child_process')>(
+          'node:child_process'
+        )
+      const children: import('node:child_process').ChildProcess[] = []
+      const requests: Packet[] = []
+      const notifications: string[] = []
+      let nativeIsolation: unknown
+      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
+        const child = native.spawn(
+          args[0],
+          [
+            '-c',
+            'features.hooks=true',
+            '-c',
+            'features.multi_agent_v2=true',
+            '-c',
+            'notify=["missing-notification-probe"]',
+            ...(args[1] as string[]),
+            '-c',
+            'mcp_servers.startup_probe.command="missing-startup-probe"',
+            '-c',
+            'mcp_servers.startup_probe.enabled=true'
+          ],
+          args[2]
+        )
+        if (!child.stdin || !child.stdout)
+          throw new Error('Missing native protocol pipes')
+        const stdin = child.stdin
+        const stdout = child.stdout
+        const write = stdin.write.bind(stdin)
+        stdin.write = ((chunk: string, ...rest: unknown[]) => {
+          requests.push(JSON.parse(String(chunk)))
+          return write(chunk, ...(rest as []))
+        }) as typeof stdin.write
+        let buffer = ''
+        stdout.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString()
+          let index: number
+          while ((index = buffer.indexOf('\n')) >= 0) {
+            const packet = JSON.parse(buffer.slice(0, index))
+            buffer = buffer.slice(index + 1)
+            const request = requests.find(({ id }) => id === packet.id)
+            if (packet.id !== undefined && request?.method === 'config/read') {
+              const config = packet.result?.config
+              nativeIsolation = {
+                hooksDisabled: config?.features?.hooks === false,
+                agentsDisabled: config?.features?.multi_agent === false,
+                agentV2Disabled: config?.features?.multi_agent_v2 === false,
+                notifyDisabled:
+                  Array.isArray(config?.notify) && config.notify.length === 0
+              }
+            }
+            if (packet.method === 'mcpServer/startupStatus/updated')
+              notifications.push(packet.params.name)
+          }
+        })
+        children.push(child)
+        return child
+      })
+      try {
+        const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
+        if (!executable)
+          throw new Error('Missing native registration probe configuration')
+        await checkLocalAiProvider({
+          model: 'gpt-6-astra',
+          executable,
+          signal: AbortSignal.timeout(30_000)
+        })
+        expect(requests.some(({ method }) => method === 'turn/start')).toBe(
+          false
+        )
+        const config = requests.find(({ method }) => method === 'thread/start')
+          ?.params.config as Record<string, unknown>
+        expect(config.mcp_servers).toMatchObject({
+          startup_probe: { enabled: false }
+        })
+        expect(
+          Object.values(
+            config.mcp_servers as Record<string, { enabled: boolean }>
+          ).every(({ enabled }) => enabled === false)
+        ).toBe(true)
+        expect(nativeIsolation).toEqual({
+          hooksDisabled: true,
+          agentsDisabled: true,
+          agentV2Disabled: true,
+          notifyDisabled: true
+        })
+        expect(notifications).toEqual([])
+        expect(children).toHaveLength(1)
+        expect(
+          children[0].exitCode !== null || children[0].signalCode !== null
+        ).toBe(true)
+      } finally {
+        for (const child of children)
+          if (child.exitCode === null && child.signalCode === null)
+            child.kill('SIGKILL')
+      }
+    },
+    35_000
+  )
+
   it('sends native tool schemas once and retains only final control actions in text', async () => {
     const server = fakeServer()
     const action = {
@@ -355,9 +893,9 @@ describe('local subscription AI backend', () => {
         executeBatch: async () => ({ actionResults: [], context: {} })
       }
     )
-    const definitions = server.packets.find(
-      ({ method }) => method === 'thread/start'
-    )?.params.dynamicTools as { name: string }[]
+    const definitions = nativeToolDefinitions(
+      server.packets.find(({ method }) => method === 'thread/start')?.params
+    )
     expect(
       definitions.filter(({ name }) => name === 'select_elements')
     ).toHaveLength(1)
@@ -367,6 +905,17 @@ describe('local subscription AI backend', () => {
     expect(payload).not.toHaveProperty('imageTools')
     expect(payload.input.actions).toEqual([control])
     expect(payload.input.intent).toBe(input.intent)
+  })
+
+  it('passes the original multilingual brief unchanged without a translation turn', async () => {
+    const server = fakeServer()
+    const intent =
+      '畫「很醜」的塔頂，只要 2 層；1 cm = 1 px。Keep the left ornament; no background.'
+    await requestConfiguredAiActionBatch({ ...input, intent }, { environment })
+    const turns = server.packets.filter(({ method }) => method === 'turn/start')
+    expect(turns).toHaveLength(1)
+    const items = turns[0].params.input as { text: string }[]
+    expect(JSON.parse(items[0].text).input.intent).toBe(intent)
   })
 
   it('advertises drawing tools separately from final controls for a text-only request', async () => {
@@ -399,7 +948,7 @@ describe('local subscription AI backend', () => {
     const thread = server.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
-    const definitions = thread?.dynamicTools as { name: string }[]
+    const definitions = nativeToolDefinitions(thread)
     expect(definitions.map(({ name }) => name)).not.toContain(
       'search_reference_images'
     )
@@ -412,10 +961,7 @@ describe('local subscription AI backend', () => {
         'insert_vector_composition'
       ])
     )
-    const preparedTools = thread?.dynamicTools as {
-      name: string
-      description: string
-    }[]
+    const preparedTools = definitions
     for (const name of ['prepare_design', 'prepare_and_apply_design']) {
       const definition = preparedTools.find((tool) => tool.name === name)
       for (const example of designPreparationExamples)
@@ -426,7 +972,9 @@ describe('local subscription AI backend', () => {
       'input.actions lists final-response actions, not the complete capability catalog'
     )
     for (const { name } of definitions) expect(instructions).toContain(name)
-    expect(instructions).toContain('Use native web search')
+    expect(String(thread?.baseInstructions)).toContain(
+      'Use native web research'
+    )
     expect(instructions).not.toContain(
       'Only explicitly supplied App tools are available'
     )
@@ -577,13 +1125,7 @@ describe('local subscription AI backend', () => {
           }
         ],
         metadata: {
-          imageAttachments: [
-            {
-              dataUrl: 'data:image/png;base64,YQ==',
-              mediaType: 'image/png',
-              size: 1
-            }
-          ]
+          imageAttachments: [await rasterAttachment()]
         }
       },
       { environment }
@@ -635,13 +1177,7 @@ describe('local subscription AI backend', () => {
           }
         ],
         metadata: {
-          imageAttachments: [
-            {
-              dataUrl: 'data:image/png;base64,YQ==',
-              mediaType: 'image/png',
-              size: 1
-            }
-          ]
+          imageAttachments: [await rasterAttachment()]
         }
       },
       { environment }
@@ -678,13 +1214,7 @@ describe('local subscription AI backend', () => {
           {
             ...input,
             metadata: {
-              imageAttachments: [
-                {
-                  dataUrl: 'data:image/png;base64,YQ==',
-                  mediaType: 'image/png',
-                  size: 1
-                }
-              ]
+              imageAttachments: [await rasterAttachment()]
             }
           },
           {
@@ -777,6 +1307,69 @@ describe('local subscription AI backend', () => {
     expect(server.child.kill).toHaveBeenCalledOnce()
   })
 
+  it('pins medium effort on both thread configuration and the model turn', async () => {
+    const server = fakeServer()
+    await requestConfiguredAiActionBatch(input, { environment })
+    expect(
+      server.packets.find(({ method }) => method === 'thread/start')?.params
+        .config
+    ).toMatchObject({ model_reasoning_effort: 'medium' })
+    expect(
+      server.packets.find(({ method }) => method === 'turn/start')?.params
+    ).toMatchObject({ effort: 'medium' })
+  })
+
+  it.each(['unregistered_namespace', 'design_preparation', null])(
+    'rejects a tool called through the wrong namespace %s before execution',
+    async (toolNamespace) => {
+      const server = fakeServer({
+        toolNamespace,
+        toolCall: true,
+        toolName: 'select_elements',
+        toolArguments: { arguments: { elementIds: [] } }
+      })
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      await expect(
+        requestConfiguredAiActionBatch(
+          {
+            ...input,
+            actions: [
+              {
+                name: 'select_elements',
+                description: 'Select',
+                inputSchema: {}
+              }
+            ]
+          },
+          { environment, executeBatch }
+        )
+      ).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+      })
+      expect(executeBatch).not.toHaveBeenCalled()
+      expect(server.child.kill).toHaveBeenCalledOnce()
+    }
+  )
+
+  it.each(['high', 'low', null])(
+    'rejects native effort %s before starting a model turn',
+    async (reasoningEffort) => {
+      const server = fakeServer({ reasoningEffort })
+      await expect(
+        requestConfiguredAiActionBatch(input, { environment })
+      ).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
+      })
+      expect(server.packets.some(({ method }) => method === 'turn/start')).toBe(
+        false
+      )
+      expect(server.child.kill).toHaveBeenCalledOnce()
+    }
+  )
+
   it.each(['AGENTS.md', 'AGENTS.override.md'])(
     'accepts personal %s without returning its path or identity',
     async (file) => {
@@ -823,12 +1416,29 @@ describe('local subscription AI backend', () => {
       sandbox: 'read-only',
       environments: [],
       dynamicTools: expect.arrayContaining([
-        expect.objectContaining({ name: 'import_reference_image' })
+        expect.objectContaining({
+          type: 'namespace',
+          tools: expect.arrayContaining([
+            expect.objectContaining({ name: 'import_reference_image' })
+          ])
+        })
       ]),
       selectedCapabilityRoots: [],
       runtimeWorkspaceRoots: [],
       allowProviderModelFallback: false
     })
+    // Native app-server DynamicToolSpec requires the function discriminator.
+    // Check every advertised definition, not only one known tool name.
+    expect(thread?.dynamicTools).toBeInstanceOf(Array)
+    for (const definition of nativeToolDefinitions(thread)) {
+      expect(definition).toMatchObject({
+        type: 'function',
+        deferLoading: true,
+        name: expect.any(String),
+        description: expect.any(String),
+        inputSchema: expect.any(Object)
+      })
+    }
     expect(thread?.developerInstructions).toContain(
       'Return the prepared action batch without invoking backend operation tools'
     )
@@ -839,12 +1449,308 @@ describe('local subscription AI backend', () => {
       'features.multi_agent': false,
       'features.plugins': false,
       'features.apps': false,
-      web_search: 'live',
-      mcp_servers: {}
+      web_search: 'live'
     })
     expect(JSON.stringify(server.packets)).not.toContain('private@example.test')
     expect(JSON.stringify(result)).not.toContain('private@example.test')
     expect(server.child.kill).toHaveBeenCalledExactlyOnceWith('SIGKILL')
+  })
+
+  it('isolates inherited lifecycle commands and all agent variants before launch and thread creation', async () => {
+    const server = fakeServer()
+    await requestConfiguredAiActionBatch(input, { environment })
+    const args = spawn.mock.calls[0][1] as string[]
+    const launchConfig = Object.fromEntries(
+      args.flatMap((arg, index) => {
+        if (arg !== '-c') return []
+        const entry = args[index + 1]
+        const split = entry.indexOf('=')
+        return [[entry.slice(0, split), JSON.parse(entry.slice(split + 1))]]
+      })
+    )
+    const threadConfig = server.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params.config
+    const isolation = {
+      'features.hooks': false,
+      'features.multi_agent': false,
+      'features.multi_agent_v2': false,
+      'features.plugins': false,
+      'features.apps': false,
+      'features.shell_snapshot': false,
+      notify: []
+    }
+    expect(launchConfig).toMatchObject(isolation)
+    expect(threadConfig).toMatchObject(isolation)
+  })
+
+  it('disables every inherited MCP before thread startup without writing user config', async () => {
+    const server = fakeServer({
+      effectiveConfig: {
+        config: {
+          mcp_servers: {
+            'personal.viewer': {
+              command: 'secret-command',
+              enabled: true,
+              tool_timeout_sec: null
+            },
+            addedLater: { url: 'https://private.example/token' },
+            alreadyDisabled: { enabled: false }
+          }
+        }
+      }
+    })
+    await requestConfiguredAiActionBatch(input, { environment })
+    const methods = server.packets.map(({ method }) => method)
+    expect(methods.filter((method) => method === 'config/read')).toHaveLength(1)
+    expect(methods.indexOf('config/read')).toBeLessThan(
+      methods.indexOf('thread/start')
+    )
+    expect(methods).not.toContain('config/value/write')
+    const config = server.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params.config
+    expect(config).toMatchObject({
+      mcp_servers: {
+        'personal.viewer': { command: 'secret-command', enabled: false },
+        addedLater: { url: 'https://private.example/token', enabled: false },
+        alreadyDisabled: { enabled: false }
+      }
+    })
+    expect(JSON.stringify(config)).not.toContain('tool_timeout_sec')
+    expect(JSON.stringify(retainedRecords)).not.toContain('private.example')
+  })
+
+  it.each([{}, { config: null }, { config: { mcp_servers: [] } }])(
+    'rejects unreadable MCP configuration before inference: %j',
+    async (effectiveConfig) => {
+      const server = fakeServer({ effectiveConfig })
+      await expect(
+        requestConfiguredAiActionBatch(input, { environment })
+      ).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
+      })
+      expect(server.packets.some(({ method }) => method === 'turn/start')).toBe(
+        false
+      )
+    }
+  )
+
+  it('retains process and thread startup diagnostics without copying private text', async () => {
+    const server = fakeServer({
+      hold: true,
+      onRequest: ({ method }) => {
+        if (method === 'initialize')
+          server.send({
+            method: 'warning',
+            params: {
+              message:
+                'Invalid configuration token=private-secret private@example.test'
+            }
+          })
+      }
+    })
+    const completion = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    server.notify('mcpServer/startupStatus/updated', {
+      name: 'personal.viewer',
+      status: 'failed',
+      failureReason: null,
+      error:
+        'Connection timed out at https://private.example/?key=private-secret'
+    })
+    server.notify('mcpServer/startupStatus/updated', {
+      name: 'unrelated',
+      status: 'ready',
+      threadId: 'other-thread'
+    })
+    server.finish()
+    await completion
+    expect(retainedRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stage: 'provider_notification',
+          evidence: expect.objectContaining({
+            method: 'warning',
+            diagnostic: { reason: 'configuration', detailOmitted: true }
+          })
+        }),
+        expect.objectContaining({
+          stage: 'provider_notification',
+          evidence: expect.objectContaining({
+            method: 'mcpServer/startupStatus/updated',
+            diagnostic: {
+              server: 'personal.viewer',
+              status: 'failed',
+              reason: 'timeout',
+              detailOmitted: true
+            }
+          })
+        })
+      ])
+    )
+    const evidence = JSON.stringify(retainedRecords)
+    for (const secret of [
+      'private-secret',
+      'private@example.test',
+      'private.example',
+      'unrelated'
+    ])
+      expect(evidence).not.toContain(secret)
+  })
+
+  it('records native retry reasons while allowing successful recovery without replay', async () => {
+    const server = fakeServer({ hold: true })
+    const promise = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    server.notify('error', {
+      willRetry: true,
+      error: {
+        message: 'private endpoint https://private.example?token=secret',
+        additionalDetails: 'Bearer private-credential',
+        codexErrorInfo: {
+          responseStreamConnectionFailed: { httpStatusCode: 503 }
+        }
+      }
+    })
+    server.notify('error', {
+      threadId: 'unrelated',
+      willRetry: true,
+      error: { codexErrorInfo: 'unauthorized', message: 'private-credential' }
+    })
+    server.finish()
+    await expect(promise).resolves.toEqual(batch)
+    expect(
+      server.packets.filter(({ method }) => method === 'turn/start')
+    ).toHaveLength(1)
+    expect(retainedRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stage: 'provider_notification',
+          evidence: expect.objectContaining({
+            method: 'error',
+            nativeThreadId: 'thread-1',
+            nativeTurnId: 'turn-1',
+            diagnostic: {
+              reason: 'responseStreamConnectionFailed',
+              httpStatusCode: 503,
+              willRetry: true,
+              detailOmitted: true
+            }
+          })
+        })
+      ])
+    )
+    for (const secret of [
+      'private.example',
+      'private-credential',
+      'unrelated',
+      'unauthorized'
+    ])
+      expect(JSON.stringify(retainedRecords)).not.toContain(secret)
+  })
+
+  it.each(['usageLimitExceeded', 'unknown-private-error-kind'])(
+    'records terminal native error %s without private details',
+    async (kind) => {
+      const server = fakeServer({ hold: true })
+      const promise = requestConfiguredAiActionBatch(input, { environment })
+      const checked = expect(promise).rejects.toMatchObject({
+        code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+      })
+      await untilTurn(server.packets)
+      server.notify('turn/completed', {
+        turn: {
+          id: 'turn-1',
+          status: 'failed',
+          error: { codexErrorInfo: kind, message: 'private-credential' }
+        }
+      })
+      await checked
+      expect(retainedRecords).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            stage: 'provider_notification',
+            evidence: expect.objectContaining({
+              method: 'turn/completed',
+              diagnostic: {
+                reason: kind === 'usageLimitExceeded' ? kind : 'unclassified',
+                detailOmitted: true
+              }
+            })
+          })
+        ])
+      )
+      expect(JSON.stringify(retainedRecords)).not.toContain('private-')
+    }
+  )
+
+  it.each([
+    'initialize',
+    'account/read',
+    'config/read',
+    'thread/start',
+    'turn/start'
+  ])('records RPC error status at %s and closes its child', async (method) => {
+    const server = fakeServer({
+      responseError: {
+        method,
+        error: {
+          code: -32602,
+          message: 'private-credential',
+          data: { token: 'private-credential' }
+        }
+      }
+    })
+    await expect(
+      requestConfiguredAiActionBatch(input, { environment })
+    ).rejects.toMatchObject({
+      code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+    })
+    expect(retainedRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stage: 'provider_request_failed',
+          evidence: expect.objectContaining({
+            method,
+            diagnostic: {
+              reason: 'rpcError',
+              rpcCode: -32602,
+              detailOmitted: true
+            }
+          })
+        })
+      ])
+    )
+    expect(server.child.kill).toHaveBeenCalledOnce()
+    expect(JSON.stringify(retainedRecords)).not.toContain('private-credential')
+  })
+
+  it.each([
+    'initialize',
+    'account/read',
+    'config/read',
+    'thread/start',
+    'turn/start'
+  ])('cancels a stalled %s without later startup work', async (method) => {
+    const server = fakeServer({ holdMethod: method })
+    const controller = new AbortController()
+    const promise = requestConfiguredAiActionBatch(input, {
+      environment,
+      signal: controller.signal
+    })
+    const checked = expect(promise).rejects.toMatchObject({
+      code: 'AI_MODEL_BACKEND_ABORTED'
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.method === method)).toBe(
+        true
+      )
+    )
+    controller.abort()
+    await checked
+    expect(server.child.kill).toHaveBeenCalledOnce()
+    expect(server.packets.at(-1)?.method).toBe(method)
   })
 
   it('passes an explicitly configured executable as a literal without a shell', async () => {
@@ -962,6 +1868,336 @@ describe('local subscription AI backend', () => {
     await checked
   })
 
+  it.each([
+    ['config/read', 'end'],
+    ['config/read', 'error'],
+    ['config/read', 'close'],
+    ['turn/start', 'end'],
+    ['turn/start', 'error'],
+    ['turn/start', 'close'],
+    ['active-turn', 'end'],
+    ['active-turn', 'error'],
+    ['active-turn', 'close']
+  ] as const)(
+    'settles required stdout %s/%s without waiting for process exit',
+    async (method, event) => {
+      const server = fakeServer({
+        holdMethod: method === 'active-turn' ? undefined : method,
+        hold: true
+      })
+      const controller = new AbortController()
+      const result = requestConfiguredAiActionBatch(input, {
+        environment,
+        signal: controller.signal
+      }).then(
+        (value) => ({ value }),
+        (error: Error & { code: string }) => ({ code: error.code })
+      )
+      try {
+        await vi.waitFor(() =>
+          expect(
+            server.packets.some(
+              (packet) =>
+                packet.method ===
+                (method === 'active-turn' ? 'turn/start' : method)
+            )
+          ).toBe(true)
+        )
+        expect(() =>
+          server.child.stdout.emit(
+            event,
+            new Error('private-stream-credential')
+          )
+        ).not.toThrow()
+        await new Promise((resolve) => setImmediate(resolve))
+        expect(server.child.kill).toHaveBeenCalledOnce()
+        expect(await result).toEqual({
+          code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+        })
+        expect(retainedRecords).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              stage: 'provider_transport_event',
+              evidence: expect.objectContaining({
+                channel: 'stdout',
+                status: event,
+                terminal: true
+              })
+            })
+          ])
+        )
+        expect(JSON.stringify(retainedRecords)).not.toContain(
+          'private-stream-credential'
+        )
+      } finally {
+        controller.abort()
+        await result
+      }
+    }
+  )
+
+  it.each(['running', 'completed', 'research'])(
+    'keeps a throwing %s progress observer outside execution settlement',
+    async (phase) => {
+      const server = fakeServer({ toolCall: true, research: true })
+      const onProgress = vi.fn((event) => {
+        if (phase === 'research' || event.status === phase)
+          throw new Error('private observer exception')
+      })
+      await expect(
+        requestConfiguredAiActionBatch(
+          {
+            ...input,
+            metadata: { imageAttachments: [await rasterAttachment()] }
+          },
+          { environment, onProgress }
+        )
+      ).resolves.toEqual(batch)
+      expect(convertVTracerBuffer).toHaveBeenCalledOnce()
+      expect(server.packets.filter((packet) => packet.id === 99)).toHaveLength(
+        1
+      )
+      expect(server.child.kill).toHaveBeenCalledOnce()
+      expect(retainedRecords).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            stage: 'provider_notification',
+            evidence: expect.objectContaining({
+              method: 'app/progressObserverFailed',
+              diagnostic: { reason: 'observerError', detailOmitted: true }
+            })
+          })
+        ])
+      )
+      expect(JSON.stringify(retainedRecords)).not.toContain(
+        'private observer exception'
+      )
+    }
+  )
+
+  it.each(['matching-turn', 'wrong-turn', 'missing-ack', 'malformed-ack'])(
+    'validates %s admission before a same-chunk first tool can execute',
+    async (mode) => {
+      const server = fakeServer({
+        holdMethod: 'turn/start',
+        onRequest: (packet) => {
+          if (packet.method !== 'turn/start') return
+          const frames: unknown[] = []
+          if (mode !== 'missing-ack')
+            frames.push({
+              id: packet.id,
+              result:
+                mode === 'malformed-ack'
+                  ? { turn: {} }
+                  : { turn: { id: 'turn-1' } }
+            })
+          frames.push({
+            id: 99,
+            method: 'item/tool/call',
+            params: {
+              threadId: 'thread-1',
+              turnId: mode === 'wrong-turn' ? 'other-turn' : 'turn-1',
+              namespace: 'image_analysis',
+              callId: 'call-1',
+              tool: 'vtracer',
+              arguments: {
+                attachmentIndex: 0,
+                plan: {
+                  strategy: 'preserve-vectors',
+                  reason: 'Keep source geometry.'
+                }
+              }
+            }
+          })
+          server.child.stdout.write(
+            frames.map((frame) => JSON.stringify(frame)).join('\n') + '\n'
+          )
+        }
+      })
+      const controller = new AbortController()
+      const result = requestConfiguredAiActionBatch(
+        {
+          ...input,
+          metadata: { imageAttachments: [await rasterAttachment()] }
+        },
+        { environment, signal: controller.signal }
+      ).then(
+        (value) => ({ value }),
+        (error: Error & { code: string }) => ({ code: error.code })
+      )
+      try {
+        await untilTurn(server.packets)
+        if (mode === 'matching-turn') {
+          expect(await result).toEqual({ value: batch })
+          expect(convertVTracerBuffer).toHaveBeenCalledOnce()
+          expect(
+            server.packets.filter((packet) => packet.id === 99)
+          ).toHaveLength(1)
+        } else {
+          await new Promise((resolve) => setImmediate(resolve))
+          expect(server.child.kill).toHaveBeenCalledOnce()
+          expect(await result).toEqual({
+            code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+          })
+          expect(convertVTracerBuffer).not.toHaveBeenCalled()
+          expect(
+            server.packets.filter((packet) => packet.id === 99)
+          ).toHaveLength(0)
+        }
+      } finally {
+        controller.abort()
+        await result
+      }
+    }
+  )
+
+  it('accepts process close immediately after the admitted readiness response', async () => {
+    const server = fakeServer({
+      onRequest: (packet) => {
+        if (packet.method === 'thread/start')
+          queueMicrotask(() => server.child.emit('close', 0, null))
+      }
+    })
+    await expect(
+      checkLocalAiProvider({ executable: 'codex', model: 'selected-model' })
+    ).resolves.toBeUndefined()
+    expect(
+      server.packets.some((packet) => packet.method === 'turn/start')
+    ).toBe(false)
+  })
+
+  it.each(['finish', 'close', 'error'])(
+    'settles required stdin %s during a pending request',
+    async (event) => {
+      const server = fakeServer({ holdMethod: 'turn/start' })
+      const controller = new AbortController()
+      const result = requestConfiguredAiActionBatch(input, {
+        environment,
+        signal: controller.signal
+      }).then(
+        (value) => ({ value }),
+        (error: Error & { code: string }) => ({ code: error.code })
+      )
+      try {
+        await untilTurn(server.packets)
+        server.child.stdin.emit(event, new Error('private stdin exception'))
+        await new Promise((resolve) => setImmediate(resolve))
+        expect(server.child.kill).toHaveBeenCalledOnce()
+        expect(await result).toEqual({
+          code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+        })
+        expect(retainedRecords).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              stage: 'provider_transport_event',
+              evidence: expect.objectContaining({
+                channel: 'stdin',
+                status: event,
+                terminal: true
+              })
+            })
+          ])
+        )
+        expect(JSON.stringify(retainedRecords)).not.toContain(
+          'private stdin exception'
+        )
+      } finally {
+        controller.abort()
+        await result
+      }
+    }
+  )
+
+  it.each(['stdin-finish', 'stdin-close', 'stdin-error', 'process-close'])(
+    'accepts %s immediately after the complete protocol',
+    async (event) => {
+      const server = fakeServer({ hold: true })
+      const result = requestConfiguredAiActionBatch(input, { environment })
+      const checked = expect(result).resolves.toEqual(batch)
+      await untilTurn(server.packets)
+      server.finish()
+      if (event === 'process-close') server.child.emit('close', 0, null)
+      else
+        server.child.stdin.emit(
+          event.slice(6),
+          new Error('private stdin exception')
+        )
+      await checked
+    }
+  )
+
+  it('keeps optional stderr read failure from crashing or cancelling a valid turn', async () => {
+    const server = fakeServer({ hold: true })
+    const controller = new AbortController()
+    const result = requestConfiguredAiActionBatch(input, {
+      environment,
+      signal: controller.signal
+    }).then(
+      (value) => ({ value }),
+      () => ({ failed: true })
+    )
+    try {
+      await untilTurn(server.packets)
+      expect(() =>
+        server.child.stderr.emit(
+          'error',
+          new Error('private-stream-credential')
+        )
+      ).not.toThrow()
+      expect(server.child.kill).not.toHaveBeenCalled()
+      server.finish()
+      expect(await result).toEqual({ value: batch })
+      expect(retainedRecords).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            stage: 'provider_transport_event',
+            evidence: expect.objectContaining({
+              channel: 'stderr',
+              status: 'error',
+              terminal: false
+            })
+          })
+        ])
+      )
+      expect(JSON.stringify(retainedRecords)).not.toContain(
+        'private-stream-credential'
+      )
+    } finally {
+      controller.abort()
+      await result
+    }
+  })
+
+  it.each(['end', 'close', 'error'])(
+    'accepts stdout %s after the complete protocol while awaiting owned process close',
+    async (event) => {
+      const server = fakeServer({ hold: true, delayedClose: true })
+      const result = requestConfiguredAiActionBatch(input, { environment })
+      await untilTurn(server.packets)
+      server.finish()
+      server.child.stdout.emit(event, new Error('private-stream-credential'))
+      server.child.stdout.emit('close')
+      await vi.waitFor(() => expect(server.child.kill).toHaveBeenCalledOnce())
+      server.child.emit('close')
+      await expect(result).resolves.toEqual(batch)
+    }
+  )
+
+  it('keeps a peer invocation alive when one protocol stream closes', async () => {
+    const broken = fakeServer({ hold: true })
+    const peer = fakeServer({ hold: true })
+    const failed = requestConfiguredAiActionBatch(input, { environment }).catch(
+      (error: Error & { code: string }) => error.code
+    )
+    const successful = requestConfiguredAiActionBatch(input, { environment })
+    await Promise.all([untilTurn(broken.packets), untilTurn(peer.packets)])
+    broken.child.stdout.emit('end')
+    await expect(failed).resolves.toBe('AI_MODEL_BACKEND_TRANSPORT_FAILED')
+    expect(peer.child.kill).not.toHaveBeenCalled()
+    peer.finish()
+    await expect(successful).resolves.toEqual(batch)
+  })
+
   it('redacts a synchronous executable launch failure', async () => {
     spawn.mockImplementationOnce(() => {
       throw new Error('private executable path and token')
@@ -1070,9 +2306,14 @@ describe('local subscription AI backend', () => {
 it('waits for a canonical operation receipt before continuing the native model', async () => {
   const child = fakeServer({
     toolCall: true,
-    toolName: 'set_element_visibility',
+    toolName: 'execute_design_batch',
     toolArguments: {
-      arguments: { elementId: 'actual-id', visible: false },
+      operations: [
+        {
+          name: 'set_element_visibility',
+          arguments: { elementId: 'actual-id', visible: false }
+        }
+      ],
       message: 'I am hiding the separate mark.'
     }
   })
@@ -1111,7 +2352,8 @@ it('waits for a canonical operation receipt before continuing the native model',
     (packet) => 'result' in packet
   ) as unknown as { result: { contentItems: { text: string }[] } }
   expect(
-    JSON.parse(response.result.contentItems[0].text).context.selectedIds
+    JSON.parse(response.result.contentItems[0].text).actionResults[0].result
+      .appliedElementIds
   ).toEqual(['actual-id'])
 })
 
@@ -1317,7 +2559,7 @@ it.each([
         success: false,
         contentItems: [
           expect.objectContaining({
-            text: expect.stringMatching(/separate|Contour/)
+            text: expect.stringContaining('required field is missing')
           })
         ]
       }
@@ -1471,7 +2713,7 @@ describe('native semantic design handoff', () => {
     const thread = child.packets.find(
       (p) => p.method === 'thread/start'
     )?.params
-    expect(thread?.dynamicTools).toEqual(
+    expect(nativeToolDefinitions(thread)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'prepare_design' })
       ])
@@ -1577,6 +2819,66 @@ it('returns invalid vector preparation to the model for correction before any ca
   expect(executeBatch).not.toHaveBeenCalled()
 })
 
+it.each([
+  ['release_design_artifacts', { artifactIds: 'wrong' }],
+  [
+    'analyze_vector_components',
+    { imageArtifactId: 'missing', pathIds: ['path'] }
+  ],
+  ['select_elements', { unexpected: true }]
+])(
+  'keeps the conversation alive after correctable App tool failure: %s',
+  async (toolName, toolArguments) => {
+    const server = fakeServer({ toolCall: true, toolName, toolArguments })
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    await expect(
+      requestConfiguredAiActionBatch(
+        {
+          ...input,
+          actions: [
+            {
+              name: 'apply_prepared_design',
+              description: 'Apply',
+              inputSchema: {}
+            },
+            { name: 'select_elements', description: 'Select', inputSchema: {} }
+          ]
+        },
+        { environment, executeBatch }
+      )
+    ).resolves.toBeDefined()
+    const reply = server.packets.find(
+      (packet) => packet.id === 99 && 'result' in packet
+    )
+    expect(reply).toMatchObject({ result: { success: false } })
+    expect(JSON.stringify(reply)).toContain('recoverable')
+    expect(executeBatch).not.toHaveBeenCalled()
+  }
+)
+
+it('reports returned unavailable preparation as unsuccessful rather than usable output', async () => {
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'prepare_design',
+    toolArguments: {
+      draft: { type: 'frame', name: 'Invalid size', width: -1, height: 10 }
+    }
+  })
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+      ]
+    },
+    { environment, executeBatch: vi.fn() }
+  )
+  const reply = server.packets.find(
+    (packet) => packet.id === 99 && 'result' in packet
+  )
+  expect(reply).toMatchObject({ result: { success: false } })
+})
+
 it('continues serial image tools beyond former image, operation and total-call ceilings', async () => {
   const server = fakeServer({ toolCall: true, repeatedImageCalls: 170 })
   const result = await requestConfiguredAiActionBatch(
@@ -1619,6 +2921,55 @@ it('accepts cumulative protocol traffic beyond 32 MiB while bounding each messag
   expect(server.child.kill).toHaveBeenCalledOnce()
 })
 
+it('keeps a registered review tool available after rejected input and accepts a corrected call in the same turn', async () => {
+  const failures: Record<string, unknown>[] = []
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'record_design_review',
+    toolArguments: { phase: 'plan' },
+    followupTool: (reply) => {
+      failures.push(reply)
+      return {
+        name: 'record_design_review',
+        args: {
+          phase: 'plan',
+          method: 'Editable illustration',
+          references: [],
+          criteria: reviewCriteria(['Retain the requested appearance']),
+          detailRequired: true
+        }
+      }
+    }
+  })
+  spawn.mockReturnValue(server.child)
+  const executeBatch = vi.fn()
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        ...input.actions,
+        { name: 'inspect_drawing', description: 'Inspect', inputSchema: {} }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  expect(failures).toEqual([
+    expect.objectContaining({
+      available: false,
+      code: 'PREPARATION_REJECTED',
+      recoverable: true,
+      message: expect.stringContaining('required field is missing')
+    })
+  ])
+  expect(server.packets.find((packet) => packet.id === 99)).toMatchObject({
+    result: { success: false }
+  })
+  expect(server.packets.find((packet) => packet.id === 100)).toMatchObject({
+    result: { success: true }
+  })
+  expect(executeBatch).not.toHaveBeenCalled()
+})
+
 it('exposes review planning to the model and traces the operation without certifying an unassessed image', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const outcome = {
@@ -1639,12 +2990,19 @@ it('exposes review planning to the model and traces the operation without certif
       phase: 'plan',
       method: 'Three deliberately crude shapes',
       references: [],
-      criteria: ['Intentionally ugly face'],
+      criteria: reviewCriteria(['Intentionally ugly face']),
       detailRequired: false
     },
     followupTool: () => ({
-      name: 'set_element_visibility',
-      args: { arguments: { elementIds: ['drawing'], visible: true } }
+      name: 'execute_design_batch',
+      args: {
+        operations: [
+          {
+            name: 'set_element_visibility',
+            arguments: { elementIds: ['drawing'], visible: true }
+          }
+        ]
+      }
     }),
     output: JSON.stringify(outcome)
   })
@@ -1695,7 +3053,18 @@ it('exposes review planning to the model and traces the operation without certif
   })
   const records = log.mock.calls.map(([value]) => JSON.parse(String(value)))
   const trace = records.filter((entry) => entry.event === 'ai_request_trace')
-  expect(trace.map((entry) => entry.stage)).toEqual([
+  for (const entry of trace.filter((event) =>
+    event.stage.startsWith('provider_request_')
+  ))
+    expect(entry.callId).toEqual(expect.any(String))
+  expect(
+    trace
+      .filter(
+        (entry) =>
+          entry.stage.startsWith('tool_') || entry.stage === 'settlement'
+      )
+      .map((entry) => entry.stage)
+  ).toEqual([
     'tool_started',
     'tool_execution_started',
     'tool_completed',
@@ -1785,14 +3154,24 @@ it('admits native code-mode output as diagnostics only and rejects environment t
   await rejected
 })
 
-it('does not start queued canvas writes after the first executor fails', async () => {
-  const server = fakeServer({ hold: true })
+it('returns executor failure and continues queued calls without replaying the failed write', async () => {
+  const server = fakeServer({ hold: true, manualToolReplies: true })
   let rejectWrite!: (error: Error) => void
   const executeBatch = vi.fn(
-    () =>
-      new Promise<AiBatchReceipt>((_resolve, reject) => {
-        rejectWrite = reject
-      })
+    async (value: AiActionBatch): Promise<AiBatchReceipt> => {
+      if (executeBatch.mock.calls.length === 1)
+        return new Promise((_resolve, reject) => {
+          rejectWrite = reject
+        })
+      return {
+        context: {},
+        actionResults: value.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: { status: 'complete' }
+        }))
+      }
+    }
   )
   const promise = requestConfiguredAiActionBatch(
     {
@@ -1807,9 +3186,7 @@ it('does not start queued canvas writes after the first executor fails', async (
     },
     { environment, executeBatch }
   )
-  const rejected = expect(promise).rejects.toMatchObject({
-    code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
-  })
+  const completed = expect(promise).resolves.toEqual(batch)
   await untilTurn(server.packets)
   for (let i = 0; i < 2; i++)
     server.send({
@@ -1825,8 +3202,64 @@ it('does not start queued canvas writes after the first executor fails', async (
     })
   await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(1))
   rejectWrite(new Error('Canonical execution failed'))
+  await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledTimes(2))
+  await vi.waitFor(() =>
+    expect(
+      server.packets.filter((p) => p.id === 90 || p.id === 91)
+    ).toHaveLength(2)
+  )
+  const replies = server.packets.filter((p) => p.id === 90 || p.id === 91)
+  expect(replies).toMatchObject([
+    { result: { success: false } },
+    { result: { success: true } }
+  ])
+  server.finish()
+  await completed
+})
+
+it('accepts native sleep lifecycle without executing actions or completing the turn', async () => {
+  const server = fakeServer({ hold: true })
+  const executeBatch = vi.fn()
+  const promise = requestConfiguredAiActionBatch(input, {
+    environment,
+    executeBatch
+  })
+  const completed = expect(promise).resolves.toEqual(batch)
+  let settled = false
+  void promise.then(
+    () => {
+      settled = true
+    },
+    () => {
+      settled = true
+    }
+  )
+  await untilTurn(server.packets)
+  for (const method of ['item/started', 'item/completed'])
+    server.notify(method, {
+      item: { type: 'sleep', id: 'native-pause', durationMs: 1000 }
+    })
+  await new Promise((resolve) => setImmediate(resolve))
+  expect(settled).toBe(false)
+  expect(executeBatch).not.toHaveBeenCalled()
+  server.finish()
+  await completed
+})
+
+it.each([
+  { id: '', durationMs: 1000 },
+  { id: 'pause', durationMs: -1 },
+  { id: 'pause', durationMs: '1000' },
+  { id: 'pause' }
+])('rejects malformed native sleep %j', async (fields) => {
+  const server = fakeServer({ hold: true })
+  const promise = requestConfiguredAiActionBatch(input, { environment })
+  const rejected = expect(promise).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+  })
+  await untilTurn(server.packets)
+  server.notify('item/completed', { item: { type: 'sleep', ...fields } })
   await rejected
-  expect(executeBatch).toHaveBeenCalledTimes(1)
 })
 
 it('accepts an omitted default namespace on native code-mode output', async () => {
@@ -1893,7 +3326,7 @@ it.each([
 
 it('attributes overlapping tool intervals once and leaves provider gaps unattributed', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const clock = vi.spyOn(Date, 'now')
+  const clock = vi.spyOn(performance, 'now')
   try {
     clock.mockReturnValue(0)
     const usage = createLocalAiUsage(input, 'selected-model')
@@ -1910,10 +3343,108 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
     const report = JSON.parse(String(log.mock.calls.at(-1)?.[0]))
     expect(report.timing).toEqual({
       observedToolAndResearchMs: 100,
-      unattributedMs: 400
+      outsideToolAndResearchMs: 400
     })
   } finally {
     clock.mockRestore()
+    log.mockRestore()
+  }
+})
+
+it('records reported provider item intervals without retaining reasoning content', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  try {
+    const completion = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    for (const method of ['item/started', 'item/completed'])
+      server.notify(method, {
+        item: {
+          id: 'reasoning-1',
+          type: 'reasoning',
+          content: 'PRIVATE REASONING',
+          summary: ['PRIVATE REASONING']
+        }
+      })
+    server.finish()
+    await completion
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+    expect(
+      records.filter((entry) => entry.stage?.startsWith('provider_item_'))
+    ).toEqual([
+      expect.objectContaining({
+        stage: 'provider_item_started',
+        callId: 'item:reasoning-1',
+        evidence: expect.objectContaining({ kind: 'reasoning' })
+      }),
+      expect.objectContaining({
+        stage: 'provider_item_completed',
+        callId: 'item:reasoning-1'
+      })
+    ])
+    expect(JSON.stringify(records)).not.toContain('PRIVATE REASONING')
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('records native orchestration lifecycle metadata without code or output', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  try {
+    const completion = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    for (const method of ['item/started', 'item/completed'])
+      server.notify(method, {
+        item: {
+          id: 'exec-1',
+          type: 'functionCallOutput',
+          name: 'exec',
+          output: 'PRIVATE CODE OUTPUT'
+        }
+      })
+    server.finish()
+    await completion
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+    const events = records.filter((entry) =>
+      entry.stage?.startsWith('provider_item_')
+    )
+    expect(events).toHaveLength(2)
+    expect(events[0]).toMatchObject({
+      tool: 'exec',
+      evidence: {
+        kind: 'functionCallOutput',
+        nativeTurnId: 'turn-1',
+        nativeItemId: 'exec-1'
+      }
+    })
+    expect(JSON.stringify(records)).not.toContain('PRIVATE CODE OUTPUT')
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('retains exact bounded discovery and field selectors for execution diagnosis', () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  try {
+    createLocalAiUsage(input, 'selected-model').trace('tool_started', {
+      callId: 'query',
+      tool: 'describe_design_apis',
+      arguments: {
+        names: ['api_core_getElementComputedData'],
+        fields: ['bounds'],
+        password: 'must-not-be-recorded'
+      }
+    })
+    const record = JSON.parse(log.mock.calls[0][0])
+    expect(record.evidence.arguments.names.items).toEqual([
+      'api_core_getElementComputedData'
+    ])
+    expect(record.evidence.arguments.fields.items).toEqual(['bounds'])
+    expect(JSON.stringify(record)).not.toContain('must-not-be-recorded')
+  } finally {
     log.mockRestore()
   }
 })
@@ -1959,3 +3490,279 @@ it('retains compact deferred review evidence without retaining geometry', () => 
     log.mockRestore()
   }
 })
+
+it('records native discovery lifecycle and counts unseen notifications without retaining their bodies', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  try {
+    const completion = requestConfiguredAiActionBatch(input, { environment })
+    await untilTurn(server.packets)
+    for (const method of ['item/started', 'item/completed'])
+      server.notify(method, {
+        item: {
+          id: 'discovery',
+          type: 'mcpToolCall',
+          server: 'codex',
+          tool: 'list_mcp_resources',
+          status: 'completed',
+          content: 'PRIVATE_BODY'
+        }
+      })
+    server.notify('item/newPublicEvent', { content: 'PRIVATE_BODY' })
+    server.finish()
+    await completion
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+    expect(records).toContainEqual(
+      expect.objectContaining({
+        stage: 'provider_item_started',
+        tool: 'list_mcp_resources'
+      })
+    )
+    expect(records).toContainEqual(
+      expect.objectContaining({
+        stage: 'provider_notifications',
+        evidence: expect.objectContaining({
+          notificationCounts: expect.objectContaining({
+            items: expect.arrayContaining([
+              { notification: 'item/newPublicEvent', occurrences: 1 }
+            ])
+          })
+        })
+      })
+    )
+    expect(JSON.stringify(records)).not.toContain('PRIVATE_BODY')
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('binds the call digest to the schema actually advertised to native discovery', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'describe_design_apis',
+    toolArguments: { query: 'fill' }
+  })
+  spawn.mockReturnValue(server.child)
+  try {
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: basicApiContracts.map(({ name, description }) => ({
+          name,
+          description,
+          inputSchema: {}
+        }))
+      },
+      {
+        environment,
+        executeBatch: async () => ({ context: {}, actionResults: [] })
+      }
+    )
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+    const advertised = server.packets.find(
+      (packet) => packet.method === 'thread/start'
+    )?.params.dynamicTools as { name: string; tools: { name: string }[] }[]
+    const call = records.find((record) => record.stage === 'tool_started')
+    const definition = advertised
+      .flatMap((group) => group.tools)
+      .find((tool) => tool.name === call.tool)
+    expect(call.diagnostic.attribution.contractDigest).toBe(
+      toolContractDigest(definition)
+    )
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('isolates visual assessment from drawing conclusions and returns validated findings with image inputs', async () => {
+  const result = {
+    overall: {
+      status: 'fail',
+      evidence: 'The requested solid form is unfolded.'
+    },
+    checks: [
+      {
+        criterionId: 'shape',
+        status: 'fail',
+        evidence: 'The two walls appear unfolded.'
+      }
+    ]
+  }
+  const server = fakeServer({ output: JSON.stringify(result) })
+  spawn.mockReturnValue(server.child)
+  const response = await requestLocalVisualAssessment(
+    {
+      request:
+        'Draw a solid tower from an elevated view looking down, with visible top surfaces.',
+      phase: 'structure',
+      criteria: { shape: { requirement: 'solid tower' } },
+      images: [{ role: 'overview', dataUrl: 'data:image/png;base64,YQ==' }]
+    },
+    {
+      model: 'selected-model',
+      executable: 'codex',
+      sourceRequestId: 'parent-visual',
+      parentCallId: 'review-call',
+      sourceSpanId: 'visual-wait'
+    }
+  )
+  expect(response).toEqual(result)
+  const thread = server.packets.find(
+    ({ method }) => method === 'thread/start'
+  )?.params
+  expect(thread?.dynamicTools).toEqual([])
+  expect(thread?.baseInstructions).toContain('Independently compare')
+  expect(thread?.config).toMatchObject({
+    web_search: 'disabled',
+    'features.code_mode': false,
+    model_reasoning_effort: 'medium'
+  })
+  const turn = server.packets.find(
+    ({ method }) => method === 'turn/start'
+  )?.params
+  expect(turn?.input).toEqual(
+    expect.arrayContaining([
+      { type: 'image', url: 'data:image/png;base64,YQ==' }
+    ])
+  )
+  const submitted = (turn?.input as { type: string; text?: string }[]).find(
+    (entry) => entry.type === 'text'
+  )
+  expect(JSON.parse(submitted?.text ?? '{}').input.intent).toBe(
+    'Draw a solid tower from an elevated view looking down, with visible top surfaces.'
+  )
+  expect(retainedRecords[0]).toMatchObject({
+    purpose: 'execution-assessment',
+    sourceRequestId: 'parent-visual',
+    parentCallId: 'review-call',
+    sourceSpanId: 'visual-wait'
+  })
+})
+
+it.each(['completed', 'cancelled'] as const)(
+  'retains actual provider delegation and settlement ownership for %s',
+  async (outcome) => {
+    const controller = new AbortController()
+    const server = fakeServer({ hold: outcome === 'cancelled' })
+    spawn.mockReturnValue(server.child)
+    const request = requestLocalAiActionBatch(input, {
+      model: 'selected-model',
+      executable: 'codex',
+      signal: controller.signal
+    })
+    if (outcome === 'cancelled') {
+      await vi.waitFor(() =>
+        expect(
+          server.packets.some((packet) => packet.method === 'turn/start')
+        ).toBe(true)
+      )
+      controller.abort()
+      await expect(request).rejects.toBeDefined()
+    } else await request
+    const run = parseExecutionRecord(
+      retainedRecords.map((record) => JSON.stringify(record)).join('\n')
+    )
+    expect(run.complete).toBe(true)
+    expect(run.outcome).toBe(outcome)
+    expect(run.timing.unattributedMs).toBe(0)
+    expect(
+      run.steps.find((step) => step.callId === 'provider-turn')
+    ).toMatchObject({ status: 'completed', kind: 'lifecycle' })
+    expect(run.timing.breakdown.providerWaitMs).toBeGreaterThanOrEqual(0)
+    if (outcome === 'completed')
+      expect(
+        run.records.some((record) => record.stage === 'provider_notification')
+      ).toBe(true)
+  }
+)
+
+it.each(['execution', 'delivery'] as const)(
+  'continues the same turn after reference %s failure and delivers corrected output',
+  async (stage) => {
+    const original = referenceTools.createLocalReferenceTools(vi.fn())
+    const attachment = await rasterAttachment()
+    const call = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        if (stage === 'execution') throw new Error('Reference decode failed')
+        return JSON.stringify({
+          actionResults: [
+            {
+              actionName: 'import_reference_image',
+              result: {
+                available: true,
+                image: { dataUrl: 'broken', width: 1, height: 1 }
+              }
+            }
+          ]
+        })
+      })
+      .mockResolvedValue(
+        JSON.stringify({
+          actionResults: [
+            {
+              actionName: 'import_reference_image',
+              result: {
+                available: true,
+                image: { dataUrl: attachment.dataUrl, width: 1, height: 1 }
+              }
+            }
+          ]
+        })
+      )
+    vi.spyOn(referenceTools, 'createLocalReferenceTools').mockReturnValue({
+      ...original,
+      call
+    })
+    const args = {
+      imageUrl: 'https://example.com/image.png',
+      sourceUrl: 'https://example.com/page'
+    }
+    const followup = vi.fn((receipt: Record<string, unknown>) => {
+      expect(receipt).toMatchObject({
+        recoverable: true,
+        toolOutcome: {
+          status: stage === 'delivery' ? 'partial' : 'unavailable'
+        }
+      })
+      expect(receipt.message).toEqual(expect.any(String))
+      if (stage === 'delivery') {
+        expect(receipt).toMatchObject({
+          code: 'TOOL_RESULT_DELIVERY_FAILED',
+          executionResult: {
+            actionResults: [{ actionName: 'import_reference_image' }]
+          }
+        })
+        expect(receipt.message).toContain('Do not replay mutations')
+      }
+      return { name: 'import_reference_image', args }
+    })
+    const server = fakeServer({
+      toolCall: true,
+      toolName: 'import_reference_image',
+      toolArguments: args,
+      followupTool: followup
+    })
+    await expect(
+      requestLocalAiActionBatch(input, {
+        model: 'selected-model',
+        executable: '/usr/bin/codex',
+        recordDirectory: 'unused'
+      })
+    ).resolves.toEqual(batch)
+    expect(followup).toHaveBeenCalledOnce()
+    expect(call).toHaveBeenCalledTimes(2)
+    const responses = server.packets.filter(
+      (packet) => 'result' in packet
+    ) as unknown as { result: { success: boolean; contentItems: unknown[] } }[]
+    expect(responses[0].result.success).toBe(false)
+    expect(responses[1].result).toMatchObject({
+      success: true,
+      contentItems: expect.arrayContaining([
+        { type: 'inputImage', imageUrl: attachment.dataUrl }
+      ])
+    })
+  }
+)

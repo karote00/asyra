@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
+import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
 import {
   createRectangle,
   dragSelectedElementBy,
@@ -1143,18 +1144,21 @@ const expectSelectedElementInteriorToConverge = async (
     .toBe(expected)
 }
 
-test('16-item server response keeps ordered minimal publications through one Action, Undo, and Redo', async ({
+test('16-item server response publishes each finite member with one Undo and Redo entry', async ({
   page
 }, testInfo) => {
   const fileId = `single-actor-fast-${Date.now()}-${testInfo.workerIndex}`
-  await installGeneratedActionBatchInterceptor(page.context(), {
+  const record = await installGeneratedActionBatchInterceptor(page.context(), {
     appUrl: requireAppUrl(testInfo),
     fileId,
     itemCount: 16
   })
+  const artifact = record.batch.actions[0].arguments as PreparedDrawingArtifact
+  const expectedMemberCount = 1 + artifact.slices.length
   await page.goto(collaborationUrl(fileId))
   await waitForAppReady(page)
   await captureFactoryPublicationShapes(page)
+  const undoDepthBefore = await getUndoDepth(page)
 
   await page.getByTestId('ai-agent-toolbar-button').click()
   await expect(page.getByTestId('ai-agent-panel')).toBeVisible()
@@ -1168,6 +1172,7 @@ test('16-item server response keeps ordered minimal publications through one Act
     { timeout: 30_000 }
   )
   await expect.poll(() => getElementCount(page)).toBe(17)
+  expect(await getUndoDepth(page)).toBe(undoDepthBefore + 1)
 
   await undo(page)
   await expect.poll(() => getElementCount(page)).toBe(0)
@@ -1181,15 +1186,19 @@ test('16-item server response keeps ordered minimal publications through one Act
     body: Buffer.from(JSON.stringify(shapes, null, 2)),
     contentType: 'application/json'
   })
-  expect(shapes.map(({ origin }) => origin)).toEqual(['action', 'undo', 'redo'])
+  expect(shapes.map(({ origin }) => origin)).toEqual([
+    ...Array.from({ length: expectedMemberCount }, () => 'action'),
+    'undo',
+    'redo'
+  ])
   expect(JSON.stringify(shapes)).not.toMatch(
     /updateComputedData|updateComputedDataPatch/
   )
 
   expect(await classifyFactoryPublicationsInApp(page)).toEqual([
-    ...Array.from({ length: 9 }, () => ['element-creation']),
-    ...Array.from({ length: 9 }, () => ['element-removal']),
-    ...Array.from({ length: 9 }, () => ['element-creation'])
+    ...Array.from({ length: expectedMemberCount }, () => ['element-creation']),
+    ...Array.from({ length: expectedMemberCount }, () => ['element-removal']),
+    ...Array.from({ length: expectedMemberCount }, () => ['element-creation'])
   ])
 })
 
@@ -3077,5 +3086,78 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
       .toEqual(await getCanonicalSnapshot(first))
   } finally {
     await Promise.all([firstContext.close(), secondContext.close()])
+  }
+})
+
+test('partial Fill updates preserve computed and UI fields on both peers through Undo and Redo', async ({
+  browser
+}) => {
+  const fileId = `fill-patch-${crypto.randomUUID()}`
+  const senderContext = await browser.newContext()
+  const peerContext = await browser.newContext()
+  const sender = await senderContext.newPage()
+  const peer = await peerContext.newPage()
+  try {
+    await Promise.all([
+      sender.goto(collaborationUrl(fileId)),
+      peer.goto(collaborationUrl(fileId))
+    ])
+    await Promise.all([waitForAppReady(sender), waitForAppReady(peer)])
+    await Promise.all([
+      waitForCollaboration(sender),
+      waitForCollaboration(peer)
+    ])
+    await createRectangle(sender, 0.35, 0.35)
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+    const elementId = (await getSelectedIds(sender))[0]
+    await layerRow(peer, elementId).click()
+    const read = (page: Page) =>
+      page.evaluate(async (elementId) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return {
+          fills: core.getElementComputedData(elementId, ['fills'])?.fills,
+          ui: core.getUIProperty('fills')
+        }
+      }, elementId)
+    const initial = await read(sender)
+    await expect.poll(() => read(peer)).toEqual(initial)
+    const mutate = (patch: Record<string, unknown>) =>
+      sender.evaluate(
+        async ({ elementId, patch }) => {
+          const { core } = await import('../src/testing/runtime-access')
+          const { fillApis } = await import('../src/common-apis')
+          const fillId = (
+            core.getElementComputedData(elementId, ['fills'])?.fills as {
+              id: string
+            }[]
+          )[0].id
+          fillApis.updateFillFields(elementId, fillId, patch)
+        },
+        { elementId, patch }
+      )
+    await mutate({ color: '#2468ac' })
+    const recolored = await read(sender)
+    await expect.poll(() => read(peer)).toEqual(recolored)
+    await mutate({ opacity: 0.4, visible: false })
+    const final = await read(sender)
+    expect(final.fills).toEqual(
+      (recolored.fills as object[]).map((fill) => ({
+        ...fill,
+        opacity: 0.4,
+        visible: false
+      }))
+    )
+    await expect.poll(() => read(peer)).toEqual(final)
+    await undo(sender)
+    await expect.poll(() => read(sender)).toEqual(recolored)
+    await expect.poll(() => read(peer)).toEqual(recolored)
+    await undo(sender)
+    await expect.poll(() => read(peer)).toEqual(initial)
+    await redo(sender)
+    await redo(sender)
+    await expect.poll(() => read(peer)).toEqual(final)
+  } finally {
+    await senderContext.close()
+    await peerContext.close()
   }
 })
