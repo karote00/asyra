@@ -1,4 +1,4 @@
-import { isDeepStrictEqual } from 'node:util'
+import isEqual from 'lodash/isEqual.js'
 
 // App-owned model-input admission. Canonical executors remain the authority for
 // target permissions, current state and writes. Never validate prepared geometry
@@ -133,9 +133,7 @@ export const operationInputIssue = (
         for (let i = 0; i < v.length; i++) {
           const item = v[i]
           if (item !== null && typeof item === 'object') {
-            if (
-              structures.some((previous) => isDeepStrictEqual(previous, item))
-            )
+            if (structures.some((previous) => isEqual(previous, item)))
               return [`${path}[${i}]: duplicate item`]
             structures.push(item)
           } else {
@@ -210,7 +208,7 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
   }
   const result: Record<string, unknown> = { ...left }
   for (const [key, value] of Object.entries(right)) {
-    if (!(key in result) || isDeepStrictEqual(result[key], value)) {
+    if (!(key in result) || isEqual(result[key], value)) {
       result[key] = value
       continue
     }

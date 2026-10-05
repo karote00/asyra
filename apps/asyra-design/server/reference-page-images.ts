@@ -149,9 +149,9 @@ export const referencePageImages = (
       const imageAttrs = attributes(image[0])
       const src = url(imageAttrs.src)
       if (src) previewUrls.add(src)
-      for (const candidate of (imageAttrs.srcset ?? '').matchAll(
-        /(?:^|,\s*)(\S+?)\s+\d+(?:\.\d+)?[wx](?=\s*,|$)/g
-      )) {
+      for (const candidate of (imageAttrs.srcset ?? '')
+        .trim()
+        .matchAll(/(?:^|,\s*)(\S+?)\s+\d+(?:\.\d+)?[wx](?=\s*,|$)/g)) {
         const srcset = url(candidate[1])
         if (srcset) previewUrls.add(srcset)
       }

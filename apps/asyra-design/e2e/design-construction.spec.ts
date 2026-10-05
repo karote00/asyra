@@ -168,6 +168,7 @@ const face = (
   vertices: ReturnType<typeof point>[]
 ) => ({ key, name: key, type: 'projected-face', fill, vertices })
 const pavilion = {
+  key: 'pavilion',
   type: 'frame',
   name: 'Projected pavilion',
   width: 480,
@@ -178,7 +179,9 @@ const pavilion = {
     viewpoint: '30 degree azimuth and elevation',
     sources: ['Explicit fixture geometry'],
     assumptions: ['Illustration, not a surveyed building'],
-    checks: [{ key: '$root', property: 'width', expected: 480, tolerance: 0 }]
+    checks: [
+      { key: 'pavilion', property: 'width', expected: 480, tolerance: 0 }
+    ]
   },
   projection: {
     azimuth: 30,
@@ -281,7 +284,7 @@ for (const [name, draft] of Object.entries({
         new AbortController().signal
       )
     )
-    expect(receipt.applicable).toBe(true)
+    expect(receipt.applicable, JSON.stringify(receipt)).toBe(true)
     const batch = tools.resolveBatch({
       batchId: name,
       actions: [
@@ -489,11 +492,36 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
 }, testInfo) => {
   const { createLocalOperationTools } =
     await import('../server/local-operation-tools')
-  const available = [
-    AiActionNames.APPLY_PREPARED_DESIGN,
-    AiActionNames.UPDATE_DESIGN_ELEMENT,
-    AiActionNames.SET_ELEMENT_VISIBILITY
-  ].map((name) => ({ name, description: name, inputSchema: {} }))
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const available = await page.evaluate(
+    async (names) => {
+      const { createAiActions } = await import('../src/ai/actions')
+      const { createDesignEditAction } =
+        await import('../src/ai/design-edit-action')
+      const { createPreparedDesignAction } =
+        await import('../src/ai/design-actions')
+      return [
+        ...createAiActions(),
+        createDesignEditAction(),
+        createPreparedDesignAction()
+      ]
+        .filter((action) => names.includes(action.name))
+        .map(({ name, description, inputSchema }) => ({
+          name,
+          description,
+          inputSchema
+        }))
+    },
+    [
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.SET_ELEMENT_VISIBILITY
+    ]
+  )
   const tools = createLocalDesignTools(available)
   const signal = new AbortController().signal
   const prepared = JSON.parse(
@@ -574,14 +602,9 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
     artifactId: prepared.artifactId,
     keys: ['a', 'b']
   })
-  await page.route('**/api/ai/status', (route) =>
-    route.fulfill({ json: { state: 'ready' } })
-  )
   await page.route('**/api/ai/action-batch', (route) =>
     route.fulfill({ json: batch })
   )
-  await page.goto(createTestDocumentIdentity().url)
-  await waitForAppReady(page)
   const before = await getCoreDocumentDigest(page),
     depth = await getUndoHistoryDepth(page)
   await page.getByRole('button', { name: 'Open Agent' }).click()

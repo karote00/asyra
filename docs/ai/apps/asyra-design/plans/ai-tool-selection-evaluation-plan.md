@@ -962,3 +962,59 @@ Scoped ESLint, formatting, naming and whitespace review passed. No Render, cache
 geometry or browser execution code changed. No browser performance result is claimed;
 no service was started and no push was performed. The three contract failures found
 during the tool review and its follow-ups are now resolved.
+
+## Push integration - prepare owner whitespace regression
+
+Scope: source-page linked-image resolution only. The prepare Inspector requires
+following publisher-declared original/preview relationships without site rules or
+URL rewriting. The maintained linked-image fixture now contains legal leading and
+trailing whitespace in srcset; the existing import regression fails by selecting
+the social preview. Normalize attribute-boundary whitespace before parsing its
+candidates. Preserve URLs, metadata matching, source resolution, and download
+reuse. Gate: existing reference-page and reference acquisition suites, server
+checks, and current local affected validation. No search/model/render changes.
+
+## Push integration - compose admission browser compatibility
+
+Scope: the shared operation-input-schema admission owner and its existing tests.
+The compose Inspector requires one schema contract for server and browser callers.
+The full registered-action E2E failed before its first action because Node util
+was externalized by Vite. Replace only structural comparison with the existing
+browser-compatible lodash dependency; preserve JSON schema admission, uniqueItems
+and schema intersection behavior. Existing schema tests and the complete basic
+action browser suite are the regression gates. Rerun affected App checks and
+functional/render E2E; retain already passed unchanged workspace gates.
+
+Integration iteration: the shared module also loads through Vite configuration
+in native Node ESM. The browser-compatible named lodash import failed the App
+build because lodash is CommonJS. The compose owner and JSON comparison contract
+remain unchanged. Use lodash's default isEqual entry with its explicit .js path,
+which loads in native Node and browser bundling. Prove the App build and existing
+schema tests first, then resume affected gates; do not change fixture loading or
+introduce environment-specific admission implementations. Self-review confirms
+this addresses both actual consumers without changing API or validation policy.
+
+Push integration - preparation browser fixture: the maintained pavilion E2E
+reported `Invalid design construction: check key is missing`. Its brief still
+assumed `$root`, contrary to the current prepare contract (optional explicit
+selectors; generated canonical identities; no reserved root name). Update this
+fixture to declare and reference `pavilion`, and include the actual preparation
+receipt in failed assertions. Production admission stays unchanged. Existing
+explicit/unnamed-root unit cases remain authoritative. Run the complete structured
+construction browser file and the remaining functional/render cases; retain
+passed earlier cases whose inputs have not changed.
+
+The same construction E2E file also registered empty schemas for its mixed-action
+proof. Canonical target resolution correctly rejected those untyped placeholders.
+Use the actual browser action factories to supply advertised schemas, then keep
+the same preparation, target lookup, canonical writes and Undo/Redo assertions.
+A bounded scan of E2E operation-tool callers found this single placeholder caller;
+no production schema or routing exception is needed.
+
+Push integration - inspect receipt E2E: repeated rendered inspection already
+produced correct red/blue/green pixels, but the test still expected the removed
+implicit subtree `elements` payload. Align only this consumer with the inspect
+contract: assert the requested elementId and absence of implicit object data;
+retain all three pixel checks, image freshness, size, and Undo/Redo assertions.
+A bounded search of E2E inspection-result consumers found only this stale read.
+No product API change or restored duplicate payload is needed.

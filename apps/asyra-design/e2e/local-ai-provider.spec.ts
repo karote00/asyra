@@ -851,7 +851,7 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
       result: {
         available: boolean
         image: { dataUrl: string; width: number }
-        elements: { id: string }[]
+        elementId: string
       }
     }[]
   }[] = []
@@ -980,9 +980,8 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
   ])
   for (const [index, inspection] of inspections.entries()) {
     expect(inspection.image.width).toBeLessThanOrEqual(1024)
-    expect(
-      inspection.elements.map((element: { id: string }) => element.id)
-    ).toContain(id)
+    expect(inspection.elementId).toBe(drawing.groupDescriptor.id)
+    expect(inspection).not.toHaveProperty('elements')
     await writeFile(
       testInfo.outputPath(`inspection-${index}.png`),
       Buffer.from(inspection.image.dataUrl.split(',')[1], 'base64')
