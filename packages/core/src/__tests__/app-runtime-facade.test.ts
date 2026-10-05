@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Core } from '../core.js'
 
-const createCoreForTest = () => {
+const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
   const inputRegistry = {
     registerKeyCombinations: vi.fn(),
     unregister: vi.fn()
@@ -81,7 +81,7 @@ const createCoreForTest = () => {
       measureElementContentBounds,
       setEngineProvider: vi.fn(() => vi.fn()),
       requestRender: vi.fn(),
-      getViewportPosition: vi.fn(() => ({ x: 1, y: 2 })),
+      getViewportPosition: vi.fn(() => viewportPosition),
       getViewportScale: vi.fn(() => 2),
       getMousePosInWorkspace: vi.fn(() => ({ x: 3, y: 4 })),
       workspaceToCanvas: vi.fn(() => ({ x: 9, y: 10 })),
@@ -302,4 +302,18 @@ describe('Core app runtime facade', () => {
     expect(core.applyCanonicalChanges).toHaveBeenNthCalledWith(1, first)
     expect(core.applyCanonicalChanges).toHaveBeenNthCalledWith(2, second)
   })
+})
+
+it('projects engine-backed viewport positions to fresh detached coordinate data', () => {
+  const position = { x: 12, y: 24, onChange: vi.fn() }
+  const { core } = createCoreForTest(position)
+  const first = core.getViewportPosition()
+  expect(first).toEqual({ x: 12, y: 24 })
+  expect(Object.keys(first)).toEqual(['x', 'y'])
+  first.x = 99
+  expect(position.x).toBe(12)
+  position.y = 48
+  expect(core.getViewportPosition()).toEqual({ x: 12, y: 48 })
+  expect(first.y).toBe(24)
+  expect(position.onChange).not.toHaveBeenCalled()
 })

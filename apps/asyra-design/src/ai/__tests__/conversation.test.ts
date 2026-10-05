@@ -517,6 +517,34 @@ describe('Asyra Design AI conversation controller', () => {
     })
   })
 
+  it.each([
+    { statuses: ['failed'], outcome: 'failed' },
+    { statuses: ['no-change', 'failed'], outcome: 'failed' },
+    { statuses: ['complete', 'failed'], outcome: 'partial' }
+  ])(
+    'retains API receipt failures: $statuses',
+    async ({ statuses, outcome }) => {
+      const feature = createFeature(async () => ({
+        status: 'executed',
+        actionResults: statuses.map((status, index) => ({
+          actionId: `action-${index}`,
+          actionName: 'basic_element_createElements',
+          result: {
+            status,
+            value: status === 'failed' ? [null] : ['element-1']
+          }
+        }))
+      }))
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      await expect(
+        controller.submit('Create the requested elements')
+      ).resolves.toMatchObject({ outcome })
+    }
+  )
+
   it('clears target hints after successful composition deletion', async () => {
     const feature = createFeature(async (request) => {
       if (request.intent === 'create') {

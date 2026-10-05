@@ -32,10 +32,11 @@ const vectorAnchorPointSchema = apiObject(
 )
 
 const vectorWorkspaceEditingDescription =
-  'Anchor and handle positions are absolute workspace coordinates. Read current IDs before editing; a null/false result means no change was applied.'
+  'Anchor and handle positions are absolute workspace coordinates. Reuse known IDs; read only missing IDs or values needed by the calculation; a null/false result means no change was applied.'
 
 const getVectorAnchorPointAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorPointAtWorkspacePos',
   effect: 'read',
   parameters: [
@@ -48,6 +49,7 @@ const getVectorAnchorPointAtWorkspacePosApi = defineBasicApi({
 
 const getVectorEditablePointAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorEditablePointAtWorkspacePos',
   effect: 'read',
   parameters: [
@@ -60,6 +62,7 @@ const getVectorEditablePointAtWorkspacePosApi = defineBasicApi({
 
 const getVectorSegmentAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorSegmentAtWorkspacePos',
   effect: 'read',
   parameters: [
@@ -72,6 +75,7 @@ const getVectorSegmentAtWorkspacePosApi = defineBasicApi({
 
 const getVectorSegmentHitAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorSegmentHitAtWorkspacePos',
   effect: 'read',
   parameters: [
@@ -84,6 +88,7 @@ const getVectorSegmentHitAtWorkspacePosApi = defineBasicApi({
 
 const isPointNearVectorPathAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'isPointNearVectorPathAtWorkspacePos',
   effect: 'read',
   parameters: [
@@ -95,7 +100,10 @@ const isPointNearVectorPathAtWorkspacePosApi = defineBasicApi({
 })
 
 const getVectorAnchorPointAtClientPosApi = defineBasicApi({
+  description:
+    'Hit-test anchors using a browser client position; returns the nearest anchor or null.',
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorPointAtClientPos',
   effect: 'read',
   parameters: [
@@ -105,7 +113,10 @@ const getVectorAnchorPointAtClientPosApi = defineBasicApi({
 })
 
 const getVectorEditablePointAtClientPosApi = defineBasicApi({
+  description:
+    'Hit-test editable anchors and handles using a browser client position; returns the hit or null.',
   owner: 'element',
+  category: 'vector',
   method: 'getVectorEditablePointAtClientPos',
   effect: 'read',
   parameters: [
@@ -116,6 +127,7 @@ const getVectorEditablePointAtClientPosApi = defineBasicApi({
 
 const getVectorSegmentAtClientPosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorSegmentAtClientPos',
   effect: 'read',
   parameters: [
@@ -128,6 +140,7 @@ const getVectorSegmentAtClientPosApi = defineBasicApi({
 
 const getVectorSegmentHitAtClientPosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorSegmentHitAtClientPos',
   effect: 'read',
   parameters: [
@@ -140,6 +153,7 @@ const getVectorSegmentHitAtClientPosApi = defineBasicApi({
 
 const isPointNearVectorPathAtClientPosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'isPointNearVectorPathAtClientPos',
   effect: 'read',
   parameters: [
@@ -152,6 +166,7 @@ const isPointNearVectorPathAtClientPosApi = defineBasicApi({
 
 const getVectorAnchorPointsApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorPoints',
   effect: 'read',
   parameters: [{ name: 'elementId', schema: apiString }],
@@ -161,6 +176,7 @@ const getVectorAnchorPointsApi = defineBasicApi({
 
 const getVectorAnchorSubpathsApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorSubpaths',
   effect: 'read',
   parameters: [{ name: 'elementId', schema: apiString }],
@@ -169,6 +185,7 @@ const getVectorAnchorSubpathsApi = defineBasicApi({
 
 const getVectorTopologyApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorTopology',
   effect: 'read',
   parameters: [{ name: 'elementId', schema: apiString }],
@@ -178,6 +195,7 @@ const getVectorTopologyApi = defineBasicApi({
 
 const getVectorAnchorPointByIdApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorPointById',
   effect: 'read',
   parameters: [
@@ -188,7 +206,10 @@ const getVectorAnchorPointByIdApi = defineBasicApi({
 })
 
 const getVectorAnchorEndpointApi = defineBasicApi({
+  description:
+    'Read whether a known anchor is a subpath endpoint; use before joining open paths.',
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorEndpoint',
   effect: 'read',
   parameters: [
@@ -198,7 +219,10 @@ const getVectorAnchorEndpointApi = defineBasicApi({
 })
 
 const getVectorAnchorContinuationApi = defineBasicApi({
+  description:
+    'Read the continuation of a known anchor for path extension; does not edit topology.',
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorContinuation',
   effect: 'read',
   parameters: [
@@ -208,7 +232,9 @@ const getVectorAnchorContinuationApi = defineBasicApi({
 })
 
 const getVectorAnchorPointHandleModeApi = defineBasicApi({
+  description: 'Read the current handle constraint mode for a known anchor.',
   owner: 'element',
+  category: 'vector',
   method: 'getVectorAnchorPointHandleMode',
   effect: 'read',
   parameters: [
@@ -219,6 +245,7 @@ const getVectorAnchorPointHandleModeApi = defineBasicApi({
 
 const updateVectorAnchorPointPositionApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'updateVectorAnchorPointPosition',
   effect: 'write',
   parameters: [
@@ -232,7 +259,10 @@ const updateVectorAnchorPointPositionApi = defineBasicApi({
 })
 
 const updateVectorAnchorPointTypeApi = defineBasicApi({
+  description:
+    'Change the type of an existing anchor without recreating the vector.',
   owner: 'element',
+  category: 'vector',
   method: 'updateVectorAnchorPointType',
   effect: 'write',
   parameters: [
@@ -243,7 +273,9 @@ const updateVectorAnchorPointTypeApi = defineBasicApi({
 })
 
 const setVectorAnchorPointHandleModeApi = defineBasicApi({
+  description: 'Set an anchor handle constraint mode; preserves its identity.',
   owner: 'element',
+  category: 'vector',
   method: 'setVectorAnchorPointHandleMode',
   effect: 'write',
   parameters: [
@@ -255,6 +287,7 @@ const setVectorAnchorPointHandleModeApi = defineBasicApi({
 
 const updateVectorAnchorPointHandlePositionApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'updateVectorAnchorPointHandlePosition',
   effect: 'write',
   parameters: [
@@ -270,6 +303,7 @@ const updateVectorAnchorPointHandlePositionApi = defineBasicApi({
 
 const updateVectorAnchorPointHandlesApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'updateVectorAnchorPointHandles',
   effect: 'write',
   parameters: [
@@ -296,6 +330,7 @@ const updateVectorAnchorPointHandlesApi = defineBasicApi({
 
 const appendVectorAnchorPointApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'appendVectorAnchorPoint',
   effect: 'write',
   parameters: [
@@ -326,7 +361,10 @@ const appendVectorAnchorPointApi = defineBasicApi({
 })
 
 const connectVectorAnchorEndpointsApi = defineBasicApi({
+  description:
+    'Join existing open-path endpoints through the topology owner; returns whether the operation applied.',
   owner: 'element',
+  category: 'vector',
   method: 'connectVectorAnchorEndpoints',
   effect: 'write',
   parameters: [
@@ -337,7 +375,10 @@ const connectVectorAnchorEndpointsApi = defineBasicApi({
 })
 
 const connectVectorAnchorPointsApi = defineBasicApi({
+  description:
+    'Connect existing anchors through the topology owner; returns whether the operation applied.',
   owner: 'element',
+  category: 'vector',
   method: 'connectVectorAnchorPoints',
   effect: 'write',
   parameters: [
@@ -348,14 +389,20 @@ const connectVectorAnchorPointsApi = defineBasicApi({
 })
 
 const removeLastSinglePointSubpathApi = defineBasicApi({
+  description:
+    'Remove an unfinished one-anchor subpath; use for cancelling an unfinished path.',
   owner: 'element',
+  category: 'vector',
   method: 'removeLastSinglePointSubpath',
   effect: 'delete',
   parameters: [{ name: 'elementId', schema: apiString }]
 })
 
 const removeVectorAnchorPointApi = defineBasicApi({
+  description:
+    'Remove a known anchor through topology mutation; connected segments are handled by the owner.',
   owner: 'element',
+  category: 'vector',
   method: 'removeVectorAnchorPoint',
   effect: 'delete',
   parameters: [
@@ -366,6 +413,7 @@ const removeVectorAnchorPointApi = defineBasicApi({
 
 const splitVectorSegmentAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'splitVectorSegmentAtWorkspacePos',
   effect: 'write',
   parameters: [
@@ -377,7 +425,10 @@ const splitVectorSegmentAtWorkspacePosApi = defineBasicApi({
 })
 
 const setVectorClosedApi = defineBasicApi({
+  description:
+    'Set path closure through topology mutation; supply the desired closed state.',
   owner: 'element',
+  category: 'vector',
   method: 'setVectorClosed',
   effect: 'write',
   parameters: [
@@ -388,6 +439,7 @@ const setVectorClosedApi = defineBasicApi({
 
 const scaleVectorElementAroundCenterApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'scaleVectorElementAroundCenter',
   effect: 'write',
   parameters: [
@@ -406,6 +458,7 @@ const scaleVectorElementAroundCenterApi = defineBasicApi({
 
 const setVectorElementPositionsApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'setVectorElementPositions',
   effect: 'write',
   parameters: [
@@ -419,19 +472,9 @@ const setVectorElementPositionsApi = defineBasicApi({
   description: 'Updates element positions, not anchor positions.'
 })
 
-const setVectorElementPositionApi = defineBasicApi({
-  owner: 'element',
-  method: 'setVectorElementPosition',
-  effect: 'write',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'position', schema: apiPosition }
-  ],
-  description: 'Updates element position, not anchor position.'
-})
-
 const createVectorElementFromSinglePointApi = defineBasicApi({
   owner: 'element',
+  category: 'vector',
   method: 'createVectorElementFromSinglePoint',
   effect: 'write',
   parameters: [
@@ -474,6 +517,5 @@ export const basicVectorApiContracts = [
   setVectorClosedApi,
   scaleVectorElementAroundCenterApi,
   setVectorElementPositionsApi,
-  setVectorElementPositionApi,
   createVectorElementFromSinglePointApi
 ]

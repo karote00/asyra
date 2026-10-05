@@ -1086,6 +1086,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     }
     let runMutation: AiMutationExecutor | undefined
     let failedAction: string | undefined
+    let failedActionId: string | null = null
+    let actionStartedAt: number | undefined
     let currentStage: AiRuntimeStage = 'context'
     const emitProgress = (update: AiRuntimeProgressUpdate): void =>
       emitAiRuntimeProgress(
@@ -1128,9 +1130,25 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         ),
         this.redactionOptions
       )
+      let contextStale = false
+      const refreshContext = async () => {
+        currentStage = 'context'
+        context = redactAiValue(
+          await runAbortable(signal, () =>
+            this.contextProvider.getContext({ intent, signal })
+          ),
+          this.redactionOptions
+        )
+        contextStale = false
+        return context
+      }
       currentStage = 'registry'
       const actions = this.registry.list()
       const executePrepared = async (actionBatch: AiActionBatch) => {
+        failedAction = undefined
+        failedActionId = null
+        actionStartedAt = undefined
+        if (contextStale) await refreshContext()
         currentStage = 'resolution'
         emitProgress({
           attempt,
@@ -1212,6 +1230,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                 : 'Preparing the drawing'
           })
           failedAction = action.name
+          failedActionId = action.id
+          actionStartedAt = performance.now()
           const completed = await executeAiActions(
             { ...confirmed, actions: [action] },
             signal,
@@ -1310,27 +1330,56 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                         batchSettlement = new Promise<void>((resolve) => {
                           settle = resolve
                         })
+                        const resultOffset = allResults.length
                         try {
                           const { execution } = await executePrepared(batch)
-                          currentStage = 'context'
-                          const updatedContext = redactAiValue(
-                            await runAbortable(signal, () =>
-                              this.contextProvider.getContext({
-                                intent,
-                                signal
-                              })
-                            ),
-                            this.redactionOptions
-                          )
-                          context = updatedContext
+                          contextStale = true
+                          const updatedContext = await refreshContext()
                           currentStage = 'provider'
                           return Object.freeze({
                             actionResults: execution.actionResults,
                             context: updatedContext
                           })
                         } catch (error) {
-                          callbackFailure = error
-                          throw error
+                          if (signal.aborted || error === INVOCATION_ABORTED)
+                            throw INVOCATION_ABORTED
+                          const stage = currentStage
+                          const actionExecutionMs =
+                            stage === 'execution' &&
+                            actionStartedAt !== undefined
+                              ? Math.max(0, performance.now() - actionStartedAt)
+                              : null
+                          const actionName = failedAction ?? null
+                          const failure = stableFailure(error, {
+                            code: 'AI_EXECUTION_FAILED',
+                            message: 'The batch could not complete.',
+                            stage
+                          })
+                          contextStale = true
+                          try {
+                            await refreshContext()
+                          } catch {
+                            if (signal.aborted) throw INVOCATION_ABORTED
+                          }
+                          currentStage = 'provider'
+                          return Object.freeze({
+                            actionResults: allResults.slice(resultOffset),
+                            context,
+                            failure: {
+                              code: failure.code,
+                              message: failure.message,
+                              stage,
+                              actionName,
+                              actionId:
+                                stage === 'execution' ? failedActionId : null,
+                              actionExecutionMs,
+                              settlement:
+                                stage === 'execution' || stage === 'context'
+                                  ? ('unknown' as const)
+                                  : ('not-started' as const),
+                              contextFresh: !contextStale
+                            }
+                          })
                         } finally {
                           batchPending = false
                           settle()

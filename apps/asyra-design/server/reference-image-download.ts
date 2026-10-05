@@ -65,11 +65,15 @@ export const resolvePublicImageAddress = async (
   return first.address
 }
 
-/** Public raster download only; no cookies, auth, proxy environment or local network access. */
-export const downloadReferenceImage = async (
+/** Public source transport; every redirect is independently admitted and DNS-pinned. */
+const downloadReference = async (
   value: string,
-  signal: AbortSignal
-): Promise<Response> => {
+  signal: AbortSignal,
+  kind: 'image' | 'page'
+): Promise<{ response: Response; url: string }> => {
+  const limit = (kind === 'page' ? 1 : 6) * 1024 * 1024
+  const media =
+    kind === 'page' ? /^text\/html(;|$)/i : /^image\/(png|jpeg|webp)(;|$)/i
   const deadline = AbortSignal.any([signal, AbortSignal.timeout(15_000)])
   let url = validateReferenceImageUrl(value)
   for (let hop = 0; hop <= 3; hop++) {
@@ -92,7 +96,8 @@ export const downloadReferenceImage = async (
           headers: {
             'User-Agent':
               'asyra-design/1.0 (https://github.com/karote00/asyra)',
-            Accept: 'image/png,image/jpeg,image/webp'
+            Accept:
+              kind === 'page' ? 'text/html' : 'image/png,image/jpeg,image/webp'
           }
         },
         (response) => {
@@ -110,8 +115,8 @@ export const downloadReferenceImage = async (
           }
           if (
             status !== 200 ||
-            !/^image\/(png|jpeg|webp)(;|$)/i.test(type) ||
-            Number(response.headers['content-length']) > 6 * 1024 * 1024
+            !media.test(type) ||
+            Number(response.headers['content-length']) > limit
           ) {
             response.destroy()
             reject(new Error('Unsupported reference response'))
@@ -122,7 +127,7 @@ export const downloadReferenceImage = async (
           response.on('error', reject)
           response.on('data', (chunk: Buffer) => {
             size += chunk.length
-            if (size > 6 * 1024 * 1024) {
+            if (size > limit) {
               response.destroy(new Error('Reference size limit'))
               return
             }
@@ -141,9 +146,23 @@ export const downloadReferenceImage = async (
       continue
     }
     if (result.status !== 200) throw new Error('Reference redirect failed')
-    return new Response(result.bytes, {
-      headers: { 'content-type': result.type }
-    })
+    return {
+      url: url.href,
+      response: new Response(result.bytes, {
+        headers: { 'content-type': result.type }
+      })
+    }
   }
   throw new Error('Reference redirect limit')
 }
+
+/** Original raster bytes only; no thumbnail substitution or resampling. */
+export const downloadReferenceImage = async (
+  value: string,
+  signal: AbortSignal
+): Promise<Response> =>
+  (await downloadReference(value, signal, 'image')).response
+
+/** Bounded HTML only; returns the admitted final URL for relative metadata links. */
+export const downloadReferencePage = (value: string, signal: AbortSignal) =>
+  downloadReference(value, signal, 'page')

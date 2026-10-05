@@ -3088,3 +3088,76 @@ test('pen drag-to-add publishes real topology and curve frames before pointer-up
     await Promise.all([firstContext.close(), secondContext.close()])
   }
 })
+
+test('partial Fill updates preserve computed and UI fields on both peers through Undo and Redo', async ({
+  browser
+}) => {
+  const fileId = `fill-patch-${crypto.randomUUID()}`
+  const senderContext = await browser.newContext()
+  const peerContext = await browser.newContext()
+  const sender = await senderContext.newPage()
+  const peer = await peerContext.newPage()
+  try {
+    await Promise.all([
+      sender.goto(collaborationUrl(fileId)),
+      peer.goto(collaborationUrl(fileId))
+    ])
+    await Promise.all([waitForAppReady(sender), waitForAppReady(peer)])
+    await Promise.all([
+      waitForCollaboration(sender),
+      waitForCollaboration(peer)
+    ])
+    await createRectangle(sender, 0.35, 0.35)
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+    const elementId = (await getSelectedIds(sender))[0]
+    await layerRow(peer, elementId).click()
+    const read = (page: Page) =>
+      page.evaluate(async (elementId) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return {
+          fills: core.getElementComputedData(elementId, ['fills'])?.fills,
+          ui: core.getUIProperty('fills')
+        }
+      }, elementId)
+    const initial = await read(sender)
+    await expect.poll(() => read(peer)).toEqual(initial)
+    const mutate = (patch: Record<string, unknown>) =>
+      sender.evaluate(
+        async ({ elementId, patch }) => {
+          const { core } = await import('../src/testing/runtime-access')
+          const { fillApis } = await import('../src/common-apis')
+          const fillId = (
+            core.getElementComputedData(elementId, ['fills'])?.fills as {
+              id: string
+            }[]
+          )[0].id
+          fillApis.updateFillFields(elementId, fillId, patch)
+        },
+        { elementId, patch }
+      )
+    await mutate({ color: '#2468ac' })
+    const recolored = await read(sender)
+    await expect.poll(() => read(peer)).toEqual(recolored)
+    await mutate({ opacity: 0.4, visible: false })
+    const final = await read(sender)
+    expect(final.fills).toEqual(
+      (recolored.fills as object[]).map((fill) => ({
+        ...fill,
+        opacity: 0.4,
+        visible: false
+      }))
+    )
+    await expect.poll(() => read(peer)).toEqual(final)
+    await undo(sender)
+    await expect.poll(() => read(sender)).toEqual(recolored)
+    await expect.poll(() => read(peer)).toEqual(recolored)
+    await undo(sender)
+    await expect.poll(() => read(peer)).toEqual(initial)
+    await redo(sender)
+    await redo(sender)
+    await expect.poll(() => read(peer)).toEqual(final)
+  } finally {
+    await senderContext.close()
+    await peerContext.close()
+  }
+})

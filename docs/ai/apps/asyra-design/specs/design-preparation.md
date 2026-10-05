@@ -27,8 +27,10 @@ Group has no independently rendered background. Layout overflow checks apply to
 Frame boundaries, not to Group's content-derived bounds. A fixed requested output
 region may be a Frame; a collection of artwork parts may be a Group.
 
-Each node has a unique request-local key and
-meaningful name. Absolute children use parent-local positions. Row/column/grid
+Each node has a unique request-local key and meaningful name. The root may
+supply its own semantic key; omission uses the generated element ID as its selector. No root name is reserved. Keys share one uniqueness
+namespace across the draft and map to server-generated canonical IDs. A semantic
+key never supplies or overrides a canonical ID. Absolute children use parent-local positions. Row/column/grid
 containers declare padding, gap and alignment; the backend computes positions
 from child dimensions. Text stays literal editable content with explicit font,
 size, weight, alignment, line height and color. Vector illustrations use bounded
@@ -36,6 +38,14 @@ closed `rings` of anchor coordinates with straight segments or paired explicit
 `outControl`/`inControl` cubic controls, never raster
 stand-ins. Repeated patterns are expanded native objects, not claimed reusable
 component instances.
+
+For exact repeated 2D curves, `vector-pattern` takes `key`, `name`, `template`
+(width, height, rings, optional fill) and ordered `placements` (x, y, optional
+fill override). Each placement becomes an ordinary vector keyed `key-index` with
+all original anchors/controls retained. It requires absolute positioning and
+performs no scaling, projection or inferred detail. Templates share one bounds
+measurement within a preparation, not a cross-request cache. Expanded node and
+point budgets still apply; use explicit geometry for genuinely different shapes.
 
 `fill` accepts the existing `#RRGGBB` string or native gradient data:
 `{gradientType, gradientHandles:[{x,y},{x,y}], gradientStops:[{position,color,opacity},...]}`.
@@ -49,6 +59,18 @@ Preparation and browser admission share the App wire validator. Canonical fill
 data, rendering, persistence and Undo use existing owners; no new renderer,
 fallback shading geometry or persisted version is introduced. Gradients supply
 continuous shading without expanding strips and do not guarantee visual fidelity.
+
+A root draft may declare `sharedFills: {key: inlineFill}`. Supported fill slots
+may explicitly select `{shared: key}`. The compiler emits one ordinary Fill
+record at first use and canonical child-ID references on subsequent uses, even
+across nested groups and expanded patterns. Equal inline values remain independent.
+Unused definitions create no property. Unknown keys, reference chains and malformed
+definitions fail before any write. The compact receipt's `sharedFillIds` maps
+used draft-local names to actual property IDs for later edits; names are not
+canonical identities. Browser admission accepts only references to preceding
+admitted Fill records in the same artifact. Existing document sharing/detachment
+uses the public fill APIs. Linked edits, detachment, Undo/Redo and save/load retain
+the ordinary property-component semantics.
 
 Admission rejects unknown fields, unsupported kinds, duplicate keys, nonfinite
 numbers, invalid colors/font values, contradictory layout fields and excessive
@@ -72,6 +94,16 @@ full descriptor/path payload. No cross-request cache.
 The local provider advertises `prepare_design` only when `apply_prepared_design`
 is registered. The combined prepare_and_apply_design tool may perform both steps without an
 intermediate model round trip, preserving the same admission and receipt owners.
+When the registered review owner is available, the combined tool also accepts
+optional `plan` using that owner's exact schema. Its executable prompt example
+comes from the same owner. It validates the plan shape, prepares the draft, records
+the criteria, then applies; invalid preparation or plan never writes. Every
+criterion includes requirement, description and visual/data verification. A plan
+is supplied once before the first write; later parts reuse it. Standalone plans
+and direct edits remain available. This removes an unnecessary separate model
+roundtrip for ready drafts without bypassing retained facts, per-part inspections
+or final acceptance. It makes no claim that every task needs no planning.
+
 For preparation-only calls, the model supplies a semantic draft, receives a same-request
 artifact ID and findings, and applies that ID without copying native descriptors
 or point/property IDs. The same resolver serves dynamic operation calls and final
@@ -363,7 +395,6 @@ properties and defaults to an empty list: identities, names and hierarchy metada
 need no geometry/style computation. Missing IDs are explicit. Selection and children
 retain pagination for discovery only; do not restart discovery to recover known IDs.
 
-
 ## Priority-based progressive work
 
 The AI makes a cheap global estimate of parts, rough bounds and likely visibility,
@@ -404,7 +435,6 @@ work proportional to selected ranges rather than the full Cartesian product, inv
 range rejection, deferred-part retention, current-evidence settlement and request
 isolation. Runtime mutation, permissions, cancellation and Undo remain unchanged.
 
-
 ## Preparation input repair
 
 The published preparation schema declares native node requirements by type:
@@ -430,7 +460,6 @@ the face key and vertices; repair/split the plane rather than search again. Thes
 failures do not imply an unsuitable reference. Preparation still never modifies the
 canvas, relaxes geometric tolerances, invents visual approval or discards valid artifacts.
 Existing per-draft shared projection and request-owned artifacts remain the reuse owners.
-
 
 ### Type-directed repair and construction choice
 
@@ -462,3 +491,13 @@ Regression evidence reproduces the error classes observed during live preparatio
 unlogged raw user/model payloads. Deterministic preparation and identity-reuse tests do
 not establish that a future model turn will choose the right strategy, run faster or
 produce better artwork. Those outcomes require a separate live test.
+
+### Owner-derived vector bounds
+
+For `vector` and `vector-pattern.template`, callers may omit both `width` and
+`height`. The preparation owner measures exact supplied rings with the existing
+curve measurement API; it retains `x/y` as the local placement offset (default
+zero). A supplied width/height pair remains a positive enclosing-bounds assertion;
+a partial pair is invalid. Geometry, control coordinates, painter order and fills
+are unchanged. Repeated template rings share one measurement per preparation.
+This does not infer a camera, invent depth or simplify the drawing.

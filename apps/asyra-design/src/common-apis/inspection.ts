@@ -1,7 +1,5 @@
 import core from '../contexts'
 
-const inspectionElementLimit = 200
-
 export const inspectionApis = {
   inspect: (
     elementId: string,
@@ -20,57 +18,13 @@ export const inspectionApis = {
         nativeResolution: !!region || view === 'detail',
         ...(region ? { region } : {})
       })
-      const queue = [elementId]
-      const visited = new Set<string>()
-      const elements: Record<string, unknown>[] = []
-      for (
-        let index = 0;
-        index < queue.length && elements.length < inspectionElementLimit;
-        index += 1
-      ) {
-        const id = queue[index]
-        if (visited.has(id)) continue
-        visited.add(id)
-        const data = id === elementId ? root : core.getElementData(id)
-        if (!data) continue
-        const computed = core.getElementComputedData(id)
-        elements.push({
-          id,
-          name: data.name,
-          type: data.type,
-          visible: data.visible !== false,
-          locked: data.lock === true,
-          bounds: computed
-            ? {
-                x: computed.x,
-                y: computed.y,
-                width: computed.width,
-                height: computed.height
-              }
-            : null,
-          fills: Array.isArray(computed?.fills)
-            ? computed.fills.map((fill: Record<string, unknown>) => ({
-                color: fill.color,
-                opacity: fill.opacity,
-                visible: fill.visible
-              }))
-            : []
-        })
-        const children = 'children' in data ? data.children : []
-        if (Array.isArray(children))
-          queue.push(
-            ...children.filter((id): id is string => typeof id === 'string')
-          )
-      }
       return {
         available: true,
         elementId,
         image,
         partial: !!region,
         imageScope: region ? 'region' : view,
-        background: '#ffffff',
-        elements,
-        elementsTruncated: queue.length > visited.size
+        background: '#ffffff'
       }
     } catch {
       return {

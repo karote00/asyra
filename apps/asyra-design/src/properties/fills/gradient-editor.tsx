@@ -17,11 +17,7 @@ interface GradientEditorProps {
   fillId: string
   ownerElementId: string | null
   gradient: FillGradientData
-  onChangeFill: (
-    patch: FillPatch,
-    options?: EVENT_OPTIONS,
-    sourceFill?: FillAttrs
-  ) => void
+  onChangeFill: (patch: FillPatch, options?: EVENT_OPTIONS) => void
   onStartInteraction: () => void
   onEndInteraction: () => void
   embedded?: boolean

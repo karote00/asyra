@@ -18,11 +18,18 @@ export {
   type AppendVectorAnchorPointOptions,
   type VectorPointUpdate
 } from './element'
-export { fillApis, type FillPatch, type PrimaryFillColorUpdate } from './fills'
+export {
+  fillApis,
+  type FillPatch,
+  type FillTarget,
+  type FillFieldsUpdate,
+  type PrimaryFillColorUpdate
+} from './fills'
 export {
   strokeApis,
   type PrimaryStrokeColorUpdate,
-  type StrokePatch
+  type StrokePatch,
+  type StrokeFieldsUpdate
 } from './strokes'
 export { viewportApis } from './viewport'
 export { systemContextApis } from './system-context'

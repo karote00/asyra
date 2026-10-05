@@ -52,9 +52,19 @@ describe('execution report CLI', () => {
       ])
       expect(result.code).toBe(0)
       expect(JSON.parse(result.output)).toMatchObject({
+        investigationTargets: [],
         runs: [{ requestId: 'run-1', userFeedback: 'Too plain.' }],
         excluded: [{ requestId: null, reason: 'unknown-request' }]
       })
+      const readable = await runExecutionReportCli([
+        '--directory',
+        directory,
+        '--from',
+        '2026-10-01',
+        '--to',
+        '2026-10-03'
+      ])
+      expect(readable.output).toContain('Investigation targets: 0')
       const single = await runExecutionReportCli([
         '--directory',
         directory,
@@ -63,6 +73,8 @@ describe('execution report CLI', () => {
       ])
       expect(single.output).toContain('run-1')
       expect(single.output).toContain('Unattributed')
+      expect(single.output).toContain('Model rounds: unavailable')
+      expect(single.output).toContain('program-to-tool links: unavailable')
       expect(single.output).toContain('unavailable')
       const assessed = await runExecutionReportCli(
         [

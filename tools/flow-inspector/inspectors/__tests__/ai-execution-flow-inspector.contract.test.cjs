@@ -38,7 +38,12 @@ test('AI execution architecture resolves current authorities and boundaries', ()
     for (const file of step.implementationBoundary)
       assert.ok(fs.existsSync(path.join(root, file)), file)
     for (const ref of step.specRefs) assert.ok(headings.has(ref), ref)
-    assert.deepEqual(step.cacheDimensions, [])
+    if (step.id === 'compose' || step.id === 'prepare') {
+      assert.ok(step.cacheDimensions.length > 0)
+      for (const dimension of step.cacheDimensions)
+        assert.match(dimension, /request-local/)
+      assert.match(step.cacheDimensions.join(' '), /refresh/)
+    } else assert.deepEqual(step.cacheDimensions, [])
   }
 })
 

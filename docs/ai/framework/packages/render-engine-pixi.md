@@ -43,7 +43,10 @@ package-resolution path.
 2. `execute(...)` translates engine-neutral object, hierarchy, draw, resource,
    viewport, resize, and flush commands.
 3. `query(...)` resolves bounds, coordinate conversions, and hit testing
-   without exposing Pixi objects.
+   without exposing Pixi objects. Each hit test uses the owned application stage
+   as its boundary root, including before the first pointer event and after
+   Pixi's event system changes that root. Queries do not trigger a render or
+   synthesize pointer events; no hit returns a null target.
 4. Pixi pointer events are normalized to `RenderEngineInteractionEvent` and
    returned with an opaque target handle.
 5. Framework frame scheduling uses one engine-owned standalone Pixi `Ticker`

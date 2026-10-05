@@ -310,3 +310,199 @@ it('rejects null ranges instead of silently expanding the full pattern', () => {
     constructDesign(draft([{ ...pattern(), instanceRanges: null }]))
   ).toThrow()
 })
+
+describe('exact 2D vector patterns', () => {
+  const template = () => ({
+    width: 10,
+    height: 10,
+    fill: '#224466',
+    rings: [
+      [
+        { x: 0, y: 0, outControl: { x: 4, y: 0 } },
+        { x: 10, y: 10, inControl: { x: 10, y: 4 } },
+        { x: 0, y: 10 }
+      ]
+    ]
+  })
+  const motif = () => ({
+    type: 'vector-pattern',
+    key: 'curves',
+    name: 'Curves',
+    template: template(),
+    placements: [
+      { x: 10, y: 10 },
+      { x: 30, y: 20, fill: '#abcdef' }
+    ]
+  })
+  it('matches explicit geometry and painter order and measures a template once per preparation', () => {
+    const node = motif(),
+      input = draft([node]),
+      before = structuredClone(input)
+    const measure = vi.spyOn(vectorArtifact, 'measureVectorPath')
+    try {
+      const actual = constructDesign(input).draft.children as Record<
+        string,
+        unknown
+      >[]
+      const expected = node.placements.map((position, i) => ({
+        ...node.template,
+        ...position,
+        type: 'vector',
+        key: `curves-${i}`,
+        name: `Curves - ${i + 1}`
+      }))
+      expect(actual).toEqual(expected)
+      expect(actual[0].rings).toBe(actual[1].rings)
+      const prepared = prepareDesign(input, 'reused')
+      expect(measure).toHaveBeenCalledTimes(1)
+      expect(prepared.findings).toEqual([])
+      const explicit = prepareDesign(draft(expected), 'reused')
+      expect(prepared.entries).toEqual(explicit.entries)
+      expect(input).toEqual(before)
+      measure.mockClear()
+      node.template.rings[0][0].outControl = { x: 3, y: 0 }
+      prepareDesign(input, 'changed')
+      expect(measure).toHaveBeenCalledTimes(1)
+      expect(measure.mock.calls[0][0].rings[0][0].outControl).toEqual({
+        x: 3,
+        y: 0
+      })
+    } finally {
+      measure.mockRestore()
+    }
+  })
+  it('rejects overrides, unpaired controls and expanded budget overflow', () => {
+    const node = motif()
+    expect(() =>
+      prepareDesign(
+        draft([{ ...node, placements: [{ x: 1, y: 1, width: 20 }] }]),
+        'bad'
+      )
+    ).toThrow()
+    delete node.template.rings[0][0].outControl
+    expect(() => prepareDesign(draft([node]), 'bad')).toThrow(/unpaired/)
+    expect(() =>
+      constructDesign(
+        draft([
+          {
+            ...motif(),
+            placements: Array.from({ length: 10000 }, () => ({ x: 1, y: 1 }))
+          }
+        ])
+      )
+    ).toThrow(/limit/)
+  })
+})
+
+it('projects children of an explicitly keyed container using the same camera', () => {
+  const unnamed = prepareDesign(draft([pattern()]), 'same')
+  const named = prepareDesign({ ...draft([pattern()]), key: 'facade' }, 'same')
+  expect(named.entries.slice(1)).toEqual(unnamed.entries.slice(1))
+  expect(named.keyToId.facade).toBe(named.rootId)
+})
+
+describe('construction budget recovery diagnostics', () => {
+  it('partitions source work across groups without changing the hierarchy', () => {
+    const leaf = (key: string) => ({
+      type: 'rect',
+      key,
+      name: key,
+      width: 1,
+      height: 1
+    })
+    const children = Array.from({ length: 2 }, (_, group) => ({
+      type: 'group',
+      key: `group-${group}`,
+      name: 'Part',
+      children: Array.from({ length: 500 }, (_, index) =>
+        leaf(`${group}-${index}`)
+      )
+    }))
+    const result = constructDesign(draft(children))
+    expect(result.sourceWork).toMatchObject({
+      batches: 2,
+      nodes: 1003,
+      largestBatchNodes: 1000
+    })
+    expect(result.draft.children).toHaveLength(2)
+  })
+  it('identifies depth separately from source count', () => {
+    let child: Record<string, unknown> = {
+      type: 'rect',
+      key: 'leaf',
+      name: 'Leaf',
+      width: 1,
+      height: 1
+    }
+    for (let level = 0; level < 11; level++)
+      child = {
+        type: 'group',
+        key: `level-${level}`,
+        name: 'Group',
+        children: [child]
+      }
+    expect(() => constructDesign(draft([child]))).toThrow(
+      'depth 13 exceeds 12 per artifact; reduce container nesting without changing visible geometry'
+    )
+  })
+  it('does not mislabel a malformed node as a budget failure', () => {
+    expect(() => constructDesign(draft([null]))).toThrow(
+      'node must be an object'
+    )
+  })
+})
+
+it('expands explicitly typed and implicit vector templates to identical geometry and keys', () => {
+  const template = {
+    width: 3,
+    height: 2,
+    rings: [
+      [
+        { x: 0, y: 0 },
+        { x: 3, y: 0 },
+        { x: 3, y: 2 }
+      ]
+    ],
+    fill: '#123456'
+  }
+  const source = (value: unknown) => ({
+    type: 'group',
+    key: 'drawing',
+    name: 'Drawing',
+    children: [
+      {
+        type: 'vector-pattern',
+        key: 'windows',
+        name: 'Windows',
+        template: value,
+        placements: [
+          { x: 0, y: 0 },
+          { x: 5, y: 8, fill: '#abcdef' }
+        ]
+      }
+    ]
+  })
+  expect(constructDesign(source({ ...template, type: 'vector' }))).toEqual(
+    constructDesign(source(template))
+  )
+  expect(() => constructDesign(source({ ...template, type: 'oval' }))).toThrow(
+    /template type/
+  )
+})
+
+it('retains one explicitly shared Fill across expanded faces', () => {
+  const result = prepareDesign(
+    {
+      ...draft([{ ...pattern(), fills: [{ shared: 'glass' }] }]),
+      sharedFills: { glass: '#224466' }
+    },
+    'shared-pattern'
+  )
+  const fills = result.entries
+    .slice(1)
+    .map(({ descriptor }) => descriptor.fills)
+  expect(fills[0]).toEqual([expect.objectContaining({ color: '#224466' })])
+  expect(fills.slice(1)).toEqual(
+    Array.from({ length: 5 }, () => [result.sharedFillIds?.glass])
+  )
+})

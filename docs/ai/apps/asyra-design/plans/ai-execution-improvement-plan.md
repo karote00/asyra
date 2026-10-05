@@ -56,8 +56,8 @@ Use the existing formal live-provider test with this exact brief:
 > Draw only Taipei 101's two uppermost large bamboo-shaped sections, plus the full crown and spire above them, as a highly detailed, realistic 2D illustration from one fixed oblique view. Use editable shapes, preserve visible façade details, and scale at 1 cm = 1 px.
 
 Keep `gpt-6-astra` / `medium`. Record headlessly from App opening, open AI panel,
-enter brief and Send; fit established bounds while drawing, retain the full
-finished work, wait ten seconds and stop recording. Preserve document, native
+enter brief and Send; fit once after confirmed overall bounds and once after
+terminal settlement, retain the full finished work, wait ten seconds and stop recording. Preserve document, native
 detail/overview screenshots, run record, assessment and video. Inspect actual
 screenshots. Report first visible stage, observed execution/queue/provider
 intervals, unknown time, bytes, failures/rework and the requested visual quality.
@@ -87,3 +87,25 @@ No shared renderer or speculative RAG/cache was added without owner evidence.
 
 Local records, recordings and `.env` are retained. Task-owned test servers were
 closed. No push, PR update or remote CI was performed.
+
+## Recording navigation follow-up - 2026-10-04
+
+Bounded test-only change requested by the user: fit once after the first current,
+complete overall inspection coverage receipt, then once after terminal settlement.
+Partial geometry or later bounds changes must not trigger another fit. A question
+is a pause, not terminal settlement. If no confirmed overall bounds arrive while
+active, skip the early fit rather than guess; fit the retained drawing at the end.
+The isolated recorder owns canvas focus and keyboard commands. This adds no
+App automatic viewport behavior, no request mutation, and no AI/provider calls.
+Scope is the existing E2E recording driver, permanent navigation regression cases
+and its acceptance documentation. Verify focus, deferred initial fit, changing
+bounds, final fit, questions and existing approval handling with headless browser
+fixtures. The next live brief explicitly requests an elevated three-quarter view
+looking down with visible top surfaces. Historical prompts/evidence stay intact.
+
+Verification: the new navigation regression failed on the previous driver, which
+refit on changed bounds. Five focused headless E2E cases now pass (24.0s), covering
+focus, the two fit milestones, intervening geometry changes, question pauses,
+missing early bounds and existing confirmation handling. Naming and formatting
+checks pass. No live AI generation or production App code was changed in this
+follow-up; no commit or push. Evidence: `tmp/recording-navigation-{red,final}/`.

@@ -377,7 +377,11 @@ export class PixiRenderEngine implements RenderEngine {
         return { type: 'point', point: { x: point.x, y: point.y } }
       }
       case 'hit-test': {
-        const target = app.renderer.events.rootBoundary.hitTest(
+        const boundary = app.renderer.events.rootBoundary
+        // Pointer events normally set this root. Core queries may precede them,
+        // and must always search this engine's stage, not the last rendered object.
+        boundary.rootTarget = app.stage
+        const target = boundary.hitTest(
           query.point.x,
           query.point.y
         ) as Container | null

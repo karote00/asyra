@@ -1,3 +1,13 @@
+import sharp from 'sharp'
+import type {
+  VisualAssessment,
+  VisualAssessmentContext,
+  VisualAssessmentInput
+} from './local-visual-assessment'
+import {
+  LocalToolInputError,
+  type LocalToolDefinition
+} from './local-tool-invocation'
 import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { operationInputIssue } from './operation-input-schema'
 import { LocalToolAccess } from './local-tool-scheduler'
@@ -13,20 +23,28 @@ import {
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
 import { Buffer } from 'node:buffer'
-import { randomUUID } from 'node:crypto'
-import { AiActionNames } from '../src/constants/ai-actions'
+import { createHash, randomUUID } from 'node:crypto'
+import {
+  AiActionNames,
+  AiBatchOnlyActionNames
+} from '../src/constants/ai-actions'
 import type {
   AiActionBatch,
   AiProviderInput,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
-export class LocalOperationPreparationError extends Error {
+export class LocalOperationPreparationError extends LocalToolInputError {
   constructor(message?: string) {
     super(
       message ??
         'Drawing preparation rejected these arguments before any canvas changes. Check the supplied operation schema, use a valid artifact from this request, valid target bounds and only supported fields. Component conversions require matching analysis receipts; omit optional mappings and analysisIds when no conversion is selected. Correct the arguments and reuse the prepared artifact; do not invent replacement paths or repeat unchanged arguments.'
     )
   }
+}
+
+export interface NativeToolDescriptor extends LocalToolDefinition {
+  namespace: string
+  description: string
 }
 
 export interface LocalActionPreparation {
@@ -77,6 +95,14 @@ export const createLocalOperationTools = (
   executeBatch: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
   options: {
     reviewTargetId?: string
+    getNativeTools?: () => NativeToolDescriptor[]
+    assessVisual?: (
+      input: VisualAssessmentContext & {
+        phase: 'structure' | 'visual'
+        images: VisualAssessmentInput['images']
+      },
+      signal: AbortSignal
+    ) => Promise<VisualAssessment>
     onInspection?: (status: 'running' | 'completed') => void
   } = {}
 ) => {
@@ -95,7 +121,44 @@ export const createLocalOperationTools = (
           AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE
         ].includes(action.name as never)
     )
-  const designReview = createLocalDesignReview()
+  // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
+  const admittedApisByName = new Map(registered.map((api) => [api.name, api]))
+  const admittedApisByOperation = new Map<string, (typeof registered)[number]>()
+  const admittedApiCategories = new Map<string, typeof registered>()
+  for (const api of admittedApisByName.values()) {
+    const contract = getBasicApiContract(api.name)
+    const category = contract ? contract.category : 'design'
+    admittedApisByOperation.set(contract ? contract.operation : api.name, api)
+    const entries = admittedApiCategories.get(category) ?? []
+    entries.push(api)
+    admittedApiCategories.set(category, entries)
+  }
+  const returnedDefinitions = new Map<string, string>()
+  const categoryChoices = [...admittedApiCategories.keys()]
+  const lookupRecovery = `Available categories: ${categoryChoices.join(', ')}. Select one category for its admitted operation menu. Exact names may also identify native tools; use their returned execution route.`
+  // Resolve lazily after the provider has assembled all native tool groups.
+  // The definitions and index live for this request only.
+  let nativeToolsByName: Map<string, NativeToolDescriptor[]> | undefined
+  const nativeMatches = (name: string): NativeToolDescriptor[] => {
+    if (!nativeToolsByName) {
+      nativeToolsByName = new Map()
+      for (const tool of options.getNativeTools?.() ?? []) {
+        for (const key of [tool.name, `${tool.namespace}.${tool.name}`]) {
+          const matches = nativeToolsByName.get(key) ?? []
+          matches.push(tool)
+          nativeToolsByName.set(key, matches)
+        }
+      }
+    }
+    return nativeToolsByName.get(name) ?? []
+  }
+  const designReview = createLocalDesignReview({
+    independentAssessment: !!options.assessVisual
+  })
+  const inspectionImages = new Map<
+    string,
+    VisualAssessmentInput['images'][number]
+  >()
   let reviewTargetId = options.reviewTargetId
   const reviewScope = new Set(
     options.reviewTargetId ? [options.reviewTargetId] : []
@@ -134,7 +197,12 @@ export const createLocalOperationTools = (
   const canInspect = registered.some(
     (action) => action.name === AiActionNames.INSPECT_DRAWING
   )
+  let latestEvidenceValidation: unknown
   const validateEvidence = async (ids?: unknown, signal?: AbortSignal) => {
+    latestEvidenceValidation = {
+      current: false,
+      reason: 'Inspection evidence is unavailable.'
+    }
     signal?.throwIfAborted()
     const evidence = designReview.evidenceFor(ids)
     if (
@@ -144,6 +212,9 @@ export const createLocalOperationTools = (
       )
     )
       return false
+    const requiredIds = [
+      ...new Set([...reviewScope, ...designReview.factTargets()])
+    ]
     const actionId = randomUUID()
     const receipt = await executeBatch({
       batchId: randomUUID(),
@@ -153,10 +224,10 @@ export const createLocalOperationTools = (
           name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
           arguments: {
             evidence,
-            ...(reviewScope.size
+            ...(requiredIds.length
               ? {
                   scope: {
-                    requiredIds: [...reviewScope],
+                    requiredIds,
                     overviewIds: designReview.overviewTargets(ids)
                   }
                 }
@@ -167,6 +238,9 @@ export const createLocalOperationTools = (
       ]
     })
     signal?.throwIfAborted()
+    latestEvidenceValidation = receipt.actionResults.find(
+      (entry) => entry.actionId === actionId
+    )?.result
     const current = receipt.actionResults.some(
       (entry) =>
         entry.actionId === actionId &&
@@ -175,6 +249,7 @@ export const createLocalOperationTools = (
         entry.result.current === true
     )
     if (!current) {
+      inspectionImages.clear()
       designReview.mutate()
       return false
     }
@@ -182,7 +257,7 @@ export const createLocalOperationTools = (
       (entry) => entry.actionId === actionId
     )?.result
     if (
-      reviewScope.size &&
+      requiredIds.length &&
       (!isRecord(validation) ||
         !isRecord(validation.coverage) ||
         validation.coverage.complete !== true)
@@ -299,7 +374,18 @@ export const createLocalOperationTools = (
               (!overview && entry.result.imageScope !== 'overview'),
             source
           )
-          if (evidence) Object.assign(entry.result, evidence)
+          if (evidence) {
+            Object.assign(entry.result, evidence)
+            const image = entry.result.image
+            if (isRecord(image) && typeof image.dataUrl === 'string')
+              inspectionImages.set(evidence.inspectionId, {
+                role:
+                  overview && !region && view !== 'detail'
+                    ? 'overview'
+                    : 'detail',
+                dataUrl: image.dataUrl
+              })
+          }
         }
       }
       signal?.throwIfAborted()
@@ -323,6 +409,7 @@ export const createLocalOperationTools = (
         if (!(await validateEvidence(undefined, signal))) designReview.mutate()
       } catch (error) {
         if (!(error instanceof LocalOperationPreparationError)) throw error
+        inspectionImages.clear()
         designReview.mutate()
       }
     },
@@ -396,18 +483,41 @@ export const createLocalOperationTools = (
     getStructureIssue: () => designReview.getStructureIssue(),
     actionNames: registered.map((action) => action.name),
     definitions: [
-      ...(registered.some((action) => getBasicApiContract(action.name))
+      ...(registered.length
         ? [
             {
               type: 'function',
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover public Core and App APIs. With no arguments returns the complete compact API index. Supply query to search current names and descriptions by purpose, or names to retrieve exact input schemas and coordinate semantics, then call these actions in execute_design_batch. Do not combine query with names. No lexical match does not mean a capability is unavailable: use the complete index. Prefer plural APIs for ready data; basic vector APIs edit existing anchors/handles without replacing the vector.',
+                'Discover task operations. With no arguments returns categories. Choose category for a scoped operation menu (includeSchemas=true also returns its exact schemas in this call), operation for exact owner.method lookup, names for exact action definitions and native execution routes (optionally namespace.name), or query for optional lexical search. Use only one selector. Action definitions are included once per request/revision; repeated reads return references. Use refresh=true to restore full definitions after context loss or failed delivery. Native Code Mode declarations may abbreviate nested fields as unknown. names returns the exact registered native inputSchema, including definitions and constraints, once per request/revision; refresh restores it when needed. Execute known operations directly in execute_design_batch; discovery is not a prerequisite on every edit. All mutations accept new values; retain known target IDs. Uniform row patches, per-target patches and shared ownership are different operations. apis execute as batch items; tools execute through their returned native namespace. Missing names do not discard valid matches.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  operation: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                      'Exact semantic identity, for example fill.updateFillsAtIndex.'
+                  },
+                  category: {
+                    type: 'string',
+                    enum: categoryChoices,
+                    minLength: 1,
+                    description:
+                      'Category from the compact index, for example fill or vector.'
+                  },
+                  includeSchemas: {
+                    type: 'boolean',
+                    description:
+                      'Optional with category only. Include definitions not yet returned, otherwise references; refresh=true restores full definitions. Defaults to a compact menu.'
+                  },
+                  refresh: {
+                    type: 'boolean',
+                    description:
+                      'Restore full action definitions after context loss or failed delivery. Does not execute actions.'
+                  },
                   names: { type: 'array', items: { type: 'string' } },
                   query: {
                     type: 'string',
@@ -426,7 +536,7 @@ export const createLocalOperationTools = (
               type: 'function',
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
-                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. target optionally supplies artifactId with exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
+                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. target optionally supplies artifactId with exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -487,7 +597,11 @@ export const createLocalOperationTools = (
         : []),
       ...(canInspect ? [designReviewDefinition] : []),
       ...registered
-        .filter((action) => !getBasicApiContract(action.name))
+        .filter(
+          (action) =>
+            !getBasicApiContract(action.name) &&
+            !AiBatchOnlyActionNames.includes(action.name)
+        )
         .map((action) => ({
           type: 'function',
           name: action.name,
@@ -522,83 +636,177 @@ export const createLocalOperationTools = (
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
       if (name === AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
+        const selectors = ['names', 'query', 'operation', 'category']
         if (
           !isRecord(args) ||
-          Object.keys(args).some((key) => !['names', 'query'].includes(key)) ||
-          (args.query !== undefined &&
-            (typeof args.query !== 'string' ||
-              !args.query.trim() ||
-              args.names !== undefined)) ||
+          Object.keys(args).some(
+            (key) =>
+              !selectors.includes(key) &&
+              !['includeSchemas', 'refresh'].includes(key)
+          ) ||
+          (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
+          (args.includeSchemas !== undefined &&
+            (typeof args.includeSchemas !== 'boolean' ||
+              args.category === undefined)) ||
+          selectors.filter((key) => args[key] !== undefined).length > 1 ||
+          ['query', 'operation', 'category'].some(
+            (key) =>
+              args[key] !== undefined &&
+              (typeof args[key] !== 'string' || !String(args[key]).trim())
+          ) ||
           (args.names !== undefined &&
             (!Array.isArray(args.names) ||
               args.names.some((v) => typeof v !== 'string')))
         )
           throw new LocalOperationPreparationError(
-            'Expected optional API names array or nonempty purpose query, not both'
+            'Provide one selector: operation, category, names or query; omit selectors for categories. includeSchemas must be a boolean used with category only.'
           )
-        const apis = registered.filter((action) =>
-          getBasicApiContract(action.name)
-        )
+        const apis = registered
+        const details = (api: (typeof apis)[number], includeSchema = true) => {
+          const contract = getBasicApiContract(api.name)
+          const descriptor = {
+            ...api,
+            execution: {
+              kind: 'batch-action',
+              tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
+            },
+            operation: contract ? contract.operation : api.name,
+            category: contract ? contract.category : 'design',
+            ...(contract
+              ? { effect: contract.effect, result: contract.result }
+              : {})
+          }
+          const { inputSchema: _schema, ...menu } = descriptor
+          if (!includeSchema) return menu
+          const revision = createHash('sha256')
+            .update(JSON.stringify(descriptor))
+            .digest('hex')
+          const repeated =
+            args.refresh !== true &&
+            returnedDefinitions.get(api.name) === revision
+          returnedDefinitions.set(api.name, revision)
+          return {
+            ...(repeated
+              ? {
+                  name: api.name,
+                  execution: descriptor.execution,
+                  operation: descriptor.operation,
+                  category: descriptor.category
+                }
+              : descriptor),
+            definition: {
+              revision,
+              state: repeated ? 'previously-returned' : 'included',
+              refresh: {
+                tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+                arguments: { names: [api.name], refresh: true }
+              }
+            }
+          }
+        }
         if (Array.isArray(args.names)) {
-          const names = args.names as string[]
-          if (
-            names.some(
-              (requested) => !apis.some((api) => api.name === requested)
-            )
+          const names = [...new Set(args.names as string[])]
+          const selected = names.flatMap((name) => {
+            const api = admittedApisByName.get(name)
+            return api ? [api] : []
+          })
+          const tools = [...new Set(names.flatMap(nativeMatches))]
+          const missingNames = names.filter(
+            (name) =>
+              !admittedApisByName.has(name) && !nativeMatches(name).length
           )
-            throw new LocalOperationPreparationError(
-              'Unknown or unavailable public API'
-            )
           return JSON.stringify({
-            apis: names.map((requested) =>
-              apis.find((api) => api.name === requested)
-            )
+            apis: selected.map((api) => details(api)),
+            tools: tools.map((tool) => {
+              const identity = `${tool.namespace}.${tool.name}`
+              const revision = createHash('sha256')
+                .update(JSON.stringify(tool))
+                .digest('hex')
+              const repeated =
+                args.refresh !== true &&
+                returnedDefinitions.get(`native:${identity}`) === revision
+              returnedDefinitions.set(`native:${identity}`, revision)
+              return {
+                ...(repeated
+                  ? { name: tool.name, namespace: tool.namespace }
+                  : tool),
+                schemaSource: 'registered-tool-contract',
+                execution: {
+                  kind: 'native-tool',
+                  namespace: tool.namespace,
+                  tool: tool.name
+                },
+                definition: {
+                  revision,
+                  state: repeated ? 'previously-returned' : 'included',
+                  refresh: {
+                    tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+                    arguments: { names: [identity], refresh: true }
+                  }
+                }
+              }
+            }),
+            missingNames,
+            ...(missingNames.length ? { message: lookupRecovery } : {})
           })
         }
-        const normalizeApiLookupText = (value: string) =>
+        if (typeof args.operation === 'string') {
+          const api = admittedApisByOperation.get(args.operation)
+          if (!api)
+            throw new LocalOperationPreparationError(
+              `Unknown or unavailable operation. ${lookupRecovery}`
+            )
+          return JSON.stringify({ apis: [details(api)] })
+        }
+        const categories = [...admittedApiCategories].map(
+          ([category, entries]) => ({ category, count: entries.length })
+        )
+        if (args.category !== undefined) {
+          const entries = admittedApiCategories.get(String(args.category))
+          if (!entries)
+            throw new LocalOperationPreparationError(
+              `Unknown category. ${lookupRecovery}`
+            )
+          return JSON.stringify({
+            category: args.category,
+            apis: entries.map((api) => {
+              return details(
+                api,
+                args.includeSchemas === true || args.refresh === true
+              )
+            })
+          })
+        }
+        if (args.query === undefined)
+          return JSON.stringify({ categories, catalogSize: apis.length })
+        const normalize = (value: string) =>
           value
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
             .normalize('NFKC')
             .toLowerCase()
             .replace(/[^\p{L}\p{N}]+/gu, ' ')
             .trim()
-        const terms =
-          typeof args.query === 'string'
-            ? normalizeApiLookupText(args.query).split(' ').filter(Boolean)
-            : []
-        const matches = terms.length
-          ? apis.filter((api) => {
-              const descriptor = normalizeApiLookupText(
-                `${api.name} ${api.description}`
-              )
-              return terms.every((term) => descriptor.includes(term))
-            })
-          : apis
+        const terms = normalize(String(args.query)).split(' ').filter(Boolean)
+        const matches = apis.filter((api) => {
+          const descriptor = normalize(`${api.name} ${api.description}`)
+          return terms.every((term) => descriptor.includes(term))
+        })
         return JSON.stringify({
           complete: true,
           count: matches.length,
           catalogSize: apis.length,
-          ...(args.query !== undefined && matches.length === 0
-            ? {
+          ...(matches.length
+            ? {}
+            : {
                 message:
-                  'No lexical match; this is not evidence of an unavailable capability. Read the complete compact catalog without arguments or try other terms.',
+                  'No lexical match; this is not evidence of an unavailable capability. Select an operation from its category.',
+                categories,
                 recovery: {
                   tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
                   arguments: {}
                 }
-              }
-            : {}),
-          apis: matches.map(({ name, description }) => {
-            const contract = getBasicApiContract(name)
-            if (!contract) throw new Error('Missing API contract')
-            return {
-              name,
-              owner: contract.owner,
-              method: contract.method,
-              effect: contract.effect,
-              ...(args.query !== undefined ? { description } : {})
-            }
-          })
+              }),
+          apis: matches.map((api) => details(api))
         })
       }
       if (canInspect && name === AiDesignToolIds.RECORD_DESIGN_REVIEW) {
@@ -607,22 +815,82 @@ export const createLocalOperationTools = (
           designReviewDefinition.inputSchema
         )
         if (issue) throw new LocalOperationPreparationError(issue)
-        try {
-          if (
-            isRecord(args) &&
-            args.phase !== 'plan' &&
-            !(await validateEvidence(args.inspectionIds, signal))
-          ) {
-            throw new Error(
-              'The drawing changed or current inspection IDs have no valid App evidence. Inspect the current drawing again before assessment.'
+        const candidate =
+          isRecord(args) &&
+          (args.phase === 'structure' || args.phase === 'visual')
+        const recordReview = (independent?: VisualAssessment) => {
+          try {
+            return designReview.record(args, independent)
+          } catch (error) {
+            throw new LocalOperationPreparationError(
+              error instanceof Error ? error.message : 'Invalid review evidence'
             )
           }
-          return JSON.stringify(designReview.record(args))
+        }
+        if (!candidate) return JSON.stringify(recordReview())
+        const evidenceResult = async () => {
+          let message =
+            'Inspection evidence changed. Inspect the current drawing again; earlier findings cannot approve completion.'
+          try {
+            if (await validateEvidence(args.inspectionIds, signal))
+              return undefined
+          } catch (error) {
+            if (!(error instanceof LocalOperationPreparationError)) throw error
+            message = error.message
+          }
+          designReview.invalidateAssessment(message)
+          return {
+            status: 'partial',
+            phase: args.phase,
+            accepted: false,
+            readyForDetail: false,
+            inspectionIds: args.inspectionIds,
+            evidenceValidation: latestEvidenceValidation,
+            message
+          }
+        }
+        const unavailable = await evidenceResult()
+        if (unavailable) return JSON.stringify(unavailable)
+        try {
+          designReview.validateReview(args)
         } catch (error) {
           throw new LocalOperationPreparationError(
             error instanceof Error ? error.message : 'Invalid review evidence'
           )
         }
+        if (
+          options.assessVisual &&
+          (args.phase === 'structure' || args.final !== false)
+        ) {
+          const phase = args.phase as 'structure' | 'visual'
+          const comparison = designReview.comparisonContext(phase)
+          if (!Object.keys(comparison.criteria).length)
+            return JSON.stringify(recordReview())
+          const images = (args.inspectionIds as string[]).map((id) =>
+            inspectionImages.get(id)
+          )
+          if (images.some((image) => !image))
+            throw new Error('Current assessment images are unavailable.')
+          const independent = await options.assessVisual(
+            {
+              ...comparison,
+              phase,
+              images: images as VisualAssessmentInput['images']
+            },
+            signal
+          )
+          signal.throwIfAborted()
+          // Preserve findings before checking freshness, but never let old pixels approve a revision.
+          designReview.retainAssessment(phase, independent, false)
+          const invalidated = await evidenceResult()
+          if (invalidated)
+            return JSON.stringify({
+              ...invalidated,
+              independentAssessment: independent
+            })
+          return JSON.stringify(recordReview(independent))
+        }
+        return JSON.stringify(recordReview())
       }
       const batchMode = name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
       const definition = registered.find((action) => action.name === name)
@@ -685,8 +953,11 @@ export const createLocalOperationTools = (
             !isRecord(item) ||
             item.status !== 'complete' ||
             item.value !== null ||
+            (item.application !== undefined &&
+              item.application !== 'not-reported') ||
             Object.keys(item).some(
-              (key) => !['status', 'value', 'elementId'].includes(key)
+              (key) =>
+                !['status', 'value', 'elementId', 'application'].includes(key)
             )
           )
             return true
@@ -705,7 +976,11 @@ export const createLocalOperationTools = (
             ...(acknowledged.size
               ? {
                   acknowledgedActions: [...acknowledged].map(
-                    ([actionName, count]) => ({ actionName, count })
+                    ([actionName, count]) => ({
+                      actionName,
+                      count,
+                      application: 'not-reported'
+                    })
                   )
                 }
               : {})
@@ -716,22 +991,20 @@ export const createLocalOperationTools = (
       if (name === AiActionNames.INSPECT_DRAWING) {
         if (typeof operationArguments.elementId !== 'string')
           throw new Error('Missing inspection target')
+        const view = operationArguments.region
+          ? 'detail'
+          : (operationArguments.view ?? 'overview')
         return JSON.stringify(
           await inspect(
             operationArguments.elementId,
-            !operationArguments.region &&
-              (operationArguments.view === 'overview' ||
-                operationArguments.elementId === reviewTargetId),
+            view === 'overview',
             operationArguments.region,
-            operationArguments.view ??
-              (operationArguments.region ||
-              operationArguments.elementId === reviewTargetId
-                ? undefined
-                : 'detail'),
+            view,
             signal
           )
         )
       }
+
       const message =
         typeof args.message === 'string' ? args.message : 'Updating the drawing'
       let prepared: AiActionBatch
@@ -744,9 +1017,11 @@ export const createLocalOperationTools = (
             summary: message
           }))
         }) as unknown as AiActionBatch
-      } catch {
+      } catch (error) {
         signal.throwIfAborted()
-        throw new LocalOperationPreparationError()
+        throw new LocalOperationPreparationError(
+          error instanceof Error ? error.message : undefined
+        )
       }
       const affectsDrawingReview = batchActions.some(
         (action) =>
@@ -755,6 +1030,7 @@ export const createLocalOperationTools = (
       )
       if (affectsDrawingReview) {
         measuredTargets.clear()
+        inspectionImages.clear()
         designReview.mutate()
         measurementPending = canReview
       }
@@ -792,12 +1068,37 @@ export const createLocalOperationTools = (
             : {}
           if (
             method === 'deleteElement' &&
-            entry.result === true &&
+            isRecord(entry.result) &&
+            entry.result.value === true &&
             typeof submittedArguments.elementId === 'string'
           )
             reviewScope.delete(submittedArguments.elementId)
           if (!isRecord(entry.result)) continue
-          const result = entry.result
+          const receiptResult = entry.result
+          const result =
+            contract && isRecord(receiptResult.value)
+              ? receiptResult.value
+              : receiptResult
+          if (
+            contract?.result.kind === 'created-items' &&
+            Array.isArray(receiptResult.appliedElementIds)
+          ) {
+            for (const id of receiptResult.appliedElementIds) {
+              if (typeof id !== 'string') continue
+              reviewScope.add(id)
+              reviewTargetId ??= id
+            }
+          }
+          if (
+            contract?.effect === 'write' &&
+            Array.isArray(receiptResult.reviewElementIds)
+          ) {
+            for (const id of receiptResult.reviewElementIds) {
+              if (typeof id !== 'string' || id.length === 0) continue
+              reviewScope.add(id)
+              reviewTargetId ??= id
+            }
+          }
           let removed: unknown
           if (entry.actionName === AiActionNames.REMOVE_AI_COMPOSITION)
             removed = result.appliedElementIds
@@ -840,6 +1141,7 @@ export const createLocalOperationTools = (
                 reviewTargetId = [...reviewScope][0]
             }
           }
+          const reportedElementId = receiptResult.elementId
           if (typeof result.compositionId === 'string') {
             reviewScope.add(result.compositionId)
             if (
@@ -849,10 +1151,10 @@ export const createLocalOperationTools = (
               reviewTargetId = result.compositionId
           } else if (
             contract?.effect === 'write' &&
-            typeof result.elementId === 'string'
+            typeof reportedElementId === 'string'
           ) {
-            reviewScope.add(result.elementId)
-            reviewTargetId ??= result.elementId
+            reviewScope.add(reportedElementId)
+            reviewTargetId ??= reportedElementId
           }
         }
         if (reviewTargetId && !reviewScope.has(reviewTargetId))
@@ -905,12 +1207,25 @@ export const createLocalOperationTools = (
   }
 }
 
-/** Native image payloads are separated from text; only actual bounded PNG receipts are admitted. */
-export const localToolContent = (
+// This recipe is tested against native Code Mode's actual dynamic-tool adapter.
+export const localToolResultExample = `const [receipt, ...images] = result.split("\\n");
+text(JSON.parse(receipt));
+for (const uri of images) image(uri);`
+
+export const localToolResultInstructions = `App tool results in Code Mode are STRINGS, not MCP objects with a content array.
+The first line is JSON; any following lines are image data URLs. After const result = await tools.<discovered_tool>(input), forward the result in that SAME exec:
+${localToolResultExample}
+Do not print the whole string: that prints base64 instead of showing images. Retain result with store if needed; redisplay that retained result with this recipe instead of importing again. Text-only receipts have no following image lines.`
+
+/** Separate validated original reference rasters and bounded canvas snapshots from text. */
+export const localToolContent = async (
   text: string
-): (
-  { type: 'inputText'; text: string } | { type: 'inputImage'; imageUrl: string }
-)[] => {
+): Promise<
+  (
+    | { type: 'inputText'; text: string }
+    | { type: 'inputImage'; imageUrl: string }
+  )[]
+> => {
   const value = JSON.parse(text)
   const images: { type: 'inputImage'; imageUrl: string }[] = []
   if (isRecord(value) && Array.isArray(value.actionResults)) {
@@ -927,15 +1242,31 @@ export const localToolContent = (
       if (
         !isRecord(snapshot) ||
         typeof snapshot.dataUrl !== 'string' ||
-        snapshot.dataUrl.length > 8 * 1024 * 1024 ||
-        !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(snapshot.dataUrl)
+        snapshot.dataUrl.length > 8 * 1024 * 1024 + 64 ||
+        !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+          snapshot.dataUrl
+        )
       )
         throw new Error('Invalid drawing snapshot')
-      const bytes = Buffer.from(
-        snapshot.dataUrl.slice('data:image/png;base64,'.length),
-        'base64'
-      )
-      if (
+      const bytes = Buffer.from(snapshot.dataUrl.split(',')[1], 'base64')
+      if (entry.actionName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) {
+        // Import already decodes once. Read metadata only here to validate the
+        // handoff without re-decoding, resampling or imposing a second pixel cap.
+        const metadata = await sharp(bytes).metadata()
+        const declaredType = snapshot.dataUrl.slice(
+          11,
+          snapshot.dataUrl.indexOf(';')
+        )
+        if (
+          bytes.length > 6 * 1024 * 1024 ||
+          metadata.format !== declaredType ||
+          (metadata.pages ?? 1) !== 1 ||
+          metadata.autoOrient.width !== snapshot.width ||
+          metadata.autoOrient.height !== snapshot.height
+        )
+          throw new Error('Invalid reference image metadata')
+      } else if (
+        !snapshot.dataUrl.startsWith('data:image/png;base64,') ||
         bytes.length < 24 ||
         !bytes
           .subarray(0, 8)
@@ -944,9 +1275,8 @@ export const localToolContent = (
         bytes.readUInt32BE(20) !== snapshot.height ||
         Number(snapshot.width) < 1 ||
         Number(snapshot.height) < 1 ||
-        (entry.actionName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE
-          ? Number(snapshot.width) * Number(snapshot.height) > 4_000_000
-          : Number(snapshot.width) > 1024 || Number(snapshot.height) > 1024)
+        Number(snapshot.width) > 1024 ||
+        Number(snapshot.height) > 1024
       )
         throw new Error('Invalid drawing snapshot dimensions')
       images.push({ type: 'inputImage', imageUrl: snapshot.dataUrl })

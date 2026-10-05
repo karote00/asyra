@@ -37,7 +37,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Compact design intent, requested viewpoint, actual source notes and unverified assumptions. Numeric checks measure final parent-local native layout boxes ($root for root); tolerance is in drawing pixels. A pass is not visual fidelity approval. Do not invent source evidence.'
+      'Compact design intent, requested viewpoint, actual source notes and unverified assumptions. Numeric checks measure final parent-local native layout boxes (use the explicit draft key of the node being checked); tolerance is in drawing pixels. A pass is not visual fidelity approval. Do not invent source evidence.'
   },
   relations: {
     type: 'array',

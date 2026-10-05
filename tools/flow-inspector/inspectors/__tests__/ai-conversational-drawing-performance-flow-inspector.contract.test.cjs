@@ -1961,8 +1961,14 @@ test('local-only startup is transport-free while configured socket remote apply 
   )
   assert.match(
     text,
-    /root dev:all.*only workspace package watchers.*App dev server.*explicit collaboration:server.*separately owns.*reference WebSocket server/i
+    /root start:asyra-design.*only the Asyra Design dev server.*explicit collaboration:server.*collaboration Playwright.*separately owns.*reference WebSocket server/i
   )
+  assert.equal(
+    JSON.parse(read('package.json')).scripts['start:asyra-design'],
+    'yarn workspace @asyra/asyra-design start'
+  )
+  assert.equal(JSON.parse(read('package.json')).scripts['dev:all'], undefined)
+  assert.doesNotMatch(text, /root dev:all/i)
   assert.doesNotMatch(text, /ordinary non-collaboration.*FILE.*unchanged/i)
   assert.ok(
     !localProofOwner.inputs.includes(
@@ -2019,6 +2025,6 @@ test('local-only startup is transport-free while configured socket remote apply 
   )
   assert.match(
     feature,
-    /root dev:all[\s\S]*only frontend workspace processes[\s\S]*App dev server[\s\S]*explicit collaboration:server[\s\S]*collaboration Playwright[\s\S]*separately supply the WebSocket endpoint/i
+    /root start:asyra-design[\s\S]*Asyra Design dev server[\s\S]*explicit collaboration:server[\s\S]*collaboration Playwright[\s\S]*separately supply the WebSocket endpoint/i
   )
 })

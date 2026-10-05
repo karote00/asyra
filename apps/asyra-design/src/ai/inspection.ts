@@ -20,7 +20,7 @@ export const createAiInspectionAction = (
 }> => ({
   name: AiActionNames.INSPECT_DRAWING,
   description:
-    'Inspect an existing drawing or composition using its actual rendered image and object summaries. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. elementsTruncated describes object summaries only, not image coverage. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
+    'Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

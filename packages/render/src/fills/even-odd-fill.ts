@@ -151,52 +151,58 @@ const createGradientSampler = (
   const start = handles[0] ?? { x: 0, y: 0 }
   const end = handles[1] ?? { x: 1, y: 0 }
   const side = handles[2] ?? null
+  const startX = start.x
+  const startY = start.y
+  const endX = end.x
+  const endY = end.y
+  const sideX = side ? side.x - startX : 0
+  const sideY = side ? side.y - startY : 0
+  const gradientType = fill.gradient.gradientType
 
-  const getT = (x: number, y: number) => {
-    switch (fill.gradient?.gradientType) {
-      case FillGradientTypes.RADIAL: {
-        const dx = end.x - start.x
-        const dy = end.y - start.y
+  // These values are invariant for this synchronous rasterization. Resolve the
+  // gradient kind once; only the sample coordinates vary in the pixel loop.
+  const dx = endX - startX
+  const dy = endY - startY
+  const getT = (() => {
+    switch (gradientType) {
+      case FillGradientTypes.RADIAL:
+      case FillGradientTypes.DIAMOND: {
+        const radial = gradientType === FillGradientTypes.RADIAL
         const radiusX = Math.max(Math.hypot(dx, dy), EPSILON)
         const radiusY = side
-          ? Math.max(Math.hypot(side.x - start.x, side.y - start.y), EPSILON)
+          ? Math.max(Math.hypot(sideX, sideY), EPSILON)
           : radiusX
-        const nx = (x - start.x) / radiusX
-        const ny = (y - start.y) / radiusY
-        return Math.sqrt(nx * nx + ny * ny)
+        if (radial)
+          return (x: number, y: number) => {
+            const nx = (x - startX) / radiusX
+            const ny = (y - startY) / radiusY
+            return Math.sqrt(nx * nx + ny * ny)
+          }
+        return (x: number, y: number) => {
+          const nx = Math.abs(x - startX) / radiusX
+          const ny = Math.abs(y - startY) / radiusY
+          return (nx + ny) / 2
+        }
       }
       case FillGradientTypes.ANGULAR: {
-        const baseAngle = Math.atan2(end.y - start.y, end.x - start.x)
-        const angle = Math.atan2(y - start.y, x - start.x)
-        const delta = angle - baseAngle
-        const normalized =
-          ((delta % (Math.PI * 2)) + Math.PI * 2) / (Math.PI * 2)
-        return normalized
-      }
-      case FillGradientTypes.DIAMOND: {
-        const dx = end.x - start.x
-        const dy = end.y - start.y
-        const radiusX = Math.max(Math.hypot(dx, dy), EPSILON)
-        const radiusY = side
-          ? Math.max(Math.hypot(side.x - start.x, side.y - start.y), EPSILON)
-          : radiusX
-        const nx = Math.abs(x - start.x) / radiusX
-        const ny = Math.abs(y - start.y) / radiusY
-        return (nx + ny) / 2
+        const baseAngle = Math.atan2(dy, dx)
+        return (x: number, y: number) => {
+          const delta = Math.atan2(y - startY, x - startX) - baseAngle
+          return ((delta % (Math.PI * 2)) + Math.PI * 2) / (Math.PI * 2)
+        }
       }
       case FillGradientTypes.LINEAR:
       default: {
-        const vx = end.x - start.x
-        const vy = end.y - start.y
-        const denom = vx * vx + vy * vy
-        if (denom <= EPSILON) {
-          return 0
-        }
-
-        return ((x - start.x) * vx + (y - start.y) * vy) / denom
+        const denom = dx * dx + dy * dy
+        if (denom <= EPSILON) return () => 0
+        return (x: number, y: number) =>
+          ((x - startX) * dx + (y - startY) * dy) / denom
       }
     }
-  }
+  })()
+  // The rasterizer consumes each sample immediately; scratch belongs to this
+  // sampler, not a document/global cache or a retained consumer result.
+  const sampled: RGBA = { r: 0, g: 0, b: 0, a: 0 }
 
   return (x, y) => {
     const t = clampUnit(getT(x, y))
@@ -225,12 +231,11 @@ const createGradientSampler = (
     const ratio = clampUnit(
       (t - lower.position) / (upper.position - lower.position)
     )
-    return {
-      r: lower.color.r + (upper.color.r - lower.color.r) * ratio,
-      g: lower.color.g + (upper.color.g - lower.color.g) * ratio,
-      b: lower.color.b + (upper.color.b - lower.color.b) * ratio,
-      a: lower.color.a + (upper.color.a - lower.color.a) * ratio
-    }
+    sampled.r = lower.color.r + (upper.color.r - lower.color.r) * ratio
+    sampled.g = lower.color.g + (upper.color.g - lower.color.g) * ratio
+    sampled.b = lower.color.b + (upper.color.b - lower.color.b) * ratio
+    sampled.a = lower.color.a + (upper.color.a - lower.color.a) * ratio
+    return sampled
   }
 }
 
@@ -489,6 +494,7 @@ export const createEvenOddFillStyle = (
   for (let row = 0; row < height; row += 1) {
     const y = offsetY + (row + 0.5) * scaleY
     const intersections = collectHorizontalIntersections(y, preparedShape)
+    const ny = baseHeight ? (y - offsetY) / baseHeight : 0
 
     if (intersections.length === 0) {
       continue
@@ -523,7 +529,6 @@ export const createEvenOddFillStyle = (
       for (let col = startIndex; col <= endIndex; col += 1) {
         const x = offsetX + (col + 0.5) * scaleX
         const nx = baseWidth ? (x - offsetX) / baseWidth : 0
-        const ny = baseHeight ? (y - offsetY) / baseHeight : 0
         const idx = (row * width + col) * 4
 
         let dstR = data[idx]
@@ -531,10 +536,10 @@ export const createEvenOddFillStyle = (
         let dstB = data[idx + 2]
         let dstA = data[idx + 3] / 255
 
-        samplers.forEach((sample) => {
+        for (const sample of samplers) {
           const color = sample(nx, ny)
           if (color.a <= 0) {
-            return
+            continue
           }
 
           const srcA = clampUnit(color.a)
@@ -544,7 +549,7 @@ export const createEvenOddFillStyle = (
             dstG = 0
             dstB = 0
             dstA = 0
-            return
+            continue
           }
 
           const outR = (color.r * srcA + dstR * dstA * (1 - srcA)) / outA
@@ -555,7 +560,7 @@ export const createEvenOddFillStyle = (
           dstG = outG
           dstB = outB
           dstA = outA
-        })
+        }
 
         data[idx] = Math.round(dstR)
         data[idx + 1] = Math.round(dstG)

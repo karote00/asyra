@@ -6,6 +6,8 @@ import {
   createRectangle,
   createTestDocumentIdentity,
   getElementCount,
+  getCoreDocumentDigest,
+  getPersistedDocumentDigest,
   redo,
   undo,
   waitForAppReady
@@ -180,6 +182,41 @@ test('recorded action stream preserves drawable targets during incremental const
           batchId: currentBatchId,
           ...event
         })
+      const stopPublicationProfile = core.subscribeToSharedPublication(
+        (publication) => {
+          const serializedBytes = new TextEncoder().encode(
+            JSON.stringify(publication)
+          ).byteLength
+          if (serializedBytes < 1_000_000) return
+          const deliveries = publication.slices.flatMap((slice) =>
+            slice.batches.flatMap((batch) => batch.deliveries)
+          )
+          const largest = deliveries
+            .map((delivery) => ({
+              event: delivery.eventName,
+              bytes: new TextEncoder().encode(JSON.stringify(delivery.payload))
+                .byteLength,
+              fields: Object.entries(
+                delivery.payload as Record<string, unknown>
+              ).map(([key, value]) => ({
+                key,
+                count: Array.isArray(value) ? value.length : undefined,
+                bytes: new TextEncoder().encode(JSON.stringify(value) ?? '')
+                  .byteLength
+              }))
+            }))
+            .sort((a, b) => b.bytes - a.bytes)
+            .slice(0, 3)
+          void record({
+            phase: 'publication-profile',
+            publicationId: publication.publicationId,
+            mode: publication.mode,
+            serializedBytes,
+            deliveryCount: deliveries.length,
+            largest
+          })
+        }
+      )
       const remap = (value: unknown): unknown => {
         if (typeof value === 'string') return aliases.get(value) ?? value
         if (Array.isArray(value)) return value.map(remap)
@@ -373,6 +410,7 @@ test('recorded action stream preserves drawable targets during incremental const
           targetState
         }
       } finally {
+        stopPublicationProfile()
         unsubscribeConfirmation()
         pipelineDebugger?.disable()
         core.captureElementSnapshot = originalCapture
@@ -402,6 +440,19 @@ test('recorded action stream preserves drawable targets during incremental const
   }
   expect(result.status, result.failure ?? 'Recorded batches must execute').toBe(
     'executed'
+  )
+  const fileId = new URL(page.url()).searchParams.get('fileId')
+  if (!fileId) throw new Error('The test document has no file ID')
+  const canonicalDigest = await getCoreDocumentDigest(page)
+  await expect
+    .poll(() => getPersistedDocumentDigest(fileId), {
+      timeout: 30_000,
+      intervals: [1_000]
+    })
+    .toEqual(canonicalDigest)
+  await writeFile(
+    testInfo.outputPath('durable-replay.json'),
+    JSON.stringify({ fileId, canonicalDigest })
   )
   expect(result.captures.length).toBeGreaterThan(0)
   // A recorded run can recover from an invalid native-detail request. The
@@ -700,12 +751,9 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       if (fillChanges.length) {
         transactionApis.runTransaction(() => {
           for (const change of fillChanges) {
-            fillApis.updateFillFields(
-              change.elementId,
-              change.fillId,
-              { ...change.currentFill, ...change.patch },
-              { gradient: change.currentFill.gradient }
-            )
+            fillApis.updateFillFields(change.elementId, change.fillId, {
+              gradient: change.currentFill.gradient
+            })
           }
         })
         await stage('original fills restored')
@@ -716,7 +764,6 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
             fillApis.updateFillFields(
               change.elementId,
               change.fillId,
-              change.currentFill,
               change.patch
             )
           }

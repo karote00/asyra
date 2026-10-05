@@ -94,12 +94,14 @@ export interface ExecutionFinding {
   sequence: number | null
   callId: string | null
   relatedCallIds?: string[]
+  repeatedFields?: string[]
   kind:
     | 'tool-failure'
     | 'incomplete-step'
     | 'protocol-rejection'
     | 'unavailable-result'
     | 'repeat-query-candidate'
+    | 'input-echo-candidate'
   confidence: 'observed' | 'candidate'
   observation: string
   possibleRemedy: string
@@ -136,7 +138,7 @@ export const evaluateExecution = (
     AiDesignToolIds.DESCRIBE_DESIGN_APIS
   ])
   const toolCalls = run.steps
-    .filter((step) => step.kind !== 'provider')
+    .filter((step) => step.kind === 'tool' || step.kind === 'research')
     .map((step) => {
       const events = byCall.get(step.callId) ?? []
       const start = events.find(
@@ -149,19 +151,64 @@ export const evaluateExecution = (
       )
       const evidence = object(finish?.evidence)
       const args = object(retainedValue(object(start?.evidence).arguments))
-      const result = object(evidence.result)
+      const result = object(retainedValue(evidence.result))
       const identity = {
         requestId: run.requestId,
         sequence: start?.sequence ?? null,
         callId: step.callId
       }
-      if (step.status === 'completed' && result.available === false)
+      const outcome = object(result.toolOutcome)
+      if (
+        step.status === 'completed' &&
+        step.tool === AiDesignToolIds.RECORD_DESIGN_REVIEW &&
+        args.phase === 'plan'
+      ) {
+        const repeatedFields = [
+          'method',
+          'references',
+          'criteria',
+          'deferredDetails'
+        ].filter((field) => {
+          const input = args[field]
+          const output = result[field]
+          const nonempty =
+            typeof input === 'string'
+              ? input.trim().length > 0
+              : input !== null &&
+                typeof input === 'object' &&
+                Object.keys(input).length > 0
+          return (
+            nonempty &&
+            output !== undefined &&
+            !omitted(input) &&
+            !omitted(output) &&
+            stable(input) === stable(output)
+          )
+        })
+        if (repeatedFields.length)
+          findings.push({
+            ...identity,
+            kind: 'input-echo-candidate',
+            confidence: 'candidate',
+            repeatedFields,
+            observation:
+              'Fully retained plan fields are repeated unchanged in the tool reply; necessity and latency impact are not established.',
+            possibleRemedy:
+              'Keep the review state at its owner and verify that an acknowledgement can replace echoed narrative without losing later review inputs.'
+          })
+      }
+      if (
+        step.status === 'completed' &&
+        (result.available === false ||
+          outcome.status === 'unavailable' ||
+          outcome.status === 'partial')
+      )
         findings.push({
           ...identity,
           kind: 'unavailable-result',
           confidence: 'observed',
           observation:
-            'The tool returned no usable result although its transport call completed.',
+            'The tool did not return a fully usable result although its transport call completed.',
           possibleRemedy:
             'Inspect the retained recovery advice and subsequent calls; do not count transport completion as successful work.'
         })
@@ -208,7 +255,9 @@ export const evaluateExecution = (
       return {
         ...identity,
         tool: step.tool,
+        phase: text(args.phase),
         selectors: querySelectors(args),
+        diagnostics: step.diagnostics ?? { input: null, output: null },
         status: step.status,
         durationMs:
           step.startedMs !== null && step.endedMs !== null
@@ -221,6 +270,25 @@ export const evaluateExecution = (
         ownerTiming: object(result.timing)
       }
     })
+  const actions = run.steps
+    .filter((step) => step.kind === 'action')
+    .map((step) => ({
+      callId: step.callId,
+      tool: step.tool,
+      status: step.status,
+      exchangeStartedMs: step.startedMs,
+      exchangeEndedMs: step.endedMs,
+      handlerMs: count(
+        object(
+          object(object(step.diagnostics?.output).summary).actionObservation
+        ).handlerMs
+      ),
+      diagnostics: step.diagnostics ?? {
+        input: null,
+        output: null,
+        attribution: null
+      }
+    }))
   const reviewCalls = run.steps
     .filter(
       (step) =>
@@ -261,6 +329,36 @@ export const evaluateExecution = (
     transport: settlement?.transport ?? null,
     findings,
     toolCalls,
+    actions,
+    orchestration: {
+      // A native turn can contain many model inferences. The current app-server
+      // protocol exposes neither inference IDs nor exec -> child-call linkage.
+      modelRoundCount: null,
+      programChildLinks: 'unavailable' as const,
+      reason:
+        'Native app-server exposes turn/item/call IDs, not model inference IDs or program parent IDs. Tool counts and interval overlap cannot establish those relationships.',
+      nativeTurnIds: [
+        ...new Set(
+          run.records.flatMap((entry) => {
+            const id = text(object(entry.evidence).nativeTurnId)
+            return id ? [id] : []
+          })
+        )
+      ],
+      programs: run.steps
+        .filter(
+          (step) =>
+            step.kind === 'provider' &&
+            ['exec', 'wait'].includes(step.tool ?? '')
+        )
+        .map((step) => ({
+          callId: step.callId,
+          tool: step.tool,
+          startedMs: step.startedMs,
+          endedMs: step.endedMs,
+          status: step.status
+        }))
+    },
     modelReview: {
       status: visual ? 'recorded' : 'unavailable',
       current: Boolean(
@@ -270,6 +368,15 @@ export const evaluateExecution = (
         run.steps.every(
           (step) =>
             step.kind === 'provider' ||
+            step.kind === 'lifecycle' ||
+            (step.kind === 'action' &&
+              step.tool === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
+              step.status === 'completed' &&
+              (byCall.get(step.callId) ?? []).some(
+                (entry) =>
+                  entry.stage === 'action_completed' &&
+                  object(object(entry.evidence).result).current === true
+              )) ||
             (step.endedMs !== null &&
               step.endedMs <= (visual.endedMs as number))
         )
@@ -342,12 +449,14 @@ export const createExecutionPeriodReport = (
     string,
     { configuration: Record<string, string | null>; requestIds: string[] }
   >()
-  for (const run of runs) {
-    const configuration = Object.fromEntries(
+  const configurationFor = (run: (typeof runs)[number]) =>
+    Object.fromEntries(
       ['provider', 'model', 'effort', 'sourceRevision', 'purpose'].map(
         (key) => [key, text(run.metadata[key])]
       )
     )
+  for (const run of runs) {
+    const configuration = configurationFor(run)
     const key = stable(configuration)
     const group = groups.get(key) ?? { configuration, requestIds: [] }
     if (run.requestId) group.requestIds.push(run.requestId)
@@ -357,6 +466,56 @@ export const createExecutionPeriodReport = (
     string,
     { kind: string; occurrences: number; requestIds: Set<string> }
   >()
+  const investigationTargets = new Map<
+    string,
+    {
+      configuration: Record<string, string | null>
+      tool: string | null
+      phase: string | null
+      code: string | null
+      kind: ExecutionFinding['kind']
+      confidence: ExecutionFinding['confidence']
+      occurrences: number
+      requestIds: Set<string>
+      evidence: {
+        requestId: string | null
+        callId: string | null
+        sequence: number | null
+      }[]
+      possibleRemedy: string
+    }
+  >()
+  for (const run of runs) {
+    const configuration = configurationFor(run)
+    const calls = new Map(run.toolCalls.map((call) => [call.callId, call]))
+    for (const finding of run.findings) {
+      const call = finding.callId ? calls.get(finding.callId) : undefined
+      const identity = {
+        configuration,
+        tool: call?.tool ?? null,
+        phase: call?.phase ?? null,
+        code: call?.code ?? null,
+        kind: finding.kind,
+        confidence: finding.confidence
+      }
+      const key = stable(identity)
+      const target = investigationTargets.get(key) ?? {
+        ...identity,
+        occurrences: 0,
+        requestIds: new Set<string>(),
+        evidence: [],
+        possibleRemedy: finding.possibleRemedy
+      }
+      target.occurrences++
+      if (run.requestId) target.requestIds.add(run.requestId)
+      target.evidence.push({
+        requestId: finding.requestId,
+        callId: finding.callId,
+        sequence: finding.sequence
+      })
+      investigationTargets.set(key, target)
+    }
+  }
   for (const run of runs)
     for (const finding of run.findings) {
       const entry = frequencies.get(finding.kind) ?? {
@@ -373,6 +532,10 @@ export const createExecutionPeriodReport = (
     to: new Date(to).toISOString(),
     runs,
     groups: [...groups.values()],
+    investigationTargets: [...investigationTargets.values()].map((target) => ({
+      ...target,
+      requestIds: [...target.requestIds]
+    })),
     excluded,
     outsidePeriod,
     partialRuns: runs.filter((run) => !run.complete).length,

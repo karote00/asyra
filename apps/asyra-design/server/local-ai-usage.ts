@@ -21,6 +21,37 @@ const correlationId = (value: unknown): string | undefined =>
 // Evidence is deliberately allowlisted: never retain raw prompts, provider events,
 // credentials, bitmap bytes, SVG/path coordinates or complete document payloads.
 const evidenceKeys = new Set([
+  'actor',
+  'executor',
+  'channel',
+  'terminal',
+  'parentCallId',
+  'nativeThreadId',
+  'nativeTurnId',
+  'nativeItemId',
+  'batchId',
+  'purpose',
+  'purposeSource',
+  'expectedResult',
+  'expectationSource',
+  'contractDigest',
+  'timingScope',
+  'actionObservation',
+  'handlerMs',
+  'executionMs',
+  'settlement',
+  'notificationCounts',
+  'notification',
+  'diagnostic',
+  'server',
+  'failureReason',
+  'willRetry',
+  'rpcCode',
+  'httpStatusCode',
+  'detailOmitted',
+  'occurrences',
+  'value',
+  'acknowledgedActions',
   'tool',
   'namespace',
   'names',
@@ -46,6 +77,20 @@ const evidenceKeys = new Set([
   'scaleX',
   'scaleY',
   'properties',
+  'facts',
+  'factBindings',
+  'criterionId',
+  'factId',
+  'factIds',
+  'final',
+  'statement',
+  'sources',
+  'verification',
+  'dependencies',
+  'dependencyChanges',
+  'invalidatedBy',
+  'key',
+  'version',
   'structureCriteria',
   'readyForDetail',
   'recovery',
@@ -70,8 +115,11 @@ const evidenceKeys = new Set([
   'actionName',
   'status',
   'available',
+  'current',
   'complete',
   'outcome',
+  'toolOutcome',
+  'issues',
   'code',
   'durationMs',
   'queueMs',
@@ -195,7 +243,23 @@ const summarizeEvidence = (
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => evidenceKeys.has(key))
-      .map(([key, item]) => [key, summarizeEvidence(item, depth + 1, budget)])
+      .map(([key, item]) => [
+        key,
+        ['fillColor', 'strokeColor'].includes(key) &&
+        typeof item === 'string' &&
+        !/^#[0-9a-f]{6,8}$/i.test(item)
+          ? '[invalid color value]'
+          : summarizeEvidence(
+              key === 'criteria' && isRecord(item)
+                ? Object.entries(item).map(([id, criterion]) => ({
+                    criterionId: id,
+                    ...(isRecord(criterion) ? criterion : {})
+                  }))
+                : item,
+              depth + 1,
+              budget
+            )
+      ])
   )
 }
 
@@ -214,6 +278,146 @@ const persistedEvidence = (value: unknown): unknown => {
   )
 }
 
+const payloadShape = (value: unknown) => {
+  if (Array.isArray(value)) return 'array'
+  if (value === null) return 'null'
+  return typeof value
+}
+const diagnosticSummary = (value: unknown) => {
+  const summary = persistedEvidence(summarizeEvidence(value))
+  if (JSON.stringify(summary ?? null).length > 4000)
+    return {
+      truncated: true,
+      reason:
+        'Diagnostic summary exceeds its display budget; inspect the local payload reference.'
+    }
+  return summary
+}
+// Shape and omissions are explicit; this is not a raw-payload recorder.
+const payloadDiagnostic = (value: unknown) => ({
+  shape: payloadShape(value),
+  summary: diagnosticSummary(value),
+  omittedFields: isRecord(value)
+    ? Object.keys(value)
+        .filter((key) => !evidenceKeys.has(key))
+        .slice(0, 24)
+        .map((key) =>
+          /secret|password|token|credential|authorization|key/i.test(key)
+            ? '[sensitive field]'
+            : key
+        )
+    : [],
+  policy: 'bounded-allowlist'
+})
+const outputDiagnostic = (
+  value: unknown,
+  failed: boolean,
+  reason?: unknown
+) => {
+  const result = isRecord(value) ? value : {}
+  const receipts = Array.isArray(result.actionResults)
+    ? result.actionResults
+        .filter(isRecord)
+        .map((entry) => (isRecord(entry.result) ? entry.result : {}))
+    : []
+  const observations = [result, ...receipts]
+  let usability = 'unknown'
+  let basis = 'No explicit output-availability contract was returned.'
+  const outcome = isRecord(result.toolOutcome) ? result.toolOutcome : {}
+  if (
+    !failed &&
+    ['usable', 'unavailable', 'partial'].includes(String(outcome.status))
+  ) {
+    usability =
+      outcome.status === 'unavailable' ? 'unusable' : String(outcome.status)
+    basis =
+      'The App invocation owner classified execution output; this does not certify visual correctness.'
+  } else if (
+    failed ||
+    observations.some(
+      (item) =>
+        item.available === false ||
+        item.applicable === false ||
+        item.status === 'failed'
+    )
+  ) {
+    usability = 'unusable'
+    basis = failed
+      ? 'Tool raised an execution or admission error.'
+      : 'Receipt explicitly rejected or could not provide the requested output.'
+  } else if (
+    observations.some(
+      (item) =>
+        item.partial === true ||
+        item.complete === false ||
+        item.accepted === false ||
+        item.readyForDetail === false
+    )
+  ) {
+    usability = 'partial'
+    basis = 'Receipt reports incomplete coverage or unmet review criteria.'
+  } else if (
+    observations.some(
+      (item) =>
+        item.available === true ||
+        item.complete === true ||
+        item.accepted === true ||
+        item.status === 'complete' ||
+        item.status === 'no-change'
+    ) ||
+    (isRecord(result.batchSummary) &&
+      Number(result.batchSummary.actionCount) > 0)
+  ) {
+    usability = 'usable'
+    basis =
+      'Receipt acknowledges output or operations; this does not certify visual correctness.'
+  }
+  const issue = Array.isArray(outcome.issues)
+    ? outcome.issues.find(
+        (item) => isRecord(item) && typeof item.message === 'string'
+      )
+    : undefined
+  const feedback =
+    reason ??
+    (isRecord(issue) ? issue.message : undefined) ??
+    (usability === 'unusable' || usability === 'partial'
+      ? observations.find((item) => typeof item.message === 'string')?.message
+      : undefined)
+  let correctness = {
+    status: 'unverified',
+    source: 'none',
+    reason: 'Execution receipt alone does not verify the requested result.'
+  }
+  const checks = result.checks
+  if (
+    Array.isArray(checks) &&
+    checks.length > 0 &&
+    checks.every(
+      (check) =>
+        isRecord(check) &&
+        ['pass', 'fail', 'unverified'].includes(String(check.status)) &&
+        typeof check.evidence === 'string'
+    )
+  ) {
+    let status = 'unverified'
+    if (checks.some((check) => check.status === 'fail')) status = 'failed'
+    else if (checks.every((check) => check.status === 'pass')) status = 'passed'
+    correctness = {
+      status,
+      source: 'model-review',
+      reason:
+        'Recorded criterion judgments only; see each check and its evidence. This is not independent verification of the artwork.'
+    }
+  }
+  return {
+    ...payloadDiagnostic(value),
+    correctness,
+    usability,
+    basis,
+    feedback: typeof feedback === 'string' ? summarizeEvidence(feedback) : null
+  }
+}
+
 /** One bounded accumulator per provider invocation; provider totals are snapshots, not deltas. */
 export const createLocalAiUsage = (
   input: AiProviderInput,
@@ -224,6 +428,9 @@ export const createLocalAiUsage = (
     sourceRevision?: string
     purpose?: 'drawing' | 'execution-assessment'
     sourceRequestId?: string
+    parentCallId?: string
+    sourceSpanId?: string
+    lifecycle?: boolean
   } = {}
 ) => {
   const now = options.now ?? (() => performance.now())
@@ -272,10 +479,62 @@ export const createLocalAiUsage = (
     turnId,
     replyToTurnId,
     purpose: options.purpose ?? 'drawing',
-    sourceRequestId: correlationId(options.sourceRequestId) ?? null
+    sourceRequestId: correlationId(options.sourceRequestId) ?? null,
+    parentCallId: correlationId(options.parentCallId) ?? null,
+    sourceSpanId: correlationId(options.sourceSpanId) ?? null,
+    ...(options.lifecycle ? { lifecycleVersion: 1 } : {})
   })
+  const lifecycle = (
+    stage: 'lifecycle_started' | 'lifecycle_completed',
+    evidence: {
+      callId: string
+      owner: 'app' | 'provider'
+      purpose: string
+      parentCallId?: string
+    },
+    elapsedMs = Math.max(0, now() - startedAt)
+  ) => {
+    const record = {
+      event: 'ai_request_trace',
+      schemaVersion: 2,
+      requestId,
+      sequence: ++sequence,
+      stage,
+      callId: evidence.callId,
+      elapsedMs,
+      recordedAt: new Date().toISOString(),
+      evidence
+    }
+    persist(record)
+    try {
+      log(JSON.stringify(record))
+    } catch {
+      /* Diagnostics cannot fail work. */
+    }
+  }
+  const root = {
+    callId: 'request-lifecycle',
+    owner: 'app' as const,
+    purpose: 'Compose, execute and settle this provider invocation'
+  }
+  if (options.lifecycle) lifecycle('lifecycle_started', root, 0)
   return {
     requestId,
+    span(evidence: {
+      callId: string
+      owner: 'app' | 'provider'
+      purpose: string
+      parentCallId?: string
+    }): () => void {
+      if (finished) return () => undefined
+      lifecycle('lifecycle_started', evidence)
+      let closed = false
+      return () => {
+        if (closed || finished) return
+        closed = true
+        lifecycle('lifecycle_completed', evidence)
+      }
+    },
     recordTransport(direction: 'sent' | 'received', bytes: number): void {
       if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
       const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'
@@ -283,6 +542,12 @@ export const createLocalAiUsage = (
     },
     trace(
       stage:
+        | 'action_started'
+        | 'action_completed'
+        | 'action_failed'
+        | 'provider_transport_event'
+        | 'provider_notification'
+        | 'provider_notifications'
         | 'tool_started'
         | 'tool_execution_started'
         | 'tool_completed'
@@ -292,6 +557,7 @@ export const createLocalAiUsage = (
         | 'orchestration_completed'
         | 'protocol_rejected'
         | 'settlement'
+        | 'visual_assessment_context'
         | 'capabilities_advertised'
         | 'provider_request_started'
         | 'provider_request_completed'
@@ -301,6 +567,7 @@ export const createLocalAiUsage = (
       evidence: unknown
     ): void {
       if (finished) return
+      const observedElapsedMs = Math.max(0, now() - startedAt)
       try {
         if (isRecord(evidence) && typeof evidence.callId === 'string') {
           const research = stage.startsWith('research_')
@@ -320,10 +587,84 @@ export const createLocalAiUsage = (
               )
           }
         }
+        let diagnostic:
+          | {
+              input?: unknown
+              output?: unknown
+              attribution?: unknown
+              contracts?: unknown
+            }
+          | undefined
+        if (isRecord(evidence) && typeof evidence.callId === 'string') {
+          const payload = (phase: 'input' | 'output', value: unknown) =>
+            options.sink?.writePayload?.(
+              requestId,
+              evidence.callId as string,
+              phase,
+              value
+            ) ?? { status: 'unavailable', path: null }
+          if (stage === 'visual_assessment_context')
+            diagnostic = {
+              input: { payload: payload('input', evidence.arguments) }
+            }
+          if (stage === 'provider_notifications')
+            diagnostic = {
+              output: {
+                payload: payload('output', evidence.notificationCounts)
+              }
+            }
+          if (stage === 'capabilities_advertised')
+            diagnostic = { contracts: payload('input', evidence.definitions) }
+          if (stage === 'tool_started' || stage === 'action_started')
+            diagnostic = {
+              attribution: {
+                actor: evidence.actor ?? 'model',
+                executor: evidence.executor ?? 'app-server',
+                parentCallId: correlationId(evidence.parentCallId) ?? null,
+                nativeThreadId: correlationId(evidence.nativeThreadId) ?? null,
+                nativeTurnId: correlationId(evidence.nativeTurnId) ?? null,
+                contractDigest: evidence.contractDigest ?? null,
+                purpose: summarizeEvidence(evidence.purpose) ?? null,
+                purposeSource: evidence.purposeSource ?? 'unavailable',
+                expectedResult:
+                  summarizeEvidence(evidence.expectedResult) ?? null,
+                expectationSource: evidence.expectationSource ?? 'unavailable',
+                timingScope: evidence.timingScope ?? 'native-call'
+              },
+              input: {
+                ...payloadDiagnostic(evidence.arguments),
+                payload: payload('input', evidence.arguments)
+              }
+            }
+          if (
+            [
+              'tool_completed',
+              'tool_failed',
+              'action_completed',
+              'action_failed'
+            ].includes(stage)
+          ) {
+            const output = evidence.result ?? {
+              code: evidence.code,
+              reason: evidence.reason
+            }
+            diagnostic = {
+              output: {
+                ...outputDiagnostic(
+                  evidence.result,
+                  stage.endsWith('_failed'),
+                  evidence.reason
+                ),
+                payload: payload('output', output)
+              }
+            }
+          }
+        }
         const summarized = summarizeEvidence(evidence)
         const serialized = JSON.stringify(summarized)
         const record = {
           event: 'ai_request_trace',
+          diagnostic,
           schemaVersion: 2,
           requestId,
           conversationId,
@@ -336,10 +677,10 @@ export const createLocalAiUsage = (
           callId: isRecord(evidence)
             ? summarizeEvidence(evidence.callId)
             : undefined,
-          elapsedMs: Math.max(0, now() - startedAt),
+          elapsedMs: observedElapsedMs,
           recordedAt: new Date().toISOString(),
           evidence:
-            serialized.length <= 12000
+            serialized.length <= 6000
               ? summarized
               : {
                   truncated: true,
@@ -394,6 +735,7 @@ export const createLocalAiUsage = (
           outcome === 'completed' && !invalidSnapshot ? 'reported' : 'partial'
       }
       const durationMs = Math.max(0, now() - startedAt)
+      if (options.lifecycle) lifecycle('lifecycle_completed', root, durationMs)
       const observedMs = Math.min(
         durationMs,
         observedToolAndResearchMs +
@@ -417,7 +759,7 @@ export const createLocalAiUsage = (
         durationMs,
         timing: {
           observedToolAndResearchMs: observedMs,
-          unattributedMs: durationMs - observedMs
+          outsideToolAndResearchMs: durationMs - observedMs
         },
         transport: { ...transport },
         outcome,

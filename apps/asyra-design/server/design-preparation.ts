@@ -1,4 +1,9 @@
-import { isDesignFill, isDesignGradient } from '../src/ai/design-fill'
+import {
+  isDesignFill,
+  isDesignGradient,
+  isDesignInlineFill,
+  isDesignSharedFill
+} from '../src/ai/design-fill'
 import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
 import { constructDesign } from './design-construction'
@@ -19,6 +24,7 @@ import {
 } from '../src/ai/prepared-design'
 
 type AnalyzedDesign = PreparedDesign & {
+  readonly sharedFillIds?: Readonly<Record<string, string>>
   readonly layoutReview?: Readonly<{
     textBoxOverlaps: readonly Readonly<{
       firstKey: string
@@ -139,9 +145,7 @@ const admitDraft = (input: unknown): DraftNode => {
     ]
     if (Object.keys(source).some((key) => !allowed.includes(key)))
       return fail('unknown field')
-    if (root && source.key !== undefined)
-      return fail('root identity is server-owned')
-    const key = root ? '$root' : source.key
+    const key = source.key
     if (
       typeof key !== 'string' ||
       !key.trim() ||
@@ -175,18 +179,19 @@ const admitDraft = (input: unknown): DraftNode => {
     if (type === 'vector') {
       if (!Array.isArray(source.rings) || !source.rings.length)
         return fail('missing vector rings')
-      const admitPoint = (value: unknown) => {
+      const admitPoint = (value: unknown, control = false) => {
         if (
           !record(value) ||
           Object.keys(value).some((k) => !['x', 'y'].includes(k))
         )
           return fail('vector control')
-        finite(value.x, 'vector x')
-        finite(value.y, 'vector y')
+        finite(value.x, `node ${key} vector x`, control ? -limits.dimension : 0)
+        finite(value.y, `node ${key} vector y`, control ? -limits.dimension : 0)
         if (++pathPoints > limits.expandedPathCommands)
           return fail('vector point limit')
       }
-      for (const ring of source.rings) {
+      const pairIssues: string[] = []
+      for (const [ringIndex, ring] of source.rings.entries()) {
         if (!Array.isArray(ring) || ring.length < 2) return fail('vector ring')
         for (const anchor of ring) {
           if (
@@ -197,8 +202,9 @@ const admitDraft = (input: unknown): DraftNode => {
           )
             return fail('vector anchor')
           admitPoint({ x: anchor.x, y: anchor.y })
-          if (anchor.inControl !== undefined) admitPoint(anchor.inControl)
-          if (anchor.outControl !== undefined) admitPoint(anchor.outControl)
+          if (anchor.inControl !== undefined) admitPoint(anchor.inControl, true)
+          if (anchor.outControl !== undefined)
+            admitPoint(anchor.outControl, true)
         }
         ring.forEach((anchor, index) => {
           const next = ring[(index + 1) % ring.length]
@@ -206,9 +212,12 @@ const admitDraft = (input: unknown): DraftNode => {
             (anchor.outControl !== undefined) !==
             (next.inControl !== undefined)
           )
-            fail('unpaired cubic controls')
+            pairIssues.push(
+              `rings[${ringIndex}] edge ${index} -> ${(index + 1) % ring.length}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
+            )
         })
       }
+      if (pairIssues.length) fail(`node ${key}: ${pairIssues.join('; ')}`)
     }
     const layout = source.layout ?? 'absolute'
     if (!['absolute', 'row', 'column', 'grid'].includes(String(layout)))
@@ -226,15 +235,24 @@ const admitDraft = (input: unknown): DraftNode => {
       return fail('grid columns')
     if (source.children !== undefined && !Array.isArray(source.children))
       return fail('children')
+    if (
+      type === 'vector' &&
+      (source.width === undefined) !== (source.height === undefined)
+    )
+      return fail(`node ${key}: supply both vector dimensions or omit both`)
+    const deriveVectorDimensions =
+      type === 'vector' && source.width === undefined
     const node: DraftNode = {
       ...source,
       key,
       type: type as NodeKind,
       name: source.name,
       width:
-        type === 'group' ? 0 : finite(source.width, 'width', Number.MIN_VALUE),
+        type === 'group' || deriveVectorDimensions
+          ? 0
+          : finite(source.width, 'width', Number.MIN_VALUE),
       height:
-        type === 'group'
+        type === 'group' || deriveVectorDimensions
           ? 0
           : finite(source.height, 'height', Number.MIN_VALUE),
       x: finite(source.x ?? 0, 'x'),
@@ -266,10 +284,12 @@ const admitDraft = (input: unknown): DraftNode => {
         b.height <= 0 ||
         b.x < 0 ||
         b.y < 0 ||
-        b.x + b.width > node.width ||
-        b.y + b.height > node.height
+        b.x + b.width >
+          (deriveVectorDimensions ? limits.dimension : node.width) ||
+        b.y + b.height >
+          (deriveVectorDimensions ? limits.dimension : node.height)
       )
-        fail('vector exceeds declared bounds')
+        fail(`node ${key}: vector exceeds declared bounds`)
       node.vectorBounds = b
       node.x += b.x
       node.y += b.y
@@ -294,9 +314,58 @@ const admitDraft = (input: unknown): DraftNode => {
 
 export const prepareDesign = (
   input: unknown,
-  identity: string = randomUUID()
+  identity: string = randomUUID(),
+  onSourceWork?: (
+    summary: ReturnType<typeof constructDesign>['sourceWork']
+  ) => void
 ): AnalyzedDesign => {
-  const { draft, brief } = constructDesign(input)
+  const sharedFills =
+    record(input) && input.sharedFills !== undefined ? input.sharedFills : {}
+  if (
+    !record(sharedFills) ||
+    Object.entries(sharedFills).some(
+      ([key, value]) =>
+        !key.trim() || key.length > 160 || !isDesignInlineFill(value)
+    )
+  )
+    return fail('sharedFills must define named inline colors or gradients')
+  const sharedFillIds: Record<string, string> = Object.create(null)
+  const compileFill = (value: unknown, elementId: string): unknown[] => {
+    if (value === undefined) return []
+    let definition: unknown = value
+    if (isDesignSharedFill(value)) {
+      if (!Object.hasOwn(sharedFills, value.shared))
+        return fail(`unknown shared Fill ${value.shared}`)
+      if (Object.hasOwn(sharedFillIds, value.shared))
+        return [sharedFillIds[value.shared]]
+      definition = sharedFills[value.shared]
+      sharedFillIds[value.shared] = `${elementId}-fill`
+    }
+    if (!isDesignInlineFill(definition)) return fail('fill')
+    return [
+      {
+        id: `${elementId}-fill`,
+        type: 'fill',
+        kind: isDesignGradient(definition) ? 'gradient' : 'solid',
+        color:
+          typeof definition === 'string'
+            ? definition
+            : definition.gradientStops[0].color,
+        opacity: 1,
+        visible: true,
+        colorFormat: 'hex',
+        defaultColorFormat: 'hex',
+        gradient: isDesignGradient(definition)
+          ? structuredClone(definition)
+          : null
+      }
+    ]
+  }
+  const { draft, brief, sourceWork } = constructDesign(
+    input,
+    `design-${identity}-0`
+  )
+  onSourceWork?.(sourceWork)
   const root = admitDraft(draft)
   const entries: PreparedDesignEntry[] = [],
     findings: DesignFinding[] = []
@@ -344,26 +413,7 @@ export const prepareDesign = (
             ])
           )
         : {
-            fills: isDesignFill(node.fill)
-              ? [
-                  {
-                    id: `${id}-fill`,
-                    type: 'fill',
-                    kind: isDesignGradient(node.fill) ? 'gradient' : 'solid',
-                    color:
-                      typeof node.fill === 'string'
-                        ? node.fill
-                        : node.fill.gradientStops[0].color,
-                    opacity: 1,
-                    visible: true,
-                    colorFormat: 'hex',
-                    defaultColorFormat: 'hex',
-                    gradient: isDesignGradient(node.fill)
-                      ? structuredClone(node.fill)
-                      : null
-                  }
-                ]
-              : [],
+            fills: compileFill(node.fill, id),
             ...(node.type === 'frame' ? {} : { strokes: [] })
           })
     } as PreparedDesignEntry['descriptor']
@@ -586,6 +636,9 @@ export const prepareDesign = (
     ...(textBoxOverlaps.length
       ? { layoutReview: { textBoxOverlaps, truncated } }
       : {}),
+    ...(record(input) && input.sharedFills !== undefined
+      ? { sharedFillIds }
+      : {}),
     version: PREPARED_DESIGN_VERSION,
     rootId: entries[0].descriptor.id,
     entries,
@@ -601,11 +654,23 @@ export const createDesignPreparationSession = (
   return {
     prepare(input: unknown) {
       const artifactId = randomUUID()
-      const { review, layoutReview, ...compiled } = compile(input, artifactId)
+      let sourceWork:
+        ReturnType<typeof constructDesign>['sourceWork'] | undefined
+      const { review, layoutReview, sharedFillIds, ...compiled } = compile(
+        input,
+        artifactId,
+        (summary) => {
+          sourceWork = summary
+        }
+      )
       const artifact = freeze(compiled)
       artifacts.set(artifactId, artifact)
       return {
         artifactId,
+        ...(sharedFillIds && Object.keys(sharedFillIds).length
+          ? { sharedFillIds }
+          : {}),
+        ...(sourceWork ? { sourceWork } : {}),
         elementCount: artifact.entries.length,
         findings: artifact.findings,
         applicable: artifact.findings.every(

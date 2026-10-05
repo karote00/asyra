@@ -60,6 +60,22 @@ Reference replacement uses one registered action and one ordinary transaction: i
 complete replacement, then remove only the referenced Group or Frame. Ordinary failure retains applied progress; explicit cancellation rolls back. Each modifying request appends one independent Undo entry.
 App UI text is English; user and model-authored content preserve their language.
 
+## AI tool discovery and reference acquisition
+
+Provider-native discovery owns native tool schemas. App API discovery returns
+native execution routes and versioned action definitions. A request returns an
+unchanged action definition once, then a compact reference; explicit refresh
+restores it after context loss or delivery failure. Category menus do not consume
+schema delivery. Execution is never deduplicated by discovery state.
+
+Reference acquisition accepts independent candidate image/source URL pairs in one
+batch. The importer shares simultaneous reads of the same URL within one request
+and cancellation scope, preserves per-caller attribution, and returns ordered
+per-source results. Partial or entirely unsuccessful acquisition is reflected in
+the common tool outcome; successful siblings remain available. Original image
+bytes, decoder safety, URL validation and cancellation are preserved. This does
+not select a search provider or decide whether an image satisfies the user.
+
 ## Structured AI construction
 
 For fixed-view 2D output, the server-owned App prompt asks AI to plan visible
@@ -115,7 +131,6 @@ Final visual review still needs current evidence for all requested criteria and
 reports regressions against the preceding review. It does not automatically judge
 beauty, roll back work, or weaken the user's requested finish.
 
-
 ## AI tool orchestration
 
 The installed local Codex code-mode runtime may compute draft data and compose
@@ -127,3 +142,11 @@ receipts to select specific IDs without printing the full result to the model.
 Concurrent writes queue; only adjacent read-only contour analyses overlap.
 Fatal failure/cancellation prevents queued work from starting. Native script
 outputs are diagnostics only and cannot become canonical action batches.
+
+Source preparation uses bounded work windows while retaining one immutable
+artifact and its global hierarchy/layout/relations. Expanded artifact ceilings
+remain unchanged. `sourceWork` is a server receipt diagnostic, never part of the
+canonical prepared descriptor wire contract. Plural visibility returns ordered
+target statuses; Fill row patches accept uniform or aligned new values and resolve
+current child identities inside the App. Neither needs per-item tool envelopes.
+Visual review retains optional suggestions separately from required findings.

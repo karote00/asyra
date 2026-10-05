@@ -1,3 +1,4 @@
+import { basicApiContracts } from '../src/ai/basic-api-catalog'
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import {
@@ -231,3 +232,26 @@ for (const scenario of [
     })
   })
 }
+
+test.describe('real registered basic actions', () => {
+  for (const contract of basicApiContracts) {
+    test(contract.name, async ({ page }) => {
+      await page.goto(createTestDocumentIdentity().url)
+      await waitForAppReady(page)
+      const error = await page.evaluate(async (name) => {
+        const { createBasicApiCases } =
+          await import('../e2e/fixtures/basic-api-cases')
+        const cases = await createBasicApiCases()
+        try {
+          await cases.run(name)
+          return null
+        } catch (error) {
+          return error instanceof Error
+            ? `${error.message} ${String(error.cause ?? '')}`
+            : String(error)
+        }
+      }, contract.name)
+      expect(error).toBeNull()
+    })
+  }
+})

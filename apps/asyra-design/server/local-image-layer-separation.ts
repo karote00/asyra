@@ -133,7 +133,6 @@ export const separateImageBackground = async (
   )
     return invalid()
   const decoder = sharp(source, {
-    limitInputPixels: 4_000_000,
     failOn: 'warning'
   }).timeout({ seconds: 10 })
   const metadata = await decoder.metadata()

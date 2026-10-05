@@ -18,24 +18,6 @@ const mocks = vi.hoisted(() => ({
   getMousePosInWorkspace: vi.fn(
     (position: { x: number; y: number }) => position
   ),
-  getNextGradientForHandleWithDelta: vi.fn(
-    (
-      gradient: {
-        gradientHandles: { x: number; y: number }[]
-      },
-      handleIndex: number,
-      _width: number,
-      _height: number,
-      delta: { x: number; y: number }
-    ) => ({
-      ...gradient,
-      gradientHandles: gradient.gradientHandles.map((handle, index) =>
-        index === handleIndex
-          ? { x: handle.x + delta.x / 100, y: handle.y + delta.y / 100 }
-          : handle
-      )
-    })
-  ),
   getCanvasPositionFromClient: vi.fn(
     (position: { x: number; y: number }) => position
   ),
@@ -62,7 +44,6 @@ vi.mock('../../../common-apis', () => ({
     getMousePosInWorkspace: mocks.getMousePosInWorkspace
   },
   fillApis: {
-    getNextGradientForHandleWithDelta: mocks.getNextGradientForHandleWithDelta,
     getCanvasPositionFromClient: mocks.getCanvasPositionFromClient,
     updateFillField: mocks.updateFillField
   },
@@ -113,7 +94,6 @@ describe('Gradient canonical drag History', () => {
       dragStartWorkspacePos: { x: 0, y: 0 },
       initialGradient: gradient,
       latestGradient: gradient,
-      currentFill: { color: '#ffffff', gradient },
       width: 100,
       height: 100,
       pendingWorkspacePos: null,
@@ -135,7 +115,6 @@ describe('Gradient canonical drag History', () => {
     expect(mocks.updateFillField).toHaveBeenLastCalledWith(
       'element-a',
       'fill-a',
-      expect.any(Object),
       'gradient',
       expect.any(Object),
       {
@@ -152,6 +131,43 @@ describe('Gradient canonical drag History', () => {
     expect(mocks.updateFillField).not.toHaveBeenCalled()
   })
 
+  it.each(['radial', 'angular', 'diamond'])(
+    'preserves the %s display center when dragging the outer handle',
+    (gradientType) => {
+      const session = mocks.definitions.get(
+        FeatureNames.DRAG_GRADIENT_HANDLE
+      )?.session
+      const initialGradient = { ...gradient, gradientType }
+      const state = {
+        elementId: 'element-a',
+        fillId: 'fill-a',
+        handleIndex: 1,
+        dragStartWorkspacePos: { x: 0, y: 0 },
+        initialGradient,
+        latestGradient: initialGradient,
+        width: 100,
+        height: 100,
+        pendingWorkspacePos: null,
+        rafId: null,
+        isDragging: false,
+        previousSelectedHandle: null,
+        previousHoveredHandle: null
+      }
+      session?.onUpdate?.(
+        { mouseDragging: true, mousePosition: { x: 25, y: 30 } },
+        state
+      )
+      scheduledFrame?.(0)
+      const updated = mocks.updateFillField.mock.calls[0]?.[3]
+      expect(updated.gradientHandles).toEqual([
+        { x: -0.25, y: -0.3 },
+        { x: 1.25, y: 1.3 }
+      ])
+      expect(updated.gradientStops).toEqual(initialGradient.gradientStops)
+      expect(initialGradient.gradientHandles).toEqual(gradient.gradientHandles)
+    }
+  )
+
   it('publishes stop frames with the same canonical immediate History contract and no mouse-up replay', () => {
     const session = mocks.definitions.get(
       FeatureNames.DRAG_GRADIENT_STOP
@@ -162,7 +178,6 @@ describe('Gradient canonical drag History', () => {
       stopIndex: 0,
       initialGradient: gradient,
       latestGradient: gradient,
-      currentFill: { color: '#ffffff', gradient },
       geometry: {
         fill: { color: '#ffffff', gradient },
         canvasHandles: [
@@ -191,7 +206,6 @@ describe('Gradient canonical drag History', () => {
     expect(mocks.updateFillField).toHaveBeenLastCalledWith(
       'element-a',
       'fill-a',
-      expect.any(Object),
       'gradient',
       expect.any(Object),
       {

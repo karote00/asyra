@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`preserves exact angular pixels, transparent stacking and hole boundaries 1`] = `
+[
+  "8d4101d0e3d85bf1d32458bbb2450e8c9be35c3156a18d3895ac984af5ff2446",
+  "b291077067ec055436599fb02add42b426828f1f01392c57dce7aed96e479bf5",
+  "3cc756e1aa4add74cff8de19720b0625f7463118493a5edd507f0cc0e388a00a",
+]
+`;
+
+exports[`preserves exact diamond pixels, transparent stacking and hole boundaries 1`] = `
+[
+  "813212185b0529d50eedb004d58e9c34b8f3436bc60d4cb23a76d45f7b8ad6bb",
+  "e718b5215ff0363bd04ed069f4e70fe3b5b33621246d9df5cc49074a3dabf02d",
+  "813212185b0529d50eedb004d58e9c34b8f3436bc60d4cb23a76d45f7b8ad6bb",
+]
+`;
+
+exports[`preserves exact linear pixels, transparent stacking and hole boundaries 1`] = `
+[
+  "ff98192ddc224c030401233be6f3005a537554823adb10d7afde80fbfbebb247",
+  "d7d0a0843a273c285ee9dcd37d264aea3d4aed9ee322681202d21a87dc818ca2",
+  "fc1c3edf66eb227668e400a8617266bba1ca0027d88e2d531c6163a5b8b909d7",
+]
+`;
+
+exports[`preserves exact radial pixels, transparent stacking and hole boundaries 1`] = `
+[
+  "54eb3b6f70f7deb9140bbcd4886d758acc3b7117052c0e62896258db811e16df",
+  "5d7e6171acb299082f420e31361bcc01e15b70e9135bf43583668e7a93a20158",
+  "54eb3b6f70f7deb9140bbcd4886d758acc3b7117052c0e62896258db811e16df",
+]
+`;

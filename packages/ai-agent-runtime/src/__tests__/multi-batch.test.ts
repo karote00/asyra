@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiProviderError,
+  AiActionExecutionError,
   AiTransactionSettlementError,
   createAiAgentRuntime,
   runAiMutation,
@@ -14,6 +15,126 @@ const batch = (id: string): AiActionBatch => ({
 })
 
 describe('one invocation with dependent prepared batches', () => {
+  it('returns partial failure receipts and admits a corrected batch without replay', async () => {
+    const writes: string[] = []
+    const receipts: unknown[] = []
+    const contexts: unknown[] = []
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Missing batch executor')
+          receipts.push(
+            await options.executeBatch({
+              batchId: 'partial',
+              actions: ['first', 'broken', 'skipped'].map(
+                (id) => batch(id).actions[0]
+              )
+            })
+          )
+          receipts.push(await options.executeBatch(batch('corrected')))
+          return batch('final')
+        }
+      },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          inputSchema: {},
+          execute: async (args: { id: string }) => {
+            if (args.id === 'broken')
+              throw new AiActionExecutionError('Target unavailable')
+            writes.push(args.id)
+            return { id: args.id }
+          }
+        }
+      ],
+      contextProvider: { getContext: async () => ({ count: writes.length }) },
+      permissionPolicy: {
+        evaluate: (request) => {
+          contexts.push(request.context)
+          return 'allow'
+        }
+      },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: { run: async (_label, execute) => execute() }
+    })
+    const result = await runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal
+    })
+    expect(result.status).toBe('executed')
+    expect(writes).toEqual(['first', 'corrected', 'final'])
+    expect(receipts[0]).toMatchObject({
+      actionResults: [{ actionId: 'first' }],
+      failure: {
+        message: 'Target unavailable',
+        actionId: 'broken',
+        stage: 'execution',
+        actionName: 'edit',
+        settlement: 'unknown'
+      },
+      context: { count: 1 }
+    })
+    expect(contexts).toContainEqual({ count: 1 })
+    await runtime.dispose()
+  })
+
+  it('marks failed context refresh stale and refreshes before the next permission decision', async () => {
+    const writes: string[] = []
+    let contextReads = 0
+    const evaluated: unknown[] = []
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Missing batch executor')
+          const first = await options.executeBatch(batch('first'))
+          expect(first).toMatchObject({
+            actionResults: [{ actionId: 'first' }],
+            failure: { stage: 'context', contextFresh: false }
+          })
+          const second = await options.executeBatch(batch('second'))
+          expect(second.failure).toBeUndefined()
+          return batch('final')
+        }
+      },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          inputSchema: {},
+          execute: async (args: { id: string }) => {
+            writes.push(args.id)
+            return {}
+          }
+        }
+      ],
+      contextProvider: {
+        getContext: async () => {
+          contextReads++
+          if (contextReads === 2 || contextReads === 3)
+            throw new Error('Context temporarily unavailable')
+          return { count: writes.length }
+        }
+      },
+      permissionPolicy: {
+        evaluate: (request) => {
+          evaluated.push(request.context)
+          return 'allow'
+        }
+      },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: { run: async (_label, execute) => execute() }
+    })
+    const result = await runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal
+    })
+    expect(result.status).toBe('executed')
+    expect(writes).toEqual(['first', 'second', 'final'])
+    expect(evaluated).toEqual([{ count: 0 }, { count: 1 }, { count: 2 }])
+    await runtime.dispose()
+  })
+
   it('uses grouped host evidence when preserve-progress has no successful member', async () => {
     const runtime = createAiAgentRuntime({
       options: { failurePolicy: 'preserve-progress' },

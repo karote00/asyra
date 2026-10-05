@@ -133,13 +133,7 @@ export const useStrokeInteractions = ({
       return
     }
 
-    strokeApis.updateStrokeFields(
-      ownerElementId,
-      strokeId,
-      currentStroke,
-      patch,
-      options
-    )
+    strokeApis.updateStrokeFields(ownerElementId, strokeId, patch, options)
   }
 
   const commitStrokeInteractionPatch = (

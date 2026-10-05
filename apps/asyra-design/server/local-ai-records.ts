@@ -1,5 +1,11 @@
-import { mkdir, open, type FileHandle } from 'node:fs/promises'
+import {
+  partitionExecutionTime,
+  summarizeCallDurations,
+  summarizeAppCallGaps
+} from './local-execution-timing'
+import { mkdir, open, writeFile, type FileHandle } from 'node:fs/promises'
 import { join } from 'node:path'
+import { serializeToolPayload } from './local-tool-payload'
 
 export interface ExecutionRecord {
   event: string
@@ -11,6 +17,18 @@ export interface ExecutionRecord {
 
 export interface ExecutionRecordSink {
   write(record: ExecutionRecord): void
+  writePayload?(
+    requestId: string,
+    callId: string,
+    phase: 'input' | 'output',
+    value: unknown
+  ): {
+    status: 'queued' | 'failed'
+    path: string | null
+    bytes?: number
+    sha256?: string
+    redactions?: string[]
+  }
   flush(): Promise<{
     status: 'saved' | 'failed' | 'empty'
     path: string | null
@@ -44,7 +62,31 @@ export const createExecutionRecordSink = (
       // Diagnostic error observers are also non-authoritative.
     }
   }
+  let payloadSequence = 0
   return {
+    writePayload(requestId, _callId, phase, value) {
+      if (closed || failed || identity !== requestId)
+        return { status: 'failed', path: null }
+      try {
+        const { serialized, ...metadata } = serializeToolPayload(value)
+        const relative = `${requestId}.payloads/${++payloadSequence}-${phase}.json`
+        const target = join(directory, relative)
+        pending = pending
+          .then(async () => {
+            if (failed) return
+            await mkdir(join(directory, `${requestId}.payloads`), {
+              recursive: true,
+              mode: 0o700
+            })
+            await writeFile(target, serialized, { flag: 'wx', mode: 0o600 })
+          })
+          .catch(fail)
+        return { status: 'queued', path: relative, ...metadata }
+      } catch (error) {
+        fail(error)
+        return { status: 'failed', path: null }
+      }
+    },
     write(record) {
       if (closed || failed) return
       try {
@@ -92,10 +134,12 @@ export const createExecutionRecordSink = (
 
 export interface ExecutionStep {
   callId: string
-  kind: 'tool' | 'research' | 'provider'
+  kind: 'tool' | 'action' | 'research' | 'provider' | 'lifecycle'
   tool: string | null
   startedMs: number | null
   endedMs: number | null
+  executionStartedMs?: number
+  diagnostics?: { input?: unknown; output?: unknown; attribution?: unknown }
   status: 'incomplete' | 'completed' | 'failed'
   evidence: unknown[]
 }
@@ -180,13 +224,13 @@ export const parseExecutionRecord = (text: string) => {
     if (typeof entry.stage !== 'string' || typeof entry.callId !== 'string')
       return
     const match =
-      /^(tool|research|provider_request|provider_item)_(started|execution_started|completed|failed)$/.exec(
+      /^(tool|action|research|provider_request|provider_item|lifecycle)_(started|execution_started|completed|failed)$/.exec(
         entry.stage
       )
     if (!match) return
     const kind = match[1].startsWith('provider_')
       ? 'provider'
-      : (match[1] as 'tool' | 'research')
+      : (match[1] as 'tool' | 'action' | 'research' | 'lifecycle')
     const key = `${kind}:${entry.callId}`
     let step = steps.get(key)
     if (!step) {
@@ -202,6 +246,10 @@ export const parseExecutionRecord = (text: string) => {
       steps.set(key, step)
     }
     step.evidence.push(entry.evidence)
+    if (isRecord(entry.diagnostic))
+      step.diagnostics = { ...step.diagnostics, ...entry.diagnostic }
+    if (match[2] === 'execution_started')
+      step.executionStartedMs = entry.elapsedMs
     if (match[2] === 'started') {
       if (step.startedMs !== null) issues.push(`Duplicate start for ${key}`)
       else step.startedMs = entry.elapsedMs
@@ -218,7 +266,13 @@ export const parseExecutionRecord = (text: string) => {
   let end = 0
   const spans = [...steps.values()]
     .flatMap((step) => {
-      if (step.kind === 'provider' || step.startedMs === null) return []
+      if (
+        step.kind === 'lifecycle' ||
+        step.kind === 'provider' ||
+        step.kind === 'action' ||
+        step.startedMs === null
+      )
+        return []
       return [[step.startedMs, step.endedMs ?? durationMs]]
     })
     .sort((a, b) => a[0] - b[0])
@@ -228,6 +282,17 @@ export const parseExecutionRecord = (text: string) => {
       Math.min(durationMs, finish) - Math.max(start, end)
     )
     end = Math.max(end, finish)
+  }
+  const breakdown = partitionExecutionTime([...steps.values()], durationMs)
+  if (metadata.lifecycleVersion === 1) {
+    const root = steps.get('lifecycle:request-lifecycle')
+    if (!root || root.startedMs !== 0 || root.endedMs !== durationMs)
+      issues.push('Missing or incomplete request lifecycle boundary')
+    for (const step of steps.values())
+      if (step.kind === 'lifecycle' && step.status === 'incomplete')
+        issues.push(`Incomplete lifecycle span ${step.callId}`)
+    if (breakdown.unattributedMs > 0)
+      issues.push('Uncovered lifecycle interval')
   }
   return {
     requestId: requestId as string | null,
@@ -242,8 +307,32 @@ export const parseExecutionRecord = (text: string) => {
       [...steps.values()].every((step) => step.status !== 'incomplete'),
     timing: {
       durationMs,
+      breakdown,
+      owners: {
+        providerMs:
+          breakdown.childProviderMs +
+          breakdown.researchMs +
+          breakdown.nativeWaitMs +
+          breakdown.providerOrchestrationEventMs +
+          breakdown.providerReasoningEventMs +
+          breakdown.providerResponseEventMs +
+          breakdown.providerRequestMs +
+          breakdown.providerWaitMs,
+        toolMs:
+          breakdown.toolExecutionMs +
+          breakdown.toolQueueMs +
+          breakdown.toolUnsplitMs,
+        appMs: breakdown.appExchangeMs + breakdown.appOrchestrationMs,
+        recordingGapMs: breakdown.unattributedMs
+      },
+      callDurations: summarizeCallDurations([...steps.values()], durationMs),
+      appCallGaps: summarizeAppCallGaps([...steps.values()], durationMs),
       observedToolAndResearchMs,
-      unattributedMs: Math.max(0, durationMs - observedToolAndResearchMs)
+      outsideToolAndResearchMs: Math.max(
+        0,
+        durationMs - observedToolAndResearchMs
+      ),
+      unattributedMs: breakdown.unattributedMs
     }
   }
 }

@@ -22,6 +22,17 @@ export interface AiProviderInput<TContext = unknown> {
 }
 
 export interface AiBatchReceipt {
+  /** Failure of this batch only. Completed actions must not be replayed. */
+  readonly failure?: {
+    readonly code: string
+    readonly message: string
+    readonly stage: string
+    readonly actionName: string | null
+    readonly actionId: string | null
+    readonly actionExecutionMs: number | null
+    readonly settlement: 'not-started' | 'unknown'
+    readonly contextFresh: boolean
+  }
   readonly actionResults: readonly {
     readonly actionId: string
     readonly actionName: string

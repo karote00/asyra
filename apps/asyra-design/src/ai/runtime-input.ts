@@ -1,5 +1,7 @@
+import { recordActionFailure } from './action-failure'
 import { createBasicApiActions } from './basic-api-actions'
 import type {
+  AiActionDefinition,
   AiProvider,
   AiRuntimeOptions,
   AiRuntimeOwnedResource,
@@ -35,6 +37,33 @@ export interface CreateAiRuntimeInputOptions {
   readonly transactionRunner?: AiTransactionRunner
 }
 
+/** Handler elapsed time is observed in the browser, not inferred from transport. */
+export const observeAiAction = (
+  definition: AiActionDefinition,
+  now: () => number = () => performance.now()
+): AiActionDefinition => ({
+  ...definition,
+  execute: async (input, context) => {
+    const started = now()
+    let result
+    try {
+      result = await definition.execute(input, context)
+    } catch (error) {
+      recordActionFailure(error, definition.name, Math.max(0, now() - started))
+      throw error
+    }
+    if (!result || typeof result !== 'object' || Array.isArray(result))
+      return result
+    return {
+      ...result,
+      actionObservation: {
+        handlerMs: Math.max(0, now() - started),
+        executor: 'app-browser'
+      }
+    }
+  }
+})
+
 export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => {
@@ -51,7 +80,7 @@ export const createAiRuntimeInput = (
       createDesignReviewAction(undefined, evidence),
       createAiInspectionAction(undefined, evidence),
       createInspectionValidationAction(evidence)
-    ],
+    ].map((definition) => observeAiAction(definition)),
     confirmationHandler: createAiConfirmationHandler(
       options.requestConfirmation
     ),

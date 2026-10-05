@@ -134,7 +134,7 @@ describe('semantic design preparation', () => {
         name: 'Too many',
         width: 100,
         height: 100,
-        children: Array.from({ length: 1000 }, (_, index) => ({
+        children: Array.from({ length: 10000 }, (_, index) => ({
           key: `node-${index}`,
           name: 'Node',
           type: 'rect',
@@ -310,7 +310,7 @@ describe('editable illustration preparation', () => {
       measurement.mockRestore()
     }
   })
-  it('preserves compound rings and enforces the combined point budget', () => {
+  it('preserves compound rings across source path work windows', () => {
     const shape = vector()
     const result = prepareDesign(
       illustration({
@@ -337,8 +337,9 @@ describe('editable illustration preparation', () => {
     const rings = [
       Array.from({ length: 10001 }, (_, i) => ({ x: i % 100, y: i % 90 }))
     ]
-    expect(() =>
-      prepareDesign({
+    const sourceWork = vi.fn()
+    const partitioned = prepareDesign(
+      {
         type: 'frame',
         name: 'Over budget',
         width: 300,
@@ -347,8 +348,18 @@ describe('editable illustration preparation', () => {
           { ...shape, rings },
           { ...shape, key: 'other', rings }
         ]
+      },
+      'partitioned',
+      sourceWork
+    )
+    expect(sourceWork).toHaveBeenCalledWith(
+      expect.objectContaining({
+        batches: 2,
+        pathCommands: 20002,
+        largestBatchPathCommands: 10001
       })
-    ).toThrow('vector point limit')
+    )
+    expect(partitioned.entries).toHaveLength(3)
   })
   it('rejects malformed rings, unpaired controls and excess whole-request points', () => {
     for (const rings of [
@@ -900,4 +911,306 @@ describe('preparation text layout review', () => {
     expect(receipt.layoutReview?.textBoxOverlaps).toHaveLength(64)
     expect(receipt.layoutReview?.truncated).toBe(true)
   })
+})
+
+it('reports all malformed cubic edges with semantic node and ring locations', () => {
+  expect(() =>
+    prepareDesign({
+      type: 'group',
+      name: 'Decorations',
+      children: [
+        {
+          key: 'ornament',
+          name: 'Ornament',
+          type: 'vector',
+          width: 100,
+          height: 100,
+          rings: [
+            [
+              { x: 10, y: 10, outControl: { x: 15, y: 10 } },
+              { x: 90, y: 90 },
+              { x: 90, y: 10, outControl: { x: 95, y: 10 } }
+            ]
+          ]
+        }
+      ]
+    })
+  ).toThrow(/ornament.*rings\[0\].*edge 0.*edge 2/)
+})
+
+it('checks an explicitly keyed root and preserves server-generated identity', () => {
+  const input = {
+    type: 'frame',
+    key: 'building',
+    name: 'Building',
+    width: 80,
+    height: 210,
+    children: [],
+    brief: {
+      intent: 'Draw',
+      viewpoint: 'front',
+      sources: [],
+      assumptions: [],
+      checks: [
+        { key: 'building', property: 'height', expected: 210, tolerance: 0 }
+      ]
+    }
+  }
+  const before = structuredClone(input)
+  const result = prepareDesign(input)
+  expect(result.review?.checks[0]).toMatchObject({
+    key: 'building',
+    actual: 210,
+    passed: true
+  })
+  expect(result.keyToId.building).toBe(result.rootId)
+  expect(result.rootId).not.toBe('building')
+  expect(input).toEqual(before)
+})
+
+it('uses the generated identity for unnamed roots without a reserved selector', () => {
+  for (const type of ['group', 'frame']) {
+    const result = prepareDesign({
+      type,
+      name: 'Untitled',
+      ...(type === 'frame' ? { width: 10, height: 10 } : {}),
+      children: []
+    })
+    expect(result.entries[0].key).toBe(result.rootId)
+    expect(result.keyToId[result.rootId]).toBe(result.rootId)
+    expect(result.keyToId).not.toHaveProperty('$root')
+  }
+})
+
+it('preserves global relation resolution and deterministic identities across source windows', () => {
+  const children = Array.from({ length: 1100 }, (_, index) => ({
+    key: `item-${index}`,
+    name: 'item',
+    type: 'rect',
+    width: 1,
+    height: 1,
+    x: index,
+    y: 0
+  }))
+  const input = {
+    type: 'frame',
+    key: 'page',
+    name: 'page',
+    width: 5000,
+    height: 10,
+    children,
+    relations: [
+      {
+        target: 'item-1099',
+        property: 'x',
+        source: 'item-0',
+        sourceProperty: 'right',
+        offset: 5
+      }
+    ]
+  }
+  const first = prepareDesign(input, 'stable')
+  const second = prepareDesign(input, 'stable')
+  expect(second).toEqual(first)
+  expect(first.entries[1100].descriptor.x).toBe(6)
+  expect(first.entries[1100].descriptor.id).toBe(first.keyToId['item-1099'])
+  expect(input.children[1099].x).toBe(1099)
+  const duplicate = { ...input, children: [...children, children[0]] }
+  expect(() => prepareDesign(duplicate)).toThrow(/duplicate key/)
+})
+
+const sharedFillDraft = () => ({
+  type: 'group',
+  name: 'Shared paint',
+  sharedFills: { paint: '#123456' },
+  children: [
+    {
+      type: 'rect',
+      key: 'a',
+      name: 'A',
+      width: 10,
+      height: 10,
+      fill: { shared: 'paint' }
+    },
+    {
+      type: 'oval',
+      key: 'b',
+      name: 'B',
+      x: 20,
+      width: 10,
+      height: 10,
+      fill: { shared: 'paint' }
+    },
+    {
+      type: 'rect',
+      key: 'c',
+      name: 'Independent',
+      x: 40,
+      width: 10,
+      height: 10,
+      fill: '#123456'
+    }
+  ]
+})
+it('compiles explicit shared fills once without merging equal independent paint', () => {
+  const input = sharedFillDraft(),
+    before = structuredClone(input)
+  const artifact = prepareDesign(input, 'shared')
+  const first = (artifact.entries[1].descriptor.fills as { id: string }[])[0]
+  expect(first).toMatchObject({ id: 'design-shared-1-fill', color: '#123456' })
+  expect(artifact.entries[2].descriptor.fills).toEqual([first.id])
+  expect(artifact.entries[3].descriptor.fills).toEqual([
+    expect.objectContaining({ id: 'design-shared-3-fill' })
+  ])
+  expect(artifact.sharedFillIds).toEqual({ paint: first.id })
+  expect(input).toEqual(before)
+  expect(prepareDesign(input, 'other').sharedFillIds?.paint).not.toBe(first.id)
+})
+it('rejects missing or malformed shared definitions before creating an artifact', () => {
+  for (const sharedFills of [
+    {},
+    { paint: '#bad' },
+    { paint: { shared: 'other' } }
+  ]) {
+    expect(() => prepareDesign({ ...sharedFillDraft(), sharedFills })).toThrow()
+  }
+  const input = sharedFillDraft()
+  input.sharedFills.paint = '#abcdef'
+  const session = createDesignPreparationSession()
+  const result = session.prepare(input)
+  expect(result.sharedFillIds).toEqual({ paint: expect.any(String) })
+  expect(session.resolve(result.artifactId)).not.toHaveProperty('sharedFillIds')
+})
+it('does not create unused shared fills', () => {
+  const result = prepareDesign({ ...sharedFillDraft(), children: [] })
+  expect(result.entries).toHaveLength(1)
+  expect(result.sharedFillIds).toEqual({})
+})
+
+it('retains shared gradient data without freezing or aliasing the caller input', () => {
+  const gradient = {
+    gradientType: 'linear',
+    gradientHandles: [
+      { x: 0, y: 0.5 },
+      { x: 1, y: 0.5 }
+    ],
+    gradientStops: [
+      { position: 0, color: '#123456', opacity: 1 },
+      { position: 1, color: '#abcdef', opacity: 0.5 }
+    ]
+  }
+  const session = createDesignPreparationSession()
+  const receipt = session.prepare({
+    ...sharedFillDraft(),
+    sharedFills: { paint: gradient }
+  })
+  const artifact = session.resolve(receipt.artifactId)
+  expect(artifact.entries[1].descriptor.fills).toEqual([
+    expect.objectContaining({
+      kind: 'gradient',
+      gradient: structuredClone(gradient)
+    })
+  ])
+  expect(artifact.entries[2].descriptor.fills).toEqual([
+    receipt.sharedFillIds?.paint
+  ])
+  gradient.gradientStops[0].color = '#ffffff'
+  expect(artifact.entries[1].descriptor.fills).toEqual([
+    expect.objectContaining({
+      gradient: expect.objectContaining({
+        gradientStops: [
+          { position: 0, color: '#123456', opacity: 1 },
+          { position: 1, color: '#abcdef', opacity: 0.5 }
+        ]
+      })
+    })
+  ])
+})
+
+describe('owner-derived vector dimensions', () => {
+  const rings = [
+    [
+      { x: 10, y: 20 },
+      { x: 50, y: 20 },
+      { x: 50, y: 60 }
+    ]
+  ]
+  const source = (dimensions = {}) => ({
+    type: 'group',
+    key: 'assembly',
+    name: 'Assembly',
+    children: [
+      {
+        type: 'vector',
+        key: 'face',
+        name: 'Face',
+        x: 3,
+        y: 7,
+        fill: '#123456',
+        rings,
+        ...dimensions
+      }
+    ]
+  })
+  it('derives dimensions without changing canonical geometry or repeating measurement', () => {
+    const measure = vi.spyOn(vectorMeasurement, 'measureVectorPath')
+    try {
+      const derived = prepareDesign(source(), 'same')
+      expect(measure).toHaveBeenCalledTimes(1)
+      const explicit = prepareDesign(source({ width: 50, height: 60 }), 'same')
+      expect(derived.entries).toEqual(explicit.entries)
+      expect(source().children[0]).not.toHaveProperty('width')
+    } finally {
+      measure.mockRestore()
+    }
+  })
+  it('rejects incomplete dimensions and keeps explicit bounds assertions', () => {
+    expect(() => prepareDesign(source({ width: 50 }))).toThrow(/dimensions/)
+    expect(() => prepareDesign(source({ width: 20, height: 20 }))).toThrow(
+      /bounds/
+    )
+  })
+})
+
+it('derives repeated vector bounds once and preserves independent Fill identities', () => {
+  const measure = vi.spyOn(vectorMeasurement, 'measureVectorPath')
+  try {
+    const prepared = prepareDesign({
+      type: 'group',
+      name: 'Repeated',
+      children: [
+        {
+          type: 'vector-pattern',
+          key: 'motif',
+          name: 'Motif',
+          template: {
+            rings: [
+              [
+                { x: 0, y: 0 },
+                { x: 10, y: 0 },
+                { x: 10, y: 8 }
+              ]
+            ],
+            fill: '#123456'
+          },
+          placements: [
+            { x: 0, y: 0 },
+            { x: 20, y: 0 },
+            { x: 40, y: 0 }
+          ]
+        }
+      ]
+    })
+    expect(prepared.entries).toHaveLength(4)
+    expect(measure).toHaveBeenCalledTimes(1)
+    expect(
+      new Set(
+        prepared.entries
+          .slice(1)
+          .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
+      )
+    ).toHaveProperty('size', 3)
+  } finally {
+    measure.mockRestore()
+  }
 })

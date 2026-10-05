@@ -11,7 +11,7 @@ export const createDocumentContextAction = (
 ): AiActionDefinition<DesignContextQuery> => ({
   name: AiActionNames.READ_DESIGN_CONTEXT,
   description:
-    'Read known elementIds with scope=ids in one request, current selection, or a page of direct children. Prefer existing artifact references or known IDs over hierarchy traversal. Default fields=[] returns identity/name/hierarchy only; request just the needed property fields. Known IDs without limit are returned together. Returns editable names, parent IDs, bounds, text and styles, never vector points. Use nextOffset for more; descend containers by parentId. Restart pagination after hierarchy changes. Truncated text is a preview, not the complete content. Read before targeted edits or organization.',
+    'Read known elementIds with scope=ids in one request, current selection, or a page of direct children. Prefer existing artifact references or known IDs over hierarchy traversal. Default fields=[] returns identity/name/hierarchy only; request just the needed property fields. Known IDs without limit are returned together. Returns editable names, parent IDs, bounds, text and styles, never vector points. Use nextOffset for more; descend containers by parentId. Restart pagination after hierarchy changes. Truncated text is a preview, not the complete content. Read only when target identities or values needed for the edit are unknown.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

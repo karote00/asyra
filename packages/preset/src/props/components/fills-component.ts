@@ -1,5 +1,5 @@
 import type { PropertyComponentDefinition } from '@asyra/core'
-import { PropertyTypes, createDefaultFill } from '@asyra/utils'
+import { PropertyTypes } from '@asyra/utils'
 
 export const fillsPropertyComponentDefinition: PropertyComponentDefinition = {
   type: PropertyTypes.FILLS,
@@ -17,7 +17,8 @@ export const fillsPropertyComponentDefinition: PropertyComponentDefinition = {
       }
 
       return {
-        ...createDefaultFill({ id: childId ?? '' }),
+        id: childId ?? '',
+        type: PropertyTypes.FILL,
         ...item
       }
     },

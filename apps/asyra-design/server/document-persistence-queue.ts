@@ -50,6 +50,15 @@ export interface DocumentPersistenceQueueOptions {
   ) => Awaitable<Readonly<{ durableSequence: number }>>
   readonly onEditabilityChange?: (editable: boolean) => void
   readonly onDurableSequenceChange?: (durableSequence: number) => void
+  readonly onFailure?: (
+    failure: Readonly<{
+      documentId: string
+      batchId: string
+      firstSequence: number
+      lastSequence: number
+      message: string
+    }>
+  ) => void
   readonly initialDurableSequence?: number
   readonly flushIntervalMs?: number
   readonly retryIntervalMs?: number
@@ -104,6 +113,7 @@ export const createDocumentPersistenceQueue = ({
   sendBatch,
   onEditabilityChange,
   onDurableSequenceChange,
+  onFailure,
   initialDurableSequence = 0,
   flushIntervalMs = DEFAULT_DOCUMENT_PERSISTENCE_FLUSH_INTERVAL_MS,
   retryIntervalMs = DEFAULT_DOCUMENT_PERSISTENCE_RETRY_INTERVAL_MS,
@@ -155,11 +165,14 @@ export const createDocumentPersistenceQueue = ({
   let inFlight: InFlightBatch | undefined
   let activeAttempt: Promise<void> | undefined
   let backendUnavailable = false
+  let backendFailure: Error | undefined
   const capacityWaiters = new Set<CapacityWaiter>()
 
   const unavailableError = (): Error =>
     new Error(
-      '[document-persistence-queue] document is unavailable until pending changes are durable'
+      '[document-persistence-queue] document is unavailable until pending changes are durable' +
+        (backendFailure ? `: ${backendFailure.message}` : ''),
+      { cause: backendFailure }
     )
 
   const resolveCapacityWaiters = (): void => {
@@ -236,6 +249,7 @@ export const createDocumentPersistenceQueue = ({
     }
     const wasBlocked = !editable
     backendUnavailable = false
+    backendFailure = undefined
     durableSequence = acknowledgement.durableSequence
     onDurableSequenceChange?.(durableSequence)
     inFlight = undefined
@@ -266,12 +280,20 @@ export const createDocumentPersistenceQueue = ({
     try {
       const acknowledgement = await sendBatch(active.batch)
       completeSuccessfulBatch(active, acknowledgement)
-    } catch {
+    } catch (error) {
       if (inFlight !== active) return
       backendUnavailable = true
+      backendFailure = error instanceof Error ? error : new Error(String(error))
       setEditable(false)
       rejectCapacityWaiters(unavailableError())
       scheduleRetry()
+      onFailure?.({
+        documentId,
+        batchId: active.batch.batchId,
+        firstSequence: active.batch.firstSequence,
+        lastSequence: active.batch.lastSequence,
+        message: backendFailure.message
+      })
     }
   }
 

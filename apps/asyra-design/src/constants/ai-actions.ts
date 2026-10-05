@@ -29,3 +29,9 @@ export const AiDrawingDetailSelectionIntents = Object.freeze({
   MAXIMUM_EN: 'draw this image with maximum detail',
   MAXIMUM_REFERENCE: 'draw the reference image with maximum detail'
 } as const)
+
+/** Single-object convenience actions execute only as items of execute_design_batch. */
+export const AiBatchOnlyActionNames: readonly string[] = Object.freeze([
+  AiActionNames.UPDATE_DESIGN_ELEMENT,
+  AiActionNames.SET_ELEMENT_VISIBILITY
+])

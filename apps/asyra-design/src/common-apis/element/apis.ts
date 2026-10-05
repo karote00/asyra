@@ -46,29 +46,45 @@ const resolveEventOptions = (options?: EVENT_OPTIONS): EVENT_OPTIONS => {
   return { undoable: true }
 }
 
+export type ElementFlagResult = 'changed' | 'unchanged' | 'unavailable'
+
+const setElementFlags = (
+  elementIds: readonly string[],
+  key: 'lock' | 'visible',
+  value: boolean,
+  options?: EVENT_OPTIONS
+): ElementFlagResult[] => {
+  const changes = new Set<string>()
+  const targets = new Map<string, ElementFlagResult>()
+  const result = elementIds.map((elementId): ElementFlagResult => {
+    if (changes.has(elementId)) return 'unchanged'
+    const previous = targets.get(elementId)
+    if (previous) return previous
+    const element = core.getElementData(elementId)
+    let status: ElementFlagResult = 'changed'
+    if (!element || element.type === EntityTypes.WORKSPACE)
+      status = 'unavailable'
+    else if (element[key] === value) status = 'unchanged'
+    targets.set(elementId, status)
+    if (status === 'changed') changes.add(elementId)
+    return status
+  })
+  if (changes.size) {
+    const resolvedOptions = resolveEventOptions(options)
+    runTransaction(() => {
+      for (const elementId of changes)
+        core.updateElementData(elementId, { [key]: value }, resolvedOptions)
+    })
+  }
+  return result
+}
+
 const setElementFlag = (
   elementId: string,
   key: 'lock' | 'visible',
   value: boolean,
   options?: EVENT_OPTIONS
-): boolean => {
-  const element = core.getElementData(elementId)
-  if (!element || element.type === EntityTypes.WORKSPACE) {
-    return false
-  }
-
-  if (element[key] === value) {
-    return false
-  }
-
-  const resolvedOptions = resolveEventOptions(options)
-
-  runTransaction(() => {
-    core.updateElementData(elementId, { [key]: value }, resolvedOptions)
-  })
-
-  return true
-}
+): boolean => setElementFlags([elementId], key, value, options)[0] === 'changed'
 
 const getDefaultFillsForType = (type: EntityType) => {
   switch (type) {
@@ -319,6 +335,13 @@ export const elementApis = {
     return setElementFlag(elementId, 'visible', visible, options)
   },
 
+  setElementsVisible: (
+    elementIds: readonly string[],
+    visible: boolean,
+    options?: EVENT_OPTIONS
+  ): ElementFlagResult[] =>
+    setElementFlags(elementIds, 'visible', visible, options),
+
   toggleElementLock: (elementId: string, options?: EVENT_OPTIONS): boolean => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
@@ -512,29 +535,36 @@ export const elementApis = {
     if (createOptions.length === 0) {
       return []
     }
-    if (createOptions.every(({ type }) => type === 'vector')) {
-      const parentId = createOptions[0].parentId ?? core.getCurrentWorkspaceId()
-      if (
-        !parentId ||
-        createOptions.some(
-          (elementOptions) =>
-            (elementOptions.parentId ?? core.getCurrentWorkspaceId()) !==
+    return runTransaction(() => {
+      const result: (string | null)[] = []
+      let offset = 0
+      while (offset < createOptions.length) {
+        const current = createOptions[offset]
+        if (current.type !== 'vector') {
+          result.push(elementApis.createElement(current, options))
+          offset++
+          continue
+        }
+        const parentId = current.parentId ?? core.getCurrentWorkspaceId()
+        const first = offset++
+        while (
+          offset < createOptions.length &&
+          createOptions[offset].type === 'vector' &&
+          (createOptions[offset].parentId ?? core.getCurrentWorkspaceId()) ===
             parentId
         )
-      ) {
-        return createOptions.map(() => null)
+          offset++
+        const group = createOptions.slice(first, offset)
+        result.push(
+          ...(vectorApis.createVectorElementsInParent(
+            group,
+            parentId,
+            options
+          ) ?? group.map(() => null))
+        )
       }
-      return (
-        vectorApis.createVectorElementsInParent(
-          createOptions,
-          parentId,
-          options
-        ) ?? createOptions.map(() => null)
-      )
-    }
-    return createOptions.map((elementOptions) =>
-      elementApis.createElement(elementOptions, options)
-    )
+      return Object.freeze(result)
+    })
   },
 
   createElement: (

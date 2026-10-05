@@ -231,6 +231,7 @@
         'Only currently connected peers receive the publication.',
         'A live room actor reservation is atomic and can be released only by its owning connection.',
         'Wire validation rejects incomplete Factory transport metadata and values that JSON cannot preserve without interpreting app meaning.',
+        'App payload version 2 encodes slice ordering once and ordered batch delivery counts without per-delivery copies; decode preserves the exact publication and reads retained version 1 payloads, rejects invalid counts/order/unknown versions, and leaves frame envelopes and resource limits unchanged.',
         'Promise settlement is the acknowledgement boundary.'
       ],
       bypasses: [
@@ -255,6 +256,7 @@
         'packages/collaboration/src/providers/memory/provider.ts',
         'packages/collaboration/src/__tests__/provider.test.ts',
         'apps/asyra-design/src/collaboration/protocol.ts',
+        'apps/asyra-design/src/init/__tests__/collaboration-protocol.test.ts',
         'apps/asyra-design/src/collaboration/websocket-provider.ts',
         'apps/asyra-design/collaboration-server.ts',
         'apps/asyra-design/__tests__/collaboration-server.test.mjs',
@@ -286,9 +288,7 @@
         'A synchronous or asynchronous callback settles before its outcome is reported and before the next publication advances.',
         'Equal or repeated publications are each delivered.'
       ],
-      bypasses: [
-        'Disposed queued work does not invoke the callback.'
-      ],
+      bypasses: ['Disposed queued work does not invoke the callback.'],
       allowedContributors: [
         'artifact:inbound-provider-publication',
         'app inbound publication callback'
@@ -372,9 +372,7 @@
         'Factory remote origin suppresses local undo/history and network echo.',
         'Render/UI observe canonical state and never replace it.'
       ],
-      bypasses: [
-        'A rejected app publication never reaches canonical apply.'
-      ],
+      bypasses: ['A rejected app publication never reaches canonical apply.'],
       allowedContributors: [
         'artifact:canonical-apply-request',
         'app event/API processor',
@@ -422,9 +420,7 @@
         'Disconnect, leave, and timeout clear remote presence.',
         'Awareness never authorizes or transports canonical document mutation.'
       ],
-      bypasses: [
-        'Presence-free apps may never send Awareness.'
-      ],
+      bypasses: ['Presence-free apps may never send Awareness.'],
       allowedContributors: [
         'local presence input',
         'Provider Awareness messages',
@@ -542,7 +538,8 @@
       id: 'provider-send-settled',
       from: 'handoff-local-publication',
       kind: 'terminal',
-      predicate: 'Provider send settles and Collaboration discards the publication.',
+      predicate:
+        'Provider send settles and Collaboration discards the publication.',
       producedArtifacts: ['artifact:publication-send-settled']
     },
     {
@@ -587,7 +584,8 @@
       from: 'process-app-publication',
       to: 'apply-canonical-state-owner',
       kind: 'handoff',
-      predicate: 'The app accepts the publication inside its remote transaction.',
+      predicate:
+        'The app accepts the publication inside its remote transaction.',
       producedArtifacts: ['artifact:canonical-apply-request']
     },
     {
@@ -623,22 +621,88 @@
   ]
 
   const artifacts = [
-    ['artifact:collaboration-disabled', 'compose-collaboration-opt-in', [], true],
-    ['artifact:collaboration-composition', 'compose-collaboration-opt-in', ['own-collaboration-instance']],
-    ['artifact:active-collaboration-instance', 'own-collaboration-instance', ['publish-local-shared-publication', 'own-awareness-state']],
-    ['artifact:local-shared-publication', 'publish-local-shared-publication', ['handoff-local-publication']],
-    ['artifact:provider-publication-request', 'handoff-local-publication', ['transport-live-publication']],
-    ['artifact:publication-send-failure', 'handoff-local-publication', [], true],
-    ['artifact:publication-send-settled', 'handoff-local-publication', [], true],
-    ['artifact:publication-send-acknowledgement', 'transport-live-publication', [], true],
-    ['artifact:inbound-provider-publication', 'transport-live-publication', ['deliver-inbound-publication']],
-    ['artifact:app-publication-request', 'deliver-inbound-publication', ['process-app-publication']],
-    ['artifact:app-publication-failure', 'deliver-inbound-publication', [], true],
+    [
+      'artifact:collaboration-disabled',
+      'compose-collaboration-opt-in',
+      [],
+      true
+    ],
+    [
+      'artifact:collaboration-composition',
+      'compose-collaboration-opt-in',
+      ['own-collaboration-instance']
+    ],
+    [
+      'artifact:active-collaboration-instance',
+      'own-collaboration-instance',
+      ['publish-local-shared-publication', 'own-awareness-state']
+    ],
+    [
+      'artifact:local-shared-publication',
+      'publish-local-shared-publication',
+      ['handoff-local-publication']
+    ],
+    [
+      'artifact:provider-publication-request',
+      'handoff-local-publication',
+      ['transport-live-publication']
+    ],
+    [
+      'artifact:publication-send-failure',
+      'handoff-local-publication',
+      [],
+      true
+    ],
+    [
+      'artifact:publication-send-settled',
+      'handoff-local-publication',
+      [],
+      true
+    ],
+    [
+      'artifact:publication-send-acknowledgement',
+      'transport-live-publication',
+      [],
+      true
+    ],
+    [
+      'artifact:inbound-provider-publication',
+      'transport-live-publication',
+      ['deliver-inbound-publication']
+    ],
+    [
+      'artifact:app-publication-request',
+      'deliver-inbound-publication',
+      ['process-app-publication']
+    ],
+    [
+      'artifact:app-publication-failure',
+      'deliver-inbound-publication',
+      [],
+      true
+    ],
     ['artifact:app-policy-rejection', 'process-app-publication', [], true],
-    ['artifact:canonical-apply-request', 'process-app-publication', ['apply-canonical-state-owner']],
-    ['artifact:canonical-state-applied', 'apply-canonical-state-owner', [], true],
-    ['artifact:remote-awareness-snapshot', 'own-awareness-state', ['project-awareness-state']],
-    ['artifact:awareness-cleared', 'own-awareness-state', ['project-awareness-state']],
+    [
+      'artifact:canonical-apply-request',
+      'process-app-publication',
+      ['apply-canonical-state-owner']
+    ],
+    [
+      'artifact:canonical-state-applied',
+      'apply-canonical-state-owner',
+      [],
+      true
+    ],
+    [
+      'artifact:remote-awareness-snapshot',
+      'own-awareness-state',
+      ['project-awareness-state']
+    ],
+    [
+      'artifact:awareness-cleared',
+      'own-awareness-state',
+      ['project-awareness-state']
+    ],
     ['artifact:awareness-projection', 'project-awareness-state', [], true]
   ].map(([id, ownerStepId, consumerStepIds, terminal = false]) => ({
     id,
@@ -753,10 +817,7 @@
       id: 'app-owned-semantics',
       title: 'App-owned policy and canonical apply',
       stepIds: ['process-app-publication', 'apply-canonical-state-owner'],
-      specRefs: [
-        '#app-callback',
-        '#ownership-and-forbidden-boundaries'
-      ],
+      specRefs: ['#app-callback', '#ownership-and-forbidden-boundaries'],
       assertions: [
         'The app owns route, payload, permission, domain ordering, and conflict decisions and applies accepted deliveries inside one remote transaction without local undo or echo.'
       ]

@@ -252,13 +252,14 @@ const freezeTargetHints = (
 
 const readActionResultStatus = (
   value: unknown
-): 'complete' | 'no-change' | 'partial' | null => {
+): 'complete' | 'no-change' | 'partial' | 'failed' | null => {
   if (!isPlainObject(value)) {
     return null
   }
   return value.status === 'complete' ||
     value.status === 'no-change' ||
-    value.status === 'partial'
+    value.status === 'partial' ||
+    value.status === 'failed'
     ? value.status
     : null
 }
@@ -298,8 +299,9 @@ const outcomeForResult = (
 
   const statuses = readActionResults(result)
     .map((action) => readActionResultStatus(action.result))
-    .filter((status): status is 'complete' | 'no-change' | 'partial' =>
-      Boolean(status)
+    .filter(
+      (status): status is 'complete' | 'no-change' | 'partial' | 'failed' =>
+        Boolean(status)
     )
   const unsupported = readActionResults(result).some(
     (action) =>
@@ -312,6 +314,9 @@ const outcomeForResult = (
     (unsupported && statuses.includes('complete'))
   ) {
     return 'partial'
+  }
+  if (statuses.includes('failed')) {
+    return statuses.includes('complete') ? 'partial' : 'failed'
   }
   if (
     statuses.length > 0 &&

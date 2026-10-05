@@ -77,8 +77,10 @@ const renderRun = (run: ReturnType<typeof evaluateExecution>) => {
   const lines = [
     `Request ${run.requestId ?? 'unknown'} - ${run.outcome} - record ${run.complete ? 'complete' : 'incomplete'}`,
     `Total: ${run.timing.durationMs} ms; observed tool/research union: ${run.timing.observedToolAndResearchMs} ms; Unattributed: ${run.timing.unattributedMs} ms`,
+    `Exclusive ownership: ${JSON.stringify(run.timing.owners)} (provider wait is not measured model thinking)`,
     `Usage: ${run.usageStatus}; model review: ${run.modelReview.status} (not visual certification)`,
-    `Steps: ${run.toolCalls.length}; findings: ${run.findings.length}`
+    `Steps: ${run.toolCalls.length}; findings: ${run.findings.length}`,
+    `Model rounds: unavailable; program-to-tool links: ${run.orchestration.programChildLinks}. Native exec/wait items: ${run.orchestration.programs.length}. ${run.orchestration.reason}`
   ]
   const longest = [...run.toolCalls]
     .sort((a, b) => (b.durationMs ?? -1) - (a.durationMs ?? -1))
@@ -86,10 +88,14 @@ const renderRun = (run: ReturnType<typeof evaluateExecution>) => {
   lines.push(
     `Longest observed calls (${longest.length} of ${run.toolCalls.length}; full details with --json):`
   )
-  for (const call of longest)
-    lines.push(
-      `  ${call.callId} - ${call.tool} - ${call.durationMs ?? 'unknown'} ms - ${call.responseTextBytes ?? 'unknown'} response bytes - sequence ${call.sequence}`
+  for (const call of longest) {
+    const duration = run.timing.callDurations.find(
+      (entry) => entry.callId === call.callId
     )
+    lines.push(
+      `  ${call.callId} - ${call.tool} - ${call.durationMs ?? 'unknown'} ms inclusive; ${duration?.ownMs ?? 'unknown'} ms own - ${call.responseTextBytes ?? 'unknown'} response bytes - sequence ${call.sequence}`
+    )
+  }
   for (const finding of run.findings)
     lines.push(
       `  ${finding.kind} - call ${finding.callId ?? 'unknown'} - sequence ${finding.sequence ?? 'unknown'}: ${finding.observation} ${finding.possibleRemedy}`
@@ -305,6 +311,11 @@ export const runExecutionReportCli = async (
         `Execution report - ${report.from} to ${report.to} (exclusive)`,
         `${report.runs.length} runs; ${report.partialRuns} incomplete; ${report.excluded.length} unclassified; ${report.outsidePeriod} outside period`,
         `${report.groups.length} configuration groups (task equivalence is not established)`,
+        `Investigation targets: ${report.investigationTargets.length} (observations, not confirmed root causes)`,
+        ...report.investigationTargets.map(
+          (target) =>
+            `${target.tool ?? 'protocol'} - ${target.phase ?? 'no phase'} - ${target.kind} - ${target.code ?? 'no code'}: ${target.occurrences} observations in ${target.requestIds.length} runs; source ${target.configuration.sourceRevision ?? 'unknown'}; evidence ${target.evidence.map((entry) => `${entry.requestId}:${entry.callId ?? 'none'}:${entry.sequence ?? 'unknown'}`).join(', ')}`
+        ),
         `Saved assessment records: ${assessments.length} (separate opinions, not independent drawing samples)`,
         ...assessments.map(
           (entry) =>

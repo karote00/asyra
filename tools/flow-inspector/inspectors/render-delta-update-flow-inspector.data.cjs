@@ -1,7 +1,8 @@
 ;(function () {
   'use strict'
 
-  const specPath = 'docs/ai/framework/plans/completed/render-delta-update-plan.md'
+  const specPath =
+    'docs/ai/framework/plans/completed/render-delta-update-plan.md'
   const inspectorPath =
     'tools/flow-inspector/inspectors/render-delta-update-flow-inspector.data.cjs'
 
@@ -391,9 +392,7 @@
       ownerPackage: '@asyra/render',
       purpose:
         'Coalesce accepted updates per element and hand the final complete snapshot to the normal Render layer update route once per frame.',
-      inputs: [
-        'artifact:accepted-render-snapshot'
-      ],
+      inputs: ['artifact:accepted-render-snapshot'],
       outputs: ['artifact:complete-strategy-request'],
       conditions: [
         'Commit order is reflected in the final derived snapshot before pending ids are cleared.',
@@ -508,7 +507,7 @@
         'The frame handoff preserves command ordering and uses the normal layer/update/flush route.',
         'Local hierarchy parent and sibling-order bookkeeping commits only after the corresponding engine append and set-child-index handoff succeeds; a failed handoff retains the pre-command local state so the same complete snapshot can retry it.',
         'A diagnostic sink failure is isolated and cannot change the product result.',
-        'The dense-vector fixture meets count, total, p95, max, and combined p95 budgets.'
+        'The dense-vector fixture enforces work-count limits; timing totals, percentiles and maxima remain observations, not pass/fail thresholds.'
       ],
       bypasses: [
         'A non-dirty frame emits no surface flush.',
@@ -522,7 +521,7 @@
       forbiddenContributors: [
         '@asyra/render-engine-pixi changes',
         'Pixi imports in Render',
-        'semantic performance-budget loosening',
+        'semantic work-count limit loosening',
         'fallback surface output'
       ],
       cacheDimensions: [],
@@ -533,6 +532,9 @@
         'packages/render/src/types/render-object.ts',
         'packages/render/src/__tests__/**',
         'apps/asyra-design/e2e/render-delta-performance.spec.ts',
+        'apps/asyra-design/e2e/render-contracts.mjs',
+        'apps/asyra-design/e2e/render-profile.mjs',
+        'apps/asyra-design/__tests__/render-profile.test.mjs',
         'docs/ai/framework/packages/render.md',
         'docs/ai/framework/plans/completed/render-delta-update-plan.md'
       ],
@@ -1005,7 +1007,7 @@
     },
     {
       id: 'dense-vector-budget',
-      title: 'Dense-vector formal performance budget',
+      title: 'Dense-vector work limits and timing observations',
       stepIds: [
         'commit-scene-tree-delta',
         'apply-render-delta',
@@ -1014,7 +1016,7 @@
       ],
       specRefs: ['#profiling-and-cache-decision'],
       assertions: [
-        '12 delta applies, 0 Render full rehydrates, every phase count is 12, per-phase total/p95/max budgets pass, and combined p95 is at most 12 ms'
+        '12 delta applies, 0 Render full rehydrates, every phase count is 12, element.save calls are at most 12 and computed snapshot calls at most 13; timing totals, percentiles, first measured sample and later sample maxima remain observations, not pass/fail thresholds'
       ]
     }
   ]

@@ -173,3 +173,636 @@ Completed locally. The corrected canonical property descriptors passed the nativ
 regression and successful final drawing. See [parent results](ai-execution-improvement-results.md).
 Remaining recovered argument failures and large responses are recorded as
 observations, not concealed or treated as proven redundant queries. No push.
+
+## Follow-up prerequisite - canonical Fill updates (2026-10-03)
+
+Status: in progress. Before AI integration, refactor Design's public Fill write
+API to consume target IDs and requested new fields only, then validate all Fill
+interactions. This prerequisite does not change the completed lexical lookup.
+
+The focused API regression failed on the old signature. Browser verification
+then exposed a deeper defect: the Preset Fill child adapter supplied defaults
+for omitted fields on existing-record patches, resetting a previously changed
+color. Do not repair this by requiring full old data from callers.
+
+Step card: `prepare-and-apply-property-batch` in the canonical projection and
+collaboration Inspector; product sections `Canonical Element Property Update
+Contract` and `Props Manager Batch Contract`. Inputs are canonical record deltas
+and the registered Fill relation; outputs are updated fields and owner-produced
+before/after evidence. Missing records use registered creation defaults;
+existing records retain omitted fields. Empty/equal updates produce no changes.
+Allowed contributors are Preset's Fill relation and existing Props preparation;
+caller snapshots, render patches and manual history are forbidden. This slice
+is bounded to `fills-component.ts` and `children-map-property-component.test.ts`,
+both in that step's allowlist. Failure belongs to the property preparation step.
+No new cache or schema is introduced. The failing sparse-adapter regression,
+real App creation/patch/Undo/Redo test, existing Fill unit suites and complete
+Property Panel/gradient browser suites form the gates. Broader relation-adapter
+changes are excluded. Any further owner mismatch requires re-evaluation before
+editing. After this prerequisite passes, sync the AI caller's new signature;
+no live AI run starts before Fill verification passes.
+
+Fill prerequisite checkpoint: common API/UI/gradient callers now send only the
+requested fields. The Preset relation adapter retains ID/type mapping without
+supplying creation defaults on an update. Existing component defaults still own
+creation. The partial-update regression and all 38 Property Panel/Fill/gradient
+browser cases pass, as does the two-peer computed/UI/Undo/Redo case. The run in
+`tmp/fill-api-verification/verified` records 39 passes and verified source inputs.
+The 24 App Fill unit cases and 28 Preset cases pass; typecheck, build and scoped
+lint pass. Linear/radial/angular/diamond App screenshots were inspected.
+
+User clarification - Design acceptance is the integration gate: verify the public
+API replacement in Asyra Design itself before enabling any AI caller. Include
+multi-element mutations, Property Panel edits, preserved independent fields,
+gradients, canonical notifications and Undo/Redo. Passing batch API tests alone
+does not prove multi-selection Property Panel behavior. The current panel uses a
+single-selection owner and must be verified explicitly. The previously recorded
+39 browser passes do not close that new multi-selection acceptance case.
+
+AI integration remains deferred. Its descriptor regression was drafted, but
+production descriptors have not been changed. Do not treat the public API
+replacement as accepted, or begin AI integration, until the Design gate passes.
+
+Deferred step card - `compose` caller synchronization: after the Fill prerequisite, update
+only the two existing Fill descriptors and their contract tests. Source:
+`ai-execution-flow.md` / Capability discovery and composition, Inspector
+`compose` inputs/outputs and exact-schema condition. Input remains admitted
+capability definitions; output keeps tool identity/effect but uses target IDs
+and new values in public API argument order. No current-data prerequisite,
+provider/model/prompt change, alternate mutation route, or new permission. Tests
+must admit new-value requests and reject superseded snapshot arguments. Boundary
+is `basic-design-api-contracts.ts` and `server/__tests__/basic-api-contracts.test.ts`;
+failure belongs to compose. Stop if the descriptor requires behavior outside the
+validated common API. No cache or additional runtime state is introduced.
+
+Multi-selection verification slice: Design Fill UI intent composes one plural
+canonical patch at `coordinate-canonical-owner-preparations`. Keep the existing
+mixed-fill presentation and single-owner canvas gradient handles. Inputs are
+selected element IDs, displayed row index and requested new fields; resolve each
+row's actual Fill ID at the App API boundary. Outputs are one canonical batch,
+preserved unmentioned fields and one Undo action. No caller old-value snapshot,
+UI-owned document, default padding or per-element commit is allowed. Extend only
+the direct Fill common API/UI callers and their permanent tests and docs. Test
+multi-selection opacity, visibility, gradient edits, add/remove and exact replay;
+reject invalid batches atomically. This is an App composition repair, not a new
+Framework projection or mutation contract. First prove the current multi-select
+UI fails; AI integration stays deferred until these cases pass.
+
+Design acceptance completed: the multi-selection E2E failed before correction
+(both opacity values remained 1). App common APIs now resolve actual row targets
+and submit plural mutations, with single-item APIs delegating to them. Nine new
+Fill E2E cases pass, including multi-selection add/remove/opacity/visibility/
+gradient/replay and atomic invalid-batch rejection. Complete scoped browser gate:
+35 ordinary passes plus 5 pre-existing expected gradient-render failures; these
+five are known baseline limitations, not reported as successful visual checks.
+The source-verified run is `tmp/fill-api-verification/design-final`; no unexpected
+failures. App Fill unit tests: 26 passed. Multi-selection screenshot reviewed.
+
+Compose integration now resumes: update existing Fill write signatures and admit
+the validated plural APIs and narrow target lookup in the existing registry.
+The formal catalog test failed on the old signature and uncovered unregistered
+new methods before this integration. Keep native dispatch/permissions/history;
+no AI-specific copy of mutation logic. The native action path must demonstrate
+multi-target preservation and Undo/Redo before the full Taipei 101 live run.
+
+Compose checkpoint: seven descriptor/coverage tests pass after removing old Fill
+arguments and registering the four new public methods. All 89 focused compose,
+operation and execution-proof tests pass. The native browser dispatch case passes:
+registered AI action -> public Fill batch -> two real canonical records, preserving
+independent opacity and restoring both records in one Undo/Redo. No mock replaces
+the native canonical path. Guidance now requests direct productive first drawing
+rather than disposable motif trials; actual drawing review remains required.
+Full real-subscription acceptance is the next gate; model remains 6-Astra medium.
+
+Live acceptance exposed a new admission defect: the model used the new batch API
+for 22 targets but placed `gradientType`, `gradientStops`, `gradientHandles` and
+`type` at Fill patch root. The permissive descriptor admitted them; the App key
+filter silently dropped them. Stop this acceptance and preserve its artifacts in
+`tmp/ai-fill-acceptance-20261003-r2`. Do not count partial field application as a
+successful edit. Correction at App composition: reject unknown new-value fields
+before any canonical call, derive writable keys from the existing registry, and
+make the AI schema explain/validate nested `gradient`. Keep canonical value
+validation and no-old-values semantics. Tests first: unknown field in the second
+batch item rejects the entire batch; nested gradients admit while flattened
+fields reject. Re-run Design gates before AI descriptor correction and native/live
+acceptance. No renderer or Framework authority changes are needed.
+
+Admission correction verified: the two new regressions failed on permissive
+admission, then passed after unknown root keys reject before any transaction and
+AI schemas describe the complete nested Fill gradient. Writable types derive from
+the existing field registry and exclude record identity/type. Design: 27 unit
+cases and nine native Fill E2E cases pass. Compose: 90 tests pass. Typecheck and
+scoped lint pass. No legacy snapshot overload or automatic payload coercion was
+introduced. The next native action and full live recording use this corrected
+candidate; previous interrupted evidence is retained, not a successful acceptance.
+
+## Active correction - retain verified source facts
+
+R3 automated live gate passed but visual acceptance failed: the model moved
+1,831 crown/facade objects by (-350, -260) after its structural review. Preserve
+R3 evidence; do not label it a successful visual acceptance.
+
+Bounded contract: retain evidence-backed source/requirement facts at the existing
+review owner and guide composition to reuse them without subjective changes.
+No Framework mutation, image caching, geometry locks, provider settings or new
+external dependency. No automatic truth claim for an AI-authored statement.
+Current canvas checks and final inspection remain required. Extend the existing
+spec/Inspector inspect contract and compose guidance; do not change Fill work.
+
+Step card - inspect: input is compact fact assertions with sources, verification,
+scope and versioned dependencies, or explicit dependency changes with cause and
+evidence. Output is retained current/invalid fact records in review receipts.
+Unrelated drawing edits and read-only retrieval preserve facts; source/request/
+contradictory evidence changes invalidate exact dependents. Valid records cannot
+be overwritten. Unknown/invalid updates fail atomically. Only this invocation
+owns facts; fresh invocations have none. Canvas observations are not source facts
+and retain existing App generation validation. Forbidden: rendering from facts,
+replacing canonical data, automatically certifying source correctness, resurrecting
+stale image approval, aesthetic invalidation. Failure owner: inspect. Files:
+local-design-review.ts, local-design-facts.ts, local-operation-tools.ts and existing
+review/operation tests. No cache; this is retained authored evidence.
+
+Tests: baseline must reject facts-phase admission; verify detached storage,
+unchanged reads with zero App calls, selective dependency invalidation, invalid
+updates/overwrites and invocation isolation; preserve stale-image rejection.
+Then compose guidance and formal prompt assertions, focused tests/type/lint/build,
+Inspector validation, and one full headless live Taipei 101 recording. Review its
+actual source-bound images separately from automated pass. Stop on unavailable
+required evidence or an owner contract conflict. No push.
+
+Inspect checkpoint: three new retention/invalidation/admission regressions failed
+before implementation and pass with the existing review owner's facts phase.
+Review/operation/execution proof passed 70 cases. Source facts do not expire on
+canvas revision, while current inspection approval still does. Invocation lifetime
+and model-assertion limits are explicit; this does not claim geometric locking.
+
+Step card - compose: consume retained facts through the existing review tool and
+receipts, distinguish source assertions from current canvas evidence, and preserve
+verified source results absent requested changes. Source/requirement corrections
+must carry concrete dependency changes; visual review checks conformity rather than
+reconsidering valid source facts. Owner compose, files ai-domain-prompt.ts and its
+existing tests; no capability, model, tool dispatch or history change. The new prompt
+contract test first fails. Required gates include review/operation/provider/proof,
+types/lint/build, source-bound live acceptance and inspected screenshots.
+
+Compose checkpoint: 191 focused review/operation/provider/prompt/proof tests pass,
+three existing subscription opt-ins skipped. New normal-caller case retrieves facts
+five times with zero App calls. Typecheck and scoped lint pass.
+
+Step card - observe: retain bounded fact provenance and invalidation summaries in
+existing local execution records so this live regression can be diagnosed later.
+Inputs are actual review tool arguments/receipts; outputs are sanitized traces.
+No raw document, source assets, credentials or canonical state. Existing evidence
+length/depth/node guards remain. Files local-ai-usage.ts and local-ai-records.test.ts
+are already in observe boundary. Prove retention through actual usage sink first;
+run record/evaluation regression and existing schema checks. No new report owner.
+
+Live attempt 1 reached final review with source facts retained but failed at
+15m20s: native Codex emitted a sleep display item; compose rejected it as an
+unsupported completed item. Preserve evidence in tmp/ai-verified-facts-acceptance-20261003.
+This is not a successful full acceptance.
+
+Step card - compose protocol correction: capability-discovery-and-composition and
+Inspector compose permit native protocol orchestration. Accept the installed
+provider's documented sleep display notification (id, durationMs) as lifecycle
+evidence only. It cannot produce an App receipt, execute actions, or finish the
+request. Reject malformed items and preserve unknown-tool rejection and diagnostic
+assessment restrictions. Files: local-ai-provider.ts and its formal tests. First
+prove started/completed sleep fails today; then test malformed notices, notification
+without final output, existing transport/security cases and typecheck. Failure
+owner compose. Stop for any need to broaden native execution authority. Repeat
+headless full acceptance only after these gates pass.
+
+Protocol checkpoint: the new native sleep regression failed before the correction.
+205 focused tests pass (three subscription opt-ins skipped), including malformed
+notifications and unchanged external-tool rejection. Typecheck, scoped lint and
+naming pass. Inspector candidate ef63c235-e944-43bb-b610-52aac46f148a passed.
+Next: repeat the same full live brief with model/effort unchanged.
+
+Verified-facts acceptance checkpoint (2026-10-03): retry completed using unchanged
+gpt-6-astra medium and the same upper-two-tiers/crown/spire brief. Formal headless
+Playwright case passed, sourceVerified=true, zero browser errors; recording includes
+ten seconds after completion. Provider duration 997.49 s; initial 77-element body
+applied at approximately 232 s. Test artifacts: tmp/ai-verified-facts-acceptance-20261003-r2;
+provider record b3041c6b-4b4e-431e-9cb9-c0319348be3f.
+
+The real request saved two source facts (2.5 m double notches; eight 4.2 m storeys
+per module) with source/evidence/versioned dependencies. Final visual receipts
+retained both; no dependency invalidation or fact overwrite occurred. Inspected
+full App screenshot and overview plus native-size ruyi/metalwork detail images.
+No repeat of the previous whole-crown lateral move was observed. Some metalwork
+remains stylized and other dimensions are explicitly estimates; this proves
+request-owned fact retention and end-to-end completion, not surveyed accuracy or
+photorealism. Runtime is still long; no speed-improvement claim.
+
+The first failed run and its sleep-protocol diagnosis are retained separately.
+No model/effort change, no remote push. Fact authority lasts this invocation;
+diagnostic records persist but are not automatically restored as valid facts in
+a new request. Framework Fill validation remains recorded in the preceding slice.
+
+## Active stage - fact reuse and actionable call diagnostics
+
+User-approved bounded scope: preserve verified facts at first use and bind them
+at the existing inspect owner to affected design targets; reuse the binding for
+focused current-evidence checks. Improve union input diagnostics and existing tool
+descriptions/examples rather than trial preparation. Record each call's admitted
+input summary/shape, queue/execution duration, feedback, output summary and explicit
+usability basis; distinguish missing evidence from success. Split observed provider
+lifecycle time without inventing thinking time. Preserve model/effort, canonical
+API authority, existing history and original-resolution evidence. No dependencies,
+Framework edits, cross-request truth restoration, UI redesign or push.
+
+Discovery is confined to provider/tool admission, review/fact owners, existing
+record/evaluation projection and their direct tests/spec/Inspector. Required gates:
+test-first regressions, normal-caller integration, types/lint/naming/build and
+Inspector baseline, then same full headless Taipei upper-two-tier recording with
+actual recorded call diagnostics inspected. No speed SLA or scripted geometry.
+
+Step card - observe: observed provider and tool events are inputs; additive v2
+call diagnostics and exclusive observed timeline categories are outputs. Queue and
+execution come from actual boundaries; provider item spans describe reported
+activity, never all hidden reasoning. Output utility is a receipt-based diagnostic,
+not a visual correctness claim. Preserve sanitized summaries, explicit omissions,
+legacy record readability, incomplete calls, concurrent interval unions and sink
+failure isolation. Compute report projections once per report, not on each canvas
+update. Existing record/evaluation owners plus local-execution-timing.ts own these
+changes; their permanent tests prove overlap, failure, partial and unknown results.
+Naming: additive internal diagnostic fields, no changed persisted identities.
+First prove loss of rejection feedback and missing per-call diagnostics in tests.
+
+Observe checkpoint: diagnostic regression reproduced omitted rejection feedback.
+Additive call projections now distinguish unavailable, partial and unknown output;
+legacy timing fields remain. No raw payload/geometry or hidden reasoning retained.
+
+Step card - compose admission: existing operationInputIssue owns union validation.
+Use a shared supplied string discriminator constrained by every alternative, not
+only type. Preserve overlapping/general branches and allOf semantics. Input is
+existing schema and arguments; output is actionable selected-branch diagnostics,
+not relaxed admission. Scope operation-input-schema.ts and permanent tests, with
+existing review/preparation regressions. Inspector compose allows this admission
+owner; this is the identified phase diagnostic failure, not new routing.
+
+## Prompt audit - current model instruction burden (2026-10-03)
+
+User-requested additional discovery is bounded to the App prompt, provider prompt
+assembly, registered tool guidance and their direct contract tests. Model remains
+gpt-6-astra at medium. No installation, model migration, repository-wide rules
+cleanup or removal of product requirements follows from this audit.
+
+Method references:
+<a href="https://github.com/anthropics/skills/blob/main/skills/claude-api/shared/prompt-audit.md" target="_blank" rel="noopener noreferrer">Anthropic prompt-audit</a>
+identifies stale project assumptions, repeated guidance and unnecessary workflow
+choreography; its Claude-specific advice is not an Astra requirement.
+<a href="https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra" target="_blank" rel="noopener noreferrer">OpenAI's Astra instruction guidance</a>
+supports contextual guidance and revisiting accumulated instructions. Neither
+source proves a speed improvement for this App.
+
+Baseline: dirty working tree based on c6506a164bea82a5c7284dd3c4a0b4f3bb17c7a5,
+before audit-driven production changes. Static template bodies in
+server/ai-domain-prompt.ts contain 36,481 characters / 5,039 whitespace-delimited
+words in AI_APP_PROMPT and 16,910 characters / 2,404 words in
+AI_OPERATION_INSTRUCTIONS. These are source-text counts before interpolation,
+not token counts or complete request sizes. local-ai-provider.ts sends both as
+baseInstructions for normal operation-enabled requests, alongside additional
+developer instructions and discoverable tool definitions.
+
+Findings and bounded follow-up:
+
+- Confirmed repetition: research existing subjects, preserve requested quality,
+  distinguish execution from visual proof, and recover from unsuitable references
+  appear in multiple sections. Consolidate each invariant at one guidance owner;
+  preserve tool-specific input requirements. Mere repetition does not establish
+  its contribution to elapsed time.
+- Confirmed broad loading: all requests receive tracing, decomposition, contour
+  refinement and component-conversion procedures. Move procedural details to the
+  relevant discoverable tool guidance, retaining concise routing and App-wide
+  authority/privacy rules. Prove the relevant instructions remain discoverable.
+- Ambiguous scope: "Review the representation of every meaningful object" and
+  "Inspect all objects" are global, although the same prompt supports targeted
+  edits and narrow context reads. Make representation analysis conditional on
+  the relevant conversion task, preserving affected-object validation.
+- Conflicting work-order risk: "After each coherent drawing stage" requires
+  exactly one visual check for every criterion, while structureCriteria and
+  deferredDetails explicitly permit unfinished later stages. Stage checks should
+  identify pending requirements honestly; final acceptance must still require
+  current evidence for every requested criterion. This requires checking the
+  review owner, not just deleting prompt sentences.
+- Confirmed fixture-specific wording: the unconditional 50,800px building-height
+  example encodes one prior test in generic guidance. Replace it with the general
+  distinction between dimension correctness and visual fidelity.
+- Test limitation: ai-domain-prompt.test.ts contains exact prose assertions.
+  They prove instruction presence, not model quality or speed. Update only
+  affected assertions with the changed contract and retain normal-caller and
+  live visual evidence; do not treat a shorter prompt as successful behavior.
+
+Product constraints remain: requested detail (including intentionally simple or
+rough work), source resolution, verified facts, exact registered API/schema use,
+canonical permissions/history, preservation of completed work, and truthful
+final visual assessment. Some repetition protects real previous failures;
+remove duplication without removing its requirement. Capability unavailability
+claims need verification against the current registry before classification as
+stale. Record per-call evidence in the active diagnostic stage and use the same
+live acceptance brief; one live run is evidence, not a causal speed benchmark.
+
+Audit status: production prompt refactor and local validation completed in the
+combined-stage checkpoint below. Live results retain the observed input-retry
+regression; shorter instructions alone do not establish better tool selection.
+
+User-approved audit integration: complete the four improvements, tool diagnostics
+and prompt refactor before one new full acceptance run. Observe additionally
+owns local sidecar snapshots of App tool inputs/outputs, with content digest,
+byte count and explicit redaction paths. These are not model context or console
+output. Credentials, binary images, private reasoning and request prompts remain
+excluded. Existing geometry fields in tool payloads may be retained locally for
+diagnosis. Failure to write evidence cannot affect drawing. Formal cases cover
+exact geometry/value retention, redaction, detached input lifetime, sink failures
+and per-call linkage; summaries remain bounded. No new configuration is needed.
+
+Step card - inspect fact application: source assertions can be saved in the
+initial plan, then linked to planned requirements and known canonical element
+IDs through factBindings. Inputs remain source evidence, current image evidence
+and registered receipts; bindings are request-local review metadata, never
+canonical geometry or automatic factual certification. Require the corresponding
+criterion check to cite bound fact IDs, validate bound target coverage through
+the existing canonical inspection API, and preserve source facts through drawing
+edits. Source dependency changes invalidate only their facts; unknown canvas
+changes still invalidate all image evidence. Scope existing review/fact/tool
+owners and direct tests, with spec/Inspector synchronization. No verdict cache or
+geometry locks. Tests prove first-use capture, atomic rejection, bound checks and
+canonical coverage, source invalidation and new-invocation isolation.
+
+Inspect continuation: phase=visual with final=false admits a nonempty planned
+criterion subset and current overview for intermediate decisions. It never
+approves completion. Default final=true retains full criteria and required
+native detail. Retained diagnostic comparison is not reused visual approval.
+Focused regression proves final acceptance cannot use the partial assessment.
+
+Step card - compose prompt: send one concise App contract plus operational
+guidance; discover tool-specific tracing/conversion procedures through existing
+tool definitions. Inputs are the request, current registered schemas and actual
+receipts; outputs remain native tool calls with existing permissions. Preserve
+all product constraints; remove duplicate rules, unconditional all-object
+analysis, fixture-specific examples and stale total-call/rollback claims. Scope
+ai-domain-prompt.ts, local-image-tools.ts, review tool description, provider
+assembly and their direct tests. Formal prompt routing tests plus existing image
+owner tests cover discoverability; normal-caller review tests cover semantics.
+No new tools, schema suppression, capability classifier or model/effort change.
+
+## Combined stage checkpoint - 2026-10-03
+
+Implemented the approved fact capture/bindings, union admission diagnostics,
+observed timing partition, per-call input/output snapshots and prompt audit.
+Shared source-template instructions are now 13,983 characters versus 53,391
+before this stage (74% fewer characters; not a token measurement). Image-specific
+procedures remain in discovered tool descriptions. Model remains gpt-6-astra at
+medium. Removed stale whole-request rollback and four-call separation claims.
+
+Validation: 501 server tests passed, four explicit opt-in cases skipped; App
+and backend types/builds, report build, naming and scoped lint passed (three
+console warnings, no errors). Inspector candidate
+`b816ab7f-9f85-4c73-a7ad-fe00ec359e11` passed; contract review
+`09554acd00e1301c72b0de8cca63a5133514b2363b3edeada9260e8cef4e5c56`
+was accepted without blockers. Five canonical inspection E2E cases and one real
+subscription drawing passed with source fingerprint verified; two explicit
+collaboration opt-ins were skipped by the ordinary inspection suite. An earlier
+inspection-only wrapper omitted its fingerprint callback; its tests passed but
+that wrapper was unverified, so it is not the final source-bound evidence.
+
+The single live drawing used the unchanged Taipei upper-two-tier brief. Request
+`00ac7e23-ce28-4f79-9ecf-ce38d3ba93a2` completed in 846.515 seconds;
+first visible bounds were observed at 229.232 seconds. It retained two source
+facts in its initial accepted plan and later bound them to three criteria/target
+associations. Intermediate visual review rejected visible spire/ornament contacts,
+then the model repaired and completed its final assessment. All 108 input/output
+sidecars exist and match recorded byte counts and SHA-256 digests; total 2,903,625
+bytes. Full geometry is retained locally, with explicit secret/binary redactions.
+No browser errors. Owned servers stopped. No push.
+
+Implementation and acceptance execution are complete, but fewer model input
+mistakes is not demonstrated: seven review calls were rejected (previous run:
+four input rejections). All recovered. Names, phase-specific fields and required
+fact citations are the observed remaining friction, not slow rejection execution.
+The final illustration is detailed and editable, but retains stylized materials
+and awkward railing/junction details; final artistic acceptance belongs to the
+user. See the combined-stage section in ai-execution-improvement-results.md for
+comparison, exact diagnostics and retained recording paths. No second live run
+or unmeasured speed guarantee is claimed.
+
+## Active stage - clear requirements and phase-specific tool contracts
+
+Approved task: apply STE-inspired clarity to existing tool contracts and request
+interpretation, then one full live recording with before/after observations.
+Baseline is request 00ac7e23-ce28-4f79-9ecf-ce38d3ba93a2 and its retained source,
+not a fresh baseline model run. Same brief, gpt-6-astra medium, original-resolution
+checks, source preservation and complete final acceptance remain. The one new
+sample is descriptive; it cannot establish statistical or causal improvement.
+Repository agent-evals exercises development-agent fixture work; this App task
+uses its existing server and live-provider harness, not a relabelled agent trial.
+No new translator model call, STE dependency, vocabulary restriction, user-language
+restriction, framework change, global rule rewrite or push. Preserve prior Fill
+work. Scope discovery: review/fact schema, their operation/provider consumers,
+App prompt, direct tests and these existing docs. Gates: failing formal schema
+regression first, normal caller checks, server tests, type/build/lint/naming,
+source-bound Inspector proof, one headless live drawing and artifact review.
+Stop for out-of-scope changes; preserve any failed test/run evidence.
+
+Step card - inspect: evidence-and-completion / retained-verified-facts contracts;
+Inspector inspect owns phase admission and review metadata. Input: registered
+plan/facts/structure/visual fields and existing evidence. Output: the same phase
+receipts and truthful acceptance; no geometry or model-produced fallback.
+Discovery must expose only fields used by each phase, including final and deferred
+checks only for visual, and facts/bindings only for plan/facts. Required citations,
+exact criterion matching, current coverage and native-detail final proof remain.
+Use named phase schemas, concise conditions before actions, and exact field names
+in examples/descriptions. Runtime remains the owner of cross-field/state checks.
+Allowlist: local-design-review.ts, local-design-facts.ts, design-review-stages and
+direct operation tests already assigned to inspect. No cache, new persisted/tool
+identity, auto-corrected arguments or extra canvas read. Formal tests prove
+illegal field combinations fail admission and valid native-projected phase
+schemas retain complete validation. Existing tests prove facts and final checks.
+
+Next segment is compose, after inspect passes: preserve the original request in
+existing provider input and use the existing initial plan to organize requested
+scope/style/units without inventing requirements. A short request needs no extra
+translation or summary tool. Separate methods/assumptions from user requirements.
+Preserve source terms and later corrections. Touch ai-domain-prompt.ts and its
+formal tests, with normal-provider envelope verification. No new classification,
+user-input rewrite or compulsory model call. Complete final gates before live.
+
+Inspect checkpoint: 13 newly exposed invalid phase combinations failed the original
+schema admission tests; after the phase split all 91 review/operation tests pass.
+Each native-projected alternative admits its valid inputs and rejects unrelated
+fields. Existing fact lifetime, coverage and final-acceptance checks still pass.
+
+Step card - compose (active): original request and registered schemas enter the
+existing provider; the existing initial plan organizes constraints and separates
+method/assumptions. No request rewrite or extra model call is added. Owner,
+allowlist, exclusions and failure owner remain compose above. Formal prompt
+contract assertions precede edits; the normal provider test checks verbatim
+multilingual intent and one native turn for a direct response. Inspect contract
+rechecked: no new evidence acceptance or cache behavior is introduced.
+
+Compose checkpoint: the new guidance assertion failed before the prompt change;
+the normal provider already preserved the complete multilingual request and
+used one turn. With the concise guidance, 107 prompt/provider tests pass (three
+existing opt-ins skipped). No provider implementation change was needed. The
+full server-response harness passes 524 tests (four existing opt-ins skipped),
+with typecheck, build and naming checks passing. Live acceptance is next after
+final scoped lint and Inspector source verification.
+
+Clear-contract stage closure: one full headless request
+51e9ba2f-d902-48bb-8cb1-5e919434e870 completed with the unchanged brief and
+6-Astra medium. Source verification passed and owned services stopped. Final
+current-evidence review accepted; manual comparison found persistent stray lines
+and flatter/simpler detail than baseline despite more elements. Four rejected
+calls recovered, including three recurring review-input mistakes. The results
+record contains timing, cached/uncached usage, exact rejection reasons, verified
+96 payload sidecars and recording paths. The observed improvement is 14.4% in
+elapsed time, not proof of causation or quality improvement. No repeat run, push,
+new dependency, translation call, framework change or imposed user language.
+Inspector candidate ac244f52-69b7-47a3-892d-354bb08db0d5 passed and contract review
+314a80e39d165873a2ea6cc89eca2fe48e6b99ae223b7f64b7799be915a5a8e2 was accepted.
+The bounded STE-inspired stage is complete; model reliability and visual quality
+remain measured follow-up work, not hidden closure claims.
+
+## Completed stage - execution-report findings
+
+Approved scope: address the five report findings and timing attribution in the
+existing Asyra Design owners. Preserve Fill work and every unrelated dirty file.
+Baseline request: 51e9ba2f-d902-48bb-8cb1-5e919434e870. No push, dependencies,
+model/effort change, language restriction, image downsampling or framework rewrite.
+Discovery is limited to review/inspection, batch target admission and API contracts,
+semantic construction/patterns, provider event recording and their direct consumers.
+No speculative renderer optimization. One owner segment at a time; focused failing
+regressions precede behavior fixes. Complete server/type/build/lint/naming and
+Inspector gates, then one headless live case with retained input/output evidence.
+Long-run records supplement deterministic equivalence/work-count tests; no speed SLA.
+
+Plan and handoffs:
+
+1. inspect: named criterion IDs map to original requirement text and an observable
+   description. Structure selects IDs, fact bindings and results refer to IDs. Keep
+   detailed structure checks through format recovery; final review covers every ID.
+   Inspection captures images/evidence without implicit hierarchy summaries;
+   explicit read_design_context remains the owner of targeted data reads.
+2. compose: target resolution follows registered API argument locations, including
+   nested request.elementIds, rather than assuming a root field. Preserve collision
+   rejection, current canonical admission and plural one-call execution.
+3. prepare: reuse existing construction to define vector templates once and reference
+   them with explicit placements. Preserve rings, bounds, fills, ordering and keys;
+   validate each immutable template once per preparation, never across requests.
+4. observe: retain metadata for provider execution spans and gaps between App calls,
+   separate observed spans from inference, with no private reasoning/code capture.
+5. compose guidance and final verification: visual judgments compare the requested
+   shape/contact/finish to observed evidence, not merely feature presence. Requested
+   rough/simple styles remain valid. Reuse exact schemas and prepared target handles.
+
+Step card - inspect: evidence-and-completion. Inputs: initial request-based criteria,
+source assertions, current canonical image stamps; outputs: named checklist and
+truthful phase acceptance. Criterion wire IDs are request-local; no saved-document
+migration or compatibility parser. Use a map keyed by model-chosen stable IDs, each
+value {requirement,description}; structureCriteria selects IDs and checks/bindings
+use criterionId. No automatic text repair or weakened completion. Existing retained
+facts and image freshness rules remain. Snapshot owner stops implicit traversal;
+no cache is needed. Direct formal tests cover linked detailed checks, unknown IDs,
+full completion, stale evidence, zero summary traversal and fresh image capture.
+Allowlist: review/facts and direct tests, common-apis/inspection.ts and its tests,
+AI inspection descriptor/tests, operation caller/tests; spec and exact Inspector
+updated before implementation. Stop for any canonical renderer or external API need.
+
+Inspect checkpoint: two formal regressions failed before edits; 105 focused
+review/operation/flow/inspection tests now pass. Image capture performs no computed
+summary reads; current stamps and native image behavior remain. No cache introduced.
+
+Step card - compose: registered-schema target resolution / capability composition.
+Inputs: registered schema, explicit non-target arguments and existing artifact handle.
+Output: admitted canonical actions at a unique nested identifier path. No API-name
+allowlist or hierarchy read. Path ambiguity/conflicting IDs/non-object ancestors fail
+before dispatch; resolve once per operation and plural calls remain one action. Normal
+caller tests prove new nested path plus original root path and rejection. Files:
+local-operation-batch.ts, local-operation-tools.ts, direct operation tests; domain
+prompt/tests synchronize named criteria and evidence-only inspection. Source clauses:
+Prepared target and geometry reuse, Request-linked criteria. No canonical semantics,
+transport permissions, new cache or argument repair. Stop for unknown schema forms;
+explicit API arguments remain available when target inference is ambiguous.
+
+### Compose checkpoint and prepare step card
+
+Compose now uses a unique path from the registered operation schema, preserving
+supplied sibling arguments and rejecting ambiguity/conflicts before identity lookup.
+The corrected regression used the registered hierarchy API and failed on missing
+`request.elementIds` before the resolver change. Compose/review tests passed (60).
+
+Prepare step: add request-local `vector-pattern` construction for exact repeated
+2D rings plus positions. Existing planar pattern and canonical vector APIs retain
+their roles. Inputs are one geometry template and ordered placements; output is
+ordinary editable vectors with stable keys. No scaling, simplification, inferred
+lighting, hidden geometry, shared canonical component or persisted template cache.
+Reuse existing ring bounds measurement for one preparation lifetime. Tests compare
+explicit vectors, painter order, geometry, validation limits, work counts and fresh
+input changes. Owners: design-construction, local-design-tools/schema/examples,
+design-patterns/preparation tests and their documented prepare contract.
+
+### Prepare checkpoint and observe step card
+
+Prepare tests passed (54): exact curved geometry and order, one bounds measurement
+per template per preparation, fresh measurement after source change, invalid
+controls/overrides and expanded budgets. New syntax uses `vector-pattern` with
+`template` and ordered `placements`; existing preparation examples advertise it.
+
+Observe step: preserve public native exec/wait item name and lifecycle timestamps,
+add exclusive orchestration-event duration, and report the longest gaps between App
+calls with the surrounding actual operation names. Gaps include observed research
+and public provider events; missing event coverage stays unattributed. No additional
+model calls, inference of private reasoning or capture of native code/output bodies.
+Owners: local-ai-provider, local-ai-usage, local-ai-records, local-execution-timing,
+existing provider/record tests and the observation spec. Tests cover overlapping
+calls, queue/execution precedence, missing starts and redacted native metadata.
+
+### Observe checkpoint and validation stage
+
+Focused observation/preparation tests passed (170, with 3 existing opt-in skips).
+Native lifecycle metadata retains only kind/name and times, never code/output or
+reasoning content. Added concurrent-gap and missing-start regressions before final
+validation. All six report findings now have owner changes. Remaining: full scoped
+server/App inspection regression gates, type/lint/build, source-bound Inspector
+acceptance, then one unchanged-brief headless run with current source frozen.
+
+### Pre-live gates - report findings iteration
+
+- Server suite from App cwd: 533 passed, 4 existing opt-in skips.
+- App inspection: 6 passed. Typecheck, scoped ESLint, naming and App/report builds passed.
+- Earlier root-cwd test launches exhausted the Node heap because the public API
+  signature test resolves its TypeScript project from cwd. Correct App-cwd run
+  passed; no product memory or renderer conclusion follows from those launches.
+- Freeze implementation for one formal headless upper-two-tier run. Compare to
+  request 51e9ba2f-d902-48bb-8cb1-5e919434e870, not a timing pass/fail threshold.
+- No push. Review actual final overview and native detail evidence before claims.
+
+### Final diff review - prepare guard correction
+
+The new vector-pattern branch must honor the same unresolved structure gate as
+planar patterns, including nested groups. The final changed-owner review found
+that the original guard matched only root planar patterns. Add root/nested formal
+regressions before correcting local-design-tools; do not change canonical writes
+or the successful live artifact. The live run passed its structure checkpoint
+at 378.949s before the first vector-pattern call at 473.119s, so this correction
+does not explain or invalidate that observed run. Re-run preparation, flow, types
+and lint gates; no additional stochastic live attempt.
+
+### Completed report-findings stage
+
+One headless run completed: d360eb00-ac73-4e1c-9a01-778142df5f3f. Source unchanged
+during recording, browser errors empty, 84 sidecars verified, owned services
+closed. Compare with baseline in ai-execution-improvement-results.md: total time
+928.168 s versus 724.549 s; browser first visible 336.713 s versus 217.696 s.
+Implicit summary bytes fell to zero and return bytes fell 64%, while input bytes
+increased. No speed-success claim. Final overview and four native detail crops
+were inspected; visual defects remain documented.
+
+Post-live guard correction: both new regressions were red before implementation;
+54 preparation/flow tests then passed. Typecheck, scoped lint and naming passed.
+The accepted live structure path was unchanged; the new rejection branch has
+formal coverage. All six authorized changes, documents and the single live
+comparison are complete. No push, and no additional quality/performance tuning
+was silently added to this stage.

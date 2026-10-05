@@ -1,3 +1,5 @@
+import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
+import { randomUUID } from 'node:crypto'
 import { isDesignFill } from '../src/ai/design-fill'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 
@@ -151,16 +153,26 @@ const planar = (points: Point3[]) => {
 
 /** Pure, bounded pre-compilation; never edits canonical state or the caller draft. */
 export const constructDesign = (
-  input: unknown
-): { draft: Node; brief?: DesignBrief } => {
+  input: unknown,
+  generatedRootId: string = randomUUID()
+): {
+  draft: Node
+  brief?: DesignBrief
+  sourceWork: ReturnType<ReturnType<typeof createDesignSourceWork>['summary']>
+} => {
   if (!record(input)) return fail('draft')
+  const rootKey =
+    input.key === undefined
+      ? generatedRootId
+      : label(input.key, 'node key', 160)
   const brief = readBrief(input.brief),
     project = camera(input.projection)
   const nodes = new Map<string, { node: Node; parent?: string }>()
-  let sourceNodeCount = 0,
-    sourcePointCount = 0,
-    nodeCount = 0,
+  const sourceWork = createDesignSourceWork()
+  let nodeCount = 0,
     vertexCount = 0
+  const consumeSourceNode = (value: unknown) =>
+    sourceWork.admit(sourcePathCommandCount(value))
   const face = (
     node: Node,
     key: string,
@@ -170,7 +182,7 @@ export const constructDesign = (
     fields(node, ['key', 'name', 'type', 'fill', 'vertices'], 'projected face')
     if (
       !project ||
-      parent !== '$root' ||
+      parent !== rootKey ||
       (input.layout ?? 'absolute') !== 'absolute'
     )
       return fail('projected face requires a shared camera and absolute root')
@@ -180,9 +192,6 @@ export const constructDesign = (
       (vertexCount += node.vertices.length) > limits.expandedPathCommands
     )
       return fail('face vertex limit')
-    sourcePointCount += node.vertices.length
-    if (sourcePointCount > limits.pathCommands)
-      return fail('source vector point limit')
     const vertices = node.vertices.map((v) => {
       if (!record(v)) return fail('face vertex')
       fields(v, ['x', 'y', 'z'], 'face vertex')
@@ -252,7 +261,7 @@ export const constructDesign = (
     )
     if (
       !project ||
-      parent !== '$root' ||
+      parent !== rootKey ||
       (input.layout ?? 'absolute') !== 'absolute'
     )
       return fail('pattern requires shared projection and absolute root')
@@ -335,6 +344,7 @@ export const constructDesign = (
     )
       return fail('pattern fills')
     const seen = new Set<string>()
+    let templatePointCount = 0
     const templates = value.faces.map((v) => {
       if (!record(v)) return fail('pattern face')
       fields(v, ['key', 'name', 'fill', 'vertices'], 'pattern face')
@@ -349,6 +359,7 @@ export const constructDesign = (
         vertexCount + vertices.length * count > limits.expandedPathCommands
       )
         return fail('pattern vertices')
+      templatePointCount += vertices.length
       const points = vertices.map(point3)
       const bounds = {
         min: { x: Infinity, y: Infinity, z: Infinity },
@@ -376,6 +387,7 @@ export const constructDesign = (
         return fail('pattern vertex limit')
       return { compiled, bounds, faceKey }
     })
+    sourceWork.admit(templatePointCount)
     const zero = project({ x: 0, y: 0, z: 0 }),
       result: Node[] = []
     for (const range of selectedRanges) {
@@ -416,49 +428,91 @@ export const constructDesign = (
     }
     return result
   }
+  const expandVectors = (value: Node): Node[] => {
+    fields(
+      value,
+      ['key', 'name', 'type', 'template', 'placements'],
+      'vector pattern'
+    )
+    const key = label(value.key, 'vector pattern key', 140)
+    const name = label(value.name, 'vector pattern name', 140)
+    if (!record(value.template)) return fail('vector pattern template')
+    fields(
+      value.template,
+      ['type', 'width', 'height', 'fill', 'rings'],
+      'vector template'
+    )
+    const template = value.template
+    if (template.type !== undefined && template.type !== 'vector')
+      return fail('vector template type must be vector')
+    // The preparation owner validates explicit dimensions or measures omitted ones.
+    // Keep the same immutable rings across placements for one exact measurement.
+    if (!Array.isArray(template.rings) || !template.rings.length)
+      return fail('vector template rings')
+    // Source geometry is counted once. Admission checks expanded point budgets,
+    // curve controls and exact bounds, sharing its request-local measurement.
+    if (
+      !Array.isArray(value.placements) ||
+      !value.placements.length ||
+      nodeCount + value.placements.length > limits.expandedNodes
+    )
+      return fail('vector pattern node limit')
+    return value.placements.map((placement, index) => {
+      if (!record(placement)) return fail('vector placement')
+      fields(placement, ['x', 'y', 'fill'], 'vector placement')
+      return {
+        ...template,
+        type: 'vector',
+        key: `${key}-${index}`,
+        name: `${name} - ${index + 1}`,
+        x: number(placement.x, 'vector placement x', 0),
+        y: number(placement.y, 'vector placement y', 0),
+        ...(placement.fill !== undefined ? { fill: placement.fill } : {})
+      }
+    })
+  }
   const copy = (
     value: unknown,
     parent?: string,
     depth = 1,
     generated = false
   ): Node => {
-    if (
-      (!generated && ++sourceNodeCount > limits.nodes) ||
-      !record(value) ||
-      ++nodeCount > limits.expandedNodes ||
-      depth > limits.depth
-    )
-      return fail('node/depth limit')
-    if (!generated && Array.isArray(value.rings)) {
-      for (const ring of value.rings) {
-        if (!Array.isArray(ring)) continue
-        for (const anchor of ring) {
-          sourcePointCount +=
-            1 +
-            (record(anchor) && anchor.inControl ? 1 : 0) +
-            (record(anchor) && anchor.outControl ? 1 : 0)
-          if (sourcePointCount > limits.pathCommands)
-            return fail('vector point limit')
-        }
-      }
-    }
+    if (!generated) consumeSourceNode(value)
+    if (!record(value)) return fail('node must be an object')
+    if (++nodeCount > limits.expandedNodes)
+      return fail(
+        `expanded nodes ${nodeCount} exceed ${limits.expandedNodes} per artifact; use separate preparation calls without omitting detail`
+      )
+    if (depth > limits.depth)
+      return fail(
+        `depth ${depth} exceeds ${limits.depth} per artifact; reduce container nesting without changing visible geometry`
+      )
     const root = parent === undefined
-    const key = root ? '$root' : label(value.key, 'node key', 160)
+    const key = root ? rootKey : label(value.key, 'node key', 160)
     if (nodes.has(key)) return fail('duplicate key')
-    let node = { ...value }
+    let node: Node = { ...value, key }
     if (root) {
       delete node.brief
       delete node.relations
       delete node.projection
+      delete node.sharedFills
     }
     if (node.type === 'projected-face') node = face(node, key, parent)
     nodes.set(key, { node, parent })
     if (node.children !== undefined) {
-      if (!Array.isArray(node.children) || node.children.length > limits.nodes)
+      if (
+        !Array.isArray(node.children) ||
+        node.children.length > limits.expandedNodes
+      )
         return fail('children limit')
       node.children = node.children.flatMap((child) => {
+        if (record(child) && child.type === 'vector-pattern') {
+          consumeSourceNode(child)
+          return expandVectors(child).map((item) =>
+            copy(item, key, depth + 1, true)
+          )
+        }
         if (record(child) && child.type === 'pattern') {
-          if (++sourceNodeCount > limits.nodes) return fail('source node limit')
           return expand(child, key).map((item) =>
             copy(item, key, depth + 1, true)
           )
@@ -575,5 +629,5 @@ export const constructDesign = (
     get(relation.target, relation.property)
   for (const check of brief?.checks ?? [])
     if (!nodes.has(check.key)) fail('check key is missing')
-  return { draft, brief }
+  return { draft, brief, sourceWork: sourceWork.summary() }
 }

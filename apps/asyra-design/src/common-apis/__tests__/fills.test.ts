@@ -1,10 +1,10 @@
-import type { FillAttrs } from '@asyra/utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   commitPropertyChanges: vi.fn(),
   getElementById: vi.fn(),
   patchElementProperties: vi.fn(),
+  updateElementProperties: vi.fn(),
   runTransaction: vi.fn((operation: () => unknown) => operation()),
   updatePropertyById: vi.fn()
 }))
@@ -17,6 +17,7 @@ vi.mock('../../contexts', () => ({
     getElementData: (elementId: string) =>
       mocks.getElementById(elementId) ? { id: elementId } : undefined,
     patchElementProperties: mocks.patchElementProperties,
+    updateElementProperties: mocks.updateElementProperties,
     updatePropertyById: mocks.updatePropertyById
   }
 }))
@@ -117,10 +118,7 @@ describe('fill common API primary-color boundary', () => {
               key: 'fills',
               set: {
                 'fill-1': {
-                  color: '#DC2626',
-                  colorFormat: 'hex',
-                  opacity: 1,
-                  visible: true
+                  color: '#DC2626'
                 }
               }
             }
@@ -280,34 +278,22 @@ describe('fill common API primary-color boundary', () => {
     expect(mocks.runTransaction).not.toHaveBeenCalled()
   })
 
-  it('preserves canonical fill fields without forwarding UI aggregation metadata', () => {
-    const currentFill = {
-      color: '#050504',
-      colorFormat: 'hex',
-      id: 'fill-1',
-      ids: ['fill-1'],
-      opacity: 1,
-      type: 'fill',
-      visible: true
-    } as FillAttrs & { ids: string[] }
+  it('patches only new fill values without reading or forwarding a caller snapshot', () => {
     const options = {
       sharedDelivery: 'transaction-end',
       undoable: true
     } as const
-
     fillApis.updateFillFields(
       'rect-1',
       'fill-1',
-      currentFill,
       {
         opacity: 0.5,
         visible: false
       },
       options
     )
-
-    expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
-    expect(mocks.patchElementProperties).toHaveBeenCalledWith(
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.patchElementProperties).toHaveBeenCalledExactlyOnceWith(
       [
         {
           elementId: 'rect-1',
@@ -315,12 +301,7 @@ describe('fill common API primary-color boundary', () => {
             {
               key: 'fills',
               set: {
-                'fill-1': {
-                  color: '#050504',
-                  colorFormat: 'hex',
-                  opacity: 0.5,
-                  visible: false
-                }
+                'fill-1': { opacity: 0.5, visible: false }
               }
             }
           ]
@@ -329,7 +310,184 @@ describe('fill common API primary-color boundary', () => {
       options
     )
     expect(mocks.runTransaction).toHaveBeenCalledOnce()
-    expect(mocks.updatePropertyById).not.toHaveBeenCalled()
     expect(mocks.commitPropertyChanges).not.toHaveBeenCalled()
+  })
+
+  it('does not open a transaction for an empty or undefined fill patch', () => {
+    fillApis.updateFillFields('rect-1', 'fill-1', {})
+    fillApis.updateFillFields('rect-1', 'fill-1', { opacity: undefined })
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+  })
+
+  it('updates one field without requiring other fill data', () => {
+    fillApis.updateFillField('rect-1', 'fill-1', 'color', '#123456')
+    expect(mocks.patchElementProperties).toHaveBeenCalledWith(
+      [
+        {
+          elementId: 'rect-1',
+          records: [
+            {
+              key: 'fills',
+              set: {
+                'fill-1': { color: '#123456' }
+              }
+            }
+          ]
+        }
+      ],
+      undefined
+    )
+  })
+})
+
+describe('plural Fill new-value operations', () => {
+  beforeEach(() => vi.clearAllMocks())
+  it('submits distinct target patches once without reading old values', () => {
+    fillApis.updateFillFieldsBatch([
+      { elementId: 'a', fillId: 'fa', patch: { opacity: 0.3 } },
+      { elementId: 'b', fillId: 'fb', patch: { visible: false } },
+      { elementId: 'a', fillId: 'fa', patch: {} }
+    ])
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.patchElementProperties).toHaveBeenCalledExactlyOnceWith(
+      [
+        {
+          elementId: 'a',
+          records: [{ key: 'fills', set: { fa: { opacity: 0.3 } } }]
+        },
+        {
+          elementId: 'b',
+          records: [{ key: 'fills', set: { fb: { visible: false } } }]
+        }
+      ],
+      undefined
+    )
+    expect(mocks.runTransaction).toHaveBeenCalledTimes(1)
+  })
+  it('keeps empty plural calls inert', () => {
+    fillApis.updateFillFieldsBatch([])
+    fillApis.addFills([])
+    fillApis.removeFills([])
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+  })
+})
+
+it('rejects misplaced Fill fields before applying any prefix of a batch', () => {
+  vi.clearAllMocks()
+  expect(() =>
+    fillApis.updateFillFieldsBatch([
+      { elementId: 'a', fillId: 'fa', patch: { opacity: 0.2 } },
+      {
+        elementId: 'b',
+        fillId: 'fb',
+        patch: { color: '#123456', gradientType: 'linear' } as never
+      }
+    ])
+  ).toThrow(/gradientType/)
+  expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  expect(mocks.runTransaction).not.toHaveBeenCalled()
+})
+
+describe('Fill property reuse', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.getElementById.mockImplementation((elementId: string) => ({
+      getAllComputedData: () => ({
+        fills: [
+          { id: `fill-${elementId}`, color: '#123456', opacity: 0.4 },
+          { id: `second-${elementId}`, color: '#abcdef' }
+        ]
+      })
+    }))
+  })
+  it('resolves a uniform patch once per target and writes one plural batch', () => {
+    fillApis.updateFillsAtIndex(['a', 'b'], 0, { color: '#ffffff' })
+    expect(mocks.getElementById).toHaveBeenCalledTimes(2)
+    expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+    expect(mocks.patchElementProperties.mock.calls[0][0]).toEqual(
+      ['a', 'b'].map((elementId) => ({
+        elementId,
+        records: [
+          { key: 'fills', set: { [`fill-${elementId}`]: { color: '#ffffff' } } }
+        ]
+      }))
+    )
+  })
+  it('applies aligned new patches without returning Fill IDs and rejects mismatched input before writes', () => {
+    fillApis.updateFillsAtIndex(['a', 'b'], 0, [
+      { color: '#ffffff' },
+      { opacity: 0.8 }
+    ])
+    expect(mocks.getElementById).toHaveBeenCalledTimes(2)
+    expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+    expect(mocks.patchElementProperties.mock.calls[0][0]).toEqual([
+      {
+        elementId: 'a',
+        records: [{ key: 'fills', set: { 'fill-a': { color: '#ffffff' } } }]
+      },
+      {
+        elementId: 'b',
+        records: [{ key: 'fills', set: { 'fill-b': { opacity: 0.8 } } }]
+      }
+    ])
+    vi.clearAllMocks()
+    expect(() =>
+      fillApis.updateFillsAtIndex(['a', 'b'], 0, [{ color: '#ffffff' }])
+    ).toThrow(/aligned/)
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+  })
+  it('rejects duplicate row targets before any lookup or mutation', () => {
+    for (const patch of [
+      { color: '#ffffff' },
+      [{ color: '#ffffff' }, { color: '#000000' }]
+    ]) {
+      expect(() => fillApis.updateFillsAtIndex(['a', 'a'], 0, patch)).toThrow(
+        /unique/
+      )
+    }
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+  })
+  it('rejects duplicate sharing destinations before lookup or writes', () => {
+    expect(() => fillApis.shareFillAtIndex('a', ['b', 'b'], 0)).toThrow(
+      /unique/
+    )
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+  })
+  it('links only the chosen child Fill property, leaving other rows intact', () => {
+    fillApis.shareFillAtIndex('a', ['b', 'c'], 0)
+    expect(mocks.updateElementProperties).toHaveBeenCalledWith(
+      [
+        { elementId: 'b', values: { fills: ['fill-a', 'second-b'] } },
+        { elementId: 'c', values: { fills: ['fill-a', 'second-c'] } }
+      ],
+      undefined
+    )
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+  it('rejects a missing target row before linking any earlier target', () => {
+    mocks.getElementById.mockImplementation((elementId: string) => ({
+      getAllComputedData: () => ({
+        fills: elementId === 'missing' ? [] : [{ id: `fill-${elementId}` }]
+      })
+    }))
+    expect(() => fillApis.shareFillAtIndex('a', ['b', 'missing'], 0)).toThrow(
+      /Missing/
+    )
+    expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+  })
+  it('detaches into a new child ID with current values and preserves other references', () => {
+    fillApis.detachFillsAtIndex(['a'], 0)
+    const change = mocks.updateElementProperties.mock.calls[0][0][0]
+    const newId = change.values.fills[0]
+    expect(newId).not.toBe('fill-a')
+    expect(
+      mocks.patchElementProperties.mock.calls[0][0][0].records[0].set[newId]
+    ).toMatchObject({ color: '#123456', opacity: 0.4 })
+    expect(change.values.fills[1]).toBe('second-a')
   })
 })

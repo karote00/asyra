@@ -93,7 +93,25 @@ child process. No process or model work starts on App startup. The process is
 closed before success or failure settles. Cancellation,
 protocol errors, unavailable login, and malformed output never execute incomplete batches. Ordinary execution failures and explicit cancellation preserve successful finite members; the App seals them into one request-owned Undo entry. A failed member rolls back only its own writes.
 Parallel turns have independent process, output, cancellation, and configuration.
-No retained cache or cross-turn conversation is introduced.
+Required stdout read failure/EOF or stdin error/finish/close before protocol
+completion closes the affected invocation even if its process has not exited yet.
+Stream or process closure after a complete protocol is normal, including a validated
+readiness-only acknowledgement. Optional stderr read failure is recorded but cannot
+fail the drawing. Thread and turn acknowledgements are validated before admitting
+subsequent tool packets, including packets received together in one chunk; tools
+must match the acknowledged active turn. Progress observer exceptions are recorded
+without private text and cannot interrupt execution or receipt delivery.
+Transport records retain only channel/status/terminal disposition and correlation,
+never raw error text or diagnostic bytes.
+Before thread creation, read effective native configuration once and disable each
+inherited MCP server by name in the request-local thread override. Empty tables
+merge with inherited configuration and do not clear it. Do not modify user config
+or retain server names across requests. Invalid configuration stops admission
+before inference; native App tools and permitted web research remain available.
+No retained cache or cross-turn conversation is introduced. The same isolation
+policy applies at child launch and thread creation: disable native hooks, legacy
+notification commands and both multi-agent variants, in addition to the existing
+App/plugin/shell isolation. User configuration files are never modified.
 
 The local provider explicitly sets medium reasoning effort for both thread
 configuration and turn execution, and checks the thread acknowledgement before
@@ -142,7 +160,11 @@ and may follow the user request or personal language preferences.
 
 Codex manages its own credentials. The App never reads, copies, serializes,
 returns, or logs credential files, account identity, provider stderr, or raw
-protocol errors. Only the account type is checked in memory. Configuration and
+protocol errors. Only the account type is checked in memory. Native retry/error notifications
+retain public error kinds, retry disposition and numeric HTTP/RPC status with
+thread/turn correlation; unknown kinds are unclassified, and private text/data
+are omitted. Recording a retry never interrupts native recovery or changes turn
+settlement. Configuration and
 credentials are excluded from templates. Authentication and rate limits remain
 with the user's subscription; inference still runs remotely.
 
@@ -492,6 +514,8 @@ turn. Unknown tool/call identities remain protocol failures.
 
 The App HTTP request and local model turn have no elapsed-time deadline. Stop,
 disposal and client disconnect still abort work and close the owned child process.
+Browser cancellation is checked before consuming each buffered frame; no subsequent
+batch callback or receipt is dispatched after Stop, even within the same chunk.
 The readiness check retains its 10-second deadline; individual network/tool and
 payload/call-count bounds remain unchanged. Generic HTTP providers opt out with
 `timeoutMs: null`; an omitted value retains the Framework default.
@@ -659,7 +683,6 @@ server validation and phase-specific required fields remain authoritative. The
 permanent offline alternative-validation test and opt-in native review probe cover
 both schema validation and actual deferred tool discovery.
 
-
 ### Inspecting execution records locally
 
 Build the read-only reporting command once after source changes:
@@ -687,7 +710,6 @@ Configuration grouping does not establish equivalent drawing tasks. A repeated
 query candidate is not a proven unnecessary call, and unknown time is not measured
 model reasoning. Accepted model review evidence is not independent visual proof.
 
-
 An optional explicit assessment reuses the configured local model at medium effort:
 
 ```sh
@@ -711,7 +733,6 @@ The diagnostic model projection includes up to 40 calls ranked by unresolved
 status and observed duration, states the omitted count, and leaves the complete
 record untouched. This bound never limits drawing tools or execution. User
 criteria govern evaluation; it does not impose a high-detail drawing style.
-
 
 ### Narrow API discovery
 

@@ -54,7 +54,7 @@ it('does not capture after cancellation and preserves explicit unavailable resul
   ).toMatchObject({ available: false })
 })
 
-it('bounds metadata reads and captures once per invocation without reusing old images', () => {
+it('captures fresh images without querying unrelated subtree metadata', () => {
   core.getElementData.mockImplementation((id: string) =>
     id === 'group'
       ? {
@@ -76,12 +76,11 @@ it('bounds metadata reads and captures once per invocation without reusing old i
   const first = inspectionApis.inspect('group')
   expect(first).toMatchObject({
     available: true,
-    elementsTruncated: true,
     imageScope: 'overview',
     image: { dataUrl: 'first' }
   })
-  expect(first.elements).toHaveLength(200)
-  expect(core.getElementComputedData).toHaveBeenCalledTimes(200)
+  expect(first).not.toHaveProperty('elements')
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
   expect(core.captureElementSnapshot).toHaveBeenCalledWith('group', 1024, {
     nativeResolution: false
@@ -90,6 +89,8 @@ it('bounds metadata reads and captures once per invocation without reusing old i
     image: { dataUrl: 'second' }
   })
   expect(core.captureElementSnapshot).toHaveBeenCalledTimes(2)
+  expect(core.getElementData).toHaveBeenCalledTimes(2)
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   core.captureElementSnapshot.mockImplementation(() => {
     throw new Error('Unsupported renderer')
   })
@@ -131,7 +132,6 @@ it('keeps overview and native detail capture separate without mutating source ge
   })
   expect(inspectionApis.inspect('drawing')).toMatchObject({
     imageScope: 'overview',
-    elementsTruncated: false,
     partial: false
   })
   expect(core.captureElementSnapshot).toHaveBeenLastCalledWith(

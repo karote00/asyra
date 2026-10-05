@@ -9,6 +9,7 @@ import {
   viewportApis
 } from '../common-apis'
 import { basicApiContracts } from './basic-api-catalog'
+import { describeBasicApiResult } from './basic-api-results'
 import type { BasicApiOwner } from './basic-api-contracts'
 
 type ApiOwners = Record<BasicApiOwner, object>
@@ -58,13 +59,7 @@ export const createBasicApiActions = (
       else if (contract.effect === 'write' && typeof value === 'string')
         elementId = value
       return {
-        status:
-          (contract.effect === 'write' || contract.effect === 'delete') &&
-          value !== false &&
-          value !== null
-            ? 'complete'
-            : 'no-change',
-        value: value ?? null,
+        ...describeBasicApiResult(contract, value, args.elementIds),
         ...(elementId ? { elementId } : {})
       }
     }

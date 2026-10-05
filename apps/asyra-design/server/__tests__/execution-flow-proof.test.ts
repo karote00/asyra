@@ -1,3 +1,10 @@
+const reviewCriteria = (names: readonly string[]) =>
+  Object.fromEntries(
+    names.map((id) => [
+      id,
+      { requirement: id, description: id, verification: 'visual' }
+    ])
+  )
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { expect, it, vi } from 'vitest'
@@ -84,6 +91,7 @@ it('execution proof preserves registered native capability envelopes', async ({
         if (packet.id === undefined) return
         const responses: Record<string, unknown> = {
           initialize: {},
+          'config/read': { config: {} },
           'account/read': { account: { type: 'chatgpt' } },
           'thread/start': {
             thread: { id: 'proof-thread' },
@@ -106,11 +114,31 @@ it('execution proof preserves registered native capability envelopes', async ({
               callId: 'discover',
               namespace: 'design_operations',
               tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-              arguments: { names: basicApiContracts.map(({ name }) => name) }
+              arguments: {
+                names: [
+                  ...basicApiContracts.map(({ name }) => name),
+                  AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+                  AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
+                ]
+              }
             }
           })
         }
         if (packet.id === 100 && packet.result) {
+          send({
+            id: 101,
+            method: 'item/tool/call',
+            params: {
+              threadId: 'proof-thread',
+              turnId: 'proof-turn',
+              callId: 'discover-fill',
+              namespace: 'design_operations',
+              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              arguments: { category: 'fill', includeSchemas: true }
+            }
+          })
+        }
+        if (packet.id === 101 && packet.result) {
           send({
             method: 'item/completed',
             params: {
@@ -148,6 +176,11 @@ it('execution proof preserves registered native capability envelopes', async ({
           description,
           inputSchema: inputSchema as AiActionDescription['inputSchema']
         })),
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        },
         {
           name: 'report_outcome',
           description: 'Report the outcome',
@@ -199,6 +232,47 @@ it('execution proof preserves registered native capability envelopes', async ({
       properties: { query: { type: 'string' }, names: { type: 'array' } }
     }
   })
+  const categoryDiscovery = packets.find(
+    (packet) => packet.id === 101 && packet.result
+  )?.result
+  expect(categoryDiscovery?.success).toBe(true)
+  if (!categoryDiscovery) throw new Error('Missing category discovery receipt')
+  const categoryApis = JSON.parse(categoryDiscovery.contentItems[0].text).apis
+  expect(categoryApis).toEqual(
+    basicApiContracts
+      .filter((api) => api.category === 'fill')
+      .map((api) =>
+        expect.objectContaining({
+          name: api.name,
+          definition: expect.objectContaining({ state: 'previously-returned' })
+        })
+      )
+  )
+  for (const api of categoryApis) expect(api.inputSchema).toBeUndefined()
+  const mixed = packets.find(
+    (packet) => packet.id === 100 && packet.result
+  )?.result
+  expect(mixed?.success).toBe(true)
+  if (!mixed) throw new Error('Missing mixed discovery receipt')
+  const nativeMatches = JSON.parse(mixed.contentItems[0].text).tools
+  for (const name of [
+    AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
+  ]) {
+    expect(nativeMatches).toContainEqual(
+      expect.objectContaining({
+        name,
+        schemaSource: 'registered-tool-contract',
+        execution: expect.objectContaining({ kind: 'native-tool', tool: name })
+      })
+    )
+  }
+  for (const tool of nativeMatches) {
+    expect(tool.inputSchema).toEqual(expect.any(Object))
+    expect(tool.description).toEqual(expect.any(String))
+    expect(tool.definition.state).toBe('included')
+  }
+  expect(executeBatch).not.toHaveBeenCalled()
   expect(names.has(AiDesignToolIds.EXECUTE_DESIGN_BATCH)).toBe(true)
   const discovery = packets.find(
     (packet) => packet.id === 100 && packet.result
@@ -221,11 +295,17 @@ it('execution proof preserves registered native capability envelopes', async ({
     records
       .filter((record) => record.stage === 'provider_request_started')
       .map((record) => record.evidence.method)
-  ).toEqual(['initialize', 'account/read', 'thread/start', 'turn/start'])
+  ).toEqual([
+    'initialize',
+    'account/read',
+    'config/read',
+    'thread/start',
+    'turn/start'
+  ])
   const completed = records.filter(
     (record) => record.stage === 'provider_request_completed'
   )
-  expect(completed).toHaveLength(4)
+  expect(completed).toHaveLength(5)
   expect(completed.every((record) => record.evidence.durationMs >= 0)).toBe(
     true
   )
@@ -364,7 +444,10 @@ it('execution proof composes preparation and canonical dispatch without repeated
     }
   )
   const operations = createLocalOperationTools(actions, designs, execute)
-  const workflow = createLocalDesignWorkflow(designs, operations)
+  const handoffs: { stage: string; tool?: unknown }[] = []
+  const workflow = createLocalDesignWorkflow(designs, operations, {
+    trace: (stage, evidence) => handoffs.push({ stage, ...evidence })
+  })
   const signal = new AbortController().signal
   const schedule = createLocalToolScheduler(signal)
   let resume!: () => void
@@ -398,6 +481,15 @@ it('execution proof composes preparation and canonical dispatch without repeated
     await Promise.all(independent)
   }
   const result = JSON.parse(await application)
+  expect(
+    handoffs
+      .filter((entry) => entry.stage === 'action_started')
+      .map((entry) => entry.tool)
+  ).toEqual(['prepare_design', 'apply_prepared_design'])
+  expect(result.completedSteps).toEqual([
+    'prepare_design',
+    'apply_prepared_design'
+  ])
   expect(compile).toHaveBeenCalledTimes(1)
   expect(execute).toHaveBeenCalledTimes(1)
   const dispatched = execute.mock.calls[0][0].actions
@@ -438,18 +530,31 @@ it('execution proof composes preparation and canonical dispatch without repeated
 
 it('execution proof distinguishes stage readiness from current final assessment', async () => {
   const review = createLocalDesignReview()
+  const savedFacts = review.record({
+    phase: 'facts',
+    facts: [
+      {
+        id: 'scale',
+        statement: 'Requested scale is 1 cm = 1 px.',
+        scope: 'User scale only',
+        sources: ['request'],
+        verification: 'Explicit user requirement',
+        dependencies: [{ key: 'request:scale', version: '1' }]
+      }
+    ]
+  })
   review.record({
     phase: 'plan',
     method: 'Preserve the requested appearance',
     references: [],
-    criteria: ['Silhouette', 'Finish'],
+    criteria: reviewCriteria(['Silhouette', 'Finish']),
     structureCriteria: ['Silhouette'],
     detailRequired: true
   })
-  const check = (requirement: string) => ({
-    requirement,
+  const check = (criterionId: string) => ({
+    criterionId,
     status: 'pass',
-    evidence: `Observed ${requirement}`
+    evidence: `Observed ${criterionId}`
   })
   review.mutate()
   const initial = review.inspect('root', true, true)?.inspectionId
@@ -469,6 +574,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
     })
   ).toThrow()
   expect(review.getIssue()).toBeTruthy()
+  expect(review.record({ phase: 'facts' })).toEqual(savedFacts)
   expect(
     review.record({
       phase: 'visual',
@@ -527,7 +633,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
       phase: 'plan',
       method: 'Match the brief',
       references: [],
-      criteria: ['Silhouette'],
+      criteria: reviewCriteria(['Silhouette']),
       detailRequired: false
     },
     signal
@@ -549,7 +655,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
       },
       signal
     )
-  ).rejects.toThrow(/cover|full drawing/)
+  ).resolves.toContain('"accepted":false')
   const image = JSON.parse(
     await operations.call(
       AiActionNames.INSPECT_DRAWING,
@@ -675,7 +781,7 @@ it('execution proof accounts observed spans without private payloads or invented
     const report = JSON.parse(String(log.mock.calls.at(-1)?.[0]))
     expect(report.timing).toEqual({
       observedToolAndResearchMs: 100,
-      unattributedMs: 400
+      outsideToolAndResearchMs: 400
     })
     const serialized = JSON.stringify(log.mock.calls)
     expect(serialized).not.toContain('private user brief')

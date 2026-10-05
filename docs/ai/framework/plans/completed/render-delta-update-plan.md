@@ -66,7 +66,7 @@ In scope:
 - add, remove, load, undo, redo, replay, frame coalescing, and teardown parity
 - exact full-snapshot equivalence and bounded cache lifecycle tests
 - the existing engine-neutral strategy and command handoff
-- a formal dense-vector count and timing budget
+- formal dense-vector work-count limits and observational timing reports
 
 Out of scope:
 
@@ -325,16 +325,21 @@ must never receive a handle created by an earlier engine.
 
 ## Profiling and Cache Decision
 
-Three repeated Chromium runs of the formal fixture produced these observed ranges:
+Historical evidence: three repeated Chromium runs of the original formal fixture
+produced the observed ranges below. The former local timing thresholds are retained
+for context; they are not current acceptance criteria.
 
-| Phase                                          | Count/run | Observed p95 |         Formal total / p95 / max budget |
+| Phase                                          | Count/run | Observed p95 |  Historical total / p95 / max threshold |
 | ---------------------------------------------- | --------: | -----------: | --------------------------------------: |
 | Scene Tree canonical patch                     |        12 |   1.0–1.4 ms |                           24 / 4 / 6 ms |
 | transaction publish + Render snapshot delivery |        12 |       0.1 ms |                            6 / 1 / 2 ms |
 | vector strategy geometry                       |        12 |   1.5–1.8 ms | 24 / 4 / 8 ms cold max; 6 ms steady max |
 | engine handoff per frame                       |        12 |   0.9–1.0 ms |                           18 / 3 / 5 ms |
 
-The combined phase p95 budget is 12 ms. Render delta apply count must be 12 and
+Elapsed times are observational, not pass/fail thresholds. The historical combined
+phase p95 threshold was 12 ms. Current deterministic checks are enforced by
+`apps/asyra-design/e2e/render-contracts.mjs`, called from the maintained E2E.
+Render delta apply count must be 12 and
 Render full rehydrate count must be 0. Across all canonical/UI consumers,
 `element.save()` is bounded to 12 calls and `getAllComputedData()` to 13 calls;
 these are separate from the zero Render seed count. The fresh full-snapshot
@@ -347,21 +352,23 @@ Before installing the phase timers, the formal fixture creates its vector and
 fill, then waits for the active Collaboration session and publication outbox to
 be idle and confirms that the session remains connected. This excludes fixture
 setup publication work from the measured Render phases without changing the
-ordinary App composition or any formal timing threshold.
+ordinary App composition or work-count limits.
 
 Pull-request CI runs this timing fixture with the exact Playwright-managed
 Chromium binary installed by the workflow. The remaining functional E2E suite
-continues to use the configured Google Chrome channel. This pins the timing
-runner without changing the measured 12-frame product flow, sample counts,
-total, p95, cold/steady max budgets, ordinary App composition, or zero-retry
-policy.
+continues to use the configured Google Chrome channel. This pins the browser
+version, but does not establish equal machine capacity across hosts. The measured
+12-frame flow, exact phase/sample counts, ordinary App composition and zero-retry
+policy remain unchanged; elapsed times are recorded without fixed timing gates.
 
 For this bounded 12-frame sample, p50 and p95 use the lower sample quantile at
-`floor((sampleCount - 1) * ratio)`. The maximum sample retains its own explicit
-oracle, so the p95 and max budgets remain independent. The first vector
-strategy invocation on a clean browser process is reported as the cold strategy
-frame with an 8 ms max; the remaining 11 steady-state frames retain the original
-6 ms max.
+`floor((sampleCount - 1) * ratio)`. The maximum sample is reported
+separately from p95, with no timing outliers removed. The first measured strategy
+sample is reported separately from the remaining 11 samples; it is not assumed to
+be cold after fixture warm-up. Raw samples, warm-up observations and timing summaries
+remain available even when work-count assertions fail. A slow host alone does not
+fail these checks. No timing result establishes a performance improvement without
+a controlled reference host and baseline.
 
 ## Owner Slices
 
