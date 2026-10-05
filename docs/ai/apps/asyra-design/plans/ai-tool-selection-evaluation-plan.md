@@ -1018,3 +1018,20 @@ contract: assert the requested elementId and absence of implicit object data;
 retain all three pixel checks, image freshness, size, and Undo/Redo assertions.
 A bounded search of E2E inspection-result consumers found only this stale read.
 No product API change or restored duplicate payload is needed.
+
+## CI integration iteration - cold browser admission loading
+
+The previous dual-environment fix passed a warm local Vite cache but failed
+CI run 37330875212: loading the first basic action dynamically discovered
+`lodash/isEqual.js`, triggered dependency optimization and reloaded the page
+during invocation. The existing registered-action test detects the failure.
+
+Revised compose step: consume the already shared lodash package through its
+native-ESM-compatible default export, preserving the same isEqual function.
+Only operation-input-schema.ts and this plan change. Inputs, outputs, canonical
+admission and failure ownership stay as defined by the compose Inspector; no
+fixture retry, browser-reload recovery, alternate validator or Vite exception.
+Self-review: the package root is already in the App's static dependency graph;
+default import also handles native Node CommonJS interop. Verify the existing
+schema suite, App build, and basic-action E2E from a cold Vite cache, followed
+by affected local gates. Stop on any admission or loading regression.

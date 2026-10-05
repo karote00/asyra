@@ -1,4 +1,6 @@
-import isEqual from 'lodash/isEqual.js'
+import lodash from 'lodash'
+
+const { isEqual } = lodash
 
 // App-owned model-input admission. Canonical executors remain the authority for
 // target permissions, current state and writes. Never validate prepared geometry
