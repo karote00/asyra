@@ -139,7 +139,8 @@ it('prepares invariant gradient inputs once per fill instead of once per pixel',
   )
   expect(pixels).toBe(9_216_000)
   expect(typeReads).toBeLessThanOrEqual(count)
-})
+  // Keep the full raster workload; this is a hang guard, not a speed assertion.
+}, 30_000)
 
 it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
   'prepares %s handle coordinates once per raster',

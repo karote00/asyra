@@ -1035,3 +1035,16 @@ Self-review: the package root is already in the App's static dependency graph;
 default import also handles native Node CommonJS interop. Verify the existing
 schema suite, App build, and basic-action E2E from a cold Vite cache, followed
 by affected local gates. Stop on any admission or loading regression.
+
+## CI integration - retained raster work-count watchdog
+
+CI run 37333920794 completed the retained 24-fill, 9,216,000-pixel fixture
+with exactly 24 gradient-type reads in 5,662 ms, then failed Vitest's default
+5-second watchdog. This is a test-runtime limit, not a failed work-count or
+pixel oracle. Scope is only even-odd-fill-work.test.ts and this plan; production
+rendering and Inspector behavior remain unchanged. Keep the full fixture, pixel
+snapshots and work-count assertions; give this one expensive case a bounded
+30-second watchdog. Duration remains diagnostic, never a throughput acceptance
+threshold. The existing CI failure supplies regression evidence. Validate the
+Render workspace with coverage, then shared gates. Self-review confirms no
+production contract, workload, assertion, retry or global timeout is changed.
