@@ -2,7 +2,7 @@
 
 These are permanent manual product trials for the installed candidate. They are
 not packaging assertions or evidence that a model has already complied. Run in
-fresh Codex conversations with the candidate version confirmed from the actual
+fresh host conversations with the candidate version confirmed from the actual
 loaded Skill's `bundle.json`. Keep each project inside the user's selected
 workspace. Use an empty directory for the first trial; never overwrite a product.
 
@@ -13,10 +13,12 @@ actually loaded Skill path and `bundle.json` version, not the plugin page label.
 Record the model and reasoning setting actually selected, project location,
 Starter source/CLI version and installed package versions. Keep the model and
 settings fixed when comparing bundles; do not guess them from an actor label.
-No terminal installation or installed-cache modification is required by this
-protocol. Use the desktop installation route already accepted by the user.
+Choose one documented installation route for the host under test. Record the
+host/client version and route separately from the model. Never modify an
+installed cache as part of product acceptance.
 
-The baseline is the retained 0.1.1 bundle; the candidate is 0.1.2. Both contain
+For the historical reference-refresh comparison, the baseline is the retained
+0.1.1 bundle and the candidate is 0.1.2. Both contain
 identical Skill instructions. Their canonical references differ. A fresh trial
 must receive its chosen bundle only, not prior answers or the review findings.
 This round budgets one creation and one subsequent extension per configuration.
@@ -135,3 +137,13 @@ versions, commands, failures, attempt count and reviewer findings for every actu
 trial. Keep creation and extension outcomes separate; do not collapse skipped or
 pending checks into success. The informed maintenance session is not an
 independent trial or reviewer. Do not invoke other agents without authorization.
+
+## Portable phase-one acceptance
+
+For 0.1.7, run the same creation and extension scenarios independently in Codex,
+Claude Code and Grok Build. Confirm the actual loaded Skill path and version
+first. Do not substitute one host's result for another or transfer previous
+answers. Record native discovery, reference access, product implementation and
+product checks separately. General chat upload tests do not prove coding-client
+installation. The current native trials remain pending; packaging tests only
+prove manifests, reference integrity and relocation.

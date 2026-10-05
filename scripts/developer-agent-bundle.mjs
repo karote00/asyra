@@ -8,9 +8,11 @@ const PLUGIN = 'plugins/asyra-agent'
 const SKILL = 'skills/asyra-agent'
 const RECORD = `${SKILL}/bundle.json`
 const MANIFEST = '.codex-plugin/plugin.json'
+const CLAUDE_MANIFEST = '.claude-plugin/plugin.json'
 const INVENTORY = 'docs/public/generated/package-reference.json'
 const STATIC_FILES = [
   MANIFEST,
+  CLAUDE_MANIFEST,
   'bundle.config.json',
   'README.md',
   'CHANGELOG.md',
@@ -137,8 +139,22 @@ export function renderReference(sourcePath, source, documents) {
 
 export function createBundle(root) {
   const directory = contained(root, PLUGIN)
-  const manifest = manifestAt(directory)
   const config = JSON.parse(read(directory, 'bundle.config.json'))
+  const identity = config.identity
+  version(identity?.version)
+  if (
+    identity.name !== 'asyra-agent' ||
+    !identity.author?.name ||
+    !identity.description ||
+    !identity.license ||
+    !config.codexInterface
+  )
+    fail('Invalid shared Agent identity')
+  const manifest = {
+    ...identity,
+    skills: './skills/',
+    interface: config.codexInterface
+  }
   const documents = config.documents
   if (
     !Array.isArray(documents) ||
@@ -157,10 +173,12 @@ export function createBundle(root) {
     contained(root, source)
   }
   const outputs = new Map()
+  outputs.set(MANIFEST, json(manifest))
+  outputs.set(CLAUDE_MANIFEST, json(identity))
   const inputs = {}
   const files = {}
   for (const relative of STATIC_FILES)
-    files[relative] = hash(read(directory, relative))
+    files[relative] = hash(outputs.get(relative) ?? read(directory, relative))
   for (const source of [...documents].sort()) {
     const bytes = read(root, source)
     inputs[source] = hash(bytes)
@@ -184,14 +202,17 @@ export function createBundle(root) {
   }
   if (!referenceVersions['@asyra/core'])
     fail('Public package inventory is missing Core')
-  const identity = {
+  const bundleIdentity = {
     schemaVersion: 1,
     pluginVersion: manifest.version,
     inputs,
     referenceVersions,
     files
   }
-  const record = { ...identity, contentDigest: hash(json(identity)) }
+  const record = {
+    ...bundleIdentity,
+    contentDigest: hash(json(bundleIdentity))
+  }
   outputs.set(RECORD, json(record))
   return { directory, outputs, record }
 }
@@ -236,6 +257,61 @@ export function inspectPlugin(directory) {
     if (hash(read(directory, relative)) !== digest)
       fail(`Changed or stale plugin file: ${relative}`)
   }
+  const config = JSON.parse(read(directory, 'bundle.config.json'))
+  const other = JSON.parse(read(directory, CLAUDE_MANIFEST))
+  if (
+    json(other) !== json(config.identity) ||
+    json(manifest) !==
+      json({
+        ...config.identity,
+        skills: './skills/',
+        interface: config.codexInterface
+      })
+  )
+    fail('Plugin adapters differ from shared Agent identity')
+  return record
+}
+
+// The same record describes the full distribution. A standalone installation
+// checks only its Skill subtree and never reaches into a host plugin directory.
+export function inspectSkill(directory) {
+  const record = JSON.parse(read(directory, 'bundle.json'))
+  const { contentDigest, ...identity } = record
+  version(record.pluginVersion)
+  if (record.schemaVersion !== 1 || hash(json(identity)) !== contentDigest)
+    fail('Invalid Skill bundle identity')
+  const entries = Object.entries(record.files ?? {}).filter(([file]) =>
+    file.startsWith(`${SKILL}/`)
+  )
+  if (!entries.some(([file]) => file === `${SKILL}/SKILL.md`))
+    fail('Missing Skill entry point')
+  const expected = new Set(['bundle.json'])
+  for (const [file, digest] of entries) {
+    const relative = file.slice(SKILL.length + 1)
+    expected.add(relative)
+    if (hash(read(directory, relative)) !== digest)
+      fail(`Changed or stale Skill file: ${relative}`)
+  }
+  for (const file of filesUnder(directory))
+    if (!expected.has(file)) fail(`Unexpected Skill file: ${file}`)
+  return record
+}
+
+export function exportSkill(root, relative) {
+  const record = checkBundle(root)
+  const destination = contained(root, relative)
+  if (fs.existsSync(destination))
+    fail('Skill export destination must not exist')
+  const source = contained(root, `${PLUGIN}/${SKILL}`)
+  if (destination.startsWith(contained(root, PLUGIN) + path.sep))
+    fail('Skill export cannot be inside its source')
+  fs.mkdirSync(destination, { recursive: true })
+  for (const file of filesUnder(source)) {
+    const target = contained(destination, file)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.copyFileSync(contained(source, file), target)
+  }
+  inspectSkill(destination)
   return record
 }
 
@@ -257,6 +333,16 @@ export function checkBundle(root, baseline) {
   )
     fail('Invalid Asyra marketplace entry')
   if (baseline) checkVersion(record, baseline)
+  const otherMarket = JSON.parse(read(root, '.claude-plugin/marketplace.json'))
+  const otherEntry = otherMarket.plugins?.find(
+    (item) => item.name === 'asyra-agent'
+  )
+  if (
+    otherMarket.name !== marketplace.name ||
+    !otherMarket.owner?.name ||
+    otherEntry?.source !== `./${PLUGIN}`
+  )
+    fail('Invalid Claude marketplace entry')
   return record
 }
 
@@ -293,6 +379,13 @@ export function writeBundle(root) {
 
 function main(args) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+  if (args[0] === '--export-skill' && args.length === 2) {
+    const record = exportSkill(root, args[1])
+    process.stdout.write(
+      `Asyra Agent ${record.pluginVersion} - Skill exported to ${args[1]}\n`
+    )
+    return
+  }
   const [mode, flag, baselinePath, ...extra] = args
   if (
     !['--write', '--check'].includes(mode) ||
@@ -300,7 +393,7 @@ function main(args) {
     (flag && (mode !== '--check' || flag !== '--baseline' || !baselinePath))
   )
     fail(
-      'Usage: node scripts/developer-agent-bundle.mjs --write|--check [--baseline project-relative-bundle.json]'
+      'Usage: node scripts/developer-agent-bundle.mjs --write|--check [--baseline project-relative-bundle.json] | --export-skill project-relative-directory'
     )
   let record
   if (mode === '--write') record = writeBundle(root)

@@ -91,6 +91,7 @@
       "ownsInputs": true,
       "patterns": [
         ".agents/plugins/marketplace.json",
+        ".claude-plugin/marketplace.json",
         "plugins/asyra-agent/**",
         "plugins/asyra-developer/**",
         "docs/ai/tools/developer-agent/*.md",

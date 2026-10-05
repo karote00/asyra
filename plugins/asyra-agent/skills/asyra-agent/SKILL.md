@@ -32,14 +32,18 @@ supply package names or an architecture design you can establish yourself.
 1. Read the target project's instructions and current changes. Establish the
    authorized task boundary and preserve unrelated work.
 2. Resolve this Skill from the exact location supplied by the host's Skill
-   catalog. Resolve `bundle.json` and `references/` relative to that loaded
+   catalog or explicit user-selected Skill folder. Resolve `bundle.json` and
+   `references/` relative to that loaded
    `SKILL.md`; never reconstruct a cache path from a marketplace or version.
-   An independent product is not expected to contain these plugin files. If the
+   An independent product is not expected to contain these Skill files. If the
    supplied path is missing, report that lookup failure and use the host's
-   plugin inventory to locate the installed Skill; a missing path alone is not
-   evidence of a version mismatch. Read [bundle identity](bundle.json). Its
-   `referenceVersions` identify the
-   package versions used by these guides, not a promise of compatibility with
+   Skill or plugin inventory to locate the installed Skill; a missing path alone
+   is not
+   evidence of a version mismatch. A host without filesystem/tool access cannot
+   implement or verify a local product; state the limitation rather than claim
+   files or checks were completed. Read [bundle identity](bundle.json). Its
+   `pluginVersion` is the shared Agent release version, including standalone
+   Skill installs. Its `referenceVersions` identify the package versions used by these guides, not a promise of compatibility with
    every project. Inspect the target's installed versions, public exports and
    declarations before using an API. If versions differ, confirm the needed
    API against that installation; resolve unavailable APIs before dependent
@@ -160,8 +164,11 @@ push, dependency-upgrade, installation or multi-agent permissions.
 The included references are generated from maintained Asyra documents. Links
 between bundled guides work offline. External source links provide provenance
 or further reading and may describe a different revision; inspect installed
-APIs before relying on them. For maintenance, update the plugin through its
-marketplace; do not rewrite the installed reference snapshot during a task.
+APIs before relying on them. For maintenance, use the installation source to
+update the complete Skill or
+plugin, then verify its bundle in a fresh session. Do not rewrite the installed
+reference snapshot during a task. Tool-specific installation and invocation
+syntax belongs to the host; these development instructions are shared.
 
 ## Failure Policy
 
