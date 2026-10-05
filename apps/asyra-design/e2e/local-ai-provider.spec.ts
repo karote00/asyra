@@ -9,7 +9,13 @@ import {
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import { convertBuffer } from '@visioncortex/vtracer'
 import { convertVTracerBuffer } from '../vtracer-tool-server.mjs'
-import { expect, test, type Page, type Frame } from '@playwright/test'
+import {
+  expect,
+  test,
+  type Page,
+  type Frame,
+  type Request
+} from '@playwright/test'
 import {
   captureBrowserErrors,
   getCapturedBrowserErrors,
@@ -1762,141 +1768,155 @@ const waitForRecordedDrawing = async (
     stopAfterFirstVisibleMs?: number
   }
 ) => {
-  const message = page.getByTestId('ai-agent-message').last()
-  const baseline = observation
-    ? (observation.baseline ?? (await captureRecordedCanvas(page)))
-    : undefined
-  let lastUnchangedAtMs = baseline
-    ? Math.max(0, baseline.captureStartedAt - started)
-    : 0
-  let visibleChangeObserved = false
-  if (baseline)
-    timeline.push({
-      interaction: 'canvas-baseline',
-      elapsedMs: lastUnchangedAtMs,
-      region: baseline.clip
-    })
-  const observeCanvas = async () => {
-    if (!baseline || visibleChangeObserved) return
-    const current = await captureRecordedCanvas(page, baseline.clip)
-    const elapsedMs = Math.max(0, current.capturedAt - started)
-    if (current.pixels.equals(baseline.pixels)) {
-      // Screenshot sampling itself has a duration; its start is the safe
-      // lower bound, not the later time when Playwright returns the image.
-      lastUnchangedAtMs = Math.max(0, current.captureStartedAt - started)
-      return
-    }
-    visibleChangeObserved = true
-    timeline.push({
-      interaction: 'first-visible-canvas-change',
-      elapsedMs,
-      lastUnchangedAtMs,
-      region: baseline.clip,
-      evidence: 'screenshot-pixels',
-      quality: 'not-assessed'
-    })
-    if (observation?.imagePath)
-      await writeFile(observation.imagePath, current.png)
-    if (observation?.stopAfterFirstVisibleMs !== undefined) {
-      await page.waitForTimeout(observation.stopAfterFirstVisibleMs)
-      const stop = page.getByRole('button', {
-        name: 'Cancel request',
-        exact: true
-      })
-      // A control may temporarily disappear during a render. Only a terminal
-      // conversation outcome can establish that there is no active request.
-      await expect
-        .poll(
-          async () => {
-            if (await stop.isVisible()) return true
-            const outcome = await message.getAttribute('data-outcome')
-            return !!outcome && outcome !== 'active'
-          },
-          { timeout: 30_000 }
-        )
-        .toBe(true)
-      const outcomeBeforeStop = await message.getAttribute('data-outcome')
-      const active = outcomeBeforeStop === 'active'
-      if (active) await stop.click()
-      await expect(message).not.toHaveAttribute('data-outcome', 'active', {
-        timeout: 30_000
-      })
-      timeline.push({
-        interaction: 'first-output-stop',
-        elapsedMs: Date.now() - started,
-        cancelledActiveRequest: active,
-        settledOutcome: await message.getAttribute('data-outcome')
-      })
-    }
-  }
-  let initiallyFitted = false
+  let failure: unknown
   let interruption: Error | undefined
-  const onNavigation = (frame: Frame) => {
-    if (frame !== page.mainFrame()) return
+  const recordNavigation = (url: string) => {
+    if (interruption) return
     timeline.push({
       elapsedMs: Date.now() - started,
       interaction: 'page-navigation',
-      url: frame.url()
+      url
     })
     interruption = new Error(
       'Recording interrupted by page reload or navigation; inspect the navigation and development-reload timeline. This is not drawing completion.'
     )
   }
+  const onNavigation = (frame: Frame) => {
+    if (frame === page.mainFrame()) recordNavigation(frame.url())
+  }
+  const onNavigationRequest = (request: Request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+      recordNavigation(request.url())
+  }
+  // A browser RPC can reject before the replacement document commits.
+  page.on('request', onNavigationRequest)
   page.on('framenavigated', onNavigation)
   // Browser-local navigation must not wait for a screenshot RPC to finish.
   // The fixture state is disposed below; ordinary App usage never installs it.
   const observerKey = `recording-first-fit-${started}`
-  await page.evaluate(
-    async ({ observerKey, started }) => {
-      const { core, testRuntimeState } =
-        await import('../src/testing/runtime-access')
-      const { viewportApis } = await import('../src/common-apis/viewport')
-      const observer: { frame: number; result?: unknown } = { frame: 0 }
-      const fitWhenReady = () => {
-        const bounds = core.getAllElementsBounds()
-        if (bounds && bounds.maxX > bounds.minX && bounds.maxY > bounds.minY) {
-          viewportApis.zoomFit()
-          observer.result = {
-            elapsedMs: Date.now() - started,
-            interaction: 'fit-zoom',
-            reason: 'first-objects',
-            bounds
-          }
-        } else observer.frame = requestAnimationFrame(fitWhenReady)
+  try {
+    const message = page.getByTestId('ai-agent-message').last()
+    const baseline = observation
+      ? (observation.baseline ?? (await captureRecordedCanvas(page)))
+      : undefined
+    let lastUnchangedAtMs = baseline
+      ? Math.max(0, baseline.captureStartedAt - started)
+      : 0
+    let visibleChangeObserved = false
+    if (baseline)
+      timeline.push({
+        interaction: 'canvas-baseline',
+        elapsedMs: lastUnchangedAtMs,
+        region: baseline.clip
+      })
+    const observeCanvas = async () => {
+      if (!baseline || visibleChangeObserved) return
+      const current = await captureRecordedCanvas(page, baseline.clip)
+      const elapsedMs = Math.max(0, current.capturedAt - started)
+      if (current.pixels.equals(baseline.pixels)) {
+        // Screenshot sampling itself has a duration; its start is the safe
+        // lower bound, not the later time when Playwright returns the image.
+        lastUnchangedAtMs = Math.max(0, current.captureStartedAt - started)
+        return
       }
-      testRuntimeState.set(observerKey, observer)
-      fitWhenReady()
-    },
-    { observerKey, started }
-  )
-  const fit = async (reason: 'first-objects' | 'settled') => {
-    if (reason === 'first-objects') {
-      const result = await page.evaluate(async (key) => {
-        const { testRuntimeState } =
+      visibleChangeObserved = true
+      timeline.push({
+        interaction: 'first-visible-canvas-change',
+        elapsedMs,
+        lastUnchangedAtMs,
+        region: baseline.clip,
+        evidence: 'screenshot-pixels',
+        quality: 'not-assessed'
+      })
+      if (observation?.imagePath)
+        await writeFile(observation.imagePath, current.png)
+      if (observation?.stopAfterFirstVisibleMs !== undefined) {
+        await page.waitForTimeout(observation.stopAfterFirstVisibleMs)
+        const stop = page.getByRole('button', {
+          name: 'Cancel request',
+          exact: true
+        })
+        // A control may temporarily disappear during a render. Only a terminal
+        // conversation outcome can establish that there is no active request.
+        await expect
+          .poll(
+            async () => {
+              if (await stop.isVisible()) return true
+              const outcome = await message.getAttribute('data-outcome')
+              return !!outcome && outcome !== 'active'
+            },
+            { timeout: 30_000 }
+          )
+          .toBe(true)
+        const outcomeBeforeStop = await message.getAttribute('data-outcome')
+        const active = outcomeBeforeStop === 'active'
+        if (active) await stop.click()
+        await expect(message).not.toHaveAttribute('data-outcome', 'active', {
+          timeout: 30_000
+        })
+        timeline.push({
+          interaction: 'first-output-stop',
+          elapsedMs: Date.now() - started,
+          cancelledActiveRequest: active,
+          settledOutcome: await message.getAttribute('data-outcome')
+        })
+      }
+    }
+    let initiallyFitted = false
+    await page.evaluate(
+      async ({ observerKey, started }) => {
+        const { core, testRuntimeState } =
           await import('../src/testing/runtime-access')
-        return testRuntimeState.get<{ result?: unknown }>(key)?.result
-      }, observerKey)
-      if (!result) return false
-      timeline.push(result)
+        const { viewportApis } = await import('../src/common-apis/viewport')
+        const observer: { frame: number; result?: unknown } = { frame: 0 }
+        const fitWhenReady = () => {
+          const bounds = core.getAllElementsBounds()
+          if (
+            bounds &&
+            bounds.maxX > bounds.minX &&
+            bounds.maxY > bounds.minY
+          ) {
+            viewportApis.zoomFit()
+            observer.result = {
+              elapsedMs: Date.now() - started,
+              interaction: 'fit-zoom',
+              reason: 'first-objects',
+              bounds
+            }
+          } else observer.frame = requestAnimationFrame(fitWhenReady)
+        }
+        testRuntimeState.set(observerKey, observer)
+        fitWhenReady()
+      },
+      { observerKey, started }
+    )
+    const fit = async (reason: 'first-objects' | 'settled') => {
+      if (reason === 'first-objects') {
+        const result = await page.evaluate(async (key) => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          return testRuntimeState.get<{ result?: unknown }>(key)?.result
+        }, observerKey)
+        if (!result) return false
+        timeline.push(result)
+        return true
+      }
+      const bounds = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getAllElementsBounds()
+      )
+      if (!bounds) return false
+      await focusRecordedCanvas(page)
+      await page.keyboard.press('Meta+1')
+      timeline.push({
+        elapsedMs: Date.now() - started,
+        interaction: 'fit-zoom',
+        reason,
+        bounds
+      })
       return true
     }
-    const bounds = await page.evaluate(async () =>
-      (
-        await import('../src/testing/runtime-access')
-      ).core.getAllElementsBounds()
-    )
-    if (!bounds) return false
-    await focusRecordedCanvas(page)
-    await page.keyboard.press('Meta+1')
-    timeline.push({
-      elapsedMs: Date.now() - started,
-      interaction: 'fit-zoom',
-      reason,
-      bounds
-    })
-    return true
-  }
-  try {
     while (true) {
       if (interruption) throw interruption
       if (Date.now() - started > maximumDurationMs)
@@ -1936,18 +1956,26 @@ const waitForRecordedDrawing = async (
       await page.waitForTimeout(1000)
     }
   } catch (error) {
-    throw interruption ?? error
+    failure = error
   } finally {
-    page.off('framenavigated', onNavigation)
-    if (!page.isClosed())
-      await page.evaluate(async (key) => {
-        const { testRuntimeState } =
-          await import('../src/testing/runtime-access')
-        const observer = testRuntimeState.get<{ frame: number }>(key)
-        if (observer) cancelAnimationFrame(observer.frame)
-        testRuntimeState.delete(key)
-      }, observerKey)
+    try {
+      if (!interruption && !page.isClosed())
+        await page.evaluate(async (key) => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          const observer = testRuntimeState.get<{ frame: number }>(key)
+          if (observer) cancelAnimationFrame(observer.frame)
+          testRuntimeState.delete(key)
+        }, observerKey)
+    } catch (error) {
+      failure ??= error
+    } finally {
+      page.off('request', onNavigationRequest)
+      page.off('framenavigated', onNavigation)
+    }
   }
+  if (interruption) throw interruption
+  if (failure !== undefined) throw failure
 }
 
 test('recording does not count conversation changes as canvas output', async ({
@@ -2848,6 +2876,60 @@ test('recording identifies page reload as an interruption instead of a missing m
     expect.objectContaining({ interaction: 'canvas-baseline' }),
     expect.objectContaining({ interaction: 'page-navigation' })
   ])
+})
+
+test('recording reports navigation during observer setup and removes its listener', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const baseline = await captureRecordedCanvas(page)
+  const timeline: unknown[] = []
+  const listenersBefore = page.listenerCount('framenavigated')
+  const requestsBefore = page.listenerCount('request')
+  const evaluate = page.evaluate.bind(page)
+  let enteredSetup!: () => void
+  const setupEntered = new Promise<void>((resolve) => {
+    enteredSetup = resolve
+  })
+  let firstEvaluation = true
+  page.evaluate = (async (...args: Parameters<Page['evaluate']>) => {
+    if (!firstEvaluation) return evaluate(...args)
+    firstEvaluation = false
+    // Hold a real browser RPC until reload destroys its execution context.
+    const pending = evaluate(
+      () =>
+        new Promise<void>(() => {
+          // Intentionally pending until navigation destroys this document.
+        })
+    )
+    const outcome = pending.then(
+      () => undefined,
+      (error: unknown) => error
+    )
+    await evaluate(() => document.readyState)
+    enteredSetup()
+    const error = await outcome
+    if (error) throw error
+  }) as Page['evaluate']
+  const running = waitForRecordedDrawing(page, timeline, Date.now(), 10000, {
+    baseline
+  }).then(
+    () => null,
+    (error: Error) => error.message
+  )
+  await setupEntered
+  await page.reload()
+  expect(await running).toContain(
+    'Recording interrupted by page reload or navigation'
+  )
+  expect(timeline).toEqual([
+    expect.objectContaining({ interaction: 'canvas-baseline' }),
+    expect.objectContaining({ interaction: 'page-navigation' })
+  ])
+  expect(page.listenerCount('framenavigated')).toBe(listenersBefore)
+  expect(page.listenerCount('request')).toBe(requestsBefore)
+  page.evaluate = evaluate
 })
 
 test('plural AI visibility uses one Undo and preserves target status', async ({

@@ -1048,3 +1048,24 @@ snapshots and work-count assertions; give this one expensive case a bounded
 threshold. The existing CI failure supplies regression evidence. Validate the
 Render workspace with coverage, then shared gates. Self-review confirms no
 production contract, workload, assertion, retry or global timeout is changed.
+
+## CI integration - recording navigation lifecycle
+
+The completed functional CI job exposed a recording-fixture race: page reload
+during observer setup occurs outside the guarded lifecycle, and cleanup can
+replace the intended interruption with a context-destroyed exception. Scope is
+local-ai-provider.spec.ts and this plan. The observe contract requires recording
+interruptions to remain distinct from drawing completion. Keep navigation
+observation active through setup, observation and disposal; preserve the first
+failure, and do not evaluate cleanup in a destroyed document. Add a deterministic
+reload-during-setup case before changing the helper, retaining the existing real
+reload regression and recording assertions. Gates: focused recording E2E, then
+App/shared checks and complete functional E2E. No App or model changes.
+Self-review confirms all browser operations must be within the same lifecycle;
+cleanup failure must remain visible when there is no prior failure.
+
+The deterministic setup case additionally proved that an in-flight browser RPC
+can reject before framenavigated (document commit). Observe main-frame navigation
+requests as well as commits, deduplicate their interruption event, and remove
+both listeners. This preserves failure attribution without matching error strings
+or waiting for the new document to load. The red setup regression is the oracle.
