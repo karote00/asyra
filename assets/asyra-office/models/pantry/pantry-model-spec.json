@@ -1,0 +1,1054 @@
+{
+  "specVersion": "1.0.0",
+  "status": "user approved commit; drawings and documents only; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "base centre on Z=0",
+    "dimensions": "X,Y,Z"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "cream": {
+      "baseColorSRGB": "#DDD9CB",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "grey": {
+      "baseColorSRGB": "#AAAFA9",
+      "roughness": 0.65,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "dark": {
+      "baseColorSRGB": "#424944",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "oak": {
+      "baseColorSRGB": "#C7A376",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "oak-grain": {
+      "baseColorSRGB": "#AF895F",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "counter": {
+      "baseColorSRGB": "#D6D4C9",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "basin": {
+      "baseColorSRGB": "#8E9694",
+      "roughness": 0.6,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "bottle": {
+      "baseColorSRGB": "#789DBB",
+      "roughness": 0.45,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "red": {
+      "baseColorSRGB": "#B56B55",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "blue": {
+      "baseColorSRGB": "#597F9C",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "pantry-fridge",
+      "name": "Refrigerator - single unit",
+      "reviewDrawing": "review/01-fridge-v1.png",
+      "components": [
+        {
+          "partId": "cabinet",
+          "primitive": "rounded-box",
+          "size": [
+            0.52,
+            0.48,
+            1.11
+          ],
+          "centre": [
+            0,
+            0.02,
+            0.595
+          ],
+          "material": "cream",
+          "radius": 0.024
+        },
+        {
+          "partId": "plinth",
+          "primitive": "rounded-box",
+          "size": [
+            0.46,
+            0.43,
+            0.04
+          ],
+          "centre": [
+            0,
+            0.025,
+            0.02
+          ],
+          "material": "dark",
+          "radius": 0.005
+        },
+        {
+          "partId": "lower-door",
+          "primitive": "rounded-box",
+          "size": [
+            0.508,
+            0.04,
+            0.698
+          ],
+          "centre": [
+            0,
+            -0.24,
+            0.409
+          ],
+          "material": "cream",
+          "radius": 0.018
+        },
+        {
+          "partId": "upper-door",
+          "primitive": "rounded-box",
+          "size": [
+            0.508,
+            0.04,
+            0.37
+          ],
+          "centre": [
+            0,
+            -0.24,
+            0.955
+          ],
+          "material": "cream",
+          "radius": 0.018
+        },
+        {
+          "partId": "lower-handle",
+          "primitive": "rounded-box",
+          "size": [
+            0.019,
+            0.022,
+            0.17
+          ],
+          "centre": [
+            -0.207,
+            -0.286,
+            0.62
+          ],
+          "material": "grey",
+          "radius": 0.008
+        },
+        {
+          "partId": "lower-handle-mount--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.017,
+            0.025,
+            0.014
+          ],
+          "centre": [
+            -0.207,
+            -0.2675,
+            0.5469999999999999
+          ],
+          "material": "grey",
+          "radius": 0.004
+        },
+        {
+          "partId": "lower-handle-mount-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.017,
+            0.025,
+            0.014
+          ],
+          "centre": [
+            -0.207,
+            -0.2675,
+            0.6930000000000001
+          ],
+          "material": "grey",
+          "radius": 0.004
+        },
+        {
+          "partId": "upper-handle",
+          "primitive": "rounded-box",
+          "size": [
+            0.019,
+            0.022,
+            0.13
+          ],
+          "centre": [
+            -0.207,
+            -0.286,
+            0.94
+          ],
+          "material": "grey",
+          "radius": 0.008
+        },
+        {
+          "partId": "upper-handle-mount--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.017,
+            0.025,
+            0.014
+          ],
+          "centre": [
+            -0.207,
+            -0.2675,
+            0.8869999999999999
+          ],
+          "material": "grey",
+          "radius": 0.004
+        },
+        {
+          "partId": "upper-handle-mount-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.017,
+            0.025,
+            0.014
+          ],
+          "centre": [
+            -0.207,
+            -0.2675,
+            0.993
+          ],
+          "material": "grey",
+          "radius": 0.004
+        }
+      ],
+      "overallSize": [
+        0.52,
+        0.557,
+        1.15
+      ],
+      "bodySize": [
+        0.52,
+        0.52,
+        1.15
+      ],
+      "source": "Grey-white two-door refrigerator beside the pantry water dispenser",
+      "decisions": [
+        "closed two-door exterior only",
+        "left-side handles",
+        "plain rear, no cable or compressor"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "water-dispenser",
+      "name": "Water dispenser - single unit with bottle",
+      "reviewDrawing": "review/02-water-dispenser-v1.png",
+      "components": [
+        {
+          "partId": "cabinet",
+          "primitive": "rounded-box",
+          "size": [
+            0.32,
+            0.34,
+            0.77
+          ],
+          "centre": [
+            0,
+            0,
+            0.405
+          ],
+          "material": "cream",
+          "radius": 0.016,
+          "subtract": [
+            {
+              "primitive": "rounded-box",
+              "size": [
+                0.225,
+                0.12,
+                0.205
+              ],
+              "centre": [
+                0,
+                -0.135,
+                0.584
+              ],
+              "radius": 0.012
+            }
+          ]
+        },
+        {
+          "partId": "plinth",
+          "primitive": "rounded-box",
+          "size": [
+            0.285,
+            0.3,
+            0.02
+          ],
+          "centre": [
+            0,
+            0,
+            0.01
+          ],
+          "material": "dark",
+          "radius": 0.003
+        },
+        {
+          "partId": "bay-back",
+          "primitive": "rounded-box",
+          "size": [
+            0.216,
+            0.006,
+            0.194
+          ],
+          "centre": [
+            0,
+            -0.073,
+            0.584
+          ],
+          "material": "grey",
+          "radius": 0.006
+        },
+        {
+          "partId": "drip-tray",
+          "primitive": "rounded-box",
+          "size": [
+            0.228,
+            0.112,
+            0.016
+          ],
+          "centre": [
+            0,
+            -0.136,
+            0.481
+          ],
+          "material": "grey",
+          "radius": 0.005,
+          "grooves": {
+            "count": 6,
+            "width": 0.034,
+            "depth": 0.002,
+            "slotBreadth": 0.003,
+            "xCentres": [
+              -0.067,
+              0,
+              0.067
+            ],
+            "yCentres": [
+              -0.155,
+              -0.123
+            ]
+          }
+        },
+        {
+          "partId": "lower-door",
+          "primitive": "rounded-box",
+          "size": [
+            0.258,
+            0.008,
+            0.36
+          ],
+          "centre": [
+            0,
+            -0.173,
+            0.251
+          ],
+          "material": "cream",
+          "radius": 0.01
+        },
+        {
+          "partId": "tap--1",
+          "primitive": "cylinder",
+          "radius": 0.012,
+          "length": 0.046,
+          "centre": [
+            -0.046,
+            -0.126,
+            0.681
+          ],
+          "material": "grey",
+          "axis": "Y"
+        },
+        {
+          "partId": "tap-lever--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.018,
+            0.036,
+            0.01
+          ],
+          "centre": [
+            -0.046,
+            -0.126,
+            0.7
+          ],
+          "material": "red",
+          "radius": 0.003
+        },
+        {
+          "partId": "tap-1",
+          "primitive": "cylinder",
+          "radius": 0.012,
+          "length": 0.046,
+          "centre": [
+            0.046,
+            -0.126,
+            0.681
+          ],
+          "material": "grey",
+          "axis": "Y"
+        },
+        {
+          "partId": "tap-lever-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.018,
+            0.036,
+            0.01
+          ],
+          "centre": [
+            0.046,
+            -0.126,
+            0.7
+          ],
+          "material": "blue",
+          "radius": 0.003
+        },
+        {
+          "partId": "bottle",
+          "primitive": "lathe",
+          "centreXY": [
+            0,
+            0
+          ],
+          "profileZR": [
+            [
+              0.79,
+              0.042
+            ],
+            [
+              0.815,
+              0.042
+            ],
+            [
+              0.84,
+              0.1
+            ],
+            [
+              0.86,
+              0.125
+            ],
+            [
+              1.055,
+              0.125
+            ],
+            [
+              1.085,
+              0.116
+            ],
+            [
+              1.108,
+              0.088
+            ],
+            [
+              1.12,
+              0
+            ]
+          ],
+          "material": "bottle",
+          "rings": {
+            "centresZ": [
+              0.902,
+              1.016
+            ],
+            "height": 0.012,
+            "extraRadius": 0.004
+          }
+        },
+        {
+          "partId": "tap-nozzle--1",
+          "primitive": "cylinder",
+          "radius": 0.009,
+          "length": 0.026,
+          "centre": [
+            -0.046,
+            -0.149,
+            0.661
+          ],
+          "material": "grey",
+          "axis": "Z"
+        },
+        {
+          "partId": "tap-nozzle-1",
+          "primitive": "cylinder",
+          "radius": 0.009,
+          "length": 0.026,
+          "centre": [
+            0.046,
+            -0.149,
+            0.661
+          ],
+          "material": "grey",
+          "axis": "Z"
+        }
+      ],
+      "overallSize": [
+        0.32,
+        0.362,
+        1.12
+      ],
+      "source": "Water dispenser with a blue bottle to the left of the refrigerator",
+      "decisions": [
+        "two taps, red and blue levers",
+        "opaque stylized blue bottle",
+        "closed lower storage door"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "sink-cabinet",
+      "name": "Sink cabinet - single assembly",
+      "reviewDrawing": "review/03-sink-cabinet-v1.png",
+      "components": [
+        {
+          "partId": "cabinet",
+          "primitive": "rounded-box",
+          "size": [
+            0.88,
+            0.465,
+            0.57
+          ],
+          "centre": [
+            0,
+            0.0075,
+            0.335
+          ],
+          "material": "oak",
+          "radius": 0.006,
+          "subtract": [
+            {
+              "primitive": "rounded-box",
+              "size": [
+                0.54,
+                0.35,
+                0.16
+              ],
+              "centre": [
+                0,
+                -0.005,
+                0.58
+              ],
+              "radius": 0.025
+            }
+          ]
+        },
+        {
+          "partId": "toe-kick",
+          "primitive": "rounded-box",
+          "size": [
+            0.81,
+            0.39,
+            0.05
+          ],
+          "centre": [
+            0,
+            0.025,
+            0.025
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "countertop",
+          "primitive": "rounded-box",
+          "size": [
+            0.9,
+            0.5,
+            0.03
+          ],
+          "centre": [
+            0,
+            0,
+            0.625
+          ],
+          "material": "counter",
+          "radius": 0.008,
+          "subtract": [
+            {
+              "primitive": "rounded-box",
+              "size": [
+                0.5,
+                0.31,
+                0.08
+              ],
+              "centre": [
+                0,
+                -0.005,
+                0.635
+              ],
+              "radius": 0.025
+            }
+          ]
+        },
+        {
+          "partId": "basin-outer",
+          "primitive": "rounded-box",
+          "size": [
+            0.52,
+            0.33,
+            0.13
+          ],
+          "centre": [
+            0,
+            -0.005,
+            0.575
+          ],
+          "material": "basin",
+          "radius": 0.025,
+          "subtract": [
+            {
+              "primitive": "rounded-box",
+              "size": [
+                0.488,
+                0.298,
+                0.16
+              ],
+              "centre": [
+                0,
+                -0.005,
+                0.607
+              ],
+              "radius": 0.02
+            }
+          ]
+        },
+        {
+          "partId": "drain",
+          "primitive": "cylinder",
+          "radius": 0.018,
+          "length": 0.001,
+          "centre": [
+            0,
+            -0.005,
+            0.5275
+          ],
+          "material": "dark",
+          "axis": "Z"
+        },
+        {
+          "partId": "door--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.427,
+            0.023,
+            0.51
+          ],
+          "centre": [
+            -0.2175,
+            -0.2365,
+            0.323
+          ],
+          "material": "oak",
+          "radius": 0.004,
+          "panelRecess": {
+            "innerWidth": 0.357,
+            "innerHeight": 0.44,
+            "depth": 0.004,
+            "border": 0.035
+          }
+        },
+        {
+          "partId": "handle--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.018,
+            0.023,
+            0.065
+          ],
+          "centre": [
+            -0.036,
+            -0.26,
+            0.51
+          ],
+          "material": "dark",
+          "radius": 0.005
+        },
+        {
+          "partId": "door-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.427,
+            0.023,
+            0.51
+          ],
+          "centre": [
+            0.2175,
+            -0.2365,
+            0.323
+          ],
+          "material": "oak",
+          "radius": 0.004,
+          "panelRecess": {
+            "innerWidth": 0.357,
+            "innerHeight": 0.44,
+            "depth": 0.004,
+            "border": 0.035
+          }
+        },
+        {
+          "partId": "handle-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.018,
+            0.023,
+            0.065
+          ],
+          "centre": [
+            0.036,
+            -0.26,
+            0.51
+          ],
+          "material": "dark",
+          "radius": 0.005
+        },
+        {
+          "partId": "faucet",
+          "primitive": "bezier-tube",
+          "radius": 0.012,
+          "material": "grey",
+          "segments": [
+            [
+              [
+                0,
+                0.17,
+                0.64
+              ],
+              [
+                0,
+                0.17,
+                0.7
+              ],
+              [
+                0,
+                0.17,
+                0.785
+              ],
+              [
+                0,
+                0.17,
+                0.81
+              ]
+            ],
+            [
+              [
+                0,
+                0.17,
+                0.81
+              ],
+              [
+                0,
+                0.17,
+                0.874
+              ],
+              [
+                0,
+                0.04,
+                0.874
+              ],
+              [
+                0,
+                0.04,
+                0.81
+              ]
+            ]
+          ],
+          "endCaps": true
+        },
+        {
+          "partId": "faucet-base",
+          "primitive": "cylinder",
+          "radius": 0.024,
+          "length": 0.012,
+          "centre": [
+            0,
+            0.17,
+            0.646
+          ],
+          "material": "grey",
+          "axis": "Z"
+        },
+        {
+          "partId": "faucet-lever",
+          "primitive": "rounded-box",
+          "size": [
+            0.055,
+            0.014,
+            0.012
+          ],
+          "centre": [
+            0.039,
+            0.17,
+            0.664
+          ],
+          "material": "grey",
+          "radius": 0.004
+        }
+      ],
+      "nominalSize": [
+        0.9,
+        0.5215,
+        0.87
+      ],
+      "source": "Wooden sink cabinet below the poster on the right of the pantry",
+      "decisions": [
+        "single centred basin",
+        "two front cabinet doors",
+        "plain rear and underside",
+        "no plumbing interior"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "coffee-machine",
+      "name": "Coffee machine - single unit",
+      "reviewDrawing": "review/04-coffee-machine-v1.png",
+      "components": [
+        {
+          "partId": "housing",
+          "primitive": "rounded-box",
+          "size": [
+            0.2,
+            0.25,
+            0.28
+          ],
+          "centre": [
+            0,
+            0,
+            0.15
+          ],
+          "material": "cream",
+          "radius": 0.022,
+          "subtract": [
+            {
+              "primitive": "rounded-box",
+              "size": [
+                0.142,
+                0.125,
+                0.17
+              ],
+              "centre": [
+                0,
+                -0.095,
+                0.121
+              ],
+              "radius": 0.012
+            }
+          ]
+        },
+        {
+          "partId": "base",
+          "primitive": "rounded-box",
+          "size": [
+            0.19,
+            0.24,
+            0.01
+          ],
+          "centre": [
+            0,
+            0,
+            0.005
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "bay-back",
+          "primitive": "rounded-box",
+          "size": [
+            0.136,
+            0.006,
+            0.158
+          ],
+          "centre": [
+            0,
+            -0.03,
+            0.121
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "drip-tray",
+          "primitive": "rounded-box",
+          "size": [
+            0.15,
+            0.107,
+            0.012
+          ],
+          "centre": [
+            0,
+            -0.09,
+            0.026
+          ],
+          "material": "dark",
+          "radius": 0.004,
+          "grooves": {
+            "count": 6,
+            "width": 0.031,
+            "depth": 0.002,
+            "slotBreadth": 0.003,
+            "xCentres": [
+              -0.046,
+              0,
+              0.046
+            ],
+            "yCentres": [
+              -0.11,
+              -0.075
+            ]
+          }
+        },
+        {
+          "partId": "outlet",
+          "primitive": "cylinder",
+          "radius": 0.012,
+          "length": 0.028,
+          "centre": [
+            0,
+            -0.086,
+            0.198
+          ],
+          "material": "cream",
+          "axis": "Z"
+        },
+        {
+          "partId": "rear-panel",
+          "primitive": "rounded-box",
+          "size": [
+            0.148,
+            0.004,
+            0.21
+          ],
+          "centre": [
+            0,
+            0.126,
+            0.145
+          ],
+          "material": "dark",
+          "radius": 0.01
+        },
+        {
+          "partId": "button--1",
+          "primitive": "cylinder",
+          "radius": 0.009,
+          "length": 0.005,
+          "centre": [
+            0.062,
+            -0.1275,
+            0.255
+          ],
+          "material": "dark",
+          "axis": "Y"
+        },
+        {
+          "partId": "button-1",
+          "primitive": "cylinder",
+          "radius": 0.009,
+          "length": 0.005,
+          "centre": [
+            0.062,
+            -0.1275,
+            0.23
+          ],
+          "material": "dark",
+          "axis": "Y"
+        }
+      ],
+      "overallSize": [
+        0.2,
+        0.258,
+        0.29
+      ],
+      "source": "Small countertop appliance below the pantry shelf and left of the sink",
+      "decisions": [
+        "source detail uncertain; compact single-outlet interpretation",
+        "two front buttons",
+        "concealed water tank",
+        "plain rear panel, no cable"
+      ],
+      "unitCount": 1
+    }
+  ],
+  "geometryRecipe": "GEOMETRY-SUPPLEMENT.md",
+  "surfaceRecipe": "SURFACE-RECIPES.md",
+  "appOwns": [
+    "placement",
+    "count",
+    "opening doors",
+    "water and coffee effects",
+    "lighting",
+    "interaction"
+  ],
+  "excluded": [
+    "props",
+    "mugs",
+    "notes",
+    "magnets",
+    "plants",
+    "walls",
+    "floor",
+    "adjacent cabinets",
+    "rigging",
+    "animation",
+    "actual appliance internals"
+  ],
+  "verification": {
+    "modelBuilt": false,
+    "dimensionTolerance": 0.002,
+    "reviewViews": [
+      "front -Y",
+      "right +X",
+      "back +Y",
+      "top +Z",
+      "three-quarter (1,-1,.8)"
+    ],
+    "bakedLighting": false,
+    "lights": false
+  }
+}

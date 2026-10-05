@@ -55,7 +55,7 @@ test(
   }
 )
 test(
-  'real candidate verification retains all six obligations and detects inverse corruption',
+  'real candidate verification retains all registered obligations and detects inverse corruption',
   { skip: process.platform !== 'darwin', timeout: 60000 },
   async (t) => {
     const directory = make()
@@ -116,7 +116,7 @@ test(
         fs.readFileSync(path.join(frozenRoot, file.path), 'utf8'),
         file.content
       )
-    assert.equal(baseline.evidence.cases.length, 6)
+    assert.equal(baseline.evidence.cases.length, 9)
     assert.equal(
       baseline.evidence.runtimeSourceDigest,
       snapshot.runtimeSource.digest
@@ -146,7 +146,7 @@ test(
       changed.runner.identity.runtimeSourceDigest,
       changed.evidence.runtimeSourceDigest
     )
-    assert.equal(changed.evidence.cases.length, 6)
+    assert.equal(changed.evidence.cases.length, 9)
     fs.writeFileSync(file, original)
     const mutation = contract.definition.scenarios.find(
       (value) => value.id === 'inverse-regression'
@@ -178,7 +178,12 @@ test(
         .filter((value) => value.status === 'failed')
         .map((value) => value.id)
         .sort(),
-      ['cancel.delivery', 'cancel.outcome']
+      [
+        'cancel.delivery',
+        'cancel.outcome',
+        'history-group.ordered-replay',
+        'history-group.snapshot'
+      ]
     )
     fs.writeFileSync(
       file,
@@ -425,7 +430,7 @@ test(
     assert.equal(produced.source, null)
     injected.mock.restore()
     assert.equal(proof.runner.code, 0)
-    assert.equal(proof.evidence.passedCount, 6)
+    assert.equal(proof.evidence.passedCount, 9)
     assert.equal(proof.evidence.status, 'unknown')
     assert.ok(
       proof.evidence.issues.includes(

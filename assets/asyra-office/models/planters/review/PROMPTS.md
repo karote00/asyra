@@ -1,0 +1,32 @@
+# Planters - Image Generation Prompts
+
+Generated with the built-in image tool. Both calls used `../../architecture/review/approved-office-reference.jpg` relative to this file. No external service, CLI fallback, Blender or model exports. The numeric wall-bowl geometry follows the rounded bottom and keyhole orientation in the generated sheet; exact leaf locations are authored for reproducibility.
+
+## tree
+
+```text
+Use case: stylized-concept. Make a five-view design sheet of ONE SMALL POTTED TREE, based on the warm terracotta planted greenery immediately beside the CENTRAL OFFICE entrance in the provided reference. Use that building's cozy miniature organic plant style, not the large street trees. A single short gently tapered brown trunk, three forked branches supporting a compact rounded irregular crown of simple broad green leaves. Warm matte terracotta tapered pot with softly rounded thick rim, flat inset brown soil. Total height about 0.70 m, pot diameter 0.25 m and height 0.23 m, crown width about 0.40 m. Keep trunk visible between rim and crown. Crown should be a few readable clusters of simplified oval leaves, NOT a faceted sphere or cotton-ball canopy, not densely photorealistic foliage. No flowers, fruit, moss, saucer, exposed roots, planter stand, person, wall, street or ground. Five consistent views FRONT, RIGHT, BACK, TOP, THREE-QUARTER. Same branching structure and asymmetric organic silhouette across views; exact hidden leaves are an authored completion. English title 'POTTED SMALL TREE - SINGLE UNIT', five English labels, no numerical annotations. Clean white sheet with flat matte intrinsic colours, no cast/contact shadows, ambient occlusion or baked lighting. One pot-soil-tree assembly per view; no wind or animation.
+```
+
+## hanging
+
+```text
+Use case: stylized-concept. Make a five-view sheet for ONE WALL-MOUNTED TRAILING PLANTER matching the pale pots and green trailing foliage on the CENTRAL OFFICE walls in the supplied reference. The exact wall fixture is an authored matching-style completion, not clearly resolved in the original. One warm ivory ceramic HALF-ROUND WALL POT: flat vertical rear, curved semicircular front bowl, open top with flat brown soil. One small flush dark metal keyhole mounting recess in the upper flat back. Three slim green vines cascade down the front at different lengths, each bearing a few simple pointed oval leaves; no flowers. Width 0.20 m, maximum projection from wall 0.14 m, planter bowl height 0.16 m, total height with vines about 0.38 m. Five views FRONT (three trailing vines), RIGHT (edge-on flat rear clearly visible, bowl projects forward), BACK (flat back with one keyhole recess, no leaves attached to back), TOP (D-shaped opening with straight rear edge), THREE-QUARTER. Same single unit in every view. No rope, chain, ceiling hook, wall slab, shelf, screws, other pots or scene. English title 'WALL PLANTER - SINGLE UNIT', English labels, no dimensions needed. Clean white sheet, matte ivory pot and muted green foliage, neutral flat colors; NO cast/contact shadows, ambient occlusion, glossy reflections or baked lighting. Keep the flat back flush, nothing behind mounting plane. Plant and pot distinguishable as components.
+```
+
+## Lighting revision - 2026-10-04
+
+Edited the existing current sheets individually using imagegen. Preserved the original reference and historical files. The user authorized committing this output. Numeric specifications were not changed.
+
+Files:
+
+- `01-potted-small-tree-v1.png`
+- `02-wall-planter-v1.png`
+
+Submitted prompt:
+
+Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.
+
+The small tree or cactus required a second edit using its first revision as input:
+
+Preserve this exact five-view asset sheet: all silhouettes, leaf or cactus shapes, part counts, view layouts, text and colour palette. Flatten ALL material lighting into flat colour fills. Especially remove dark blurry bands under pot rims, around soil edges, under overlapping leaves and inside cactus grooves. No highlights or gradients on rounded surfaces. Use thin contour lines to express pot lips, leaf boundaries and cactus ribs instead. Keep intrinsic different leaf colours and brown soil; same material has equal brightness everywhere. No ground or cast shadows. Do not redesign any parts.

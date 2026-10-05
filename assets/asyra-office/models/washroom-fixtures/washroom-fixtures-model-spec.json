@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "floor center of overall XY bounds"
+  },
+  "source": "Approved office washroom thumbnail supplies broad style only; dimensions and hidden geometry are authored.",
+  "constructionConventions": {
+    "ellipse": "x=rx*cos(t), y=cy+ry*sin(t); 96 samples; t=2*pi*i/96",
+    "loft": "Join matching ring vertices linearly in Z; smooth side normals; cap solid ends. Subtract stated cavities. No subdivision.",
+    "roundedRectangle": "XY rectangle with circular corner arcs, 12 segments per quarter; centered X and at cy in Y; ring values are full width/depth",
+    "bevel": "Only explicitly specified bevels; 4 segments"
+  },
+  "assets": [
+    {
+      "id": "ivory-toilet",
+      "bounds": [
+        0.38,
+        0.68,
+        0.78
+      ],
+      "parts": {
+        "body": {
+          "method": "ellipse loft, subtract cavity",
+          "rings_z_rx_ry_cy": [
+            [
+              0,
+              0.12,
+              0.23,
+              0.03
+            ],
+            [
+              0.03,
+              0.12,
+              0.23,
+              0.03
+            ],
+            [
+              0.2,
+              0.105,
+              0.21,
+              0.02
+            ],
+            [
+              0.25,
+              0.13,
+              0.265,
+              0
+            ],
+            [
+              0.33,
+              0.18,
+              0.32,
+              0
+            ],
+            [
+              0.395,
+              0.19,
+              0.34,
+              0
+            ]
+          ],
+          "cavityRings_z_rx_ry_cy": [
+            [
+              0.2,
+              0.025,
+              0.04,
+              -0.08
+            ],
+            [
+              0.24,
+              0.065,
+              0.1,
+              -0.08
+            ],
+            [
+              0.31,
+              0.12,
+              0.18,
+              -0.08
+            ],
+            [
+              0.398,
+              0.145,
+              0.22,
+              -0.08
+            ]
+          ]
+        },
+        "seat": {
+          "method": "elliptical ring extrusion",
+          "center": [
+            0,
+            -0.08,
+            0.398
+          ],
+          "outerRadii": [
+            0.188,
+            0.258
+          ],
+          "innerRadii": [
+            0.145,
+            0.22
+          ],
+          "height": 0.014,
+          "bevel": 0.002
+        },
+        "seatLid": {
+          "method": "solid ellipse extrusion",
+          "center": [
+            0,
+            -0.08,
+            0.414
+          ],
+          "radii": [
+            0.188,
+            0.258
+          ],
+          "height": 0.016,
+          "bevel": 0.004
+        },
+        "hinges": {
+          "count": 2,
+          "centers": [
+            [
+              -0.085,
+              0.169,
+              0.42
+            ],
+            [
+              0.085,
+              0.169,
+              0.42
+            ]
+          ],
+          "axis": "+X",
+          "radius": 0.01,
+          "length": 0.028,
+          "segments": 32
+        },
+        "tank": {
+          "method": "rounded box",
+          "min": [
+            -0.17,
+            0.18,
+            0.395
+          ],
+          "max": [
+            0.17,
+            0.34,
+            0.754
+          ],
+          "bevel": 0.018
+        },
+        "tankLid": {
+          "method": "rounded box",
+          "min": [
+            -0.17,
+            0.18,
+            0.754
+          ],
+          "max": [
+            0.17,
+            0.34,
+            0.775
+          ],
+          "bevel": 0.009
+        },
+        "flushButton": {
+          "method": "Z cylinder",
+          "center": [
+            0,
+            0.26,
+            0.775
+          ],
+          "radius": 0.018,
+          "height": 0.005,
+          "segments": 48
+        }
+      },
+      "pivot": {
+        "seat": [
+          0,
+          0.169,
+          0.412
+        ],
+        "lid": [
+          0,
+          0.169,
+          0.422
+        ],
+        "axis": "+X",
+        "closedAngle": 0
+      },
+      "materials": {
+        "ceramic": "#EEE9DB",
+        "seat": "#EEE9DB",
+        "button": "#999C99"
+      },
+      "hidden": "Closed bowl floor; no water or trap plumbing. Tank is a closed solid display shell. Hinges are separate from seat and lid."
+    },
+    {
+      "id": "ivory-pedestal-basin",
+      "bounds": [
+        0.5,
+        0.4,
+        0.94
+      ],
+      "parts": {
+        "basin": {
+          "method": "rounded rectangle loft minus cavity",
+          "outerRings_z_width_depth_radius_cy": [
+            [
+              0.68,
+              0.25,
+              0.22,
+              0.065,
+              -0.015
+            ],
+            [
+              0.72,
+              0.4,
+              0.32,
+              0.08,
+              0
+            ],
+            [
+              0.8,
+              0.5,
+              0.4,
+              0.075,
+              0
+            ],
+            [
+              0.82,
+              0.5,
+              0.4,
+              0.075,
+              0
+            ]
+          ],
+          "cavityRings_z_width_depth_radius_cy": [
+            [
+              0.725,
+              0.12,
+              0.1,
+              0.04,
+              -0.04
+            ],
+            [
+              0.75,
+              0.28,
+              0.21,
+              0.055,
+              -0.04
+            ],
+            [
+              0.8,
+              0.4,
+              0.28,
+              0.065,
+              -0.04
+            ],
+            [
+              0.83,
+              0.4,
+              0.28,
+              0.065,
+              -0.04
+            ]
+          ]
+        },
+        "pedestal": {
+          "method": "ellipse loft",
+          "rings_z_rx_ry_cy": [
+            [
+              0,
+              0.08,
+              0.07,
+              0
+            ],
+            [
+              0.035,
+              0.08,
+              0.07,
+              0
+            ],
+            [
+              0.12,
+              0.065,
+              0.06,
+              0
+            ],
+            [
+              0.62,
+              0.065,
+              0.06,
+              0
+            ],
+            [
+              0.7,
+              0.08,
+              0.07,
+              0
+            ]
+          ]
+        },
+        "drain": {
+          "method": "Z cylinder",
+          "center": [
+            0,
+            -0.04,
+            0.725
+          ],
+          "radius": 0.018,
+          "height": 0.001,
+          "segments": 48
+        },
+        "faucetPost": {
+          "method": "Z cylinder",
+          "center": [
+            0,
+            0.155,
+            0.82
+          ],
+          "radius": 0.014,
+          "height": 0.105,
+          "segments": 48
+        },
+        "spout": {
+          "method": "sweep round tube along polyline with rounded elbow",
+          "points": [
+            [
+              0,
+              0.155,
+              0.902
+            ],
+            [
+              0,
+              0.02,
+              0.902
+            ],
+            [
+              0,
+              0.02,
+              0.882
+            ]
+          ],
+          "outerRadius": 0.01,
+          "innerRadius": 0.006,
+          "elbowRadius": 0.01,
+          "elbowSegments": 12,
+          "tubeSegments": 32,
+          "openEnd": "downward at z .882"
+        },
+        "lever": {
+          "method": "rounded box",
+          "min": [
+            -0.017,
+            0.105,
+            0.93
+          ],
+          "max": [
+            0.017,
+            0.175,
+            0.94
+          ],
+          "bevel": 0.003
+        },
+        "leverStem": {
+          "method": "Z cylinder",
+          "center": [
+            0,
+            0.155,
+            0.925
+          ],
+          "radius": 0.006,
+          "height": 0.005,
+          "segments": 32
+        }
+      },
+      "materials": {
+        "ceramic": "#EEE9DB",
+        "faucet": "#999C99",
+        "drain": "#999C99"
+      },
+      "hidden": "Closed rear ceramic surface and pedestal base; no plumbing, wall brackets, water or separate room objects."
+    }
+  ],
+  "lighting": {
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.001,
+    "modelsProduced": false,
+    "reviewRequired": true
+  }
+}

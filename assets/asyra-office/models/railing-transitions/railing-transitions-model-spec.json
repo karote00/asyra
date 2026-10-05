@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom footprint centre",
+  "tolerance": 0.0005,
+  "extrusionY": [
+    -0.02,
+    0.02
+  ],
+  "objects": [
+    {
+      "id": "upper-transition-post",
+      "xzPolygon": [
+        [
+          -0.02,
+          0
+        ],
+        [
+          0.02,
+          0
+        ],
+        [
+          0.02,
+          0.9
+        ],
+        [
+          0,
+          0.9
+        ],
+        [
+          -0.02,
+          0.89
+        ]
+      ],
+      "bounds": [
+        0.04,
+        0.04,
+        0.9
+      ],
+      "top": "z=0.90+0.5*x for x<=0; z=0.90 for x>=0",
+      "railOrigins": {
+        "sloped": [
+          -0.3,
+          0,
+          0.75
+        ],
+        "level": [
+          0,
+          0,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "lower-transition-post",
+      "xzPolygon": [
+        [
+          -0.02,
+          0
+        ],
+        [
+          0.02,
+          0
+        ],
+        [
+          0.02,
+          0.91
+        ],
+        [
+          0,
+          0.9
+        ],
+        [
+          -0.02,
+          0.9
+        ]
+      ],
+      "bounds": [
+        0.04,
+        0.04,
+        0.91
+      ],
+      "top": "z=0.90 for x<=0; z=0.90+0.5*x for x>=0",
+      "railOrigins": {
+        "level": [
+          -0.3,
+          0,
+          0.9
+        ],
+        "sloped": [
+          0,
+          0,
+          0.9
+        ]
+      }
+    }
+  ],
+  "construction": {
+    "vertices": 10,
+    "polygonFaces": 7,
+    "triangles": 16,
+    "closed": true,
+    "bevel": 0,
+    "subdivision": 0,
+    "outwardNormals": true,
+    "flatFaceNormals": true
+  },
+  "material": {
+    "baseColor": "#383A38",
+    "metallic": 0.15,
+    "roughness": 0.8,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numeric polygons define exact geometry; sheets are non-calibrated appearance references.",
+  "exclusions": [
+    "models",
+    "runtime implementation",
+    "rails bundled with posts",
+    "corner transitions",
+    "structural certification"
+  ]
+}

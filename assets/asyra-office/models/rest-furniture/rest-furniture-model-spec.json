@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of base footprint at Z=0"
+  },
+  "source": "Supplementary authored rest-area designs; not recovered source-image objects.",
+  "assets": [
+    {
+      "id": "sage-nap-daybed",
+      "bounds": [
+        1.8,
+        0.75,
+        0.65
+      ],
+      "parts": {
+        "legs": {
+          "method": "boxes",
+          "centersXY": [
+            [
+              -0.78,
+              -0.255
+            ],
+            [
+              -0.78,
+              0.255
+            ],
+            [
+              0.78,
+              -0.255
+            ],
+            [
+              0.78,
+              0.255
+            ]
+          ],
+          "sizeXY": [
+            0.06,
+            0.06
+          ],
+          "zRange": [
+            0,
+            0.28
+          ],
+          "material": "wood"
+        },
+        "platform": {
+          "method": "box",
+          "min": [
+            -0.9,
+            -0.375,
+            0.28
+          ],
+          "max": [
+            0.9,
+            0.375,
+            0.34
+          ],
+          "material": "wood"
+        },
+        "headboard": {
+          "method": "box",
+          "min": [
+            -0.9,
+            -0.375,
+            0.34
+          ],
+          "max": [
+            -0.86,
+            0.375,
+            0.65
+          ],
+          "material": "wood"
+        },
+        "pad": {
+          "method": "rounded box as Minkowski sum of inner box and sphere",
+          "center": [
+            0.02,
+            0,
+            0.38
+          ],
+          "outerSize": [
+            1.74,
+            0.71,
+            0.08
+          ],
+          "roundingRadius": 0.02,
+          "innerBoxSize": [
+            1.7,
+            0.67,
+            0.04
+          ],
+          "material": "sage"
+        }
+      },
+      "excluded": [
+        "pillow",
+        "blanket",
+        "side rails",
+        "footboard",
+        "drawer",
+        "reclining mechanism"
+      ]
+    },
+    {
+      "id": "ivory-sleeping-pillow",
+      "bounds": [
+        0.5,
+        0.32,
+        0.1
+      ],
+      "construction": {
+        "method": "rounded box as Minkowski sum of inner box and sphere",
+        "center": [
+          0,
+          0,
+          0.05
+        ],
+        "outerSize": [
+          0.5,
+          0.32,
+          0.1
+        ],
+        "roundingRadius": 0.04,
+        "innerBoxSize": [
+          0.42,
+          0.24,
+          0.02
+        ]
+      },
+      "material": "ivory",
+      "excluded": [
+        "seam",
+        "piping",
+        "wrinkles",
+        "buttons",
+        "cloth simulation"
+      ]
+    }
+  ],
+  "construction": {
+    "roundedBoxes": "planar central faces joined by cylindrical edges and spherical octant corners; 12 angular segments per quarter, weld shared boundaries",
+    "woodBoxes": "flat faces, no bevel",
+    "shading": "flat planar faces, smooth curved faces",
+    "subdivision": false,
+    "parts": "closed solids; preserve each named part separately"
+  },
+  "materials": {
+    "wood": {
+      "baseColor": "#B9864E",
+      "grainColor": "#A77945",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "sage": {
+      "baseColor": "#899B85",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.9,
+      "metallic": 0
+    }
+  },
+  "lighting": {
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "glow": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.001,
+    "modelsProduced": false
+  }
+}

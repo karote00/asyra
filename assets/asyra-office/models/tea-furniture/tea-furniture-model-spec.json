@@ -1,0 +1,329 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "origin": "footprint centre at ground Z=0",
+    "bevelRule": "inward, no bounds expansion"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "referenceLocation": "rear central-office tea nook below the wall clock; not the front lounge coffee table",
+  "materials": {
+    "oak": {
+      "baseColorSRGB": "#D5B587",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    },
+    "oak-grain": {
+      "baseColorSRGB": "#BD986B",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    },
+    "dark-wood": {
+      "baseColorSRGB": "#584333",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    },
+    "orange": {
+      "baseColorSRGB": "#BF753D",
+      "roughness": 0.93,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0,
+      "transmission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "round-tea-table",
+      "name": "Round tea table - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-round-tea-table-v1.png",
+      "overallSize": [
+        0.68,
+        0.68,
+        0.58
+      ],
+      "components": [
+        {
+          "partId": "top",
+          "primitive": "cylinder",
+          "axis": "Z",
+          "radius": 0.34,
+          "zMin": 0.545,
+          "zMax": 0.58,
+          "radialSegments": 128,
+          "bevel": 0.006,
+          "bevelSegments": 4,
+          "material": "oak"
+        },
+        {
+          "partId": "apron-front-back",
+          "primitive": "two boxes",
+          "size": [
+            0.39,
+            0.025,
+            0.06
+          ],
+          "centres": [
+            [
+              0,
+              -0.1825,
+              0.515
+            ],
+            [
+              0,
+              0.1825,
+              0.515
+            ]
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "apron-sides",
+          "primitive": "two boxes",
+          "size": [
+            0.025,
+            0.34,
+            0.06
+          ],
+          "centres": [
+            [
+              -0.1825,
+              0,
+              0.515
+            ],
+            [
+              0.1825,
+              0,
+              0.515
+            ]
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "legs",
+          "primitive": "four sheared conical frusta with horizontal end rings",
+          "signPairs": [
+            [
+              -1,
+              -1
+            ],
+            [
+              -1,
+              1
+            ],
+            [
+              1,
+              -1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "bottomCentreFormula": "(sx*0.22,sy*0.22,0)",
+          "topCentreFormula": "(sx*0.16,sy*0.16,0.545)",
+          "bottomRadius": 0.017,
+          "topRadius": 0.022,
+          "radialSegments": 48,
+          "edgeBevel": 0.002,
+          "bevelSegments": 3,
+          "material": "dark-wood"
+        }
+      ],
+      "authoredCompletions": [
+        "four-leg layout",
+        "hidden square apron",
+        "underside",
+        "dimensions"
+      ],
+      "omissions": [
+        "cups",
+        "plants",
+        "people",
+        "chair",
+        "floor",
+        "metal fasteners"
+      ]
+    },
+    {
+      "moduleId": "tea-chair",
+      "name": "Tea chair - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-tea-chair-v1.png",
+      "nominalOverallSize": [
+        0.44,
+        0.46,
+        0.65
+      ],
+      "nominalBounds": {
+        "min": [
+          -0.22,
+          -0.23,
+          0
+        ],
+        "max": [
+          0.22,
+          0.23,
+          0.65
+        ]
+      },
+      "seatTop": 0.33,
+      "components": [
+        {
+          "partId": "wraparound-shell",
+          "primitive": "variable-height elliptical annular sector",
+          "thetaDegrees": [
+            -120,
+            120
+          ],
+          "outerRadiiXY": [
+            0.22,
+            0.23
+          ],
+          "innerRadiiXY": [
+            0.17,
+            0.18
+          ],
+          "xyFormula": "X=rx*sin(theta); Y=ry*cos(theta)",
+          "bottomZ": 0.235,
+          "topZFormula": "0.39+0.26*(1-(abs(thetaDegrees)/120)^1.6)",
+          "angularIntervals": 120,
+          "bevel": 0.012,
+          "bevelSegments": 4,
+          "material": "orange"
+        },
+        {
+          "partId": "seat-base",
+          "primitive": "rounded-rectangle extrusion",
+          "width": 0.36,
+          "depth": 0.35,
+          "centreXY": [
+            0,
+            -0.015
+          ],
+          "zMin": 0.205,
+          "zMax": 0.255,
+          "planCornerRadius": 0.07,
+          "edgeBevel": 0.008,
+          "bevelSegments": 3,
+          "material": "orange"
+        },
+        {
+          "partId": "seat-cushion",
+          "primitive": "rounded-rectangle extrusion",
+          "width": 0.36,
+          "depth": 0.39,
+          "centreXY": [
+            0,
+            -0.035
+          ],
+          "zMin": 0.255,
+          "zMax": 0.33,
+          "planCornerRadius": 0.07,
+          "edgeBevel": 0.025,
+          "bevelSegments": 4,
+          "material": "orange"
+        },
+        {
+          "partId": "legs",
+          "primitive": "four sheared conical frusta with horizontal end rings",
+          "endCentres": [
+            {
+              "bottom": [
+                -0.175,
+                -0.18,
+                0
+              ],
+              "top": [
+                -0.12,
+                -0.12,
+                0.23
+              ]
+            },
+            {
+              "bottom": [
+                0.175,
+                -0.18,
+                0
+              ],
+              "top": [
+                0.12,
+                -0.12,
+                0.23
+              ]
+            },
+            {
+              "bottom": [
+                -0.175,
+                0.145,
+                0
+              ],
+              "top": [
+                -0.12,
+                0.105,
+                0.23
+              ]
+            },
+            {
+              "bottom": [
+                0.175,
+                0.145,
+                0
+              ],
+              "top": [
+                0.12,
+                0.105,
+                0.23
+              ]
+            }
+          ],
+          "bottomRadius": 0.014,
+          "topRadius": 0.018,
+          "radialSegments": 48,
+          "edgeBevel": 0.002,
+          "bevelSegments": 3,
+          "material": "dark-wood"
+        }
+      ],
+      "authoredCompletions": [
+        "continuous inner shell",
+        "plain underside",
+        "four-leg positions",
+        "exact dimensions"
+      ],
+      "omissions": [
+        "loose back cushion",
+        "loose pillow",
+        "buttons",
+        "wheels",
+        "footrest",
+        "table",
+        "room"
+      ]
+    }
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "nominalDimensionTolerance": 0.001,
+    "legsPerUnit": 4,
+    "bakedLighting": false
+  }
+}

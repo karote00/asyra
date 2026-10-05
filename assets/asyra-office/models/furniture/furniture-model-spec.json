@@ -1,0 +1,941 @@
+{
+  "specVersion": "1.0.0",
+  "status": "user approved commit; drawings and documents only; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "ground centre of footprint; symmetric X unless explicit",
+    "sizeOrder": "X,Y,Z"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "referencePriority": "central office; hidden details explicitly chosen here, not measured from source",
+  "materials": {
+    "oak": {
+      "baseColorSRGB": "#D5B587",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "oak-grain": {
+      "baseColorSRGB": "#BD986B",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "dark-frame": {
+      "baseColorSRGB": "#363832",
+      "roughness": 0.7,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "dark-wood": {
+      "baseColorSRGB": "#584333",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "sage": {
+      "baseColorSRGB": "#78836A",
+      "roughness": 0.93,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "orange": {
+      "baseColorSRGB": "#BF753D",
+      "roughness": 0.93,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "writing-desk",
+      "name": "Writing desk - single unit",
+      "reviewDrawing": "review/01-desk-v1.png",
+      "size": [
+        1.2,
+        0.6,
+        0.65
+      ],
+      "components": [
+        {
+          "partId": "top",
+          "primitive": "rounded-box",
+          "size": [
+            1.2,
+            0.6,
+            0.04
+          ],
+          "centre": [
+            0,
+            0,
+            0.63
+          ],
+          "radius": 0.008,
+          "material": "oak"
+        },
+        {
+          "partId": "front-apron",
+          "primitive": "rounded-box",
+          "size": [
+            1.06,
+            0.025,
+            0.055
+          ],
+          "centre": [
+            0,
+            -0.238,
+            0.5825
+          ],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "back-apron",
+          "primitive": "rounded-box",
+          "size": [
+            1.06,
+            0.025,
+            0.055
+          ],
+          "centre": [
+            0,
+            0.238,
+            0.5825
+          ],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "left-apron",
+          "primitive": "rounded-box",
+          "size": [
+            0.025,
+            0.45,
+            0.055
+          ],
+          "centre": [
+            -0.538,
+            0,
+            0.5825
+          ],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "right-apron",
+          "primitive": "rounded-box",
+          "size": [
+            0.025,
+            0.45,
+            0.055
+          ],
+          "centre": [
+            0.538,
+            0,
+            0.5825
+          ],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "leg-1",
+          "primitive": "tapered-square-leg",
+          "bottomCentre": [
+            -0.54,
+            -0.24,
+            0
+          ],
+          "topCentre": [
+            -0.54,
+            -0.24,
+            0.61
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.032,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-2",
+          "primitive": "tapered-square-leg",
+          "bottomCentre": [
+            0.54,
+            -0.24,
+            0
+          ],
+          "topCentre": [
+            0.54,
+            -0.24,
+            0.61
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.032,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-3",
+          "primitive": "tapered-square-leg",
+          "bottomCentre": [
+            -0.54,
+            0.24,
+            0
+          ],
+          "topCentre": [
+            -0.54,
+            0.24,
+            0.61
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.032,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-4",
+          "primitive": "tapered-square-leg",
+          "bottomCentre": [
+            0.54,
+            0.24,
+            0
+          ],
+          "topCentre": [
+            0.54,
+            0.24,
+            0.61
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.032,
+          "radius": 0.002,
+          "material": "dark-frame"
+        }
+      ],
+      "surfaceHeight": 0.65,
+      "source": "central office left laptop desk",
+      "hiddenDecisions": [
+        "four legs",
+        "plain apron",
+        "no drawers"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "work-chair",
+      "name": "Work chair - single unit",
+      "reviewDrawing": "review/02-work-chair-v1.png",
+      "size": [
+        0.42,
+        0.46,
+        0.7
+      ],
+      "components": [
+        {
+          "partId": "seat",
+          "primitive": "rounded-box",
+          "size": [
+            0.42,
+            0.4,
+            0.07
+          ],
+          "centre": [
+            0,
+            -0.02,
+            0.325
+          ],
+          "radius": 0.025,
+          "material": "sage"
+        },
+        {
+          "partId": "backrest",
+          "primitive": "rounded-box",
+          "size": [
+            0.4,
+            0.075,
+            0.285
+          ],
+          "centre": [
+            0,
+            0.17,
+            0.554
+          ],
+          "radius": 0.033,
+          "material": "sage",
+          "rotationXDegrees": -7
+        },
+        {
+          "partId": "leg-1",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.163,
+            -0.165,
+            0
+          ],
+          "topCentre": [
+            -0.163,
+            -0.165,
+            0.3
+          ],
+          "bottomWidth": 0.025,
+          "topWidth": 0.025,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-2",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.163,
+            -0.165,
+            0
+          ],
+          "topCentre": [
+            0.163,
+            -0.165,
+            0.3
+          ],
+          "bottomWidth": 0.025,
+          "topWidth": 0.025,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-3",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.163,
+            0.15,
+            0
+          ],
+          "topCentre": [
+            -0.163,
+            0.15,
+            0.3
+          ],
+          "bottomWidth": 0.025,
+          "topWidth": 0.025,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "leg-4",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.163,
+            0.15,
+            0
+          ],
+          "topCentre": [
+            0.163,
+            0.15,
+            0.3
+          ],
+          "bottomWidth": 0.025,
+          "topWidth": 0.025,
+          "radius": 0.002,
+          "material": "dark-frame"
+        },
+        {
+          "partId": "back-post--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.022,
+            0.022,
+            0.34
+          ],
+          "centre": [
+            -0.14,
+            0.17,
+            0.4
+          ],
+          "radius": 0.003,
+          "material": "dark-frame",
+          "rotationXDegrees": -7
+        },
+        {
+          "partId": "back-post-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.022,
+            0.022,
+            0.34
+          ],
+          "centre": [
+            0.14,
+            0.17,
+            0.4
+          ],
+          "radius": 0.003,
+          "material": "dark-frame",
+          "rotationXDegrees": -7
+        }
+      ],
+      "seatDatum": [
+        0,
+        -0.02,
+        0.36
+      ],
+      "source": "partly hidden chair behind laptop worker",
+      "hiddenDecisions": [
+        "four legs and two back posts",
+        "no casters or arms",
+        "back rear plain"
+      ],
+      "unitCount": 1,
+      "normalizeBackAssembly": {
+        "targetRearY": 0.24,
+        "targetTopZ": 0.7,
+        "parts": [
+          "backrest",
+          "back-post--1",
+          "back-post-1"
+        ],
+        "rule": "translate assembly after rotation so maxY=.24 and maxZ=.70"
+      }
+    },
+    {
+      "moduleId": "two-seat-sofa",
+      "name": "Sofa - two seats",
+      "reviewDrawing": "review/03-sofa-v1.png",
+      "size": [
+        1.35,
+        0.65,
+        0.7
+      ],
+      "components": [
+        {
+          "partId": "base",
+          "primitive": "rounded-box",
+          "size": [
+            1.35,
+            0.65,
+            0.16
+          ],
+          "centre": [
+            0,
+            0,
+            0.2
+          ],
+          "radius": 0.045,
+          "material": "sage"
+        },
+        {
+          "partId": "back-shell",
+          "primitive": "rounded-box",
+          "size": [
+            1.21,
+            0.135,
+            0.42
+          ],
+          "centre": [
+            0,
+            0.2575,
+            0.49
+          ],
+          "radius": 0.045,
+          "material": "sage"
+        },
+        {
+          "partId": "arm--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.12,
+            0.63,
+            0.31
+          ],
+          "centre": [
+            -0.615,
+            0,
+            0.375
+          ],
+          "radius": 0.048,
+          "material": "sage"
+        },
+        {
+          "partId": "seat-cushion--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.545,
+            0.45,
+            0.09
+          ],
+          "centre": [
+            -0.278,
+            -0.05,
+            0.295
+          ],
+          "radius": 0.035,
+          "material": "sage"
+        },
+        {
+          "partId": "back-cushion--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.545,
+            0.11,
+            0.325
+          ],
+          "centre": [
+            -0.278,
+            0.148,
+            0.525
+          ],
+          "radius": 0.04,
+          "material": "sage",
+          "rotationXDegrees": -10
+        },
+        {
+          "partId": "arm-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.12,
+            0.63,
+            0.31
+          ],
+          "centre": [
+            0.615,
+            0,
+            0.375
+          ],
+          "radius": 0.048,
+          "material": "sage"
+        },
+        {
+          "partId": "seat-cushion-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.545,
+            0.45,
+            0.09
+          ],
+          "centre": [
+            0.278,
+            -0.05,
+            0.295
+          ],
+          "radius": 0.035,
+          "material": "sage"
+        },
+        {
+          "partId": "back-cushion-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.545,
+            0.11,
+            0.325
+          ],
+          "centre": [
+            0.278,
+            0.148,
+            0.525
+          ],
+          "radius": 0.04,
+          "material": "sage",
+          "rotationXDegrees": -10
+        },
+        {
+          "partId": "foot-1",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.55,
+            -0.23,
+            0
+          ],
+          "topCentre": [
+            -0.55,
+            -0.23,
+            0.14
+          ],
+          "bottomWidth": 0.045,
+          "topWidth": 0.045,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-2",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.55,
+            -0.23,
+            0
+          ],
+          "topCentre": [
+            0.55,
+            -0.23,
+            0.14
+          ],
+          "bottomWidth": 0.045,
+          "topWidth": 0.045,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-3",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.55,
+            0.23,
+            0
+          ],
+          "topCentre": [
+            -0.55,
+            0.23,
+            0.14
+          ],
+          "bottomWidth": 0.045,
+          "topWidth": 0.045,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-4",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.55,
+            0.23,
+            0
+          ],
+          "topCentre": [
+            0.55,
+            0.23,
+            0.14
+          ],
+          "bottomWidth": 0.045,
+          "topWidth": 0.045,
+          "radius": 0.002,
+          "material": "dark-wood"
+        }
+      ],
+      "seatDatums": [
+        [
+          -0.278,
+          -0.05,
+          0.34
+        ],
+        [
+          0.278,
+          -0.05,
+          0.34
+        ]
+      ],
+      "source": "green sofa in lower-right office lounge",
+      "hiddenDecisions": [
+        "four feet",
+        "plain rear",
+        "two fixed seat and back cushions"
+      ],
+      "excluded": [
+        "yellow throw pillows"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "lounge-armchair",
+      "name": "Lounge armchair - single unit",
+      "reviewDrawing": "review/04-armchair-v1.png",
+      "size": [
+        0.62,
+        0.61,
+        0.69
+      ],
+      "components": [
+        {
+          "partId": "base",
+          "primitive": "rounded-box",
+          "size": [
+            0.56,
+            0.55,
+            0.14
+          ],
+          "centre": [
+            0,
+            0,
+            0.215
+          ],
+          "radius": 0.04,
+          "material": "orange"
+        },
+        {
+          "partId": "seat-cushion",
+          "primitive": "rounded-box",
+          "size": [
+            0.43,
+            0.43,
+            0.085
+          ],
+          "centre": [
+            0,
+            -0.045,
+            0.2975
+          ],
+          "radius": 0.035,
+          "material": "orange"
+        },
+        {
+          "partId": "wrap-shell",
+          "primitive": "variable-height-u-shell",
+          "outerHalfWidth": 0.31,
+          "outerFrontY": -0.305,
+          "outerBackY": 0.305,
+          "rearCornerRadius": 0.11,
+          "thickness": 0.075,
+          "bottomZ": 0.21,
+          "frontTopZ": 0.45,
+          "backTopZ": 0.69,
+          "edgeRadius": 0.022,
+          "material": "orange"
+        },
+        {
+          "partId": "foot-1",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.238,
+            -0.22,
+            0
+          ],
+          "topCentre": [
+            -0.208,
+            -0.19,
+            0.17
+          ],
+          "bottomWidth": 0.026,
+          "topWidth": 0.038,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-2",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.238,
+            -0.22,
+            0
+          ],
+          "topCentre": [
+            0.208,
+            -0.19,
+            0.17
+          ],
+          "bottomWidth": 0.026,
+          "topWidth": 0.038,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-3",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.238,
+            0.22,
+            0
+          ],
+          "topCentre": [
+            -0.208,
+            0.19,
+            0.17
+          ],
+          "bottomWidth": 0.026,
+          "topWidth": 0.038,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "foot-4",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.238,
+            0.22,
+            0
+          ],
+          "topCentre": [
+            0.208,
+            0.19,
+            0.17
+          ],
+          "bottomWidth": 0.026,
+          "topWidth": 0.038,
+          "radius": 0.002,
+          "material": "dark-wood"
+        }
+      ],
+      "seatDatum": [
+        0,
+        -0.045,
+        0.34
+      ],
+      "source": "orange armchair beside lower-right green sofa",
+      "hiddenDecisions": [
+        "continuous U-shaped shell",
+        "four splayed feet",
+        "plain rear"
+      ],
+      "unitCount": 1
+    },
+    {
+      "moduleId": "round-coffee-table",
+      "name": "Round coffee table - single unit",
+      "reviewDrawing": "review/05-coffee-table-v1.png",
+      "size": [
+        0.62,
+        0.62,
+        0.32
+      ],
+      "components": [
+        {
+          "partId": "top",
+          "primitive": "beveled-cylinder",
+          "radius": 0.31,
+          "height": 0.035,
+          "centre": [
+            0,
+            0,
+            0.3025
+          ],
+          "edgeRadius": 0.006,
+          "material": "oak"
+        },
+        {
+          "partId": "leg-1",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.0,
+            -0.24,
+            0
+          ],
+          "topCentre": [
+            0.0,
+            -0.18,
+            0.285
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.044,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "leg-2",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            0.207846,
+            0.12,
+            0
+          ],
+          "topCentre": [
+            0.155885,
+            0.09,
+            0.285
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.044,
+          "radius": 0.002,
+          "material": "dark-wood"
+        },
+        {
+          "partId": "leg-3",
+          "primitive": "tapered-round-leg",
+          "bottomCentre": [
+            -0.207846,
+            0.12,
+            0
+          ],
+          "topCentre": [
+            -0.155885,
+            0.09,
+            0.285
+          ],
+          "bottomWidth": 0.032,
+          "topWidth": 0.044,
+          "radius": 0.002,
+          "material": "dark-wood"
+        }
+      ],
+      "surfaceHeight": 0.32,
+      "source": "low wooden table in front of green sofa",
+      "hiddenDecisions": [
+        "circular top",
+        "three splayed feet at 120 degrees",
+        "no underside shelf"
+      ],
+      "unitCount": 1
+    }
+  ],
+  "construction": {
+    "recipe": "GEOMETRY-SUPPLEMENT.md",
+    "bevelSegments": 3,
+    "cylinderSegments": 64,
+    "uShellCornerSegments": 12,
+    "bakedAO": false,
+    "bakedShadows": false,
+    "bakedHighlights": false,
+    "lightObjects": false,
+    "normalMaps": false
+  },
+  "assembly": {
+    "oneAsset": "one complete furniture item, including own legs and attached seat/back cushions",
+    "separateAssets": [
+      "throw pillow",
+      "laptop",
+      "mug",
+      "rug",
+      "plant",
+      "wall",
+      "floor"
+    ],
+    "appOwns": [
+      "placement",
+      "rotation",
+      "count",
+      "lighting",
+      "character seating",
+      "interaction"
+    ]
+  },
+  "verification": {
+    "status": "document criteria only, no model built",
+    "dimensionTolerance": 0.002,
+    "cameraDirections": {
+      "front": [
+        0,
+        -1,
+        0
+      ],
+      "right": [
+        1,
+        0,
+        0
+      ],
+      "back": [
+        0,
+        1,
+        0
+      ],
+      "top": [
+        0,
+        0,
+        1
+      ],
+      "three-quarter": [
+        1,
+        -1,
+        0.8
+      ]
+    },
+    "orthographic": true,
+    "mustInspect": [
+      "all view silhouettes",
+      "leg count",
+      "ground contact Z=0",
+      "underside closure",
+      "plain rear",
+      "separate props",
+      "no baked light"
+    ]
+  }
+}

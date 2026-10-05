@@ -5,7 +5,10 @@ const path = require('node:path')
 const fs = require('node:fs')
 const { captureSource } = require('../snapshot.cjs')
 const { execFileSync } = require('node:child_process')
-const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
+const { loadContract } = require('../contracts.cjs')
+const {
+  createAcceptedRepository
+} = require('./accepted-repository-fixture.cjs')
 const { prepareCIContext, verifierFiles } = require('../ci-context.cjs')
 const root = path.resolve(__dirname, '../../../..')
 test('CI context loads independent accepted obligations and binds captured source to integration Git bytes', (t) => {
@@ -15,49 +18,12 @@ test('CI context loads independent accepted obligations and binds captured sourc
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const contract = loadContract(root),
     snapshot = captureSource(root, dir, contract)
-  const repository = path.join(dir, 'repository')
-  fs.mkdirSync(repository)
-  const files = new Set([
-    ...snapshot.files.map((f) => f.path),
-    MANIFEST_PATH,
-    contract.definition.architecturePath,
-    contract.definition.specPath,
-    contract.definition.testFile,
-    contract.definition.configFile,
-    'yarn.lock',
-    '.github/workflows/main.yml',
-    ...verifierFiles
-  ])
-  for (const file of files) {
-    const target = path.join(repository, file)
-    fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.copyFileSync(path.join(root, file), target)
-  }
+  const repository = createAcceptedRepository(root, dir)
   const git = (...args) =>
-    execFileSync('git', args, {
-      cwd: repository,
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-      .toString()
-      .trim()
-  git('init')
-  git('config', 'user.email', 'test@example.invalid')
-  git('config', 'user.name', 'Flow test')
-  git('add', '.')
-  git(
-    '-c',
-    'core.hooksPath=/dev/null',
-    '-c',
-    'commit.gpgsign=false',
-    'commit',
-    '-m',
-    'Accepted fixture'
-  )
-  git('remote', 'add', 'origin', 'https://github.com/example/fixture.git')
-  git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+    execFileSync('git', args, { cwd: repository }).toString().trim()
   const captured = { ...snapshot, head: git('rev-parse', 'HEAD') }
   const result = prepareCIContext(repository, 'origin/main', captured)
-  assert.equal(result.accepted.cases.length, 6)
+  assert.equal(result.accepted.cases.length, 9)
   assert.equal(result.expected.sourceDigest, snapshot.digest)
   assert.match(result.expected.base, /^[a-f0-9]{40}$/)
   assert.equal(result.expected.integration, captured.head)

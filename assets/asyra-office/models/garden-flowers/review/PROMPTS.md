@@ -1,0 +1,15 @@
+# Generation Prompts
+
+Tool: built-in imagegen, one call per plant. Both calls received the [approved office image](../../architecture/review/approved-office-reference.jpg) for garden color cues. Petal counts and exact geometry are authored.
+
+## Yellow plant
+
+Use case: stylized-concept. Five-view component sheet ONE small yellow flowering plant, inspired by little yellow flowers in the supplied miniature office park garden; exact petal count and hidden geometry authored. White background, flat unlit solid colors, fine contour lines ONLY. NO shadows, AO, gradients, highlights, reflections, ground, soil, pot or scene. FRONT RIGHT BACK TOP THREE-QUARTER. ONE straight green stem, exactly TWO simple oval leaves growing opposite left/right at different heights, ONE upward-facing horizontal flower head at top. Flower has exactly FIVE rounded oval yellow petals in single radial whorl around ONE small ochre circular center. Total height0.25m, flower diameterabout0.08m. Stem green #81945F, petals yellow #E8C35C, center #B18B45. Petals have slight real thickness but no veins or color gradient. Elevations show flower edge because flower points upward; TOP reveals FIVE petals clearly. No extra buds, blooms, leaves or stems. Title YELLOW GARDEN FLOWER - SINGLE PLANT. Caption HEIGHT 0.25 m. All views SAME one plant and petal count.
+
+## White plant
+
+Use case: stylized-concept. Five-view component sheet ONE small white flowering plant, inspired by little pale flowers in supplied office garden; exact flower geometry is authored, not botanical species reconstruction. White background, flat unlit colors, thin contours ONLY. NO shadows, AO, gradients, highlights, reflections, ground, soil, pot or scene. FRONT RIGHT BACK TOP THREE-QUARTER. ONE straight olive green stem, exactly TWO simple oval leaves at different heights extending opposite directions, ONE upward-facing horizontal daisy-like flower head at top. Exactly EIGHT elongated rounded ivory petals in single radial whorl around ONE yellow circular center. Totalheight0.28m, flower diameterabout0.09m. Stem/leaves #81945F, petals ivory #EEE9DB, center #E8C35C. Petals slight thickness, no veins or shading. Elevations see flower edge; TOP shows all eight petals. No extra buds, leaves, blooms, grass or objects. Title WHITE GARDEN FLOWER - SINGLE PLANT. Caption HEIGHT 0.28 m. Same single plant every view.
+
+## Inspection notes
+
+Both sheets show five labels and isolated single plants. The top details show five yellow petals and eight ivory petals. TOP isolates the flower head and omits lower leaves; it is not a complete assembled overhead projection. FRONT/BACK views expose petal faces through an elevated illustrative camera, while numeric flower heads lie horizontally. Leaf visibility and apparent azimuth vary across generated views; fixed coordinates govern the two leaves and their connection to the stem. No extra petals, tilted flower heads, veins or dark cavity texture are authorized by these drawing artifacts. No model validation is claimed.

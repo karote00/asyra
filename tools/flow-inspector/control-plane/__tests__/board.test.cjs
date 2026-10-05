@@ -1401,7 +1401,9 @@ test(
       )
       await expect(canvas.locator('#mapping-accept')).toBeDisabled()
       await canvas.getByText('Mapping review', { exact: true }).click()
-      await expect(canvas.locator('#checks')).toHaveText('6 / 6')
+      await expect(canvas.locator('#checks')).toHaveText(
+        `${server.service.contract().cases.length} / ${server.service.contract().cases.length}`
+      )
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
@@ -1428,7 +1430,7 @@ test(
       )
       await expect(canvas.locator('#proof-run-failure')).toBeVisible()
       await expect(canvas.locator('#proof-run-failure')).toContainText(
-        '2 failed obligations'
+        `${server.service.contract().scenarios.find((scenario) => scenario.id === 'inverse-regression').expectedFailedCaseIds.length} failed obligations`
       )
       await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(2)
       assert.equal(
@@ -1541,10 +1543,10 @@ test(
         'cancel.delivery - failed'
       )
       await canvas
-        .getByRole('button', {
-          name: 'Show Finalize transaction state',
-          exact: true
-        })
+        .locator('#proof-run-failure p')
+        .filter({ hasText: /^Cancel an already visible change$/ })
+        .locator('xpath=following-sibling::button[1]')
+        .filter({ hasText: /^Show Finalize transaction state$/ })
         .click()
       await expect(owner).toHaveClass(/is-selected/)
       assert.equal(
@@ -1632,7 +1634,9 @@ test(
       ).toHaveCount(3)
       const attempts = server.service.state().runs.length
       await page.reload()
-      await expect(canvas.locator('#checks')).toHaveText('6 / 6')
+      await expect(canvas.locator('#checks')).toHaveText(
+        `${server.service.contract().cases.length} / ${server.service.contract().cases.length}`
+      )
       assert.equal(server.service.state().runs.length, attempts)
       // The loaded static canvas is its own immutable architecture snapshot.
       // A newer server contract cannot authorize old, differently authored cards.
@@ -2828,7 +2832,10 @@ test(
         await expect(frame.locator('h1:visible')).toBeVisible()
         if (entry.kind === 'flow-v2') {
           await frame.locator('.step-card').first().click()
-          await expect(frame.locator('.detail-heading')).toBeVisible()
+          await expect(
+            frame.locator('.detail-heading'),
+            entry.slug + ' selected step detail must be visible'
+          ).toBeVisible()
           const overflow = await frame
             .locator('#detail')
             .evaluate((node) => node.scrollWidth - node.clientWidth)

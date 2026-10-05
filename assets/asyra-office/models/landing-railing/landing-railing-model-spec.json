@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "dimensionTolerance": 0.0005,
+  "objects": [
+    {
+      "id": "landing-baluster",
+      "origin": "bottom footprint centre",
+      "primitive": "closed-box",
+      "min": [
+        -0.02,
+        -0.02,
+        0
+      ],
+      "max": [
+        0.02,
+        0.02,
+        0.9
+      ],
+      "size": [
+        0.04,
+        0.04,
+        0.9
+      ]
+    },
+    {
+      "id": "level-handrail",
+      "origin": "midpoint of bottom edge of negative-X end",
+      "primitive": "closed-box",
+      "min": [
+        0,
+        -0.02,
+        0
+      ],
+      "max": [
+        0.3,
+        0.02,
+        0.04
+      ],
+      "size": [
+        0.3,
+        0.04,
+        0.04
+      ]
+    }
+  ],
+  "construction": {
+    "verticesPerObject": 8,
+    "quadFacesPerObject": 6,
+    "trianglesPerObject": 12,
+    "bevel": 0,
+    "subdivision": 0,
+    "hollow": false,
+    "outwardNormals": true,
+    "flatFaceNormals": true
+  },
+  "material": {
+    "baseColor": "#383A38",
+    "metallic": 0.15,
+    "roughness": 0.8,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "interiorJoinExample": {
+    "railOrigins": [
+      [
+        0,
+        0,
+        0.9
+      ],
+      [
+        0.3,
+        0,
+        0.9
+      ]
+    ],
+    "postOrigin": [
+      0.3,
+      0,
+      0
+    ],
+    "repeatTranslation": [
+      0.3,
+      0,
+      0
+    ],
+    "topZ": 0.94
+  },
+  "authority": "Numerical geometry defines dimensions and hidden surfaces. Drawings are uncalibrated appearance references.",
+  "exclusions": [
+    "models",
+    "runtime implementation",
+    "sloped-to-level connector",
+    "corner connectors",
+    "end fittings",
+    "assembled railing",
+    "safety certification"
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "dimensionTolerance": 0.0005,
+  "objects": [
+    {
+      "id": "stair-baluster",
+      "origin": "bottom footprint centre",
+      "bounds": {
+        "min": [
+          -0.02,
+          -0.02,
+          0
+        ],
+        "max": [
+          0.02,
+          0.02,
+          0.91
+        ]
+      },
+      "construction": "Extrude XZ polygon along Y from -0.02 to +0.02; close both ends.",
+      "xzPolygon": [
+        [
+          -0.02,
+          0
+        ],
+        [
+          0.02,
+          0
+        ],
+        [
+          0.02,
+          0.91
+        ],
+        [
+          -0.02,
+          0.89
+        ]
+      ],
+      "topPlane": "z = 0.90 + 0.5*x"
+    },
+    {
+      "id": "sloped-handrail",
+      "origin": "centre of lower end bottom edge",
+      "bounds": {
+        "min": [
+          0,
+          -0.02,
+          0
+        ],
+        "max": [
+          0.3,
+          0.02,
+          0.19
+        ]
+      },
+      "construction": "Extrude XZ polygon along Y from -0.02 to +0.02; close both ends.",
+      "xzPolygon": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.15
+        ],
+        [
+          0.3,
+          0.19
+        ],
+        [
+          0,
+          0.04
+        ]
+      ],
+      "bottomPlane": "z = 0.5*x",
+      "topPlane": "z = 0.5*x + 0.04",
+      "run": 0.3,
+      "rise": 0.15,
+      "verticalThickness": 0.04,
+      "pitchDegrees": 26.5650511771
+    }
+  ],
+  "sharedGeometry": {
+    "verticesPerObject": 8,
+    "quadFacesPerObject": 6,
+    "trianglesPerObject": 12,
+    "bevel": 0,
+    "subdivision": 0,
+    "outwardNormals": true,
+    "flatFaceNormals": true,
+    "hollow": false
+  },
+  "material": {
+    "baseColor": "#383A38",
+    "metallic": 0.15,
+    "roughness": 0.8,
+    "alpha": 1,
+    "ior": 1.5,
+    "emission": 0,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "placementReference": {
+    "railOrigins": [
+      [
+        0,
+        0,
+        0.9
+      ],
+      [
+        0.3,
+        0,
+        1.05
+      ]
+    ],
+    "interiorPostOrigin": [
+      0.3,
+      0,
+      0.15
+    ],
+    "repeatTranslation": [
+      0.3,
+      0,
+      0.15
+    ],
+    "scope": "Illustrative interior join only; end treatment and complete railing assemblies are outside this batch."
+  },
+  "surface": "Uniform intrinsic color. No baked shadow, AO, highlight, reflection or gradient.",
+  "authority": "Numeric specification fixes geometry; drawings communicate appearance and are not calibrated measurements.",
+  "exclusions": [
+    "models",
+    "Blender execution",
+    "runtime behavior",
+    "complete railing assemblies",
+    "horizontal transitions",
+    "end fittings",
+    "physical safety certification"
+  ]
+}

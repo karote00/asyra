@@ -435,6 +435,10 @@
   ],
   "fieldscopeProfilesWorkspaceDirectory": "apps/fieldscope",
   "internalDocumentationAssetPatterns": [
+    "assets/{slug}/models/**.md",
+    "assets/{slug}/models/**.png",
+    "assets/{slug}/models/**.jpg",
+    "assets/{slug}/models/**-spec.json",
     "docs/ai/**/bdd-features/*.feature",
     "docs/ai/**/references/**.png",
     "docs/ai/**/references/**.jpg",

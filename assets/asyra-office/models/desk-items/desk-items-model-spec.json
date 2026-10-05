@@ -1,0 +1,467 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "origin": "base footprint centre at Z=0; mug origin is vessel axis at ground"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "silver": {
+      "baseColorSRGB": "#BFC1C4",
+      "roughness": 0.65,
+      "metallic": 0.65,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "trackpad": {
+      "baseColorSRGB": "#B1B3B7",
+      "roughness": 0.75,
+      "metallic": 0.4,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "key": {
+      "baseColorSRGB": "#303236",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "bezel": {
+      "baseColorSRGB": "#242629",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "screen": {
+      "baseColorSRGB": "#313335",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "emblem": {
+      "baseColorSRGB": "#F6F4EE",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "ceramic": {
+      "baseColorSRGB": "#EEE8D9",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "laptop",
+      "name": "Laptop - single open unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-laptop-v2.png",
+      "bounds": {
+        "min": [
+          -0.15,
+          -0.105,
+          0
+        ],
+        "max": [
+          0.15,
+          0.15780290509423475,
+          0.1975676583792996
+        ]
+      },
+      "components": [
+        {
+          "partId": "base",
+          "primitive": "rounded-box",
+          "size": [
+            0.3,
+            0.21,
+            0.012
+          ],
+          "centre": [
+            0,
+            0,
+            0.006
+          ],
+          "planCornerRadius": 0.006,
+          "edgeBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "silver"
+        },
+        {
+          "partId": "hinge",
+          "primitive": "cylinder",
+          "axis": "X",
+          "length": 0.25,
+          "radius": 0.003,
+          "centre": [
+            0,
+            0.09,
+            0.015
+          ],
+          "radialSegments": 48,
+          "material": "key"
+        },
+        {
+          "partId": "lid",
+          "primitive": "rounded-box-in-local-basis",
+          "sizeWidthThicknessHeight": [
+            0.3,
+            0.006,
+            0.19
+          ],
+          "origin": [
+            0,
+            0.09,
+            0.018
+          ],
+          "basisWidth": [
+            1,
+            0,
+            0
+          ],
+          "basisUp": [
+            0,
+            0.3420201433256687,
+            0.9396926207859084
+          ],
+          "basisFront": [
+            0,
+            -0.9396926207859084,
+            0.3420201433256687
+          ],
+          "localExtents": {
+            "width": [
+              -0.15,
+              0.15
+            ],
+            "normal": [
+              -0.003,
+              0.003
+            ],
+            "height": [
+              0,
+              0.19
+            ]
+          },
+          "planCornerRadius": 0.004,
+          "edgeBevel": 0.0005,
+          "bevelSegments": 3,
+          "material": "silver",
+          "openAngleDegrees": 110
+        },
+        {
+          "partId": "front-inserts",
+          "primitive": "coplanar material regions on lid front",
+          "normalCoordinate": 0.003,
+          "bezel": {
+            "width": 0.294,
+            "height": 0.184,
+            "centreHeight": 0.095,
+            "cornerRadius": 0.003,
+            "material": "bezel"
+          },
+          "display": {
+            "width": 0.276,
+            "height": 0.157,
+            "centreHeight": 0.0935,
+            "cornerRadius": 0.001,
+            "material": "screen",
+            "uvOrigin": "bottom left when viewed from front",
+            "uvRange": [
+              0,
+              1
+            ],
+            "separateSurfaceRegion": true
+          },
+          "cameraDot": {
+            "radius": 0.001,
+            "centreWidth": 0,
+            "centreHeight": 0.181,
+            "material": "key"
+          }
+        },
+        {
+          "partId": "standard-keys",
+          "primitive": "rounded-box-array",
+          "rowsY": [
+            0.063,
+            0.042,
+            0.021,
+            0,
+            -0.021
+          ],
+          "columns": 14,
+          "firstX": -0.117,
+          "pitchX": 0.018,
+          "keySize": [
+            0.015,
+            0.014,
+            0.001
+          ],
+          "centreZ": 0.0125,
+          "planCornerRadius": 0.002,
+          "edgeBevel": 0.0002,
+          "bevelSegments": 2,
+          "material": "key"
+        },
+        {
+          "partId": "bottom-row",
+          "primitive": "rounded-box-array-with-spacebar",
+          "rowY": -0.042,
+          "smallKeyCentresX": [
+            -0.114,
+            -0.096,
+            -0.078,
+            0.078,
+            0.096,
+            0.114
+          ],
+          "smallKeySize": [
+            0.015,
+            0.014,
+            0.001
+          ],
+          "spacebarCentreX": 0,
+          "spacebarSize": [
+            0.126,
+            0.014,
+            0.001
+          ],
+          "centreZ": 0.0125,
+          "planCornerRadius": 0.002,
+          "edgeBevel": 0.0002,
+          "bevelSegments": 2,
+          "material": "key"
+        },
+        {
+          "partId": "trackpad",
+          "primitive": "coplanar material region on base top",
+          "centre": [
+            0,
+            -0.078,
+            0.012
+          ],
+          "width": 0.126,
+          "depth": 0.039,
+          "cornerRadius": 0.003,
+          "material": "trackpad"
+        },
+        {
+          "partId": "rear-emblem",
+          "primitive": "flat vector colour mask on lid rear",
+          "normalCoordinate": -0.003,
+          "centreWidth": 0,
+          "centreHeight": 0.1,
+          "displayWidth": 0.018,
+          "displayHeight": 0.024,
+          "svgViewBox": [
+            -12,
+            -16,
+            24,
+            32
+          ],
+          "svgPaths": [
+            "M 0 -7 C -5 -12 -11 -8 -10 -1 C -10 6 -6 12 -3 11 C -1 10 1 10 3 11 C 6 12 10 6 10 3 C 5 2 5 -3 10 -5 C 8 -10 3 -11 0 -7 Z",
+            "M 0 -10 C 0 -14 4 -16 7 -15 C 7 -12 3 -9 0 -10 Z"
+          ],
+          "svgYDirection": "down",
+          "material": "emblem",
+          "note": "Authored simplified apple-shaped silhouette; no claim of exact manufacturer logo geometry"
+        }
+      ],
+      "omissions": [
+        "ports",
+        "charger",
+        "cable",
+        "key legends",
+        "speaker holes",
+        "rubber feet",
+        "screen content",
+        "screen reflection",
+        "table"
+      ],
+      "authoredCompletions": [
+        "keyboard layout",
+        "screen surface",
+        "camera dot",
+        "hidden underside",
+        "exact dimensions and opening angle",
+        "vector emblem"
+      ]
+    },
+    {
+      "moduleId": "ceramic-mug",
+      "name": "Ceramic mug - single empty unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-ceramic-mug-v1.png",
+      "bounds": {
+        "min": [
+          -0.042,
+          -0.042,
+          0
+        ],
+        "max": [
+          0.077,
+          0.042,
+          0.09
+        ]
+      },
+      "components": [
+        {
+          "partId": "vessel",
+          "primitive": "closed-profile revolution about Z",
+          "radialSegments": 128,
+          "profileOrder": "from bottom axis outward, then outer side and lip, then inner wall and floor, then back down axis",
+          "profile": [
+            {
+              "line": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  0.031,
+                  0
+                ]
+              ]
+            },
+            {
+              "arc": {
+                "centre": [
+                  0.031,
+                  0.003
+                ],
+                "radius": 0.003,
+                "startDegrees": -90,
+                "endDegrees": 0,
+                "segments": 8
+              }
+            },
+            {
+              "line": [
+                [
+                  0.034,
+                  0.003
+                ],
+                [
+                  0.042,
+                  0.0875
+                ]
+              ]
+            },
+            {
+              "arc": {
+                "centre": [
+                  0.0395,
+                  0.0875
+                ],
+                "radius": 0.0025,
+                "startDegrees": 0,
+                "endDegrees": 180,
+                "segments": 16
+              }
+            },
+            {
+              "line": [
+                [
+                  0.037,
+                  0.0875
+                ],
+                [
+                  0.029,
+                  0.01
+                ]
+              ]
+            },
+            {
+              "arc": {
+                "centre": [
+                  0.027,
+                  0.01
+                ],
+                "radius": 0.002,
+                "startDegrees": 0,
+                "endDegrees": -90,
+                "segments": 8
+              }
+            },
+            {
+              "line": [
+                [
+                  0.027,
+                  0.008
+                ],
+                [
+                  0,
+                  0.008
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            }
+          ],
+          "material": "ceramic"
+        },
+        {
+          "partId": "handle",
+          "primitive": "capped tube swept over half ellipse in X/Z plane",
+          "centrelineFormula": "(0.038 + 0.034*cos(t), 0, 0.049 + 0.028*sin(t))",
+          "tDegrees": [
+            90,
+            -90
+          ],
+          "pathSegments": 48,
+          "tubeRadius": 0.005,
+          "tubeSegments": 16,
+          "frame": "cross-section spanned by +Y and the unit in-plane normal perpendicular to centreline tangent",
+          "material": "ceramic",
+          "join": "union with vessel; remove any handle geometry intruding into the vessel cavity defined by the inner profile; no separate ring or interior nub"
+        }
+      ],
+      "omissions": [
+        "liquid",
+        "steam",
+        "saucer",
+        "lid",
+        "spoon",
+        "coaster",
+        "logo",
+        "foot ring"
+      ],
+      "authoredCompletions": [
+        "precise taper",
+        "handle section and join",
+        "interior wall",
+        "flat underside",
+        "metric size"
+      ]
+    }
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "dimensionTolerance": 0.0005,
+    "laptopKeyCount": 77,
+    "mugHandles": 1,
+    "mugOpenCavities": 1,
+    "noBakedLighting": true
+  }
+}

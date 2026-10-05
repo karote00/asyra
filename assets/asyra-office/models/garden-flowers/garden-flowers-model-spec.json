@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "stem bottom center at Z=0"
+  },
+  "source": "Garden flower color cues from approved image; individual plant geometry is authored.",
+  "assets": [
+    {
+      "id": "yellow-garden-flower",
+      "height": 0.25,
+      "stemRadius": 0.002,
+      "headZ": 0.244,
+      "petals": {
+        "count": 5,
+        "centerRadius": 0.022,
+        "radii": [
+          0.018,
+          0.009,
+          0.002
+        ],
+        "startDegrees": 90,
+        "material": "yellow"
+      },
+      "center": {
+        "radii": [
+          0.009,
+          0.009,
+          0.006
+        ],
+        "material": "ochre"
+      },
+      "leaves": [
+        {
+          "center": [
+            -0.018,
+            0,
+            0.1
+          ],
+          "tiltYDegrees": -45
+        },
+        {
+          "center": [
+            0.018,
+            0,
+            0.15
+          ],
+          "tiltYDegrees": 45
+        }
+      ]
+    },
+    {
+      "id": "white-garden-flower",
+      "height": 0.28,
+      "stemRadius": 0.002,
+      "headZ": 0.274,
+      "petals": {
+        "count": 8,
+        "centerRadius": 0.025,
+        "radii": [
+          0.02,
+          0.007,
+          0.002
+        ],
+        "startDegrees": 0,
+        "material": "ivory"
+      },
+      "center": {
+        "radii": [
+          0.01,
+          0.01,
+          0.006
+        ],
+        "material": "yellow"
+      },
+      "leaves": [
+        {
+          "center": [
+            0.018,
+            0,
+            0.115
+          ],
+          "tiltYDegrees": 45
+        },
+        {
+          "center": [
+            -0.018,
+            0,
+            0.17
+          ],
+          "tiltYDegrees": -45
+        }
+      ]
+    }
+  ],
+  "construction": {
+    "stem": "closed Z cylinder from 0 to headZ, 24 radial segments, olive material",
+    "petals": "ellipsoids; a=start+360*i/count; center=[centerRadius*cos(a),centerRadius*sin(a),headZ]; rotate Rz(a) so long local X axis points radially",
+    "flowerCenter": "ellipsoid centered [0,0,headZ]",
+    "leaves": "two ellipsoids with local radii [0.008,0.002,0.025]; centers and Ry rotations from asset",
+    "ellipsoidSegments": {
+      "longitude": 32,
+      "latitude": 16
+    },
+    "subdivision": false,
+    "shading": "smooth ellipsoids and stem sides, flat stem end caps",
+    "parts": "separate closed solids; intentional contact/intersection at stem and flower center"
+  },
+  "materials": {
+    "olive": "#81945F",
+    "yellow": "#E8C35C",
+    "ivory": "#EEE9DB",
+    "ochre": "#B18B45"
+  },
+  "surface": {
+    "roughness": 0.9,
+    "metallic": 0,
+    "emission": 0,
+    "transmission": 0,
+    "uniformColors": true,
+    "textures": false,
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0005,
+    "modelsProduced": false
+  }
+}

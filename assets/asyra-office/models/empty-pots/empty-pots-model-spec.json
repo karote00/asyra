@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "status": "user-authorized-reference-commit",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "Axis centre on bottom contact plane",
+  "construction": {
+    "primitive": "revolved closed radial profile",
+    "profileCoordinates": [
+      "radius",
+      "Z"
+    ],
+    "angularSegments": 96,
+    "extraBevel": 0,
+    "rotationAxis": "Z",
+    "normals": "Smooth around circumference; retain profile corner normals"
+  },
+  "materials": {
+    "terracotta": {
+      "baseColorSRGB": "#CC8754",
+      "metallic": 0,
+      "roughness": 0.9
+    },
+    "ivory": {
+      "baseColorSRGB": "#EEE9DB",
+      "metallic": 0,
+      "roughness": 0.8
+    }
+  },
+  "commonSurface": {
+    "opacity": 1,
+    "emission": 0,
+    "textures": [],
+    "bakedLighting": false
+  },
+  "assets": [
+    {
+      "name": "terracotta-empty-pot",
+      "bounds": [
+        0.28,
+        0.28,
+        0.24
+      ],
+      "material": "terracotta",
+      "drainDiameter": 0.012,
+      "innerFloorZ": 0.014,
+      "profile": [
+        [
+          0.006,
+          0
+        ],
+        [
+          0.09,
+          0
+        ],
+        [
+          0.093,
+          0.003
+        ],
+        [
+          0.126,
+          0.205
+        ],
+        [
+          0.136,
+          0.205
+        ],
+        [
+          0.14,
+          0.209
+        ],
+        [
+          0.14,
+          0.236
+        ],
+        [
+          0.136,
+          0.24
+        ],
+        [
+          0.12,
+          0.24
+        ],
+        [
+          0.116,
+          0.236
+        ],
+        [
+          0.116,
+          0.218
+        ],
+        [
+          0.08,
+          0.014
+        ],
+        [
+          0.006,
+          0.014
+        ]
+      ]
+    },
+    {
+      "name": "ivory-empty-pot",
+      "bounds": [
+        0.2,
+        0.2,
+        0.18
+      ],
+      "material": "ivory",
+      "drainDiameter": 0.01,
+      "innerFloorZ": 0.01,
+      "profile": [
+        [
+          0.005,
+          0
+        ],
+        [
+          0.075,
+          0
+        ],
+        [
+          0.078,
+          0.003
+        ],
+        [
+          0.097,
+          0.166
+        ],
+        [
+          0.1,
+          0.169
+        ],
+        [
+          0.1,
+          0.177
+        ],
+        [
+          0.097,
+          0.18
+        ],
+        [
+          0.092,
+          0.18
+        ],
+        [
+          0.089,
+          0.177
+        ],
+        [
+          0.089,
+          0.17
+        ],
+        [
+          0.069,
+          0.01
+        ],
+        [
+          0.005,
+          0.01
+        ]
+      ]
+    }
+  ]
+}

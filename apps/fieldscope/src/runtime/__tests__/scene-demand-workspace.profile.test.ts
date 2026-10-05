@@ -259,30 +259,84 @@ it('invalidates scene demand for farm replacement and bypasses unrelated operati
 }, 30000)
 
 it('lazily reuses observation inventory and retires it with its source scene', async () => {
-  const { runtime, workspaces, inventories, dispose } =
-    await createSceneDemandRuntime()
+  const phases: { phase: string; elapsedMs: number }[] = []
+  const measure = async <T>(phase: string, operation: () => T | Promise<T>) => {
+    const started = performance.now()
+    try {
+      return await operation()
+    } finally {
+      phases.push({ phase, elapsedMs: performance.now() - started })
+    }
+  }
+  const { runtime, workspaces, inventories, dispose } = await measure(
+    'bootstrap',
+    createSceneDemandRuntime
+  )
   try {
-    await runtime.setSceneDemandConfiguration(
-      configuredDemand(runtime.getSceneDemandConfiguration())
+    const result = workspaces.mock.results[0]
+    if (result?.type !== 'return')
+      throw new Error('Missing production scene demand workspace')
+    const workspace = result.value
+    // Observation lifecycle setup must not prepare the unrelated default route.
+    expect(
+      Object.values(workspace.getSourceWork()).every((value) => value === 0)
+    ).toBe(true)
+    await measure('configure source scene', () =>
+      runtime.setConfiguration({
+        ...runtime.getConfiguration(),
+        length: 2.2,
+        // One planted passage with both drainage edges exercises the lifecycle.
+        // Full default-farm source coverage stays in scene-demand.source profiles.
+        strips: runtime.getConfiguration().strips.slice(1, 4)
+      })
     )
-    const workspace = workspaces.mock.results[0].value
-    if (!workspace) throw new Error('Missing production scene demand workspace')
-    await runtime.setConfiguration({
-      ...runtime.getConfiguration(),
-      length: 2.2
-    })
+    expect(
+      Object.values(workspace.getSourceWork()).every((value) => value === 0)
+    ).toBe(true)
+    await measure('configure demand', () =>
+      runtime.setSceneDemandConfiguration(
+        configuredDemand(runtime.getSceneDemandConfiguration())
+      )
+    )
     expect(inventories).not.toHaveBeenCalled()
-    const observation = workspace.prepareObservationSpace()
+    const observation = await measure('prepare inventory', () =>
+      workspace.prepareObservationSpace()
+    )
     expect(observation.status).toBe('complete')
     expect(observation.work.inventoryBuilds).toBe(1)
     expect(observation.demand).toBe(runtime.getSceneDemand())
+    const obstacleLayers = new Set([
+      'cucumbers',
+      'tomatoes',
+      'net',
+      'ties',
+      'supports',
+      'clips',
+      'film',
+      'steel',
+      'barriers'
+    ])
+    expect(
+      new Set(observation.sources.map((source) => source.mesh.layer))
+    ).toEqual(obstacleLayers)
+    const sourceCount = observation.scene.meshes.reduce(
+      (count, mesh) =>
+        count +
+        (obstacleLayers.has(mesh.layer)
+          ? (mesh.descriptor.instances?.length ?? 1) * mesh.regions.length
+          : 0),
+      0
+    )
+    expect(observation.sources).toHaveLength(sourceCount)
     const preparedWork = workspace.getSourceWork()
     expect(workspace.prepareObservationSpace()).toBe(observation)
     expect(workspace.getSourceWork()).toEqual(preparedWork)
-    await runtime.setSceneDemandConfiguration({
-      ...runtime.getSceneDemandConfiguration(),
-      clearanceMargin: { kind: 'bounded', metres: 0.04 }
-    })
+    await measure('revise demand', () =>
+      runtime.setSceneDemandConfiguration({
+        ...runtime.getSceneDemandConfiguration(),
+        clearanceMargin: { kind: 'bounded', metres: 0.04 }
+      })
+    )
     expect(workspace.isCurrentObservationSpace(observation)).toBe(false)
     const routeRevision = workspace.prepareObservationSpace()
     expect(routeRevision.inventory).toBe(observation.inventory)
@@ -291,17 +345,28 @@ it('lazily reuses observation inventory and retires it with its source scene', a
     expect(routeRevision.work.regionWorldBounds).toBe(0)
     expect(routeRevision.work.inventoryReuses).toBe(1)
     const inventoryBuilds = workspace.getSourceWork().inventoryBuilds
-    await runtime.setConfiguration({
-      ...runtime.getConfiguration(),
-      length: 2.3
-    })
+    await measure('replace source scene', () =>
+      runtime.setConfiguration({
+        ...runtime.getConfiguration(),
+        length: 2.3
+      })
+    )
     expect(workspace.isCurrentObservationSpace(routeRevision)).toBe(false)
     expect(workspace.getSourceWork().inventoryBuilds).toBe(inventoryBuilds)
-    const successor = workspace.prepareObservationSpace()
+    const successor = await measure('prepare successor inventory', () =>
+      workspace.prepareObservationSpace()
+    )
     expect(successor.inventory).not.toBe(observation.inventory)
+    expect(successor.status).toBe('complete')
     expect(successor.work.inventoryBuilds).toBe(1)
     expect(workspace.isCurrentObservationSpace(successor)).toBe(true)
+    console.info('Scene demand observation lifecycle work', {
+      initialSources: observation.sources.length,
+      successorSources: successor.sources.length,
+      inventoryBuilds: workspace.getSourceWork().inventoryBuilds
+    })
   } finally {
-    await dispose()
+    await measure('dispose', dispose)
+    console.info('Scene demand observation lifecycle phases', phases)
   }
 }, 30000)

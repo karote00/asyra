@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "source": "Authored supplementary designs; not identifiable source-image objects.",
+  "assets": [
+    {
+      "id": "capped-whiteboard-marker",
+      "origin": "center of assembled axis; cylinder axis +X",
+      "bounds": [
+        0.14,
+        0.018,
+        0.018
+      ],
+      "parts": {
+        "barrel": {
+          "axis": "+X",
+          "xRange": [
+            -0.07,
+            0.035
+          ],
+          "radius": 0.007,
+          "segments": 64,
+          "edgeBevel": 0.0005,
+          "bevelSegments": 3,
+          "material": "ivory"
+        },
+        "neck": {
+          "axis": "+X",
+          "xRange": [
+            0.035,
+            0.05
+          ],
+          "radius": 0.005,
+          "segments": 64,
+          "material": "charcoal"
+        },
+        "nib": {
+          "axis": "+X",
+          "xRange": [
+            0.05,
+            0.057
+          ],
+          "radius": 0.0025,
+          "segments": 48,
+          "material": "charcoal"
+        },
+        "cap": {
+          "axis": "+X",
+          "xRange": [
+            0.035,
+            0.07
+          ],
+          "outerRadius": 0.009,
+          "outerEdgeBevel": 0.0005,
+          "bevelSegments": 3,
+          "subtractBore": {
+            "xRange": [
+              0.034,
+              0.067
+            ],
+            "radius": 0.007
+          },
+          "segments": 64,
+          "material": "charcoal"
+        }
+      },
+      "hidden": "All cylinders centered Y=Z=0. Cap is hollow, open toward -X, closed at +X. Neck and nib fit inside; no ink reservoir, clip or mechanism.",
+      "state": "capped only; no uncapped drawing or animation"
+    },
+    {
+      "id": "whiteboard-eraser",
+      "origin": "center of bottom felt contact plane",
+      "bounds": [
+        0.1,
+        0.045,
+        0.025
+      ],
+      "parts": {
+        "felt": {
+          "method": "XY rounded rectangle extrusion",
+          "width": 0.1,
+          "depth": 0.045,
+          "cornerRadius": 0.006,
+          "zRange": [
+            0,
+            0.006
+          ],
+          "segmentsPerCorner": 16,
+          "material": "charcoal"
+        },
+        "grip": {
+          "method": "XY rounded rectangle extrusion",
+          "width": 0.1,
+          "depth": 0.045,
+          "cornerRadius": 0.006,
+          "zRange": [
+            0.006,
+            0.025
+          ],
+          "segmentsPerCorner": 16,
+          "material": "sage"
+        }
+      },
+      "hidden": "Two closed solids meet at Z=.006; no additional pad layers, magnets, grooves or relief."
+    }
+  ],
+  "materials": {
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "charcoal": {
+      "baseColor": "#414647",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "sage": {
+      "baseColor": "#899B85",
+      "roughness": 0.8,
+      "metallic": 0
+    }
+  },
+  "surfacePolicy": {
+    "uniformColors": true,
+    "textures": false,
+    "unlitReview": true,
+    "shadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0002,
+    "modelsProduced": false
+  }
+}

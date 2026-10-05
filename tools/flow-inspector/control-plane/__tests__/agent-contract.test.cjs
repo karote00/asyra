@@ -22,8 +22,8 @@ test('admission binds the exact concrete owner, adjacent contracts and retained 
   const input = request()
   const task = admitTask(input, contract, 1, 'local-developer')
   assert.equal(task.step.id, input.stepId)
-  assert.equal(task.obligations.length, 6)
-  assert.equal(task.flowIds.length, 2)
+  assert.equal(task.obligations.length, 9)
+  assert.equal(task.flowIds.length, 3)
   assert.ok(task.routes.length)
   assert.equal(task.actor, 'local-developer')
   assert.equal(task.usage.tokens, null)
@@ -138,7 +138,7 @@ test('real provider admission binds trusted authorization without accepting call
   assert.throws(() => admitTask(input, contract, 1, 'local-developer'))
   const task = admitTask(input, contract, 1, 'local-developer', authorization)
   assert.deepEqual(task.provider, authorization)
-  assert.equal(task.obligations.length, 6)
+  assert.equal(task.obligations.length, 9)
   authorization.model = 'changed'
   assert.equal(task.provider.model, 'gpt-5.6-sol')
   for (const change of [

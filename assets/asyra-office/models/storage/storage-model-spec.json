@@ -1,0 +1,635 @@
+{
+  "specVersion": "1.0.0",
+  "status": "pending user review; drawings and documents only; not committed",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "defaultOrigin": "cabinet footprint centre at ground Z=0; shelf overrides"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "oak": {
+      "baseColorSRGB": "#C7A376",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "oak-grain": {
+      "baseColorSRGB": "#AF895F",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "oak-dark": {
+      "baseColorSRGB": "#A68760",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "dark": {
+      "baseColorSRGB": "#44443C",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "snack-cabinet",
+      "name": "Snack cabinet - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-snack-cabinet-v2.png",
+      "overallSize": [
+        0.7,
+        0.378,
+        1.0
+      ],
+      "bodySize": [
+        0.7,
+        0.34,
+        1
+      ],
+      "components": [
+        {
+          "partId": "side-left",
+          "primitive": "rounded-box",
+          "size": [
+            0.025,
+            0.34,
+            0.96
+          ],
+          "centre": [
+            -0.33749999999999997,
+            0,
+            0.52
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "side-right",
+          "primitive": "rounded-box",
+          "size": [
+            0.025,
+            0.34,
+            0.96
+          ],
+          "centre": [
+            0.33749999999999997,
+            0,
+            0.52
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "top",
+          "primitive": "rounded-box",
+          "size": [
+            0.6499999999999999,
+            0.34,
+            0.025
+          ],
+          "centre": [
+            0,
+            0,
+            0.9875
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "bottom",
+          "primitive": "rounded-box",
+          "size": [
+            0.6499999999999999,
+            0.34,
+            0.025
+          ],
+          "centre": [
+            0,
+            0,
+            0.052500000000000005
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "back",
+          "primitive": "rounded-box",
+          "size": [
+            0.6499999999999999,
+            0.018,
+            0.9099999999999999
+          ],
+          "centre": [
+            0,
+            0.161,
+            0.52
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "plinth",
+          "primitive": "rounded-box",
+          "size": [
+            0.6399999999999999,
+            0.28,
+            0.04
+          ],
+          "centre": [
+            0,
+            0.01,
+            0.02
+          ],
+          "material": "oak-dark",
+          "radius": 0.003
+        },
+        {
+          "partId": "shelf-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.6499999999999999,
+            0.322,
+            0.025
+          ],
+          "centre": [
+            0,
+            -0.009,
+            0.4475
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "shelf-2",
+          "primitive": "rounded-box",
+          "size": [
+            0.6499999999999999,
+            0.322,
+            0.025
+          ],
+          "centre": [
+            0,
+            -0.009,
+            0.71
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "door--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.321,
+            0.02,
+            0.38
+          ],
+          "centre": [
+            -0.1645,
+            -0.168,
+            0.25
+          ],
+          "material": "oak",
+          "radius": 0.003,
+          "recess": {
+            "width": 0.261,
+            "height": 0.32,
+            "depth": 0.004,
+            "transition": 0.002
+          }
+        },
+        {
+          "partId": "handle--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.014,
+            0.022,
+            0.052
+          ],
+          "centre": [
+            -0.028,
+            -0.197,
+            0.365
+          ],
+          "material": "dark",
+          "radius": 0.006
+        },
+        {
+          "partId": "handle-mount--1--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.012,
+            0.02,
+            0.012
+          ],
+          "centre": [
+            -0.028,
+            -0.183,
+            0.348
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "handle-mount--1-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.012,
+            0.02,
+            0.012
+          ],
+          "centre": [
+            -0.028,
+            -0.183,
+            0.382
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "door-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.321,
+            0.02,
+            0.38
+          ],
+          "centre": [
+            0.1645,
+            -0.168,
+            0.25
+          ],
+          "material": "oak",
+          "radius": 0.003,
+          "recess": {
+            "width": 0.261,
+            "height": 0.32,
+            "depth": 0.004,
+            "transition": 0.002
+          }
+        },
+        {
+          "partId": "handle-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.014,
+            0.022,
+            0.052
+          ],
+          "centre": [
+            0.028,
+            -0.197,
+            0.365
+          ],
+          "material": "dark",
+          "radius": 0.006
+        },
+        {
+          "partId": "handle-mount-1--1",
+          "primitive": "rounded-box",
+          "size": [
+            0.012,
+            0.02,
+            0.012
+          ],
+          "centre": [
+            0.028,
+            -0.183,
+            0.348
+          ],
+          "material": "dark",
+          "radius": 0.004
+        },
+        {
+          "partId": "handle-mount-1-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.012,
+            0.02,
+            0.012
+          ],
+          "centre": [
+            0.028,
+            -0.183,
+            0.382
+          ],
+          "material": "dark",
+          "radius": 0.004
+        }
+      ],
+      "compartments": {
+        "openCount": 2,
+        "lowerDoors": 2,
+        "clearIntervalsZ": [
+          [
+            0.46,
+            0.6975
+          ],
+          [
+            0.7225,
+            0.975
+          ]
+        ],
+        "clearWidth": 0.65,
+        "clearDepth": 0.322
+      },
+      "sourceStatus": "not clearly present in reference; new style-compatible design",
+      "rear": "plain oak backing; no branding or vents"
+    },
+    {
+      "moduleId": "low-bookcase",
+      "name": "Bookcase - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-bookcase-v1.png",
+      "overallSize": [
+        0.42,
+        0.26,
+        0.82
+      ],
+      "components": [
+        {
+          "partId": "side-left",
+          "primitive": "rounded-box",
+          "size": [
+            0.022,
+            0.26,
+            0.7849999999999999
+          ],
+          "centre": [
+            -0.19899999999999998,
+            0,
+            0.4275
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "side-right",
+          "primitive": "rounded-box",
+          "size": [
+            0.022,
+            0.26,
+            0.7849999999999999
+          ],
+          "centre": [
+            0.19899999999999998,
+            0,
+            0.4275
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "top",
+          "primitive": "rounded-box",
+          "size": [
+            0.376,
+            0.26,
+            0.022
+          ],
+          "centre": [
+            0,
+            0,
+            0.8089999999999999
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "bottom",
+          "primitive": "rounded-box",
+          "size": [
+            0.376,
+            0.26,
+            0.022
+          ],
+          "centre": [
+            0,
+            0,
+            0.046
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "back",
+          "primitive": "rounded-box",
+          "size": [
+            0.376,
+            0.018,
+            0.7409999999999999
+          ],
+          "centre": [
+            0,
+            0.12100000000000001,
+            0.4275
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "plinth",
+          "primitive": "rounded-box",
+          "size": [
+            0.36,
+            0.2,
+            0.035
+          ],
+          "centre": [
+            0,
+            0.01,
+            0.0175
+          ],
+          "material": "oak-dark",
+          "radius": 0.003
+        },
+        {
+          "partId": "shelf-1",
+          "primitive": "rounded-box",
+          "size": [
+            0.376,
+            0.24200000000000002,
+            0.025
+          ],
+          "centre": [
+            0,
+            -0.009,
+            0.297
+          ],
+          "material": "oak",
+          "radius": 0.003
+        },
+        {
+          "partId": "shelf-2",
+          "primitive": "rounded-box",
+          "size": [
+            0.376,
+            0.24200000000000002,
+            0.025
+          ],
+          "centre": [
+            0,
+            -0.009,
+            0.547
+          ],
+          "material": "oak",
+          "radius": 0.003
+        }
+      ],
+      "compartments": {
+        "openCount": 3,
+        "clearIntervalsZ": [
+          [
+            0.057,
+            0.2845
+          ],
+          [
+            0.3095,
+            0.5345
+          ],
+          [
+            0.5595,
+            0.798
+          ]
+        ],
+        "clearWidth": 0.376,
+        "clearDepth": 0.242
+      },
+      "sourceStatus": "narrow shelf beside green sofa; hidden back and exact shelf count are explicit completion",
+      "rear": "plain oak backing"
+    },
+    {
+      "moduleId": "wall-shelf-plank",
+      "name": "Wall shelf - single plank",
+      "unitCount": 1,
+      "reviewDrawing": "review/03-wall-shelf-v1.png",
+      "overallSize": [
+        0.6,
+        0.18,
+        0.035
+      ],
+      "components": [
+        {
+          "partId": "plank",
+          "primitive": "rounded-box",
+          "size": [
+            0.6,
+            0.18,
+            0.035
+          ],
+          "centre": [
+            0,
+            -0.09,
+            0.0175
+          ],
+          "material": "oak",
+          "radius": 0.004,
+          "rearEdgeRule": "rear plane Y=0 and hole entrances planar; bevel all other exposed edges only",
+          "sockets": [
+            {
+              "centre": [
+                -0.2,
+                -0.0125,
+                0.0175
+              ],
+              "axis": "Y",
+              "radius": 0.004,
+              "length": 0.025
+            },
+            {
+              "centre": [
+                0.2,
+                -0.0125,
+                0.0175
+              ],
+              "axis": "Y",
+              "radius": 0.004,
+              "length": 0.025
+            }
+          ],
+          "socketRecess": {
+            "width": 0.034,
+            "depth": 0.002,
+            "height": 0.018,
+            "cornerRadius": 0.002,
+            "insetMaterial": "oak-dark",
+            "centreY": -0.001
+          }
+        }
+      ],
+      "origin": "rear edge midpoint at bottom, mounting wall plane Y=0",
+      "mounting": {
+        "wallPlaneY": 0,
+        "socketCentresXZ": [
+          [
+            -0.2,
+            0.0175
+          ],
+          [
+            0.2,
+            0.0175
+          ]
+        ],
+        "wallAndPinsIncluded": false
+      },
+      "sourceStatus": "single floating wooden plank left of laptop worker; rear sockets are hidden completion"
+    }
+  ],
+  "geometryRecipe": "GEOMETRY-SUPPLEMENT.md",
+  "surfaceRecipe": "SURFACE-RECIPES.md",
+  "unitRule": "one whole cabinet or one wall plank; no stocked contents or attached wall",
+  "appOwns": [
+    "placement",
+    "wall alignment",
+    "count",
+    "shelf spacing",
+    "contents",
+    "lighting",
+    "interaction"
+  ],
+  "excluded": [
+    "books",
+    "snacks",
+    "baskets",
+    "plants",
+    "walls",
+    "floor",
+    "mounting pins",
+    "hinges",
+    "opening animation",
+    "Blender output",
+    "GLB"
+  ],
+  "verification": {
+    "modelBuilt": false,
+    "tolerance": 0.002,
+    "views": [
+      "front -Y",
+      "right +X",
+      "back +Y",
+      "top +Z",
+      "three-quarter (1,-1,.8)"
+    ],
+    "checks": [
+      "shelf count",
+      "empty actual cavities",
+      "back closure",
+      "plinth ground contact",
+      "unit origin",
+      "two rear shelf sockets",
+      "no baked lighting"
+    ]
+  }
+}

@@ -259,7 +259,7 @@ jobs:
         run: |
           node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
-          node tools/flow-inspector/control-plane/cli.cjs ci-trial
+          node tools/flow-inspector/control-plane/cli.cjs candidate
 
   fieldscope-profile-heavy:
     if: ${{ always() && needs.scope.result == 'success' && (needs.workspace-validation.result == 'success' || needs.workspace-validation.result == 'skipped') && needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}

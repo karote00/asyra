@@ -32,7 +32,7 @@ const hit = (engine: ThreeEngine, x = 320, y = 240) => {
   if (result.type !== 'hit') throw new Error('Expected a hit-query result')
   return result.target
 }
-const setup = () => {
+const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
   const canvas = document.createElement('canvas')
   canvas.getBoundingClientRect = () => ({
     x: 0,
@@ -54,7 +54,8 @@ const setup = () => {
     clear: vi.fn(),
     clearDepth: vi.fn(),
     render: vi.fn(),
-    dispose: vi.fn()
+    dispose: vi.fn(),
+    ...driverOptions
   }
   let pending: FrameRequestCallback | undefined
   const engine = new ThreeEngine({
@@ -98,6 +99,27 @@ const setup = () => {
 }
 
 describe('CUSTOM Three engine', () => {
+  it('preserves Sim shadow policy with a software graphics driver after shared extraction', () => {
+    const { engine, driver, add } = setup({
+      shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+      getContext: () =>
+        ({
+          getExtension: () => ({ UNMASKED_RENDERER_WEBGL: 1 }),
+          getParameter: () => 'SwiftShader'
+        }) as unknown as WebGLRenderingContext
+    })
+    add(camera)
+    add(box)
+    engine.execute({ type: 'flush' })
+    const scene = vi.mocked(driver.render).mock.calls[0][0]
+    const key = scene.children.find(
+      (value) => value instanceof THREE.DirectionalLight
+    )
+    expect(driver.shadowMap?.enabled).toBe(true)
+    expect(key instanceof THREE.DirectionalLight && key.castShadow).toBe(true)
+    engine.destroy()
+  })
+
   it('does not advertise or simulate unsupported subtree snapshots', () => {
     const { engine, driver, root } = setup()
     expect(engine.capabilities.has('snapshot')).toBe(false)

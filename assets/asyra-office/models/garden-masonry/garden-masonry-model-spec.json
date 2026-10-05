@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "status": "user-authorized-reference-commit",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "Centre of bottom bounding rectangle",
+  "construction": {
+    "primitive": "convex chamfered box",
+    "chamferStyle": "straight planar equal-offset cuts",
+    "extraSubdivision": 0,
+    "normals": "flat per face"
+  },
+  "assets": [
+    {
+      "name": "masonry-block",
+      "size": [
+        0.3,
+        0.18,
+        0.14
+      ],
+      "center": [
+        0,
+        0,
+        0.07
+      ],
+      "chamfer": 0.006,
+      "material": "warm-grey-stone"
+    },
+    {
+      "name": "wall-coping-slab",
+      "size": [
+        0.32,
+        0.22,
+        0.055
+      ],
+      "center": [
+        0,
+        0,
+        0.0275
+      ],
+      "chamfer": 0.003,
+      "material": "cream-limestone"
+    }
+  ],
+  "materials": {
+    "warm-grey-stone": {
+      "baseColorSRGB": "#C6BFB3",
+      "fleckColorSRGB": "#AFA79A",
+      "roughness": 0.92
+    },
+    "cream-limestone": {
+      "baseColorSRGB": "#EBE2CE",
+      "fleckColorSRGB": "#D5C7AB",
+      "roughness": 0.88
+    }
+  },
+  "commonMaterial": {
+    "metallic": 0,
+    "opacity": 1,
+    "emission": 0,
+    "normalMap": null,
+    "displacement": 0,
+    "bakedLighting": false
+  },
+  "surfaceRecipe": {
+    "space": "local object coordinates in metres",
+    "field": "s=sin(2*pi*(x/0.019+y/0.023+z/0.017))*sin(2*pi*(x/0.031-y/0.013+z/0.029))",
+    "mask": "smoothstep(0.68,0.90,abs(s))",
+    "linearColourMixWeight": "0.30*mask",
+    "randomSeed": null
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom centre",
+  "tolerance": 0.0002,
+  "object": {
+    "id": "chocolate-chip-cookie",
+    "diameter": 0.07,
+    "height": 0.012,
+    "rimRadius": 0.002,
+    "flatFaceRadius": 0.033,
+    "angularSegments": 64,
+    "quarterArcSegments": 4,
+    "sideWallZ": [
+      0.002,
+      0.01
+    ]
+  },
+  "topSpots": {
+    "radius": 0.004,
+    "centresXY": [
+      [
+        0,
+        0
+      ],
+      [
+        -0.014,
+        0.014
+      ],
+      [
+        0.014,
+        0.014
+      ],
+      [
+        -0.014,
+        -0.014
+      ],
+      [
+        0.014,
+        -0.014
+      ]
+    ],
+    "z": 0.012,
+    "representation": "Intrinsic top-face color mask, flush, no extra mesh or displacement"
+  },
+  "materials": {
+    "dough": {
+      "baseColor": "#D5A66B",
+      "roughness": 0.9
+    },
+    "chocolate": {
+      "baseColor": "#654333",
+      "roughness": 0.9
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numeric geometry and color mask define reconstruction; drawings are uncalibrated appearance references.",
+  "exclusions": [
+    "model",
+    "app implementation",
+    "eating animation",
+    "bite states",
+    "packaging",
+    "plate",
+    "crumbs"
+  ]
+}

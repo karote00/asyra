@@ -52,6 +52,12 @@ edits.
 
 ### Input ownership
 
+Reference-only asset handoffs under `assets/<app>/models/` are recognized by
+`internalDocumentationAssetPatterns`: Markdown, PNG/JPG drawings and `*-spec.json`
+reconstruction specifications. They do not select runtime workspaces. Executable
+files, arbitrary JSON and exported model binaries are not covered; introducing
+runtime consumers requires an explicit CI relationship at that consumer boundary.
+
 One PR scope calculation selects workspace, repository-contract, E2E, dependency,
 and production-artifact checks. Reusable workflows consume that calculation;
 Production Artifacts has no independent PR trigger. Plan checks run through the

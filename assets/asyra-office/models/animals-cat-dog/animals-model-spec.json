@@ -1,0 +1,617 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "ground-plane centre of final XY bounds",
+  "source": "../architecture/review/approved-office-reference.jpg",
+  "dimensionPolicy": "Construct in raw coordinates, then normalize complete animal to finalSize as documented.",
+  "animals": [
+    {
+      "id": "sleeping-orange-cat",
+      "finalSize": [
+        0.38,
+        0.5,
+        0.26
+      ],
+      "ellipsoids": [
+        [
+          "torso",
+          [
+            0,
+            0.065,
+            0.13
+          ],
+          [
+            0.155,
+            0.17,
+            0.125
+          ],
+          "orange"
+        ],
+        [
+          "head",
+          [
+            0,
+            -0.155,
+            0.105
+          ],
+          [
+            0.14,
+            0.1,
+            0.095
+          ],
+          "cream"
+        ],
+        [
+          "front-paw-left",
+          [
+            -0.09,
+            -0.205,
+            0.025
+          ],
+          [
+            0.044,
+            0.049,
+            0.025
+          ],
+          "cream"
+        ],
+        [
+          "front-paw-right",
+          [
+            0.09,
+            -0.205,
+            0.025
+          ],
+          [
+            0.044,
+            0.049,
+            0.025
+          ],
+          "cream"
+        ],
+        [
+          "hind-paw-left",
+          [
+            -0.085,
+            0.14,
+            0.025
+          ],
+          [
+            0.045,
+            0.05,
+            0.025
+          ],
+          "cream"
+        ],
+        [
+          "hind-paw-right",
+          [
+            0.085,
+            0.14,
+            0.025
+          ],
+          [
+            0.045,
+            0.05,
+            0.025
+          ],
+          "cream"
+        ]
+      ],
+      "ears": [
+        {
+          "side": -1,
+          "rings": [
+            [
+              -0.09,
+              -0.15,
+              0.155,
+              0.043,
+              0.028
+            ],
+            [
+              -0.11,
+              -0.15,
+              0.205,
+              0.032,
+              0.02
+            ],
+            [
+              -0.125,
+              -0.15,
+              0.245,
+              0.004,
+              0.003
+            ]
+          ]
+        },
+        {
+          "side": 1,
+          "rings": [
+            [
+              0.09,
+              -0.15,
+              0.155,
+              0.043,
+              0.028
+            ],
+            [
+              0.11,
+              -0.15,
+              0.205,
+              0.032,
+              0.02
+            ],
+            [
+              0.125,
+              -0.15,
+              0.245,
+              0.004,
+              0.003
+            ]
+          ]
+        }
+      ],
+      "tail": {
+        "centres": [
+          [
+            0.06,
+            0.18,
+            0.06
+          ],
+          [
+            0.145,
+            0.14,
+            0.05
+          ],
+          [
+            0.175,
+            0.05,
+            0.043
+          ],
+          [
+            0.177,
+            -0.06,
+            0.042
+          ],
+          [
+            0.145,
+            -0.145,
+            0.041
+          ]
+        ],
+        "radii": [
+          0.03,
+          0.035,
+          0.035,
+          0.035,
+          0.032
+        ]
+      },
+      "eyes": {
+        "closed": true,
+        "curvesXZ": [
+          [
+            [
+              -0.075,
+              0.102
+            ],
+            [
+              -0.055,
+              0.083
+            ],
+            [
+              -0.035,
+              0.102
+            ]
+          ],
+          [
+            [
+              0.035,
+              0.102
+            ],
+            [
+              0.055,
+              0.083
+            ],
+            [
+              0.075,
+              0.102
+            ]
+          ]
+        ],
+        "lineRadius": 0.002
+      },
+      "nose": {
+        "centreXZ": [
+          0,
+          0.075
+        ],
+        "radiiXZ": [
+          0.009,
+          0.006
+        ],
+        "color": "pink"
+      },
+      "mouth": {
+        "curvesXZ": [
+          [
+            [
+              0,
+              0.069
+            ],
+            [
+              0,
+              0.06
+            ],
+            [
+              0,
+              0.057
+            ]
+          ],
+          [
+            [
+              0,
+              0.057
+            ],
+            [
+              -0.008,
+              0.05
+            ],
+            [
+              -0.014,
+              0.053
+            ]
+          ],
+          [
+            [
+              0,
+              0.057
+            ],
+            [
+              0.008,
+              0.05
+            ],
+            [
+              0.014,
+              0.053
+            ]
+          ]
+        ],
+        "lineRadius": 0.0013
+      }
+    },
+    {
+      "id": "standing-corgi",
+      "finalSize": [
+        0.32,
+        0.62,
+        0.48
+      ],
+      "ellipsoids": [
+        [
+          "torso",
+          [
+            0,
+            0.06,
+            0.19
+          ],
+          [
+            0.135,
+            0.22,
+            0.13
+          ],
+          "orange"
+        ],
+        [
+          "chest",
+          [
+            0,
+            -0.11,
+            0.21
+          ],
+          [
+            0.112,
+            0.11,
+            0.15
+          ],
+          "cream"
+        ],
+        [
+          "head",
+          [
+            0,
+            -0.205,
+            0.31
+          ],
+          [
+            0.135,
+            0.105,
+            0.12
+          ],
+          "orange"
+        ],
+        [
+          "muzzle",
+          [
+            0,
+            -0.295,
+            0.262
+          ],
+          [
+            0.09,
+            0.052,
+            0.045
+          ],
+          "cream"
+        ],
+        [
+          "front-leg--1",
+          [
+            -0.084,
+            -0.095,
+            0.083
+          ],
+          [
+            0.045,
+            0.052,
+            0.075
+          ],
+          "orange"
+        ],
+        [
+          "front-paw--1",
+          [
+            -0.084,
+            -0.115,
+            0.03
+          ],
+          [
+            0.049,
+            0.06,
+            0.03
+          ],
+          "cream"
+        ],
+        [
+          "hind-leg--1",
+          [
+            -0.087,
+            0.21,
+            0.083
+          ],
+          [
+            0.05,
+            0.055,
+            0.075
+          ],
+          "orange"
+        ],
+        [
+          "hind-paw--1",
+          [
+            -0.087,
+            0.195,
+            0.03
+          ],
+          [
+            0.05,
+            0.06,
+            0.03
+          ],
+          "cream"
+        ],
+        [
+          "front-leg-1",
+          [
+            0.084,
+            -0.095,
+            0.083
+          ],
+          [
+            0.045,
+            0.052,
+            0.075
+          ],
+          "orange"
+        ],
+        [
+          "front-paw-1",
+          [
+            0.084,
+            -0.115,
+            0.03
+          ],
+          [
+            0.049,
+            0.06,
+            0.03
+          ],
+          "cream"
+        ],
+        [
+          "hind-leg-1",
+          [
+            0.087,
+            0.21,
+            0.083
+          ],
+          [
+            0.05,
+            0.055,
+            0.075
+          ],
+          "orange"
+        ],
+        [
+          "hind-paw-1",
+          [
+            0.087,
+            0.195,
+            0.03
+          ],
+          [
+            0.05,
+            0.06,
+            0.03
+          ],
+          "cream"
+        ]
+      ],
+      "ears": [
+        {
+          "side": -1,
+          "rings": [
+            [
+              -0.09,
+              -0.19,
+              0.37,
+              0.047,
+              0.032
+            ],
+            [
+              -0.115,
+              -0.18,
+              0.45,
+              0.038,
+              0.022
+            ],
+            [
+              -0.12,
+              -0.175,
+              0.505,
+              0.006,
+              0.004
+            ]
+          ]
+        },
+        {
+          "side": 1,
+          "rings": [
+            [
+              0.09,
+              -0.19,
+              0.37,
+              0.047,
+              0.032
+            ],
+            [
+              0.115,
+              -0.18,
+              0.45,
+              0.038,
+              0.022
+            ],
+            [
+              0.12,
+              -0.175,
+              0.505,
+              0.006,
+              0.004
+            ]
+          ]
+        }
+      ],
+      "tail": {
+        "centres": [
+          [
+            0,
+            0.255,
+            0.23
+          ],
+          [
+            0,
+            0.29,
+            0.265
+          ],
+          [
+            0,
+            0.315,
+            0.26
+          ]
+        ],
+        "radii": [
+          0.027,
+          0.027,
+          0.012
+        ]
+      },
+      "eyes": {
+        "closed": false,
+        "centresXZ": [
+          [
+            -0.053,
+            0.309
+          ],
+          [
+            0.053,
+            0.309
+          ]
+        ],
+        "radiiXZ": [
+          0.012,
+          0.017
+        ]
+      },
+      "nose": {
+        "centre": [
+          0,
+          -0.345,
+          0.275
+        ],
+        "radii": [
+          0.019,
+          0.008,
+          0.012
+        ],
+        "color": "dark"
+      }
+    }
+  ],
+  "construction": {
+    "ellipsoidField": "(length((p-centre)/radii)-1)*min(radii)",
+    "union": "polynomial smooth min",
+    "blendWidth": 0.004,
+    "extractionGrid": 0.001,
+    "earAngularSegments": 32,
+    "tailSamplesPerSpan": 32,
+    "pose": "static",
+    "rigging": false
+  },
+  "palette": {
+    "orange": "#C98B50",
+    "cream": "#F1E4CC",
+    "pink": "#B97972",
+    "dark": "#38312C"
+  },
+  "material": {
+    "roughness": 0.9,
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Reference establishes style and visible features; hidden geometry, dimensions and masks are authored. Model comparison is still required.",
+  "surfaceRecipes": "SURFACE-RECIPES.md",
+  "geometryRecipe": "GEOMETRY-SUPPLEMENT.md",
+  "exclusions": [
+    "models",
+    "Blender execution",
+    "rigging",
+    "animation",
+    "fur simulation",
+    "app implementation"
+  ]
+}

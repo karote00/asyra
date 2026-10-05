@@ -1,0 +1,1082 @@
+{
+  "specVersion": "2.1.0",
+  "scope": "seven approved street component designs; documentation only",
+  "approval": {
+    "date": "2026-10-04",
+    "timezone": "Asia/Taipei",
+    "userDecision": "English translation of user approval: This group is OK; you can start preparing the documentation.",
+    "approved": "appearance of the seven v2 sheets, superseded for all paint units by the four approved transparent v4 drawings",
+    "dimensionStatus": "fixed authoring decisions in this document; not recovered measurements or user-verified models",
+    "modelStatus": "not built or validated",
+    "unitCorrection": "Each independently placeable unit must be illustrated and specified on its own; crossing is one bar and longitudinal road marking is one segment.",
+    "transparentUnitDecision": "English translation of user approval: OK, please start supplementing the documentation. Thank you.",
+    "transparentUnitApprovalDate": "2026-10-04"
+  },
+  "coordinateSystem": {
+    "units": "metres",
+    "upAxis": "+Z",
+    "rightAxis": "+X",
+    "frontViewCameraDirection": "+Y",
+    "frontViewCameraPosition": "on -Y",
+    "supportPlaneZ": 0,
+    "dimensionOrder": "X,Y,Z",
+    "angleConvention": "degrees, counterclockwise from +X about +Z",
+    "originRule": "specified per module; do not recenter from bounding box"
+  },
+  "authority": {
+    "shapeAndPalette": "per-module approvedDrawing and per-piece singleUnitDrawing; transparent v4 replaces paint v2/v3",
+    "geometryAndCounts": "this JSON and STREET-SUPPLEMENT.md",
+    "originalScene": "review/approved-office-reference.jpg",
+    "excluded": "v1 sheets, paint v2/v3 receiving-surface previews, orthoviews, old assembled review, version 1.x spec"
+  },
+  "lighting": {
+    "bakedShadows": false,
+    "bakedAmbientOcclusion": false,
+    "bakedHighlights": false,
+    "bloom": false,
+    "emissionStrength": 0,
+    "lightObjects": false,
+    "owner": "future app scene",
+    "albedoRule": "intrinsic pigment/grain only; never sample rendered shading as base color"
+  },
+  "materialConvention": {
+    "hexEncoding": "sRGB",
+    "conversion": "channel c=byte/255; linear=c/12.92 if c<=0.04045 else ((c+0.055)/1.055)^2.4",
+    "normalStrengthDefault": 0,
+    "transmission": 0,
+    "alpha": 1,
+    "emissionStrength": 0,
+    "alphaRule": "alpha=1 is the solid-material default only; paint material alpha is taken from the separate marking mask"
+  },
+  "materials": {
+    "asphalt": {
+      "baseColorSRGB": "#55545D",
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "ivory-paint": {
+      "baseColorSRGB": "#E4DECF",
+      "roughness": 0.86,
+      "metallic": 0
+    },
+    "ochre-paint": {
+      "baseColorSRGB": "#C5A055",
+      "roughness": 0.86,
+      "metallic": 0
+    },
+    "stone-cream": {
+      "baseColorSRGB": "#D9CDBA",
+      "roughness": 0.88,
+      "metallic": 0
+    },
+    "stone-pale": {
+      "baseColorSRGB": "#E3D9C9",
+      "roughness": 0.88,
+      "metallic": 0
+    },
+    "stone-grey": {
+      "baseColorSRGB": "#C9C4B9",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "mortar": {
+      "baseColorSRGB": "#9B978F",
+      "roughness": 0.95,
+      "metallic": 0
+    },
+    "iron": {
+      "baseColorSRGB": "#49433F",
+      "roughness": 0.65,
+      "metallic": 0.55
+    },
+    "iron-worn": {
+      "baseColorSRGB": "#726456",
+      "roughness": 0.72,
+      "metallic": 0.45
+    },
+    "lamp-metal": {
+      "baseColorSRGB": "#373733",
+      "roughness": 0.58,
+      "metallic": 0.55
+    },
+    "collar-metal": {
+      "baseColorSRGB": "#60594B",
+      "roughness": 0.62,
+      "metallic": 0.5
+    },
+    "amber-glass": {
+      "baseColorSRGB": "#C7A15B",
+      "roughness": 0.48,
+      "metallic": 0
+    },
+    "bark": {
+      "baseColorSRGB": "#806144",
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "bark-light": {
+      "baseColorSRGB": "#937456",
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "leaf-olive": {
+      "baseColorSRGB": "#829347",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "leaf-pale": {
+      "baseColorSRGB": "#A7AD58",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "leaf-deep": {
+      "baseColorSRGB": "#596D3D",
+      "roughness": 0.9,
+      "metallic": 0
+    }
+  },
+  "commonGeometry": {
+    "solidNormals": "outward",
+    "paintNormals": "+Z",
+    "applyScale": true,
+    "rigging": false,
+    "animation": false,
+    "hiddenFaces": "closed, primary material, no invented decoration",
+    "defaultBevelSegments": 2,
+    "circumferenceSegments": 48,
+    "paintSurfaceOffsetMetres": 0.0005
+  },
+  "modules": [
+    {
+      "moduleId": "road-asphalt-straight",
+      "name": "Asphalt surface",
+      "approvedDrawing": "review/01-asphalt-v2.png",
+      "origin": "centre of top surface, Z=0",
+      "boundsMetres": {
+        "min": [
+          -3,
+          -2,
+          -0.08
+        ],
+        "max": [
+          3,
+          2,
+          0
+        ]
+      },
+      "sizeMetres": [
+        6,
+        4,
+        0.08
+      ],
+      "material": "asphalt",
+      "geometry": {
+        "primitive": "closed box",
+        "bevelMetres": 0.003,
+        "bevelScope": "outer vertical corners and bottom edges only; top boundary remains planar for tiling"
+      },
+      "surface": {
+        "seed": 101,
+        "grainDiameterRangeMetres": [
+          0.001,
+          0.005
+        ],
+        "coverageFraction": 0.12,
+        "albedoValueMultiplierRange": [
+          0.9,
+          1.1
+        ],
+        "macroCellSizeMetres": 0.45,
+        "macroValueMultiplierRange": [
+          0.985,
+          1.015
+        ],
+        "edgeWear": false,
+        "cracks": false,
+        "textureRule": "SURFACE-RECIPES.md#grain",
+        "tileAcrossXAndY": true
+      },
+      "unitCount": 1
+    },
+    {
+      "moduleId": "road-marking-segments",
+      "name": "Road markings - independent segments",
+      "approvedDrawing": "review/02-road-line-single-v4.png",
+      "origin": "each straight piece at centre; curved piece at arc centre; all on Z=0",
+      "pieces": [
+        {
+          "partId": "edge-line-straight",
+          "sizeMetres": [
+            1,
+            0.1,
+            0
+          ],
+          "axis": "X",
+          "material": "ochre-paint",
+          "connectionPitchMetres": 1,
+          "singleUnitDrawing": "review/02-road-line-single-v4.png",
+          "centrelineEndpointsMetres": [
+            [
+              -0.5,
+              0,
+              0
+            ],
+            [
+              0.5,
+              0,
+              0
+            ]
+          ],
+          "increasingPathTangents": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "placementUnitCount": 1
+        },
+        {
+          "partId": "edge-line-curve",
+          "centreMetres": [
+            0,
+            0,
+            0
+          ],
+          "centreRadiusMetres": 1.05,
+          "widthMetres": 0.1,
+          "anglesDegrees": [
+            180,
+            270
+          ],
+          "segments": 32,
+          "material": "ochre-paint",
+          "singleUnitDrawing": "review/02-road-curve-single-v4.png",
+          "centrelineEndpointsMetres": [
+            [
+              -1.05,
+              0,
+              0
+            ],
+            [
+              0,
+              -1.05,
+              0
+            ]
+          ],
+          "increasingPathTangents": [
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "placementUnitCount": 1
+        },
+        {
+          "partId": "lane-dash",
+          "sizeMetres": [
+            0.6,
+            0.12,
+            0
+          ],
+          "axis": "X",
+          "material": "ivory-paint",
+          "singleUnitDrawing": "review/02-road-dash-single-v4.png",
+          "centrelineEndpointsMetres": [
+            [
+              -0.3,
+              0,
+              0
+            ],
+            [
+              0.3,
+              0,
+              0
+            ]
+          ],
+          "increasingPathTangents": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "placementUnitCount": 1
+        }
+      ],
+      "paint": {
+        "thicknessMetres": 0,
+        "surfaceOffsetMetres": 0.0005,
+        "bevelMetres": 0,
+        "castShadow": false,
+        "seed": 202,
+        "wearCoverageFraction": 0.02,
+        "wearSpeckDiameterRangeMetres": [
+          0.001,
+          0.004
+        ],
+        "wearMode": "transparent holes reveal receiving surface",
+        "noReceivingSlabInComponent": true,
+        "receivingSurfaceIncluded": false,
+        "alphaRule": "outside and wear holes transparent; no asphalt, brick or stone RGB baked into pigment",
+        "surfaceMaterialOwner": "future app; material-agnostic",
+        "reviewProjection": "top only; no thickness or road slab needed for side views",
+        "materialAlphaSource": "marking mask; overrides materialConvention.alpha=1",
+        "sourcePNGRole": "approved appearance reference; not dimensionally calibrated production texture",
+        "lightingContent": "no lights, emission, shadow, AO, ground fill or halo in production texture"
+      },
+      "drawingInterpretation": "The v4 transparent single-unit drawings are approved appearance references. Use one independently placeable piece; no receiving material. Numeric local dimensions remain authoritative.",
+      "singleUnitDrawing": "review/02-road-line-single-v4.png",
+      "inventoryUnitsPerPiece": 1,
+      "combinedKitMesh": false
+    },
+    {
+      "moduleId": "road-crossing-bar",
+      "name": "Crosswalk - single stripe",
+      "approvedDrawing": "review/03-crossing-single-v4.png",
+      "origin": "centre of ONE paint bar on road top, Z=0",
+      "material": "ivory-paint",
+      "orientation": {
+        "barLongAxis": "Y",
+        "pedestrianCrossingAxis": "X",
+        "trafficAxis": "Y"
+      },
+      "paint": {
+        "thicknessMetres": 0,
+        "surfaceOffsetMetres": 0.0005,
+        "castShadow": false,
+        "seed": 303,
+        "wearCoverageFraction": 0.025,
+        "wearSpeckDiameterRangeMetres": [
+          0.001,
+          0.004
+        ],
+        "edgeIrregularityMaxMetres": 0.003,
+        "noReceivingSlabInComponent": true,
+        "receivingSurfaceIncluded": false,
+        "alphaRule": "outside and wear holes transparent; no asphalt, brick or stone RGB baked into pigment",
+        "surfaceMaterialOwner": "future app; material-agnostic",
+        "reviewProjection": "top only; no thickness or road slab needed for side views",
+        "materialAlphaSource": "marking mask; overrides materialConvention.alpha=1",
+        "sourcePNGRole": "approved appearance reference; not dimensionally calibrated production texture",
+        "lightingContent": "no lights, emission, shadow, AO, ground fill or halo in production texture"
+      },
+      "singleUnitDrawing": "review/03-crossing-single-v4.png",
+      "drawingInterpretation": "Approved transparent v4 drawing: exactly one independent bar, no receiving surface or array. Numeric dimensions define the local-space rectangle.",
+      "sizeMetres": [
+        0.4,
+        2.8,
+        0
+      ],
+      "unitCount": 1,
+      "repetition": "app chooses count and gap; no fixed group size",
+      "centrelineEndpointsMetres": [
+        [
+          0,
+          -1.4,
+          0
+        ],
+        [
+          0,
+          1.4,
+          0
+        ]
+      ],
+      "repetitionAxis": "local X; position/count/gap selected by app"
+    },
+    {
+      "moduleId": "pavement-pieces",
+      "name": "Pavement and curb - individual units",
+      "approvedDrawing": "review/04-pavement-curb-v2.png",
+      "drawingInterpretation": "assembled appearance reference only; paving stones and curb blocks are independent units, not one fixed L-shaped mesh",
+      "origin": "specified per piece",
+      "inventoryUnitsPerPiece": 1,
+      "combinedKitMesh": false,
+      "pieces": [
+        {
+          "partId": "paving-stone",
+          "origin": "bottom face centre",
+          "sizeMetres": [
+            0.6,
+            0.3,
+            0.05
+          ],
+          "bevelMetres": 0.004,
+          "materialOptions": [
+            "stone-cream",
+            "stone-pale",
+            "stone-grey"
+          ],
+          "shape": "one closed rectangular block"
+        },
+        {
+          "partId": "curb-straight",
+          "origin": "bottom face centre",
+          "sizeMetres": [
+            0.3,
+            0.16,
+            0.12
+          ],
+          "bevelMetres": 0.008,
+          "materialOptions": [
+            "stone-grey",
+            "stone-cream",
+            "stone-pale"
+          ],
+          "shape": "one closed rectangular block"
+        },
+        {
+          "partId": "curb-curved",
+          "origin": "arc centre at bottom Z=0",
+          "centreMetres": [
+            0,
+            0,
+            0
+          ],
+          "innerRadiusMetres": 0.69,
+          "outerRadiusMetres": 0.85,
+          "anglesDegrees": [
+            0,
+            18
+          ],
+          "heightMetres": 0.12,
+          "arcSegments": 8,
+          "bevelMetres": 0.004,
+          "materialOptions": [
+            "stone-grey",
+            "stone-cream",
+            "stone-pale"
+          ],
+          "shape": "one closed annular-sector curb stone, not a complete corner"
+        }
+      ],
+      "surface": {
+        "seed": 404,
+        "grainDiameterRangeMetres": [
+          0.001,
+          0.003
+        ],
+        "coverageFraction": 0.015,
+        "albedoValueMultiplierRange": [
+          0.97,
+          1.03
+        ],
+        "cracks": false,
+        "textureRule": "SURFACE-RECIPES.md#grain"
+      },
+      "assemblyNotes": {
+        "foundation": "scene-owned, not baked into stones",
+        "joints": "scene chooses gap and staggering",
+        "curvedRuns": "app places multiple curved pieces; each piece remains independent",
+        "cutting": "arbitrary trimming is outside the present fixed-piece asset specification"
+      }
+    },
+    {
+      "moduleId": "road-drain-cover-round",
+      "name": "Round manhole cover",
+      "approvedDrawing": "review/05-manhole-cover-v2.png",
+      "origin": "centre of rim TOP on road surface, Z=0",
+      "overallSizeMetres": [
+        0.66,
+        0.66,
+        0.026
+      ],
+      "material": "iron",
+      "rim": {
+        "innerRadiusMetres": 0.29,
+        "outerRadiusMetres": 0.33,
+        "zRangeMetres": [
+          -0.026,
+          0
+        ],
+        "bevelMetres": 0.0015
+      },
+      "cover": {
+        "radiusMetres": 0.286,
+        "zRangeMetres": [
+          -0.021,
+          -0.001
+        ],
+        "bevelMetres": 0.001
+      },
+      "grooves": {
+        "circleRadiiMetres": [
+          0.065,
+          0.1,
+          0.14,
+          0.265
+        ],
+        "widthMetres": 0.003,
+        "depthMetres": 0.0015
+      },
+      "slots": {
+        "count": 6,
+        "centreRadiusMetres": 0.21,
+        "firstAngleDegrees": 30,
+        "angleStepDegrees": 60,
+        "lengthMetres": 0.055,
+        "widthMetres": 0.013,
+        "depthMetres": 0.002,
+        "shape": "radially aligned capsule with semicircular ends; blind recess"
+      },
+      "surface": {
+        "seed": 505,
+        "grainDiameterRangeMetres": [
+          0.001,
+          0.003
+        ],
+        "coverageFraction": 0.05,
+        "albedoValueMultiplierRange": [
+          0.95,
+          1.05
+        ],
+        "textureRule": "SURFACE-RECIPES.md#grain",
+        "wearMaterial": "iron-worn",
+        "wearAreaFraction": 0.015,
+        "wearOn": "rim edge and relief boundaries only"
+      },
+      "mounting": {
+        "roadCutoutRadiusMetres": 0.33,
+        "cutoutDepthMetres": 0.026,
+        "rule": "rim top flush to road; remove intersecting road top faces, not stack a disk above road",
+        "interaction": "none"
+      },
+      "unitCount": 1
+    },
+    {
+      "moduleId": "street-tree-leafy",
+      "name": "Street tree",
+      "approvedDrawing": "review/06-street-tree-v2.png",
+      "origin": "trunk base centre on planting ground, Z=0",
+      "silhouetteEnvelopeMetres": {
+        "min": [
+          -1.18,
+          -0.9,
+          0
+        ],
+        "max": [
+          1.18,
+          0.9,
+          3.55
+        ],
+        "role": "maximum allowed envelope; not an instruction to scale canopy to fill it"
+      },
+      "trunk": {
+        "material": "bark",
+        "ringSides": 12,
+        "centrelineXYZRadiusMetres": [
+          [
+            0,
+            0,
+            0,
+            0.115
+          ],
+          [
+            -0.02,
+            0.005,
+            0.28,
+            0.095
+          ],
+          [
+            0.015,
+            0,
+            0.72,
+            0.08
+          ],
+          [
+            0.035,
+            0.01,
+            1.1,
+            0.067
+          ],
+          [
+            -0.025,
+            0.015,
+            1.5,
+            0.05
+          ],
+          [
+            0.01,
+            0.02,
+            1.95,
+            0.034
+          ],
+          [
+            0.03,
+            0.035,
+            2.55,
+            0.012
+          ]
+        ],
+        "interpolation": "piecewise linear centreline and radius, segment divisions=4",
+        "capEnds": true
+      },
+      "branches": {
+        "count": 12,
+        "startZMetres": [
+          1.05,
+          1.1,
+          1.2,
+          1.32,
+          1.42,
+          1.6,
+          1.68,
+          1.75,
+          1.9,
+          2.05,
+          2.25,
+          1.65
+        ],
+        "endTargets": "cluster centres in listed order",
+        "midpointRule": "(start+end)/2 + (0,0,0.12)",
+        "radiiMetres": [
+          0.036,
+          0.024,
+          0.01
+        ],
+        "ringSides": 8,
+        "interpolation": "two straight tapered segments",
+        "material": "bark"
+      },
+      "foliage": {
+        "clusterGuidesXYZRadiiMetres": [
+          [
+            -0.62,
+            -0.03,
+            1.72,
+            0.46,
+            0.4,
+            0.45
+          ],
+          [
+            0.56,
+            -0.02,
+            1.8,
+            0.44,
+            0.39,
+            0.43
+          ],
+          [
+            0,
+            -0.37,
+            1.97,
+            0.47,
+            0.37,
+            0.44
+          ],
+          [
+            -0.45,
+            0.32,
+            2.08,
+            0.43,
+            0.36,
+            0.47
+          ],
+          [
+            0.45,
+            0.34,
+            2.12,
+            0.45,
+            0.38,
+            0.48
+          ],
+          [
+            -0.59,
+            -0.1,
+            2.4,
+            0.46,
+            0.38,
+            0.45
+          ],
+          [
+            0.53,
+            -0.1,
+            2.4,
+            0.43,
+            0.36,
+            0.44
+          ],
+          [
+            0,
+            -0.33,
+            2.48,
+            0.46,
+            0.37,
+            0.46
+          ],
+          [
+            -0.22,
+            0.29,
+            2.65,
+            0.44,
+            0.36,
+            0.46
+          ],
+          [
+            0.33,
+            0.22,
+            2.79,
+            0.38,
+            0.35,
+            0.41
+          ],
+          [
+            -0.12,
+            -0.05,
+            3.0,
+            0.37,
+            0.34,
+            0.42
+          ],
+          [
+            0.02,
+            0.12,
+            2.26,
+            0.48,
+            0.39,
+            0.5
+          ]
+        ],
+        "guidesVisible": false,
+        "leafCountPerCluster": 96,
+        "distributionRule": "SURFACE-RECIPES.md#tree-leaves",
+        "leafLengthRangeMetres": [
+          0.075,
+          0.115
+        ],
+        "leafWidthToLength": 0.58,
+        "leafThicknessMetres": 0.001,
+        "leafCentreBulgeMetres": 0.003,
+        "outlineNormalized": [
+          [
+            -0.5,
+            0
+          ],
+          [
+            -0.28,
+            -0.5
+          ],
+          [
+            0.25,
+            -0.5
+          ],
+          [
+            0.5,
+            0
+          ],
+          [
+            0.25,
+            0.5
+          ],
+          [
+            -0.28,
+            0.5
+          ]
+        ],
+        "seed": 606,
+        "materials": [
+          "leaf-olive",
+          "leaf-pale",
+          "leaf-deep"
+        ],
+        "materialProbabilities": [
+          0.5,
+          0.3,
+          0.2
+        ],
+        "billboard": false,
+        "visibleSpheres": false
+      },
+      "hiddenSurfaces": {
+        "trunkBase": "flat closed cap",
+        "canopyRear": "same leaf algorithm over full volume; no flat back",
+        "roots": "no additional roots or soil mesh"
+      },
+      "barkDetail": {
+        "seed": 607,
+        "grainDiameterRangeMetres": [
+          0.001,
+          0.003
+        ],
+        "coverageFraction": 0.04,
+        "albedoValueMultiplierRange": [
+          0.94,
+          1.06
+        ],
+        "textureRule": "SURFACE-RECIPES.md#grain",
+        "grooves": "none; keep trunk taper and branching readable"
+      },
+      "unitCount": 1
+    },
+    {
+      "moduleId": "streetlight-vintage-lantern",
+      "name": "Street lantern",
+      "approvedDrawing": "review/07-street-lantern-v2.png",
+      "origin": "foot base centre on pavement, Z=0",
+      "overallSizeMetres": [
+        0.38,
+        0.38,
+        2.74
+      ],
+      "radialSymmetry": "fourfold lamp head; circular pole and foot",
+      "foot": {
+        "latheZRadiusMetres": [
+          [
+            0,
+            0.14
+          ],
+          [
+            0.035,
+            0.14
+          ],
+          [
+            0.05,
+            0.125
+          ],
+          [
+            0.12,
+            0.095
+          ],
+          [
+            0.17,
+            0.065
+          ],
+          [
+            0.2,
+            0.065
+          ]
+        ],
+        "material": "lamp-metal",
+        "segments": 48
+      },
+      "shaft": {
+        "zRangeMetres": [
+          0.2,
+          1.88
+        ],
+        "radiusMetres": 0.037,
+        "material": "lamp-metal",
+        "segments": 32
+      },
+      "collars": [
+        {
+          "partId": "foot-collar",
+          "zRangeMetres": [
+            0.17,
+            0.21
+          ],
+          "radiusMetres": 0.068,
+          "material": "collar-metal"
+        },
+        {
+          "partId": "upper-collar",
+          "zRangeMetres": [
+            1.87,
+            1.92
+          ],
+          "radiusMetres": 0.064,
+          "material": "collar-metal"
+        }
+      ],
+      "neck": {
+        "latheZRadiusMetres": [
+          [
+            1.92,
+            0.052
+          ],
+          [
+            1.97,
+            0.062
+          ],
+          [
+            2.01,
+            0.055
+          ],
+          [
+            2.05,
+            0.085
+          ]
+        ],
+        "material": "lamp-metal",
+        "segments": 32
+      },
+      "glass": {
+        "bottomZMetres": 2.05,
+        "topZMetres": 2.45,
+        "bottomOuterSideMetres": 0.2,
+        "topOuterSideMetres": 0.3,
+        "wallThicknessMetres": 0.003,
+        "panelCount": 4,
+        "material": "amber-glass",
+        "transmission": 0,
+        "alpha": 1,
+        "emissionStrength": 0,
+        "internalBulb": false
+      },
+      "frame": {
+        "railWidthMetres": 0.018,
+        "railDepthMetres": 0.018,
+        "material": "lamp-metal",
+        "geometry": "four sloped corner posts connecting square corner coordinates at glass bottom/top; square border rails at both levels",
+        "bevelMetres": 0.002
+      },
+      "roof": {
+        "eaveSideMetres": 0.38,
+        "eaveBottomZMetres": 2.45,
+        "eaveTopZMetres": 2.48,
+        "peakZMetres": 2.62,
+        "peakSideMetres": 0.055,
+        "shellThicknessMetres": 0.012,
+        "shape": "four-sided hipped truncated pyramid; closed underside",
+        "material": "lamp-metal"
+      },
+      "finial": {
+        "latheZRadiusMetres": [
+          [
+            2.62,
+            0.034
+          ],
+          [
+            2.64,
+            0.043
+          ],
+          [
+            2.66,
+            0.033
+          ],
+          [
+            2.68,
+            0.039
+          ],
+          [
+            2.71,
+            0.035
+          ],
+          [
+            2.735,
+            0.015
+          ],
+          [
+            2.74,
+            0
+          ]
+        ],
+        "segments": 32,
+        "material": "lamp-metal"
+      },
+      "surface": {
+        "seed": 707,
+        "grainDiameterRangeMetres": [
+          0.001,
+          0.002
+        ],
+        "coverageFraction": 0.015,
+        "albedoValueMultiplierRange": [
+          0.98,
+          1.02
+        ],
+        "textureRule": "SURFACE-RECIPES.md#grain"
+      },
+      "lightObjects": false,
+      "sideArm": false,
+      "unitCount": 1
+    }
+  ],
+  "verification": {
+    "unitsToleranceMetres": 0.001,
+    "paintOffsetToleranceMetres": 0.0001,
+    "reviewViews": [
+      "front",
+      "side",
+      "top",
+      "three-quarter"
+    ],
+    "cameraDirectionsFromTarget": {
+      "front": [
+        0,
+        -1,
+        0
+      ],
+      "side": [
+        1,
+        0,
+        0
+      ],
+      "top": [
+        0,
+        0,
+        1
+      ],
+      "three-quarter": [
+        1,
+        -1,
+        0.8
+      ]
+    },
+    "projection": "orthographic",
+    "framing": "entire module plus 10 percent margin, equal front and side pixels per metre",
+    "albedoReview": "unlit colors, no shadows, no AO, no bloom",
+    "lightingReview": "later modeling task only, temporary scene lights not saved into module",
+    "status": "criteria only, no model verification performed",
+    "reviewViewsByType": {
+      "solid": [
+        "front",
+        "side",
+        "top",
+        "three-quarter"
+      ],
+      "paint": [
+        "top on transparent background"
+      ]
+    },
+    "paintSurfaceCases": [
+      "asphalt",
+      "red brick",
+      "stone paving"
+    ],
+    "paintSurfaceCaseRule": "same unchanged marking pigment and alpha on each receiving surface; surface visible outside and through wear holes; no surface image stored in unit"
+  },
+  "deliverables": {
+    "approvedDrawings": true,
+    "writtenRecipes": true,
+    "machineReadableSpecifications": true,
+    "modelFiles": false,
+    "appImplementation": false,
+    "unitDrawings": "v4 transparent paint units; v2 solid appearance sheets; pavement assembly is appearance-only, with individual stone dimensions specified"
+  },
+  "unitContract": {
+    "inventoryCount": "one physical piece, not an assembled layout",
+    "moduleGroups": "seven categories; pieces/variants below are separately placeable units, never an inseparable kit",
+    "repetitionOwner": "future app",
+    "appControls": [
+      "instance count",
+      "spacing",
+      "rotation",
+      "placement",
+      "assembly"
+    ],
+    "designFileControls": [
+      "one-piece dimensions",
+      "one-piece geometry",
+      "materials",
+      "local origin"
+    ],
+    "arrayGeometryInAssets": false
+  }
+}
