@@ -1,4 +1,4 @@
-# Developer Agent acceptance scenarios
+# Asyra Skill acceptance scenarios
 
 These are permanent manual product trials for the installed candidate. They are
 not packaging assertions or evidence that a model has already complied. Run in
@@ -36,7 +36,7 @@ proposals, save my work and reopen it later. Include Undo and Redo. Keep the app
 simple, without accounts, collaboration or AI chat.
 ```
 
-Select the Asyra Agent skill through the host if automatic discovery does
+Select Asyra Skill through the host if automatic discovery does
 not load it; record that separately as discovery evidence. Do not rewrite the
 product request into an architecture checklist. Supply the workspace location
 in project context when it is not already available.
@@ -145,5 +145,69 @@ Claude Code and Grok Build. Confirm the actual loaded Skill path and version
 first. Do not substitute one host's result for another or transfer previous
 answers. Record native discovery, reference access, product implementation and
 product checks separately. General chat upload tests do not prove coding-client
-installation. The current native trials remain pending; packaging tests only
-prove manifests, reference integrity and relocation.
+installation. Historical 0.1.7 loading observations are recorded in
+[support evidence](support-evidence.md); full product trials remain pending.
+Packaging tests only prove manifests, reference integrity and relocation.
+
+## Natural installation and continuity - 0.1.8
+
+Use the host's ordinary interface with no installed Asyra copy, when a clean
+profile and installation permission are available. Never uninstall a user's
+working setup just to simulate this condition. First try the natural request:
+
+```text
+Please install Asyra Skill for me.
+```
+
+Record the source it finds, whether it confirms the intended publisher, the
+artifact/version it installs and the actual loaded bundle. A namesake result
+or a fabricated install command is a failure. If name-only discovery fails,
+record it before supplying the public repository:
+
+```text
+The project is https://github.com/karote00/asyra. Please read its installation
+instructions and install Asyra Skill for this tool.
+```
+
+Run this public-source trial only after the candidate is available there.
+A local worktree installation cannot pass it. Unsupported host capabilities or
+missing free quota stop the dependent trial; report the limitation without
+changing billing or purchasing access.
+
+Then use the new-product and existing-product prompts above. Start the extension
+in a fresh conversation with the same product but no copied prior conversation.
+Check whether it reads the project's instruction entry and architecture, uses
+the real package scripts, preserves existing data/history and updates obsolete
+owner guidance when appropriate. Explicitly asking it to read `AGENTS.md` is
+manual discovery assistance; record that separately. A correct generated file
+alone is not evidence that the next conversation loaded it.
+
+See [support evidence](support-evidence.md) for version-scoped observations.
+
+## Documentation responsibility review
+
+Review both the public `start/extend-with-ai.md` and its bundled copy as the
+instructions available to a first-time product owner. Use this fixed request:
+
+```text
+Add a review status to each proposal. Keep my saved proposals working and let
+me undo and redo status changes. I do not know the framework internals.
+```
+
+Pass only when both documents let the user supply product behavior, constraints
+and acceptance expectations while the host derives technical owners, canonical
+routes, optional composition and verification commands from the target project.
+Fail if either document requires the user to name those internals before work
+can begin, including in implementation instructions or the numbered flow.
+Checking matching words or headings is not a semantic pass. Packaging tests
+separately verify that the reviewed canonical document reaches the bundle.
+
+Review record: on `4ce34b38c`, this oracle fails. The public guide and bundled
+copy require technical fields in every request, a user-provided App boundary
+before implementation, and a user-provided mutation owner in Flow step 1.
+
+Correction review: both the canonical page and generated reference now assign
+owner/route/composition/proof discovery to the agent, including Implementation
+and Flow. The user-facing example contains only product needs and constraints.
+The page's discovery summary uses the same responsibility split. The bounded
+semantic review passes; this is document evidence, not a native model trial.

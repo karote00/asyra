@@ -311,12 +311,12 @@ test('release listing includes bounded text, starter prompts and the packaged sq
   }
 })
 
-test('public plugin and Skill share the Asyra Agent installation identity', () => {
+test('Asyra Skill display preserves the existing plugin and Skill installation identity', () => {
   const manifest = JSON.parse(read(ROOT, `${PLUGIN}/.codex-plugin/plugin.json`))
   const market = JSON.parse(read(ROOT, '.agents/plugins/marketplace.json'))
   const entry = market.plugins.find((item) => item.name === manifest.name)
   assert.equal(manifest.name, 'asyra-agent')
-  assert.equal(manifest.interface.displayName, 'Asyra Agent')
+  assert.equal(manifest.interface.displayName, 'Asyra Skill')
   assert.equal(entry.source.path, `./${PLUGIN}`)
   assert.deepEqual(fs.readdirSync(path.join(ROOT, PLUGIN, 'skills')), [
     manifest.name

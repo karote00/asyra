@@ -135,6 +135,7 @@ for (const packageManager of ['yarn', 'npm']) {
       for (const guide of [
         'AGENTS.md',
         'docs/ONBOARDING.md',
+        'docs/ARCHITECTURE.md',
         'docs/PRIORITY_AGENT_PROMPT.md',
         'docs/PRIORITY_EXERCISE.md'
       ]) {
@@ -161,7 +162,31 @@ for (const packageManager of ['yarn', 'npm']) {
         path.join(projectDirectory, 'AGENTS.md'),
         'utf8'
       )
+      const generatedManifest = JSON.parse(
+        fs.readFileSync(path.join(projectDirectory, 'package.json'), 'utf8')
+      )
+      assert.equal(
+        agentGuide,
+        fs.readFileSync(
+          path.join(repositoryRoot, 'apps/starter-app/AGENTS.md'),
+          'utf8'
+        ),
+        'generated products retain the canonical project instructions'
+      )
+      const guideLinks = [...agentGuide.matchAll(/\[[^\]]+\]\(([^)]+)\)/gu)]
+      assert.ok(
+        guideLinks.length > 0,
+        'project entry links to maintained guides'
+      )
+      for (const [, relative] of guideLinks) {
+        const target = path.resolve(projectDirectory, relative)
+        assert.ok(target.startsWith(`${projectDirectory}${path.sep}`), relative)
+        assert.ok(fs.statSync(target).isFile(), relative)
+      }
+      assert.doesNotMatch(agentGuide, /\.codex\/plugins\/cache|\/Users\//u)
       for (const script of ['test', 'typecheck', 'lint', 'react:build']) {
+        assert.equal(typeof generatedManifest.scripts[script], 'string', script)
+        assert.ok(generatedManifest.scripts[script].trim(), script)
         assert.match(agentGuide, new RegExp(`yarn ${script}`, 'u'))
         assert.match(agentGuide, new RegExp(`npm run ${script}`, 'u'))
       }

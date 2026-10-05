@@ -1,33 +1,53 @@
-# Asyra Agent
+# Asyra Skill
 
-One Agent Skill for building and extending Asyra products. The same instructions,
-offline references and release version are used by Codex, Claude Code and Grok
-Build. Plugins are installation adapters around that Skill, not separate agents.
-Use your host's account, model and project permissions. No hosted AI service or
-API key is included.
+Asyra Skill gives your existing coding agent Asyra-specific architecture,
+implementation procedures and offline references. Describe the product you want;
+the host agent uses this knowledge to plan, implement and verify it with its own
+model and permissions. Plugins are installation wrappers around the same Skill.
+No hosted AI service, independent execution engine or API key is included.
 
-## Release status and supported surfaces
+The display name is **Asyra Skill**. The installation identifier remains
+`asyra-agent`, including commands, paths and marketplace entries. Existing
+Asyra Agent installations do not require an identity migration.
 
-**0.1.7 is an unpublished candidate.** The 0.1.6 release remains unchanged.
-Use a checkout of this candidate for the local instructions below. Do not expect
-the 0.1.6 ZIP or Git tag to include these new adapters.
+## Release status and support
 
-| Surface                                                  | Installation path                            | Evidence for this candidate                             |
-| -------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------- |
-| Codex desktop and CLI                                    | Existing Codex plugin or standalone Skill    | Packaging checked; fresh native candidate trial pending |
-| Claude Code                                              | Claude plugin or standalone Skill            | Official format implemented; fresh native trial pending |
-| Grok Build                                               | Standalone Skill or local plugin directory   | Official format implemented; fresh native trial pending |
-| General Claude/Grok chat, Cowork and hosted API sessions | Separate host capabilities and account setup | Not validated by this candidate                         |
-| Cursor and Antigravity                                   | Future adapters if needed                    | Phase two                                               |
+**0.1.8 is an unpublished local candidate.** These instructions describe its
+source. The merged 0.1.7 is the portable baseline; a GitHub source on `main` may
+contain a different version from a release archive or this candidate. Verify
+`pluginVersion` after installing. Publication is a separate action.
 
-Packaging and relocation tests establish file correctness, not a host's loading
-behavior or the quality of generated products. Claude Code and Grok Build are
-the coding surfaces targeted in phase one. Uploading files to a general chat is
-not evidence of local project access or successful installation.
+| Surface                                 | Delivery                              | What is established                                                                             |
+| --------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.8 loading and product trials pending                    |
+| Claude Code                             | Plugin or standalone Skill            | Shared packaging; fresh native trials pending                                                   |
+| Claude Desktop                          | Skill ZIP upload                      | Local 0.1.7 upload and reference loading observed; no complete product trial                    |
+| Grok Build CLI                          | Standalone Skill or compatible plugin | Local 0.1.7 plugin and reference loading observed; product trials pending, free quota exhausted |
+| General Grok chat, Cowork, API sessions | Host-specific capabilities            | Not validated here                                                                              |
+| Cursor and Antigravity                  | Future adapter if needed              | Phase two                                                                                       |
+
+File validation proves packaging. Actual loading proves reference access. Only
+an observed product creation, fresh-conversation extension and executed checks
+establish that complete development workflow for the tested host/configuration.
+See `docs/ai/tools/developer-agent/support-evidence.md` in the source checkout
+for versioned support evidence.
+Automatic installation from the name alone has not been verified.
+
+## Public GitHub source and local candidates
+
+External users can obtain the source from
+<a href="https://github.com/karote00/asyra" target="_blank" rel="noopener noreferrer">karote00/asyra</a>.
+No maintainer worktree is required. Use a reviewed release ref when available;
+`main` follows merged development. Inspect its plugin version rather than
+assuming the newest GitHub Release and `main` are identical. A source checkout
+contains the complete Skill at `plugins/asyra-agent/skills/asyra-agent`.
+
+For testing unpublished 0.1.8, use the local candidate checkout in the routes
+below. Do not describe that private local path as a public installation source.
 
 ## Start with the same Skill everywhere
 
-From a checkout containing this candidate, copy the **entire**
+From the chosen source checkout, copy the **entire**
 `plugins/asyra-agent/skills/asyra-agent` folder to one of these locations:
 
 | Host        | Project installation                    | Personal installation           |
@@ -66,18 +86,25 @@ same reviewed source as the plugin package, never edited separately.
 1. Open **Plugins > Add > Add a marketplace**.
 2. For this unpublished candidate, use the absolute path of its checkout as
    **Source**. Git ref and sparse paths do not apply to a local source.
-3. Add the marketplace, select **Asyra**, find **Asyra Agent**, and install it.
+3. Add the marketplace, select **Asyra**, find **Asyra Skill**, and install it.
    Adding the marketplace alone does not install the plugin.
 4. Start a fresh conversation in your product folder and verify the bundle.
 
-After a version is published, the GitHub source is `karote00/asyra`; use that
-release's exact Git ref and leave sparse paths empty. A pinned ref does not
+For the public GitHub source, enter `karote00/asyra`; use a reviewed Git ref
+and leave sparse paths empty. A pinned ref does not
 advance when you refresh the marketplace. Inspect an existing `asyra` source
 before adding another; do not assume it is replaced automatically.
 
 ### CLI
 
-From the candidate checkout, with a CLI supporting these commands:
+For the merged public source, with a CLI supporting these commands:
+
+```sh
+codex plugin marketplace add karote00/asyra --ref main
+codex plugin add asyra-agent@asyra
+```
+
+For an unpublished local candidate, run from its checkout instead:
 
 ```sh
 codex plugin marketplace add .
@@ -104,11 +131,26 @@ reload instructions, or start a fresh session. Invoke
 `/asyra-agent:asyra-agent`, then verify the bundle below. The namespace comes
 from the plugin name followed by the Skill name.
 
-After these changes are merged into the public repository, the marketplace can
-also be added with `/plugin marketplace add karote00/asyra`. That tracks the
+For the merged public source, the marketplace can also be added with
+`/plugin marketplace add karote00/asyra`. That tracks the
 repository's selected source; it is not a promise of a pinned release version.
 The `.claude-plugin/marketplace.json` catalog points to the same plugin folder
 used by Codex, and both generated manifests use one release identity.
+
+## Claude Desktop Skill upload
+
+The observed local 0.1.7 route was **Customize > Skills > Add skill > Upload
+skill**. Export the complete Skill using the command above and ZIP it with
+`asyra-agent/SKILL.md`, `asyra-agent/bundle.json` and `asyra-agent/references/`
+under the same root. Upload and enable that Skill, then start a new conversation.
+Use a standalone Skill archive when one is provided by a reviewed release;
+a full plugin/source archive is a different artifact.
+
+This trial established uploaded reference access in Claude Desktop, not local
+repository editing, arbitrary command execution or GitHub self-installation.
+Check the capabilities available in the actual session before requesting product
+implementation. Account/client capabilities may differ; do not purchase access
+merely to satisfy a packaging check.
 
 ## Grok Build
 
@@ -120,7 +162,7 @@ grok --plugin-dir /absolute/path/to/asyra-checkout/plugins/asyra-agent
 ```
 
 Open `/skills` or `/plugins` to inspect the discovered extension, select the
-Asyra Agent Skill, and verify it. A session-only plugin path is not a persistent
+Asyra Skill, and verify it. A session-only plugin path is not a persistent
 installation. Grok documents compatibility with Claude Code plugins and
 marketplaces, so no separate Grok instruction fork or manifest is maintained.
 Do not assume these instructions apply to the general grok.com chat interface.
@@ -130,14 +172,14 @@ Do not assume these instructions apply to the general grok.com chat interface.
 In a new session, ask:
 
 ```text
-Load the installed Asyra Agent Skill. Read bundle.json beside that exact
+Load the installed Asyra Skill. Read bundle.json beside that exact
 SKILL.md. Report both full paths, pluginVersion, and whether the bundled
 references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
 Skill files, not the Asyra development checkout. Do not modify files.
 ```
 
-Expect **0.1.7** for this candidate. `pluginVersion` remains the compatibility
-field for the shared Agent version even in standalone installations. The record
+Expect **0.1.8** for this candidate. `pluginVersion` remains the compatibility
+field for the shared Skill version even in standalone installations. The record
 also contains the full plugin distribution inventory; entries outside the Skill
 subtree do not need to exist beside a standalone Skill. Its hashes detect drift,
 not authenticity. The host's listing version alone does not prove what loaded.
@@ -145,19 +187,33 @@ not authenticity. The host's listing version alone does not prove what loaded.
 Then describe your actual product, for example:
 
 ```text
-Use Asyra Agent to build a personal expense tracker in my chosen project folder.
+Use Asyra to build a personal expense tracker in my chosen project folder.
 Include monthly filters, exact totals, Undo/Redo and browser storage.
 ```
 
 For an existing product:
 
 ```text
-Use Asyra Agent to add tags and combined filters to this app. Preserve existing
+Use Asyra to add tags and combined filters to this app. Preserve existing
 data and history, and test the affected behavior.
 ```
 
 Ordinary product requests do not need technical installation prompts. Specify
 the destination for a new project. Review and test the generated product.
+
+## Continue developing the same product
+
+The delivered product keeps its own `AGENTS.md`, architecture guide and real
+validation commands. In a fresh conversation, open that product and describe the
+next change. If the host does not discover its instructions, ask it to read
+`AGENTS.md` first. Installing a Skill does not grant filesystem access or guarantee
+automatic discovery in every tool. Avoid multiple stale instruction copies.
+
+The Skill guides Asyra ownership, subscriptions, history and persistence. The
+host agent still owns product implementation, general UI quality and testing.
+Review what was actually built and tested; do not treat documentation access as
+a correctness certificate. Technical version probes above are acceptance tools,
+not the everyday way to ask for product work.
 
 ## Updates and replacement
 
@@ -175,7 +231,7 @@ the destination for a new project. Review and test the generated product.
   update schedule from format compatibility.
 
 For 0.1.5 **Asyra Developer** users, uninstall that old identity and install
-**Asyra Agent**. Product files and saved data do not need migration. Agent
+**Asyra Skill**. Product files and saved data do not need migration. Skill
 updates do not update product dependencies. Reference package versions identify
 the guide snapshot, not universal API compatibility. Do not edit plugin caches
 or bundled references to conceal a stale installation.
@@ -195,6 +251,7 @@ node --test scripts/__tests__/developer-agent-bundle.test.mjs
 See `docs/ai/tools/developer-agent/README.md` in the source checkout for release
 checks and native product acceptance. Publishing remains a separate action.
 
+- <a href="https://learn.chatgpt.com/docs/developer-commands" target="_blank" rel="noopener noreferrer">Codex plugin and marketplace commands</a>
 - <a href="https://agentskills.io/specification" target="_blank" rel="noopener noreferrer">Agent Skills specification</a>
 - <a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener noreferrer">Codex Skill discovery</a>
 - <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer">Claude Code Skills</a>

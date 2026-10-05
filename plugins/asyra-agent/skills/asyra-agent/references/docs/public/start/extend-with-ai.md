@@ -11,46 +11,59 @@ second state store, mutate a package owner directly, bypass a Feature or
 transaction, expose a server credential, or treat a future roadmap API as if
 it already exists.
 
-## Use Asyra Agent in Codex
+## Use Asyra Skill with your coding agent
 
-The repository includes an initial Codex plugin with a developer Skill and
-selected build guides. Describe your desired product; the Skill helps identify
-the owners, public APIs and tests needed to implement it. Follow the
-<a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md" target="_blank" rel="noopener noreferrer">Asyra Agent installation guide</a>.
-This candidate has not been publicly released. It runs in your coding tool and
-is separate from the optional in-app `@asyra/ai-agent-runtime`.
+Asyra Skill supplies shared development instructions and maintained reference
+guides to your existing coding agent. Plugins provide tool-specific installation
+wrappers around the same Skill. See the
+<a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md" target="_blank" rel="noopener noreferrer">Asyra Skill installation guide</a> for
+available routes, candidate versions and actual host validation status.
+The host agent owns reasoning, implementation and verification. This development
+Skill is separate from the optional in-app `@asyra/ai-agent-runtime`.
 
-## Give the agent a bounded task contract
+## Describe the product outcome
 
-Include these facts in each request:
+Tell the agent what you want the product to do, which project to work in, and
+any constraints you already know. Describe the result you expect and existing
+behavior or saved data that must remain usable. You do not need to name Asyra
+packages, Features, canonical routes or test commands.
 
-1. **Outcome** - one observable product behavior, stated in app-domain terms.
-2. **Owner** - the app module, Feature, schema, or adapter allowed to change.
-3. **Canonical route** - the public Core/common API and transaction boundary
-   that owns the write.
-4. **Composition** - which optional Preset, Render, Collaboration, or AI
-   capabilities are active and which are absent.
-5. **Proof** - the exact unit, integration, type, build, or E2E behavior that
-   must pass.
-6. **Exclusions** - private imports, duplicate state, UI-only fixes, fallback
-   output, secrets, and unrelated refactors.
+For example: “Add a review status to each proposal. Keep my saved proposals
+working and let me undo and redo status changes. Keep the app simple, without
+accounts, collaboration or AI chat.”
 
-A useful request is concrete: “Add an app-owned review status to the generated
-Asyra Design app. Reuse the existing common API and one transaction, add a
-formal test, keep collaboration and AI optional, and do not change Framework
-packages.”
+## The agent derives the technical plan
+
+Before implementation, the agent reads the project's instructions, architecture,
+installed public APIs and closest existing behavior. It derives a bounded plan:
+
+1. **Outcome** - translate the request into observable app behavior.
+2. **Owner** - identify the app module, Feature, schema or adapter to change.
+3. **Canonical route** - trace the supported Core/common API and transaction
+   boundary that owns the write.
+4. **Composition** - inspect active optional capabilities and preserve the
+   user's requested scope.
+5. **Proof** - select the project's applicable tests, types, lint and build;
+   add a permanent regression when the affected behavior lacks coverage.
+6. **Exclusions** - preserve unrelated work and avoid private imports, duplicate
+   state, UI-only fixes, secrets and unrelated refactors.
+
+The agent asks about unresolved product choices that affect the result. It
+should investigate technical details available in the project itself rather
+than require the user to design the architecture.
 
 ## Where this runs
 
 The collaboration with an AI coding agent happens in your generated app
 repository. The agent should edit the app-owned Feature, schema, common API,
-adapter, UI, and tests named by your task contract. Framework package source is
-outside that boundary unless you are intentionally developing the Framework.
+adapter, UI, and tests identified in the bounded implementation plan. Framework
+package source is outside that boundary unless you are intentionally developing the Framework.
 
 ## Implementation
 
-Give the agent an app-owned public boundary before asking it to connect UI or
-AI behavior. For example, this Feature exposes one review-domain action:
+The agent identifies or defines an App-owned public boundary before connecting
+UI or AI behavior. The following developer example illustrates a review-domain
+action; the user does not need to provide this code:
 
 ```ts
 import { defineFeature } from '@asyra/core'
@@ -72,12 +85,12 @@ export const reviewActions = defineFeature('app.reviewActions', undefined, {
 ```
 
 In a real document-backed feature, the body calls the generated app's common
-API so Factory can own the transaction and Undo evidence. Ask the agent to
-reuse that route instead of preserving the illustrative local `Map`.
+API so Factory can own the transaction and Undo evidence. The implementing agent
+must reuse that route instead of preserving the illustrative local `Map`.
 
 ## Flow
 
-1. You state the observable domain outcome and mutation owner.
+1. You state the observable product outcome and constraints.
 2. The agent finds the maintained app Feature and common API that already own
    the closest behavior.
 3. It adds or extends one typed API, then connects UI or AI intent to it.
@@ -94,11 +107,12 @@ state; and removing an optional provider does not change the document owner.
 
 ## Start from maintained contracts
 
-For a generated app extension, start with
-[Create a complete design app](create-design-app.md) and the closest existing
-Feature in `src/features`. For Framework composition, choose the closest task
-guide in this documentation and ask the agent to preserve its owner, flow,
-failure behavior, and public API boundary.
+For a generated app extension, the agent reads the target's architecture guide
+and closest existing Feature in `src/features`. For an existing Design product,
+[Create a complete design app](create-design-app.md) provides the relevant
+starting context. For Framework composition, the agent selects the applicable
+task guide and preserves its owner, flow, failure behavior and public API
+boundary. The user does not need to select technical guides in advance.
 
 The agent should inspect current public entrypoints and declarations before
 naming an API. Package-private source imports and cross-package relative paths

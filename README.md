@@ -19,6 +19,7 @@ boundaries, and downstream projections.
 - <a href="https://asyra-design.vercel.app/?fileId=demo" target="_blank" rel="noopener noreferrer">Try Asyra Design</a>
 - [Explore the Generic Starter source](#generic-starter)
 - [Read the documentation](docs/public/index.md)
+- [Install Asyra Skill for your coding agent](plugins/asyra-agent/README.md)
 - [Create an Asyra Design app](#complete-design-product)
 - [Install `@asyra/core`](#advanced-composition)
 
