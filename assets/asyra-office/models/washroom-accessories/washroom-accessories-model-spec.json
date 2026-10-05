@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "status": "user-authorized-reference-commit",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "center of rear mounting plane; wall at Y=0, object extends toward negative Y"
+  },
+  "source": "Authored supplementary designs; neither object is clearly visible in the approved office image.",
+  "conventions": {
+    "roundedRectangle": "XZ plane; full width and height; circular corner arcs with 16 segments per quarter; extrusion along Y",
+    "cylinders": "64 equal radial segments, capped ends; bounds include caps",
+    "shading": "smooth curved sides, flat end caps; no subdivision or unspecified bevel"
+  },
+  "assets": [
+    {
+      "id": "wood-framed-mirror",
+      "bounds": [
+        0.4,
+        0.025,
+        0.56
+      ],
+      "parts": {
+        "frame": {
+          "method": "rounded rectangle ring extrusion",
+          "outer": {
+            "width": 0.4,
+            "height": 0.56,
+            "cornerRadius": 0.04
+          },
+          "inner": {
+            "width": 0.35,
+            "height": 0.51,
+            "cornerRadius": 0.015
+          },
+          "yRange": [
+            -0.025,
+            0
+          ]
+        },
+        "pane": {
+          "method": "solid rounded rectangle extrusion",
+          "width": 0.35,
+          "height": 0.51,
+          "cornerRadius": 0.015,
+          "yRange": [
+            -0.02,
+            -0.017
+          ]
+        },
+        "backing": {
+          "method": "solid rounded rectangle extrusion",
+          "width": 0.35,
+          "height": 0.51,
+          "cornerRadius": 0.015,
+          "yRange": [
+            -0.005,
+            0
+          ]
+        }
+      },
+      "materials": {
+        "frame": "honey-wood",
+        "backing": "honey-wood",
+        "pane": "mirror"
+      },
+      "hidden": "Flat back, no hanging hardware, screws, lights or wall. Parts share edges without clearance; no decorative seam geometry."
+    },
+    {
+      "id": "towel-rail",
+      "bounds": [
+        0.46,
+        0.08,
+        0.05
+      ],
+      "parts": {
+        "bar": {
+          "axis": "+X",
+          "start": [
+            -0.23,
+            -0.07,
+            0
+          ],
+          "end": [
+            0.23,
+            -0.07,
+            0
+          ],
+          "radius": 0.01
+        },
+        "arms": {
+          "axis": "-Y",
+          "starts": [
+            [
+              -0.2,
+              -0.008,
+              0
+            ],
+            [
+              0.2,
+              -0.008,
+              0
+            ]
+          ],
+          "ends": [
+            [
+              -0.2,
+              -0.07,
+              0
+            ],
+            [
+              0.2,
+              -0.07,
+              0
+            ]
+          ],
+          "radius": 0.008
+        },
+        "mountingDisks": {
+          "axis": "-Y",
+          "starts": [
+            [
+              -0.2,
+              0,
+              0
+            ],
+            [
+              0.2,
+              0,
+              0
+            ]
+          ],
+          "ends": [
+            [
+              -0.2,
+              -0.008,
+              0
+            ],
+            [
+              0.2,
+              -0.008,
+              0
+            ]
+          ],
+          "radius": 0.025
+        }
+      },
+      "material": "muted-metal",
+      "hidden": "Exactly five solid primitive parts, joined as one placeable unit. No towel, screws, holes, wall or end ornaments."
+    }
+  ],
+  "materials": {
+    "honey-wood": {
+      "baseColor": "#B9864E",
+      "metallic": 0,
+      "roughness": 0.8,
+      "grainRecipe": "SURFACE-RECIPES.md - Intrinsic wood grain"
+    },
+    "mirror": {
+      "baseColor": "#C6D1D2",
+      "metallic": 1,
+      "roughness": 0.08
+    },
+    "muted-metal": {
+      "baseColor": "#999C99",
+      "metallic": 0.35,
+      "roughness": 0.65
+    }
+  },
+  "preview": {
+    "unlit": true,
+    "castShadow": false,
+    "ambientOcclusion": false,
+    "reflection": false,
+    "highlights": false,
+    "textures": "intrinsic wood grain only; other surfaces uniform"
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0005,
+    "modelsProduced": false,
+    "reflectionImplementation": "owned by app; not provided or validated"
+  }
+}

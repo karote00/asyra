@@ -1,6 +1,11 @@
 {
   "version": 2,
-  "negativeCaseIds": ["cancel.outcome", "cancel.delivery"],
+  "negativeCaseIds": [
+    "cancel.outcome",
+    "cancel.delivery",
+    "history-group.ordered-replay",
+    "history-group.snapshot"
+  ],
   "targetId": "transaction-atomicity",
   "architecturePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs",
   "specPath": "docs/ai/framework/packages/factory.md",
@@ -201,7 +206,12 @@
     {
       "id": "inverse-regression",
       "title": "Inverse regression demo",
-      "expectedFailedCaseIds": ["cancel.outcome", "cancel.delivery"],
+      "expectedFailedCaseIds": [
+        "cancel.outcome",
+        "cancel.delivery",
+        "history-group.ordered-replay",
+        "history-group.snapshot"
+      ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
         "from": "inversePayload.after = (payload as { before?: unknown }).before",

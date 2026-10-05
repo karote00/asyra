@@ -1,0 +1,277 @@
+{
+  "specVersion": "1.0.0",
+  "status": "Approved by the user for commit; drawings and documents only; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "origin": "centre of bottom edge"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "ivory": {
+      "baseColorSRGB": "#E7DDC7",
+      "roughness": 0.95,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "sage": {
+      "baseColorSRGB": "#82927A",
+      "roughness": 0.95,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "cord": {
+      "baseColorSRGB": "#B49A73",
+      "roughness": 0.95,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "wood": {
+      "baseColorSRGB": "#B68050",
+      "roughness": 0.85,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "wood-grain": {
+      "baseColorSRGB": "#95683E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "blue": {
+      "baseColorSRGB": "#607F9F",
+      "roughness": 0.9,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "paper": {
+      "baseColorSRGB": "#E7DFCB",
+      "roughness": 0.98,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    },
+    "page-line": {
+      "baseColorSRGB": "#D0C5AE",
+      "roughness": 0.98,
+      "metallic": 0,
+      "emission": 0,
+      "transmission": 0,
+      "alpha": 1
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "fabric-hanging",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-fabric-hanging-v1.png",
+      "source": "New matching-style design; no definite source fabric hanging",
+      "nominalSize": [
+        0.42,
+        0.03,
+        0.562
+      ],
+      "anchor": [
+        0,
+        0,
+        0.56
+      ],
+      "components": [
+        {
+          "partId": "cloth",
+          "primitive": "closed sampled surface",
+          "xBounds": [
+            -0.18,
+            0.18
+          ],
+          "zBounds": [
+            0,
+            0.44
+          ],
+          "middleY": "-0.0105+0.002*sin(2*pi*(X/0.36+0.5))*sin(pi*Z/0.44)",
+          "xIntervals": 72,
+          "zIntervals": 88,
+          "thicknessAlongY": 0.001,
+          "frontBandZ": [
+            0.03,
+            0.07
+          ],
+          "frontBandMaterial": "sage",
+          "material": "ivory",
+          "back": "plain ivory"
+        },
+        {
+          "partId": "sleeve",
+          "primitive": "open hollow cylinder with annular ends",
+          "axis": "X",
+          "centre": [
+            0,
+            0,
+            0.44
+          ],
+          "length": 0.36,
+          "innerRadius": 0.0085,
+          "outerRadius": 0.0105,
+          "radialSegments": 64,
+          "material": "ivory"
+        },
+        {
+          "partId": "dowel",
+          "primitive": "capped cylinder",
+          "axis": "X",
+          "centre": [
+            0,
+            0,
+            0.44
+          ],
+          "length": 0.42,
+          "radius": 0.008,
+          "radialSegments": 64,
+          "rimBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "cord",
+          "primitive": "capped circular polyline sweep",
+          "points": [
+            [
+              -0.2,
+              0,
+              0.448
+            ],
+            [
+              0,
+              0,
+              0.56
+            ],
+            [
+              0.2,
+              0,
+              0.448
+            ]
+          ],
+          "radius": 0.0015,
+          "radialSegments": 16,
+          "join": "continuous miter",
+          "material": "cord"
+        }
+      ]
+    },
+    {
+      "moduleId": "blue-book",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-blue-book-v1.png",
+      "source": "Blue book on central-office laptop-room wall shelf; hidden binding authored",
+      "nominalSize": [
+        0.125,
+        0.028,
+        0.18
+      ],
+      "pose": "closed upright book; spine negative X",
+      "components": [
+        {
+          "partId": "covers",
+          "primitive": "two boxes",
+          "size": [
+            0.125,
+            0.002,
+            0.18
+          ],
+          "centres": [
+            [
+              0,
+              -0.013,
+              0.09
+            ],
+            [
+              0,
+              0.013,
+              0.09
+            ]
+          ],
+          "bevel": 0.001,
+          "bevelSegments": 3,
+          "material": "blue"
+        },
+        {
+          "partId": "spine",
+          "primitive": "capped half-ellipse extrusion",
+          "crossSection": "X=-0.0565-0.006*cos(t); Y=0.014*sin(t); t=-pi/2..pi/2; close chord at X=-0.0565",
+          "arcIntervals": 48,
+          "zBounds": [
+            0,
+            0.18
+          ],
+          "endRimBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "blue"
+        },
+        {
+          "partId": "page-block",
+          "primitive": "box",
+          "size": [
+            0.116,
+            0.024,
+            0.174
+          ],
+          "centre": [
+            0.0015,
+            0,
+            0.09
+          ],
+          "bevel": 0.0004,
+          "bevelSegments": 2,
+          "material": "paper",
+          "edgeLinePitch": 0.0007,
+          "edgeLineWidth": 5e-05,
+          "edgeLineMix": 0.25,
+          "edgeLineMaterial": "page-line"
+        },
+        {
+          "partId": "front-hinge-groove",
+          "operation": "subtract cylinder from front cover after binding union",
+          "axis": "Z",
+          "centreXY": [
+            -0.051,
+            -0.0148
+          ],
+          "radius": 0.001,
+          "zBounds": [
+            0,
+            0.18
+          ],
+          "radialSegments": 32
+        }
+      ]
+    }
+  ],
+  "geometryAuthority": "GEOMETRY-SUPPLEMENT.md",
+  "surfaceAuthority": "SURFACE-RECIPES.md",
+  "omissions": [
+    "wall",
+    "wall hook",
+    "shelf",
+    "other books",
+    "cloth animation",
+    "opening book",
+    "rigging",
+    "baked lighting"
+  ],
+  "modelsVerified": false
+}

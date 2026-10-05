@@ -1,0 +1,464 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "sizeOrder": "X,Y,Z",
+    "wallPlane": "Y=0, all objects project toward -Y",
+    "origin": "bottom centre on rear mounting plane"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "bronze": {
+      "baseColorSRGB": "#695237",
+      "roughness": 0.8,
+      "metallic": 0.65,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "brass": {
+      "baseColorSRGB": "#A18450",
+      "roughness": 0.75,
+      "metallic": 0.65,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "shade": {
+      "baseColorSRGB": "#E9DEC2",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "bulb": {
+      "baseColorSRGB": "#E8DFC9",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "oak": {
+      "baseColorSRGB": "#BB9469",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "paper": {
+      "baseColorSRGB": "#EDE2CD",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "backing": {
+      "baseColorSRGB": "#BEAC8E",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "ink": {
+      "baseColorSRGB": "#39352F",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "wall-sconce",
+      "name": "Wall sconce - single unlit fixture",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-wall-sconce-v1.png",
+      "bounds": {
+        "min": [
+          -0.07,
+          -0.23,
+          0
+        ],
+        "max": [
+          0.07,
+          0,
+          0.25
+        ]
+      },
+      "components": [
+        {
+          "partId": "wall-plate",
+          "primitive": "cylinder",
+          "axis": "Y",
+          "radius": 0.05,
+          "centreXZ": [
+            0,
+            0.14
+          ],
+          "yMin": -0.012,
+          "yMax": 0,
+          "radialSegments": 96,
+          "edgeBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "bronze"
+        },
+        {
+          "partId": "rear-disc",
+          "primitive": "coplanar colour mask on plate rear",
+          "centre": [
+            0,
+            0,
+            0.14
+          ],
+          "radius": 0.008,
+          "material": "brass"
+        },
+        {
+          "partId": "arm",
+          "primitive": "capped circular tube sweep",
+          "radius": 0.005,
+          "tubeSegments": 16,
+          "path": [
+            {
+              "cubicBezier": [
+                [
+                  0,
+                  -0.01,
+                  0.15
+                ],
+                [
+                  0,
+                  -0.034,
+                  0.15
+                ],
+                [
+                  0,
+                  -0.04,
+                  0.167
+                ],
+                [
+                  0,
+                  -0.04,
+                  0.185
+                ]
+              ],
+              "segments": 24
+            },
+            {
+              "arc": "(0,-0.10+0.06*cos(t),0.185+0.06*sin(t))",
+              "tDegrees": [
+                0,
+                180
+              ],
+              "segments": 48
+            },
+            {
+              "line": [
+                [
+                  0,
+                  -0.16,
+                  0.185
+                ],
+                [
+                  0,
+                  -0.16,
+                  0.145
+                ]
+              ],
+              "segments": 1
+            }
+          ],
+          "frame": "one cross-section axis +X, other the in-plane unit normal to tangent",
+          "material": "bronze"
+        },
+        {
+          "partId": "neck",
+          "primitive": "cylinder",
+          "axis": "Z",
+          "centreXY": [
+            0,
+            -0.16
+          ],
+          "radius": 0.022,
+          "zMin": 0.115,
+          "zMax": 0.15,
+          "radialSegments": 96,
+          "edgeBevel": 0.002,
+          "bevelSegments": 3,
+          "material": "brass"
+        },
+        {
+          "partId": "shade",
+          "primitive": "closed profile revolved about local Z",
+          "axisXY": [
+            0,
+            -0.16
+          ],
+          "profileRZ": [
+            [
+              0.07,
+              0.02
+            ],
+            [
+              0.069,
+              0.026
+            ],
+            [
+              0.056,
+              0.047
+            ],
+            [
+              0.04,
+              0.082
+            ],
+            [
+              0.024,
+              0.116
+            ],
+            [
+              0.022,
+              0.12
+            ],
+            [
+              0.019,
+              0.12
+            ],
+            [
+              0.021,
+              0.114
+            ],
+            [
+              0.037,
+              0.08
+            ],
+            [
+              0.053,
+              0.045
+            ],
+            [
+              0.066,
+              0.024
+            ],
+            [
+              0.066,
+              0.02
+            ]
+          ],
+          "closeProfile": true,
+          "radialSegments": 128,
+          "profileInterpolation": "straight segments; smooth normals",
+          "material": "shade"
+        },
+        {
+          "partId": "bulb",
+          "primitive": "sphere",
+          "centre": [
+            0,
+            -0.16,
+            0.0275
+          ],
+          "radius": 0.0275,
+          "longitudeSegments": 64,
+          "latitudeSegments": 32,
+          "material": "bulb"
+        },
+        {
+          "partId": "bulb-stem",
+          "primitive": "cylinder",
+          "axis": "Z",
+          "centreXY": [
+            0,
+            -0.16
+          ],
+          "radius": 0.012,
+          "zMin": 0.045,
+          "zMax": 0.12,
+          "radialSegments": 48,
+          "material": "bulb"
+        }
+      ],
+      "lightSourceIncluded": false,
+      "authoredCompletions": [
+        "rear plate",
+        "arm curve",
+        "shade wall thickness",
+        "bulb shape",
+        "dimensions"
+      ],
+      "omissions": [
+        "wall",
+        "emission",
+        "light cone",
+        "wire",
+        "screws",
+        "halo"
+      ]
+    },
+    {
+      "moduleId": "framed-print",
+      "name": "Framed print - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-framed-print-v1.png",
+      "bounds": {
+        "min": [
+          -0.17,
+          -0.022,
+          0
+        ],
+        "max": [
+          0.17,
+          0,
+          0.46
+        ]
+      },
+      "components": [
+        {
+          "partId": "frame",
+          "primitive": "rectangular ring extrusion",
+          "outerWidth": 0.34,
+          "outerHeight": 0.46,
+          "borderWidth": 0.018,
+          "originBottomCentre": [
+            0,
+            0,
+            0
+          ],
+          "yMin": -0.022,
+          "yMax": 0,
+          "edgeBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "oak",
+          "cornerJoin": "four mitred rails; no gap"
+        },
+        {
+          "partId": "back-panel",
+          "primitive": "box",
+          "size": [
+            0.31,
+            0.004,
+            0.43
+          ],
+          "centre": [
+            0,
+            -0.002,
+            0.23
+          ],
+          "material": "backing"
+        },
+        {
+          "partId": "print-support",
+          "primitive": "box",
+          "size": [
+            0.304,
+            0.0115,
+            0.424
+          ],
+          "centre": [
+            0,
+            -0.00975,
+            0.23
+          ],
+          "material": "backing"
+        },
+        {
+          "partId": "paper",
+          "primitive": "box",
+          "size": [
+            0.304,
+            0.0005,
+            0.424
+          ],
+          "centre": [
+            0,
+            -0.01575,
+            0.23
+          ],
+          "material": "paper",
+          "frontY": -0.016,
+          "frontUV": "u=(X+0.152)/0.304; v=(Z-0.018)/0.424"
+        },
+        {
+          "partId": "lettering",
+          "primitive": "flat vector mask on paper front",
+          "textLines": [
+            "A",
+            "Brighter",
+            "Day"
+          ],
+          "fontDependency": null,
+          "glyphPaths": {
+            "A": "M 4 70 L 24 5 L 45 70 M 12 47 L 37 47",
+            "B": "M 6 70 L 6 5 C 46 0 48 34 8 35 C 52 29 51 74 6 70",
+            "r": "M 7 70 L 7 30 M 7 44 Q 18 22 34 32",
+            "i": "M 12 31 L 12 70 M 12 13 L 12 15",
+            "g": "M 37 35 C 2 15 -1 74 25 70 Q 37 68 37 45 M 37 31 L 37 82 Q 31 100 9 88",
+            "h": "M 7 5 L 7 70 M 7 45 C 28 17 40 27 38 70",
+            "t": "M 20 10 L 20 59 Q 18 78 35 66 M 5 32 L 35 32",
+            "e": "M 5 48 L 38 48 C 37 16 1 21 4 53 C 6 77 29 74 39 63",
+            "D": "M 6 70 L 6 5 C 61 2 61 74 6 70",
+            "a": "M 35 36 C 2 16 -2 74 23 69 Q 36 65 35 44 M 35 32 L 36 70",
+            "y": "M 5 31 L 23 67 M 42 30 L 21 84 Q 17 94 7 91"
+          },
+          "glyphCoordinateSystem": "arbitrary 50-wide cells, Y down, path coordinates as authored",
+          "strokeWidth": 3,
+          "strokeCaps": "round",
+          "strokeJoins": "round",
+          "fill": "none",
+          "tracking": 8,
+          "glyphAdvance": 50,
+          "linePlacement": [
+            {
+              "text": "A",
+              "topZ": 0.34,
+              "scaleMetresPerGlyphUnit": 0.00065
+            },
+            {
+              "text": "Brighter",
+              "topZ": 0.275,
+              "scaleMetresPerGlyphUnit": 0.00049
+            },
+            {
+              "text": "Day",
+              "topZ": 0.205,
+              "scaleMetresPerGlyphUnit": 0.00065
+            }
+          ],
+          "horizontalAlignment": "centre total advance box about X=0; total advance = 50*N + 8*(N-1)",
+          "mapping": "X=(glyphOffset+glyphX-totalAdvance/2)*scale; Z=topZ-glyphY*scale",
+          "material": "ink",
+          "note": "Authored handwritten-style vector completion; not recovered exact source letter contours"
+        }
+      ],
+      "authoredCompletions": [
+        "backing",
+        "support depth",
+        "frame dimensions",
+        "letter contours"
+      ],
+      "omissions": [
+        "glass",
+        "wall",
+        "hook",
+        "screw",
+        "easel",
+        "mat border"
+      ]
+    }
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "dimensionTolerance": 0.001,
+    "fixtureCount": 1,
+    "printCount": 1,
+    "bakedLighting": false
+  }
+}

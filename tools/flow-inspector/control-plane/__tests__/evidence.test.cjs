@@ -45,9 +45,9 @@ function result() {
     reportDigest: '3'.repeat(64),
     report: {
       success: true,
-      numTotalTests: 6,
+      numTotalTests: contract.cases.length,
       numFailedTests: 0,
-      numPassedTests: 6,
+      numPassedTests: contract.cases.length,
       testResults: [
         {
           name: path.join(snapshot.sourceRoot, contract.testFile),
@@ -63,10 +63,10 @@ function result() {
   }
 }
 const assess = (runner) => assessEvidence(contract, snapshot, runner, flowIds)
-test('accepts only the complete six-case baseline', () => {
+test('accepts only the complete registered baseline', () => {
   const evidence = assess(result())
   assert.equal(evidence.status, 'passed')
-  assert.equal(evidence.passedCount, 6)
+  assert.equal(evidence.passedCount, 9)
   assert.deepEqual(evidence.issues, [])
 })
 for (const [name, corrupt] of [
@@ -208,7 +208,7 @@ test('a zero-exit wrapper cannot conceal real assertion failures', () => {
   const runner = result()
   runner.report.testResults[0].assertionResults[0].status = 'failed'
   runner.report.numFailedTests = 1
-  runner.report.numPassedTests = 5
+  runner.report.numPassedTests = contract.cases.length - 1
   assert.equal(assess(runner).status, 'failed')
   assert.ok(
     assess(runner).issues.includes('Runner exit masked failed assertions')
@@ -219,7 +219,7 @@ test('attributes failed obligations while preserving the passing other flow', ()
   runner.code = 1
   runner.report.success = false
   runner.report.numFailedTests = 1
-  runner.report.numPassedTests = 5
+  runner.report.numPassedTests = contract.cases.length - 1
   runner.report.testResults[0].status = 'failed'
   runner.report.testResults[0].assertionResults[4].status = 'failed'
   const evidence = assess(runner)
@@ -1412,7 +1412,9 @@ test(
         'deferred.snapshot',
         'cancel.snapshot',
         'cancel.outcome',
-        'cancel.delivery'
+        'cancel.delivery',
+        'history-group.ordered-replay',
+        'history-group.snapshot'
       ])
       assert.notEqual(
         changed.captured.runtimeSource.digest,
@@ -1420,7 +1422,7 @@ test(
       )
       assert.deepEqual(
         changed.evidence.flows.map((flow) => flow.status),
-        ['failed', 'failed']
+        ['failed', 'failed', 'failed']
       )
     } finally {
       restore(factoryFile)

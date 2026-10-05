@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "centre of rear mounting disk",
+  "tolerance": 0.0002,
+  "object": {
+    "id": "wooden-wall-peg",
+    "axis": "-Y",
+    "profileDistanceRadius": [
+      [
+        0,
+        0.03
+      ],
+      [
+        0.012,
+        0.03
+      ],
+      [
+        0.012,
+        0.009
+      ],
+      [
+        0.045,
+        0.009
+      ],
+      [
+        0.045,
+        0.018
+      ],
+      [
+        0.055,
+        0.018
+      ]
+    ],
+    "angularSegments": 64,
+    "bounds": {
+      "min": [
+        -0.03,
+        -0.055,
+        -0.03
+      ],
+      "max": [
+        0.03,
+        0,
+        0.03
+      ]
+    },
+    "rearCapRadius": 0.03,
+    "frontCapRadius": 0.018
+  },
+  "construction": {
+    "oneClosedExterior": true,
+    "internalCaps": false,
+    "bevel": 0,
+    "subdivision": 0,
+    "outwardNormals": true,
+    "smoothCylinderNormals": true,
+    "flatAnnularFaces": true
+  },
+  "material": {
+    "baseColor": "#D5B587",
+    "roughness": 0.85,
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Numeric profile defines geometry; drawings are uncalibrated appearance references.",
+  "exclusions": [
+    "model",
+    "app implementation",
+    "wall",
+    "clothing",
+    "screws",
+    "drilled holes",
+    "load simulation"
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of bottom contact plane"
+  },
+  "source": "Authored supplementary designs, not identifiable source-image objects.",
+  "assets": [
+    {
+      "id": "sage-wastebasket",
+      "construction": {
+        "method": "revolve closed radius-z profile",
+        "profile": [
+          [
+            0,
+            0
+          ],
+          [
+            0.09,
+            0
+          ],
+          [
+            0.12,
+            0.28
+          ],
+          [
+            0.116,
+            0.28
+          ],
+          [
+            0.08664285714285715,
+            0.006
+          ],
+          [
+            0,
+            0.006
+          ]
+        ],
+        "segments": 96,
+        "shading": "smooth side surfaces; flat bottom, inner floor and rim",
+        "subdivision": false
+      },
+      "bounds": [
+        0.24,
+        0.24,
+        0.28
+      ],
+      "wallThickness": {
+        "radial": 0.004,
+        "normal": "not constant"
+      },
+      "baseThickness": 0.006,
+      "material": "sage",
+      "excluded": [
+        "liner",
+        "trash",
+        "lid",
+        "handles",
+        "pedal"
+      ]
+    },
+    {
+      "id": "ivory-tissue-box",
+      "construction": {
+        "outer": {
+          "method": "box with inward edge bevel",
+          "min": [
+            -0.11,
+            -0.06,
+            0
+          ],
+          "max": [
+            0.11,
+            0.06,
+            0.08
+          ],
+          "bevel": 0.003,
+          "bevelSegments": 4
+        },
+        "cavity": {
+          "method": "subtract box",
+          "min": [
+            -0.107,
+            -0.057,
+            0.003
+          ],
+          "max": [
+            0.107,
+            0.057,
+            0.077
+          ]
+        },
+        "opening": {
+          "method": "subtract capsule prism along Z",
+          "axis": "+X",
+          "totalLength": 0.12,
+          "width": 0.025,
+          "endCenterX": [
+            -0.0475,
+            0.0475
+          ],
+          "radius": 0.0125,
+          "yCenter": 0,
+          "zRange": [
+            0.076,
+            0.081
+          ],
+          "segmentsPerSemicircle": 48
+        },
+        "shading": "flat planes and smooth bevels",
+        "subdivision": false
+      },
+      "bounds": [
+        0.22,
+        0.12,
+        0.08
+      ],
+      "material": "ivory",
+      "excluded": [
+        "tissue",
+        "label",
+        "feet",
+        "lid seam",
+        "refill mechanism"
+      ]
+    }
+  ],
+  "materials": {
+    "sage": {
+      "baseColor": "#899B85",
+      "roughness": 0.85,
+      "metallic": 0
+    },
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.8,
+      "metallic": 0
+    }
+  },
+  "surfacePolicy": {
+    "uniformColors": true,
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "gradients": false,
+    "highlights": false,
+    "reflections": false,
+    "textureMaps": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0005,
+    "modelsProduced": false
+  }
+}

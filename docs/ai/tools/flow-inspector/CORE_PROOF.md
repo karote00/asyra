@@ -381,6 +381,15 @@ acceptance requirements.
 
 ### Accepted-base CI
 
+The repository's Flow Inspector validation job runs the control-plane tests,
+`prove`, and `candidate`. These check the candidate's complete registered
+behavior and negative scenarios; they do not authorize a new accepted baseline
+or emit protected-delivery evidence. Accepted-base admission remains a separate
+operation. Its `ci-trial` command requires the independently selected accepted
+policy to match, so it is not a general candidate self-test for changes to that
+policy. Integration tests use an isolated committed Git fixture to exercise
+accepted-base recovery without trusting the contributor checkout as its base.
+
 The aggregate must evaluate every obligation in the declared supported set,
 including previously completed flows. Candidate removal or gate weakening is
 compared with an independently selected accepted base. The candidate cannot

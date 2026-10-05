@@ -410,3 +410,14 @@ See:
 - `packages/render-engine.md`
 - `packages/render-engine-pixi.md`
 - `packages/feature-system.md`
+
+## Optional shared spatial foundation
+
+Preset also owns intentionally shared App defaults/foundations through the
+side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
+spatial descriptor admission, graphics/resource lifecycle and common instancing
+mechanisms extracted from Sim and FieldScope. CUSTOM composition selects this
+provider explicitly; default 2D composition remains unchanged. Apps own scene
+contents, lighting choices, domain validation, movement and interaction policy.
+This shared warehouse boundary does not transfer canonical runtime ownership
+from Core or introduce Office domain semantics into Framework.

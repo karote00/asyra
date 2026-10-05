@@ -38,12 +38,11 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
     runId: await progress.getAttribute('data-run-id'),
     progressText: await progress.textContent(),
     camera: 'default',
-    screenshot: 'analysis-progress.png',
+    screenshot: 'analysis-cancelled.png',
     pipeline:
       'ordinary experiment Feature, production worker, validated bounded progress, CUSTOM renderer'
   }
-  await progress.scrollIntoViewIfNeeded()
-  await page.screenshot({ path: info.outputPath('analysis-progress.png') })
+  // Cancel while the real worker is active; screenshot encoding can outlast it.
   await page
     .getByRole('button', { name: 'Cancel analysis', exact: true })
     .click()
@@ -54,6 +53,7 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${Number(depth?.match(/\d+/)?.[0]) + 1}`
   )
+  await page.screenshot({ path: info.outputPath('analysis-cancelled.png') })
   await info.attach('review-state.json', {
     contentType: 'application/json',
     body: JSON.stringify(state)

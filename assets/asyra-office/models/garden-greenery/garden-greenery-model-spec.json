@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of root at ground Z=0"
+  },
+  "source": "Original garden supplies palette and general silhouette. Exact leaf counts, positions and concealed stems are authored completions.",
+  "assets": [
+    {
+      "id": "low-leafy-shrub",
+      "construction": {
+        "stem": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0.39
+          ],
+          "radius": 0.007,
+          "segments": 24
+        },
+        "leafShape": {
+          "method": "ellipsoid",
+          "radii": [
+            0.025,
+            0.006,
+            0.07
+          ],
+          "longitudeSegments": 24,
+          "latitudeSegments": 12
+        },
+        "rings": [
+          {
+            "count": 10,
+            "radius": 0.11,
+            "height": 0.16,
+            "tiltDegrees": 55,
+            "startDegrees": 0
+          },
+          {
+            "count": 12,
+            "radius": 0.12,
+            "height": 0.24,
+            "tiltDegrees": 45,
+            "startDegrees": 15
+          },
+          {
+            "count": 8,
+            "radius": 0.06,
+            "height": 0.33,
+            "tiltDegrees": 25,
+            "startDegrees": 22.5
+          }
+        ],
+        "topLeaf": {
+          "center": [
+            0,
+            0,
+            0.39
+          ],
+          "tiltDegrees": 0
+        },
+        "branches": {
+          "radius": 0.0025,
+          "segments": 12,
+          "from": "[0,0,max(0,leafCenterZ-0.06)]",
+          "to": "leaf center"
+        },
+        "transforms": "ring angle a=start+360*i/count; center=[r*cos(a),r*sin(a),height]; leaf rotation=Rz(a)*Ry(tilt); top leaf identity",
+        "totalLeaves": 31
+      },
+      "height": 0.46,
+      "materials": {
+        "leaves": "olive",
+        "stemAndBranches": "wood"
+      }
+    },
+    {
+      "id": "ornamental-grass-tuft",
+      "construction": {
+        "blades": [
+          {
+            "angleDegrees": 0,
+            "height": 0.24,
+            "reach": 0.055
+          },
+          {
+            "angleDegrees": 51.428571,
+            "height": 0.2,
+            "reach": 0.08
+          },
+          {
+            "angleDegrees": 102.857143,
+            "height": 0.18,
+            "reach": 0.07
+          },
+          {
+            "angleDegrees": 154.285714,
+            "height": 0.22,
+            "reach": 0.06
+          },
+          {
+            "angleDegrees": 205.714286,
+            "height": 0.16,
+            "reach": 0.085
+          },
+          {
+            "angleDegrees": 257.142857,
+            "height": 0.21,
+            "reach": 0.07
+          },
+          {
+            "angleDegrees": 308.571429,
+            "height": 0.19,
+            "reach": 0.08
+          }
+        ],
+        "tSegments": 16,
+        "centerline": "C(t)=[d*t*t*cos(a),d*t*t*sin(a),h*t], t in [0,1]",
+        "fullWidth": "0.016*sin(pi*t)^0.7+0.004*(1-t)",
+        "fullThickness": "0.001*(1-t)",
+        "transverse": "T=[-sin(a),cos(a),0]",
+        "normal": "N=normalize([-h*cos(a),-h*sin(a),2*d*t])",
+        "sectionVertices": "C +/- (width/2)*T +/- (thickness/2)*N; join matching vertices; cap root; weld tip",
+        "totalBlades": 7
+      },
+      "height": 0.24,
+      "material": "olive"
+    }
+  ],
+  "materials": {
+    "olive": {
+      "baseColor": "#81945F",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "wood": {
+      "baseColor": "#8B6948",
+      "roughness": 0.9,
+      "metallic": 0
+    }
+  },
+  "construction": {
+    "closedSolids": true,
+    "subdivision": false,
+    "shading": "smooth curved foliage, flat stem caps",
+    "overlap": "intentional leaf/branch and blade-root intersections"
+  },
+  "lighting": {
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.001,
+    "modelsProduced": false
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "status": "user-authorized-reference-commit",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "Centre of each unit's bottom plane",
+  "material": {
+    "name": "charcoal-painted-metal",
+    "baseColorSRGB": "#383A38",
+    "metallic": 0.15,
+    "roughness": 0.8,
+    "opacity": 1,
+    "emission": 0,
+    "bakedLighting": false
+  },
+  "construction": {
+    "boxBevel": 0,
+    "sphereSegments": 48,
+    "sphereLatitudeIntervals": 24,
+    "joins": "Boolean union intersecting solids within each unit; retain separate post and panel assets",
+    "normals": "Flat box faces; smooth sphere"
+  },
+  "assets": [
+    {
+      "name": "park-railing-post",
+      "bounds": [
+        0.08,
+        0.08,
+        0.72
+      ],
+      "parts": [
+        {
+          "name": "shaft",
+          "primitive": "box",
+          "size": [
+            0.045,
+            0.045,
+            0.622
+          ],
+          "center": [
+            0,
+            0,
+            0.311
+          ]
+        },
+        {
+          "name": "collar",
+          "primitive": "box",
+          "size": [
+            0.08,
+            0.08,
+            0.032
+          ],
+          "center": [
+            0,
+            0,
+            0.636
+          ]
+        },
+        {
+          "name": "finial",
+          "primitive": "sphere",
+          "radius": 0.035,
+          "center": [
+            0,
+            0,
+            0.685
+          ]
+        }
+      ]
+    },
+    {
+      "name": "park-railing-panel",
+      "bounds": [
+        0.9,
+        0.025,
+        0.55
+      ],
+      "parts": [
+        {
+          "name": "lower-rail",
+          "primitive": "box",
+          "size": [
+            0.9,
+            0.025,
+            0.025
+          ],
+          "center": [
+            0,
+            0,
+            0.06
+          ]
+        },
+        {
+          "name": "upper-rail",
+          "primitive": "box",
+          "size": [
+            0.9,
+            0.025,
+            0.025
+          ],
+          "center": [
+            0,
+            0,
+            0.49
+          ]
+        },
+        {
+          "name": "picket-1",
+          "primitive": "box",
+          "size": [
+            0.018,
+            0.018,
+            0.55
+          ],
+          "center": [
+            -0.36,
+            0,
+            0.275
+          ]
+        },
+        {
+          "name": "picket-2",
+          "primitive": "box",
+          "size": [
+            0.018,
+            0.018,
+            0.55
+          ],
+          "center": [
+            -0.18,
+            0,
+            0.275
+          ]
+        },
+        {
+          "name": "picket-3",
+          "primitive": "box",
+          "size": [
+            0.018,
+            0.018,
+            0.55
+          ],
+          "center": [
+            0,
+            0,
+            0.275
+          ]
+        },
+        {
+          "name": "picket-4",
+          "primitive": "box",
+          "size": [
+            0.018,
+            0.018,
+            0.55
+          ],
+          "center": [
+            0.18,
+            0,
+            0.275
+          ]
+        },
+        {
+          "name": "picket-5",
+          "primitive": "box",
+          "size": [
+            0.018,
+            0.018,
+            0.55
+          ],
+          "center": [
+            0.36,
+            0,
+            0.275
+          ]
+        }
+      ]
+    }
+  ],
+  "referenceAssembly": {
+    "panelCenter": [
+      0,
+      0,
+      0.06
+    ],
+    "postCenters": [
+      [
+        -0.4725,
+        0,
+        0
+      ],
+      [
+        0.4725,
+        0,
+        0
+      ]
+    ],
+    "note": "Illustrative fit only, not a new combined asset or implemented placement behavior"
+  }
+}

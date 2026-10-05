@@ -1,0 +1,7 @@
+# Level Handrail Corner - Actual Prompt
+
+Built-in imagegen, one text-only generation call. Supplementary design, no image input or fallback CLI.
+
+```text
+Use case: stylized-concept. Technical multi-view sheet ONE 90-DEGREE LEVEL HANDRAIL CORNER - SINGLE UNIT, a plain horizontal L-shaped solid metal rail for a miniature office. White background, thin contour lines, FLAT UNIFORM charcoal #383A38 on all faces, NO lighting/shadows/gradients/AO/highlights/reflections/textures. One joined L with equal perpendicular arms, square section 0.04 x0.04m, overall footprint0.32 x0.32m and height0.04m. All corners sharp square, no bevel, curve, seams or fittings. Top-view L polygon in XY: (-0.02,-0.02),(0.30,-0.02),(0.30,0.02),(0.02,0.02),(0.02,0.30),(-0.02,0.30). Z0..0.04. TOP view shows long bar along bottom extending right, another up left, gap upper-right. BOTTOM view is mirrored left-right relative TOP: bar at bottom and upright at right. FRONT/RIGHT/BACK each silhouette horizontal rectangle0.32wide x0.04high, show edge lines where appropriate. THREE-QUARTER clearly shows horizontal L with equal legs. Six accurate English labels FRONT RIGHT BACK TOP BOTTOM THREE-QUARTER. Include small title and caption '0.32 x 0.32 x 0.04 m - Section 0.04 x 0.04 m'. No posts, floor, attached straight rails, environment or other objects. This single L is one asset shown from six views, not an assembly. No logo.
+```

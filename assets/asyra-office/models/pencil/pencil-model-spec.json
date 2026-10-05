@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "graphite tip apex",
+  "tolerance": 0.0001,
+  "object": {
+    "id": "sharpened-sage-pencil",
+    "length": 0.18,
+    "hexCircumradius": 0.0035,
+    "hexSides": 6,
+    "firstVertexAngleDegrees": 0,
+    "rings": [
+      {
+        "z": 0.006,
+        "r": 0.001
+      },
+      {
+        "z": 0.02,
+        "r": 0.0035
+      },
+      {
+        "z": 0.18,
+        "r": 0.0035
+      }
+    ],
+    "apex": [
+      0,
+      0,
+      0
+    ],
+    "coreRadius": 0.001,
+    "coreShape": "regular hexagon aligned with barrel"
+  },
+  "materials": {
+    "paint": {
+      "baseColor": "#8B9B7A",
+      "roughness": 0.85
+    },
+    "wood": {
+      "baseColor": "#D5B587",
+      "roughness": 0.85
+    },
+    "graphite": {
+      "baseColor": "#383A38",
+      "roughness": 0.85
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "construction": {
+    "closedExterior": true,
+    "bevel": 0,
+    "subdivision": 0,
+    "outwardNormals": true,
+    "flatFaceNormals": true
+  },
+  "authority": "Numeric ring geometry defines dimensions; sheets communicate appearance and are not calibrated projections.",
+  "exclusions": [
+    "models",
+    "app implementation",
+    "eraser",
+    "ferrule",
+    "holder",
+    "writing simulation",
+    "wear states"
+  ]
+}

@@ -1,0 +1,462 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no verified models",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "pot bottom centre at Z=0",
+    "azimuth": "degrees in XY from +X toward +Y"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "ceramic": {
+      "baseColorSRGB": "#E8DBC3",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "terracotta": {
+      "baseColorSRGB": "#B98059",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "soil": {
+      "baseColorSRGB": "#554432",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "leaf": {
+      "baseColorSRGB": "#718752",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "stem": {
+      "baseColorSRGB": "#526C3C",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "cactus": {
+      "baseColorSRGB": "#78865B",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "areole": {
+      "baseColorSRGB": "#D8D0AB",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "potted-leaf-plant",
+      "name": "Potted leaf plant - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-potted-leaf-plant-v1.png",
+      "nominalHeight": 0.32,
+      "potSize": [
+        0.14,
+        0.14,
+        0.12
+      ],
+      "crownApproximateSpan": 0.26,
+      "sourceLimit": "Central-office pale pots and broad leaves; exact six-leaf plant is a simplified authored completion",
+      "components": [
+        {
+          "partId": "pot",
+          "primitive": "closed-profile revolution",
+          "axis": "Z",
+          "profileRZ": [
+            [
+              0,
+              0
+            ],
+            [
+              0.047,
+              0
+            ],
+            [
+              0.05,
+              0.003
+            ],
+            [
+              0.064,
+              0.095
+            ],
+            [
+              0.07,
+              0.098
+            ],
+            [
+              0.07,
+              0.116
+            ],
+            [
+              0.069,
+              0.119
+            ],
+            [
+              0.066,
+              0.12
+            ],
+            [
+              0.063,
+              0.119
+            ],
+            [
+              0.062,
+              0.116
+            ],
+            [
+              0.06,
+              0.1
+            ],
+            [
+              0.044,
+              0.015
+            ],
+            [
+              0.042,
+              0.013
+            ],
+            [
+              0,
+              0.013
+            ]
+          ],
+          "closeProfile": true,
+          "radialSegments": 96,
+          "profileInterpolation": "straight segments",
+          "edgeBevel": 0.0008,
+          "bevelSegments": 3,
+          "material": "ceramic"
+        },
+        {
+          "partId": "soil",
+          "primitive": "cylinder",
+          "axis": "Z",
+          "radius": 0.0604,
+          "zMin": 0.085,
+          "zMax": 0.108,
+          "radialSegments": 96,
+          "material": "soil"
+        },
+        {
+          "partId": "stem",
+          "primitive": "tapered cylinder",
+          "axis": "Z",
+          "bottomRadius": 0.0035,
+          "topRadius": 0.002,
+          "zMin": 0.1,
+          "zMax": 0.29,
+          "radialSegments": 24,
+          "material": "stem"
+        },
+        {
+          "partId": "leaves",
+          "primitive": "six closed folded leaf patches",
+          "instances": [
+            {
+              "azimuthDegrees": 40,
+              "attachZ": 0.16,
+              "tipRadius": 0.13,
+              "tipZ": 0.21,
+              "width": 0.06
+            },
+            {
+              "azimuthDegrees": 220,
+              "attachZ": 0.16,
+              "tipRadius": 0.125,
+              "tipZ": 0.2,
+              "width": 0.06
+            },
+            {
+              "azimuthDegrees": 100,
+              "attachZ": 0.2,
+              "tipRadius": 0.105,
+              "tipZ": 0.27,
+              "width": 0.052
+            },
+            {
+              "azimuthDegrees": 280,
+              "attachZ": 0.2,
+              "tipRadius": 0.11,
+              "tipZ": 0.25,
+              "width": 0.052
+            },
+            {
+              "azimuthDegrees": 20,
+              "attachZ": 0.255,
+              "tipRadius": 0.07,
+              "tipZ": 0.32,
+              "width": 0.043
+            },
+            {
+              "azimuthDegrees": 200,
+              "attachZ": 0.255,
+              "tipRadius": 0.075,
+              "tipZ": 0.3,
+              "width": 0.043
+            }
+          ],
+          "leafStartRadius": 0.009,
+          "centrelineArch": 0.008,
+          "centralFold": 0.003,
+          "verticalThickness": 0.0006,
+          "lengthIntervals": 24,
+          "widthIntervals": 8,
+          "profileWidth": "width/2*sin(pi*t)^0.85",
+          "material": "leaf"
+        },
+        {
+          "partId": "petioles",
+          "primitive": "six cylinders between points",
+          "start": "(0,0,attachZ)",
+          "end": "(0.009*cos(azimuth),0.009*sin(azimuth),attachZ+0.005)",
+          "radius": 0.0015,
+          "radialSegments": 16,
+          "material": "stem"
+        }
+      ]
+    },
+    {
+      "moduleId": "potted-cactus",
+      "name": "Potted cactus - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-potted-cactus-v1.png",
+      "nominalHeight": 0.3,
+      "potSize": [
+        0.13,
+        0.13,
+        0.11
+      ],
+      "sourceLimit": "No clearly identifiable source cactus; new design in the central-office palette",
+      "components": [
+        {
+          "partId": "pot",
+          "primitive": "closed-profile revolution",
+          "axis": "Z",
+          "profileRZ": [
+            [
+              0,
+              0
+            ],
+            [
+              0.042,
+              0
+            ],
+            [
+              0.045,
+              0.003
+            ],
+            [
+              0.059,
+              0.09
+            ],
+            [
+              0.065,
+              0.092
+            ],
+            [
+              0.065,
+              0.106
+            ],
+            [
+              0.063,
+              0.11
+            ],
+            [
+              0.059,
+              0.11
+            ],
+            [
+              0.057,
+              0.106
+            ],
+            [
+              0.055,
+              0.09
+            ],
+            [
+              0.039,
+              0.014
+            ],
+            [
+              0.037,
+              0.012
+            ],
+            [
+              0,
+              0.012
+            ]
+          ],
+          "closeProfile": true,
+          "radialSegments": 96,
+          "profileInterpolation": "straight segments",
+          "edgeBevel": 0.0008,
+          "bevelSegments": 3,
+          "material": "terracotta"
+        },
+        {
+          "partId": "soil",
+          "primitive": "cylinder",
+          "axis": "Z",
+          "radius": 0.0555,
+          "zMin": 0.078,
+          "zMax": 0.098,
+          "radialSegments": 96,
+          "material": "soil"
+        },
+        {
+          "partId": "trunk",
+          "primitive": "eight-rib vertical tube with rounded top",
+          "zMin": 0.095,
+          "capStartZ": 0.274,
+          "topZ": 0.3,
+          "radialFunction": ".024+.002*cos(8*phi)",
+          "radialSegments": 96,
+          "capLatitudeIntervals": 16,
+          "capFormula": "X=R(phi)*cos(v)*cos(phi); Y=R(phi)*cos(v)*sin(phi); Z=0.274+0.026*sin(v), v=0..pi/2",
+          "material": "cactus"
+        },
+        {
+          "partId": "right-branch",
+          "primitive": "ribbed curved tube",
+          "cubicBezier": [
+            [
+              0.016,
+              0,
+              0.18
+            ],
+            [
+              0.055,
+              0,
+              0.18
+            ],
+            [
+              0.055,
+              0,
+              0.208
+            ],
+            [
+              0.055,
+              0,
+              0.23
+            ]
+          ],
+          "radius": 0.014,
+          "ribAmplitude": 0.0012,
+          "ribCount": 8,
+          "pathIntervals": 32,
+          "radialSegments": 48,
+          "terminalCap": "hemispherical in end tangent direction, axial radius equals tube radius",
+          "material": "cactus"
+        },
+        {
+          "partId": "left-branch",
+          "primitive": "ribbed curved tube",
+          "cubicBezier": [
+            [
+              -0.016,
+              0,
+              0.155
+            ],
+            [
+              -0.048,
+              0,
+              0.155
+            ],
+            [
+              -0.05,
+              0,
+              0.18
+            ],
+            [
+              -0.05,
+              0,
+              0.2
+            ]
+          ],
+          "radius": 0.012,
+          "ribAmplitude": 0.001,
+          "ribCount": 8,
+          "pathIntervals": 32,
+          "radialSegments": 48,
+          "terminalCap": "hemispherical in end tangent direction, axial radius equals tube radius",
+          "material": "cactus"
+        },
+        {
+          "partId": "areoles",
+          "primitive": "flat capsule colour masks on rib crests",
+          "phiDegrees": [
+            0,
+            45,
+            90,
+            135,
+            180,
+            225,
+            270,
+            315
+          ],
+          "trunkZ": [
+            0.135,
+            0.17,
+            0.205,
+            0.24,
+            0.265
+          ],
+          "branchPathFractions": [
+            0.45,
+            0.7,
+            0.9
+          ],
+          "length": 0.003,
+          "width": 0.0015,
+          "orientation": "along trunk or branch tangent",
+          "material": "areole",
+          "spineGeometry": false
+        }
+      ]
+    }
+  ],
+  "omissions": [
+    "saucers",
+    "drain holes",
+    "flowers",
+    "gravel",
+    "moss",
+    "external roots",
+    "sharp spines",
+    "tables",
+    "walls",
+    "scene lighting"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "nominalDimensionTolerance": 0.001,
+    "leafCount": 6,
+    "cactusTrunks": 1,
+    "cactusBranches": 2,
+    "noBakedLighting": true
+  }
+}

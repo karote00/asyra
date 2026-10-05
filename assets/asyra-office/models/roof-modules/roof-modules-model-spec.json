@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "bottom footprint centre",
+  "dimensionTolerance": 0.001,
+  "authority": "Numeric geometry overrides drawing scale; sheets are appearance references, not calibrated projections.",
+  "objects": [
+    {
+      "id": "flat-roof-slab",
+      "size": [
+        1,
+        1,
+        0.18
+      ],
+      "parts": [
+        {
+          "id": "slab",
+          "primitive": "closed-box",
+          "min": [
+            -0.5,
+            -0.5,
+            0
+          ],
+          "max": [
+            0.5,
+            0.5,
+            0.18
+          ],
+          "material": "stone"
+        }
+      ]
+    },
+    {
+      "id": "rooftop-parapet",
+      "size": [
+        1,
+        0.27,
+        0.65
+      ],
+      "parts": [
+        {
+          "id": "body",
+          "primitive": "closed-box",
+          "min": [
+            -0.5,
+            -0.135,
+            0
+          ],
+          "max": [
+            0.5,
+            0.135,
+            0.62
+          ],
+          "material": "plaster"
+        },
+        {
+          "id": "cap",
+          "primitive": "closed-box",
+          "min": [
+            -0.5,
+            -0.135,
+            0.62
+          ],
+          "max": [
+            0.5,
+            0.135,
+            0.65
+          ],
+          "material": "cream-cap"
+        }
+      ]
+    }
+  ],
+  "construction": {
+    "bevel": 0,
+    "subdivision": 0,
+    "holes": false,
+    "displacement": 0,
+    "normalMaps": false,
+    "closedParts": true,
+    "outwardNormals": true,
+    "flatFaceNormals": true,
+    "internalTouchingFaces": "Retain coincident closed body/cap faces; no visible gap or overlap volume.",
+    "lod": "Same box geometry at all distances; no authored LOD meshes in this handoff."
+  },
+  "materials": {
+    "stone": {
+      "baseColor": "#D6D0C1",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "plaster": {
+      "baseColor": "#E4D9C4",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    },
+    "cream-cap": {
+      "baseColor": "#EEE4D2",
+      "roughness": 0.87,
+      "metallic": 0,
+      "alpha": 1,
+      "emission": 0
+    }
+  },
+  "surface": "Uniform intrinsic colors on every face. No texture, lighting bake, AO, gradient, reflection or painted outline.",
+  "placementReferences": {
+    "slabNeighbourTranslations": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ]
+    ],
+    "parapetStraightNeighbourTranslation": [
+      1,
+      0,
+      0
+    ],
+    "parapetOnSlabOffsetZ": 0.18
+  },
+  "exclusions": [
+    "models",
+    "app implementation",
+    "assembly automation",
+    "corner pieces",
+    "roof openings",
+    "drains",
+    "stairs",
+    "structural simulation",
+    "runtime lights"
+  ]
+}

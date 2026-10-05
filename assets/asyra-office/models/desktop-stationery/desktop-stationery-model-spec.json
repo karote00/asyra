@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of bottom contact plane"
+  },
+  "source": "Supplementary authored desktop objects, not identifiable source-image reconstructions.",
+  "assets": [
+    {
+      "id": "ivory-pencil-cup",
+      "bounds": [
+        0.08,
+        0.08,
+        0.1
+      ],
+      "construction": {
+        "method": "closed radius-z profile revolution",
+        "profile": [
+          [
+            0,
+            0
+          ],
+          [
+            0.04,
+            0
+          ],
+          [
+            0.04,
+            0.1
+          ],
+          [
+            0.036,
+            0.1
+          ],
+          [
+            0.036,
+            0.006
+          ],
+          [
+            0,
+            0.006
+          ]
+        ],
+        "segments": 96,
+        "shading": "smooth cylindrical sides, flat bottom, inner floor and rim"
+      },
+      "material": "ivory",
+      "excluded": [
+        "contents",
+        "handle",
+        "lip bead",
+        "foot ring"
+      ]
+    },
+    {
+      "id": "closed-sage-notebook",
+      "bounds": [
+        0.15,
+        0.21,
+        0.014
+      ],
+      "parts": {
+        "lowerCover": {
+          "min": [
+            -0.075,
+            -0.105,
+            0
+          ],
+          "max": [
+            0.075,
+            0.105,
+            0.002
+          ],
+          "material": "sage"
+        },
+        "upperCover": {
+          "min": [
+            -0.075,
+            -0.105,
+            0.012
+          ],
+          "max": [
+            0.075,
+            0.105,
+            0.014
+          ],
+          "material": "sage"
+        },
+        "spine": {
+          "min": [
+            -0.075,
+            -0.105,
+            0.002
+          ],
+          "max": [
+            -0.072,
+            0.105,
+            0.012
+          ],
+          "material": "sage"
+        },
+        "pageBlock": {
+          "min": [
+            -0.072,
+            -0.102,
+            0.002
+          ],
+          "max": [
+            0.072,
+            0.102,
+            0.012
+          ],
+          "material": "ivory"
+        }
+      },
+      "construction": {
+        "method": "four closed boxes with shared contact planes",
+        "bevel": 0,
+        "subdivision": false,
+        "shading": "flat"
+      },
+      "state": "closed only",
+      "excluded": [
+        "page lines",
+        "text",
+        "binding rings",
+        "ribbon",
+        "elastic band",
+        "open state"
+      ]
+    }
+  ],
+  "materials": {
+    "ivory": {
+      "baseColor": "#EEE9DB",
+      "roughness": 0.85,
+      "metallic": 0
+    },
+    "sage": {
+      "baseColor": "#899B85",
+      "roughness": 0.85,
+      "metallic": 0
+    }
+  },
+  "surfacePolicy": {
+    "uniformColors": true,
+    "unlitReview": true,
+    "textures": false,
+    "shadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0002,
+    "modelsProduced": false
+  }
+}

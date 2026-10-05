@@ -1,0 +1,870 @@
+{
+  "specVersion": "2.0.0",
+  "status": "user approved commit on 2026-10-04; drawings and documents only",
+  "approval": {
+    "originalOfficeReference": "approved by user",
+    "newDrawings": "user approved commit on 2026-10-04",
+    "newDimensions": "fixed authoring proposal, not measured from image",
+    "modelVerification": "not performed"
+  },
+  "units": "metres",
+  "coordinateSystem": {
+    "up": "+Z",
+    "front": "-Y",
+    "dimensions": "X,Y,Z",
+    "origin": "bottom centre unless explicitly overridden",
+    "rotation": "degrees around +Z counterclockwise from +X"
+  },
+  "sourceAuthority": {
+    "primary": "review/approved-office-reference.jpg",
+    "door": "review/entry-door-reference.png",
+    "secondary": "neighbouring shop window only",
+    "newSheets": "review/*-v2.png, approved for commit",
+    "historical": "old PNG, orthoviews, BUILD_SCENE.py, .blend and GLBs are not current authority"
+  },
+  "unitRule": {
+    "wall": "one repeatable segment",
+    "floor": "one plank",
+    "partition": "one repeatable segment",
+    "stair": "one step",
+    "door": "one complete frame + narrow fixed panel + main leaf + handle assembly",
+    "window": "one framed four-pane window with sill",
+    "arrays": "app owns count, spacing, rotation and placement",
+    "receivingGeometry": "not included in door, window, floor or stair"
+  },
+  "lighting": {
+    "bakedShadows": false,
+    "bakedAO": false,
+    "bakedHighlights": false,
+    "lightObjects": false,
+    "emissionStrength": 0,
+    "owner": "future app scene"
+  },
+  "materials": {
+    "plaster": {
+      "baseColorSRGB": "#E4D9C4",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "cream-cap": {
+      "baseColorSRGB": "#EEE4D2",
+      "roughness": 0.87,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "oak": {
+      "baseColorSRGB": "#D5B587",
+      "roughness": 0.78,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "oak-light": {
+      "baseColorSRGB": "#DEC59F",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "oak-grain": {
+      "baseColorSRGB": "#BD986B",
+      "roughness": 0.82,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "door-wood": {
+      "baseColorSRGB": "#B96E2E",
+      "roughness": 0.78,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "door-frame": {
+      "baseColorSRGB": "#A9602B",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "stone": {
+      "baseColorSRGB": "#D6D0C1",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "iron": {
+      "baseColorSRGB": "#403C35",
+      "roughness": 0.58,
+      "metallic": 0.5,
+      "alpha": 1,
+      "emissionStrength": 0
+    },
+    "glass": {
+      "baseColorSRGB": "#ACBCC0",
+      "roughness": 0.4,
+      "metallic": 0,
+      "alpha": 1,
+      "emissionStrength": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "wall-segment",
+      "name": "Wall - single segment",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-wall-v2.png",
+      "components": [
+        {
+          "partId": "body",
+          "shape": "closed box",
+          "sizeMetres": [
+            1,
+            0.24,
+            2.42
+          ],
+          "centreMetres": [
+            0,
+            0,
+            1.21
+          ],
+          "material": "plaster",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "top-cap",
+          "shape": "closed box",
+          "sizeMetres": [
+            1,
+            0.27,
+            0.08
+          ],
+          "centreMetres": [
+            0,
+            0,
+            2.46
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        }
+      ],
+      "overallSizeMetres": [
+        1,
+        0.27,
+        2.5
+      ],
+      "joinPlanesXMetres": [
+        -0.5,
+        0.5
+      ],
+      "capOverhang": {
+        "X": 0,
+        "Y": 0.015
+      },
+      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; X ends closed and planar",
+      "excluded": [
+        "skirting",
+        "floor",
+        "decorations",
+        "wall opening"
+      ]
+    },
+    {
+      "moduleId": "floor-plank",
+      "name": "Floor - single plank",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-floor-v2.png",
+      "components": [
+        {
+          "partId": "plank",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.2,
+            0.18,
+            0.025
+          ],
+          "centreMetres": [
+            0,
+            0,
+            0.0125
+          ],
+          "material": "oak",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        }
+      ],
+      "overallSizeMetres": [
+        1.2,
+        0.18,
+        0.025
+      ],
+      "grainAxis": "X",
+      "connections": {
+        "endCentresMetres": [
+          [
+            -0.6,
+            0,
+            0
+          ],
+          [
+            0.6,
+            0,
+            0
+          ]
+        ],
+        "sideCentresMetres": [
+          [
+            0,
+            -0.09,
+            0
+          ],
+          [
+            0,
+            0.09,
+            0
+          ]
+        ],
+        "gap": "chosen by app"
+      },
+      "excluded": [
+        "base slab",
+        "multiple boards",
+        "tongue-and-groove",
+        "fixed stagger"
+      ],
+      "hiddenFace": "plain oak on underside, grain on visible top/long sides"
+    },
+    {
+      "moduleId": "partition-segment",
+      "name": "Partition - single segment",
+      "unitCount": 1,
+      "reviewDrawing": "review/03-partition-v2.png",
+      "components": [
+        {
+          "partId": "body",
+          "shape": "closed box",
+          "sizeMetres": [
+            2,
+            0.14,
+            1.29
+          ],
+          "centreMetres": [
+            0,
+            0,
+            0.645
+          ],
+          "material": "plaster",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "top-cap",
+          "shape": "closed box",
+          "sizeMetres": [
+            2,
+            0.17,
+            0.06
+          ],
+          "centreMetres": [
+            0,
+            0,
+            1.32
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        }
+      ],
+      "overallSizeMetres": [
+        2,
+        0.17,
+        1.35
+      ],
+      "joinPlanesXMetres": [
+        -1,
+        1
+      ],
+      "capOverhang": {
+        "X": 0,
+        "Y": 0.015
+      },
+      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; X ends closed and planar",
+      "excluded": [
+        "feet",
+        "wooden cap",
+        "floor",
+        "furniture"
+      ]
+    },
+    {
+      "moduleId": "stair-step",
+      "name": "Stair - single step",
+      "unitCount": 1,
+      "reviewDrawing": "review/04-stair-v2.png",
+      "components": [
+        {
+          "partId": "step",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.2,
+            0.3,
+            0.15
+          ],
+          "centreMetres": [
+            0,
+            0,
+            0.075
+          ],
+          "material": "stone",
+          "bevelMetres": 0.003,
+          "bevelSegments": 2
+        }
+      ],
+      "overallSizeMetres": [
+        1.2,
+        0.3,
+        0.15
+      ],
+      "travelAxis": "+Y",
+      "lowerFrontEdgeCentreMetres": [
+        0,
+        -0.15,
+        0
+      ],
+      "upperBackEdgeCentreMetres": [
+        0,
+        0.15,
+        0.15
+      ],
+      "assemblyRule": "app selects number and individual placement; illustrative equal-step translation (0,.30,.15), never stored as an array in this asset",
+      "support": "scene supplies foundation/support when elevated; no full flight or rails baked in",
+      "excluded": [
+        "railing",
+        "staircase array",
+        "landing",
+        "floor"
+      ]
+    },
+    {
+      "moduleId": "entry-door-set",
+      "name": "Door - complete two-part assembly",
+      "unitCount": 1,
+      "reviewDrawing": "review/05-door-v2.png",
+      "components": [
+        {
+          "partId": "jamb-left",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.06,
+            0.12,
+            2.1
+          ],
+          "centreMetres": [
+            -0.79,
+            0,
+            1.05
+          ],
+          "material": "door-frame",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "jamb-right",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.06,
+            0.12,
+            2.1
+          ],
+          "centreMetres": [
+            0.79,
+            0,
+            1.05
+          ],
+          "material": "door-frame",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "head",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.64,
+            0.12,
+            0.06
+          ],
+          "centreMetres": [
+            0,
+            0,
+            2.13
+          ],
+          "material": "door-frame",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "fixed-left-panel",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.6,
+            0.06,
+            2.064
+          ],
+          "centreMetres": [
+            -0.456,
+            0,
+            1.06
+          ],
+          "material": "door-wood",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "right-main-leaf",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.9,
+            0.06,
+            2.064
+          ],
+          "centreMetres": [
+            0.306,
+            0,
+            1.06
+          ],
+          "material": "door-wood",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "handle-backplate",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.038,
+            0.012,
+            0.2
+          ],
+          "centreMetres": [
+            0.683,
+            -0.036,
+            1.05
+          ],
+          "material": "iron",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "handle-stem",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.016,
+            0.03,
+            0.016
+          ],
+          "centreMetres": [
+            0.683,
+            -0.057,
+            1.07
+          ],
+          "material": "iron",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "handle-lever",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.105,
+            0.025,
+            0.022
+          ],
+          "centreMetres": [
+            0.6385,
+            -0.0735,
+            1.07
+          ],
+          "material": "iron",
+          "bevelMetres": 0.003,
+          "bevelSegments": 2
+        }
+      ],
+      "overallBoundsMetres": {
+        "min": [
+          -0.82,
+          -0.086,
+          0
+        ],
+        "max": [
+          0.82,
+          0.06,
+          2.16
+        ]
+      },
+      "openingClearSizeMetres": [
+        1.52,
+        2.1
+      ],
+      "fixedPanelWidthMetres": 0.6,
+      "mainLeafWidthMetres": 0.9,
+      "meetingGapMetres": 0.012,
+      "sideGapMetres": 0.004,
+      "bottomGapMetres": 0.028,
+      "topGapMetres": 0.008,
+      "face": "-Y",
+      "insetFields": {
+        "owner": "right-main-leaf",
+        "count": 2,
+        "centreXMetres": 0.306,
+        "outerWidthMetres": 0.6,
+        "borderWidthMetres": 0.025,
+        "fields": [
+          {
+            "centreZMetres": 0.61,
+            "outerHeightMetres": 0.62
+          },
+          {
+            "centreZMetres": 1.49,
+            "outerHeightMetres": 0.76
+          }
+        ],
+        "recessMetres": 0.006,
+        "rule": "remove inner field .55m wide; border flush to front Y=-.03, recess toward +Y to -.024; sloped transition width .006",
+        "material": "door-wood"
+      },
+      "rear": "flat same-color wood; no second handle or fields; frame remains through-depth",
+      "excluded": [
+        "surrounding plaster wall",
+        "floor",
+        "threshold",
+        "signage",
+        "glass",
+        "hinges",
+        "animation"
+      ],
+      "mounting": {
+        "roughOpeningSizeMetres": [
+          1.66,
+          2.17
+        ],
+        "wallDepth": "scene-owned; frame depth .12m independent of receiving wall",
+        "originDatum": "bottom middle of entire door set",
+        "voidOwner": "app creates wall opening, asset contains no wall",
+        "leftPanelInvariant": "same-color fixed panel belongs to complete door unit; do not replace with wall or omit"
+      }
+    },
+    {
+      "moduleId": "window-four-pane",
+      "name": "Window - single four-pane unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/06-window-v2.png",
+      "components": [
+        {
+          "partId": "jamb-left",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.08,
+            0.1,
+            1.2
+          ],
+          "centreMetres": [
+            -0.87,
+            0,
+            0.6
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "jamb-right",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.08,
+            0.1,
+            1.2
+          ],
+          "centreMetres": [
+            0.87,
+            0,
+            0.6
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "head",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.82,
+            0.1,
+            0.08
+          ],
+          "centreMetres": [
+            0,
+            0,
+            1.24
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "bottom-rail",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.66,
+            0.1,
+            0.08
+          ],
+          "centreMetres": [
+            0,
+            0,
+            0.04
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "vertical-mullion",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.06,
+            0.1,
+            1.12
+          ],
+          "centreMetres": [
+            0,
+            0,
+            0.64
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "horizontal-mullion-left",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.1,
+            0.06
+          ],
+          "centreMetres": [
+            -0.43,
+            0,
+            0.64
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "horizontal-mullion-right",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.1,
+            0.06
+          ],
+          "centreMetres": [
+            0.43,
+            0,
+            0.64
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.001,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "sill",
+          "shape": "closed box",
+          "sizeMetres": [
+            1.86,
+            0.18,
+            0.035
+          ],
+          "centreMetres": [
+            0,
+            -0.04,
+            -0.0175
+          ],
+          "material": "cream-cap",
+          "bevelMetres": 0.002,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "pane-0-0",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.008,
+            0.53
+          ],
+          "centreMetres": [
+            -0.43,
+            0,
+            0.345
+          ],
+          "material": "glass",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "pane-0-1",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.008,
+            0.53
+          ],
+          "centreMetres": [
+            0.43,
+            0,
+            0.345
+          ],
+          "material": "glass",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "pane-1-0",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.008,
+            0.53
+          ],
+          "centreMetres": [
+            -0.43,
+            0,
+            0.935
+          ],
+          "material": "glass",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        },
+        {
+          "partId": "pane-1-1",
+          "shape": "closed box",
+          "sizeMetres": [
+            0.8,
+            0.008,
+            0.53
+          ],
+          "centreMetres": [
+            0.43,
+            0,
+            0.935
+          ],
+          "material": "glass",
+          "bevelMetres": 0,
+          "bevelSegments": 2
+        }
+      ],
+      "origin": "bottom centre of rectangular frame; sill extends below local Z=0",
+      "frameOuterSizeMetres": [
+        1.82,
+        0.1,
+        1.28
+      ],
+      "overallBoundsMetres": {
+        "min": [
+          -0.93,
+          -0.13,
+          -0.035
+        ],
+        "max": [
+          0.93,
+          0.05,
+          1.28
+        ]
+      },
+      "glassPaneCount": 4,
+      "rear": "same four-pane geometry; opaque muted glass; no room backdrop",
+      "referencePriority": "secondary neighbouring shop only; not a new required feature of central office",
+      "mounting": {
+        "roughOpeningSizeMetres": [
+          1.84,
+          1.3
+        ],
+        "sillHeight": "app chooses placement; do not bake floor-height wall into unit",
+        "voidOwner": "app"
+      },
+      "excluded": [
+        "wall",
+        "curtains",
+        "shutters",
+        "painted reflections",
+        "room backdrop"
+      ]
+    }
+  ],
+  "materialRules": {
+    "space": "sRGB colors converted to linear before node assignment",
+    "conversion": "c/12.92 for c<=0.04045; ((c+0.055)/1.055)^2.4 otherwise, c=byte/255",
+    "glass": "opaque muted blue-grey style material; no reflections painted in albedo",
+    "default": "no normal map, displacement, AO, lights or glow",
+    "textureRecipe": "SURFACE-RECIPES.md",
+    "surfaceParameters": {
+      "plaster": {
+        "cellSizeMetres": 0.006,
+        "seed": 17,
+        "amplitude": 0.018
+      },
+      "stone": {
+        "cellSizeMetres": 0.009,
+        "seed": 29,
+        "amplitude": 0.022
+      },
+      "glassTransmission": 0,
+      "recipeAuthority": "SURFACE-RECIPES.md"
+    }
+  },
+  "verification": {
+    "status": "criteria only, no models built",
+    "dimensionsToleranceMetres": 0.001,
+    "viewDirectionsFromTarget": {
+      "front": [
+        0,
+        -1,
+        0
+      ],
+      "side": [
+        1,
+        0,
+        0
+      ],
+      "top": [
+        0,
+        0,
+        1
+      ],
+      "three-quarter": [
+        1,
+        -1,
+        0.8
+      ]
+    },
+    "orthographic": true,
+    "lighting": "unlit base-color review; no scene lights in component",
+    "backReview": "inspect hidden closure; door rear plain wood, window four panes",
+    "imageLimit": "generated sheets are appearance references, not calibrated projections; use numeric geometry to settle ambiguous views"
+  },
+  "deliverables": {
+    "componentDrawings": true,
+    "writtenSpecification": true,
+    "machineReadableDimensions": true,
+    "blenderSource": false,
+    "glb": false,
+    "appImplementation": false,
+    "commitNewArchitecture": true
+  }
+}

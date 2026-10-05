@@ -1,0 +1,1108 @@
+{
+  "specVersion": "1.0.0",
+  "status": "User approved drawings and documents for commit; no model verification",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "treeOrigin": "pot bottom centre",
+    "wallOrigin": "centre of pot rear bottom, wall at Y=0; vines extend below Z=0"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "terracotta": {
+      "baseColorSRGB": "#B98059",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "ceramic": {
+      "baseColorSRGB": "#E8DBC3",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "soil": {
+      "baseColorSRGB": "#554432",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "wood": {
+      "baseColorSRGB": "#805B3D",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "leaf": {
+      "baseColorSRGB": "#718752",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "leaf-light": {
+      "baseColorSRGB": "#87974F",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "vine": {
+      "baseColorSRGB": "#526C3C",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "mount": {
+      "baseColorSRGB": "#514B41",
+      "roughness": 0.95,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "potted-small-tree",
+      "name": "Potted small tree - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-potted-small-tree-v1.png",
+      "nominalSize": {
+        "potDiameter": 0.25,
+        "potHeight": 0.23,
+        "crownSpan": 0.4,
+        "totalHeightApprox": 0.71
+      },
+      "sourceLimit": "Central-office entrance planted greenery style; exact crown and support structure authored",
+      "components": [
+        {
+          "partId": "pot",
+          "primitive": "closed profile revolution",
+          "profileRZ": [
+            [
+              0.0,
+              0.0
+            ],
+            [
+              0.08076923076923077,
+              0.0
+            ],
+            [
+              0.08653846153846154,
+              0.006272727272727274
+            ],
+            [
+              0.11346153846153845,
+              0.18818181818181817
+            ],
+            [
+              0.125,
+              0.19236363636363638
+            ],
+            [
+              0.125,
+              0.22163636363636363
+            ],
+            [
+              0.12115384615384615,
+              0.22999999999999998
+            ],
+            [
+              0.11346153846153845,
+              0.22999999999999998
+            ],
+            [
+              0.10961538461538461,
+              0.22163636363636363
+            ],
+            [
+              0.10576923076923077,
+              0.18818181818181817
+            ],
+            [
+              0.075,
+              0.029272727272727273
+            ],
+            [
+              0.07115384615384615,
+              0.025090909090909094
+            ],
+            [
+              0.0,
+              0.025090909090909094
+            ]
+          ],
+          "radialSegments": 96,
+          "edgeBevel": 0.001,
+          "bevelSegments": 3,
+          "material": "terracotta"
+        },
+        {
+          "partId": "soil",
+          "primitive": "cylinder",
+          "radius": 0.106,
+          "zMin": 0.163,
+          "zMax": 0.205,
+          "radialSegments": 96,
+          "material": "soil"
+        },
+        {
+          "partId": "trunk",
+          "primitive": "cubic tapered tube",
+          "controlPoints": [
+            [
+              0,
+              0,
+              0.2
+            ],
+            [
+              -0.012,
+              0,
+              0.3
+            ],
+            [
+              0.01,
+              0,
+              0.37
+            ],
+            [
+              0,
+              0,
+              0.44
+            ]
+          ],
+          "radiusStart": 0.015,
+          "radiusEnd": 0.009,
+          "pathIntervals": 32,
+          "radialSegments": 24,
+          "material": "wood"
+        },
+        {
+          "partId": "branches",
+          "primitive": "three tapered straight tubes",
+          "startPoints": [
+            [
+              0,
+              0,
+              0.36
+            ],
+            [
+              0,
+              0,
+              0.39
+            ],
+            [
+              0,
+              0,
+              0.42
+            ]
+          ],
+          "endPoints": [
+            [
+              -0.075,
+              0,
+              0.51
+            ],
+            [
+              0.075,
+              0.015,
+              0.545
+            ],
+            [
+              0,
+              -0.035,
+              0.6
+            ]
+          ],
+          "radiusStart": 0.008,
+          "radiusEnd": 0.003,
+          "radialSegments": 24,
+          "material": "wood"
+        },
+        {
+          "partId": "leaves",
+          "primitive": "thirty oriented ellipsoids",
+          "instances": [
+            {
+              "cluster": 0,
+              "centre": [
+                -0.042308257923444954,
+                0.0,
+                0.5685
+              ],
+              "majorDirection": [
+                0.4358898943540673,
+                0.0,
+                0.9
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.11449400298013776,
+                0.03135577636907842,
+                0.5555
+              ],
+              "majorDirection": [
+                -0.5265867064018369,
+                0.48239655952428345,
+                0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.06932153272182742,
+                -0.056076112822312105,
+                0.5425
+              ],
+              "majorDirection": [
+                0.07571289704230098,
+                -0.8627094280355708,
+                0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.031468973764750816,
+                0.049208046251677275,
+                0.5295
+              ],
+              "majorDirection": [
+                0.5804136831366558,
+                0.7570468654104195,
+                0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.1484833160732809,
+                -0.011265075183406652,
+                0.5165
+              ],
+              "majorDirection": [
+                -0.9797775476437455,
+                -0.17330884897548696,
+                0.09999999999999998
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.012035556300106151,
+                -0.034712448756166206,
+                0.5035000000000001
+              ],
+              "majorDirection": [
+                0.8395259159985847,
+                -0.5340376731717877,
+                -0.10000000000000009
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.09357350388561832,
+                0.0598801754293595,
+                0.4905
+              ],
+              "majorDirection": [
+                -0.247646718474911,
+                0.9212334681439923,
+                -0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.10493678976621412,
+                -0.04995593731926393,
+                0.47750000000000004
+              ],
+              "majorDirection": [
+                -0.39915719688285506,
+                -0.7685528818348296,
+                -0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.024689281303346612,
+                0.015923607594348667,
+                0.4645
+              ],
+              "majorDirection": [
+                0.6708095826220452,
+                0.24497857837459489,
+                -0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 0,
+              "centre": [
+                -0.10521846641282429,
+                0.010810578073562943,
+                0.4515
+              ],
+              "majorDirection": [
+                -0.4029128855043238,
+                0.16631658574712221,
+                -0.8999999999999999
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.1033118791322653,
+                0.029166421566507186,
+                0.6035
+              ],
+              "majorDirection": [
+                0.37749172176353746,
+                0.2179449471770336,
+                0.9
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.02270731913990174,
+                0.02504083093294601,
+                0.5905
+              ],
+              "majorDirection": [
+                -0.6972357448013101,
+                0.15447432204532321,
+                0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.11226930046879005,
+                -0.03110266909572979,
+                0.5775
+              ],
+              "majorDirection": [
+                0.496924006250534,
+                -0.7092718322419967,
+                0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.0843097171196419,
+                0.07647886282649345,
+                0.5645
+              ],
+              "majorDirection": [
+                0.12412956159522544,
+                0.94582865886913,
+                0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.017860663362798096,
+                -0.026598611582793502,
+                0.5515
+              ],
+              "majorDirection": [
+                -0.7618578218293587,
+                -0.6399786397352846,
+                0.09999999999999998
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.14955522052320516,
+                0.012222729819548495,
+                0.5385
+              ],
+              "majorDirection": [
+                0.9940696069760689,
+                -0.04272723354540776,
+                -0.10000000000000009
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.024368618742365865,
+                0.058809234754459504,
+                0.5255000000000001
+              ],
+              "majorDirection": [
+                -0.6750850834351217,
+                0.6739882269916847,
+                -0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.07789471262351062,
+                -0.041235719687038444,
+                0.5125000000000001
+              ],
+              "majorDirection": [
+                0.03859616831347504,
+                -0.8651649182621298,
+                -0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.10938366378490727,
+                0.05059156013181721,
+                0.49950000000000006
+              ],
+              "majorDirection": [
+                0.4584488504654303,
+                0.5475624635664186,
+                -0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 1,
+              "centre": [
+                0.04259316845757027,
+                0.01126756646241004,
+                0.48650000000000004
+              ],
+              "majorDirection": [
+                -0.4320910872323964,
+                -0.05742205442446091,
+                -0.8999999999999999
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                0.016345871038277525,
+                -0.010463038085370073,
+                0.6585
+              ],
+              "majorDirection": [
+                0.2179449471770337,
+                0.3774917217635374,
+                0.9
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                -0.051079577133536995,
+                -0.04896454704300675,
+                0.6455
+              ],
+              "majorDirection": [
+                -0.68106102844716,
+                -0.21483918527702683,
+                0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                0.05887385469632233,
+                -0.05877605241602743,
+                0.6325
+              ],
+              "majorDirection": [
+                0.7849847292842977,
+                -0.36578542178503737,
+                0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                -0.027406123179935554,
+                0.022276467755366944,
+                0.6194999999999999
+              ],
+              "majorDirection": [
+                -0.36541497573247406,
+                0.8811764270056454,
+                0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                -0.02548491809313449,
+                -0.09578583360231496,
+                0.6064999999999999
+              ],
+              "majorDirection": [
+                -0.33979890790845985,
+                -0.9351666708048454,
+                0.09999999999999998
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                0.06616898621579938,
+                -0.005097924302721688,
+                0.5934999999999999
+              ],
+              "majorDirection": [
+                0.8822531495439917,
+                0.46003193380428176,
+                -0.10000000000000009
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                -0.06912262090999466,
+                -0.019000354993923472,
+                0.5805
+              ],
+              "majorDirection": [
+                -0.9216349454665954,
+                0.24614838470886968,
+                -0.30000000000000004
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                0.03495057910344554,
+                -0.08244718637888805,
+                0.5675
+              ],
+              "majorDirection": [
+                0.4660077213792739,
+                -0.7299567135213546,
+                -0.5
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                0.009243533929172038,
+                0.010722782874601607,
+                0.5545
+              ],
+              "majorDirection": [
+                0.12324711905562717,
+                0.7034274288400247,
+                -0.7
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf-light"
+            },
+            {
+              "cluster": 2,
+              "centre": [
+                -0.02591181233098972,
+                -0.0522753425965428,
+                0.5415
+              ],
+              "majorDirection": [
+                -0.34549083107986295,
+                -0.26577450148527376,
+                -0.8999999999999999
+              ],
+              "halfAxes": [
+                0.055,
+                0.023,
+                0.0015
+              ],
+              "material": "leaf"
+            }
+          ],
+          "longitudeSegments": 24,
+          "latitudeSegments": 12,
+          "referenceMinorAxis": "+Y projected perpendicular to major direction"
+        },
+        {
+          "partId": "petioles",
+          "primitive": "one capped tube per leaf from cluster centre to inner major-axis leaf tip",
+          "radius": 0.0012,
+          "radialSegments": 12,
+          "material": "vine"
+        }
+      ]
+    },
+    {
+      "moduleId": "wall-planter",
+      "name": "Wall trailing planter - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-wall-planter-v1.png",
+      "nominalSize": {
+        "potWidth": 0.2,
+        "potHeight": 0.16,
+        "potProjection": 0.11,
+        "assemblyEnvelope": [
+          0.25,
+          0.15,
+          0.44
+        ]
+      },
+      "sourceLimit": "Central-office light pots and foliage; flat-back mounting and three-vine layout are new authored completions",
+      "components": [
+        {
+          "partId": "bowl",
+          "primitive": "hollow quarter ellipsoid with flat rear",
+          "outerFormula": "X=0.10*sin(v)*cos(t); Y=-0.11*sin(v)*sin(t); Z=0.16-0.16*cos(v)",
+          "innerFormula": "X=0.092*sin(v)*cos(t); Y=-0.008-0.094*sin(v)*sin(t); Z=0.16-0.152*cos(v)",
+          "tRadians": [
+            0,
+            3.141592653589793
+          ],
+          "vRadians": [
+            0,
+            1.5707963267948966
+          ],
+          "angularIntervals": 64,
+          "heightIntervals": 32,
+          "edgeBevel": 0.001,
+          "bevelSegments": 3,
+          "rearPlaneY": 0,
+          "material": "ceramic"
+        },
+        {
+          "partId": "mount-recess",
+          "primitive": "keyhole-shaped blind cut into rear face",
+          "circleCentreXZ": [
+            0,
+            0.127
+          ],
+          "circleRadius": 0.006,
+          "slotX": [
+            -0.0025,
+            0.0025
+          ],
+          "slotZ": [
+            0.127,
+            0.145
+          ],
+          "cutDepth": 0.003,
+          "floorMaterial": "mount"
+        },
+        {
+          "partId": "soil",
+          "primitive": "D-shaped prism",
+          "halfWidth": 0.086,
+          "depth": 0.086,
+          "rearY": -0.009,
+          "zMin": 0.125,
+          "zMax": 0.143,
+          "angularIntervals": 64,
+          "material": "soil",
+          "cavityTrim": "Intersect lower volume with inner bowl; preserve declared top outline."
+        },
+        {
+          "partId": "vines",
+          "primitive": "three piecewise cubic tubes",
+          "paths": [
+            {
+              "id": "left",
+              "curves": [
+                [
+                  [
+                    -0.055,
+                    -0.05,
+                    0.145
+                  ],
+                  [
+                    -0.055,
+                    -0.09,
+                    0.2
+                  ],
+                  [
+                    -0.06,
+                    -0.12,
+                    0.165
+                  ],
+                  [
+                    -0.06,
+                    -0.12,
+                    0.1
+                  ]
+                ],
+                [
+                  [
+                    -0.06,
+                    -0.12,
+                    0.1
+                  ],
+                  [
+                    -0.08,
+                    -0.12,
+                    0
+                  ],
+                  [
+                    -0.06,
+                    -0.12,
+                    -0.12
+                  ],
+                  [
+                    -0.07,
+                    -0.12,
+                    -0.22
+                  ]
+                ]
+              ]
+            },
+            {
+              "id": "middle",
+              "curves": [
+                [
+                  [
+                    0,
+                    -0.065,
+                    0.145
+                  ],
+                  [
+                    0,
+                    -0.1,
+                    0.2
+                  ],
+                  [
+                    0.01,
+                    -0.125,
+                    0.165
+                  ],
+                  [
+                    0.01,
+                    -0.125,
+                    0.1
+                  ]
+                ],
+                [
+                  [
+                    0.01,
+                    -0.125,
+                    0.1
+                  ],
+                  [
+                    0.035,
+                    -0.125,
+                    0.025
+                  ],
+                  [
+                    -0.02,
+                    -0.125,
+                    -0.08
+                  ],
+                  [
+                    0,
+                    -0.125,
+                    -0.15
+                  ]
+                ]
+              ]
+            },
+            {
+              "id": "right",
+              "curves": [
+                [
+                  [
+                    0.055,
+                    -0.05,
+                    0.145
+                  ],
+                  [
+                    0.055,
+                    -0.09,
+                    0.2
+                  ],
+                  [
+                    0.06,
+                    -0.12,
+                    0.165
+                  ],
+                  [
+                    0.06,
+                    -0.12,
+                    0.1
+                  ]
+                ],
+                [
+                  [
+                    0.06,
+                    -0.12,
+                    0.1
+                  ],
+                  [
+                    0.08,
+                    -0.12,
+                    0.05
+                  ],
+                  [
+                    0.04,
+                    -0.12,
+                    -0.04
+                  ],
+                  [
+                    0.06,
+                    -0.12,
+                    -0.11
+                  ]
+                ]
+              ]
+            }
+          ],
+          "radius": 0.0015,
+          "intervalsPerCurve": 24,
+          "radialSegments": 12,
+          "material": "vine"
+        },
+        {
+          "partId": "trailing-leaves",
+          "primitive": "fifteen folded closed patches on second vine curves",
+          "curveParameters": [
+            0.12,
+            0.3,
+            0.48,
+            0.66,
+            0.84
+          ],
+          "length": 0.043,
+          "width": 0.026,
+          "halfThickness": 0.0004,
+          "centreFold": 0.002,
+          "attachment": "leaf base equals vine centreline point; alternate left/right on consecutive leaves, inverted phase on middle vine",
+          "direction": "normalized (side*0.65,0,-1)",
+          "material": "leaf",
+          "lengthIntervals": 16,
+          "widthIntervals": 8
+        },
+        {
+          "partId": "rim-leaves",
+          "primitive": "six folded closed patches on first vine curves",
+          "curveParameters": [
+            0.25,
+            0.55
+          ],
+          "length": 0.035,
+          "width": 0.024,
+          "halfThickness": 0.0004,
+          "centreFold": 0.002,
+          "direction": "normalize (side,0,0.35); side=-1 then +1 on each vine",
+          "material": "leaf",
+          "lengthIntervals": 16,
+          "widthIntervals": 8
+        }
+      ]
+    }
+  ],
+  "omissions": [
+    "saucers",
+    "external roots",
+    "flowers",
+    "fruit",
+    "wall slab",
+    "screws",
+    "ropes",
+    "chains",
+    "actual lights"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "potTolerance": 0.001,
+    "treeLeafCount": 30,
+    "vineCount": 3,
+    "trailingLeafCount": 15,
+    "noBakedLighting": true,
+    "rimLeafCount": 6
+  }
+}

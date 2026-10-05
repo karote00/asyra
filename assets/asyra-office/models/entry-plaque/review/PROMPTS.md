@@ -1,0 +1,7 @@
+# Entry Wall Plaque - Actual Prompt
+
+Built-in imagegen, using the user's door close-up as the appearance reference. Only the small plaque was requested. The two-bar simplification was explicit because original lettering is unreadable. No fallback CLI was used.
+
+```text
+Use case: stylized-concept. Six-view component reference sheet of ONLY the small blue-gray wall plaque beside the right side of the door in attached reference. No door/wall/chalkboard/plants. Preserve plain blue-gray rectangular plate with two short ivory marks on front. Authored completion because original lettering is unreadable: exactly TWO horizontal ivory rectangular bars, NOT readable words or invented logo. Plate widthX0.18m, thicknessY0.015m, heightZ0.20m, upright. Flat blue-gray #52677C, two centered ivory #EEE4D2 bars each width0.080m height0.016m; centres at Z0.125m andZ0.075m above bottom. All square corners, no bevel, frame, screws, holes or brackets. FRONT rectangle with two bars, BACK plain rectangle, RIGHT thin side rectangle, TOP/BOTTOM thin rectangles, THREE-QUARTER shows thin upright plate with same two painted flush bars. English labels FRONT RIGHT BACK TOP BOTTOM THREE-QUARTER. Title ENTRY WALL PLAQUE - SINGLE UNIT. Caption 0.18 x 0.015 x 0.20 m. White background, uniform FLAT intrinsic colors, thin contour lines only, NO shadows, shading, AO, gradients, highlights/reflections. No surrounding scene. Plate and painted marks are one unit. All unseen surfaces plain blue-gray.
+```

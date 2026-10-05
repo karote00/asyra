@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "status": "user-approved-reference-sheets",
+  "units": "metres",
+  "axes": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X"
+  },
+  "origin": "rear plane centre at front-valance bottom height",
+  "tolerance": 0.001,
+  "object": {
+    "id": "striped-shop-awning",
+    "size": [
+      2,
+      0.8,
+      0.42
+    ],
+    "extrusionX": [
+      -1,
+      1
+    ],
+    "yzPolygon": [
+      [
+        -0.8,
+        0
+      ],
+      [
+        -0.78,
+        0
+      ],
+      [
+        -0.78,
+        0.1075
+      ],
+      [
+        0,
+        0.4
+      ],
+      [
+        0,
+        0.42
+      ],
+      [
+        -0.8,
+        0.12
+      ]
+    ],
+    "rearPlaneY": 0,
+    "frontPlaneY": -0.8,
+    "canopyVerticalThickness": 0.02,
+    "valanceDepth": 0.02
+  },
+  "construction": {
+    "closedShell": true,
+    "filledSideWedge": false,
+    "bevel": 0,
+    "subdivision": 0,
+    "flatFaceNormals": true,
+    "outwardNormals": true
+  },
+  "stripes": {
+    "count": 8,
+    "width": 0.25,
+    "startX": -1,
+    "axis": "X",
+    "evenIndexMaterial": "blue",
+    "oddIndexMaterial": "ivory",
+    "surfaceRule": "same local-X mask on all faces; no mirrored underside mapping"
+  },
+  "materials": {
+    "blue": {
+      "baseColor": "#657B89",
+      "roughness": 0.9
+    },
+    "ivory": {
+      "baseColor": "#EEE4D2",
+      "roughness": 0.9
+    }
+  },
+  "sharedMaterial": {
+    "metallic": 0,
+    "alpha": 1,
+    "ior": 1.5,
+    "coat": 0,
+    "transmission": 0,
+    "subsurface": 0,
+    "anisotropy": 0,
+    "emission": 0,
+    "normalMap": false,
+    "displacement": 0
+  },
+  "authority": "Source image guides awning silhouette and color family; dimensions, stripe count and hidden construction are authored completions.",
+  "exclusions": [
+    "models",
+    "wall",
+    "shop sign",
+    "mounting hardware",
+    "cloth simulation",
+    "app implementation"
+  ]
+}

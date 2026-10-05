@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "status": "user-approved-reference",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "center of bottom contact plane"
+  },
+  "source": "Supplementary designs matching existing palette; not identified source-image objects.",
+  "assets": [
+    {
+      "id": "empty-rectangular-planter",
+      "bounds": [
+        0.6,
+        0.26,
+        0.24
+      ],
+      "construction": {
+        "outerBox": {
+          "min": [
+            -0.3,
+            -0.13,
+            0
+          ],
+          "max": [
+            0.3,
+            0.13,
+            0.24
+          ]
+        },
+        "subtractCavity": {
+          "min": [
+            -0.275,
+            -0.105,
+            0.025
+          ],
+          "max": [
+            0.275,
+            0.105,
+            0.241
+          ]
+        },
+        "bevel": 0
+      },
+      "material": "ivory-stone"
+    },
+    {
+      "id": "rectangular-soil-insert",
+      "bounds": [
+        0.546,
+        0.206,
+        0.19
+      ],
+      "construction": {
+        "box": {
+          "min": [
+            -0.273,
+            -0.103,
+            0
+          ],
+          "max": [
+            0.273,
+            0.103,
+            0.19
+          ]
+        },
+        "bevel": 0
+      },
+      "material": "soil"
+    }
+  ],
+  "assemblyReference": {
+    "soilOriginInPlanter": [
+      0,
+      0,
+      0.025
+    ],
+    "sideClearance": 0.002,
+    "soilTopZ": 0.215,
+    "rimClearance": 0.025,
+    "implemented": false
+  },
+  "materials": {
+    "ivory-stone": {
+      "baseColor": "#DDD5C3",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "soil": {
+      "baseColor": "#806449",
+      "speckleColor": "#70563F",
+      "roughness": 1,
+      "metallic": 0,
+      "recipe": "SURFACE-RECIPES.md"
+    }
+  },
+  "construction": {
+    "closedSolids": true,
+    "flatFaces": true,
+    "subdivision": false,
+    "excluded": [
+      "plant",
+      "drain hole",
+      "soil in planter asset",
+      "pot in soil asset",
+      "ground"
+    ]
+  },
+  "lighting": {
+    "unlitReview": true,
+    "bakedShadows": false,
+    "ao": false,
+    "highlights": false,
+    "reflections": false
+  },
+  "futureAcceptance": {
+    "dimensionTolerance": 0.0005,
+    "modelsProduced": false
+  }
+}
