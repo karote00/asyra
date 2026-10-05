@@ -69,6 +69,84 @@ const requiresVisualReview = (name: string) => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+// Paths address the registered schema, not an inferred argument shape. A partial
+// answer never becomes an alternate admission schema.
+const schemaValueAt = (schema: unknown, path: string): unknown => {
+  if (!path.startsWith('/') || /~(?![01])/u.test(path))
+    throw new LocalOperationPreparationError(`Invalid schema path: ${path}`)
+  let value = schema
+  for (const part of path.slice(1).split('/')) {
+    const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+    if (
+      (!isRecord(value) && !Array.isArray(value)) ||
+      !Object.hasOwn(value, key)
+    )
+      throw new LocalOperationPreparationError(
+        `Unknown schema path: ${path}. Request the full definition to inspect available paths.`
+      )
+    value = (value as Record<string, unknown>)[key]
+  }
+  return value
+}
+
+const schemaFragments = (schema: unknown, paths: string[]) => {
+  const fragments = [...new Set(paths)].map((path) => ({
+    path,
+    schema: schemaValueAt(schema, path)
+  }))
+  const references = new Map<string, unknown>()
+  const unresolved = new Set<string>()
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    if (!isRecord(value)) return
+    if (
+      typeof value.$ref === 'string' &&
+      !references.has(value.$ref) &&
+      !unresolved.has(value.$ref)
+    ) {
+      const ref = value.$ref
+      if (ref.startsWith('#/')) {
+        try {
+          const dependency = schemaValueAt(schema, ref.slice(1))
+          references.set(ref, dependency)
+          visit(dependency)
+        } catch (error) {
+          if (!(error instanceof LocalOperationPreparationError)) throw error
+          unresolved.add(ref)
+        }
+      } else unresolved.add(ref)
+    }
+    for (const child of Object.values(value)) visit(child)
+  }
+  for (const fragment of fragments) visit(fragment.schema)
+  return {
+    schemaFragments: fragments,
+    schemaReferences: Object.fromEntries(references),
+    ...(unresolved.size ? { unresolvedSchemaReferences: [...unresolved] } : {})
+  }
+}
+
+const inputFieldPaths = (schema: unknown, prefix = ''): string[] => {
+  if (!isRecord(schema)) return []
+  const fields = isRecord(schema.properties)
+    ? Object.keys(schema.properties).map(
+        (name) =>
+          `${prefix}/properties/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
+      )
+    : []
+  for (const mode of ['anyOf', 'oneOf', 'allOf']) {
+    const branches = schema[mode]
+    if (Array.isArray(branches))
+      branches.forEach((branch, index) =>
+        fields.push(...inputFieldPaths(branch, `${prefix}/${mode}/${index}`))
+      )
+  }
+  return fields
+}
+
 const inspectionStamp = (
   value: unknown
 ): InspectionEvidenceStamp | undefined =>
@@ -134,6 +212,57 @@ export const createLocalOperationTools = (
     admittedApiCategories.set(category, entries)
   }
   const returnedDefinitions = new Map<string, string>()
+  const deliverDefinition = (
+    identity: string,
+    descriptor: Record<string, unknown>,
+    reference: Record<string, unknown>,
+    args: Record<string, unknown>
+  ) => {
+    const { inputSchema, ...usage } = descriptor
+    const revision = createHash('sha256')
+      .update(JSON.stringify(descriptor))
+      .digest('hex')
+    const refresh = {
+      tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      arguments: { names: [identity], refresh: true }
+    }
+    if (args.view === 'usage' || Array.isArray(args.schemaPaths)) {
+      const projection =
+        args.view === 'usage'
+          ? { ...usage, inputFields: inputFieldPaths(inputSchema) }
+          : {
+              ...reference,
+              ...schemaFragments(inputSchema, args.schemaPaths as string[])
+            }
+      return {
+        ...projection,
+        definition: {
+          revision,
+          state: 'included',
+          coverage: args.view === 'usage' ? 'usage' : 'partial',
+          availableInResponse: true,
+          nextAction: 'use-response-or-request-full-contract',
+          refresh
+        }
+      }
+    }
+    const repeated =
+      args.refresh !== true && returnedDefinitions.get(identity) === revision
+    returnedDefinitions.set(identity, revision)
+    return {
+      ...(repeated ? reference : descriptor),
+      definition: {
+        revision,
+        state: repeated ? 'previously-returned' : 'included',
+        coverage: repeated ? 'reference' : 'full',
+        availableInResponse: !repeated,
+        nextAction: repeated
+          ? 'reuse-or-refresh-if-missing'
+          : 'use-current-response',
+        refresh
+      }
+    }
+  }
   const categoryChoices = [...admittedApiCategories.keys()]
   const lookupRecovery = `Available categories: ${categoryChoices.join(', ')}. Select one category for its admitted operation menu. Exact names may also identify native tools; use their returned execution route.`
   // Resolve lazily after the provider has assembled all native tool groups.
@@ -495,6 +624,19 @@ export const createLocalOperationTools = (
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  view: {
+                    type: 'string',
+                    enum: ['usage', 'full'],
+                    description:
+                      'Exact names/operation only. usage returns purpose, execution route and root schema field paths without the full schema; full is the default.'
+                  },
+                  schemaPaths: {
+                    type: 'array',
+                    minItems: 1,
+                    items: { type: 'string', pattern: '^/' },
+                    description:
+                      'Exact names/operation only. JSON Pointers into inputSchema, e.g. /properties/items/items. Returns exact fragments and local reference dependencies, not a complete validation schema. Cannot combine with view or refresh.'
+                  },
                   operation: {
                     type: 'string',
                     minLength: 1,
@@ -642,9 +784,26 @@ export const createLocalOperationTools = (
           Object.keys(args).some(
             (key) =>
               !selectors.includes(key) &&
-              !['includeSchemas', 'refresh'].includes(key)
+              !['includeSchemas', 'refresh', 'view', 'schemaPaths'].includes(
+                key
+              )
           ) ||
           (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
+          (args.view !== undefined &&
+            (typeof args.view !== 'string' ||
+              !['usage', 'full'].includes(args.view))) ||
+          (args.schemaPaths !== undefined &&
+            (!Array.isArray(args.schemaPaths) ||
+              !args.schemaPaths.length ||
+              args.schemaPaths.some(
+                (path) => typeof path !== 'string' || !path.startsWith('/')
+              ))) ||
+          (args.view !== undefined && args.schemaPaths !== undefined) ||
+          ((args.view !== undefined || args.schemaPaths !== undefined) &&
+            args.names === undefined &&
+            args.operation === undefined) ||
+          ((args.view === 'usage' || args.schemaPaths !== undefined) &&
+            args.refresh === true) ||
           (args.includeSchemas !== undefined &&
             (typeof args.includeSchemas !== 'boolean' ||
               args.category === undefined)) ||
@@ -659,7 +818,7 @@ export const createLocalOperationTools = (
               args.names.some((v) => typeof v !== 'string')))
         )
           throw new LocalOperationPreparationError(
-            'Provide one selector: operation, category, names or query; omit selectors for categories. includeSchemas must be a boolean used with category only.'
+            'Provide one selector: operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operation. Partial queries cannot combine with refresh or with each other.'
           )
         const apis = registered
         const details = (api: (typeof apis)[number], includeSchema = true) => {
@@ -678,31 +837,17 @@ export const createLocalOperationTools = (
           }
           const { inputSchema: _schema, ...menu } = descriptor
           if (!includeSchema) return menu
-          const revision = createHash('sha256')
-            .update(JSON.stringify(descriptor))
-            .digest('hex')
-          const repeated =
-            args.refresh !== true &&
-            returnedDefinitions.get(api.name) === revision
-          returnedDefinitions.set(api.name, revision)
-          return {
-            ...(repeated
-              ? {
-                  name: api.name,
-                  execution: descriptor.execution,
-                  operation: descriptor.operation,
-                  category: descriptor.category
-                }
-              : descriptor),
-            definition: {
-              revision,
-              state: repeated ? 'previously-returned' : 'included',
-              refresh: {
-                tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-                arguments: { names: [api.name], refresh: true }
-              }
-            }
-          }
+          return deliverDefinition(
+            api.name,
+            descriptor,
+            {
+              name: api.name,
+              execution: descriptor.execution,
+              operation: descriptor.operation,
+              category: descriptor.category
+            },
+            args
+          )
         }
         if (Array.isArray(args.names)) {
           const names = [...new Set(args.names as string[])]
@@ -719,30 +864,18 @@ export const createLocalOperationTools = (
             apis: selected.map((api) => details(api)),
             tools: tools.map((tool) => {
               const identity = `${tool.namespace}.${tool.name}`
-              const revision = createHash('sha256')
-                .update(JSON.stringify(tool))
-                .digest('hex')
-              const repeated =
-                args.refresh !== true &&
-                returnedDefinitions.get(`native:${identity}`) === revision
-              returnedDefinitions.set(`native:${identity}`, revision)
               return {
-                ...(repeated
-                  ? { name: tool.name, namespace: tool.namespace }
-                  : tool),
+                ...deliverDefinition(
+                  identity,
+                  { ...tool },
+                  { name: tool.name, namespace: tool.namespace },
+                  args
+                ),
                 schemaSource: 'registered-tool-contract',
                 execution: {
                   kind: 'native-tool',
                   namespace: tool.namespace,
                   tool: tool.name
-                },
-                definition: {
-                  revision,
-                  state: repeated ? 'previously-returned' : 'included',
-                  refresh: {
-                    tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-                    arguments: { names: [identity], refresh: true }
-                  }
                 }
               }
             }),

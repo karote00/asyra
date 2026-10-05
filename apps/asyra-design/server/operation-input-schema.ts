@@ -239,6 +239,19 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
 export const nativeToolInputSchema = (schema: unknown): unknown => {
   if (!record(schema)) return schema
   const result = { ...schema }
+  for (const key of ['required', 'enum', 'type'] as const) {
+    if (Array.isArray(result[key])) result[key] = [...new Set(result[key])]
+  }
+  // A compatible primitive const already expresses this enum. Keep incompatible
+  // enums: their contradiction must not become an admitted value.
+  if (
+    'const' in result &&
+    (result.const === null ||
+      ['string', 'number', 'boolean'].includes(typeof result.const)) &&
+    Array.isArray(result.enum) &&
+    result.enum.includes(result.const)
+  )
+    delete result.enum
   for (const key of ['properties', '$defs', 'definitions'] as const) {
     if (record(result[key]))
       result[key] = Object.fromEntries(
@@ -258,12 +271,18 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
       return {
         ...($defs ? { $defs } : {}),
         ...(definitions ? { definitions } : {}),
-        [mode]: branches.map((branch) =>
-          nativeToolInputSchema(intersectSchemas(common, branch))
+        [mode]: compactNativeAlternatives(
+          mode,
+          branches.map((branch) =>
+            nativeToolInputSchema(intersectSchemas(common, branch))
+          )
         )
       }
     }
-    result[mode] = branches.map(nativeToolInputSchema)
+    result[mode] = compactNativeAlternatives(
+      mode,
+      branches.map(nativeToolInputSchema)
+    )
   }
   // With a closed object, omission expresses a prohibited field correctly to
   // native declaration generators that otherwise render `false` as `string`.
@@ -277,4 +296,32 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
     )
   }
   return result
+}
+
+const compactNativeAlternatives = (
+  mode: string,
+  branches: unknown[]
+): unknown[] => {
+  // oneOf counts matching alternatives; even byte-identical branches matter.
+  if (mode === 'oneOf' || branches.some(hasReferenceValueConstraint))
+    return branches
+  return [
+    ...new Map(
+      branches.map((branch) => [JSON.stringify(branch), branch])
+    ).values()
+  ]
+}
+
+// Admission currently compares object-valued const/enum choices by identity.
+// Keep those alternatives intact even when their JSON text is identical.
+const hasReferenceValueConstraint = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.some(hasReferenceValueConstraint)
+  if (!record(value)) return false
+  if (value.const !== null && typeof value.const === 'object') return true
+  if (
+    Array.isArray(value.enum) &&
+    value.enum.some((choice) => choice !== null && typeof choice === 'object')
+  )
+    return true
+  return Object.values(value).some(hasReferenceValueConstraint)
 }

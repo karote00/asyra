@@ -36,6 +36,58 @@ import { createLocalToolScheduler } from '../local-tool-scheduler'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
+
+it('execution proof preserves partial lookup full recovery and declaration constraints', async () => {
+  const action = {
+    name: AiActionNames.ORGANIZE_DESIGN,
+    description: 'Arrange',
+    inputSchema: {
+      type: 'object',
+      required: ['elementIds'],
+      properties: {
+        elementIds: {
+          type: 'array',
+          uniqueItems: true,
+          items: { type: 'string' }
+        },
+        note: { type: 'string', description: 'Long usage detail. '.repeat(100) }
+      }
+    }
+  }
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [action],
+    { modelActions: (v) => v, resolveBatch: (v) => v },
+    execute
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+        args,
+        new AbortController().signal
+      )
+    ).apis[0]
+  const fragment = await read({
+    names: [action.name],
+    schemaPaths: ['/properties/elementIds']
+  })
+  expect(fragment.schemaFragments[0].schema).toEqual(
+    action.inputSchema.properties.elementIds
+  )
+  expect(fragment.definition.coverage).toBe('partial')
+  const full = await read({ names: [action.name] })
+  expect(full.inputSchema).toEqual(action.inputSchema)
+  const repeated = await read({ names: [action.name] })
+  expect(repeated.definition.availableInResponse).toBe(false)
+  expect(
+    (await read(repeated.definition.refresh.arguments)).inputSchema
+  ).toEqual(action.inputSchema)
+  expect(JSON.stringify(fragment).length).toBeLessThan(
+    JSON.stringify(full).length
+  )
+  expect(execute).not.toHaveBeenCalled()
+})
 vi.mock('../local-ai-records', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../local-ai-records')>()),
   createExecutionRecordSink: () => ({

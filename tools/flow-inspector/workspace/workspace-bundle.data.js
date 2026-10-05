@@ -189,6 +189,8 @@
               "Initial decisions need no execution or inspection receipt; later decisions consume only receipts actually produced",
               "Research missing information after reusing available evidence; batch independent gaps and emit retained coherent parts before completing detail planning",
               "Allow category-scoped schema retrieval in one call while keeping default discovery compact",
+              "Provide exact usage and schema-pointer fragments with local reference closure without consuming full-definition delivery; reject unknown paths recoverably and distinguish response coverage from prior delivery",
+              "Compact only equivalent redundant native constraints; preserve oneOf multiplicity, contradictions and common union fields",
               "Return full action definitions once per request and exact revision, then references with explicit refresh after context loss or delivery failure; compact menus do not consume delivery",
               "Distribute common union fields for native declarations without changing admission; exact native lookup returns canonical schemas and definitions once per request revision with explicit refresh when Code Mode abbreviates nested fields; never maintain a separate schema copy",
               "Apply the same isolation policy at child launch and thread creation: disable personal hooks, legacy notification commands and both multi-agent variants without modifying user configuration",

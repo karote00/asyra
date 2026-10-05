@@ -3384,6 +3384,148 @@ it('resolves mixed action and native names without discarding known matches or d
   expect(execute).not.toHaveBeenCalled()
 })
 
+it('retrieves usage and exact schema fragments without consuming full definition delivery', async () => {
+  const action = {
+    name: AiActionNames.ORGANIZE_DESIGN,
+    description: 'Arrange supplied elements.',
+    inputSchema: {
+      type: 'object',
+      required: ['rows'],
+      properties: {
+        rows: { type: 'array', items: { $ref: '#/$defs/row' } },
+        unrelated: {
+          description: 'Unrelated detail. '.repeat(300),
+          type: 'string'
+        }
+      },
+      $defs: {
+        row: { type: 'object', properties: { next: { $ref: '#/$defs/row' } } },
+        unused: { type: 'string' }
+      }
+    }
+  }
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute
+  )
+  const read = (args: unknown) =>
+    tools
+      .call('describe_design_apis', args, new AbortController().signal)
+      .then(JSON.parse)
+  const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
+  expect(usage.description).toBe(action.description)
+  expect(usage.inputSchema).toBeUndefined()
+  expect(usage.inputFields).toContain('/properties/rows')
+  expect(usage.definition.coverage).toBe('usage')
+  const partial = (
+    await read({
+      operation: action.name,
+      schemaPaths: ['/properties/rows/items']
+    })
+  ).apis[0]
+  expect(partial.schemaFragments).toEqual([
+    { path: '/properties/rows/items', schema: { $ref: '#/$defs/row' } }
+  ])
+  expect(partial.schemaReferences).toEqual({
+    '#/$defs/row': action.inputSchema.$defs.row
+  })
+  expect(partial.definition.coverage).toBe('partial')
+  expect(partial.inputSchema).toBeUndefined()
+  const full = (await read({ names: [action.name] })).apis[0]
+  expect(full.inputSchema).toEqual(action.inputSchema)
+  expect(full.definition).toMatchObject({
+    state: 'included',
+    coverage: 'full',
+    availableInResponse: true
+  })
+  const repeated = (await read({ names: [action.name] })).apis[0]
+  expect(repeated.definition).toMatchObject({
+    state: 'previously-returned',
+    coverage: 'reference',
+    availableInResponse: false
+  })
+  expect(repeated.definition.nextAction).toBe('reuse-or-refresh-if-missing')
+  expect(
+    (await read(repeated.definition.refresh.arguments)).apis[0].inputSchema
+  ).toEqual(action.inputSchema)
+  expect(JSON.stringify(partial).length).toBeLessThan(
+    JSON.stringify(full).length / 2
+  )
+  expect(JSON.stringify(usage).length).toBeLessThan(
+    JSON.stringify(full).length / 2
+  )
+  await expect(
+    read({ names: [action.name], schemaPaths: ['/properties/missing'] })
+  ).rejects.toThrow('Unknown schema path')
+  for (const query of [
+    { category: 'design', view: 'usage' },
+    { names: [action.name], view: ['usage'] },
+    { names: [action.name], schemaPaths: [] },
+    { names: [action.name], schemaPaths: ['properties/rows'] },
+    { names: [action.name], schemaPaths: ['/properties/rows'], view: 'usage' },
+    { names: [action.name], view: 'usage', refresh: true }
+  ])
+    await expect(read(query)).rejects.toThrow()
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('uses exact native schema paths with escaped names and keeps unknown paths recoverable', async () => {
+  const native = {
+    namespace: 'custom',
+    name: 'inspect_custom',
+    description: 'Custom input',
+    inputSchema: {
+      type: 'object',
+      properties: { 'a/b~c': { type: 'boolean' }, blocked: false }
+    }
+  }
+  const getNativeTools = vi.fn(() => [native])
+  const tools = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.ORGANIZE_DESIGN,
+        description: 'Arrange',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    vi.fn(),
+    { getNativeTools }
+  )
+  const read = (args: unknown) =>
+    tools
+      .call('describe_design_apis', args, new AbortController().signal)
+      .then(JSON.parse)
+  const partial = (
+    await read({
+      names: ['custom.inspect_custom'],
+      schemaPaths: ['/properties/a~1b~0c', '/properties/blocked']
+    })
+  ).tools[0]
+  expect(partial.schemaFragments).toEqual([
+    { path: '/properties/a~1b~0c', schema: { type: 'boolean' } },
+    { path: '/properties/blocked', schema: false }
+  ])
+  expect(partial.execution).toEqual({
+    kind: 'native-tool',
+    namespace: 'custom',
+    tool: 'inspect_custom'
+  })
+  await expect(
+    read({ names: ['custom.inspect_custom'], schemaPaths: ['/__proto__'] })
+  ).rejects.toThrow('Unknown schema path')
+  const full = (await read(partial.definition.refresh.arguments)).tools[0]
+  expect(full.inputSchema).toEqual(native.inputSchema)
+  expect(full.definition.state).toBe('included')
+  expect(
+    (await read({ names: ['custom.inspect_custom'], view: 'usage' })).tools[0]
+      .definition.coverage
+  ).toBe('usage')
+  expect(getNativeTools).toHaveBeenCalledOnce()
+})
+
 it('returns one action definition per request revision with explicit context recovery', async () => {
   const action = {
     name: AiActionNames.ORGANIZE_DESIGN,

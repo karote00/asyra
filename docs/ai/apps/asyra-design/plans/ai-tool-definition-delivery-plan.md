@@ -1,6 +1,6 @@
 # Tool definition delivery
 
-Status: implementation complete; final local and remote integration checks pending.
+Status: implementation and local validation complete; awaiting PR review.
 Base: `9a59296796b24fac51c5a3f048186a24c052a8b0` (PR #281 merged).
 Parent: [AI execution flow](ai-execution-flow-plan.md).
 
@@ -93,7 +93,11 @@ suite passed 283 tests (3 existing conditional skips); 98 retrieval/schema tests
 also pass after strict query-type and object-choice preservation corrections.
 Design full lint/build/test and shared checks passed. The generated Inspector
 bundle was synchronized after its catalog consistency gate detected the stale
-artifact. Remaining gates are the final routed validation and latest-head CI.
+artifact. Final routed local validation passed (shared, Design, Inspector, 14 collaboration
+E2E, 379 functional E2E and 3 render contracts; no flaky cases). Existing
+conditional skips and deliberate expected-failure cases remain explicit in the
+reports. Local evidence: `tmp/local-validation/601401f2-b316-4144-ae4a-3aa11e945b7b`.
+Remote CI and PR review remain separate delivery gates.
 
 The source-bound compose candidate is `48670b76-ca35-4f25-8fa2-85474cbe1775`.
 The unchanged main contract has its own retained preservation verifier
@@ -101,3 +105,8 @@ The unchanged main contract has its own retained preservation verifier
 Final reviewed target is `4ff56f4a-fe6f-43ea-a26c-d1e3c1876526`.
 Synthetic long-definition tests require usage/fragment replies below half the
 full reply size. This proves selective transmission, not a model latency gain.
+
+Actual registered `api_fill_updateFillsAtIndex` query replies measured 4,154
+UTF-8 bytes full, 1,524 usage, 685 for `/properties/elementIds`, and 528 for a
+prior-delivery reference. Source-bound target assessment
+`c9138565-b74c-4d8c-9ac1-a983516c5233` passed both new and retained obligations.
