@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.1.9",
+  "pluginVersion": "0.1.8",
   "inputs": {
     "apps/starter-app/docs/ARCHITECTURE.md": "ab6b259b417ebf36d7c37012aeaa5b522025746a818996088bd6dda43433cbb8",
     "apps/starter-app/docs/ONBOARDING.md": "4b26fcecca29027c2cba3a5756914b495019368459704f8756a8a43cb5618242",
@@ -12,16 +12,12 @@
     "docs/public/build/render-boundary.md": "8610eaa7d7e318f47327e2514ab0f9db021f539fe4ba220b5c5fa0baa394cf28",
     "docs/public/index.md": "163cc0659ef45a29ea7cf6b13fbcd4062b8e1e47a4b54a63c93f3435d2277650",
     "docs/public/learn/canonical-state.md": "c85a25e7c15df4a75f64794d0468e6d92050ef3b77f2f52083d3021121298012",
-    "docs/public/learn/intent-and-features.md": "c0a40a212c6d163a2aa8b406d89731814ee36888f0e59da0706cee52287a5b83",
-    "docs/public/learn/projection-registration-replacement.md": "1283cef149e402742780622fcb020d51509abf9499933597f90d8dbb60cee572",
-    "docs/public/learn/runtime-boundaries-roadmap.md": "026197c924a74417b984485dda6427376ba4b871f050ad970668b4a2f230aa37",
     "docs/public/learn/transactions-and-durability.md": "d47c6347b43489b2b77ee20fe939364a4922390e52f55b5b3ca30f82563641da",
-    "docs/public/reference/packages/ui-context.md": "2e62ac7870b5879adf014cc48887da26e1530abfa611b9effd97b53e5489aaf4",
     "docs/public/reference/support-release.md": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
-    "docs/public/start/custom-composition.md": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
-    "docs/public/start/extend-with-ai.md": "6f6a22e8c07df5f7129695a69c5f487919f81da3e31b1a1289f96abb2a35b0c1",
-    "docs/public/generated/package-reference.json": "f1e5f1e206bf07be9438c1f00e9e7d4ab77c7e271ece2c007c5dc5eb417677e5"
+    "docs/public/start/custom-composition.md": "2d2f0dbb4146904df01fa8aa65621e555a6913d9cc5548694e857bb7951d17cc",
+    "docs/public/start/extend-with-ai.md": "8719d5bdbd128dd9d1a74997b77e5be6b4086f04fb90f5c5e89f1ed03d141dbf",
+    "docs/public/generated/package-reference.json": "7dd0443c99dbb96b83d67d50c3429bc9350b74926ae0d685b9742773c2ec4fb1"
   },
   "referenceVersions": {
     "@asyra/ai-agent-runtime": "0.5.1",
@@ -45,13 +41,13 @@
     "@asyra/utils": "0.5.2"
   },
   "files": {
-    ".codex-plugin/plugin.json": "c027ab3ed71c70853d27584be32c42fd6e2008fe4b67e2a7f5cff0f01a78df89",
-    ".claude-plugin/plugin.json": "c2e3a7cd8b6c24d5ec8bca5873c99f37122192dc3239c3881fc45b463002ebe4",
-    "bundle.config.json": "6c27dfc7f2c027b3749ecd2eccc1b90381b0ee907d7967b96b2368c5d2c3229d",
-    "README.md": "f94bfae4d18cbea4830a1367af0f153be946945d7eb849880870dbcbedfa170f",
-    "CHANGELOG.md": "30180cf42783cf2abda9888239e43beff87605b680cb736e188bd62b7c56337e",
+    ".codex-plugin/plugin.json": "3c2fdb4e92c0a6d8475945fe68c372145227d20c4f1b75cdeb805e0a1537f448",
+    ".claude-plugin/plugin.json": "3bb0881aad36b66dcacf2756d0eed6b1d975f8b3bd35d9b9c43f87f034f22597",
+    "bundle.config.json": "ae82c3771a536eff6adce5490abde7716e5cd91e9e276ab2b0ba2e4d91c2c1ce",
+    "README.md": "dfee156311e9a8e8283fbb57745c935b441f8e592bf46dd4c26e99de7673cf60",
+    "CHANGELOG.md": "bd2d1b09405c8f88100973b2d3dbce8947b763139fa23844e866d5a249346f4e",
     "assets/icon.svg": "a7fd594de4944f6cc1daf3ef674efeb10a66e839084bebcbca0414591d96fb82",
-    "skills/asyra-agent/SKILL.md": "1d1bfc501b65dce49ad4f6e177ca8d8bd2b54ebae861fbd0a3241745f47f7b20",
+    "skills/asyra-agent/SKILL.md": "9eb9e3b20b13411a8abd17d5f0d0664efe2f8be79116f811f7d658514e6eba46",
     "skills/asyra-agent/references/apps/starter-app/docs/ARCHITECTURE.md": "02e64d33b75092dade4e7682c4ee08927371af45b402c100db95ccade5962244",
     "skills/asyra-agent/references/apps/starter-app/docs/ONBOARDING.md": "ed9e7222f984500c1b8926fed2630f2dcb794a92a75b767457e422abeda5a139",
     "skills/asyra-agent/references/docs/public/build/ai-actions.md": "c6fab72ef1e400809aa177c8ba0b42dce5c17a556314bb5f37106f210efc5a5f",
@@ -59,18 +55,14 @@
     "skills/asyra-agent/references/docs/public/build/custom-schema.md": "f7658e8c0565ac2bf53ff673e6cb5e0165d622a7070a36dfa62fd8bcf6b01510",
     "skills/asyra-agent/references/docs/public/build/feature-session.md": "be6c66e448ce5cea3c7909ccd9cf5b53a82bae7454b400af676e2961ceee0388",
     "skills/asyra-agent/references/docs/public/build/persistence-migration.md": "824ebde74098da8c7d9cef2d55d678e82e66d439d9801b372ad51c840a4f13fd",
-    "skills/asyra-agent/references/docs/public/build/render-boundary.md": "d2e60fb69da6927b3938e9e12133948d2960a13581fa3221b6ef6b655420cdd0",
-    "skills/asyra-agent/references/docs/public/index.md": "e4da8df16f2e2f2e78f6ab1fe46522cf4c62dcad4cbb17a2af629f899f443481",
+    "skills/asyra-agent/references/docs/public/build/render-boundary.md": "11a1e25d1d4e46189febdf119448f67c6329611bcbf418654fed6171ad0b1a2c",
+    "skills/asyra-agent/references/docs/public/index.md": "56a7c8c12f4c2b55e5cb75f0b47d267ebe85e44801f245bdb9a44fc1393aeb40",
     "skills/asyra-agent/references/docs/public/learn/canonical-state.md": "56d00885cf48d44342683b0458ab33b130882da5773495dba30d4129cc712320",
-    "skills/asyra-agent/references/docs/public/learn/intent-and-features.md": "0372d66820e20d85cd5ad4e795d152f0fb5a25d7f1a2b4265cb39733aac280a4",
-    "skills/asyra-agent/references/docs/public/learn/projection-registration-replacement.md": "2ab11f417be72c1182136c62072705d65fa2de01440c516f4963f3f41e0bdd62",
-    "skills/asyra-agent/references/docs/public/learn/runtime-boundaries-roadmap.md": "75970ae22ef015fcbec589bffe84e43a962eec6f556f31b41eedb8bf2b049b94",
     "skills/asyra-agent/references/docs/public/learn/transactions-and-durability.md": "39eeb87892f902cb7fada818aaa42f96c02847cb5fe735c4737b98cf8e21c34e",
-    "skills/asyra-agent/references/docs/public/reference/packages/ui-context.md": "ef4d3e27eb6fb1fd4e366f65b41b73d8e0d72ef6f8fdc9ff0914421bc8336f0d",
-    "skills/asyra-agent/references/docs/public/reference/support-release.md": "64309183bc32527ebc05b18d24235e33ff02373b363df7b6a0c991460165e091",
-    "skills/asyra-agent/references/docs/public/start/create-design-app.md": "b6dc00b4c1273bf2543122b5b1824f54ff7eff44ee3b03561243b58a2900a434",
-    "skills/asyra-agent/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
-    "skills/asyra-agent/references/docs/public/start/extend-with-ai.md": "2d0f79b2cde313b9a4a5c347b517835d8be086ea33806b40b6fe90ada1ea3fc7"
+    "skills/asyra-agent/references/docs/public/reference/support-release.md": "b8803f90c73570c2acbb21745911ab734b8d2aa421381654493e567bb7b90005",
+    "skills/asyra-agent/references/docs/public/start/create-design-app.md": "6db8168e500abd07ff6dfd7d32491268b0410b8dbaa3e168932f1cade8ba9944",
+    "skills/asyra-agent/references/docs/public/start/custom-composition.md": "33a1f049a6ec10242b806949ca61f365737f375a19e9ff431b167e6644d8989e",
+    "skills/asyra-agent/references/docs/public/start/extend-with-ai.md": "458fbee3b54b794fedb69f21f61d553a96ceb6b747812491baa43f904da6d42f"
   },
-  "contentDigest": "5dd46f745b642a3d6e7dc0f118b5d38c85132c69c24ba5f4de108a8453edefc6"
+  "contentDigest": "5ad8a2bc8fe1876787b6cd1a5353d0b3f4c91b797d99083b856ee95ba63c92f3"
 }

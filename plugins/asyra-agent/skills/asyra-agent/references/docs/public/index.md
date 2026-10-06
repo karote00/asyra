@@ -131,7 +131,7 @@ The initial release supports the current browser/Core composition and the
 official `2D` Preset profile. Production `3D`, `HYBRID`, auto layout,
 unit-aware aggregation, a public `createHeadlessCore()`, and an independent
 Core Kernel are not current capabilities. See
-<a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/runtime-boundaries-roadmap.md" target="_blank" rel="noopener noreferrer">Current runtime and future Core Kernel</a>
+[Current runtime and future Core Kernel](learn/runtime-boundaries-roadmap.md)
 for the researched direction and present boundary.
 
 Runtime Atlas lets you operate six current owner flows in the browser. Concepts

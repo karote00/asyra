@@ -10,21 +10,28 @@ The display name is **Asyra Skill**. The installation identifier remains
 `asyra-agent`, including commands, paths and marketplace entries. Existing
 Asyra Agent installations do not require an identity migration.
 
+For an existing product, describe what needs to improve and what must remain
+compatible. The Skill routes the host to a problem-to-capability guide covering
+updates, computation, data ownership, actions, persistence and lifecycle. It
+supports assessment before adoption, including recommendations to improve the
+current architecture without adding Asyra. Performance benefits require measured
+proof in your product; the Skill does not supply an automatic optimizer.
+
 ## Release status and support
 
-**0.1.8 is an unpublished local candidate.** These instructions describe its
-source. The merged 0.1.7 is the portable baseline; a GitHub source on `main` may
+**0.1.9 is an unpublished local candidate.** These instructions describe its
+source. The merged 0.1.8 is the portable baseline; a GitHub source on `main` may
 contain a different version from a release archive or this candidate. Verify
 `pluginVersion` after installing. Publication is a separate action.
 
-| Surface                                 | Delivery                              | What is established                                                                             |
-| --------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.8 loading and product trials pending                    |
-| Claude Code                             | Plugin or standalone Skill            | Shared packaging; fresh native trials pending                                                   |
-| Claude Desktop                          | Skill ZIP upload                      | Local 0.1.7 upload and reference loading observed; no complete product trial                    |
-| Grok Build CLI                          | Standalone Skill or compatible plugin | Local 0.1.7 plugin and reference loading observed; product trials pending, free quota exhausted |
-| General Grok chat, Cowork, API sessions | Host-specific capabilities            | Not validated here                                                                              |
-| Cursor and Antigravity                  | Future adapter if needed              | Phase two                                                                                       |
+| Surface                                 | Delivery                              | What is established                                                                                    |
+| --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.9 loading and product trials pending                           |
+| Claude Code                             | Plugin or standalone Skill            | Shared packaging; fresh native trials pending                                                          |
+| Claude Desktop                          | Skill ZIP upload                      | 0.1.7 loading observed; user reported GitHub-to-ZIP upload/loading of 0.1.8; no complete product trial |
+| Grok Build CLI                          | Standalone Skill or compatible plugin | Local 0.1.7 plugin and reference loading observed; product trials pending, free quota exhausted        |
+| General Grok chat, Cowork, API sessions | Host-specific capabilities            | Not validated here                                                                                     |
+| Cursor and Antigravity                  | Future adapter if needed              | Phase two                                                                                              |
 
 File validation proves packaging. Actual loading proves reference access. Only
 an observed product creation, fresh-conversation extension and executed checks
@@ -42,7 +49,7 @@ No maintainer worktree is required. Use a reviewed release ref when available;
 assuming the newest GitHub Release and `main` are identical. A source checkout
 contains the complete Skill at `plugins/asyra-agent/skills/asyra-agent`.
 
-For testing unpublished 0.1.8, use the local candidate checkout in the routes
+For testing unpublished 0.1.9, use the local candidate checkout in the routes
 below. Do not describe that private local path as a public installation source.
 
 ## Start with the same Skill everywhere
@@ -178,7 +185,7 @@ references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
 Skill files, not the Asyra development checkout. Do not modify files.
 ```
 
-Expect **0.1.8** for this candidate. `pluginVersion` remains the compatibility
+Expect **0.1.9** for this candidate. `pluginVersion` remains the compatibility
 field for the shared Skill version even in standalone installations. The record
 also contains the full plugin distribution inventory; entries outside the Skill
 subtree do not need to exist beside a standalone Skill. Its hashes detect drift,

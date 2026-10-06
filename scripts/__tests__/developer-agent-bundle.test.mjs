@@ -114,6 +114,42 @@ test('standalone consumers receive the complete maintained Starter architecture'
   assert.throws(() => checkBundle(root), /Stale bundle/)
 })
 
+test('capability decisions retain their public contracts in a relocated standalone Skill', () => {
+  const sources = [
+    'docs/public/reference/packages/ui-context.md',
+    'docs/public/learn/intent-and-features.md',
+    'docs/public/learn/projection-registration-replacement.md',
+    'docs/public/learn/runtime-boundaries-roadmap.md'
+  ]
+  const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))
+  for (const source of sources) assert.ok(documents.includes(source), source)
+  const root = fixture()
+  writeBundle(root)
+  exportSkill(root, 'consumer/asyra-agent')
+  const destination = path.join(root, 'consumer/asyra-agent')
+  fs.rmSync(path.join(root, PLUGIN), { recursive: true })
+  const record = inspectSkill(destination)
+  const guide = 'references/docs/public/start/extend-with-ai.md'
+  const links = [
+    ...read(destination, guide).matchAll(/\[[^\]\n]+\]\(([^\s)]+)\)/g)
+  ]
+  for (const source of sources) {
+    const expected = path.join(destination, 'references', source)
+    const localLink = links.some(
+      ([, href]) =>
+        !/^(https?:|#)/.test(href) &&
+        path.resolve(destination, path.dirname(guide), href.split('#')[0]) ===
+          expected
+    )
+    assert.ok(localLink, `Decision guide must reach ${source} offline`)
+    assert.ok(record.inputs[source])
+    assert.equal(
+      fs.readFileSync(expected, 'utf8'),
+      renderReference(source, read(ROOT, source), documents)
+    )
+  }
+})
+
 test('the guide allowlist rejects unrelated private App documents', () => {
   const root = fixture()
   const file = `${PLUGIN}/bundle.config.json`

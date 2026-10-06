@@ -211,3 +211,34 @@ owner/route/composition/proof discovery to the agent, including Implementation
 and Flow. The user-facing example contains only product needs and constraints.
 The page's discovery summary uses the same responsibility split. The bounded
 semantic review passes; this is document evidence, not a native model trial.
+
+## Capability assessment and optimization - 0.1.9
+
+These are exposed future acceptance cases, not executed results or independent
+holdouts. Use ordinary product requests with the installed Skill, record its
+version/digest and actual references read, and inspect recommendations against
+the project's source. Do not put the expected technical answer in the prompt.
+Run assessment-only cases without authorizing modifications. For implementation
+trials, obtain the user's scope and use permanent tests in the target project.
+
+| Product situation and natural request                                                                                  | Reviewer evidence and acceptable outcomes                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing non-Asyra inventory list: "Editing one row feels slow. Assess whether Asyra would help; do not change files." | Traces actual source reads, notifications and rendering before diagnosing. Compares narrowing the existing store subscriptions with selective adoption. Explains why adding UI properties alone does not share computation. No installation, rewrite or Asyra requirement merely because the list has editable fields. |
+| Import preview: "Preview is fast, but accepting a large import pauses again. Help me find a better design."            | Investigates repeated parsing/admission and commit preparation. Identifies producer, semantic inputs, lifetime and invalidation before proposing result reuse. Preserves trust-boundary validation. Any implementation compares work counts, changed inputs, correctness and memory/lifetime behavior.                 |
+| Existing Asyra scheduling App: "A bulk reschedule leaves partial changes when I cancel. Assess the safest approach."   | Inspects actual Feature/session/transaction contracts and installed API. Defines intended cancellation and history boundary, including side effects outside history. Does not assume every cancel rolls back or that one history commit removes per-item work.                                                         |
+| Existing editor adoption: "Can we use Asyra for editing while keeping our saved projects and existing UI?"             | Maps authoritative stores, IDs, saved formats, history and observation. Proposes a bounded cutover with one write authority, compatibility checks and viable rollback or accepted one-way migration. Does not invent a generic adapter that makes arbitrary old stores canonical in Core.                              |
+| Background processing service: "Could we run the whole Asyra Core in our Node worker?"                                 | Finds the runtime-boundary contract, checks installed public packages and identifies unsupported assumptions. Does not promise a published Headless Core or treat the roadmap as an available API. Separates a possible standalone package investigation from supported full-Core deployment.                          |
+| Search results page with measured network latency: "Would moving this to Asyra make the search faster?"                | Follows the evidence to network/backend behavior. May recommend keeping the existing architecture. Does not invent Asyra caching, database or network guarantees, or migrate state to justify using the Skill.                                                                                                         |
+
+Across cases, the recommendation must distinguish observations, hypotheses and
+unsupported contracts; name the relevant public guidance and its version limits;
+assign remaining duties to the App; and propose the smallest meaningful proof.
+A sensible no-adoption conclusion is a success. Missing measurements should
+produce a bounded investigation, not a performance guarantee. If a reference is
+unavailable offline, report that gap and source/version uncertainty rather than
+requiring a private maintainer checkout or guessing an API.
+
+For an authorized implementation, retain equivalent product behavior and data,
+then measure the first changed work owner plus downstream effects. Review actual
+invalidation and teardown, not just helper reuse, component count, build success
+or generated test count. Record host limitations and unexecuted checks explicitly.

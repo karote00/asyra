@@ -1,6 +1,6 @@
 {
   "name": "asyra-agent",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Build and extend products with Asyra using its public APIs, ownership patterns and formal verification. Includes versioned reference guides.",
   "author": {
     "name": "Asa Tsai"

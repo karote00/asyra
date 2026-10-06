@@ -141,8 +141,8 @@
       "wordCount": 682
     },
     {
-      "contentSha256": "8719d5bdbd128dd9d1a74997b77e5be6b4086f04fb90f5c5e89f1ed03d141dbf",
-      "description": "Describe product needs while the coding agent derives Asyra ownership, public API routes, and verification.",
+      "contentSha256": "6f6a22e8c07df5f7129695a69c5f487919f81da3e31b1a1289f96abb2a35b0c1",
+      "description": "Map product problems to Asyra capabilities, assess adoption costs and limits, and verify bounded improvements.",
       "headings": [
         {
           "depth": 1,
@@ -155,6 +155,50 @@
         {
           "depth": 2,
           "title": "Describe the product outcome"
+        },
+        {
+          "depth": 2,
+          "title": "Find capabilities from a product problem"
+        },
+        {
+          "depth": 3,
+          "title": "Localize updates"
+        },
+        {
+          "depth": 3,
+          "title": "Reuse computation"
+        },
+        {
+          "depth": 3,
+          "title": "Establish data authority"
+        },
+        {
+          "depth": 3,
+          "title": "Group intended actions"
+        },
+        {
+          "depth": 3,
+          "title": "Extend behavior"
+        },
+        {
+          "depth": 3,
+          "title": "Preserve durable meaning"
+        },
+        {
+          "depth": 3,
+          "title": "Bound runtime lifetime"
+        },
+        {
+          "depth": 3,
+          "title": "Check environment fit"
+        },
+        {
+          "depth": 2,
+          "title": "Assess an existing project before changing it"
+        },
+        {
+          "depth": 2,
+          "title": "Find deeper guidance without copying an app"
         },
         {
           "depth": 2,
@@ -206,7 +250,7 @@
       "path": "start/extend-with-ai.md",
       "section": "Extend",
       "title": "Extend Asyra with an AI coding agent",
-      "wordCount": 896
+      "wordCount": 2861
     },
     {
       "contentSha256": "556962323fbe71309c0e639fe71489fa926334c223c845d42642790749ea50cc",
@@ -265,7 +309,7 @@
       "wordCount": 476
     },
     {
-      "contentSha256": "2d2f0dbb4146904df01fa8aa65621e555a6913d9cc5548694e857bb7951d17cc",
+      "contentSha256": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
       "description": "Build a Core App with transaction publications, incremental persistence, scoped subscriptions, computation reuse and explicit lifecycle ownership.",
       "headings": [
         {
@@ -353,7 +397,7 @@
       "path": "start/custom-composition.md",
       "section": "Customize",
       "title": "Compose only the infrastructure you need",
-      "wordCount": 2763
+      "wordCount": 2785
     },
     {
       "contentSha256": "e636a8f65ffb1b0e0f5c1f40b5eca93e0e7833ad7224c61253ac570c20fa4621",

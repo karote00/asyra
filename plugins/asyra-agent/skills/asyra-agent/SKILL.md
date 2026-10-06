@@ -1,6 +1,6 @@
 ---
 name: asyra-agent
-description: Build or extend an Asyra product, turn a product idea into an Asyra App, or diagnose Asyra integration and ownership problems. Use for Asyra development requests; exclude unrelated development and operating the in-app AI chat.
+description: Build or extend an Asyra product, turn a product idea into an Asyra App, assess Asyra adoption or optimization in an existing project, or diagnose Asyra integration and ownership problems. Use for Asyra development and feasibility requests; exclude unrelated development and operating the in-app AI chat.
 ---
 
 # Asyra Skill
@@ -15,7 +15,8 @@ The host remains responsible for reasoning, execution and general product qualit
 ## Trigger Signals
 
 Use for creating an Asyra App, extending an existing Asyra project, integrating
-its public packages, or repairing an Asyra-specific behavior.
+its public packages, assessing whether Asyra fits an existing product problem,
+or repairing an Asyra-specific behavior.
 
 ## Do Not Use When
 
@@ -61,7 +62,13 @@ supply package names or an architecture design you can establish yourself.
 
 1. Translate the request into an observable product behavior. Identify what
    data must be saved, who can change it and the interactions to support.
-   State a short implementation plan and proceed within existing authorization.
+   Distinguish assessment from implementation. For feasibility, optimization or
+   adoption, start with the [problem-to-capability guide](references/docs/public/start/extend-with-ai.md#find-capabilities-from-a-product-problem).
+   Trace the actual cause, compare existing-architecture improvements with
+   selective Asyra adoption, and state benefits, costs, limits and missing proof.
+   An assessment-only request ends with recommendations; it does not authorize
+   installation or project changes. For implementation, state a short plan and
+   proceed within existing authorization.
    When a reference requests a bounded task contract, derive its technical
    owner, route and proof fields yourself; do not require the user to supply
    them before describing a product in ordinary language.
@@ -80,10 +87,15 @@ supply package names or an architecture design you can establish yourself.
    an older template. For a new product, include any required standard alignment
    in the plan and implement it using verified installed APIs. Do not assume
    that installing the newest Skill also updates the CLI or product packages.
-3. For existing work, first read the complete App architecture above and the
-   target's architecture guide, then trace the closest maintained Feature,
-   App common API,
-   schema and projection. Read only the relevant guides:
+3. For existing work, read the target's architecture and trace its actual data,
+   command, history, persistence and observation owners. An existing Asyra App
+   should also use the complete App architecture above to locate its maintained
+   Feature, common API, schema and projection. A non-Asyra project does not need
+   those structures just to be assessed: follow the decision guide's bounded
+   adoption and cutover rules, and read composition before implementing a chosen
+   Asyra slice. Preserve one write authority per concern; verify public package
+   dependencies and environment support before proposing a drop-in replacement.
+   Read only the relevant guides:
 
    | Need                                          | Guide                                                                                                                                   |
    | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -97,10 +109,10 @@ supply package names or an architecture design you can establish yourself.
 
 4. Assign each concern to Framework mechanics, optional Preset defaults,
    App domain or backend policy. Reuse the existing owner and supported public
-   API. Product intent enters a Feature, then the App/Core API and intended
-   transaction. Views read canonical data; incomplete UI drafts remain local.
-   Apply the whole-App boundaries below and consult the architecture guide for
-   their rationale. Preserve an existing product's owner contracts; do not turn
+   API. For document-changing intent in an Asyra Core composition, follow the
+   Feature, App/Core API and intended transaction route. Views read canonical data; incomplete UI drafts remain local.
+   For the Asyra-owned slice, apply the whole-App boundaries below and consult
+   the architecture guide for their rationale. Preserve an existing product's owner contracts; do not turn
    a feature request into an unrequested architecture migration.
 5. Implement a bounded behavior with its formal proof. For a bug, first confirm
    an existing test detects it, or add a permanent regression and demonstrate
@@ -135,6 +147,9 @@ checks and host capability limitations.
 
 ## Whole-App Standard
 
+These are Asyra composition boundaries, not a mandate to rewrite an unrelated
+product. Apply only the capabilities selected for the authorized scope.
+
 - Compose Core context, initialization, registered Features, common APIs,
   controllers, semantic providers/hooks, views and render layers as separate
   responsibilities. Expose readable named actions; avoid `runtime.feature.xxx`
@@ -160,6 +175,14 @@ checks and host capability limitations.
 
 ## Validation Matrix
 
+- Assessment: distinguish observed causes from hypotheses; identify the public
+  capability, App responsibilities, compatibility limits and smallest proof for
+  each recommendation. No adoption and unsupported outcomes are valid.
+- Optimization: compare equivalent behavior at representative data sizes; count
+  source computation and downstream notifications, including invalidation and
+  cleanup. Shared helpers or fewer React renders alone do not prove less work.
+- Adoption: preserve existing behavior, saved identities and one write authority;
+  verify the bounded cutover and rollback or explicitly accepted one-way path.
 - New App: supported composition starts and one meaningful product interaction
   crosses the intended canonical route; affected persistence/history works.
 - New App architecture: identify each owner in the delivered source, inspect
