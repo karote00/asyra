@@ -16,7 +16,7 @@ One horizontal segment: 0.30 x 0.04 x 0.04 m.
 
 ## Review scope
 
-Confirm the flat top, level rail, charcoal palette and single-unit boundaries. No stairs, floor, attached posts or ground shadows are included. These are appearance sheets; exact reconstruction uses the documented bounds.
+Confirm dimensions, the flat top, level rail and single-unit boundaries. Colour and material are replaceable defaults and are outside this geometry review. No stairs, floor, attached posts or ground shadows are included. These are appearance sheets; exact reconstruction uses the documented bounds.
 
 - [Geometry and connection reference](../GEOMETRY-SUPPLEMENT.md)
 - [Surface recipes](../SURFACE-RECIPES.md)
