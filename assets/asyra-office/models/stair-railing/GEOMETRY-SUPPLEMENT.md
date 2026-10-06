@@ -19,6 +19,46 @@ Origin is the centre of the bottom footprint. Extrude the following XZ polygon f
 
 Overall bounds: 0.04 x 0.04 x 0.91. Top plane is Z=0.90+0.5X. Bottom is horizontal. The post is solid, with no base plate, finial, collar, hardware or hollow core. The rear elevation's top descends toward screen-right; this was corrected in the selected image.
 
+### Top cut - explicit geometry
+
+The top plane does not depend on Y. Its four corners, in assembly-local metres,
+are listed below. These corner labels refer only to the top face; they do not
+replace the A-D labels in the construction polygon above.
+
+| Top corner | X | Y | Z |
+| --- | --- | --- | --- |
+| A - front left | -0.02 | -0.02 | 0.89 |
+| B - front right | 0.02 | -0.02 | 0.91 |
+| C - rear right | 0.02 | 0.02 | 0.91 |
+| D - rear left | -0.02 | 0.02 | 0.89 |
+
+- Join A-B-C-D as one planar rectangular face. Opposite edges are parallel;
+  adjacent edges are perpendicular in 3D. No corner collapses into another.
+- A and D have equal height; B and C have equal height. There is no slope
+  across Y, ridge, twist, separate cap or beveled top.
+- Slope along +X is 0.02/0.04=0.5; pitch is 26.5650511771 degrees.
+- Actual top-face edge lengths are sqrt(0.04^2+0.02^2), approximately
+  0.04472136 m uphill, and 0.04 m across Y. Its horizontal TOP projection is
+  nevertheless 0.04 x 0.04 m; do not use the inclined length as footprint width.
+- Face centre is (0, 0, 0.90). The front-edge midpoint (0, -0.02, 0.90) has
+  the same height but is a different point. Labels must distinguish them.
+- FRONT rises toward screen-right; BACK falls toward screen-right. RIGHT sees
+  a 0.04 x 0.91 m rectangular silhouette from the high end, which occludes the
+  lower top edge. A low-end LEFT view also has a full 0.91 m silhouette, but
+  its visible front face ends at 0.89 m and the top continues behind it.
+- An unobstructed oblique top detail must show all four corners. At an exactly
+  edge-on camera the whole planar face collapses to a line, not a triangle.
+  The TOP CUT DETAIL must use the same projection as the main THREE-QUARTER
+  view. Derive it by a direct crop and uniform enlargement; do not independently
+  redraw it or introduce a different camera.
+
+Review correction - 2026-10-06: the v2 TOP CUT DETAIL does not clearly show
+the fourth corner and is not geometry authority. The numeric polygon and plane
+remain unchanged. The v3 inset was also rejected for a mismatched projection.
+The v4 inset is a direct 3x enlargement of the main THREE-QUARTER top.
+Use the explicit coordinates for reconstruction and the matched inset for review.
+This clarification establishes document consistency, not mesh verification.
+
 ## Sloped handrail segment
 
 Origin is the midpoint of the bottom edge of its lower end: (0,0,0). This intentionally differs from the baluster's footprint-centre origin.
@@ -56,4 +96,4 @@ A rail segment contains no duplicate post. The example describes an interior joi
 
 ## Future model acceptance
 
-After model authorization, confirm polygon bounds within 0.0005 m, end-face directions, slope, origins, closed faces and intrinsic material. These simple solids need no alternate authored LOD mesh. Models and export checks remain a later stage.
+After model authorization, confirm polygon bounds within 0.0005 m, end-face directions, slope, origins and closed faces. Colours and materials are replaceable defaults under the shared asset review rule; they are outside this geometry acceptance. These simple solids need no alternate authored LOD mesh. Models and export checks remain a later stage.
