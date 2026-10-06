@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { selectTestImpact, requiresTestParser } from './test-impact.mjs'
 import { rootInputImpact } from './ci-input-impact.mjs'
 import { RELEASE_APPS } from './app-release-plan.mjs'
 import fs from 'node:fs'
@@ -680,6 +681,32 @@ function classifyChanges(
             inputs: [],
             reason: 'owner-input-or-runner-unresolved'
           }
+        const supervised = relationshipPolicy.supervisedTestOwners?.[directory]
+        let profileSelection
+        if (supervised) {
+          const impact = selectTestImpact(
+            options.repositoryRoot ?? process.cwd(),
+            directory,
+            !sharedOwnerInput && (e2eOnlyInputs || onlyDocumentation)
+              ? []
+              : ownerPaths,
+            sharedOwnerInput
+          )
+          profileSelection = {
+            files: impact.profiles,
+            reason: impact.reason,
+            command: supervised.profileCommand
+          }
+          if (impact.reason !== 'full-owner-input')
+            testSelection = {
+              mode: impact.ordinary.length ? 'files' : 'not-selected',
+              inputs: impact.ordinary,
+              reason: impact.reason,
+              ...(impact.ordinary.length
+                ? { runner: { command: supervised.task } }
+                : {})
+            }
+        }
         const e2eSelection = e2eOwnerSelection(
           { directory, e2eTask },
           ownerPaths,
@@ -716,6 +743,7 @@ function classifyChanges(
           testTask,
           hasTestTask,
           testSelection,
+          ...(profileSelection ? { profileSelection } : {}),
           e2eTask,
           e2eSelection,
           artifactId: crypto
@@ -726,6 +754,42 @@ function classifyChanges(
         }
       }
     )
+  // A workflow-only change must exercise the profile runner even without an app matrix owner.
+  const profileDirectory =
+    relationshipPolicy.fieldscopeProfilesWorkspaceDirectory
+  const fieldscopeProfileCommand =
+    relationshipPolicy.supervisedTestOwners[profileDirectory].profileCommand
+  const fieldscopeProfileFiles = changedPaths.includes(
+    '.github/workflows/fieldscope-profile.yml'
+  )
+    ? selectTestImpact(
+        options.repositoryRoot ?? process.cwd(),
+        profileDirectory,
+        [],
+        true
+      ).profiles
+    : (workspaceMatrix.find((w) => w.directory === profileDirectory)
+        ?.profileSelection?.files ?? [])
+  const fieldscopeProfileGroups = { heavy: [], source: [], remaining: [] }
+  if (fieldscopeProfileFiles.length) {
+    const inventory = JSON.parse(
+      execFileSync(
+        fieldscopeProfileCommand[0],
+        [...fieldscopeProfileCommand.slice(1), '--list'],
+        { cwd: options.repositoryRoot ?? process.cwd(), encoding: 'utf8' }
+      )
+    )
+    for (const group of Object.keys(fieldscopeProfileGroups))
+      fieldscopeProfileGroups[group] = inventory[group].filter((file) =>
+        fieldscopeProfileFiles.includes(file)
+      )
+    const assigned = Object.values(fieldscopeProfileGroups).flat().sort()
+    if (
+      JSON.stringify(assigned) !==
+      JSON.stringify([...fieldscopeProfileFiles].sort())
+    )
+      throw new Error('Profile selection is not exactly partitioned')
+  }
   const changedNames = [...changedWorkspaceNames].sort()
   const affectedNamesInHead = affectedWorkspaces.map(({ name }) => name)
   const frameworkPackages = affectedWorkspaces
@@ -1080,14 +1144,10 @@ function classifyChanges(
     affectedWorkspaceNames: affectedNamesInHead,
     workspaceMatrix,
     executionPlan,
-    fieldscopeProfilesRequired:
-      changedPaths.includes('.github/workflows/fieldscope-profile.yml') ||
-      workspaceMatrix.some(
-        ({ directory, testSelection }) =>
-          directory ===
-            relationshipPolicy.fieldscopeProfilesWorkspaceDirectory &&
-          testSelection.mode !== 'not-selected'
-      ),
+    fieldscopeProfileFiles,
+    fieldscopeProfileCommand,
+    fieldscopeProfileGroups,
+    fieldscopeProfilesRequired: fieldscopeProfileFiles.length > 0,
     sharedValidationRequired: true,
     frameworkReleaseRequired,
     createAppPackages: resolvedCreateAppPackages,
@@ -1135,6 +1195,18 @@ function main() {
   const head = process.env.CI_SCOPE_HEAD
   const diffBase = process.env.CI_SCOPE_DIFF_BASE ?? base
   const changedPaths = loadChangedPaths(diffBase, head)
+  if (process.argv.includes('--needs-parser')) {
+    process.stdout.write(
+      String(
+        process.env.CI_SCOPE_FULL_VALIDATION !== 'true' &&
+          requiresTestParser(
+            changedPaths,
+            Object.keys(relationshipPolicy.supervisedTestOwners)
+          )
+      )
+    )
+    return
+  }
   const classification = classifyChanges(
     changedPaths,
     readWorkspaceManifests(root),
@@ -1175,7 +1247,8 @@ function main() {
     )
     fs.appendFileSync(
       outputPath,
-      `fieldscope_profiles_required=${classification.relationshipMap.fieldscopeProfilesRequired}\n`
+      `fieldscope_profiles_required=${classification.relationshipMap.fieldscopeProfilesRequired}\n` +
+        `fieldscope_profile_groups=${JSON.stringify(classification.relationshipMap.fieldscopeProfileGroups)}\n`
     )
     fs.appendFileSync(
       outputPath,

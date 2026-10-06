@@ -25,6 +25,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
+      fieldscope_profile_groups: ${{ steps.scope.outputs.fieldscope_profile_groups }}
       fieldscope_profiles_required: ${{ steps.scope.outputs.fieldscope_profiles_required }}
       production_apps: ${{ steps.scope.outputs.production_apps }}
       workspace_matrix: ${{ steps.scope.outputs.workspace_matrix }}
@@ -44,6 +45,17 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+      - name: Check whether source parsing is needed
+        id: parser
+        env:
+          CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_SCOPE_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' }}
+        run: echo "required=$(node scripts/ci-scope.mjs --needs-parser)" >> "$GITHUB_OUTPUT"
+      - name: Install declared parser dependencies
+        if: steps.parser.outputs.required == 'true'
+        run: corepack enable && yarn install --immutable --mode=skip-builds
       - name: Classify changed workspaces and consumers
         id: scope
         env:
@@ -262,25 +274,28 @@ jobs:
           node tools/flow-inspector/control-plane/cli.cjs candidate
 
   fieldscope-profile-heavy:
-    if: ${{ always() && needs.scope.result == 'success' && (needs.workspace-validation.result == 'success' || needs.workspace-validation.result == 'skipped') && needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
-    needs: [scope, workspace-validation]
+    if: ${{ needs.scope.result == 'success' && toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).heavy) != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope]
     uses: ./.github/workflows/fieldscope-profile.yml
     with:
       group: heavy
+      files: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).heavy) }}
 
   fieldscope-profile-source:
-    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
-    needs: [scope, fieldscope-profile-heavy]
+    if: ${{ needs.scope.result == 'success' && toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).source) != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope]
     uses: ./.github/workflows/fieldscope-profile.yml
     with:
       group: source
+      files: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).source) }}
 
   fieldscope-profile-remaining:
-    if: ${{ needs.scope.outputs.fieldscope_profiles_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
-    needs: [scope, fieldscope-profile-source]
+    if: ${{ needs.scope.result == 'success' && toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope]
     uses: ./.github/workflows/fieldscope-profile.yml
     with:
       group: remaining
+      files: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) }}
 
   framework-release-readiness:
     if: ${{ always() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
@@ -384,6 +399,8 @@ jobs:
         workspace-validation,
         flow-inspector-validation,
         framework-release-readiness,
+        fieldscope-profile-heavy,
+        fieldscope-profile-source,
         fieldscope-profile-remaining,
         production-artifacts,
         design-e2e,
@@ -420,12 +437,24 @@ jobs:
         with:
           name: ci-selected-check-results
           path: .
-      - name: Require complete FieldScope profiles
+      - name: Require complete FieldScope heavy profiles
         env:
-          PROFILE_SELECTED: ${{ needs.scope.outputs.fieldscope_profiles_required }}
+          PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).heavy) }}
+          PROFILE_RESULT: ${{ needs.fieldscope-profile-heavy.result }}
+        run: |
+          if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
+      - name: Require complete FieldScope source profiles
+        env:
+          PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).source) }}
+          PROFILE_RESULT: ${{ needs.fieldscope-profile-source.result }}
+        run: |
+          if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
+      - name: Require complete FieldScope remaining profiles
+        env:
+          PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) }}
           PROFILE_RESULT: ${{ needs.fieldscope-profile-remaining.result }}
         run: |
-          if [ "$PROFILE_SELECTED" = true ]; then test "$PROFILE_RESULT" = success; else test "$PROFILE_SELECTED" = false && test "$PROFILE_RESULT" = skipped; fi
+          if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
       - name: Aggregate selected CI scope and completed flow results
         env:
           FLOW_RESULT_REPOSITORY: ${{ github.repository }}

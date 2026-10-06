@@ -127,6 +127,10 @@
     {
       "pattern": "docs/public/**",
       "workspaceDirectory": "apps/asyra-framework-site"
+    },
+    {
+      "pattern": ".github/workflows/fieldscope-profile.yml",
+      "workspaceDirectory": "apps/fieldscope"
     }
   ],
   "frameworkReleaseReadinessPaths": [
@@ -246,7 +250,8 @@
         "scripts/run-e2e.sh",
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
-        "docs/ai/workflows/local-affected-validation.md"
+        "docs/ai/workflows/local-affected-validation.md",
+        "scripts/test-impact.mjs"
       ],
       "tests": [
         "scripts/__tests__/ci-scope.test.mjs",
@@ -255,7 +260,8 @@
         "tools/flow-inspector/__tests__/package.test.cjs",
         "scripts/__tests__/release-automation.test.mjs",
         "scripts/__tests__/local-validation.test.mjs",
-        "scripts/__tests__/local-validation-runner.test.mjs"
+        "scripts/__tests__/local-validation-runner.test.mjs",
+        "scripts/__tests__/test-impact.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
     },
@@ -497,7 +503,8 @@
     "tools/flow-inspector/__tests__/package.test.cjs",
     "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
     "scripts/__tests__/local-validation.test.mjs",
-    "scripts/__tests__/local-validation-runner.test.mjs"
+    "scripts/__tests__/local-validation-runner.test.mjs",
+    "scripts/__tests__/test-impact.test.mjs"
   ],
   "contractOnlyInputs": [
     "tools/flow-inspector/control-plane/ci-script-selection.cjs",
@@ -518,5 +525,14 @@
     "docs/ai/**/references/**.webp",
     "docs/ai/**/references/**.svg",
     "docs/ai/**/references/**.pdf"
-  ]
+  ],
+  "supervisedTestOwners": {
+    "apps/fieldscope": {
+      "task": "test:affected",
+      "profileCommand": [
+        "python3",
+        "apps/fieldscope/scripts/run-profile-groups.py"
+      ]
+    }
+  }
 }

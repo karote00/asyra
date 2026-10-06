@@ -74,3 +74,26 @@ invalid refs, package/downstream selection parity, new workspaces, docs-only and
 shared inputs, missing E2E, failure/zero tests, cancellation and changed inputs.
 Preview the actual task changes and run that plan. Required task-specific gates
 remain required even when not selected by this general adapter.
+
+### Supervised owner selection
+
+Registered supervised owners in `scripts/ci-relationships.json` use one
+invocation-owned TypeScript syntax dependency graph. Ordinary and profile test
+files are discovered from the owner source tree, including nested tests. Relative
+imports, re-exports and literal dynamic imports propagate to transitive consumers;
+unresolved dynamic edges retain their consumer tests. Upstream workspaces,
+deletions, shared configuration and non-code resources retain complete owner
+coverage. The classifier never executes app modules or reuses a graph across
+source revisions. CI installs the declared parser dependency before classification only when a
+registered source path needs parsing; unrelated PRs retain pre-install selection.
+
+FieldScope's ordinary files run through `test:affected` and its existing
+supervisor. Profile selection is partitioned by the existing profile owner;
+CI runs nonempty groups on independent runners, while local validation consumes
+the same selected files sequentially. Each process remains single-worker for
+profiles with unchanged guards. Empty selections are explicit, never empty test
+invocations. Selected profile runs cannot claim full-suite coverage.
+
+Browser spec edits select exact specs within their existing process groups.
+Runtime changes keep the complete browser suite because browser-to-app feature
+relationships are not inferred from TypeScript imports.

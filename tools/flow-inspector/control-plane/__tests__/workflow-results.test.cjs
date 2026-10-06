@@ -1065,7 +1065,7 @@ test('workflow wires non-workspace owners to their concrete readiness producers'
   assert.match(main, /^ {2}validate:/m)
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(
     main,
@@ -1352,7 +1352,7 @@ test('workflow waits on reusable producers and always collects after failed test
   )
   assert.match(
     main,
-    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
+    /validate:\s*\n\s*needs:\s*(?:\[\s*)?scope,\s*shared-validation,\s*workspace-validation,\s*flow-inspector-validation,\s*framework-release-readiness,\s*fieldscope-profile-heavy,\s*fieldscope-profile-source,\s*fieldscope-profile-remaining,\s*production-artifacts,\s*design-e2e,\s*e2e-tests,\s*collaboration-e2e-tests(?:\s*\])?/
   )
   assert.match(main, /workflow-results\.cjs aggregate/)
   assert.doesNotMatch(main, /workflow-results\.cjs aggregate-scope/)
@@ -1857,4 +1857,27 @@ test('workflow validates candidate behavior without claiming accepted-base deliv
   )
   assert.doesNotMatch(job, /cli\.cjs ci(?:-trial)?(?:\s|$)/)
   assert.doesNotMatch(job, /FLOW_CI_BASE|FLOW_CI_ADMISSION/)
+})
+
+test('exact supervised file selections require the same executed files at aggregation', () => {
+  const entry = workspaceEntry(
+    '@asyra/fieldscope',
+    'apps/fieldscope',
+    'react:build'
+  )
+  entry.testSelection = {
+    mode: 'files',
+    inputs: ['src/ui/__tests__/workbench.test.tsx'],
+    reason: 'source-graph',
+    runner: { command: 'test:affected' }
+  }
+  const scope = makeScope({ workspaceMatrix: [entry], e2eSuites: [] })
+  const record = workspaceResult(entry, scope)
+  const result = assess([], { workspaceResults: [record] }, scope)
+  assert.equal(result.status, 'passed', JSON.stringify(result.blockers))
+  record.testResult.inputs = []
+  assert.notEqual(
+    assess([], { workspaceResults: [record] }, scope).status,
+    'passed'
+  )
 })

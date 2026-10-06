@@ -219,21 +219,31 @@ def group_summary(name, files, receipt):
     return summary
 
 
-def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None, group=None):
+def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None, group=None, selected_files=None):
     if group is not None and group not in ("heavy", "source", "remaining"):
         raise ValueError("Unknown profile group")
     groups = discover_profile_groups(app)
+    selected = groups[group] if group is not None else groups["all"]
+    if selected_files is not None:
+        if (not isinstance(selected_files, list) or not selected_files
+                or any(not isinstance(item, str) for item in selected_files)
+                or len(set(selected_files)) != len(selected_files)
+                or not set(selected_files).issubset(set(selected))):
+            raise RuntimeError("Selected profiles must be unique existing files in the requested group")
+        selected = sorted(selected_files)
     selection = {
-        "kind": "profile-group" if group is not None else "profile-suite",
-        "coverage": "filtered-profiles" if group is not None else "profiles",
-        "files": groups[group] if group is not None else groups["all"],
+        "kind": "selected-profile-files" if selected_files is not None else ("profile-group" if group is not None else "profile-suite"),
+        "coverage": "filtered-profiles" if group is not None or selected_files is not None else "profiles",
+        "files": selected,
         "title": None,
     }
     completed = []
     for name in ("heavy", "source", "remaining"):
         if group is not None and name != group:
             continue
-        files = groups[name]
+        files = [file for file in groups[name] if file in selected]
+        if not files:
+            continue
         receipt = run_supervisor(app, supervisor, files, environment)
         completed.append(group_summary(name, files, receipt))
         if not complete_receipt(receipt, files):
@@ -247,7 +257,7 @@ def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None, group=N
             }
     return {
         "outcome": "passed",
-        "completion": "profile-group-complete" if group is not None else "profile-suite-complete",
+        "completion": "profile-selection-complete" if selected_files is not None else ("profile-group-complete" if group is not None else "profile-suite-complete"),
         "error": None,
         "selection": selection,
         "groups": completed,
@@ -257,9 +267,14 @@ def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None, group=N
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--group", choices=("heavy", "source", "remaining"))
+    parser.add_argument("--file", action="append", dest="files")
+    parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
+    if args.list:
+        print(json.dumps(discover_profile_groups()))
+        return 0
     try:
-        result = run_profile_groups(group=args.group)
+        result = run_profile_groups(group=args.group, selected_files=args.files)
     except ProfileGroupInterrupted as error:
         print(json.dumps({
             "outcome": "failed",

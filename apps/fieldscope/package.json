@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 node scripts/run-e2e-ci.mjs",
     "test:e2e:contracts": "node --test scripts/__tests__/e2e-ci-groups.test.mjs",
-    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e scripts *.ts *.mjs"
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e scripts *.ts *.mjs",
+    "test:affected": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py"
   },
   "dependencies": {
     "@asyra/core": "workspace:*",

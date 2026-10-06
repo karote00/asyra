@@ -7,6 +7,7 @@ import { createRequire } from 'node:module'
 
 import {
   CI_E2E_GROUPS,
+  selectBrowserGroups,
   collectBrowserSpecFiles,
   mergePlaywrightReports
 } from './e2e-ci-groups.mjs'
@@ -60,7 +61,9 @@ function runPlaywright(command, environment) {
 
 const groupRuns = []
 const failedGroups = []
-for (const [index, group] of CI_E2E_GROUPS.entries()) {
+for (const [index, group] of selectBrowserGroups(
+  process.argv.slice(2)
+).entries()) {
   const remainingTimeout = totalTimeoutMs - (Date.now() - startedAt)
   if (remainingTimeout <= 0 || receivedSignal) {
     failedGroups.push(group.name)

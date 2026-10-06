@@ -779,7 +779,9 @@ both classes, finite wall deadlines, output limits, process-group cleanup and CP
 accounting. The required profile gate discovers the exact profile class and
 partitions it into the walking-constrained-kinematics owner, every nested
 `*.source.profile.test.ts` file and every remaining profile. The three disjoint
-groups run sequentially through the profile config and the same worker
+groups consume affected file selection from the repository classifier. CI groups
+may run independently on separate runners; local groups remain sequential.
+Each selected group runs through the profile config and the same single-worker
 acknowledgement setup, each with the unchanged 20-minute supervisor deadline. A
 new source profile automatically joins the source group, while any other new
 profile joins the remaining group; missing,

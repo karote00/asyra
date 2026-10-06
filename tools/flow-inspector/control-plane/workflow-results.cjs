@@ -281,10 +281,18 @@ function aggregateScope(evidence, identity, jobs) {
   const unique = (values) => new Set(values).size === values.length
   const validWorkspaceTests = (selection) =>
     selection &&
-    ['full', 'related', 'not-selected'].includes(selection.mode) &&
+    ['full', 'related', 'files', 'not-selected'].includes(selection.mode) &&
     Array.isArray(selection.inputs) &&
     selection.inputs.every((file) => typeof file === 'string') &&
     typeof selection.reason === 'string' &&
+    (selection.mode !== 'files' ||
+      (selection.inputs.length > 0 &&
+        selection.runner?.command === 'test:affected' &&
+        selection.inputs.every(
+          (file) =>
+            /^src\/.*\.test\.[jt]sx?$/.test(file) &&
+            !file.split('/').includes('..')
+        ))) &&
     (selection.mode !== 'related' ||
       (selection.inputs.length > 0 &&
         selection.runner?.command === 'vitest' &&
@@ -698,7 +706,7 @@ function aggregateScope(evidence, identity, jobs) {
       (entry.testSelection.mode === 'not-selected'
         ? record.testResult === undefined
         : record.testResult?.mode === entry.testSelection.mode &&
-          (entry.testSelection.mode !== 'related' ||
+          (!['related', 'files'].includes(entry.testSelection.mode) ||
             JSON.stringify(record.testResult.inputs) ===
               JSON.stringify(entry.testSelection.inputs)))
     if (!recordValid)

@@ -1344,3 +1344,64 @@ test('developer Agent inputs select their packaging contract without product bui
     assert.deepEqual(classifyChanges([file], manifests).unknownPaths, [file])
   }
 })
+
+test('FieldScope uses exact supervised selections for ordinary tests and profiles', () => {
+  const result = classifyChanges(
+    ['apps/fieldscope/src/ui/walking-runtime-selector.tsx'],
+    manifests
+  )
+  const owner = result.relationshipMap.workspaceMatrix.find(
+    (w) => w.name === '@asyra/fieldscope'
+  )
+  assert.equal(owner.testSelection.mode, 'files')
+  assert.ok(
+    owner.testSelection.inputs.includes(
+      'src/ui/__tests__/walking-runtime-selector.test.tsx'
+    )
+  )
+  assert.deepEqual(owner.profileSelection.files, [])
+  assert.equal(result.relationshipMap.fieldscopeProfilesRequired, false)
+  const crop = classifyChanges(
+    ['apps/fieldscope/src/domain/crop-models.ts'],
+    manifests
+  )
+  const profiles = crop.relationshipMap.workspaceMatrix.find(
+    (w) => w.name === '@asyra/fieldscope'
+  ).profileSelection.files
+  assert.ok(
+    profiles.some((f) => f.endsWith('crop-models.source.profile.test.ts'))
+  )
+  assert.ok(
+    !profiles.some((f) => f.endsWith('kinematic-trigonometry.profile.test.ts'))
+  )
+})
+
+test('profile workflow changes retain full profiles even when accompanied by UI-only changes', () => {
+  const workflow = classifyChanges(
+    ['.github/workflows/fieldscope-profile.yml'],
+    manifests
+  )
+  const mixed = classifyChanges(
+    [
+      '.github/workflows/fieldscope-profile.yml',
+      'apps/fieldscope/src/ui/walking-runtime-selector.tsx'
+    ],
+    manifests
+  )
+  assert.deepEqual(
+    mixed.relationshipMap.fieldscopeProfileFiles,
+    workflow.relationshipMap.fieldscopeProfileFiles
+  )
+})
+
+test('profile workflow ownership supplies local build prerequisites', () => {
+  const scope = classifyChanges(
+    ['.github/workflows/fieldscope-profile.yml'],
+    manifests
+  )
+  assert.ok(
+    scope.relationshipMap.workspaceMatrix.some(
+      (w) => w.directory === 'apps/fieldscope'
+    )
+  )
+})

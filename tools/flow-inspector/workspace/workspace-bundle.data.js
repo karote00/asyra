@@ -22695,6 +22695,7 @@
             ],
             "conditions": [
               "Reuse the CI classifier and related/full-owner contracts",
+              "Select registered supervised owner tests and profiles from one source graph; unknown edges broaden selection",
               "Unknown relations and missing local command contracts are unresolved"
             ],
             "bypasses": [
@@ -22706,13 +22707,17 @@
               "local input adapter"
             ],
             "forbiddenContributors": [
-              "second dependency graph",
+              "local-only duplicate of the CI dependency graph",
               "workspace name whitelist",
               "execution during preview"
             ],
             "implementationBoundary": [
               "scripts/local-validation.mjs",
               "scripts/ci-relationships.json",
+              "scripts/ci-scope.mjs",
+              "scripts/test-impact.mjs",
+              "scripts/__tests__/test-impact.test.mjs",
+              "scripts/__tests__/ci-scope.test.mjs",
               "scripts/__tests__/local-validation.test.mjs"
             ],
             "specRefs": [
@@ -22738,6 +22743,7 @@
             "conditions": [
               "Run the selected live security audit before builds and stop on audit failure",
               "Retain CI build prerequisites and owner test guards",
+              "Execute selected profile files through the same supervised owner and require exact selection receipts",
               "Require actual selected results and nonzero test evidence",
               "Stop owned children on cancellation and reject changed source identity"
             ],
@@ -22760,6 +22766,13 @@
               "scripts/local-validation.mjs",
               "scripts/local-validation-runner.mjs",
               "scripts/run-workspace-checks.mjs",
+              "tools/flow-inspector/control-plane/workflow-results.cjs",
+              "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
+              "apps/fieldscope/scripts/run-profile-groups.py",
+              "apps/fieldscope/scripts/run-e2e-ci.mjs",
+              "apps/fieldscope/scripts/e2e-ci-groups.mjs",
+              ".github/workflows/main.yml",
+              ".github/workflows/fieldscope-profile.yml",
               "scripts/__tests__/local-validation.test.mjs",
               "scripts/__tests__/local-validation-runner.test.mjs",
               "package.json"

@@ -139,6 +139,8 @@ export function selectLocalValidation({
     relationshipMapDigest: scope.relationshipMapDigest,
     executionPlan,
     workspaceMatrix,
+    profileFiles: scope.relationshipMap.fieldscopeProfileFiles,
+    profileCommand: scope.relationshipMap.fieldscopeProfileCommand,
     e2eSuites,
     e2eOwners: workspaceMatrix.map(({ name, e2eTask, e2eSelection }) => ({
       workspace: name,
@@ -227,6 +229,11 @@ export function localCheckCommands(
       }
     )
   }
+  if (plan.profileFiles?.length)
+    add('fieldscope-profiles', plan.profileCommand[0], [
+      ...plan.profileCommand.slice(1),
+      ...plan.profileFiles.flatMap((file) => ['--file', file])
+    ])
   if (checks.controlPlane.mode !== 'not-selected') {
     const directory = 'tools/flow-inspector/control-plane/__tests__'
     const files = fs
