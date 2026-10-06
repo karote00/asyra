@@ -1,3 +1,4 @@
+import { PixiBatchPartitions } from './pixi-batch-partitions.js'
 import {
   RenderEngineCapabilities,
   type RenderEngine,
@@ -29,11 +30,11 @@ import {
   Rectangle,
   Text,
   Texture,
-  Ticker,
   type FederatedPointerEvent
 } from 'pixi.js'
 import {
   createPixiOwnedResource,
+  getPixiGradientResourceKey,
   type PixiOwnedResource
 } from './pixi-resources.js'
 
@@ -89,6 +90,7 @@ export class PixiRenderEngine implements RenderEngine {
     Object.values(RenderEngineCapabilities)
   )
 
+  private readonly batchPartitions = new PixiBatchPartitions()
   private app: Application | null = null
   private rootHandle: StoredObjectHandle | null = null
   private readonly objects = new Map<RenderEngineObjectHandle, PixiObject>()
@@ -97,10 +99,14 @@ export class PixiRenderEngine implements RenderEngine {
     RenderEngineResourceHandle,
     PixiOwnedResource
   >()
+  private readonly gradientResources = new Map<
+    string,
+    { resource: PixiOwnedResource; users: number }
+  >()
   private readonly interactionListeners =
     new Set<RenderEngineInteractionListener>()
-  private frameTicker: Ticker | null = null
-  private frameHandler: ((ticker: Ticker) => void) | null = null
+  private frameRequest: number | null = null
+  private frameHandler: FrameRequestCallback | null = null
   private destroyed = false
   private nextHandleId = 1
 
@@ -124,6 +130,8 @@ export class PixiRenderEngine implements RenderEngine {
           Math.min(runtimeWindow?.devicePixelRatio ?? 1, 2),
         autoDensity: options.autoDensity ?? true,
         autoStart: false,
+        // InputSystem owns native wheel input; the engine publishes only pointers.
+        eventFeatures: { wheel: false },
         ...(options.backgroundColor !== undefined
           ? { backgroundColor: options.backgroundColor }
           : {}),
@@ -196,18 +204,21 @@ export class PixiRenderEngine implements RenderEngine {
       }
       case 'append-child':
         this.textResolutionDirty = true
-        this.getOwnedObject(command.parent).addChild(
+        this.batchPartitions.append(
+          this.getOwnedObject(command.parent),
           this.getOwnedObject(command.child)
         )
         return { commandType: command.type, status: 'applied' }
       case 'remove-child':
         this.textResolutionDirty = true
-        this.getOwnedObject(command.parent).removeChild(
+        this.batchPartitions.remove(
+          this.getOwnedObject(command.parent),
           this.getOwnedObject(command.child)
         )
         return { commandType: command.type, status: 'applied' }
       case 'set-child-index':
-        this.getOwnedObject(command.parent).setChildIndex(
+        this.batchPartitions.setIndex(
+          this.getOwnedObject(command.parent),
           this.getOwnedObject(command.child),
           command.index
         )
@@ -407,29 +418,21 @@ export class PixiRenderEngine implements RenderEngine {
   requestFrame(callback: RenderEngineFrameCallback): void {
     this.assertReady()
     this.cancelFrame()
-    const ticker = this.frameTicker ?? new Ticker()
-    const frameHandler = (currentTicker: Ticker) => {
-      if (this.frameHandler !== frameHandler) {
-        return
-      }
-      this.cancelFrame()
-      callback(currentTicker.lastTime)
+    const frameHandler: FrameRequestCallback = (timestamp) => {
+      if (this.frameHandler !== frameHandler) return
+      this.frameHandler = null
+      this.frameRequest = null
+      callback(timestamp)
     }
-    this.frameTicker = ticker
     this.frameHandler = frameHandler
-    ticker.add(frameHandler)
-    ticker.start()
+    this.frameRequest = requestAnimationFrame(frameHandler)
   }
 
   cancelFrame(): void {
-    const ticker = this.frameTicker
-    const frameHandler = this.frameHandler
     this.frameHandler = null
-    if (!ticker || !frameHandler) {
-      return
-    }
-    ticker.remove(frameHandler)
-    ticker.stop()
+    if (this.frameRequest === null) return
+    cancelAnimationFrame(this.frameRequest)
+    this.frameRequest = null
   }
 
   destroy(): RenderEngineDestroyResult {
@@ -448,8 +451,6 @@ export class PixiRenderEngine implements RenderEngine {
     }
 
     this.cancelFrame()
-    this.frameTicker?.destroy()
-    this.frameTicker = null
     if (this.app) {
       this.detachInteractionEvents(this.app.stage)
     }
@@ -461,6 +462,7 @@ export class PixiRenderEngine implements RenderEngine {
     }
     this.objects.clear()
     this.interactionListeners.clear()
+    if (this.app) this.batchPartitions.dispose(this.app.stage)
     this.app?.destroy(true)
     this.app = null
     this.rootHandle = null
@@ -559,6 +561,9 @@ export class PixiRenderEngine implements RenderEngine {
 
     if (typeof properties.label === 'string') {
       object.label = properties.label
+    }
+    if (typeof properties.transformGroup === 'boolean') {
+      object.isRenderGroup = properties.transformGroup
     }
     if (typeof properties.visible === 'boolean') {
       object.visible = properties.visible
@@ -744,7 +749,25 @@ export class PixiRenderEngine implements RenderEngine {
   private createOwnedResource(
     descriptor: RenderEngineResourceDescriptor
   ): PixiOwnedResource {
-    return createPixiOwnedResource(descriptor)
+    const key = getPixiGradientResourceKey(descriptor)
+    if (key === undefined) return createPixiOwnedResource(descriptor)
+    let entry = this.gradientResources.get(key)
+    if (!entry) {
+      entry = { resource: createPixiOwnedResource(descriptor), users: 0 }
+      this.gradientResources.set(key, entry)
+    }
+    entry.users += 1
+    const leased = entry
+    return {
+      value: leased.resource.value,
+      destroy: () => {
+        leased.users -= 1
+        if (leased.users === 0) {
+          this.gradientResources.delete(key)
+          leased.resource.destroy?.()
+        }
+      }
+    }
   }
 
   private destroyOwnedResource(handle: RenderEngineResourceHandle): void {
@@ -844,7 +867,9 @@ export class PixiRenderEngine implements RenderEngine {
 
   private destroyPixiObject(object: PixiObject): void {
     if (object instanceof Graphics) this.clearTextChildren(object)
-    object.parent?.removeChild(object)
+    const parent = this.batchPartitions.parentOf(object)
+    if (parent) this.batchPartitions.remove(parent, object)
+    this.batchPartitions.dispose(object)
     const ownedGeometry = object instanceof Mesh ? object.geometry : null
     try {
       object.destroy({

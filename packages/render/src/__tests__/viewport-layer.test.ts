@@ -2,8 +2,89 @@ import { describe, expect, it, vi } from 'vitest'
 import { RenderLayer } from '../layers/scene/index.js'
 import { ViewportLayer } from '../layers/viewport/index.js'
 import type { RenderElementData } from '../types.js'
+import { RenderEngineCapabilities } from '@asyra/render-engine'
+import { RecordingRenderEngine } from '@asyra/render-engine/testing'
+import { RenderContainer, RenderObjectRuntime } from '../types/render-object.js'
 
 describe('ViewportLayer', () => {
+  it('isolates camera transforms without grouping ordinary containers or redrawing geometry', () => {
+    const engine = new RecordingRenderEngine({ name: 'camera-contract' })
+    const initialized = engine.initialize({ host: {}, width: 100, height: 100 })
+    const runtime = new RenderObjectRuntime(engine, initialized.root)
+    const viewport = new ViewportLayer()
+    const overlay = new RenderContainer()
+    runtime.attachRoot(viewport.view)
+    runtime.attachRoot(overlay)
+    expect(viewport.view.getEngineProperties().transformGroup).toBe(true)
+    expect(overlay.getEngineProperties().transformGroup).toBe(false)
+    const created = engine
+      .getOperations()
+      .find((operation) => operation.type === 'create-object')
+    expect(
+      created?.type === 'create-object' &&
+        created.command.type === 'create-object' &&
+        created.command.properties?.transformGroup
+    ).toBe(true)
+    viewport.view.transformGroup = false
+    const updated = engine.getOperations().at(-1)
+    expect(
+      updated?.type === 'update-object' &&
+        updated.command.type === 'update-object' &&
+        updated.command.properties.transformGroup
+    ).toBe(false)
+    viewport.view.transformGroup = true
+    const start = engine.getOperations().length
+    viewport.panTo(25, 50)
+    viewport.zoomTo(2)
+    expect(
+      engine
+        .getOperations()
+        .slice(start)
+        .map((command) => command.type)
+    ).toEqual(['update-object', 'update-object'])
+    expect(overlay.worldTransform.tx).toBe(0)
+    expect(viewport.view.worldTransform.apply({ x: 10, y: 20 })).toEqual({
+      x: 45,
+      y: 90
+    })
+  })
+  it('keeps optional transform hints out of engines that do not advertise them', () => {
+    const engine = new RecordingRenderEngine({
+      name: 'strict-camera',
+      capabilities: [RenderEngineCapabilities.OBJECTS]
+    })
+    const execute = engine.execute.bind(engine)
+    engine.execute = (command) => {
+      if (
+        command.type === 'create-object' ||
+        command.type === 'update-object'
+      ) {
+        if ('transformGroup' in (command.properties ?? {}))
+          throw new Error('Unsupported transformGroup')
+      }
+      return execute(command)
+    }
+    const initialized = engine.initialize({ host: {}, width: 100, height: 100 })
+    const runtime = new RenderObjectRuntime(engine, initialized.root)
+    const viewport = new ViewportLayer()
+    runtime.attachRoot(viewport.view)
+    const start = engine.getOperations().length
+    viewport.view.transformGroup = false
+    viewport.view.transformGroup = true
+    expect(engine.getOperations()).toHaveLength(start)
+    viewport.panTo(25, 50)
+    viewport.zoomTo(2)
+    expect(
+      engine
+        .getOperations()
+        .slice(start)
+        .map((command) => command.type)
+    ).toEqual(['update-object', 'update-object'])
+    expect(viewport.view.worldTransform.apply({ x: 10, y: 20 })).toEqual({
+      x: 45,
+      y: 90
+    })
+  })
   it('reports the exact number of projected RenderLayer elements without exposing the map', () => {
     const projectedElements = new Map([
       ['group-1', {}],

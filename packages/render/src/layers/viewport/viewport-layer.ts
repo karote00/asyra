@@ -22,7 +22,7 @@ export class ViewportLayer {
   private renderLayer: RenderLayer
 
   constructor() {
-    this.layer = new RenderContainer()
+    this.layer = new RenderContainer({ transformGroup: true })
     this.renderLayer = new RenderLayer()
 
     this.layer.addChild(this.renderLayer.view)

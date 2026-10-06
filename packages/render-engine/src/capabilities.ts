@@ -5,6 +5,7 @@ export const RenderEngineCapabilities = {
   SNAPSHOT: 'snapshot',
   LOCAL_CONTENT_BOUNDS: 'local-content-bounds',
   OBJECTS: 'objects',
+  TRANSFORM_GROUPS: 'transform-groups',
   GRAPHICS: 'graphics',
   INTERACTION: 'interaction',
   RESOURCES: 'resources'

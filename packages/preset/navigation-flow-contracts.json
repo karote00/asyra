@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "manifestPath": "packages/preset/navigation-flow-contracts.json",
+  "targetId": "render-delta-update",
+  "architecturePath": "tools/flow-inspector/inspectors/render-delta-update-flow-inspector.data.cjs",
+  "specPath": "docs/ai/framework/packages/preset.md",
+  "testFile": "packages/preset/src/__tests__/vector-native-fill.test.ts",
+  "configFile": "packages/preset/src/__tests__/navigation-flow.config.ts",
+  "workspaceSources": [
+    {
+      "name": "@asyra/preset",
+      "inputs": ["src/**"],
+      "entry": "src/index.ts"
+    }
+  ],
+  "externalInputs": ["artifact:vector-strategy-request"],
+  "negativeCaseIds": ["navigation.native"],
+  "flows": [
+    {
+      "id": "navigation-owner",
+      "title": "Retained navigation owner",
+      "goal": "Preserve source material and camera ownership at this boundary. Browser integration and full dependency suites remain required by the active performance plan.",
+      "stepIds": ["evaluate-vector-material"],
+      "cases": [
+        {
+          "id": "navigation.native",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work retains polygon coverage and native material without baking its bounding rectangle"
+        },
+        {
+          "id": "navigation.complex",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work preserves canonical coverage for 'concave' contours"
+        },
+        {
+          "id": "preserve.2",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work preserves canonical coverage for 'crossed' contours"
+        },
+        {
+          "id": "preserve.3",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work preserves canonical coverage for 'star' contours"
+        },
+        {
+          "id": "preserve.4",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work keeps radial gradients on the established material evaluator"
+        },
+        {
+          "id": "preserve.5",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work keeps sharp gradients on the established material evaluator"
+        },
+        {
+          "id": "navigation.precision",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work keeps steep gradients on the established material evaluator"
+        },
+        {
+          "id": "preserve.7",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work keeps alpha gradients on the established material evaluator"
+        },
+        {
+          "id": "preserve.8",
+          "stepId": "evaluate-vector-material",
+          "testName": "native vector material work keeps degenerate gradients on the established material evaluator"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "dispatch-vector-material",
+          "decision": "required",
+          "caseIds": [
+            "navigation.native",
+            "navigation.complex",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "preserve.5",
+            "navigation.precision",
+            "preserve.7",
+            "preserve.8"
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "omit-retention",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current owner source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "omit-retention",
+      "title": "Omit retained owner behavior",
+      "expectedFailedCaseIds": ["navigation.native"],
+      "mutation": {
+        "file": "packages/preset/src/components/vector.ts",
+        "from": "canUseNativeVectorFill(shape, fillPayload)",
+        "to": "false && canUseNativeVectorFill(shape, fillPayload)"
+      }
+    }
+  ]
+}

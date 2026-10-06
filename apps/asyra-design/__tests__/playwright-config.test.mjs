@@ -1422,3 +1422,81 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
     /performance-resource-guard\.test\.mjs/
   )
 })
+
+test('continuous navigation measurement stays outside CI and ordinary discovery', () => {
+  const ordinary = listTests('playwright.config.ts', { CI: 'true' })
+  assert.doesNotMatch(ordinary, /continuous-navigation\.local\.spec\.ts/)
+  const local = listTests('playwright.navigation-local.config.ts', { CI: '' })
+  assert.match(local, /continuous-navigation\.local\.spec\.ts/)
+  assert.match(local, /chromium-dpr-1/)
+  assert.match(local, /chromium-dpr-2/)
+  assert.match(local, /Total: 2 tests in 1 file/)
+  const rejected = spawnSync(
+    'yarn',
+    [
+      'playwright',
+      'test',
+      '--list',
+      '--config',
+      'playwright.navigation-local.config.ts'
+    ],
+    {
+      cwd: appDirectory,
+      encoding: 'utf8',
+      env: { ...process.env, CI: 'true' }
+    }
+  )
+  assert.notEqual(rejected.status, 0)
+  assert.match(
+    rejected.stderr,
+    /Continuous navigation measurements are local-only/
+  )
+})
+
+test('personal recording scenarios stay outside ordinary CI discovery', () => {
+  const ordinary = listTests('playwright.config.ts', { CI: 'true' })
+  const personal = ordinary
+    .split('\n')
+    .filter(
+      (line) =>
+        /local-ai-provider\.spec\.ts/.test(line) &&
+        /recording|local subscription draws the upper two Taipei/.test(line)
+    )
+  assert.deepEqual(
+    personal,
+    [],
+    'Personal acceptance recording is not a product regression suite'
+  )
+  assert.match(
+    ordinary,
+    /canonical fill reference edits and plural record patches/
+  )
+  assert.match(ordinary, /plural AI visibility uses one Undo/)
+  assert.match(ordinary, /ready design parts continue in an existing container/)
+  assert.match(ordinary, /cancellation leaves the canvas unchanged/)
+  assert.doesNotMatch(ordinary, /personal-ai-recording\.local\.spec\.ts/)
+})
+
+test('personal automation and duplicate document bytes remain outside Git', () => {
+  for (const file of [
+    'tmp/personal-recording.config.ts',
+    'tmp/personal-recording/recording.spec.ts',
+    'e2e/fixtures/large-document/document.json.gz'
+  ]) {
+    const ignored = spawnSync('git', ['check-ignore', '--no-index', file], {
+      cwd: appDirectory,
+      encoding: 'utf8'
+    })
+    assert.equal(ignored.status, 0, `${file} must stay local`)
+  }
+  const archive = 'e2e/fixtures/large-document/Taipei-101-full-document.zip'
+  const included = spawnSync('git', ['check-ignore', '--no-index', archive], {
+    cwd: appDirectory,
+    encoding: 'utf8'
+  })
+  assert.equal(
+    included.status,
+    1,
+    'The user-approved original ZIP must remain uploadable'
+  )
+})

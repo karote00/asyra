@@ -32,6 +32,7 @@ import {
 } from './fills.js'
 import { PRESET_REGISTRATION } from '../registration.js'
 import { prepareVectorCompoundFill } from './vector-compound-fill.js'
+import { canUseNativeVectorFill } from './vector-native-fill.js'
 
 const emitVectorRenderCounter = emitDiagnosticCounter
 
@@ -1140,7 +1141,7 @@ const renderVectorGraphic = (
     _transform?: { updateLocalTransform?: () => void }
   }
   renderStateGraphic.geometry?.clear?.()
-  renderStateGraphic.batched = false
+  renderStateGraphic.batched = true
   renderStateGraphic._transform?.updateLocalTransform?.()
 
   const {
@@ -1269,7 +1270,17 @@ const renderVectorGraphic = (
 
   const hasGradient = fillPayload.some((fill) => fill.kind === 'gradient')
   let previewFill = false
-  if (hasGradient) {
+  const nativeFill =
+    hasClosedNetwork &&
+    workspaceGeometryBounds.width === renderData.width &&
+    workspaceGeometryBounds.height === renderData.height &&
+    canUseNativeVectorFill(shape, fillPayload)
+  if (nativeFill) {
+    cache.__evenOddFillCache?.fill?.dispose()
+    cache.__evenOddFillCache = undefined
+    drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
+    applyRenderableFill(graphic as { fill: unknown }, fillPayload)
+  } else if (hasGradient) {
     const evenOddCache = cache.__evenOddFillCache ?? { fill: null }
     const reuseEvenOddFill =
       evenOddCache.fill &&

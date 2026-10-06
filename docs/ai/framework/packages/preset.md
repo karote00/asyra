@@ -25,8 +25,18 @@ once, including nested islands and intersecting contours. Curves remain canonica
 editable controls. Render-only adaptive subdivision uses a 0.05 local-unit
 flatness bound and a 16-level recursion guard. One prepared geometry supplies
 both fill faces and hit testing per strategy invocation; transform-only updates
-continue to reuse the existing Render projection. Single contours, gradients,
-evenodd projection and strokes retain their existing routes.
+continue to reuse the existing Render projection.
+
+Vectors request native auto-batching; the concrete engine retains bounded
+submission partitions without changing element identities. A single closed
+convex linear contour with one opaque linear gradient can use native vector
+coverage and the existing gradient resource. Its complete local bounds remain
+the material coordinate domain. Eligibility excludes degenerate or self-crossing
+contours, curves/holes, alpha transitions, duplicate/close stops and color slopes
+beyond the native ramp precision bound. Those cases keep the established raster
+material evaluator. Geometry, colors and gradient resolution are not reduced
+for interaction. Canonical fill records and shared references are unchanged;
+resource sharing belongs to the engine's live resource lifetime.
 
 Fill and Stroke child-record adapters preserve sparse patches. They do not
 expand creation defaults into updates of existing children; component defaults

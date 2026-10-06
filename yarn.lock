@@ -93,6 +93,7 @@ __metadata:
     "@asyra/preset": "workspace:*"
     "@asyra/reactive-events": "workspace:*"
     "@asyra/render": "workspace:*"
+    "@asyra/render-engine-pixi": "workspace:*"
     "@asyra/ui-context": "workspace:*"
     "@asyra/utils": "workspace:*"
     "@playwright/test": "npm:^1.62.1"

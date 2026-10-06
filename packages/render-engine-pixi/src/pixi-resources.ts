@@ -259,6 +259,46 @@ const createGradientResource = (data: unknown): PixiOwnedResource => {
   }
 }
 
+/** Value sharing never uses canonical fill IDs or caller object identity. */
+export const getPixiGradientResourceKey = (
+  descriptor: RenderEngineResourceDescriptor
+): string | undefined => {
+  if (descriptor.kind !== 'gradient') return undefined
+  const options = parseGradientData(descriptor.data)
+  if (
+    options.colorStops.some(
+      (stop) =>
+        !Number.isFinite(stop.offset) ||
+        (typeof stop.color === 'number' && !Number.isFinite(stop.color)) ||
+        (typeof stop.color !== 'string' && typeof stop.color !== 'number')
+    )
+  )
+    return undefined
+  const points = [
+    options.start,
+    options.end,
+    options.center,
+    options.outerCenter
+  ]
+  if (points.some((point) => point !== undefined && !isGradientPoint(point)))
+    return undefined
+  const scalars = [
+    options.innerRadius,
+    options.outerRadius,
+    options.radiusY,
+    options.rotation
+  ]
+  if (scalars.some((value) => value !== undefined && !Number.isFinite(value)))
+    return undefined
+  return JSON.stringify([
+    options.type,
+    options.textureSpace,
+    options.colorStops.map((stop) => [stop.offset, stop.color]),
+    points.map((point) => (point ? [point.x, point.y] : null)),
+    scalars
+  ])
+}
+
 const createRasterPatternResource = (data: unknown): PixiOwnedResource => {
   if (!isRecord(data)) {
     throw new Error('Pixi raster pattern requires descriptor data')
