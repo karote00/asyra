@@ -772,3 +772,31 @@ source: `tmp/navigation-performance/isolated-final-e2e/` (14 collaboration,
 flaky cases). Recording extraction changes only test/acceptance material and
 contract wording; rerun its direct product E2E, shared and affected App/Inspector
 checks, and retain the unchanged renderer evidence.
+
+### PR validation correction - 2026-10-06
+
+PR #295 run 37472317121 failed dependency security admission and the FieldScope
+desktop panel browser case. Design functional, collaboration and render browser
+gates passed. The user approved updating the vulnerable indirect dependencies
+in this PR: simple-git 4.0.2, tinypool 2.1.2 and source-map-js 1.2.2.
+
+This correction is bounded to dependency resolution and consumer compatibility,
+the FieldScope panel test environment and its direct verification documentation.
+Product rendering, user documents, model execution, CI thresholds and resource
+deadlines remain unchanged. Existing security audit failures are the dependency
+regression oracle. A retained consumer test additionally exposed the simple-git
+4 CommonJS export change in context-rag; a one-line Yarn patch migrates that
+consumer to the named factory, without relaxing security checks.
+
+The FieldScope case exhausted its 60-second CI guard. Local software-rendered
+trace completed in 34 seconds, with repeated waits around layer hiding and panel
+resizes. Panel tests now use the existing reduced-motion presentation in software
+rendering, as the robot workspace tests already do. All edit, canvas identity,
+focus and final geometry checks remain; hardware-rendered tests retain animation.
+This changes the test environment, not the product's rendering contract. Three
+software-rendered panel/reference cases passed with the unchanged guards.
+
+Run the dependency-consumer tests, security audit, both panel rendering modes,
+and all affected local validation owners using isolated Design browser services.
+Do not treat a passed audit alone as dependency compatibility or pending CI as
+completed delivery. Retain the failure and correction evidence in `tmp/ci-295/`.

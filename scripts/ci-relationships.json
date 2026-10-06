@@ -385,8 +385,16 @@
       "requiresFrameworkDeclarations": false
     },
     "dependencies": {
-      "patterns": ["scripts/deps-*"],
-      "tests": ["scripts/__tests__/deps-validate.test.mjs"],
+      "patterns": [
+        "scripts/deps-*",
+        "package.json",
+        "yarn.lock",
+        ".yarn/patches/**"
+      ],
+      "tests": [
+        "scripts/__tests__/deps-validate.test.mjs",
+        "scripts/__tests__/dependency-consumers.test.mjs"
+      ],
       "requiresFrameworkDeclarations": false
     },
     "planImplementation": {
@@ -456,6 +464,7 @@
     "scripts/__tests__/ci-scope.test.mjs",
     "scripts/__tests__/create-app-cli.test.mjs",
     "scripts/__tests__/deps-validate.test.mjs",
+    "scripts/__tests__/dependency-consumers.test.mjs",
     "scripts/__tests__/developer-agent-bundle.test.mjs",
     "scripts/__tests__/display-name-separators.test.mjs",
     "scripts/__tests__/framework-release-artifacts.test.mjs",

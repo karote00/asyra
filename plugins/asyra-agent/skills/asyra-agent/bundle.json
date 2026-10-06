@@ -21,7 +21,7 @@
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
     "docs/public/start/custom-composition.md": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
     "docs/public/start/extend-with-ai.md": "6f6a22e8c07df5f7129695a69c5f487919f81da3e31b1a1289f96abb2a35b0c1",
-    "docs/public/generated/package-reference.json": "f1e5f1e206bf07be9438c1f00e9e7d4ab77c7e271ece2c007c5dc5eb417677e5"
+    "docs/public/generated/package-reference.json": "303cf4c6bc73fa3f461edc5bb395203b14abd6ded831a78749428e555c2e0db8"
   },
   "referenceVersions": {
     "@asyra/ai-agent-runtime": "0.5.1",
@@ -72,5 +72,5 @@
     "skills/asyra-agent/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
     "skills/asyra-agent/references/docs/public/start/extend-with-ai.md": "2d0f79b2cde313b9a4a5c347b517835d8be086ea33806b40b6fe90ada1ea3fc7"
   },
-  "contentDigest": "5dd46f745b642a3d6e7dc0f118b5d38c85132c69c24ba5f4de108a8453edefc6"
+  "contentDigest": "b9aa84747dbb8f3fc4265445d7c22c7f574707cfaec28c75bcc5ac6ac253ccfa"
 }
