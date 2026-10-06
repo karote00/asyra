@@ -1,6 +1,6 @@
 # Architectural Components - Surface Recipes
 
-Status: 2026-10-04 baseline, with a floor material revision requested on 2026-10-06. The floor natural oak PNG and v7 sheet were approved for commit on 2026-10-06. Other materials retain the baseline recipes. Roughness, metallic, alpha, and emission follow the [JSON](architecture-model-spec.json). These recipes describe intrinsic colour variation, not scene lighting.
+Status: 2026-10-04 baseline, with floor and door surface revisions on 2026-10-06. The floor natural oak PNG and v7 sheet were approved for commit on 2026-10-06. The door uses the recolouring contract below; other materials retain the baseline recipes. Roughness, metallic, alpha, and emission follow the [JSON](architecture-model-spec.json). These recipes describe intrinsic colour variation, not scene lighting.
 
 ## Shared calculations
 
@@ -43,6 +43,33 @@ document specifies the asset handoff, not an implemented app material editor.
 
 ## Door and window
 
-Frames use door-frame; the left panel, right leaf, and recessed fields use door-wood, initially solid colours. Do not darken recesses to fake shadows. All handle parts use iron and all panes use glass, both solid colours. Glass has alpha=1, transmission=0, emission=0; no transparent backing or baked environment reflection. This is a stylized appearance choice, not physical glass simulation.
+Door frames use door-frame; the left panel, right leaf, and recessed fields use
+door-wood. Their JSON baseColorSRGB values are editable default colours, not
+colours permanently baked into wood-grain images. The user changes colour while
+retaining the existing wood material and its grain. This supersedes the earlier
+solid-colour-only door recipe.
+
+- Keep grain as fixed, neutral monochrome detail independent of the selected
+  colour. A grain PNG, if supplied, is non-colour data; it must not contain the
+  orange/brown paint colour, shadows, AO, highlights, outlines or hardware.
+- Combine the selected colour and neutral grain in the material. Convert the
+  selected sRGB colour to linear once; read the grain as linear data. Do not
+  tint an orange reference image or multiply by the old default colour again.
+- The left fixed panel, main leaf and both recessed fields share the door-wood
+  colour parameter. The frame retains its door-frame colour parameter and
+  existing darker default; it can be recoloured without changing its material.
+- Recolouring preserves geometry, UVs, grain pattern, grain direction and scale,
+  roughness, metallic, opacity and bevels. The iron handle remains independent.
+  It requires no alternate model, replacement material or PNG for each colour.
+- The future app owns per-door colour selection. Changing one placed door must
+  not recolour unrelated doors through an unintentionally shared mutable value.
+- Grain content, mapping and strength still require a separately reviewed asset
+  or reproducible recipe. No door grain PNG or shader is delivered by this
+  document change. Do not treat this colour contract as completed texture work.
+
+Do not darken recesses to fake shadows. All handle parts use iron and all panes
+use glass, both solid colours. Glass has alpha=1, transmission=0, emission=0;
+no transparent backing or baked environment reflection. This is a stylized
+appearance choice, not physical glass simulation.
 
 Textures do not define geometry: build recesses, seams, and bevels from the geometry document. Do not put source-image warm light or generated face shading into albedo. Unlit inspection should retain intrinsic texture without a fixed directional lighting pattern.
