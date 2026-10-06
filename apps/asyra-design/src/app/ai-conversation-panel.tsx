@@ -32,7 +32,10 @@ import {
   type AiDrawingDetailChoice,
   type AiDrawingDetailOptionId
 } from '../ai/presentation'
-import { AiDocumentInteractionTargetProps } from '../constants'
+import {
+  AiDocumentInteractionTargetProps,
+  CONVERSATION_PANEL_WIDTH
+} from '../constants'
 
 const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
   'image/jpeg',
@@ -335,7 +338,8 @@ const AiConversationPanelLayout = ({
       aria-label="Agent conversation"
       tabIndex={-1}
       aria-modal="false"
-      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      className="fixed bottom-0 right-0 top-10 z-50 flex flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      style={{ width: CONVERSATION_PANEL_WIDTH }}
       data-testid="ai-agent-panel"
       role="complementary"
     >

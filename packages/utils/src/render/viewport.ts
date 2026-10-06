@@ -87,8 +87,12 @@ export const calculateZoomFit = (params: {
   const scaleY = availableHeight / contentHeight
   const scale = Math.min(scaleX, scaleY)
 
-  const offsetX = viewportBounds.minX + padding - elementsBounds.minX * scale
-  const offsetY = viewportBounds.minY + padding - elementsBounds.minY * scale
+  const offsetX =
+    (viewportBounds.minX + viewportBounds.maxX) / 2 -
+    ((elementsBounds.minX + elementsBounds.maxX) / 2) * scale
+  const offsetY =
+    (viewportBounds.minY + viewportBounds.maxY) / 2 -
+    ((elementsBounds.minY + elementsBounds.maxY) / 2) * scale
 
   return {
     scale,

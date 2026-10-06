@@ -36,6 +36,13 @@ Provide shared types, ids, registry primitives, and low-level helpers.
   diagnostics sink without owning phase names, product budgets, or reporting
   policy
 
+## Viewport Fit
+
+`calculateZoomFit` preserves aspect ratio using the limiting padded viewport
+axis, then aligns the content-bounds center with the viewport-bounds center on
+both axes. Viewport origins and content world-coordinate offsets are respected.
+The App viewport API and Render `ViewportLayer.fitBounds` share this calculation.
+
 ## Must Not Own
 
 - runtime business policies
