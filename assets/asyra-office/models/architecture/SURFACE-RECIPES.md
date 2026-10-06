@@ -1,6 +1,6 @@
 # Architectural Components - Surface Recipes
 
-Status: fixed modeling recipes approved for commit on 2026-10-04. Colour, roughness, metallic, alpha, and emission values follow materials in the [JSON](architecture-model-spec.json). These recipes describe intrinsic colour variation, not scene lighting.
+Status: 2026-10-04 baseline, with a floor material revision requested on 2026-10-06. The floor natural oak PNG and v7 sheet were approved for commit on 2026-10-06. Other materials retain the baseline recipes. Roughness, metallic, alpha, and emission follow the [JSON](architecture-model-spec.json). These recipes describe intrinsic colour variation, not scene lighting.
 
 ## Shared calculations
 
@@ -22,14 +22,24 @@ Variation must not depend on face orientation, nearby objects, recess depth, or 
 
 ## Plank
 
-Top: u=X, v=Y. Long sides: u=X, v=Z. Define:
+The user rejected the evenly spaced procedural grain shown in floor v6. Do not
+use the former sinusoidal stripe recipe as the current appearance target.
+Preserve the natural variation in spacing, fine fibres and gently flowing
+longitudinal grain from the original floor reference, without its knot.
 
-- p = 2π × (v/0.014 + 0.035 × sin(2πu/0.45)).
-- g = ((1 + sin(p))/2)^12.
-- t = 0.08 × (0.5 + 0.5 × sin(2πu/0.7 + 0.4)).
-- C = mix(mix(oak, oak-light, t), oak-grain, 0.28g), where mix(a,b,t)=a(1-t)+bt.
+Geometry and material are independent. The approved replacement is the standalone
+[natural oak PNG](materials/floor-natural-oak-v1.png), with its exact mapping in
+the [floor material contract](materials/README.md). The PNG is intrinsic sRGB
+base colour only; no geometry, lighting, shadows, AO, border or background.
+It replaces the floor base-colour input; do not multiply it by the old oak colour
+or regenerate it with the rejected formula. Other materials are unaffected.
 
-The underside and two short ends are plain oak. Add no knots, nail holes, stains, or cracks. Repeated instances use the same texture. Any app variants require a separate definition, not modeling-tool randomness.
+The underside and two short ends remain uniform wood colour, using the active
+PNG's mean sRGB colour for this candidate. No short-end grain, knots, nail holes,
+stains or cracks. The same physical UV mapping is used in TOP and THREE-QUARTER.
+The app owns material selection and future repetition/rotation options; swapping
+the PNG does not change plank size, bevels, placement, or connections. This
+document specifies the asset handoff, not an implemented app material editor.
 
 ## Door and window
 
