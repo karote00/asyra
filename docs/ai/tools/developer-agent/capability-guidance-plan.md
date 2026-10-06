@@ -2,7 +2,7 @@
 
 ## Bounded contract
 
-Status: active. Single-agent task in `codex/skill-capability-guidance`.
+Status: implementation and local validation complete; remote CI pending. Single-agent task in `codex/skill-capability-guidance`.
 Deliver problem-oriented decision support for existing Asyra and non-Asyra
 products, without privileging one UI or product category. Users describe needs;
 the host investigates causes, compares options and proves the chosen change.
@@ -91,3 +91,23 @@ this invocation is not recorded as a product failure or a passing gate.
 Website validation, final committed-tree checks and remote PR checks remain
 pending at this implementation checkpoint. No runtime, dependency, release or
 host installation changed.
+
+## Local completion
+
+Committed implementation: `9067e284f`. The committed-tree shared checks passed
+(74 repository tests, 15 naming tests and selected ESLint), as did changeset
+admission and source formatting. Skill/bundle and public documentation freshness
+were rechecked after the self-review edits.
+
+Website validation passed: lint, build, 25 contract tests and 99 regular unit
+tests. Fifteen environment-dependent artwork/URL tests were skipped by their
+existing guards. Browser E2E passed 97 cases, with five existing environment/
+analytics cases skipped. No new product claims rely on those skipped cases.
+The selected production gate passed its build and real production-server browser
+case; all five bounded resource-evidence tests passed. The owned servers exited,
+and ports 3020 and 3038 had no remaining listeners.
+
+This completion record is the only subsequent edit. It does not change website,
+Skill or test inputs; their evidence remains valid. Final shared/changeset checks
+will use the completion commit before push. Public release and native model
+trials remain outside this task; remote CI is reported separately in the PR.
