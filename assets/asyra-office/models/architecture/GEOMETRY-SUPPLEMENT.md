@@ -1,13 +1,13 @@
 # Architectural Components - Geometry Supplement v2
 
-This document and the JSON describe the same design approved for commit on 2026-10-04, not a model verification result. [architecture-model-spec.json](architecture-model-spec.json) is the sole numeric authority. Each component's sizeMetres, centreMetres, material, and bevelMetres define its base construction; this document defines operations that boxes alone cannot express.
+This document and the JSON describe the 2026-10-04 design baseline with the wall v5 shape approved on 2026-10-06. They are not a model verification result. [architecture-model-spec.json](architecture-model-spec.json) is the sole numeric authority. Each component's sizeMetres, centreMetres, material, and bevelMetres define its base construction; this document defines operations that boxes alone cannot express.
 
 ## Coordinates and shared construction rules
 
 - Units are m; use right-handed coordinates, +Z up, +X right, and -Y front. All positions are component-local.
 - Origins are at the assembly's bottom centre except the window. Its origin is at the rectangular frame's bottom centre; the sill extends to Z=-0.035.
 - A box size is its pre-bevel bounding size; centre is its geometric centre. Apply scale before construction. Bevels cut inward and must not increase bounds.
-- All boxes are closed, including undersides and backs. Contact faces may remain, but exposed coincident duplicate faces are forbidden. Normals point outward. Seams are geometric gaps, not black textures.
+- All boxes are closed, including undersides and backs. Contact faces may remain, but exposed coincident duplicate faces are forbidden. Normals point outward. Specified seams are geometric gaps, not black textures; the wall cap/body contact joint below is not an added gap.
 - General bevels are circular arcs with 2 segments. Keep planar face normals and interpolate bevel normals. bevelMetres=0 means no generic all-edge bevel; walls and partitions use the specific rules below.
 - Add no lights, ground shadows, AO, emission, cameras, colliders, rigs, or animation. Geometry and materials belong to the asset; placement and interaction belong to the app.
 
@@ -18,6 +18,39 @@ The body and cap are two closed boxes with JSON dimensions and centres. Caps ove
 Bevel only long edges parallel to X: the two upper body edges and two upper cap edges use radius 0.004 m and 2 segments. Do not bevel bottom edges, the four vertical edges, or transverse end edges. X ends must be closed and perpendicular, with the long-edge bevel profile included in their cross-section and no additional setback. Adjacent end faces align directly without filler posts.
 
 The wall is 1 m wide and 2.5 m high; the partition is 2 m wide and 1.35 m high. The wide, low partition proportion is the selected design. The 1 m width in the generation prompt is historical, not authoritative. Front and back share plaster; caps are pale cream. Include no skirting, wooden cap, feet, or floor. The app owns corner joins and wall openings; this unit includes no corner assembly.
+
+### Wall - approved v5 dimensions and joins
+
+The current appearance authority is [wall v5](review/01-wall-v5.png). Earlier
+wall drawings are superseded. Dimensions below retain the authored scale;
+they are not measurements recovered from generated pixels.
+
+| Part | Size X x Y x Z (m) | Centre (m) | X bounds (m) | Y bounds (m) | Z bounds (m) |
+| --- | --- | --- | --- | --- | --- |
+| Body | 1 x 0.24 x 2.42 | (0, 0, 1.21) | -0.5 to +0.5 | -0.12 to +0.12 | 0 to 2.42 |
+| Top cap | 1 x 0.27 x 0.08 | (0, 0, 2.46) | -0.5 to +0.5 | -0.135 to +0.135 | 2.42 to 2.5 |
+
+- Overall bounds: X=-0.5 to +0.5, Y=-0.135 to +0.135, Z=0 to 2.5 m.
+- Length direction X: zero overhang at both ends. Cap and body end planes must
+  coincide exactly. Do not add an end bevel, setback, lip, ledge or seam strip.
+- Thickness direction Y: cap overhang is 0.015 m per side, 0.03 m total extra
+  thickness. Front is -Y; rear is +Y. Never apply this offset along X.
+- Cap underside is at Z=2.42 m and body top is at Z=2.42 m: no vertical gap or
+  volumetric overlap. The existing upper long-edge bevel is an inward cut;
+  it must not shift either X end plane.
+- A cap/body joint line in the drawing is not a recessed groove, black texture,
+  projecting bead or additional component. Retain the existing material split.
+- A straight neighbouring unit translated by exactly (1, 0, 0) m meets the
+  first unit at X=0.5 m with both body and cap aligned. This is an assembly
+  example; deliver one unit, not a preassembled pair.
+
+Review criteria for a future model: verify these numerical bounds and equal X
+end planes, then inspect FRONT, SIDE, TOP and THREE-QUARTER at overview scale
+and magnified at both cap/body end junctions. SIDE must preserve the thickness
+lip; THREE-QUARTER must preserve the narrow end face without a longitudinal
+cap step. The 0.001 m general dimension tolerance does not authorize an
+intentional end mismatch: body and cap must use shared X coordinates. No
+model has been validated against this newly approved drawing in this revision.
 
 ## Single floor plank
 
@@ -54,6 +87,6 @@ Reserve a wall opening 1.84 m wide and 1.30 m high, with 0.01 m clearance around
 
 ## Future modeling comparison
 
-These are criteria only; no modeling has been performed. Check each unit's bounds (tolerance 0.001 m), component count, origin, closed backs, and materials, then inspect orthographic unlit base-colour views in the four JSON directions. Additionally check the door's narrow left panel, two fields, and handle direction, and the window's four panes. Paper backgrounds and outlines are not asset content.
+These are acceptance criteria, not evidence that existing model drafts satisfy the current drawings. The wall v5 model comparison remains pending. Check each unit's bounds (tolerance 0.001 m), component count, origin, closed backs, and materials, then inspect orthographic unlit base-colour views in the four JSON directions. Additionally check the door's narrow left panel, two fields, and handle direction, and the window's four panes. Paper backgrounds and outlines are not asset content.
 
 Generated views may differ in proportions or tones; pixels are not precision measurements. These dimensions define reconstruction, but finished models still need user appearance review. If the original reference and new shape differ materially, revise that component. Numeric documentation cannot override the user's original appearance requirement.
