@@ -1,6 +1,6 @@
 # Asyra Office - Architectural Components - Design Revision 2
 
-Status: **The user approved committing all six multiview sheets and documents on 2026-10-04; model verification has not been performed.**
+Design status: **The wall v5 shape was approved on 2026-10-06. The other five components retain their 2026-10-04 design approval.**
 This delivery contains images and documents, with no Blender, GLB, animation, or app implementation. This group is approved design documentation.
 
 ## Reference and units
@@ -9,7 +9,7 @@ The central office is the primary reference; neighbouring shops are secondary re
 
 | Component | One placeable unit | X × Y × Z (m) | Multiview sheet |
 | --- | --- | --- | --- |
-| Wall | One capped wall segment | 1 × 0.27 × 2.5 | [Wall](review/01-wall-v2.png) |
+| Wall | One capped wall segment | 1 × 0.27 × 2.5 | [Wall](review/01-wall-v5.png) |
 | Floor | One plank | 1.2 × 0.18 × 0.025 | [Plank](review/02-floor-v2.png) |
 | Partition | One capped low wall segment | 2 × 0.17 × 1.35 | [Partition](review/03-partition-v2.png) |
 | Stair | One stone step | 1.2 × 0.3 × 0.15 | [Step](review/04-stair-v2.png) |
@@ -17,6 +17,20 @@ The central office is the primary reference; neighbouring shops are secondary re
 | Window | One four-pane window with sill | 1.86 × 0.18 × 1.315 (including sill) | [Window](review/06-window-v2.png) |
 
 Each sheet contains front, side, top, and oblique views. The app owns count, arrangement, rotation, joins, wall openings, and lighting. Doors and windows include no wall; planks and steps include no base slab or array. Required frames, caps, and handles remain parts of the same unit.
+
+## Wall revision - 2026-10-06
+
+The approved [v5 drawing](review/01-wall-v5.png) supersedes the wall v2/v3 sheets.
+Body and cap both span X=-0.5 to +0.5 m. Their end faces are coplanar; the cap
+must not protrude or step back at either end. Existing dimensions are retained:
+body 1 x 0.24 x 2.42 m, cap 1 x 0.27 x 0.08 m, overall 1 x 0.27 x 2.5 m.
+The cap projects 0.015 m on each Y side only. See the
+[geometry contract](GEOMETRY-SUPPLEMENT.md#wall---approved-v5-dimensions-and-joins)
+for explicit bounds and acceptance checks.
+
+This is shape approval and specification review, not model approval. Reference
+lighting has not yet been added to v5; future reference shadows must remain
+separate from production albedo and geometry.
 
 ## Inputs for modeling tools
 

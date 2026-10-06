@@ -1,6 +1,6 @@
 # Architectural Components - Image Review
 
-The user approved committing all six revision-2 sheets on 2026-10-04. Each shows four views of one component, not four components or four objects that must be placed together.
+The six revision-2 sheets were approved on 2026-10-04. The user approved the corrected wall v5 shape on 2026-10-06; it supersedes wall v2 and v3. The other five sheets retain their existing approval. Each shows four views of one component, not four components or four objects that must be placed together.
 
 ## References
 
@@ -9,7 +9,7 @@ The user approved committing all six revision-2 sheets on 2026-10-04. Each shows
 
 ## Current sheets
 
-1. [Wall - single segment](01-wall-v2.png)
+1. [Wall - single segment](01-wall-v5.png)
 2. [Floor - single plank](02-floor-v2.png)
 3. [Partition - single segment](03-partition-v2.png)
 4. [Stair - single step](04-stair-v2.png)
@@ -20,7 +20,12 @@ Sheets support appearance review. See the [main document](../README.md) for dime
 
 [Actual prompts](PROMPTS.md) are generation history only. Old overviews and orthoviews are outside this revision's approval. This document claims no model, export, or verified reconstruction.
 
-## Lighting revision - 2026-10-04
+The wall v5 approval covers shape. Its [review record](01-wall-v5-review.md) and
+[enlarged end detail](01-wall-v5-end-detail.png) document the correction. The
+current sheet has no newly added reference shadows. Numeric dimensions retain
+the existing scale with explicit flush-end checks in the geometry supplement.
+
+## Lighting revision - 2026-10-04 (historical)
 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
 

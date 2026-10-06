@@ -1,9 +1,9 @@
 {
-  "specVersion": "2.0.0",
-  "status": "user approved commit on 2026-10-04; drawings and documents only",
+  "specVersion": "2.0.1",
+  "status": "2026-10-04 design baseline; wall v5 shape approved on 2026-10-06; wall specification clarified; no model approval",
   "approval": {
     "originalOfficeReference": "approved by user",
-    "newDrawings": "user approved commit on 2026-10-04",
+    "newDrawings": "wall review/01-wall-v5.png shape approved on 2026-10-06; other five v2 sheets retain 2026-10-04 approval",
     "newDimensions": "fixed authoring proposal, not measured from image",
     "modelVerification": "not performed"
   },
@@ -19,7 +19,7 @@
     "primary": "review/approved-office-reference.jpg",
     "door": "review/entry-door-reference.png",
     "secondary": "neighbouring shop window only",
-    "newSheets": "review/*-v2.png, approved for commit",
+    "newSheets": "wall: review/01-wall-v5.png; other five components: their module reviewDrawing v2 paths; older wall drawings are superseded",
     "historical": "old PNG, orthoviews, BUILD_SCENE.py, .blend and GLBs are not current authority"
   },
   "unitRule": {
@@ -117,7 +117,7 @@
       "moduleId": "wall-segment",
       "name": "Wall - single segment",
       "unitCount": 1,
-      "reviewDrawing": "review/01-wall-v2.png",
+      "reviewDrawing": "review/01-wall-v5.png",
       "components": [
         {
           "partId": "body",
@@ -167,7 +167,7 @@
         "X": 0,
         "Y": 0.015
       },
-      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; X ends closed and planar",
+      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; body and cap X end planes exactly coincide at -0.5 and +0.5 m with zero setback or overhang; capOverhang.Y is 0.015 m per side, never an X-end extension; no end-face bevel, underside lip or added seam geometry at either X join",
       "excluded": [
         "skirting",
         "floor",
@@ -829,7 +829,7 @@
     }
   },
   "verification": {
-    "status": "criteria only, no models built",
+    "status": "acceptance criteria only; existing model drafts are not verified against wall v5",
     "dimensionsToleranceMetres": 0.001,
     "viewDirectionsFromTarget": {
       "front": [
