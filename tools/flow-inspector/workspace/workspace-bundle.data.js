@@ -26176,7 +26176,6 @@
               "packages/render/src/__tests__/**",
               "packages/preset/src/__tests__/**",
               "packages/preset/src/components/vector.ts",
-              "packages/preset/src/components/vector-native-fill.ts",
               "apps/asyra-design/e2e/render-delta-performance.spec.ts",
               "docs/ai/framework/packages/render.md",
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
@@ -26202,13 +26201,15 @@
               "artifact:vector-draw-result"
             ],
             "conditions": [
-              "Only closed convex linear polygons with one opaque eligible linear gradient use the native material descriptor.",
+              "All supported vector fills use coverage faces plus one complete neutral mesh material in a common object-local coordinate domain; no topology-dependent CPU color raster is selected.",
               "Geometry, colors, shared identities and canonical state are unchanged.",
-              "Computed material edits rebuild from the complete current input."
+              "Computed material edits update paint without preparing coverage; immutable geometry or fill-rule changes invalidate the retained coverage and triangulation.",
+              "The fill projection precedes the retained base-stroke child; element destruction releases both.",
+              "Compound coverage preparation accepts explicit nonzero or evenodd fill rules and returns non-overlapping faces and a matching hit predicate independently of paint."
             ],
             "bypasses": [
               "Other strategies do not invoke the vector evaluator.",
-              "Curves, multiple contours, alpha and sharp color transitions use the existing canonical material evaluator."
+              "Empty topology or no visible fills hides the fill projection without creating a substituted rectangle."
             ],
             "allowedContributors": [
               "complete RenderElementData",
@@ -26220,10 +26221,16 @@
               "document mutation",
               "simplified or substituted geometry"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "live graphic",
+              "immutable points, segments and networks",
+              "fill rule",
+              "material input identity"
+            ],
             "implementationBoundary": [
               "packages/preset/src/components/vector.ts",
-              "packages/preset/src/components/vector-native-fill.ts",
+              "packages/preset/src/components/fills.ts",
+              "packages/preset/src/components/vector-compound-fill.ts",
               "packages/preset/src/__tests__/**",
               "docs/ai/framework/packages/preset.md"
             ],
@@ -27176,6 +27183,7 @@
               "The viewport alone requests an independent transform domain through the optional transformGroup property. Render forwards it only when the engine advertises transform-groups; otherwise ordinary matrices remain authoritative and hint-only updates emit no command. Screen-space overlays and authored Group semantics are unchanged.",
               "Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.",
               "Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.",
+              "Mesh projection retains geometry across material-only updates and explicitly removes the previous descriptor when replacing material with a solid paint.",
               "A successful concrete result is normalized before Core observes adapter initialization success."
             ],
             "bypasses": [
@@ -27313,6 +27321,7 @@
               "Native wheel input remains owned by InputSystem; unused Pixi wheel federation performs no scene hit test. Supported pointer targeting and explicit hit-test queries remain available.",
               "The optional transformGroup optimization hint maps to a Pixi Render Group; omitting it preserves ordinary container behavior and never changes painter order or coordinates.",
               "@asyra/render-engine-pixi must not import @asyra/render or call product features.",
+              "Analytic mesh material descriptors use shared object-local UVs and batched GPU evaluation; parameter storage depends on fill stops, not object area, and replacement/destroy releases the corresponding live-engine resources.",
               "Destroy releases every owned Pixi resource after complete or partial initialization and returns a deterministic cleanup result."
             ],
             "bypasses": [
@@ -27344,6 +27353,7 @@
               "packages/render-engine-pixi/vitest.config.ts",
               "packages/render-engine-pixi/src/**",
               "apps/asyra-design/e2e/retained-navigation.spec.ts",
+              "apps/asyra-design/e2e/mesh-material.spec.ts",
               "apps/asyra-design/e2e/navigation-work-probe.ts",
               "apps/asyra-design/e2e/fixtures/__tests__/render-engine-access.ts",
               "docs/ai/framework/packages/render-engine-pixi.md"

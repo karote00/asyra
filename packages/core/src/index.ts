@@ -116,6 +116,7 @@ export {
   isPointInsidePreparedEvenOddShape,
   prepareEvenOddShape,
   createMeshProjection,
+  RenderGraphics,
   renderSceneTreeStore,
   renderSelectionStore,
   type OverlayCanvas,

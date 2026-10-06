@@ -13,6 +13,7 @@ import {
 import {
   default as core,
   type CreateRenderGradientFillOptions,
+  type MeshProjectionPaint,
   type RenderFillStyle
 } from '@asyra/core'
 
@@ -211,6 +212,77 @@ export const getRenderableFills = (fills: unknown): RenderableFill[] => {
 
     return result
   }, [])
+}
+
+/** Complete numeric paint for mesh projections; no engine resource is created here. */
+export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
+  type Material = Extract<MeshProjectionPaint, { kind: 'material' }>['material']
+  const layers: Material['fills'][number][] = []
+  if (Array.isArray(fills))
+    for (const raw of fills) {
+      const entry = normalizeFillEntry(raw)
+      if (!entry?.visible) continue
+      if (entry.kind === FillKinds.GRADIENT && entry.gradient) {
+        const gradient = entry.gradient
+        const stops = gradient.gradientStops.flatMap((stop) => {
+          const parsed = parseColor(stop.color)
+          return parsed
+            ? [
+                {
+                  position: clampOpacity(stop.position),
+                  color: [
+                    parsed.r / 255,
+                    parsed.g / 255,
+                    parsed.b / 255,
+                    clampOpacity(parsed.a * stop.opacity * entry.opacity)
+                  ] as const
+                }
+              ]
+            : []
+        })
+        if (!stops.length) continue
+        const [start = { x: 0, y: 0 }, end = { x: 1, y: 0 }, side] =
+          gradient.gradientHandles
+        const type = gradient.gradientType
+        if (
+          type !== 'linear' &&
+          type !== 'radial' &&
+          type !== 'angular' &&
+          type !== 'diamond'
+        )
+          throw new Error('Unsupported gradient type')
+        layers.push({
+          kind: 'gradient',
+          type,
+          start,
+          end,
+          ...(side ? { side } : {}),
+          stops
+        })
+      } else {
+        const parsed = parseColor(entry.color)
+        if (parsed)
+          layers.push({
+            kind: 'solid',
+            color: [
+              parsed.r / 255,
+              parsed.g / 255,
+              parsed.b / 255,
+              clampOpacity(parsed.a * entry.opacity)
+            ]
+          })
+      }
+    }
+  const onlyLayer = layers.length === 1 ? layers[0] : undefined
+  if (onlyLayer?.kind === 'solid') {
+    const [r, g, b, a] = onlyLayer.color
+    return {
+      kind: 'solid',
+      color: rgbaToColorInt({ r: r * 255, g: g * 255, b: b * 255, a }),
+      alpha: a
+    }
+  }
+  return { kind: 'material', material: { fills: layers } }
 }
 
 export const getRenderableFill = (fills: unknown): RenderableFill | null => {

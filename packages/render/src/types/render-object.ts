@@ -1,5 +1,8 @@
 import type { Rect } from '@asyra/utils'
-import { RenderEngineCapabilities } from '@asyra/render-engine'
+import {
+  RenderEngineCapabilities,
+  assertRenderEngineCapabilities
+} from '@asyra/render-engine'
 import type {
   RenderEngine,
   RenderEngineCommand,
@@ -334,6 +337,11 @@ export class RenderObjectRuntime {
   private getSupportedProperties(
     properties: RenderEngineObjectProperties
   ): RenderEngineObjectProperties {
+    if (properties.material) {
+      assertRenderEngineCapabilities(this.engine, [
+        RenderEngineCapabilities.MESH_MATERIALS
+      ])
+    }
     if (
       !('transformGroup' in properties) ||
       this.engine.capabilities.has(RenderEngineCapabilities.TRANSFORM_GROUPS)

@@ -178,3 +178,62 @@ describe('mesh projection', () => {
     expect(root.children).toHaveLength(0)
   })
 })
+
+it('updates complete mesh materials without rebuilding geometry and clears old paint on a solid edit', () => {
+  const host = new RenderContainer()
+  const projection = createMeshProjection({
+    model: {
+      polygons: [
+        [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 }
+        ]
+      ]
+    },
+    paint: { kind: 'solid', color: 0xff0000, alpha: 1 }
+  })
+  projection.attach(host)
+  const mesh = host.children[0].children[0] as RenderMesh
+  const geometry = mesh.getEngineProperties().geometry
+  const material = {
+    fills: [{ kind: 'solid' as const, color: [0, 1, 0, 0.5] as const }]
+  }
+  projection.updatePaint({ kind: 'material', material })
+  expect(mesh.getEngineProperties()).toMatchObject({
+    material,
+    tint: 0xffffff,
+    alpha: 1
+  })
+  expect(mesh.getEngineProperties().geometry).toBe(geometry)
+  projection.updatePaint({ kind: 'solid', color: 0x0000ff, alpha: 0.25 })
+  expect(mesh.getEngineProperties()).toMatchObject({
+    material: null,
+    tint: 0x0000ff,
+    alpha: 0.25
+  })
+  expect(mesh.getEngineProperties().geometry).toBe(geometry)
+  projection.dispose()
+  expect(host.children).toHaveLength(0)
+})
+
+it('rejects material delivery to an engine without the required capability', async () => {
+  const { RecordingRenderEngine } = await import('@asyra/render-engine/testing')
+  const { RenderObjectRuntime } = await import('../types/render-object.js')
+  const engine = new RecordingRenderEngine({
+    name: 'solid-only',
+    capabilities: ['objects']
+  })
+  const initialized = engine.initialize({ host: {}, width: 100, height: 100 })
+  const runtime = new RenderObjectRuntime(engine, initialized.root)
+  const mesh = new RenderMesh({
+    material: { fills: [{ kind: 'solid', color: [1, 0, 0, 1] }] }
+  })
+  expect(() => runtime.attachNode(mesh)).toThrow(/mesh-materials/)
+  expect(
+    engine
+      .getOperations()
+      .filter((operation) => operation.type === 'create-object')
+  ).toHaveLength(0)
+})

@@ -25,47 +25,57 @@
         {
           "id": "navigation.native",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work retains polygon coverage and native material without baking its bounding rectangle"
+          "testName": "unified vector material work retains polygon coverage and analytic material without baking its bounding rectangle"
         },
         {
           "id": "navigation.complex",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work preserves canonical coverage for 'concave' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'concave' contours"
         },
         {
           "id": "preserve.2",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work preserves canonical coverage for 'crossed' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'crossed' contours"
         },
         {
           "id": "preserve.3",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work preserves canonical coverage for 'star' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'star' contours"
         },
         {
           "id": "preserve.4",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work keeps radial gradients on the established material evaluator"
+          "testName": "unified vector material work keeps radial gradients on the unified material evaluator"
         },
         {
           "id": "preserve.5",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work keeps sharp gradients on the established material evaluator"
+          "testName": "unified vector material work keeps sharp gradients on the unified material evaluator"
         },
         {
           "id": "navigation.precision",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work keeps steep gradients on the established material evaluator"
+          "testName": "unified vector material work keeps steep gradients on the unified material evaluator"
         },
         {
           "id": "preserve.7",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work keeps alpha gradients on the established material evaluator"
+          "testName": "unified vector material work keeps alpha gradients on the unified material evaluator"
         },
         {
           "id": "preserve.8",
           "stepId": "evaluate-vector-material",
-          "testName": "native vector material work keeps degenerate gradients on the established material evaluator"
+          "testName": "unified vector material work keeps degenerate gradients on the unified material evaluator"
+        },
+        {
+          "id": "load.roundoff",
+          "stepId": "evaluate-vector-material",
+          "testName": "unified vector material work preserves material for dimension roundoff without changing the source"
+        },
+        {
+          "id": "load.size-change",
+          "stepId": "evaluate-vector-material",
+          "testName": "unified vector material work preserves actual size differences without raster routing"
         }
       ],
       "handoffs": [
@@ -81,7 +91,9 @@
             "preserve.5",
             "navigation.precision",
             "preserve.7",
-            "preserve.8"
+            "preserve.8",
+            "load.roundoff",
+            "load.size-change"
           ]
         }
       ]
@@ -100,8 +112,8 @@
       "expectedFailedCaseIds": ["navigation.native"],
       "mutation": {
         "file": "packages/preset/src/components/vector.ts",
-        "from": "canUseNativeVectorFill(shape, fillPayload)",
-        "to": "false && canUseNativeVectorFill(shape, fillPayload)"
+        "from": "{ contains: coverage.contains }",
+        "to": "{ contains: () => false }"
       }
     }
   ]

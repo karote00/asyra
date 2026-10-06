@@ -58,7 +58,14 @@ const edgeX = (edge: Edge, y: number) =>
     (edge.end.y - edge.start.y)
 
 /** Transient render geometry only. Canonical anchors and controls are never changed. */
-export const prepareVectorCompoundFill = (shape: EvenOddShape) => {
+export const prepareVectorCompoundFill = (
+  shape: EvenOddShape,
+  fillRule: 'nonzero' | 'evenodd' = 'nonzero'
+) => {
+  const isInside = (winding: number) => {
+    if (fillRule === 'evenodd') return Math.abs(winding) % 2 === 1
+    return winding !== 0
+  }
   const edges: Edge[] = []
   const levels = new Set<number>()
   for (const path of shape.paths) {
@@ -124,10 +131,10 @@ export const prepareVectorCompoundFill = (shape: EvenOddShape) => {
     let winding = 0
     let left: Edge | undefined
     for (const edge of active) {
-      const wasInside = winding !== 0
+      const wasInside = isInside(winding)
       winding += edge.winding
-      if (!wasInside && winding !== 0) left = edge
-      else if (wasInside && winding === 0 && left) {
+      if (!wasInside && isInside(winding)) left = edge
+      else if (wasInside && !isInside(winding) && left) {
         if (edgeX(edge, middle) - edgeX(left, middle) > EPSILON) {
           const face = [
             { x: edgeX(left, low), y: low },
@@ -155,7 +162,7 @@ export const prepareVectorCompoundFill = (shape: EvenOddShape) => {
         if (edge.minY > y) break
         if (y < edge.maxY && edgeX(edge, y) > x) winding += edge.winding
       }
-      return winding !== 0
+      return isInside(winding)
     }
   }
 }

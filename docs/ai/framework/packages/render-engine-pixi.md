@@ -116,3 +116,21 @@ handles/centers, radii and rotation. Object-valued colors are not interned.
 Each opaque resource handle owns a lease. The final release destroys the resource
 and removes the key; engine destruction releases every lease. Raster patterns
 remain shape-specific and are not interned by fill identity.
+
+## Analytic mesh fill contract
+
+A mesh material describes paint independently of tessellation. All triangles
+share the supplied object-normalized material coordinates. Solid and gradient
+layers compose in declared order with source-over alpha; linear, radial,
+angular and diamond modes use the same stop and control-point definitions.
+Equal-position stops are right-continuous, positions outside the stop interval
+clamp, and degenerate handle bases use the first stop. Radial/diamond coordinates
+use primary and secondary handles; an absent secondary handle is perpendicular
+to the primary. Angular phase zero is the primary direction; a full turn wraps.
+
+The concrete engine owns parameter upload, analytic pixel evaluation, batching,
+reference-counted resources and cleanup. Parameter storage scales with stops
+and layers, never element area. A custom shader per element that disables mesh
+batching is not an accepted production route. Geometry, hit topology and
+canonical state remain upstream responsibilities. Unsupported engine execution
+fails explicitly; it never silently substitutes a raster or simplified fill.
