@@ -15,6 +15,10 @@ by Asyra Design; you do not need to reverse-engineer that app to discover how
 editing, synchronization, UI updates, and lifecycle fit together. Its socket
 protocol, 2D tools, and backend topology are product choices, not requirements.
 
+For feasibility, existing-project adoption or optimization, start with the
+[problem-to-capability guide](extend-with-ai.md#find-capabilities-from-a-product-problem)
+to decide whether and where this composition is appropriate.
+
 ## Build one complete data path
 
 ```text

@@ -1,5 +1,18 @@
 # Asyra Skill releases
 
+## 0.1.9 - Capability guidance candidate
+
+- Route existing-product feasibility, optimization and adoption through a shared
+  problem-to-capability guide rather than one UI-specific recipe.
+- Explain applicability, App duties, limits and proof for update scope,
+  computation, state, actions, extensibility, persistence, lifetime and runtime.
+- Preserve assessment-only scope and compare existing-architecture improvements
+  with selective adoption, canonical cutover and compatibility costs.
+- Bundle public UI-context, intent, projection-lifecycle and runtime-boundary
+  contracts for offline decisions; retain the 0.1.8 comparison baseline.
+- Add multi-product acceptance scenarios and offline relocation coverage.
+  Native 0.1.9 loading and decision quality remain unverified.
+
 ## 0.1.8 - Skill delivery candidate
 
 - Present the shared capability as Asyra Skill; retain `asyra-agent` install IDs.

@@ -30,7 +30,7 @@
     },
     {
       "id": "start/extend-with-ai",
-      "pageSha256": "8719d5bdbd128dd9d1a74997b77e5be6b4086f04fb90f5c5e89f1ed03d141dbf",
+      "pageSha256": "6f6a22e8c07df5f7129695a69c5f487919f81da3e31b1a1289f96abb2a35b0c1",
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
@@ -58,7 +58,7 @@
     },
     {
       "id": "start/custom-composition",
-      "pageSha256": "2d2f0dbb4146904df01fa8aa65621e555a6913d9cc5548694e857bb7951d17cc",
+      "pageSha256": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",

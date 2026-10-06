@@ -17,6 +17,10 @@ by Asyra Design; you do not need to reverse-engineer that app to discover how
 editing, synchronization, UI updates, and lifecycle fit together. Its socket
 protocol, 2D tools, and backend topology are product choices, not requirements.
 
+For feasibility, existing-project adoption or optimization, start with the
+[problem-to-capability guide](extend-with-ai.md#find-capabilities-from-a-product-problem)
+to decide whether and where this composition is appropriate.
+
 ## Build one complete data path
 
 ```text
@@ -245,7 +249,7 @@ compatibility branch when the default renderer lacks a provider, but that is
 not a public Headless Core lifecycle or a no-Render dependency guarantee.
 
 For non-visible and machine-facing products, read the
-<a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/runtime-boundaries-roadmap.md" target="_blank" rel="noopener noreferrer">runtime roadmap</a> before choosing an
+[runtime roadmap](../learn/runtime-boundaries-roadmap.md) before choosing an
 architecture. Do not invent `createHeadlessCore()` or a Core Kernel package.
 
 ## Where this runs

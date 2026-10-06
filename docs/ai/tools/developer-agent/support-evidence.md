@@ -8,7 +8,7 @@ host and route; it does not transfer automatically to a later version.
 
 The following observations were recorded in the preceding maintenance session.
 They are historical session evidence, not reproducible CI results or an
-independent review. No new native trial is claimed by candidate 0.1.8.
+independent review. No new native trial is claimed by candidate 0.1.9.
 
 | Host                                                      | Installation source and route                                                     | Observed result                                                                                                                              | Unverified                                                                                                       |
 | --------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -25,13 +25,24 @@ Codex has earlier installed-version and product trials described in the project
 history. They do not establish 0.1.8 behavior. Claude Code native acceptance is
 still pending; Claude Desktop upload is not a substitute for it.
 
-## Candidate 0.1.8
+## User-reported Claude Desktop loading - 0.1.8
 
-Packaging and project-continuity checks are recorded in the
-[delivery plan](skill-delivery-plan.md). Native candidate loading, natural
-name-only discovery, creation and continuation remain **unverified**. This
-bounded delivery prepares those trials; it does not claim every AI tool can
-install or execute the Skill automatically.
+The user supplied two Claude responses in the maintenance conversation: Claude
+obtained the Skill from `karote00/asyra`, produced a ZIP for manual upload, and
+then read `/mnt/skills/plugins/asyra-agent/SKILL.md` and its adjacent bundle.
+It reported `pluginVersion: 0.1.8` and the Starter architecture among 15 reference
+files. The user performed the settings upload; Claude did not self-install into
+the account. The precise source commit/digest, host/model version and product
+creation/continuation checks were not supplied. This is user-reported loading
+evidence, not an independently reproduced product trial or name-only discovery.
+
+## Candidate 0.1.9
+
+Packaging and capability-guidance checks are recorded in the
+[capability guidance plan](capability-guidance-plan.md). Native candidate loading
+and model decision quality remain **unverified**. The new acceptance scenarios
+prepare existing-project assessments; passing resource checks does not prove
+better diagnosis or implementation by a host model.
 
 Use the permanent [acceptance scenarios](acceptance.md), recording:
 

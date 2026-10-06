@@ -173,5 +173,5 @@ the generated common APIs and transaction boundaries.
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/intent-and-features.md" target="_blank" rel="noopener noreferrer">Understand intent and Features</a>
+- [Understand intent and Features](../learn/intent-and-features.md)
 - <a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Study the complete Asyra Design product</a>

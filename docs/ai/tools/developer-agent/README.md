@@ -65,8 +65,8 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current candidate: 0.1.8, with public display name **Asyra Skill** and retained
-installation identity `asyra-agent`. See the [delivery plan](skill-delivery-plan.md)
+Current candidate: 0.1.9, with public display name **Asyra Skill** and retained
+installation identity `asyra-agent`. See the [capability guidance plan](capability-guidance-plan.md)
 and [support evidence](support-evidence.md). Previous native loading trials are
 versioned historical observations, not acceptance of this candidate. A plugin
 is an installation wrapper; the host agent owns execution and product quality.
@@ -77,6 +77,21 @@ the full distribution. `pluginVersion` remains the shared release version for
 compatibility with existing version-check prompts. A standalone Skill does not
 need sibling plugin metadata. Export to a new project-relative directory with
 `--export-skill dist/asyra-agent`; the command never writes host settings.
+
+## Capability decision guidance
+
+The canonical problem-oriented entry is
+`docs/public/start/extend-with-ai.md`. Keep diagnosis routes independent of a
+particular widget: applicability, supported capability, App duties, limits,
+source contract and proof belong together. SKILL.md routes tasks to that guide;
+it does not duplicate every capability contract. Bundle decision-critical public
+references so standalone users need no contributor checkout.
+
+Distill public guidance from maintained ownership and computation rules. Do not
+ship internal governance or require a consumer to copy another App's structure.
+Existing non-Asyra products need an adoption assessment before composition.
+Record no-adoption and unsupported outcomes in the acceptance scenarios, and
+keep model decision quality separate from deterministic bundle/link checks.
 
 ## Responsibility and failure attribution
 

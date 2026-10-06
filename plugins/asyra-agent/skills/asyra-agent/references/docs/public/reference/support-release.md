@@ -105,4 +105,4 @@ software is provided without warranty under the terms in the repository
 - <a href="https://github.com/karote00/asyra/blob/main/SUPPORT.md" target="_blank" rel="noopener noreferrer">Community and support policy</a>
 - <a href="https://github.com/karote00/asyra/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security policy</a>
 - <a href="https://github.com/karote00/asyra/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/runtime-boundaries-roadmap.md" target="_blank" rel="noopener noreferrer">Runtime roadmap</a>
+- [Runtime roadmap](../learn/runtime-boundaries-roadmap.md)
