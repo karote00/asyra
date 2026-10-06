@@ -43,6 +43,11 @@ the existing scale with explicit flush-end checks in the geometry supplement.
 
 ## Conditional shadow review - 2026-10-06
 
+For the single stair step, the user selected direct document review because its
+shape is a solid rectangular block with small edge treatments. Keep the current
+sheet; no extra shadow reference is needed. The checked bounds, bevel and
+placement anchors are recorded in the [stair specification](../GEOMETRY-SUPPLEMENT.md#single-stair-step).
+
 Review one component at a time: present current multiview drawings, obtain user
 shape review, add a shadow-assisted reference only when curves, recesses,
 occlusion or part relationships need clarification, then reconcile dimensions

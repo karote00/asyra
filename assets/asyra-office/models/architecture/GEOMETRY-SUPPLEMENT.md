@@ -91,6 +91,32 @@ One closed 1.2 × 0.18 × 0.025 m plank, all edges beveled inward by 0.001 m wit
 
 One closed 1.2 × 0.3 × 0.15 m stone block, all edges beveled inward by 0.003 m with 2 segments. X is width and +Y is ascent. Repeated translation (0, 0.30, 0.15) illustrates assembly only; do not store an array in the asset. The scene supplies foundations or support when elevated. Do not add a whole staircase, railings, landing, or ground.
 
+Document review - 2026-10-06: the user selected direct specification review for
+this simple block. Retain the current drawing and numeric dimensions; no
+additional shadow-assisted drawing is needed.
+
+- One unit is one solid step, with no separate tread cap, projecting nosing,
+  recess, groove, underside cavity, or surface relief.
+- Origin: bottom centre (0, 0, 0); geometric centre: (0, 0, 0.075) m.
+- Outer bounds: X=-0.6..+0.6, Y=-0.15..+0.15, Z=0..0.15 m.
+- All 12 box edges receive the shared circular inward bevel: radius 0.003 m,
+  two segments. Keep the six main faces planar and the mesh closed at corners.
+  This small edge treatment does not increase the authored outer bounds.
+- JSON front-bottom (0, -0.15, 0) and rear-top (0, +0.15, 0.15) coordinates
+  are placement anchors on the pre-bevel envelope, not required mesh vertices
+  or points on the rounded surface.
+- Translation (0, 0.30, 0.15) m aligns the next step's front-bottom envelope
+  anchor with the preceding step's rear-top envelope anchor. Beveled edges
+  do not form a load-bearing face connection; the scene supplies support.
+- Use the existing stone colour recipe on every face, including the underside.
+  Image speckles are intrinsic colour, not holes or geometry. No normal map,
+  displacement, baked shadow, or AO is required.
+
+Self-review checked the JSON component size, centre, overall size, anchors,
+bevel values, material assignment and surface recipe against this section.
+All agree. This is document consistency review, not model verification or a
+claim that the generated drawing is a calibrated dimensioned projection.
+
 ## Complete entrance door
 
 The frame, narrow same-colour fixed left panel, main right leaf, and right-side handle form one placeable unit. Never omit the left panel, replace it with wall, or turn it into glass. The door is closed. The left panel is flat; the right leaf has two rectangular recessed fields, following the user's close-up.
@@ -105,6 +131,14 @@ The frame, narrow same-colour fixed left panel, main right leaf, and right-side 
 - The rear is a flat same-colour panel with no second handle or recessed fields. Do not invent hidden details. Fixing the left panel is the explicit design decision where rear/mechanism evidence is unavailable.
 
 Local Z=0 aligns to finished floor. Reserve a wall opening 1.66 m wide and 2.17 m high. Frame depth is independent of wall thickness; the app owns wall-side finishing during assembly. The door includes no plaster wall block. Hidden hinges, pivots, and opening interaction are outside this model-design scope.
+
+Colour revision - 2026-10-06: preserve the existing door-wood and door-frame
+material assignments and treat their JSON baseColorSRGB values as editable
+defaults. The left panel, right leaf and recessed fields share one door-wood
+colour; the frame has its own colour parameter. Fixed neutral wood detail is
+independent of colour, following [the surface contract](SURFACE-RECIPES.md#door-and-window).
+Recolouring must not require a new model, material replacement or a differently
+coloured texture file. Hardware colour and all geometry remain independent.
 
 ## Single four-pane window
 
