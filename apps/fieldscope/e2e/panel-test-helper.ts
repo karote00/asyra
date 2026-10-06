@@ -1,6 +1,10 @@
 import { expect, type Page } from '@playwright/test'
+import { usesCpuSoftwareRenderer } from './renderer-environment'
 
 export async function openPanelWorkspace(page: Page) {
+  // Verify panel state and final geometry without repeated software-rendered resizes.
+  if (usesCpuSoftwareRenderer)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   // Panel checks do not need crop meshes; keep the same presentation setup.

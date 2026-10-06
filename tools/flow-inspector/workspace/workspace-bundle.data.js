@@ -608,10 +608,7 @@
               "Persist ordered sanitized records locally; incomplete streams never imply success",
               "Retain bounded summaries and separate sanitized App tool payload snapshots locally, with digest, bytes and explicit redactions",
               "Project evidence-linked reports without certifying visuals or inferring missing facts",
-              "Extract exact retained plan-echo candidates before grouping tool/phase/failure/configuration evidence for offline investigation; truncation and missing evidence remain unknown, and frequency is not root cause or model improvement",
-              "Recording-only pixel observations retain sampling intervals separately from canonical application times and do not certify drawing quality",
-              "First-output recordings wait for an actionable Stop or actual terminal outcome; button absence alone cannot prove cancellation",
-              "Explicit first-output recordings fit the first nonempty canonical canvas bounds without waiting for a batch receipt, fit in the browser independently of screenshot polling, hold ten seconds after visible pixels, then cancel; keep full-completion recording separate"
+              "Extract exact retained plan-echo candidates before grouping tool/phase/failure/configuration evidence for offline investigation; truncation and missing evidence remain unknown, and frequency is not root cause or model improvement"
             ],
             "bypasses": [
               "Missing provider fields remain unavailable"
@@ -22739,15 +22736,18 @@
               "artifact:local-result"
             ],
             "conditions": [
+              "Run the selected live security audit before builds and stop on audit failure",
               "Retain CI build prerequisites and owner test guards",
               "Require actual selected results and nonzero test evidence",
               "Stop owned children on cancellation and reject changed source identity"
             ],
             "bypasses": [
-              "Preview never creates child check processes"
+              "Preview never creates child check processes",
+              "Unselected security audits do not query the registry"
             ],
             "allowedContributors": [
               "existing CI check runners",
+              "selected security:audit registry query",
               "declared owner E2E commands",
               "owned process/log storage"
             ],
@@ -26124,11 +26124,13 @@
             "inputs": [
               "artifact:complete-render-snapshot",
               "artifact:complete-strategy-request",
-              "artifact:authoritative-resync-request"
+              "artifact:authoritative-resync-request",
+              "artifact:vector-draw-result"
             ],
             "outputs": [
               "artifact:engine-neutral-draw-commands",
-              "artifact:strategy-rebuild-result"
+              "artifact:strategy-rebuild-result",
+              "artifact:vector-strategy-request"
             ],
             "conditions": [
               "Every add, load, authoritative resync, or computed frame update reruns the selected strategy from complete RenderElementData.",
@@ -26160,6 +26162,8 @@
               "packages/render/src/types.ts",
               "packages/render/src/__tests__/**",
               "packages/preset/src/__tests__/**",
+              "packages/preset/src/components/vector.ts",
+              "packages/preset/src/components/vector-native-fill.ts",
               "apps/asyra-design/e2e/render-delta-performance.spec.ts",
               "docs/ai/framework/packages/render.md",
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
@@ -26170,6 +26174,50 @@
               "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "execute-render-strategy"
+          },
+          {
+            "id": "evaluate-vector-material",
+            "order": 2,
+            "laneId": "render",
+            "title": "Evaluate the registered vector material",
+            "ownerPackage": "@asyra/preset",
+            "purpose": "Produce engine-neutral vector contours and material descriptors from the complete strategy input; preserve complex coverage on its canonical evaluator.",
+            "inputs": [
+              "artifact:vector-strategy-request"
+            ],
+            "outputs": [
+              "artifact:vector-draw-result"
+            ],
+            "conditions": [
+              "Only closed convex linear polygons with one opaque eligible linear gradient use the native material descriptor.",
+              "Geometry, colors, shared identities and canonical state are unchanged.",
+              "Computed material edits rebuild from the complete current input."
+            ],
+            "bypasses": [
+              "Other strategies do not invoke the vector evaluator.",
+              "Curves, multiple contours, alpha and sharp color transitions use the existing canonical material evaluator."
+            ],
+            "allowedContributors": [
+              "complete RenderElementData",
+              "Core geometry and paint APIs",
+              "engine-neutral RenderGraphics operations"
+            ],
+            "forbiddenContributors": [
+              "Pixi SDK or renderer-specific objects",
+              "document mutation",
+              "simplified or substituted geometry"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/components/vector.ts",
+              "packages/preset/src/components/vector-native-fill.ts",
+              "packages/preset/src/__tests__/**",
+              "docs/ai/framework/packages/preset.md"
+            ],
+            "specRefs": [
+              "docs/ai/framework/packages/preset.md"
+            ],
+            "failureOwnerStepId": "evaluate-vector-material"
           },
           {
             "id": "handoff-engine-commands",
@@ -26215,6 +26263,8 @@
               "packages/render/src/__tests__/**",
               "apps/asyra-design/e2e/render-delta-performance.spec.ts",
               "apps/asyra-design/e2e/render-contracts.mjs",
+              "apps/asyra-design/e2e/large-document-navigation.spec.ts",
+              "apps/asyra-design/e2e/fixtures/large-document/**",
               "apps/asyra-design/e2e/render-profile.mjs",
               "apps/asyra-design/__tests__/render-profile.test.mjs",
               "docs/ai/framework/packages/render.md",
@@ -26310,6 +26360,26 @@
           }
         ],
         "routes": [
+          {
+            "id": "dispatch-vector-material",
+            "from": "execute-render-strategy",
+            "to": "evaluate-vector-material",
+            "kind": "conditional",
+            "predicate": "The registered vector strategy receives a complete render snapshot.",
+            "producedArtifacts": [
+              "artifact:vector-strategy-request"
+            ]
+          },
+          {
+            "id": "return-vector-commands",
+            "from": "evaluate-vector-material",
+            "to": "execute-render-strategy",
+            "kind": "conditional",
+            "predicate": "The vector strategy returns its engine-neutral geometry and material commands.",
+            "producedArtifacts": [
+              "artifact:vector-draw-result"
+            ]
+          },
           {
             "id": "commit-to-shared-delivery",
             "from": "commit-scene-tree-delta",
@@ -26480,6 +26550,24 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:vector-strategy-request",
+            "ownerStepId": "execute-render-strategy",
+            "consumerStepIds": [
+              "evaluate-vector-material"
+            ],
+            "title": "Complete vector strategy input",
+            "description": "The ordinary complete strategy snapshot supplied by the Render dispatcher."
+          },
+          {
+            "id": "artifact:vector-draw-result",
+            "ownerStepId": "evaluate-vector-material",
+            "consumerStepIds": [
+              "execute-render-strategy"
+            ],
+            "title": "Vector draw commands",
+            "description": "Unchanged source contour and its evaluated engine-neutral material commands."
+          },
           {
             "id": "artifact:committed-scene-tree-delta",
             "ownerStepId": "commit-scene-tree-delta",
@@ -26701,6 +26789,7 @@
               "resync-render-snapshot",
               "flush-render-snapshot",
               "execute-render-strategy",
+              "evaluate-vector-material",
               "handoff-engine-commands",
               "cleanup-render-projection"
             ],
@@ -26743,6 +26832,7 @@
               "resync-render-snapshot",
               "flush-render-snapshot",
               "execute-render-strategy",
+              "evaluate-vector-material",
               "handoff-engine-commands",
               "cleanup-render-projection"
             ],
@@ -27070,6 +27160,7 @@
               "Exactly one provider route supplies one engine instance per Render instance.",
               "@asyra/render imports @asyra/render-engine only and emits engine-neutral lifecycle, object, resource, draw, viewport, resize, flush, and destroy operations.",
               "State projection, registered layer ordering, render strategies, batching decisions, and framework target id to opaque handle mapping remain owned here.",
+              "The viewport alone requests an independent transform domain through the optional transformGroup property. Render forwards it only when the engine advertises transform-groups; otherwise ordinary matrices remain authoritative and hint-only updates emit no command. Screen-space overlays and authored Group semantics are unchanged.",
               "Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.",
               "Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.",
               "A successful concrete result is normalized before Core observes adapter initialization success."
@@ -27138,7 +27229,7 @@
             "conditions": [
               "The contract covers only initialize, resize, create, update, remove, draw, viewport, flush, interaction, capability, and destroy behavior required by current formal cases.",
               "Object and resource handles are opaque outside the implementing engine.",
-              "Unsupported capabilities fail through an explicit contract error.",
+              "Unsupported required capabilities fail through an explicit contract error. Optional transform-groups advertises retained transform optimization without becoming a startup requirement.",
               "The package exposes engine-independent contract-test utilities and no default runtime singleton."
             ],
             "bypasses": [
@@ -27204,6 +27295,10 @@
             "conditions": [
               "The default engine executes only @asyra/render-engine commands and returns opaque handles, normalized results, and normalized interaction events.",
               "All Pixi Application, Container, Graphics, Mesh, texture, ticker, event, resource, hit-test, and cleanup behavior is owned here.",
+              "Large logical child lists may use identity native submission partitions; order, coordinates and opaque targets remain unchanged, local edits invalidate only their partition, and destruction releases partition state.",
+              "One engine-owned browser animation-frame slot delivers the browser timestamp without elapsed-time gating; replacement and teardown cancel stale callbacks, callbacks may request a successor, and no idle loop remains.",
+              "Native wheel input remains owned by InputSystem; unused Pixi wheel federation performs no scene hit test. Supported pointer targeting and explicit hit-test queries remain available.",
+              "The optional transformGroup optimization hint maps to a Pixi Render Group; omitting it preserves ordinary container behavior and never changes painter order or coordinates.",
               "@asyra/render-engine-pixi must not import @asyra/render or call product features.",
               "Destroy releases every owned Pixi resource after complete or partial initialization and returns a deterministic cleanup result."
             ],
@@ -27224,7 +27319,10 @@
               "app-domain geometry or feature decisions",
               "custom-engine type introspection"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "live engine instance",
+              "complete supported gradient descriptor values"
+            ],
             "implementationBoundary": [
               "yarn.lock",
               "turbo.json",
@@ -27232,6 +27330,9 @@
               "packages/render-engine-pixi/tsconfig.json",
               "packages/render-engine-pixi/vitest.config.ts",
               "packages/render-engine-pixi/src/**",
+              "apps/asyra-design/e2e/retained-navigation.spec.ts",
+              "apps/asyra-design/e2e/navigation-work-probe.ts",
+              "apps/asyra-design/e2e/fixtures/__tests__/render-engine-access.ts",
               "docs/ai/framework/packages/render-engine-pixi.md"
             ],
             "specRefs": [

@@ -2,9 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { runRenderEngineContract } from '@asyra/render-engine/testing'
 import type { RenderEngineInteractionEvent } from '@asyra/render-engine'
 
+const frameCallbacks: FrameRequestCallback[] = []
+
 type MockFunction = ReturnType<typeof vi.fn>
 
 interface MockStageRecord {
+  children: MockStageRecord[]
+  isRenderGroup: boolean
   emit: (type: string, event: unknown) => void
   position: { set: MockFunction }
 }
@@ -31,16 +35,6 @@ interface MockApplicationRecord {
   init: MockFunction
   render: MockFunction
   destroy: MockFunction
-}
-
-interface MockTickerRecord {
-  lastTime: number
-  add: MockFunction
-  remove: MockFunction
-  start: MockFunction
-  stop: MockFunction
-  destroy: MockFunction
-  emit(timestamp: number): void
 }
 
 interface MockGraphicsRecord {
@@ -112,7 +106,6 @@ const pixiState = vi.hoisted(() => ({
   patterns: [] as MockPatternRecord[],
   matrices: [] as MockMatrixRecord[],
   meshes: [] as MockMeshRecord[],
-  tickers: [] as MockTickerRecord[],
   operationTypes: [] as string[],
   nextInitError: null as Error | null,
   nextDestroyError: null as Error | null
@@ -120,6 +113,7 @@ const pixiState = vi.hoisted(() => ({
 
 vi.mock('pixi.js', () => {
   class MockContainer {
+    isRenderGroup = false
     readonly children: MockContainer[] = []
     readonly listeners = new Map<string, Set<(event: unknown) => void>>()
     readonly position = {
@@ -477,33 +471,6 @@ vi.mock('pixi.js', () => {
     }
   }
 
-  class MockTicker {
-    private readonly listeners = new Set<(ticker: MockTicker) => void>()
-    lastTime = 0
-    readonly add = vi.fn((listener: (ticker: MockTicker) => void) => {
-      this.listeners.add(listener)
-      return this
-    })
-    readonly remove = vi.fn((listener: (ticker: MockTicker) => void) => {
-      this.listeners.delete(listener)
-      return this
-    })
-    readonly start = vi.fn()
-    readonly stop = vi.fn()
-    readonly destroy = vi.fn(() => {
-      this.listeners.clear()
-    })
-
-    constructor() {
-      pixiState.tickers.push(this)
-    }
-
-    emit(timestamp: number) {
-      this.lastTime = timestamp
-      this.listeners.forEach((listener) => listener(this))
-    }
-  }
-
   class MockText extends MockContainer {
     resolutionWrites: number[] = []
     private textResolution = 1
@@ -542,7 +509,6 @@ vi.mock('pixi.js', () => {
     Matrix: MockMatrix,
     Mesh: MockMesh,
     MeshGeometry: MockMeshGeometry,
-    Ticker: MockTicker,
     Texture: MockTexture
   }
 })
@@ -559,6 +525,89 @@ const getLastApplication = (): MockApplicationRecord => {
 }
 
 describe('PixiRenderEngine', () => {
+  it('shares equivalent gradient resources only for the lifetime of their handles', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 100, height: 100 })
+    const descriptor = {
+      kind: 'gradient',
+      data: {
+        type: 'linear',
+        start: { x: 0, y: 0 },
+        end: { x: 1, y: 0 },
+        colorStops: [
+          { offset: 0, color: '#ffffff' },
+          { offset: 1, color: '#000000' }
+        ]
+      }
+    }
+    const create = (value = descriptor) => {
+      const resource = engine.execute({
+        type: 'create-resource',
+        requestId: 'gradient',
+        descriptor: value
+      }).resource
+      if (!resource) throw new Error('Missing gradient handle')
+      return resource
+    }
+    const first = create()
+    const second = create(structuredClone(descriptor))
+    expect(first).not.toBe(second)
+    expect(pixiState.gradients).toHaveLength(1)
+    descriptor.data.end.y = 1
+    const changed = create()
+    expect(pixiState.gradients).toHaveLength(2)
+    engine.execute({ type: 'destroy-resource', resource: first })
+    expect(pixiState.gradients[0].destroy).not.toHaveBeenCalled()
+    engine.execute({ type: 'destroy-resource', resource: second })
+    expect(pixiState.gradients[0].destroy).toHaveBeenCalledOnce()
+    engine.destroy()
+    expect(pixiState.gradients[1].destroy).toHaveBeenCalledOnce()
+    expect(changed).toBeDefined()
+    const successor = new PixiRenderEngine()
+    await successor.initialize({ host: {}, width: 100, height: 100 })
+    successor.execute({ type: 'create-resource', requestId: 'new', descriptor })
+    expect(pixiState.gradients).toHaveLength(3)
+    successor.destroy()
+  })
+  it('applies transform domains only to explicitly requested containers', async () => {
+    const engine = new PixiRenderEngine()
+    const { root } = await engine.initialize({
+      host: {},
+      width: 100,
+      height: 100
+    })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'camera',
+      objectType: 'container',
+      properties: { transformGroup: true }
+    })
+    const { object: child } = engine.execute({
+      type: 'create-object',
+      requestId: 'child',
+      objectType: 'container'
+    })
+    if (!object || !child) throw new Error('Missing transform handles')
+    engine.execute({ type: 'append-child', parent: root, child: object })
+    engine.execute({ type: 'append-child', parent: object, child: child })
+    const camera = getLastApplication().stage.children[0]
+    expect(camera.isRenderGroup).toBe(true)
+    expect(camera.children[0].isRenderGroup).toBe(false)
+    const retainedChild = camera.children[0]
+    engine.execute({
+      type: 'update-object',
+      object: object,
+      properties: { x: 50, scaleX: 2, scaleY: 2 }
+    })
+    expect(camera.children[0]).toBe(retainedChild)
+    engine.execute({
+      type: 'update-object',
+      object: object,
+      properties: { transformGroup: false }
+    })
+    expect(camera.isRenderGroup).toBe(false)
+    engine.destroy()
+  })
   beforeEach(() => {
     pixiState.applications.length = 0
     pixiState.graphics.length = 0
@@ -568,7 +617,15 @@ describe('PixiRenderEngine', () => {
     pixiState.patterns.length = 0
     pixiState.matrices.length = 0
     pixiState.meshes.length = 0
-    pixiState.tickers.length = 0
+    frameCallbacks.length = 0
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        frameCallbacks.push(callback)
+        return frameCallbacks.length
+      })
+    )
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
     pixiState.operationTypes.length = 0
     pixiState.nextInitError = null
     pixiState.nextDestroyError = null
@@ -576,6 +633,25 @@ describe('PixiRenderEngine', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('delivers demanded frames without comparing frame timestamps to request time', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 100, height: 100 })
+    const now = vi.spyOn(performance, 'now')
+    const callback = vi.fn()
+    try {
+      for (let index = 0; index < 6; index++) {
+        now.mockReturnValue(20 + index * 16)
+        engine.requestFrame(callback)
+        frameCallbacks[index](16 + index * 16)
+        expect(callback).toHaveBeenCalledTimes(index + 1)
+        expect(callback).toHaveBeenLastCalledWith(16 + index * 16)
+      }
+    } finally {
+      engine.destroy()
+      now.mockRestore()
+    }
   })
 
   it('updates text density for zoom and inherited scale without work on stable flush or pan', async () => {
@@ -1290,40 +1366,30 @@ describe('PixiRenderEngine', () => {
 
     const frame = vi.fn()
     engine.requestFrame(frame)
-    const frameTicker = pixiState.tickers.slice(-1)[0]
-    expect(frameTicker).toBeDefined()
+    expect(frameCallbacks).toHaveLength(1)
     expect(app.ticker.add).not.toHaveBeenCalled()
     expect(app.ticker.start).not.toHaveBeenCalled()
-
-    frameTicker?.emit(123)
+    frameCallbacks[0](123)
+    expect(frame).toHaveBeenCalledExactlyOnceWith(123)
+    frameCallbacks[0](124)
     expect(frame).toHaveBeenCalledOnce()
-    expect(frame).toHaveBeenCalledWith(123)
-    frameTicker?.emit(124)
-    expect(frame).toHaveBeenCalledOnce()
-    expect(frameTicker?.remove).toHaveBeenCalledOnce()
-    expect(frameTicker?.stop).toHaveBeenCalledOnce()
     expect(app.render).not.toHaveBeenCalled()
 
     engine.execute({ type: 'flush' })
     expect(app.render).toHaveBeenCalledOnce()
-
     engine.requestFrame(frame)
     engine.cancelFrame()
-    expect(frameTicker?.remove).toHaveBeenCalledTimes(2)
-    expect(frameTicker?.stop).toHaveBeenCalledTimes(2)
-    expect(frameTicker?.destroy).not.toHaveBeenCalled()
-    expect(app.ticker.remove).not.toHaveBeenCalled()
-    expect(app.ticker.stop).not.toHaveBeenCalled()
-    frameTicker?.emit(456)
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(2)
+    frameCallbacks[1](456)
     expect(frame).toHaveBeenCalledOnce()
 
     engine.requestFrame(frame)
-    expect(pixiState.tickers).toHaveLength(1)
-    expect(frameTicker?.start).toHaveBeenCalledTimes(3)
     engine.destroy()
-    expect(frameTicker?.remove).toHaveBeenCalledTimes(3)
-    expect(frameTicker?.stop).toHaveBeenCalledTimes(3)
-    expect(frameTicker?.destroy).toHaveBeenCalledOnce()
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(3)
+    frameCallbacks[2](789)
+    expect(frame).toHaveBeenCalledOnce()
+    expect(app.ticker.remove).not.toHaveBeenCalled()
+    expect(app.ticker.stop).not.toHaveBeenCalled()
   })
 
   it('omits undefined optional paint fields while preserving explicit alpha', async () => {

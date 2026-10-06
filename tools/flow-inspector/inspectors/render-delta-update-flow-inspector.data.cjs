@@ -445,11 +445,13 @@
       inputs: [
         'artifact:complete-render-snapshot',
         'artifact:complete-strategy-request',
-        'artifact:authoritative-resync-request'
+        'artifact:authoritative-resync-request',
+        'artifact:vector-draw-result'
       ],
       outputs: [
         'artifact:engine-neutral-draw-commands',
-        'artifact:strategy-rebuild-result'
+        'artifact:strategy-rebuild-result',
+        'artifact:vector-strategy-request'
       ],
       conditions: [
         'Every add, load, authoritative resync, or computed frame update reruns the selected strategy from complete RenderElementData.',
@@ -481,6 +483,8 @@
         'packages/render/src/types.ts',
         'packages/render/src/__tests__/**',
         'packages/preset/src/__tests__/**',
+        'packages/preset/src/components/vector.ts',
+        'packages/preset/src/components/vector-native-fill.ts',
         'apps/asyra-design/e2e/render-delta-performance.spec.ts',
         'docs/ai/framework/packages/render.md',
         'docs/ai/framework/plans/completed/render-delta-update-plan.md'
@@ -491,6 +495,45 @@
         '#7-equivalence-and-stale-output-oracle'
       ],
       failureOwnerStepId: 'execute-render-strategy'
+    },
+    {
+      id: 'evaluate-vector-material',
+      order: 2,
+      laneId: 'render',
+      title: 'Evaluate the registered vector material',
+      ownerPackage: '@asyra/preset',
+      purpose:
+        'Produce engine-neutral vector contours and material descriptors from the complete strategy input; preserve complex coverage on its canonical evaluator.',
+      inputs: ['artifact:vector-strategy-request'],
+      outputs: ['artifact:vector-draw-result'],
+      conditions: [
+        'Only closed convex linear polygons with one opaque eligible linear gradient use the native material descriptor.',
+        'Geometry, colors, shared identities and canonical state are unchanged.',
+        'Computed material edits rebuild from the complete current input.'
+      ],
+      bypasses: [
+        'Other strategies do not invoke the vector evaluator.',
+        'Curves, multiple contours, alpha and sharp color transitions use the existing canonical material evaluator.'
+      ],
+      allowedContributors: [
+        'complete RenderElementData',
+        'Core geometry and paint APIs',
+        'engine-neutral RenderGraphics operations'
+      ],
+      forbiddenContributors: [
+        'Pixi SDK or renderer-specific objects',
+        'document mutation',
+        'simplified or substituted geometry'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'packages/preset/src/components/vector.ts',
+        'packages/preset/src/components/vector-native-fill.ts',
+        'packages/preset/src/__tests__/**',
+        'docs/ai/framework/packages/preset.md'
+      ],
+      specRefs: ['docs/ai/framework/packages/preset.md'],
+      failureOwnerStepId: 'evaluate-vector-material'
     },
     {
       id: 'handoff-engine-commands',
@@ -533,6 +576,8 @@
         'packages/render/src/__tests__/**',
         'apps/asyra-design/e2e/render-delta-performance.spec.ts',
         'apps/asyra-design/e2e/render-contracts.mjs',
+        'apps/asyra-design/e2e/large-document-navigation.spec.ts',
+        'apps/asyra-design/e2e/fixtures/large-document/**',
         'apps/asyra-design/e2e/render-profile.mjs',
         'apps/asyra-design/__tests__/render-profile.test.mjs',
         'docs/ai/framework/packages/render.md',
@@ -618,6 +663,24 @@
   ]
 
   const routes = [
+    {
+      id: 'dispatch-vector-material',
+      from: 'execute-render-strategy',
+      to: 'evaluate-vector-material',
+      kind: 'conditional',
+      predicate:
+        'The registered vector strategy receives a complete render snapshot.',
+      producedArtifacts: ['artifact:vector-strategy-request']
+    },
+    {
+      id: 'return-vector-commands',
+      from: 'evaluate-vector-material',
+      to: 'execute-render-strategy',
+      kind: 'conditional',
+      predicate:
+        'The vector strategy returns its engine-neutral geometry and material commands.',
+      producedArtifacts: ['artifact:vector-draw-result']
+    },
     {
       id: 'commit-to-shared-delivery',
       from: 'commit-scene-tree-delta',
@@ -765,6 +828,22 @@
   ]
 
   const artifacts = [
+    {
+      id: 'artifact:vector-strategy-request',
+      ownerStepId: 'execute-render-strategy',
+      consumerStepIds: ['evaluate-vector-material'],
+      title: 'Complete vector strategy input',
+      description:
+        'The ordinary complete strategy snapshot supplied by the Render dispatcher.'
+    },
+    {
+      id: 'artifact:vector-draw-result',
+      ownerStepId: 'evaluate-vector-material',
+      consumerStepIds: ['execute-render-strategy'],
+      title: 'Vector draw commands',
+      description:
+        'Unchanged source contour and its evaluated engine-neutral material commands.'
+    },
     {
       id: 'artifact:committed-scene-tree-delta',
       ownerStepId: 'commit-scene-tree-delta',

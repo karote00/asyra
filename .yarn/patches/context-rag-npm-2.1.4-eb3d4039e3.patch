@@ -1,0 +1,10 @@
+diff --git a/src/services/git.js b/src/services/git.js
+index 8c899f1f0ab4d9c9916964d852916c396c8ff4a2..363cdc748199dfbc3dc212487a02a6bc153ed30d 100644
+--- a/src/services/git.js
++++ b/src/services/git.js
+@@ -1,4 +1,4 @@
+-const simpleGit = require('simple-git');
++const { simpleGit } = require('simple-git');
+ const fs = require('fs');
+ const path = require('path');
+ const chalk = require('chalk');

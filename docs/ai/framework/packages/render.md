@@ -354,3 +354,8 @@ A region must be finite, positive, and inside the target. Oversized native captu
 fail before extraction instead of downsampling. Existing explicitly bounded captures
 without `nativeResolution` retain their scaling behavior for other consumers.
 The query changes no canonical state or viewport and caches no images.
+
+The viewport RenderContainer projects `transformGroup: true` through ordinary
+engine-neutral object properties. It is an optimization hint, not authored Group
+state; engines may ignore it while preserving output. Screen-space layers keep
+their current registration and remain outside the camera transform domain.

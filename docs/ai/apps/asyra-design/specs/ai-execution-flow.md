@@ -468,16 +468,11 @@ Permanent executable cases must cover:
 
 Use focused provider/scheduler/preparation/operation/review/lifecycle tests first,
 then App typecheck/build and affected integration/visual gates. Flow Inspector
-must resolve the complete owner flow and run the admitted source proof. A formal
-headless live test uses the agreed short Taipei 101 upper-two-tiers-and-spire brief,
-records from opening the App until ten seconds after completion and verifies the
-effective model/effort. Only the isolated test recorder performs fit-zoom: once
-as soon as the canvas has nonempty element bounds, and once after terminal
-settlement. Do not wait for a batch receipt or complete composition, and do not
-fit each subsequent bounds update. A question pause is not terminal settlement. Normal App
-use never automatically fits the viewport because of this recording policy. That live result is reviewed for
-requested qualities, not compared against a promised duration. Final delivery
-requires latest PR CI passing; static flow validation is not runtime completion.
+must resolve the complete owner flow and run the admitted source proof. Personal acceptance recordings are local developer operations, not product
+behavior or shared CI requirements. Product cancellation, lifecycle recovery,
+canonical changes and Undo remain covered by the ordinary regression suites.
+Normal App use does not automatically fit the viewport. Final delivery requires
+latest PR CI passing; static flow validation is not runtime completion.
 
 ### Request-linked criteria and bounded inspection payloads
 
@@ -666,16 +661,6 @@ existing canonical relationship representation, persistence and Undo/Redo.
 An element-instance ref with local property overrides is a distinct model capability;
 this Fill correction does not introduce it or substitute row indexes for its identity.
 
-### Recording-only visible observation
-
-The formal recording harness can sample actual canvas screenshots in its existing
-wait loop. Record the first changed canvas pixels as an observed interval relative
-to the request submission, separately from canonical application receipts. This is
-pixel evidence, not a quality judgment, and is unavailable until a change is observed.
-Keep its last unchanged observation and first changed observation; do not pretend to
-know the exact presentation time between samples. Sampling stops after detection.
-This instrumentation is test-owned, never a production drawing or zoom policy.
-
 ## Progressive preparation and reference admission
 
 Reference import preserves original encoded PNG/JPEG/WebP bytes and oriented
@@ -707,12 +692,6 @@ Remaining requirements stay pending; repeated geometry is not evidence that the
 whole structure must already be reviewed. Structure review remains an optional
 whole-structure checkpoint. Final acceptance still requires all planned criteria
 and current overview/detail evidence. There is no new rendering or Undo path.
-
-First-output recording is a separate explicit test scenario: use the first nonempty
-canonical canvas bounds for the initial recording-only fit, capture the first changed
-canvas pixels, hold for ten seconds, then cancel any active request and stop
-recording. It does not assert finished-artwork quality or wait for a whole-structure
-review. Completion recording retains its existing terminal checks and final fit.
 
 ### Ready-part continuation and delivery reuse
 
@@ -782,8 +761,6 @@ required when their declarative inputs are available.
 Reference acquisition preserves concurrent ordered receipts and original bytes.
 Per-source observations distinguish reusable acquisition from new I/O and expose
 failure stage without interpreting successful download as suitable artwork.
-First-output recording must confirm a Stop click or actual terminal outcome;
-a transiently absent button is not settlement. This is test-only navigation.
 
 ### First visible change admission
 

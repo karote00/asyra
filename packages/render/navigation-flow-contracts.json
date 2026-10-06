@@ -1,0 +1,169 @@
+{
+  "version": 2,
+  "manifestPath": "packages/render/navigation-flow-contracts.json",
+  "targetId": "render-engine-boundary",
+  "architecturePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
+  "specPath": "docs/ai/framework/packages/render.md",
+  "testFile": "packages/render/src/__tests__/viewport-layer.test.ts",
+  "configFile": "packages/render/src/__tests__/navigation-flow.config.ts",
+  "workspaceSources": [
+    {
+      "name": "@asyra/render",
+      "inputs": ["src/**"],
+      "entry": "src/index.ts"
+    }
+  ],
+  "externalInputs": [
+    "artifact:render-engine-contract",
+    "artifact:engine-provider-selection",
+    "artifact:direct-engine-provider",
+    "artifact:render-start-request",
+    "artifact:pixi-engine-result",
+    "artifact:custom-engine-result"
+  ],
+  "negativeCaseIds": ["navigation.camera"],
+  "flows": [
+    {
+      "id": "navigation-owner",
+      "title": "Retained navigation owner",
+      "goal": "Preserve source material and camera ownership at this boundary. Browser integration and full dependency suites remain required by the active performance plan.",
+      "stepIds": ["orchestrate-render-adapter"],
+      "cases": [
+        {
+          "id": "navigation.camera",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer isolates camera transforms without grouping ordinary containers or redrawing geometry"
+        },
+        {
+          "id": "preserve.1",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer reports the exact number of projected RenderLayer elements without exposing the map"
+        },
+        {
+          "id": "preserve.2",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer forwards the committed sibling index when adding an element"
+        },
+        {
+          "id": "preserve.3",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer fitBounds centers 'portrait' content in the visible viewport"
+        },
+        {
+          "id": "preserve.4",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer fitBounds centers 'landscape' content in the visible viewport"
+        },
+        {
+          "id": "navigation.optional-capability",
+          "stepId": "orchestrate-render-adapter",
+          "testName": "ViewportLayer keeps optional transform hints out of engines that do not advertise them"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "use-default-engine",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "use-custom-engine",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "inject-direct-engine",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "start-render-adapter",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "contract-to-render-adapter",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "return-pixi-engine-result",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        },
+        {
+          "routeId": "return-custom-engine-result",
+          "decision": "required",
+          "caseIds": [
+            "navigation.camera",
+            "preserve.1",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "navigation.optional-capability"
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "omit-retention",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current owner source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "omit-retention",
+      "title": "Omit retained owner behavior",
+      "expectedFailedCaseIds": ["navigation.camera"],
+      "mutation": {
+        "file": "packages/render/src/layers/viewport/viewport-layer.ts",
+        "from": "transformGroup: true",
+        "to": "transformGroup: false"
+      }
+    }
+  ]
+}

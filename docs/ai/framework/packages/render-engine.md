@@ -62,6 +62,12 @@ move/line/Bézier operations.
 
 ## Capabilities
 
+`RenderEngineObjectProperties.transformGroup` is an optional boolean hint for
+an independent transform domain. It preserves child coordinates, painter order
+and interaction identity. Engines may ignore the hint while producing identical
+output; it is not a persisted document Group or a new capability requirement.
+The Render adapter requests it for its camera container, not screen overlays.
+
 The current contract exposes only capabilities backed by current formal cases:
 
 - `objects`;
@@ -87,3 +93,12 @@ instance isolation without depending on a concrete SDK.
 - no dependency between `@asyra/render` and a concrete engine;
 - non-render framework packages do not depend on this package unless they own
   composition types.
+
+### Optional retained transforms
+
+`RenderEngineCapabilities.TRANSFORM_GROUPS` (`transform-groups`) advertises
+support for the optional boolean `transformGroup` object property. Render
+forwards this optimization hint only to engines advertising that capability.
+Engines without it continue receiving ordinary position/scale commands; an
+unsupported hint-only update sends no command. It is not a startup requirement
+and does not change required-capability errors, painter order or coordinates.

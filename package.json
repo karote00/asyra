@@ -50,7 +50,7 @@
     "test:fieldscope:ci": "yarn workspace @asyra/fieldscope test:ci",
     "test:starter-app": "yarn workspace @asyra/starter-app test:local",
     "test:starter-app:ci": "yarn workspace @asyra/starter-app test:ci",
-    "test:scripts": "node --test scripts/__tests__/local-validation.test.mjs scripts/__tests__/local-validation-runner.test.mjs apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs scripts/__tests__/agent-hook-adapter.test.mjs scripts/__tests__/agent-safety-hook.test.mjs scripts/__tests__/app-release-entry.test.mjs scripts/__tests__/app-release-plan.test.mjs scripts/__tests__/app-release-provider.test.mjs scripts/__tests__/app-release-service.test.mjs scripts/__tests__/app-release-verification.test.mjs scripts/__tests__/app-release-workflow.test.mjs scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/changeset-all-patch.test.mjs scripts/__tests__/changeset-pr-check.test.mjs scripts/__tests__/ci-scope.test.mjs scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/deps-validate.test.mjs scripts/__tests__/developer-agent-bundle.test.mjs scripts/__tests__/display-name-separators.test.mjs scripts/__tests__/framework-release-artifacts.test.mjs scripts/__tests__/framework-release-publisher.test.mjs scripts/__tests__/merge-agent-subpr.test.mjs scripts/__tests__/plan-closeout.test.mjs scripts/__tests__/production-artifact-resource-evidence.test.mjs scripts/__tests__/release-automation.test.mjs scripts/__tests__/release-records.test.mjs scripts/__tests__/task-context.test.mjs scripts/__tests__/test-file-placement.test.mjs scripts/__tests__/wait-for-http.test.mjs scripts/__tests__/workspace-automation.test.mjs scripts/agent-coordination/__tests__/guard-core.test.cjs scripts/agent-evals/__tests__/engine.test.mjs scripts/docs/__tests__/public-content-contract.test.mjs scripts/docs/__tests__/public-documentation-inputs.test.mjs scripts/docs/__tests__/public-documentation-validation.test.mjs scripts/docs/__tests__/public-documentation.test.mjs scripts/docs/__tests__/public-package-readmes.test.mjs scripts/docs/__tests__/public-package-reference.test.mjs scripts/docs/__tests__/public-readme-inputs.test.mjs scripts/docs/__tests__/public-readme-validation.test.mjs scripts/docs/__tests__/public-source-map.test.mjs scripts/docs/__tests__/support-policy-validation.test.mjs tools/flow-inspector/__tests__/package.test.cjs tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs && yarn test:workspace-builds",
+    "test:scripts": "node --test scripts/__tests__/dependency-consumers.test.mjs scripts/__tests__/local-validation.test.mjs scripts/__tests__/local-validation-runner.test.mjs apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs scripts/__tests__/agent-hook-adapter.test.mjs scripts/__tests__/agent-safety-hook.test.mjs scripts/__tests__/app-release-entry.test.mjs scripts/__tests__/app-release-plan.test.mjs scripts/__tests__/app-release-provider.test.mjs scripts/__tests__/app-release-service.test.mjs scripts/__tests__/app-release-verification.test.mjs scripts/__tests__/app-release-workflow.test.mjs scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/changeset-all-patch.test.mjs scripts/__tests__/changeset-pr-check.test.mjs scripts/__tests__/ci-scope.test.mjs scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/deps-validate.test.mjs scripts/__tests__/developer-agent-bundle.test.mjs scripts/__tests__/display-name-separators.test.mjs scripts/__tests__/framework-release-artifacts.test.mjs scripts/__tests__/framework-release-publisher.test.mjs scripts/__tests__/merge-agent-subpr.test.mjs scripts/__tests__/plan-closeout.test.mjs scripts/__tests__/production-artifact-resource-evidence.test.mjs scripts/__tests__/release-automation.test.mjs scripts/__tests__/release-records.test.mjs scripts/__tests__/task-context.test.mjs scripts/__tests__/test-file-placement.test.mjs scripts/__tests__/wait-for-http.test.mjs scripts/__tests__/workspace-automation.test.mjs scripts/agent-coordination/__tests__/guard-core.test.cjs scripts/agent-evals/__tests__/engine.test.mjs scripts/docs/__tests__/public-content-contract.test.mjs scripts/docs/__tests__/public-documentation-inputs.test.mjs scripts/docs/__tests__/public-documentation-validation.test.mjs scripts/docs/__tests__/public-documentation.test.mjs scripts/docs/__tests__/public-package-readmes.test.mjs scripts/docs/__tests__/public-package-reference.test.mjs scripts/docs/__tests__/public-readme-inputs.test.mjs scripts/docs/__tests__/public-readme-validation.test.mjs scripts/docs/__tests__/public-source-map.test.mjs scripts/docs/__tests__/support-policy-validation.test.mjs tools/flow-inspector/__tests__/package.test.cjs tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs && yarn test:workspace-builds",
     "test:workspaces:local": "yarn test:scripts && turbo run test:local --concurrency=2",
     "test:workspaces:ci": "yarn test:scripts && turbo run test:ci --concurrency=2",
     "test:e2e:asyra-design": "yarn workspace @asyra/asyra-design test:e2e",
@@ -122,13 +122,17 @@
     "yarn": ">=4.3.1"
   },
   "resolutions": {
+    "simple-git@npm:^3.20.0": "npm:4.0.2",
+    "tinypool@npm:^1.1.1": "npm:2.1.2",
+    "source-map-js": "npm:1.2.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "js-yaml@npm:4.1.1": "npm:4.3.2",
     "minimatch@npm:10.1.1": "npm:10.2.6",
     "brace-expansion@npm:^2.0.2": "npm:2.1.7",
     "brace-expansion@npm:^5.0.2": "npm:5.0.12",
-    "brace-expansion@npm:^5.0.8": "npm:5.0.12"
+    "brace-expansion@npm:^5.0.8": "npm:5.0.12",
+    "shell-quote": "npm:1.11.0"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
@@ -146,7 +150,7 @@
     "typescript-eslint": "^8.68.0"
   },
   "dependencies": {
-    "context-rag": "^2.1.4",
+    "context-rag": "patch:context-rag@npm%3A2.1.4#~/.yarn/patches/context-rag-npm-2.1.4-eb3d4039e3.patch",
     "handoff-ai": "^0.7.0"
   }
 }

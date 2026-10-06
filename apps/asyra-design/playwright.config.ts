@@ -14,6 +14,7 @@ const collaborationWebSocketURL = new URL(
 )
 collaborationWebSocketURL.protocol = 'ws:'
 const ordinaryTestIgnore = [
+  '*.local.spec.ts',
   'collaboration-ai-agent-video.spec.ts',
   'collaboration.spec.ts',
   'crdt-endpoint-performance.spec.ts',

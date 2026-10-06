@@ -488,10 +488,7 @@
           'Persist ordered sanitized records locally; incomplete streams never imply success',
           'Retain bounded summaries and separate sanitized App tool payload snapshots locally, with digest, bytes and explicit redactions',
           'Project evidence-linked reports without certifying visuals or inferring missing facts',
-          'Extract exact retained plan-echo candidates before grouping tool/phase/failure/configuration evidence for offline investigation; truncation and missing evidence remain unknown, and frequency is not root cause or model improvement',
-          'Recording-only pixel observations retain sampling intervals separately from canonical application times and do not certify drawing quality',
-          'First-output recordings wait for an actionable Stop or actual terminal outcome; button absence alone cannot prove cancellation',
-          'Explicit first-output recordings fit the first nonempty canonical canvas bounds without waiting for a batch receipt, fit in the browser independently of screenshot polling, hold ten seconds after visible pixels, then cancel; keep full-completion recording separate'
+          'Extract exact retained plan-echo candidates before grouping tool/phase/failure/configuration evidence for offline investigation; truncation and missing evidence remain unknown, and frequency is not root cause or model improvement'
         ],
         bypasses: ['Missing provider fields remain unavailable'],
         allowedContributors: [

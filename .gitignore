@@ -68,3 +68,6 @@ docs/ai/apps/*/plans/*/artifacts/canonical-stroke-matrix/
 # Rust build artifacts (context-rag)
 target/
 Cargo.lock
+
+# Personal acceptance automation and duplicate local fixture bytes
+/apps/asyra-design/e2e/fixtures/large-document/document.json.gz

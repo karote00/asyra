@@ -57,7 +57,8 @@
         "@asyra/feature-system#build:feature-system",
         "@asyra/input-system#build:input-system",
         "@asyra/reactive-events#build:reactive-events",
-        "@asyra/render#build:render"
+        "@asyra/render#build:render",
+        "@asyra/render-engine-pixi#build:render-engine-pixi"
       ]
     },
     "@asyra/asyra-framework-site#build:asyra-framework-site": {

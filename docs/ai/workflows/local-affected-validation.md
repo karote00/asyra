@@ -2,7 +2,7 @@
 
 ## Product contract
 
-`yarn validate:local` previews affected local lint, tests and E2E. Add `--run`
+`yarn validate:local` previews affected security audit, local lint, tests and E2E. Add `--run`
 to execute the previewed obligations. `--base <ref>` selects an explicit commit;
 otherwise use the merge base of HEAD and origin/main. `--full` selects full
 validation. No fetch, push, remote CI, dependency installation or tool upgrade
@@ -32,8 +32,12 @@ Run selected checks and their declared build prerequisites sequentially through
 existing CI runners or the E2E owner's local command. Keep owner resource guards
 and zero-test checks. Selected failure, missing result, zero tests or cancellation
 cannot produce a passing aggregate. Unselected checks are explicit. This command
-validates local lint/tests/E2E; it does not certify release, publication, remote
-security audit, production artifact or hosting gates.
+runs the selected security audit first using `yarn security:audit`, with the same
+selection and severity threshold as CI. An audit failure or registry error stops
+subsequent checks and remains in the run evidence. Unselected audits do not query
+the registry. Audit results depend on the live advisory database; rerun before
+push rather than treating an earlier pass as permanent. This command does not
+certify release, publication, production artifact or hosting gates.
 
 ```sh
 yarn validate:local

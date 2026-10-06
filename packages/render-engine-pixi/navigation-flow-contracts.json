@@ -1,0 +1,274 @@
+{
+  "version": 2,
+  "manifestPath": "packages/render-engine-pixi/navigation-flow-contracts.json",
+  "targetId": "render-engine-boundary",
+  "architecturePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
+  "specPath": "docs/ai/framework/packages/render-engine-pixi.md",
+  "testFile": "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts",
+  "configFile": "packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts",
+  "workspaceSources": [
+    {
+      "name": "@asyra/render-engine-pixi",
+      "inputs": ["src/**"],
+      "entry": "src/index.ts"
+    }
+  ],
+  "externalInputs": [
+    "artifact:render-engine-contract",
+    "artifact:engine-command-stream",
+    "artifact:adapter-destroy-command"
+  ],
+  "negativeCaseIds": ["navigation.camera"],
+  "flows": [
+    {
+      "id": "navigation-owner",
+      "title": "Retained navigation owner",
+      "goal": "Preserve source material and camera ownership at this boundary. Browser integration and full dependency suites remain required by the active performance plan.",
+      "stepIds": ["execute-render-engine"],
+      "cases": [
+        {
+          "id": "navigation.material",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine shares equivalent gradient resources only for the lifetime of their handles"
+        },
+        {
+          "id": "navigation.camera",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine applies transform domains only to explicitly requested containers"
+        },
+        {
+          "id": "preserve.2",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine updates text density for zoom and inherited scale without work on stable flush or pan"
+        },
+        {
+          "id": "preserve.3",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine materializes literal text and releases only owned text on clear and destroy"
+        },
+        {
+          "id": "preserve.4",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine aligns short text within its explicit layout box"
+        },
+        {
+          "id": "preserve.5",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine captures text at target-relative density and restores screen density on success and failure"
+        },
+        {
+          "id": "preserve.6",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine measures native local content without snapshot extraction or world coordinates"
+        },
+        {
+          "id": "preserve.7",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine preserves native pixels and captures explicit regions without downsampling"
+        },
+        {
+          "id": "preserve.8",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine extracts the real target at bounded resolution and rejects empty captures"
+        },
+        {
+          "id": "preserve.9",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine preserves the current bounded device resolution and resize target"
+        },
+        {
+          "id": "preserve.10",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine executes the abstract contract through a Pixi-specific test adapter"
+        },
+        {
+          "id": "preserve.11",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine hit-tests an empty stage before any pointer event without rendering"
+        },
+        {
+          "id": "preserve.12",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine hit-tests the owned stage and maps its target after the event root changes"
+        },
+        {
+          "id": "preserve.13",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine maps object, draw, viewport, query, resize, frame, and flush commands"
+        },
+        {
+          "id": "preserve.14",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine omits undefined optional paint fields while preserving explicit alpha"
+        },
+        {
+          "id": "preserve.15",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine maps the engine-neutral Graphics batching property to Pixi batch mode"
+        },
+        {
+          "id": "preserve.16",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine normalizes Pixi pointer events to opaque handles"
+        },
+        {
+          "id": "preserve.17",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine translates abstract gradient and raster descriptors into Pixi fill resources"
+        },
+        {
+          "id": "preserve.18",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine updates Pixi mesh geometry and engine-facing object properties"
+        },
+        {
+          "id": "preserve.19",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine destroys engine-owned mesh geometry without destroying the shared texture"
+        },
+        {
+          "id": "preserve.20",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine creates procedural Pixi resources for radial, angular, and diamond gradients"
+        },
+        {
+          "id": "navigation.lifecycle",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine isolates instances and cleans partial initialization deterministically"
+        },
+        {
+          "id": "preserve.fractional-0",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine captures fractional bounds 249.98 x 249.99999999999997 without truncating content"
+        },
+        {
+          "id": "preserve.fractional-1",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine captures fractional bounds 250.00000000000003 x 250 without truncating content"
+        },
+        {
+          "id": "preserve.fractional-2",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine captures fractional bounds 0.25 x 0.75 without truncating content"
+        },
+        {
+          "id": "preserve.fractional-3",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine captures fractional bounds 1024.25 x 512.5 without truncating content"
+        },
+        {
+          "id": "navigation.frame-delivery",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine delivers demanded frames without comparing frame timestamps to request time"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "contract-to-pixi-engine",
+          "decision": "required",
+          "caseIds": [
+            "navigation.material",
+            "navigation.camera",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "preserve.5",
+            "preserve.6",
+            "preserve.7",
+            "preserve.8",
+            "preserve.9",
+            "preserve.10",
+            "preserve.11",
+            "preserve.12",
+            "preserve.13",
+            "preserve.14",
+            "preserve.15",
+            "preserve.16",
+            "preserve.17",
+            "preserve.18",
+            "preserve.19",
+            "preserve.20",
+            "navigation.lifecycle",
+            "navigation.frame-delivery"
+          ]
+        },
+        {
+          "routeId": "project-state-to-engine",
+          "decision": "required",
+          "caseIds": [
+            "navigation.material",
+            "navigation.camera",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "preserve.5",
+            "preserve.6",
+            "preserve.7",
+            "preserve.8",
+            "preserve.9",
+            "preserve.10",
+            "preserve.11",
+            "preserve.12",
+            "preserve.13",
+            "preserve.14",
+            "preserve.15",
+            "preserve.16",
+            "preserve.17",
+            "preserve.18",
+            "preserve.19",
+            "preserve.20",
+            "navigation.lifecycle",
+            "navigation.frame-delivery"
+          ]
+        },
+        {
+          "routeId": "request-pixi-destroy",
+          "decision": "required",
+          "caseIds": [
+            "navigation.material",
+            "navigation.camera",
+            "preserve.2",
+            "preserve.3",
+            "preserve.4",
+            "preserve.5",
+            "preserve.6",
+            "preserve.7",
+            "preserve.8",
+            "preserve.9",
+            "preserve.10",
+            "preserve.11",
+            "preserve.12",
+            "preserve.13",
+            "preserve.14",
+            "preserve.15",
+            "preserve.16",
+            "preserve.17",
+            "preserve.18",
+            "preserve.19",
+            "preserve.20",
+            "navigation.lifecycle",
+            "navigation.frame-delivery"
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "omit-retention",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current owner source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "omit-retention",
+      "title": "Omit retained owner behavior",
+      "expectedFailedCaseIds": ["navigation.camera"],
+      "mutation": {
+        "file": "packages/render-engine-pixi/src/pixi-render-engine.ts",
+        "from": "object.isRenderGroup = properties.transformGroup",
+        "to": "object.isRenderGroup = false"
+      }
+    }
+  ]
+}

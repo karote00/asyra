@@ -1,4 +1,5 @@
 import type { Rect } from '@asyra/utils'
+import { RenderEngineCapabilities } from '@asyra/render-engine'
 import type {
   RenderEngine,
   RenderEngineCommand,
@@ -221,7 +222,7 @@ export class RenderObjectRuntime {
         type: 'create-object',
         requestId: node.label || node.objectType,
         objectType: node.objectType,
-        properties: node.getEngineProperties()
+        properties: this.getSupportedProperties(node.getEngineProperties())
       },
       node
     )
@@ -316,8 +317,32 @@ export class RenderObjectRuntime {
   ): void {
     const handle = node.getEngineHandle()
     if (handle) {
-      this.execute({ type: 'update-object', object: handle, properties }, node)
+      const supportedProperties = this.getSupportedProperties(properties)
+      if (Object.keys(supportedProperties).length > 0) {
+        this.execute(
+          {
+            type: 'update-object',
+            object: handle,
+            properties: supportedProperties
+          },
+          node
+        )
+      }
     }
+  }
+
+  private getSupportedProperties(
+    properties: RenderEngineObjectProperties
+  ): RenderEngineObjectProperties {
+    if (
+      !('transformGroup' in properties) ||
+      this.engine.capabilities.has(RenderEngineCapabilities.TRANSFORM_GROUPS)
+    ) {
+      return properties
+    }
+    const supportedProperties = { ...properties }
+    delete supportedProperties.transformGroup
+    return supportedProperties
   }
 
   destroyObject(node: RenderNode): void {
@@ -519,6 +544,7 @@ export class RenderNode {
   private _rotation = 0
   private _zIndex = 0
   private _batched = false
+  private _transformGroup = false
   private sourceSpaceOrigin: RenderEnginePoint = { x: 0, y: 0 }
   private handle: RenderEngineObjectHandle | null = null
   protected runtime: RenderObjectRuntime | null = null
@@ -698,6 +724,16 @@ export class RenderNode {
     this.updateEngineProperties({ batched: value })
   }
 
+  /** Independent transform domain; does not alter document Group semantics. */
+  get transformGroup(): boolean {
+    return this._transformGroup
+  }
+
+  set transformGroup(value: boolean) {
+    this._transformGroup = value
+    this.updateEngineProperties({ transformGroup: value })
+  }
+
   get worldTransform(): RenderMatrix {
     const rotationPlusSkewY = this.rotation + this.skew.y
     const rotationMinusSkewX = this.rotation - this.skew.x
@@ -735,7 +771,8 @@ export class RenderNode {
       zIndex: this.zIndex,
       eventMode: this.eventMode,
       cursor: this.cursor,
-      batched: this.batched
+      batched: this.batched,
+      transformGroup: this.transformGroup
     }
   }
 
@@ -964,6 +1001,9 @@ export class RenderContainer extends RenderNode {
     if (typeof properties.label === 'string') this.label = properties.label
     if (typeof properties.x === 'number') this.x = properties.x
     if (typeof properties.y === 'number') this.y = properties.y
+    if (typeof properties.transformGroup === 'boolean') {
+      this.transformGroup = properties.transformGroup
+    }
   }
 }
 

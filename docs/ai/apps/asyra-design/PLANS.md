@@ -4,6 +4,12 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
+  user accepted the candidate's navigation speed; retained navigation, shared
+  native materials, bounded GPU batches and input scheduling corrections are
+  implemented. Continuous timing measurements stay local-only. Full local CI
+  resumes before the authorized feature-branch push; AI workflow work is deferred.
+
 - Active: [Tool definition delivery](plans/ai-tool-definition-delivery-plan.md) -
   selective API documentation, equivalent native schemas and explicit recovery.
 

@@ -187,6 +187,7 @@
         'Exactly one provider route supplies one engine instance per Render instance.',
         '@asyra/render imports @asyra/render-engine only and emits engine-neutral lifecycle, object, resource, draw, viewport, resize, flush, and destroy operations.',
         'State projection, registered layer ordering, render strategies, batching decisions, and framework target id to opaque handle mapping remain owned here.',
+        'The viewport alone requests an independent transform domain through the optional transformGroup property. Render forwards it only when the engine advertises transform-groups; otherwise ordinary matrices remain authoritative and hint-only updates emit no command. Screen-space overlays and authored Group semantics are unchanged.',
         'Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.',
         'Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.',
         'A successful concrete result is normalized before Core observes adapter initialization success.'
@@ -254,7 +255,7 @@
       conditions: [
         'The contract covers only initialize, resize, create, update, remove, draw, viewport, flush, interaction, capability, and destroy behavior required by current formal cases.',
         'Object and resource handles are opaque outside the implementing engine.',
-        'Unsupported capabilities fail through an explicit contract error.',
+        'Unsupported required capabilities fail through an explicit contract error. Optional transform-groups advertises retained transform optimization without becoming a startup requirement.',
         'The package exposes engine-independent contract-test utilities and no default runtime singleton.'
       ],
       bypasses: [
@@ -321,6 +322,10 @@
       conditions: [
         'The default engine executes only @asyra/render-engine commands and returns opaque handles, normalized results, and normalized interaction events.',
         'All Pixi Application, Container, Graphics, Mesh, texture, ticker, event, resource, hit-test, and cleanup behavior is owned here.',
+        'Large logical child lists may use identity native submission partitions; order, coordinates and opaque targets remain unchanged, local edits invalidate only their partition, and destruction releases partition state.',
+        'One engine-owned browser animation-frame slot delivers the browser timestamp without elapsed-time gating; replacement and teardown cancel stale callbacks, callbacks may request a successor, and no idle loop remains.',
+        'Native wheel input remains owned by InputSystem; unused Pixi wheel federation performs no scene hit test. Supported pointer targeting and explicit hit-test queries remain available.',
+        'The optional transformGroup optimization hint maps to a Pixi Render Group; omitting it preserves ordinary container behavior and never changes painter order or coordinates.',
         '@asyra/render-engine-pixi must not import @asyra/render or call product features.',
         'Destroy releases every owned Pixi resource after complete or partial initialization and returns a deterministic cleanup result.'
       ],
@@ -341,7 +346,10 @@
         'app-domain geometry or feature decisions',
         'custom-engine type introspection'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'live engine instance',
+        'complete supported gradient descriptor values'
+      ],
       implementationBoundary: [
         'yarn.lock',
         'turbo.json',
@@ -349,6 +357,9 @@
         'packages/render-engine-pixi/tsconfig.json',
         'packages/render-engine-pixi/vitest.config.ts',
         'packages/render-engine-pixi/src/**',
+        'apps/asyra-design/e2e/retained-navigation.spec.ts',
+        'apps/asyra-design/e2e/navigation-work-probe.ts',
+        'apps/asyra-design/e2e/fixtures/__tests__/render-engine-access.ts',
         'docs/ai/framework/packages/render-engine-pixi.md'
       ],
       specRefs: [
