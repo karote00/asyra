@@ -29,8 +29,14 @@
 - priority: `10`
 - exclusive: `true`
 - computes fit against `viewport-anchor` bounds and all element bounds
+- preserves aspect ratio and padding, then centers the complete content bounds
+  on both axes within that visible viewport; unused space is split equally
 
 ## State Contract
 
 - viewport behavior is system-property-driven (`zoom`, `viewportPosition`)
 - render/UI should consume resulting state updates
+
+The App layout reserves the visible right sidebar width, including the Agent
+conversation panel, in the viewport anchor. Opening or closing that panel does
+not change the camera; the next explicit fit uses the current visible area.

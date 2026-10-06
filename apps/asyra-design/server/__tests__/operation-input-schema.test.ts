@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest'
 import {
+  designReviewDefinition,
+  reviewPlanExample
+} from '../local-design-review'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import {
   nativeToolInputSchema,
   operationInputIssue
 } from '../operation-input-schema'
@@ -175,6 +180,97 @@ it('compares unique structured items independently of object key order', () => {
     )
   ).toContain('duplicate item')
   expect(operationInputIssue([{ a: 1 }, { a: 2 }], schema)).toBeUndefined()
+})
+
+it('compacts redundant native choices while preserving overlap and contradictory constraints', () => {
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['mode', 'mode'],
+    properties: { mode: { type: ['string', 'string'], enum: ['a', 'b', 'a'] } },
+    anyOf: [
+      { properties: { mode: { const: 'a' } } },
+      { properties: { mode: { const: 'a' } } },
+      { properties: { mode: { const: 'b' } } }
+    ]
+  }
+  const converted = nativeToolInputSchema(schema) as {
+    anyOf: { properties: { mode: { enum?: unknown } }; required: string[] }[]
+  }
+  expect(converted.anyOf).toHaveLength(2)
+  expect(converted.anyOf[0].properties.mode.enum).toBeUndefined()
+  expect(converted.anyOf[0].required).toEqual(['mode'])
+  for (const value of [
+    {},
+    { mode: 'a' },
+    { mode: 'b' },
+    { mode: 'c' },
+    { mode: null },
+    { mode: 1 },
+    { mode: 'a', extra: 1 }
+  ])
+    expect(!operationInputIssue(value, converted)).toBe(
+      !operationInputIssue(value, schema)
+    )
+  for (const candidate of [
+    { oneOf: [{ const: 'a' }, { const: 'a' }] },
+    { const: 'a', enum: ['b'] },
+    { allOf: [{ type: 'string' }, { type: 'string' }, { const: 'a' }] }
+  ])
+    for (const value of ['a', 'b', 1, null, {}])
+      expect(
+        !operationInputIssue(value, nativeToolInputSchema(candidate))
+      ).toBe(!operationInputIssue(value, candidate))
+  expect(schema.anyOf).toHaveLength(3)
+  const first = { value: 1 }
+  const second = { value: 1 }
+  for (const objectChoices of [
+    { enum: [first, second, first] },
+    { anyOf: [{ enum: [first] }, { enum: [second] }] },
+    { allOf: [{ const: first }, { const: second }] }
+  ])
+    for (const value of [first, second, { value: 1 }])
+      expect(
+        !operationInputIssue(value, nativeToolInputSchema(objectChoices))
+      ).toBe(!operationInputIssue(value, objectChoices))
+})
+
+it('preserves real review and action schema admission after native conversion', () => {
+  const schema = designReviewDefinition.inputSchema
+  const converted = nativeToolInputSchema(schema)
+  const candidates = [
+    reviewPlanExample,
+    { ...reviewPlanExample, phase: 'unknown' },
+    { ...reviewPlanExample, extra: true },
+    { ...reviewPlanExample, detailRequired: 'yes' },
+    ...Object.keys(reviewPlanExample).map((key) =>
+      Object.fromEntries(
+        Object.entries(reviewPlanExample).filter(([name]) => name !== key)
+      )
+    ),
+    { phase: 'facts' },
+    { phase: 'visual', checks: [] },
+    { phase: 'structure', inspectionIds: ['image'], checks: [] }
+  ]
+  expect(operationInputIssue(reviewPlanExample, converted)).toBeUndefined()
+  for (const input of candidates)
+    expect(!operationInputIssue(input, converted), JSON.stringify(input)).toBe(
+      !operationInputIssue(input, schema)
+    )
+  for (const api of basicApiContracts) {
+    const native = nativeToolInputSchema(api.inputSchema)
+    for (const input of [
+      {},
+      { unknown: true },
+      null,
+      [],
+      { elementId: 'known' }
+    ])
+      expect(!operationInputIssue(input, native), api.name).toBe(
+        !operationInputIssue(input, api.inputSchema)
+      )
+  }
+  expect(nativeToolInputSchema(converted)).toEqual(converted)
 })
 
 it('materializes common union fields for native declarations without weakening admission', () => {

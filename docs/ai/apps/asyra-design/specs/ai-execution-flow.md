@@ -96,6 +96,21 @@ definitions after context loss or failed delivery. Compact menus do not consume
 full-definition delivery. A new request starts fresh; this state never deduplicates
 action execution.
 
+Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
+(JSON Pointers into the canonical input schema). Usage includes purpose,
+execution route and root property paths. Fragment replies include exact selected
+values and transitive local reference dependencies; they are partial documentation,
+not complete executable schemas. Unknown paths reject recoverably. These modes
+require an exact selector, cannot be combined with each other or refresh, and
+never consume full-definition delivery. Full lookup and explicit refresh remain
+available for every contract. Replies distinguish current response coverage from
+previous delivery; a delivery record cannot prove that the model retained context.
+
+Native declaration conversion may remove only equivalent redundant constraints.
+It preserves common union fields, closed-object boundaries, required fields,
+contradictions and local references. Duplicate alternatives may be removed from
+anyOf/allOf, never oneOf; admission remains owned by the original schema.
+
 Model mutations use batch dispatch, including one-item operations. Redundant
 scalar aliases have explicit surviving-operation dispositions. Single-object
 composite edits are batch items; existing collection preparation/application

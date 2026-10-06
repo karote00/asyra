@@ -4,6 +4,9 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active: [Tool definition delivery](plans/ai-tool-definition-delivery-plan.md) -
+  selective API documentation, equivalent native schemas and explicit recovery.
+
 - Active: [AI execution improvement](plans/ai-execution-improvement-plan.md) -
   recording first, then evaluation, retrieval, efficiency and local validation.
 - Active preparation: [AI Design Execution Flow](plans/ai-execution-flow-plan.md).

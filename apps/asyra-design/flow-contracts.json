@@ -42,6 +42,11 @@
       ],
       "cases": [
         {
+          "id": "compose.definition-delivery",
+          "stepId": "compose",
+          "testName": "execution proof preserves partial lookup full recovery and declaration constraints"
+        },
+        {
           "id": "compose.registered-tools",
           "stepId": "compose",
           "testName": "execution proof preserves registered native capability envelopes"

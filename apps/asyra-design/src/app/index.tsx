@@ -3,7 +3,7 @@ import ToolBar from '../toolbar'
 import Contents from '../contents'
 import Properties from '../properties'
 import { toTailwindPixelSize } from '../tailwind-size'
-import { COLUMN_WIDTH } from '../constants'
+import { COLUMN_WIDTH, CONVERSATION_PANEL_WIDTH } from '../constants'
 import RenderApp from '../render-app'
 import {
   createGroupCommandDescriptors,
@@ -184,7 +184,7 @@ const App: React.FC<AppProps> = ({
       `,
         gridTemplateColumns: `${toTailwindPixelSize(
           COLUMN_WIDTH
-        )}px 1fr ${toTailwindPixelSize(COLUMN_WIDTH)}px`,
+        )}px 1fr ${aiOpen ? CONVERSATION_PANEL_WIDTH : `${toTailwindPixelSize(COLUMN_WIDTH)}px`}`,
         gridTemplateRows: 'auto 1fr'
       }}
     >

@@ -1,6 +1,7 @@
 export const CANVAS_BACKGROUND_COLOR = 0x141414
 export const ROW_HEIGHT = 8 // 32 / 4 = 8 for tailwind
 export const COLUMN_WIDTH = 60 // 240 / 4 = 60 for tailwind
+export const CONVERSATION_PANEL_WIDTH = 'min(384px, calc(100vw - 24px))'
 export const ICON_SIZE = 24
 export const DEFAULT_ELEMENT_FILL_COLOR = '#cccccc'
 export const DEFAULT_FRAME_FILL_COLOR = DEFAULT_ELEMENT_FILL_COLOR

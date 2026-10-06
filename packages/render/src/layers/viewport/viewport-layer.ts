@@ -3,6 +3,7 @@ import {
   DEFAULT_CANVAS_PADDING,
   MouseData,
   rectToBounds,
+  calculateZoomFit,
   type Bounds
 } from '@asyra/utils'
 import {
@@ -167,25 +168,13 @@ export class ViewportLayer {
     uiBounds: Bounds,
     padding = DEFAULT_CANVAS_PADDING
   ) {
-    // The available inner canvas area (excluding padding)
-    const availableWidth = uiBounds.maxX - uiBounds.minX - padding * 2
-    const availableHeight = uiBounds.maxY - uiBounds.minY - padding * 2
-
-    const contentWidth = elementsBounds.maxX - elementsBounds.minX
-    const contentHeight = elementsBounds.maxY - elementsBounds.minY
-
-    // Calculate proportional zoom ratio
-    const scaleX = availableWidth / contentWidth
-    const scaleY = availableHeight / contentHeight
-
-    const newZoom = Math.min(scaleX, scaleY)
-
-    // Compute the offset to align the content to the padded area
-    const offsetX = uiBounds.minX + padding - elementsBounds.minX * newZoom
-    const offsetY = uiBounds.minY + padding - elementsBounds.minY * newZoom
-
-    this.panTo(offsetX, offsetY)
-    this.zoomTo(newZoom)
+    const { scale, position } = calculateZoomFit({
+      elementsBounds,
+      viewportBounds: uiBounds,
+      padding
+    })
+    this.panTo(position.x, position.y)
+    this.zoomTo(scale)
   }
 
   /**
