@@ -31,7 +31,12 @@ sequentially through the same supervisor and serial one-worker
 source profile automatically joins the source group, while any other new profile
 joins the remaining group. Both modes run their permanent
 process tests first and acknowledge worker task updates through `vitest.setup.ts`.
-Profiles remain a required CI gate after ordinary tests. `--file`, optional
+Profiles remain a required affected CI gate, independent of ordinary test jobs.
+The repository classifier selects exact files; unknown relationships retain full
+coverage. `test:affected --file <path>` runs selected ordinary files through the
+same supervisor. `run-profile-groups.py --file <path>` runs selected profile files;
+`--group` restricts their group and `--list` returns the discovered partition.
+CI groups use separate runners; local execution stays sequential. `--file`, optional
 `--title` for one file, and finite `--hard-stop-ms` remain the supervisor's
 only selection/deadline controls. Each mode rejects the other test class.
 Each group retains the default 20-minute process wall deadline, owned

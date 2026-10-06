@@ -294,3 +294,31 @@ test('unselected security audit does not query the registry for documentation ed
     false
   )
 })
+
+test('local profile commands consume exactly the same selection as CI', () => {
+  const paths = ['apps/fieldscope/src/domain/kinematic-trigonometry.ts']
+  const inputs = {
+    changedPaths: paths,
+    baseRevision: 'a'.repeat(40),
+    headRevision: 'b'.repeat(40)
+  }
+  const ci = classifyChanges(paths, readWorkspaceManifests(repositoryRoot))
+  // Omit fictional revisions so manifest reads use the live checkout only.
+  const local = selectLocalValidation({
+    repositoryRoot,
+    inputs: { ...inputs, baseRevision: null }
+  })
+  assert.deepEqual(
+    local.profileFiles,
+    ci.relationshipMap.fieldscopeProfileFiles
+  )
+  const command = localCheckCommands(
+    local,
+    path.join(repositoryRoot, 'tmp/selection-test')
+  ).find((c) => c.id === 'fieldscope-profiles')
+  assert.ok(command)
+  assert.deepEqual(
+    command.args.slice(1),
+    local.profileFiles.flatMap((file) => ['--file', file])
+  )
+})

@@ -21,7 +21,7 @@ function validateWorkspaceEntry(workspace) {
     typeof workspace.lintSelection?.reason !== 'string' ||
     !Array.isArray(workspace.lintSelection?.inputs) ||
     workspace.testTask !== 'test:ci' ||
-    !['full', 'related', 'not-selected'].includes(
+    !['full', 'related', 'files', 'not-selected'].includes(
       workspace.testSelection?.mode
     ) ||
     typeof workspace.testSelection?.reason !== 'string' ||
@@ -30,6 +30,13 @@ function validateWorkspaceEntry(workspace) {
       (workspace.testSelection.inputs.length === 0 ||
         workspace.testSelection.runner?.command !== 'vitest' ||
         !Array.isArray(workspace.testSelection.runner.args))) ||
+    (workspace.testSelection.mode === 'files' &&
+      (workspace.testSelection.runner?.command !== 'test:affected' ||
+        !workspace.testSelection.inputs.length ||
+        workspace.testSelection.inputs.some(
+          (f) =>
+            !/^src\/.*\.test\.[jt]sx?$/.test(f) || f.split('/').includes('..')
+        ))) ||
     (workspace.e2eTask !== null &&
       workspace.e2eTask !== undefined &&
       workspace.e2eTask !== 'test:e2e:ci') ||
@@ -250,6 +257,19 @@ async function main() {
           stdio: 'ignore'
         })
         return { mode: 'preflight' }
+      }
+      if (task === 'test:ci' && selection.mode === 'files') {
+        execFileSync(
+          'yarn',
+          [
+            'workspace',
+            name,
+            'test:affected',
+            ...selection.inputs.flatMap((file) => ['--file', file])
+          ],
+          { cwd: repositoryRoot, stdio: 'inherit' }
+        )
+        return { mode: 'files', inputs: selection.inputs }
       }
       if (task === 'test:ci' && selection.mode === 'related') {
         const files = selection.inputs.map((file) =>

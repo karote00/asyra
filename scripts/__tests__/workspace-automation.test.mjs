@@ -1178,60 +1178,36 @@ test('a timed-out build command terminates its descendant process', async () => 
   assert.ok(status === '' || status.startsWith('Z'), status)
 })
 
-test('FieldScope profile groups run serially outside the ordinary job and block validation', () => {
+test('FieldScope selected profile groups are independent and each blocks validation', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
-  const groups = ['heavy', 'source', 'remaining']
-  for (const [index, group] of groups.entries()) {
+  for (const group of ['heavy', 'source', 'remaining']) {
     const job = workflow.jobs[`fieldscope-profile-${group}`]
-    assert.ok(job, `${group} requires an independent job`)
-    assert.equal(job.uses, './.github/workflows/fieldscope-profile.yml')
+    assert.deepEqual(job.needs, ['scope'])
     assert.equal(job.with.group, group)
-    assert.deepEqual(job.needs, [
-      'scope',
-      index === 0
-        ? 'workspace-validation'
-        : `fieldscope-profile-${groups[index - 1]}`
-    ])
-    assert.match(job.if, /github.event.pull_request.draft == false/)
-    assert.match(
-      job.if,
-      /needs.scope.outputs.fieldscope_profiles_required == 'true'/
+    assert.ok(job.with.files.includes(`.${group}`))
+    assert.ok(job.if.includes(`.${group}`))
+    assert.ok(
+      workflow.jobs.validate.needs.includes(`fieldscope-profile-${group}`)
     )
-  }
-  assert.ok(
-    workflow.jobs.validate.needs.includes('fieldscope-profile-remaining')
-  )
-  const gate = workflow.jobs.validate.steps.find(
-    (step) => step.name === 'Require complete FieldScope profiles'
-  )
-  assert.equal(
-    gate.env.PROFILE_RESULT,
-    '${{ needs.fieldscope-profile-remaining.result }}'
-  )
-  assert.equal(
-    gate.env.PROFILE_SELECTED,
-    '${{ needs.scope.outputs.fieldscope_profiles_required }}'
-  )
-  for (const selected of ['true', 'false', '']) {
-    for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
-      const run = spawnSync('bash', ['-c', gate.run], {
-        env: {
-          ...process.env,
-          PROFILE_SELECTED: selected,
-          PROFILE_RESULT: result
-        }
-      })
-      assert.equal(
-        run.status === 0,
-        (selected === 'true' && result === 'success') ||
-          (selected === 'false' && result === 'skipped')
-      )
-    }
+    const gate = workflow.jobs.validate.steps.find(
+      (step) => step.name === `Require complete FieldScope ${group} profiles`
+    )
+    for (const files of ['[]', '["src/example.profile.test.ts"]'])
+      for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
+        const run = spawnSync('bash', ['-c', gate.run], {
+          env: { ...process.env, PROFILE_FILES: files, PROFILE_RESULT: result }
+        })
+        assert.equal(
+          run.status === 0,
+          files === '[]' ? result === 'skipped' : result === 'success'
+        )
+      }
   }
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
   assert.equal(profile.jobs.profile['timeout-minutes'], 20)
+  assert.equal(profile.on.workflow_call.inputs.files.required, true)
   assert.equal(profile.on.workflow_call.inputs.group.required, true)
   assert.ok(
     profile.jobs.profile.steps.some(
@@ -1242,16 +1218,14 @@ test('FieldScope profile groups run serially outside the ordinary job and block 
     profile.jobs.profile.steps.some(
       (step) =>
         step.run ===
-        'python3 apps/fieldscope/scripts/run-profile-groups.py --group "$PROFILE_GROUP"'
-    )
-  )
-  assert.ok(
-    profile.jobs.profile.steps.some(
-      (step) =>
-        step.run ===
         'yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2'
     )
   )
+  const run = profile.jobs.profile.steps.find(
+    (step) => step.name === 'Run selected profile group'
+  )
+  assert.equal(run.env.PROFILE_FILES, '${{ inputs.files }}')
+  assert.equal(run.env.PROFILE_GROUP, '${{ inputs.group }}')
 })
 
 test('FieldScope profile failures retain complete bounded supervision artifacts', () => {

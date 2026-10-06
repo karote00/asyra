@@ -112,3 +112,20 @@ test('merged CI report retains every group suite, failure and timing result', ()
     { group: 'second', exitCode: 1 }
   ])
 })
+
+test('selected browser specs stay in their owned group and reject missing paths', async () => {
+  const { selectBrowserGroups } = await import('../e2e-ci-groups.mjs')
+  const selected = selectBrowserGroups(['e2e/camera-flight.spec.ts'])
+  assert.deepEqual(selected, [
+    { name: 'camera-interaction', files: ['e2e/camera-flight.spec.ts'] }
+  ])
+  assert.throws(() => selectBrowserGroups(['e2e/missing.spec.ts']), /Unknown/)
+  assert.throws(
+    () =>
+      selectBrowserGroups([
+        'e2e/camera-flight.spec.ts',
+        'e2e/camera-flight.spec.ts'
+      ]),
+    /Duplicate/
+  )
+})

@@ -155,7 +155,7 @@ if result['outcome'] == 'failed':
   return fake
 }
 
-function run(root, supervisor, mode = 'pass', group = null) {
+function run(root, supervisor, mode = 'pass', group = null, files = null) {
   const record = path.join(root, 'record.jsonl')
   const code =
     loadRunner +
@@ -165,6 +165,7 @@ result = owner.run_profile_groups(
     Path(sys.argv[3]),
     environment=json.loads(sys.argv[4]),
     group=json.loads(sys.argv[5]),
+    selected_files=json.loads(sys.argv[6]),
 )
 print(json.dumps(result))
 `
@@ -182,7 +183,8 @@ print(json.dumps(result))
       root,
       supervisor,
       JSON.stringify(environment),
-      JSON.stringify(group)
+      JSON.stringify(group),
+      JSON.stringify(files)
     ],
     { cwd: app, encoding: 'utf8', timeout: 5000 }
   )
@@ -592,5 +594,43 @@ test('each walking motion profile isolates one scenario in its own worker file',
       1,
       `${file} must isolate exactly one profile scenario`
     )
+  }
+})
+
+test('selected profiles execute only intersecting groups and preserve exact receipts', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const result = run(root, writeFakeSupervisor(root), 'pass', null, [remaining])
+  assert.deepEqual(result.calls, [[remaining]])
+  assert.equal(result.result.selection.coverage, 'filtered-profiles')
+  assert.deepEqual(result.result.selection.files, [remaining])
+  assert.equal(result.result.completion, 'profile-selection-complete')
+})
+
+test('rejects empty, duplicate and foreign profile selections before starting a child', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  for (const files of [
+    [],
+    [remaining, remaining],
+    ['src/missing.profile.test.ts'],
+    [heavy]
+  ]) {
+    const checked = spawnSync(
+      'python3',
+      [
+        '-c',
+        loadRunner +
+          String.raw`
+owner.run_profile_groups(Path(sys.argv[2]), selected_files=json.loads(sys.argv[3]), group='remaining')
+`,
+        runner,
+        root,
+        JSON.stringify(files)
+      ],
+      { cwd: app, encoding: 'utf8' }
+    )
+    assert.notEqual(checked.status, 0)
+    assert.match(checked.stderr, /Selected profiles must/)
   }
 })

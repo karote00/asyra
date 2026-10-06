@@ -3,6 +3,10 @@ name: FieldScope profile group
 on:
   workflow_call:
     inputs:
+      files:
+        description: Exact selected profile files as JSON
+        required: true
+        type: string
       group:
         description: One exact profile group
         required: true
@@ -34,8 +38,16 @@ jobs:
         run: node --test apps/fieldscope/scripts/__tests__/supervise-tests.test.mjs apps/fieldscope/scripts/__tests__/run-profile-groups.test.mjs
       - name: Run selected profile group
         env:
+          PROFILE_FILES: ${{ inputs.files }}
           PROFILE_GROUP: ${{ inputs.group }}
-        run: python3 apps/fieldscope/scripts/run-profile-groups.py --group "$PROFILE_GROUP"
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, subprocess
+          files = json.loads(os.environ['PROFILE_FILES'])
+          if not isinstance(files, list) or not files or any(not isinstance(f, str) for f in files):
+              raise SystemExit('Invalid selected profile files')
+          subprocess.run(['python3', 'apps/fieldscope/scripts/run-profile-groups.py', '--group', os.environ['PROFILE_GROUP'], *[arg for f in files for arg in ('--file', f)]], check=True)
+          PYTHON
       - name: Upload profile supervision artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

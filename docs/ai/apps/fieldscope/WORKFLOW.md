@@ -40,3 +40,12 @@ Follow the Asyra Design deployment pattern: select `apps/fieldscope` as Root Dir
 The macOS browser suite uses ANGLE Metal to match the desktop GPU. `WEBGL_RENDERER=swiftshader` explicitly selects CPU software rendering; Linux defaults to SwiftShader. Software-rendered cases keep the 1440 × 1100 CSS layout and use a 0.25 device scale factor; the renderer selects level of detail from physical pixels. Software results are not a desktop responsiveness claim. Robot panel-closure and greenhouse panel cases request reduced motion in software-rendered runs and still assert edits, canvas identity and final scene geometry. Hardware-rendered runs retain transitions. Test timeout/resource guards remain unchanged.
 
 For optional Blender inspection, run `node apps/fieldscope/scripts/export-crop-review.mjs`; it exports the exact current domain meshes and vertex colors to the app-owned `.artifacts/crop-models.json`, without adding runtime assets or dependencies.
+
+Affected validation uses `yarn validate:local --base origin/main --run` at the
+repository root. It consumes the same ordinary/profile file selection as CI.
+Source dependencies select tests transitively; shared configuration, upstream
+packages, removed sources and unknown resource relations retain full coverage.
+Profile CI groups run independently on separate runners and only when nonempty;
+local profiles remain sequential through the same guarded supervisor.
+Browser-spec-only changes run selected specs inside their existing groups;
+runtime changes still require the full browser suite.
