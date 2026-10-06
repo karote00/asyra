@@ -19,3 +19,25 @@ Use case: stylized-concept. Six-view standalone single sloped handrail segment r
 ```text
 Correct ONLY the BACK VIEW (second tall post from left) in this technical reference sheet: its top must slope DOWN toward the RIGHT, upper LEFT edge at Z0.91 and lower RIGHT edge Z0.89, because rear viewing reverses horizontal direction. Keep the FRONT view ascending right, all other geometry, dimensions, labels, white background and layout unchanged. Maintain flat solid charcoal, no shadows or highlights. Do not change any other view.
 ```
+
+## 4. Baluster top-cut correction - 2026-10-06
+
+Input: `01-stair-baluster-v2.png`. Output: `01-stair-baluster-v3.png`.
+Tool: built-in imagegen. Candidate awaiting user review.
+The prompt requests preservation of the other views; this is an instruction,
+not proof of pixel-identical preservation.
+
+```text
+Use case: precise-object-edit. Correct the supplied stair-baluster geometry reference sheet. Only edit the TOP CUT DETAIL inset on the right; preserve all main views, title, dimensions, locations, FRONT/BACK/RIGHT/TOP/BOTTOM/THREE-QUARTER. This is a shape consistency repair, no redesign or materials work.
+
+The current TOP CUT DETAIL wrongly collapses the top to a triangle. Replace it with a zoomed version of the SAME FOUR-CORNER sloped top shown by the main THREE-QUARTER post. The solid has square footprint40x40mm. Its top is ONE planar rectangle, with four clearly visible and distinct vertices; two opposite edges run parallel at equal heights. Never draw a triangle, a ridge, a second cap, bevel, twisted saddle or tapered post.
+
+Mathematical authority: X from-.02 to+.02 metres; Y from-.02 to+.02; top Z=.90+.5X. Front-left A=(-.02,-.02,.89), front-right B=(+.02,-.02,.91), rear-right C=(+.02,+.02,.91), rear-left D=(-.02,+.02,.89). A and D are the two low corners89cm; B and C the two high corners91cm. A-B-C-D forms the one sloped top rectangle. Extrude the corner vertical edges straight down out of inset. Select an elevated oblique camera so the whole four-sided top is broad and unmistakable; preserve consistent solid face geometry. Flat neutral charcoal face fills, crisp outlines, no cast shadows, no lighting gradients.
+
+Inside inset: remove the old misleading leader arrows. Use four clear corner identifiers A,B,C,D at their corresponding vertices with short leaders if necessary. Under the top, in white annotation space, write exactly:
+"A, D: Z = 0.89 m"
+"B, C: Z = 0.91 m"
+"Centre: Z = 0.90 m"
+The centre value describes the face centre, not a corner; no arrow falsely points to an edge midpoint. Preserve TOP CUT DETAIL heading and boundary box. If needed make this inset taller downward using existing blank right-side area, without overlapping main THREE-QUARTER view.
+All other main views and labels must remain. No new materials, shadows, accessories or model variants.
+```
