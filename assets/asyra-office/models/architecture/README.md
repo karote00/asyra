@@ -1,6 +1,6 @@
 # Asyra Office - Architectural Components - Design Revision 2
 
-Design status: **Wall v5 and floor v7 with its independent material PNG were approved on 2026-10-06. The other four components retain their 2026-10-04 design approval.**
+Design status: **Wall v5, floor v7 with its independent material PNG, and partition v5 were approved on 2026-10-06. The other three components retain their 2026-10-04 design approval.**
 This delivery contains images and documents, with no Blender, GLB, animation, or app implementation. This group is approved design documentation.
 
 ## Reference and units
@@ -11,7 +11,7 @@ The central office is the primary reference; neighbouring shops are secondary re
 | --- | --- | --- | --- |
 | Wall | One capped wall segment | 1 × 0.27 × 2.5 | [Wall](review/01-wall-v5.png) |
 | Floor | One plank | 1.2 × 0.18 × 0.025 | [Plank](review/02-floor-v7.png) |
-| Partition | One capped low wall segment | 2 × 0.17 × 1.35 | [Partition](review/03-partition-v2.png) |
+| Partition | One capped low wall segment | 2 × 0.17 × 1.35 | [Partition](review/03-partition-v5.png) |
 | Stair | One stone step | 1.2 × 0.3 × 0.15 | [Step](review/04-stair-v2.png) |
 | Door | Frame, narrow left panel, right leaf, and handle | 1.64 × 0.146 × 2.16 (including handle) | [Complete door](review/05-door-v2.png) |
 | Window | One four-pane window with sill | 1.86 × 0.18 × 1.315 (including sill) | [Window](review/06-window-v2.png) |
@@ -42,6 +42,17 @@ irregular grain. The [material contract](materials/README.md) defines replaceabl
 base colour and UV coordinates without changing geometry. The user confirmed
 that this simple component does not need reference shadows. The sheet annotates
 the bevel rather than rendering its facets; no model validation is claimed.
+
+## Partition revision - 2026-10-06
+
+The approved [partition v5 sheet](review/03-partition-v5.png) retains the authored
+2 x 0.17 x 1.35 m overall dimensions. Body thickness is 0.14 m and cap thickness
+is 0.17 m: the cap projects 0.015 m on each Y side. Both parts share X=-1 to +1 m
+and have flush ends. The corrected SIDE is a numeric orthographic projection;
+the other views are appearance references, not calibrated measurements.
+See the [geometry contract](GEOMETRY-SUPPLEMENT.md#partition---approved-v5-dimensions-and-joins)
+and [review record](review/03-partition-v5-review.md). No reference shadows were
+needed to explain this simple profile. This is not approval of a model.
 
 ## Inputs for modeling tools
 

@@ -1,6 +1,6 @@
 # Architectural Components - Geometry Supplement v2
 
-This document and the JSON describe the 2026-10-04 design baseline with the wall v5 shape approved on 2026-10-06. They are not a model verification result. [architecture-model-spec.json](architecture-model-spec.json) is the sole numeric authority. Each component's sizeMetres, centreMetres, material, and bevelMetres define its base construction; this document defines operations that boxes alone cannot express.
+This document and the JSON describe the 2026-10-04 design baseline with wall v5, floor v7, and partition v5 approved on 2026-10-06. They are not a model verification result. [architecture-model-spec.json](architecture-model-spec.json) is the sole numeric authority. Each component's sizeMetres, centreMetres, material, and bevelMetres define its base construction; this document defines operations that boxes alone cannot express.
 
 ## Coordinates and shared construction rules
 
@@ -51,6 +51,37 @@ lip; THREE-QUARTER must preserve the narrow end face without a longitudinal
 cap step. The 0.001 m general dimension tolerance does not authorize an
 intentional end mismatch: body and cap must use shared X coordinates. No
 model has been validated against this newly approved drawing in this revision.
+
+### Partition - approved v5 dimensions and joins
+
+[Partition v5](review/03-partition-v5.png) supersedes earlier partition drawings.
+The numeric dimensions are unchanged; the corrected SIDE projects along +X,
+with horizontal +Y and vertical +Z. Use the other views for appearance, not
+pixel-based dimension recovery.
+
+| Part | Size X x Y x Z (m) | Centre (m) | X bounds (m) | Y bounds (m) | Z bounds (m) |
+| --- | --- | --- | --- | --- | --- |
+| Body | 2 x 0.14 x 1.29 | (0, 0, 0.645) | -1 to +1 | -0.07 to +0.07 | 0 to 1.29 |
+| Top cap | 2 x 0.17 x 0.06 | (0, 0, 1.32) | -1 to +1 | -0.085 to +0.085 | 1.29 to 1.35 |
+
+- Overall bounds: X=-1 to +1, Y=-0.085 to +0.085, Z=0 to 1.35 m.
+- Both X ends are flush, using identical end coordinates. No end lip, setback,
+  extra strip, or end bevel is allowed.
+- The cap is centered in thickness and projects 0.015 m on both Y sides, not
+  0.015 m total and not on only one face. SIDE has a symmetric T profile.
+- Cap bottom and body top share Z=1.29 m, with no gap or volumetric overlap.
+  The specified 0.004 m inward upper-edge bevel remains visible in section;
+  it is not an extra gap or groove. Its two segments do not enlarge bounds.
+- Body uses plaster and cap uses cream-cap from the JSON and surface recipes.
+  Diagram outlines and magnified image texture are not production textures.
+- A straight neighbour translated by (2, 0, 0) m joins at X=1 m. Deliver one
+  unit; the app owns repetition and corner assembly.
+
+Future model review must check both X end planes, both 15 mm Y lips, component
+and overall bounds, cap/body contact, and the specified bevels. Inspect all four
+views and magnified end junctions. The general 1 mm tolerance does not authorize
+intentional end mismatch or asymmetric lips. No model is validated by this
+reference and document review.
 
 ## Single floor plank
 

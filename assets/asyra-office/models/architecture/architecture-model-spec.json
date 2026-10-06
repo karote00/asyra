@@ -1,9 +1,9 @@
 {
-  "specVersion": "2.0.2",
-  "status": "2026-10-04 design baseline; wall v5 and floor v7 with independent PNG approved on 2026-10-06; no model approval",
+  "specVersion": "2.0.3",
+  "status": "2026-10-04 design baseline; wall v5, floor v7 with independent PNG, and partition v5 approved on 2026-10-06; no model approval",
   "approval": {
     "originalOfficeReference": "approved by user",
-    "newDrawings": "wall review/01-wall-v5.png and floor review/02-floor-v7.png approved on 2026-10-06; other four v2 sheets retain 2026-10-04 approval",
+    "newDrawings": "wall review/01-wall-v5.png, floor review/02-floor-v7.png, and partition review/03-partition-v5.png approved on 2026-10-06; remaining three v2 sheets retain 2026-10-04 approval",
     "newDimensions": "fixed authoring proposal, not measured from image",
     "modelVerification": "not performed"
   },
@@ -19,7 +19,7 @@
     "primary": "review/approved-office-reference.jpg",
     "door": "review/entry-door-reference.png",
     "secondary": "neighbouring shop window only",
-    "newSheets": "wall: review/01-wall-v5.png; floor: review/02-floor-v7.png; other four components: module reviewDrawing v2 paths; earlier wall and floor drawings are superseded",
+    "newSheets": "wall: review/01-wall-v5.png; floor: review/02-floor-v7.png; partition: review/03-partition-v5.png; remaining three components: module reviewDrawing v2 paths; earlier wall, floor, and partition drawings are superseded",
     "historical": "old PNG, orthoviews, BUILD_SCENE.py, .blend and GLBs are not current authority"
   },
   "unitRule": {
@@ -244,7 +244,7 @@
       "moduleId": "partition-segment",
       "name": "Partition - single segment",
       "unitCount": 1,
-      "reviewDrawing": "review/03-partition-v2.png",
+      "reviewDrawing": "review/03-partition-v5.png",
       "components": [
         {
           "partId": "body",

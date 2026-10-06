@@ -1,6 +1,6 @@
 # Architectural Components - Image Review
 
-The six revision-2 sheets were approved on 2026-10-04. The user approved the corrected wall v5 shape on 2026-10-06; it supersedes wall v2 and v3. The floor v7 drawing and independent natural oak PNG were approved for commit on 2026-10-06. The other four sheets retain their existing approval. Each shows four views of one component, not four components or four objects that must be placed together.
+The six revision-2 sheets were approved on 2026-10-04. The user approved the corrected wall v5 shape on 2026-10-06; it supersedes wall v2 and v3. The floor v7 drawing and independent natural oak PNG were approved for commit on 2026-10-06. Partition v5 was approved for commit on 2026-10-06 and supersedes its earlier sheets. The other three sheets retain their existing approval. Each shows four views of one component, not four components or four objects that must be placed together.
 
 ## References
 
@@ -11,10 +11,18 @@ The six revision-2 sheets were approved on 2026-10-04. The user approved the cor
 
 1. [Wall - single segment](01-wall-v5.png)
 2. [Floor - single plank](02-floor-v7.png)
-3. [Partition - single segment](03-partition-v2.png)
+3. [Partition - single segment](03-partition-v5.png)
 4. [Stair - single step](04-stair-v2.png)
 5. [Entrance door - complete set](05-door-v2.png)
 6. [Window - one unit with sill](06-window-v2.png)
+
+### Approved partition revision - 2026-10-06
+
+[Partition v5](03-partition-v5.png) and its [SIDE detail](03-partition-v5-side-detail.png)
+show the approved flush X ends and symmetric 15 mm Y lips. SIDE is generated
+from numeric bounds; unchanged views remain appearance references. See the
+[review record](03-partition-v5-review.md). Earlier v3/v4 sheets are historical;
+v4 failed the required symmetric thickness profile. No shadow pass was needed.
 
 ### Approved floor revision - 2026-10-06
 
