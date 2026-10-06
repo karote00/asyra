@@ -8,6 +8,33 @@ All listed batches have user approval for their drawings and documentation. **No
 
 ## Start here
 
+### Current review scope and configurable appearance - 2026-10-06
+
+This rule applies to every asset batch below and takes precedence over earlier
+batch text that fixes colours or materials as the only allowed appearance.
+
+- Current review and correction cover dimensions and geometry only: silhouette,
+  topology, part boundaries, recesses, bevels, joins, placement and view consistency.
+  Colour, grain, texture and material fidelity do not block this review stage.
+- Every future asset creation function must accept colour or material options,
+  following the user's `createXXX` concept. This is a required capability, not
+  a finalized function name, signature or implemented API.
+- Keep appearance independent from geometry. Preserve selectable part/material
+  regions so callers can replace colour or material without remodeling. Existing
+  palette values, texture recipes and material assignments are defaults only.
+- A colour override retains the chosen material's other properties; a material
+  override can replace the surface itself. Neither operation changes dimensions,
+  topology, part transforms or placement. Geometric displacement is a separate
+  geometry change, not an implied appearance override.
+- An instance's appearance override must not unintentionally change other
+  instances through shared mutable material state.
+- Existing appearance references remain available as optional defaults. This
+  stage does not generate texture assets, implement factories, validate shader
+  support or certify material fidelity. Detailed API precedence is deferred to
+  the implementation contract.
+
+### Reading order
+
 1. Select a batch below and open its review gallery for the current appearance sheets.
 2. Read that batch's README, geometry supplement, numeric specification and surface recipes together.
 3. Follow the [approved office reference](architecture/review/approved-office-reference.jpg), with the central office taking priority over neighboring shops. The [entrance close-up](architecture/review/entry-door-reference.png) establishes the complete door set, including its narrow same-color side panel.
@@ -17,7 +44,7 @@ All listed batches have user approval for their drawings and documentation. **No
 ## Current versus historical material
 
 - The exact sheet links below identify current review inputs. Do not select a file merely because its version number is highest or it is the newest file in a folder.
-- Architecture uses wall v5 and floor v7 (approved 2026-10-06) and four v2 sheets. Earlier wall, overview and orthoview files are historical, not the current reconstruction target.
+- Architecture uses approved wall v5, floor v7 and partition v5; window v6 geometry is approved, while stair and door retain v2. Earlier superseded drawings are historical, not the current reconstruction target.
 - Street markings use transparent v4 single units. The old road-marking and crosswalk arrays are historical color references only. Markings contain no asphalt and can be placed on other surfaces.
 - The approved parrot is the **cockatiel**. The rejected generic green bird is not a deliverable. Sparrow and cockatiel use the v2 sheets linked below.
 - [Lighting revision history](SHADOW-FREE-REVIEW.md) records an earlier 53-image pass; that number is not the count of all current assets and does not certify later images.
@@ -54,7 +81,7 @@ Every row has approved drawings/documents; model construction and verification r
 
 | Batch | Current sheets | Reconstruction documents |
 | --- | --- | --- |
-| Asyra Office - Architectural Components - Design Revision 2 | [Wall - single segment](architecture/review/01-wall-v5.png)<br>[Floor - single plank](architecture/review/02-floor-v7.png)<br>[Partition - single segment](architecture/review/03-partition-v5.png)<br>[Stair - single step](architecture/review/04-stair-v2.png)<br>[Entrance door - complete set](architecture/review/05-door-v2.png)<br>[Window - one unit with sill](architecture/review/06-window-v2.png) | [Overview](architecture/README.md), [gallery](architecture/review/README.md), [geometry](architecture/GEOMETRY-SUPPLEMENT.md), [numbers](architecture/architecture-model-spec.json), [surfaces](architecture/SURFACE-RECIPES.md) |
+| Asyra Office - Architectural Components - Design Revision 2 | [Wall - single segment](architecture/review/01-wall-v5.png)<br>[Floor - single plank](architecture/review/02-floor-v7.png)<br>[Partition - single segment](architecture/review/03-partition-v5.png)<br>[Stair - single step](architecture/review/04-stair-v2.png)<br>[Entrance door - complete set](architecture/review/05-door-v2.png)<br>[Window - one unit with sill](architecture/review/06-window-v6.png) | [Overview](architecture/README.md), [gallery](architecture/review/README.md), [geometry](architecture/GEOMETRY-SUPPLEMENT.md), [numbers](architecture/architecture-model-spec.json), [surfaces](architecture/SURFACE-RECIPES.md) |
 | Group 1C - Square Column and Horizontal Beam | [Square column - multiple views](column-beam/review/01-square-column-v1.png)<br>[Horizontal beam - multiple views](column-beam/review/02-horizontal-beam-v1.png) | [Overview](column-beam/README.md), [gallery](column-beam/review/README.md), [geometry](column-beam/GEOMETRY-SUPPLEMENT.md), [numbers](column-beam/column-beam-model-spec.json), [surfaces](column-beam/SURFACE-RECIPES.md) |
 | Group 1B - Roof Slab and Parapet | [Flat roof slab - multiple views](roof-modules/review/01-flat-roof-slab-v1.png)<br>[Rooftop parapet - multiple views](roof-modules/review/02-rooftop-parapet-v1.png) | [Overview](roof-modules/README.md), [gallery](roof-modules/review/README.md), [geometry](roof-modules/GEOMETRY-SUPPLEMENT.md), [numbers](roof-modules/roof-modules-model-spec.json), [surfaces](roof-modules/SURFACE-RECIPES.md) |
 | Group 1D - Stair Baluster and Sloped Handrail | [Stair baluster - multiple views](stair-railing/review/01-stair-baluster-v2.png)<br>[Sloped handrail - multiple views](stair-railing/review/02-sloped-handrail-v1.png) | [Overview](stair-railing/README.md), [gallery](stair-railing/review/README.md), [geometry](stair-railing/GEOMETRY-SUPPLEMENT.md), [numbers](stair-railing/stair-railing-model-spec.json), [surfaces](stair-railing/SURFACE-RECIPES.md) |

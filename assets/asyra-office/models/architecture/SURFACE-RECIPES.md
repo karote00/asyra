@@ -4,6 +4,13 @@ Status: 2026-10-04 baseline, with floor and door surface revisions on 2026-10-06
 
 ## Shared calculations
 
+Current scope - 2026-10-06: the [shared asset rule](../README.md#current-review-scope-and-configurable-appearance---2026-10-06)
+limits current review to dimensions and geometry. Every recipe below is an
+optional default, not a restriction against caller-supplied colours or materials.
+The door's colour-only path preserves its existing material; an explicit material
+override is also required by the shared rule. No appearance mismatch blocks this
+geometry review, and no texture or runtime implementation is added here.
+
 Mix colours in normalized sRGB (0–1), clamp to 0–1, then use the JSON sRGB-to-linear formula for material nodes. Roughness and metallic do not vary with texture. No normal maps, displacement, AO, cast shadows, highlight maps, or emission.
 
 Use component-local metres, independent of app world position. Each plane's origin is the projection of the assembly origin. Front/back use (u,v)=(X,Z), top/bottom (X,Y), and sides (Y,Z). Do not reverse signs on rear faces. Bevels use the plane corresponding to the largest absolute normal component; ties prefer Z, then Y, then X.

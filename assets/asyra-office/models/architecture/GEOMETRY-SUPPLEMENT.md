@@ -146,7 +146,71 @@ Use simple window-frame forms from secondary street shops; do not claim this is 
 
 Each of four panes is 0.80 × 0.008 × 0.53 m, with X centres ±0.43 and Z centres 0.345 / 0.935. Front and back use the same four-pane structure. Glass is opaque muted blue-grey without room backdrops, reflection images, or gradients.
 
-Sill size is 1.86 × 0.18 × 0.035 m, centre (0,-0.04,-0.0175), front Y=-0.13, rear Y=0.05. Frame bottom Z=0 is the mounting datum, not the overall lowest point; total height including sill is 1.315 m.
+Sill size is 1.82 × 0.18 × 0.035 m, centre (0,-0.04,-0.0175), front Y=-0.13, rear Y=0.05. Frame bottom Z=0 is the mounting datum, not the overall lowest point; total height including sill is 1.315 m.
+
+Document review - 2026-10-06: the user selected the original THREE-QUARTER
+appearance as authority and requested document review of [v6](review/06-window-v6.png).
+The former 1.86 m sill width introduced 20 mm lips at each X end. The revised
+1.82 m width matches the frame; the sill centre stays unchanged.
+
+| Element | X bounds (m) | Y bounds (m) | Z bounds (m) |
+| --- | --- | --- | --- |
+| Rectangular frame envelope | -0.91 to +0.91 | -0.05 to +0.05 | 0 to 1.28 |
+| Sill | -0.91 to +0.91 | -0.13 to +0.05 | -0.035 to 0 |
+| Whole unit | -0.91 to +0.91 | -0.13 to +0.05 | -0.035 to 1.28 |
+
+- Overall dimensions are 1.82 x 0.18 x 1.315 m, including the sill.
+- Frame and sill share both X end planes. Rear edges share Y=+0.05 m.
+  Only the front projects: 0.08 m beyond the frame's Y=-0.05 m face.
+- Glass spans Y=-0.004 to +0.004 m, recessed 0.046 m behind each frame face.
+  Head and jambs occlude it in true external TOP and SIDE projections.
+- Pane openings span X=-0.83..-0.03 and +0.03..+0.83 m, with
+  Z=0.08..0.61 and 0.67..1.20 m. Each matches one 0.80 x 0.53 m pane.
+- Horizontal mullion halves meet the vertical mullion without volumetric
+  overlap. Sill top meets frame bottom at Z=0. Bevels remain inward; dimensions
+  refer to pre-bevel envelopes, not a guarantee of seamless rounded contacts.
+
+### Frame joints - confirmed 2026-10-06
+
+The user confirmed the reference corner geometry. Keep the left member, right
+member, head and bottom rail as four separate frame members. Both upper corners
+and both lower corners of this rectangular perimeter use complementary 45-degree
+miters. The complete frame's bottom remains flat on the sill. Do not build a
+single U-shaped substitute, add decorative seam strips or miter the sill joint.
+The central cross mullions retain their existing end-to-face joints; do not add
+four separate trim frames around the individual panes.
+
+Each frame member is a closed prism extruded through Y=-0.05..+0.05 m from the
+ordered X/Z profile below. These profiles supersede the former box construction.
+JSON sizeMetres and centreMetres now describe each prism's bounding box, not its
+volume centroid. Profile vertices and extrusion limits are already in the
+window assembly's local coordinates; do not add centreMetres to them again.
+All coordinates are metres.
+
+| Member | Ordered profile vertices (X, Z) |
+| --- | --- |
+| Left | (-0.91, 0), (-0.83, 0.08), (-0.83, 1.20), (-0.91, 1.28) |
+| Right | (0.83, 0.08), (0.91, 0), (0.91, 1.28), (0.83, 1.20) |
+| Head | (-0.91, 1.28), (-0.83, 1.20), (0.83, 1.20), (0.91, 1.28) |
+| Bottom rail | (-0.91, 0), (0.91, 0), (0.83, 0.08), (-0.83, 0.08) |
+
+Each diagonal changes X and Z by 0.08 m, making its angle 45 degrees in the
+front X/Z plane. Paired cuts share the same plane across the entire frame depth.
+No volumetric overlap, intentional gap, black painted seam or raised joint strip
+is permitted. Separate frame parts remain available; joining vertices must not
+change the visible rectangular envelope.
+
+The existing 2 mm frame bevel affects exposed perimeter edges only. Keep miter
+mating faces and seam edges exact, and leave the assembled frame bottom at Z=0
+flat. Keep the sill's mating top region planar; bevel only its exposed edges.
+Do not bevel each prism indiscriminately and create grooves at the miter joints.
+The pane sizes, cross mullions, glass depth, frame outer size and sill position
+remain unchanged. The union of the four pre-bevel profiles is the outer
+1.82 x 1.28 m rectangle minus its 1.66 x 1.12 m opening.
+
+Wood grain and colour are excluded from this review under the
+[shared review and appearance rule](../README.md#current-review-scope-and-configurable-appearance---2026-10-06).
+They are configurable defaults, not geometry acceptance conditions.
 
 Reserve a wall opening 1.84 m wide and 1.30 m high, with 0.01 m clearance around the rectangular frame. The sill attaches outside the opening. The app chooses sill support and height above floor. Include no wall, curtains, shutters, pots, or interior backdrop.
 
