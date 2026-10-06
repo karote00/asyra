@@ -1,6 +1,6 @@
 # Asyra Office - Architectural Components - Design Revision 2
 
-Design status: **Wall v5, floor v7 with its independent material PNG, and partition v5 were approved on 2026-10-06. The other three components retain their 2026-10-04 design approval.**
+Design status: **Wall v5, floor v7 with its independent material PNG, and partition v5 were approved on 2026-10-06. Stair and door retain their 2026-10-04 design approval. Window v6 and its 45-degree frame geometry were approved for commit on 2026-10-06; colour and materials are outside this approval.**
 This delivery contains images and documents, with no Blender, GLB, animation, or app implementation. This group is approved design documentation.
 
 ## Reference and units
@@ -14,7 +14,7 @@ The central office is the primary reference; neighbouring shops are secondary re
 | Partition | One capped low wall segment | 2 × 0.17 × 1.35 | [Partition](review/03-partition-v5.png) |
 | Stair | One stone step | 1.2 × 0.3 × 0.15 | [Step](review/04-stair-v2.png) |
 | Door | Frame, narrow left panel, right leaf, and handle | 1.64 × 0.146 × 2.16 (including handle) | [Complete door](review/05-door-v2.png) |
-| Window | One four-pane window with sill | 1.86 × 0.18 × 1.315 (including sill) | [Window](review/06-window-v2.png) |
+| Window | One four-pane window with sill | 1.82 × 0.18 × 1.315 (including sill) | [Window](review/06-window-v6.png) |
 
 Each sheet contains front, side, top, and oblique views. The app owns count, arrangement, rotation, joins, wall openings, and lighting. Doors and windows include no wall; planks and steps include no base slab or array. Required frames, caps, and handles remain parts of the same unit.
 
