@@ -800,3 +800,36 @@ Run the dependency-consumer tests, security audit, both panel rendering modes,
 and all affected local validation owners using isolated Design browser services.
 Do not treat a passed audit alone as dependency compatibility or pending CI as
 completed delivery. Retain the failure and correction evidence in `tmp/ci-295/`.
+
+
+### Security admission follow-up - 2026-10-06
+
+The next head failed audit on newly published sharp and shell-quote advisories.
+The user approved sharp 0.35.5 and shell-quote 1.11.0 upgrades plus local security
+admission. The previous local contract explicitly excluded the registry audit;
+manual audit had passed before these advisories appeared. Extend the local owner
+contract to execute CI-selected securityAudit through the existing security:audit
+command first, preserving its failure exit and owned-runner fail-fast behavior.
+The new local receipt ID is security-audit; no persisted product IDs change.
+
+Bound this slice to dependency manifests/lockfile, local validation selection,
+formal consumer/selection tests, its workflow documentation and generated manifest
+fingerprints. Prove selected audit admission fails before implementation and
+preserve the docs-only unselected path. Validate existing image processing in
+Design, concurrently argument compatibility, shared checks and the local runner;
+retain prior unchanged renderer/browser proofs. This does not change product
+rendering, user documents, thresholds or CI policy. Run the registry audit again
+immediately before push because its external advisory data can change.
+
+
+Execution card: local-affected-validation / execute, plan-to-execution and result.
+The Owned execution specification and execute Inspector consume the existing
+selected plan and explicit run intent; the security-audit command emits its
+exit/log receipt through the owned runner. Registry access is limited to selected
+security admission. Preview and unselected paths bypass it. No second classifier,
+remote CI claim, global cleanup or successful missing result is allowed. Failure
+owner remains execute and no cache is introduced. Allowed implementation is the
+existing local command adapter; cases cover lockfile selection, full selection,
+docs-only bypass and existing runner failure/cancellation contracts. Stop on any
+selection or failure-propagation mismatch; synchronize the exact Inspector only
+for this authorized execution change.

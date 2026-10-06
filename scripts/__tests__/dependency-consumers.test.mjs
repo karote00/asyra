@@ -47,3 +47,22 @@ test('Tailwind source maps preserve mappings with the security resolution', () =
   })
   assert.equal(consumer.sourceContentFor('input.css'), '.panel { color: red; }')
 })
+
+test('concurrently preserves additional arguments through its shell-quote consumer', async () => {
+  const { default: concurrently } = await import('concurrently')
+  const concurrentlyRequire = createRequire(require.resolve('concurrently'))
+  const { quote } = concurrentlyRequire('shell-quote')
+  const values = ['a b', "single'quote", '$literal', 'line\nbreak']
+  const script = 'process.stdout.write(JSON.stringify(process.argv.slice(1)))'
+  const { result, commands } = concurrently(
+    [{ command: `${quote([process.execPath, '-e', script])} {@}` }],
+    { additionalArguments: values, raw: false }
+  )
+  let output = ''
+  commands[0].stdout.subscribe((chunk) => {
+    output += chunk.toString()
+  })
+  const events = await result
+  assert.equal(events[0].exitCode, 0)
+  assert.deepEqual(JSON.parse(output), values)
+})

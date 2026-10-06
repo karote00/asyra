@@ -77,13 +77,18 @@
     inputs: ['artifact:local-plan', 'explicit run flag'],
     outputs: ['artifact:local-result'],
     conditions: [
+      'Run the selected live security audit before builds and stop on audit failure',
       'Retain CI build prerequisites and owner test guards',
       'Require actual selected results and nonzero test evidence',
       'Stop owned children on cancellation and reject changed source identity'
     ],
-    bypasses: ['Preview never creates child check processes'],
+    bypasses: [
+      'Preview never creates child check processes',
+      'Unselected security audits do not query the registry'
+    ],
     allowedContributors: [
       'existing CI check runners',
+      'selected security:audit registry query',
       'declared owner E2E commands',
       'owned process/log storage'
     ],

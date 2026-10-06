@@ -175,6 +175,8 @@ export function localCheckCommands(
     CI_SCOPE_ATTEMPT: '1',
     CI_RELATIONSHIP_MAP_DIGEST: plan.relationshipMapDigest
   }
+  if (checks.securityAudit.mode === 'full')
+    add('security-audit', 'yarn', ['security:audit'])
   if (checks.dependencyValidation.mode !== 'not-selected')
     add('dependencies', 'yarn', ['deps:validate'])
   if (checks.turboValidation.mode !== 'not-selected')

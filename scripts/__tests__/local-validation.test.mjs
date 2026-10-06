@@ -227,6 +227,7 @@ test('full validation resolves declaration task records to executable task names
   // This fixture has no control-plane owner source; test the declaration handoff.
   plan.executionPlan.checks.controlPlane.mode = 'not-selected'
   const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+  assert.equal(commands[0].id, 'security-audit')
   const declarations = commands.find(({ id }) => id === 'declarations')
   assert.ok(declarations)
   assert.ok(declarations.args.every((value) => typeof value === 'string'))
@@ -249,4 +250,47 @@ test('existing separately owned E2E groups declare local argv and result evidenc
       assert.ok(suite.localCommand.args.includes('--max-failures=1'))
     assert.equal(suite.localCommand.args.includes('scripts/run-e2e.sh'), false)
   }
+})
+
+test('selected security audit runs before local builds and shared checks', (t) => {
+  const { root, git, write } = workspaceFixture(t)
+  write('package.json', JSON.stringify({ private: true, scripts: {} }))
+  write('yarn.lock', '__metadata:\n  version: 8\n')
+  git('add', 'package.json', 'yarn.lock')
+  git('commit', '-qm', 'root manifest')
+  const base = git('rev-parse', 'HEAD')
+  write(
+    'yarn.lock',
+    '__metadata:\n  version: 8\n# changed dependency resolution'
+  )
+  const plan = selectLocalValidation({
+    repositoryRoot: root,
+    inputs: collectLocalInputs({ repositoryRoot: root, base })
+  })
+  plan.executionPlan.checks.controlPlane.mode = 'not-selected'
+  assert.equal(plan.executionPlan.checks.securityAudit.mode, 'full')
+  const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+  assert.deepEqual(commands[0], {
+    id: 'security-audit',
+    executable: 'yarn',
+    args: ['security:audit'],
+    env: {},
+    evidence: { type: 'exit' }
+  })
+  assert.equal(commands.filter(({ id }) => id === 'security-audit').length, 1)
+})
+
+test('unselected security audit does not query the registry for documentation edits', (t) => {
+  const { root, base, write } = workspaceFixture(t)
+  write('apps/client/README.md', '# Client')
+  const plan = selectLocalValidation({
+    repositoryRoot: root,
+    inputs: collectLocalInputs({ repositoryRoot: root, base })
+  })
+  assert.equal(plan.executionPlan.checks.securityAudit.mode, 'not-selected')
+  const commands = localCheckCommands(plan, path.join(root, 'tmp/result'), root)
+  assert.equal(
+    commands.some(({ id }) => id === 'security-audit'),
+    false
+  )
 })
