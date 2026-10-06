@@ -2,6 +2,12 @@
 
 Use the same uniform charcoal-painted-metal material as the stair railing.
 
+This is the default for both the landing baluster and level handrail when no
+colour or material override is supplied: sRGB base colour `#383A38`, matching
+`material.baseColor` in the numeric specification. Colour and material remain
+replaceable independently of geometry. An instance override must not mutate
+other instances. Drawing face tones do not define separate default materials.
+
 | Property | Value |
 | --- | --- |
 | sRGB base color | #383A38 |

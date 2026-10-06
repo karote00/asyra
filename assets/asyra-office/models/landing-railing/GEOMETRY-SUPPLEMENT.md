@@ -17,7 +17,7 @@ Each part is one closed box, eight vertices and six planar quads, or twelve tria
 
 Both baluster top and bottom are horizontal square faces. All four elevations are identical rectangles. The handrail has two vertical square end faces; its top and bottom are horizontal. The four long-face projections are identical rectangles.
 
-No bevel, subdivision, hollowing, caps, collars, finials, sockets, mounting plates, holes or fasteners. Every face uses the same charcoal material.
+No bevel, subdivision, hollowing, caps, collars, finials, sockets, mounting plates, holes or fasteners. By default, every face uses the same charcoal material; colour and material remain replaceable as defined in the surface recipe.
 
 ## Straight interior join example
 
@@ -38,4 +38,4 @@ A sloped-to-level transition needs a separately specified joint or transition po
 
 ## Future model acceptance
 
-Confirm bounds within 0.0005 m, correct origins, closed geometry, outward normals, flat tops and the uniform material when models are authorized. Twelve triangles per unit are sufficient; no alternate LOD mesh is designed here. No physical building safety or model-export validation is claimed. App placement, counts, collisions and lighting remain future work.
+Confirm bounds within 0.0005 m, correct origins, closed geometry, outward normals and flat tops when models are authorized. Default appearance is specified separately and is replaceable; colour and material fidelity are outside the current geometry review. Twelve triangles per unit are sufficient; no alternate LOD mesh is designed here. No physical building safety or model-export validation is claimed. App placement, counts, collisions and lighting remain future work.
