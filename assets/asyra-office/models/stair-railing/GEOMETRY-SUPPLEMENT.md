@@ -78,6 +78,32 @@ Both end faces are vertical YZ rectangles, 0.04 x 0.04. The complete right ortho
 
 No curvature, round profile, bevel, end cap, bracket, post or hardware.
 
+### End cuts and side-face angles
+
+This is a sheared prism, not a rectangular cuboid rotated uphill. Construct
+the XZ parallelogram first, then extrude along Y. Do not rotate a box and retain
+cuts perpendicular to its longitudinal axis.
+
+- Lower cut: X=0, Y=-0.02..0.02, Z=0..0.04.
+- Upper cut: X=0.30, Y=-0.02..0.02, Z=0.15..0.19.
+- End normals are (-1,0,0) and (1,0,0). Each cut is vertical and rectangular.
+- Longitudinal edges follow (0.30,0,0.15); end edges follow (0,0,0.04).
+  Their dot product is 0.006, not zero: the side face is not a rectangle.
+- The XZ polygon's interior angles at A and C are 63.4349488229 degrees;
+  angles at B and D are 116.5650511771 degrees. These are geometry angles,
+  not target pixel angles in an oblique drawing.
+- The sloped top and bottom measure approximately 0.3354101966 x 0.04 m.
+  Their horizontal projections remain 0.30 x 0.04 m.
+- All four vertical end edges are parallel to world Z. With an upright
+  orthographic camera they remain vertical on screen. Longitudinal slope on
+  screen depends on both geometry and camera and cannot alone prove correctness.
+- A review view should clearly expose a vertical end cut, the sloped top and
+  the parallelogram side. View annotations are not model geometry.
+
+The numeric specification already defines these cuts correctly. The drawing
+correction clarifies their relationship; it does not change run, rise, depth,
+thickness, joining coordinates or material options.
+
 ## Mesh construction
 
 Each object has eight vertices and six closed planar quad faces, or twelve triangles after triangulation. Join corresponding polygon edges to form side faces; ensure outward winding. Use flat face normals. No subdivision, bevel or hidden extra solids. All faces share one material.

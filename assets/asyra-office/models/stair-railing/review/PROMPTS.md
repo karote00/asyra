@@ -41,3 +41,16 @@ Inside inset: remove the old misleading leader arrows. Use four clear corner ide
 The centre value describes the face centre, not a corner; no arrow falsely points to an edge midpoint. Preserve TOP CUT DETAIL heading and boundary box. If needed make this inset taller downward using existing blank right-side area, without overlapping main THREE-QUARTER view.
 All other main views and labels must remain. No new materials, shadows, accessories or model variants.
 ```
+
+## 5. Handrail end-cut correction - 2026-10-06
+
+Input: `02-sloped-handrail-v1.png`. Built-in imagegen output:
+`02-sloped-handrail-v2.png`. This attempt was not accepted: its oblique
+appearance remained ambiguous and its world datum was unverified.
+The v3 calculated diagram instead uses `draw-handrail-projections.py`;
+it has no image-generation prompt.
+
+```text
+Edit this sloped handrail reference sheet. Keep the FRONT, BACK, RIGHT, TOP and BOTTOM illustrations, labels, title and dimension text. Replace only the bottom-right THREE-QUARTER illustration with a clear engineering oblique illustration of the exact same sloped parallelepiped specified by FRONT and BACK. The crucial requirement: this is a SHEARED rectangular prism, NOT a rectangular cuboid rigidly rotated uphill. Both end cuts are world-VERTICAL planes, never perpendicular to the long axis. Long side face is a parallelogram with acute/obtuse end angles, not a rectangle. Top and underside rise 15cm for a horizontal run of 30cm; vertical thickness 4cm, transverse depth4cm. Eight vertices in metres are (0,+/-.02,0),(0,+/-.02,.04),(.30,+/-.02,.15),(.30,+/-.02,.19). Low end cut X=0 and high end cut X=.30 are vertical 4x4cm rectangles. All vertical edges remain screen vertical; show the low end and long side and broad top clearly. Use an elevated view from negative X and negative Y, with the long axis ascending toward screen right. Clearly slanted long edges meet vertical end edges, never 90-degree beam-end junctions. Flat charcoal fills with outline edges, white background, no shadows, lighting effects or ground.
+To remove ambiguity add below or beside the replacement view a small labelled world-horizontal dashed datum, and label "VERTICAL END CUTS" with leaders to the vertical end edges at left and right. The datum must be horizontal in world coordinates and drawn in the same projection, not erroneously treated as a screen-horizontal line. If space is limited prioritize correct geometry and omit the datum. No new cap, bevel, post, fittings or rounded ends. Match a clean technical reference drawing. Do not redesign the other views. Main title and dimensions unchanged.
+```
