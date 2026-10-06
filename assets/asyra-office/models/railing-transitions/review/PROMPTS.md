@@ -19,3 +19,13 @@ Use case: stylized-concept. Technical multiview reference sheet of ONE very simp
 ```text
 Correct this lower transition post sheet. The LARGE bottom profile already correctly shows a horizontal LEFT HALF followed by an upward-sloping RIGHT HALF. Make the TOP OF THE FULL FRONT POST match it exactly: left half HORIZONTAL, then right half ascending. Make full BACK view mirror this: left half descending then right half HORIZONTAL. The three-quarter post must have TWO top faces and a visible centre boundary (one flat half, one sloping half), not a single slanted top. Keep flat dark charcoal, white background, every dimension and other view unchanged. Add small header LOWER TRANSITION POST - SINGLE UNIT if space permits. No lighting/shadows. Do not alter the correct large detail.
 ```
+
+## 4. Upper post review recolouring - 2026-10-07
+
+Input: `01-upper-transition-post-v1.png`. Output candidate:
+`01-upper-transition-post-v2.png`. Built-in imagegen.
+Review colour only; model default remains `#383A38`.
+
+```text
+Edit this existing engineering reference sheet ONLY to recolour the post surfaces. Replace the dark charcoal fills of the upper transition post in every main view and enlarged detail with uniform light grey #C8CCD0 for visual inspection. Preserve all silhouettes, vertices, the left-sloped/right-flat top geometry, geometric boundary lines, dimensions, annotations, view locations, text and layout. Keep contour and boundary lines black and clearly visible. White background. No lighting, no shadows, no gradients, no texture, no changes to geometry, no added bevels or parts. Add a small clear English caption in unused white space: 'REVIEW COLOUR ONLY - DEFAULT: #383A38'. This light grey is a review-display override only; the actual model's default remains the original charcoal #383A38. Keep all dimensions and all existing labels legible; no invented details.
+```

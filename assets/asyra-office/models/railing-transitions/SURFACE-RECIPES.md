@@ -2,6 +2,15 @@
 
 Use one uniform charcoal-painted-metal material, matching the approved railing groups.
 
+This is the default when no colour or material override is supplied. Preserve
+the original charcoal reference's specified sRGB base colour `#383A38`, matching
+`material.baseColor` in the numeric JSON. Colour and material are replaceable
+independently of geometry; overrides must not mutate other instances.
+
+Recoloured review sheets are geometry-inspection aids only. Their display
+colour does not replace this default and must not be sampled into the model.
+All faces retain the same default material, including both top planes.
+
 | Property | Value |
 | --- | --- |
 | sRGB base color | #383A38 |

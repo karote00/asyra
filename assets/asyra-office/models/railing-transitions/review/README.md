@@ -6,7 +6,11 @@ Status: user-approved reference sheets. Each sheet represents one independent po
 
 0.04 x 0.04 x 0.90 m. In front view the left top half rises, then the right half is level.
 
-![Upper transition post - multiple views](01-upper-transition-post-v1.png)
+The light-grey v2 sheet was approved for commit on 2026-10-07; default material remains
+charcoal `#383A38`. The original v1 remains the default appearance reference.
+See the [specification review](01-upper-transition-post-v2-review.md).
+
+![Upper transition post - review colour v2](01-upper-transition-post-v2.png)
 
 ## Lower transition post
 
@@ -16,7 +20,12 @@ Status: user-approved reference sheets. Each sheet represents one independent po
 
 ## Review scope
 
-Confirm the two distinct top profiles, charcoal palette and single-unit boundaries. Neither asset includes rails, floor or stairs. No ground shadow is included. The lower post's selected revision corrects its full-view top profile to agree with the enlarged detail.
+Confirm dimensions, the two distinct top profiles and single-unit boundaries.
+Colour and material are replaceable defaults, not geometry acceptance criteria.
+The default charcoal colour remains defined by the surface recipe even when a
+sheet is recoloured for inspection. Neither asset includes rails, floor or stairs.
+No ground shadow is included. The lower post's selected revision corrects its
+full-view top profile to agree with the enlarged detail.
 
 - [Geometry and rail connection coordinates](../GEOMETRY-SUPPLEMENT.md)
 - [Surface recipes](../SURFACE-RECIPES.md)

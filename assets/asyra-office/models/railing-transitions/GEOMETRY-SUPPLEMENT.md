@@ -20,6 +20,29 @@ Front looks along +Y; back along -Y with screen-horizontal reversal. Right looks
 
 Overall size is 0.04 x 0.04 x 0.90. The top is Z=0.90+0.5X on the negative-X half, and Z=0.90 on the positive-X half. Both halves extend through the entire Y depth. The bottom is a flat square. The two top faces touch without a gap at X=0.
 
+### Upper post reconstruction checks
+
+- At both Y=-0.02 and Y=+0.02, top heights are 0.89 m at X=-0.02,
+  0.90 m at X=0 and 0.90 m at X=+0.02. These six points define both
+  rectangular top faces; there is no slope across Y.
+- The sloped half has a 0.02 m horizontal run and a 0.01 m rise. Its pitch
+  is 26.5650511771 degrees and its inclined length is approximately
+  0.0223606798 m. The level half is 0.02 m long. Both are 0.04 m deep.
+- The shared top edge runs from (0,-0.02,0.90) to (0,+0.02,0.90).
+  This is one continuous solid with a change of slope, not a seam gap,
+  raised strip, separate cap or groove.
+- FRONT rises on its left half and stays level on its right half; BACK
+  reverses this. RIGHT has a 0.04 x 0.90 m rectangular silhouette.
+  A strict right orthographic projection does not expose a separate top strip.
+- TOP is a 0.04 x 0.04 m square with the slope boundary at X=0;
+  BOTTOM is an undivided square. Image detail crops do not reset the Z datum.
+- In the upper connection example, the sloped underside is
+  Z=0.75+0.5(X+0.30)=0.90+0.5X over X=-0.02..0. The level underside
+  is Z=0.90 over X=0..0.02. Both contact their respective post halves
+  across the full Y depth, and rail end faces meet at X=0, Z=0.90..0.94.
+
+These checks clarify the existing numeric geometry without changing it.
+
 ## Lower transition post
 
 | Polygon vertex | X | Z |
