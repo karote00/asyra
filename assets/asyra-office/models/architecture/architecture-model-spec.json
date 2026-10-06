@@ -1,9 +1,9 @@
 {
-  "specVersion": "2.0.1",
-  "status": "2026-10-04 design baseline; wall v5 shape approved on 2026-10-06; wall specification clarified; no model approval",
+  "specVersion": "2.0.2",
+  "status": "2026-10-04 design baseline; wall v5 and floor v7 with independent PNG approved on 2026-10-06; no model approval",
   "approval": {
     "originalOfficeReference": "approved by user",
-    "newDrawings": "wall review/01-wall-v5.png shape approved on 2026-10-06; other five v2 sheets retain 2026-10-04 approval",
+    "newDrawings": "wall review/01-wall-v5.png and floor review/02-floor-v7.png approved on 2026-10-06; other four v2 sheets retain 2026-10-04 approval",
     "newDimensions": "fixed authoring proposal, not measured from image",
     "modelVerification": "not performed"
   },
@@ -19,7 +19,7 @@
     "primary": "review/approved-office-reference.jpg",
     "door": "review/entry-door-reference.png",
     "secondary": "neighbouring shop window only",
-    "newSheets": "wall: review/01-wall-v5.png; other five components: their module reviewDrawing v2 paths; older wall drawings are superseded",
+    "newSheets": "wall: review/01-wall-v5.png; floor: review/02-floor-v7.png; other four components: module reviewDrawing v2 paths; earlier wall and floor drawings are superseded",
     "historical": "old PNG, orthoviews, BUILD_SCENE.py, .blend and GLBs are not current authority"
   },
   "unitRule": {
@@ -179,7 +179,7 @@
       "moduleId": "floor-plank",
       "name": "Floor - single plank",
       "unitCount": 1,
-      "reviewDrawing": "review/02-floor-v2.png",
+      "reviewDrawing": "review/02-floor-v7.png",
       "components": [
         {
           "partId": "plank",
@@ -238,7 +238,7 @@
         "tongue-and-groove",
         "fixed stagger"
       ],
-      "hiddenFace": "plain oak on underside, grain on visible top/long sides"
+      "hiddenFace": "uniform active-PNG mean sRGB on underside and short ends; natural grain on top/long sides; materials/README.md defines the approved PNG and UV mapping"
     },
     {
       "moduleId": "partition-segment",
@@ -829,7 +829,7 @@
     }
   },
   "verification": {
-    "status": "acceptance criteria only; existing model drafts are not verified against wall v5",
+    "status": "acceptance criteria only; existing model drafts are not verified against wall v5 or floor v7",
     "dimensionsToleranceMetres": 0.001,
     "viewDirectionsFromTarget": {
       "front": [
