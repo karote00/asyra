@@ -28,10 +28,19 @@ batch text that fixes colours or materials as the only allowed appearance.
   geometry change, not an implied appearance override.
 - An instance's appearance override must not unintentionally change other
   instances through shared mutable material state.
+- Replaceable appearance still requires an explicit default. Each batch's
+  surface document must identify the default material or colour for every
+  independently configurable part, matching its numeric material specification.
+  Use those defaults when no override is supplied. Preserve an approved texture
+  as the default where specified; do not replace it with an arbitrary flat tint.
+  Drawing face tones, shadows, outlines and review annotations are not defaults.
 - Existing appearance references remain available as optional defaults. This
   stage does not generate texture assets, implement factories, validate shader
   support or certify material fidelity. Detailed API precedence is deferred to
   the implementation contract.
+
+The previously reviewed lounge chair has an explicit
+[default appearance contract](furniture/ARMCHAIR-DEFAULT-APPEARANCE.md).
 
 ### Reading order
 
@@ -84,7 +93,7 @@ Every row has approved drawings/documents; model construction and verification r
 | Asyra Office - Architectural Components - Design Revision 2 | [Wall - single segment](architecture/review/01-wall-v5.png)<br>[Floor - single plank](architecture/review/02-floor-v7.png)<br>[Partition - single segment](architecture/review/03-partition-v5.png)<br>[Stair - single step](architecture/review/04-stair-v2.png)<br>[Entrance door - complete set](architecture/review/05-door-v2.png)<br>[Window - one unit with sill](architecture/review/06-window-v6.png) | [Overview](architecture/README.md), [gallery](architecture/review/README.md), [geometry](architecture/GEOMETRY-SUPPLEMENT.md), [numbers](architecture/architecture-model-spec.json), [surfaces](architecture/SURFACE-RECIPES.md) |
 | Group 1C - Square Column and Horizontal Beam | [Square column - multiple views](column-beam/review/01-square-column-v1.png)<br>[Horizontal beam - multiple views](column-beam/review/02-horizontal-beam-v1.png) | [Overview](column-beam/README.md), [gallery](column-beam/review/README.md), [geometry](column-beam/GEOMETRY-SUPPLEMENT.md), [numbers](column-beam/column-beam-model-spec.json), [surfaces](column-beam/SURFACE-RECIPES.md) |
 | Group 1B - Roof Slab and Parapet | [Flat roof slab - multiple views](roof-modules/review/01-flat-roof-slab-v1.png)<br>[Rooftop parapet - multiple views](roof-modules/review/02-rooftop-parapet-v1.png) | [Overview](roof-modules/README.md), [gallery](roof-modules/review/README.md), [geometry](roof-modules/GEOMETRY-SUPPLEMENT.md), [numbers](roof-modules/roof-modules-model-spec.json), [surfaces](roof-modules/SURFACE-RECIPES.md) |
-| Group 1D - Stair Baluster and Sloped Handrail | [Stair baluster - multiple views](stair-railing/review/01-stair-baluster-v2.png)<br>[Sloped handrail - multiple views](stair-railing/review/02-sloped-handrail-v1.png) | [Overview](stair-railing/README.md), [gallery](stair-railing/review/README.md), [geometry](stair-railing/GEOMETRY-SUPPLEMENT.md), [numbers](stair-railing/stair-railing-model-spec.json), [surfaces](stair-railing/SURFACE-RECIPES.md) |
+| Group 1D - Stair Baluster and Sloped Handrail | [Stair baluster - multiple views](stair-railing/review/01-stair-baluster-v4.png)<br>[Sloped handrail - multiple views](stair-railing/review/02-sloped-handrail-v3.png) | [Overview](stair-railing/README.md), [gallery](stair-railing/review/README.md), [geometry](stair-railing/GEOMETRY-SUPPLEMENT.md), [numbers](stair-railing/stair-railing-model-spec.json), [surfaces](stair-railing/SURFACE-RECIPES.md) |
 | Group 1E - Landing Baluster and Level Handrail | [Landing baluster - multiple views](landing-railing/review/01-landing-baluster-v1.png)<br>[Level handrail - multiple views](landing-railing/review/02-level-handrail-v1.png) | [Overview](landing-railing/README.md), [gallery](landing-railing/review/README.md), [geometry](landing-railing/GEOMETRY-SUPPLEMENT.md), [numbers](landing-railing/landing-railing-model-spec.json), [surfaces](landing-railing/SURFACE-RECIPES.md) |
 | Group 1F - Railing Transition Posts | [Upper transition post - multiple views](railing-transitions/review/01-upper-transition-post-v1.png)<br>[Lower transition post - multiple views](railing-transitions/review/02-lower-transition-post-v2.png) | [Overview](railing-transitions/README.md), [gallery](railing-transitions/review/README.md), [geometry](railing-transitions/GEOMETRY-SUPPLEMENT.md), [numbers](railing-transitions/railing-transitions-model-spec.json), [surfaces](railing-transitions/SURFACE-RECIPES.md) |
 | Group 1G - Level Handrail Corner | [Level handrail corner - multiple views](railing-corner/review/01-level-handrail-corner-v1.png) | [Overview](railing-corner/README.md), [gallery](railing-corner/review/README.md), [geometry](railing-corner/GEOMETRY-SUPPLEMENT.md), [numbers](railing-corner/railing-corner-model-spec.json), [surfaces](railing-corner/SURFACE-RECIPES.md) |

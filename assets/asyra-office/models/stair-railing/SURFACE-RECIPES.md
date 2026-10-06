@@ -1,6 +1,17 @@
 # Stair Railing - Surface Recipes
 
-One uniform charcoal-painted-metal material is shared by both objects.
+The default surface recipe for both objects is uniform charcoal-painted metal.
+Colour and material are replaceable creation options under the shared asset
+review rule. These values are defaults, not fixed geometry requirements;
+instance-specific overrides must not mutate other instances.
+
+When no colour or material override is supplied, both the stair baluster and
+sloped handrail use sRGB base colour `#383A38` uniformly on every face. This
+matches `material.baseColor` in `stair-railing-model-spec.json`.
+
+The calculated handrail v3 diagram uses different grey face tones solely to
+distinguish geometry. Do not sample those tones as material defaults or create
+different default materials for the top, sides and cut ends.
 
 | Property | Value |
 | --- | --- |

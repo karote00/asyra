@@ -28,7 +28,13 @@ Earlier sheets are retained as historical evidence.
 
 One segment with 0.30 m run, 0.15 m rise and 0.04 m depth. Vertical thickness is 0.04 m; overall height including rise is 0.19 m.
 
-![Sloped handrail - multiple views](02-sloped-handrail-v1.png)
+The user approved the calculated v3 technical diagram on 2026-10-06. Its oblique view is derived
+from the same numeric vertices as the side profile, with vertical end cuts.
+The dashed run/rise construction lines are review annotations, not extra parts.
+See the [geometry review](02-sloped-handrail-v3-geometry-review.md).
+The earlier v1 sheet and unsuccessful imagegen v2 are historical evidence.
+
+![Sloped handrail - approved calculated v3](02-sloped-handrail-v3.png)
 
 ## Review scope
 

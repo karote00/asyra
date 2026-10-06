@@ -4,6 +4,33 @@ Status: 2026-10-04 baseline, with floor and door surface revisions on 2026-10-06
 
 ## Shared calculations
 
+### Default appearance by component
+
+Use these existing defaults when no appearance override is supplied. Hex values
+are sRGB base colours and match the named materials in the numeric JSON.
+Roughness, metallic and alpha remain those of the corresponding JSON material.
+Plaster and stone retain their intrinsic variation recipes below.
+
+| Component | Part or region | Default material and base colour |
+| --- | --- | --- |
+| Wall segment | Body | Plaster, `#E4D9C4` |
+| Wall segment | Top cap | Cream cap, `#EEE4D2` |
+| Floor plank | Top and long sides | Natural oak PNG from `materials/floor-natural-oak-v1.png`; oak material roughness 0.78 |
+| Floor plank | Underside and short ends | Active oak PNG mean sRGB, following `materials/README.md` |
+| Partition segment | Body | Plaster, `#E4D9C4` |
+| Partition segment | Top cap | Cream cap, `#EEE4D2` |
+| Stair step | All faces | Stone, `#D6D0C1` |
+| Complete entrance door | Frame | Door frame wood, `#A9602B` |
+| Complete entrance door | Fixed panel, leaf and recessed fields | Door wood, `#B96E2E` |
+| Complete entrance door | Handle and its hardware | Iron, `#403C35` |
+| Window | Frame, mullions and sill | Cream cap, `#EEE4D2` |
+| Window | All four panes | Opaque stylized glass, `#ACBCC0` |
+
+The floor PNG replaces the legacy oak base-colour input, as specified below;
+do not multiply the PNG by `#D5B587`. Diagram face tones are not extra
+per-face defaults. Every listed default remains replaceable without geometry
+changes, and overrides must not mutate other instances.
+
 Current scope - 2026-10-06: the [shared asset rule](../README.md#current-review-scope-and-configurable-appearance---2026-10-06)
 limits current review to dimensions and geometry. Every recipe below is an
 optional default, not a restriction against caller-supplied colours or materials.

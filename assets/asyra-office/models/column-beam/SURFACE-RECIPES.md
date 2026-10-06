@@ -2,6 +2,12 @@
 
 Both objects use the same uniform cream plaster material as the new roof module body.
 
+This is the explicit default for both the square column and horizontal beam
+when no colour or material override is supplied: plaster with sRGB base colour
+`#E4D9C4`, on all six faces. It matches the numeric specification's
+`materials.plaster`. The recipe is replaceable; an instance override must not
+change geometry or other instances. Diagram shading is not a separate default.
+
 | Property | Value |
 | --- | --- |
 | sRGB base color | #E4D9C4 |
