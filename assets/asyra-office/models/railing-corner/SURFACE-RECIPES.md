@@ -27,6 +27,5 @@ No baked shadows, AO, highlights, gradients, reflections, wear or rust. Runtime 
 
 The v2 reference sheet uses light grey `#C8CCD0` for inspection only and labels
 the actual default `#383A38`. Do not sample the review fill or its raster
-variation into the model material. Original v1 is retained as the default
-appearance reference. No geometry or numeric material value changes with this
+variation into the model material. Original v1 was removed; the numeric default above is authoritative. No geometry or numeric material value changes with this
 recolour.

@@ -1,5 +1,7 @@
 # Partition - Side Line Clarity
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: rejected geometry. Linework was strengthened, but the tilted SIDE did
 not establish the required symmetric thickness overhang. Superseded by v5.
 The earlier linework-only review below is historical, not geometry approval.

@@ -1,5 +1,7 @@
 # Stair Baluster - Top Cut Review
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Review date: 2026-10-06. Scope: dimensions and geometry only.
 Result: numeric specification is consistent; TOP CUT DETAIL does not pass
 visual review. No source sheet or numeric geometry was modified.

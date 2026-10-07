@@ -36,6 +36,14 @@ See [path markings](street/PATH-MARKINGS.md). Material replacement retains the
 current contour, while explicit path/width editing changes geometry. Crosswalk
 stripes remain independently placed rectangular decals sharing the ivory paint.
 
+## Path-generated curb solids
+
+Straight and curved curbs are presets of one shared cross-section swept along
+planar paths. They remain solid model components, not paint decals or materials.
+See [planar curbs](street/PLANAR-CURBS.md). One continuous run or independently
+capped blocks are app-selected generation modes; no runtime generator exists
+as a result of this classification update.
+
 ## Reclassification of reviewed components
 
 | Existing component or group | Component type | Independent appearance and source |

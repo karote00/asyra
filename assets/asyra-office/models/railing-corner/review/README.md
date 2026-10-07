@@ -6,8 +6,7 @@ Status: user-approved reference sheets.
 
 One independent solid L-shaped component, 0.32 x 0.32 x 0.04 m overall, with equal arms and a 0.04 x 0.04 section.
 
-The user approved the v2 light-grey review recolour on 2026-10-07. The original v1
-remains the charcoal appearance reference. Geometry, dimensions and the
+The user approved the v2 light-grey review recolour on 2026-10-07. The original v1 image was removed; the surface recipe owns the charcoal default. Geometry, dimensions and the
 single-sheet layout are unchanged in intent; the numeric specification remains
 the dimensional authority. The image caption distinguishes review colour from
 the model default. Visual comparison found the six-view silhouettes, inner

@@ -1,5 +1,7 @@
 # Window - Consistent Depth Reference
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: rejected by the user because TOP does not match THREE-QUARTER.
 The previous self-review below missed the longitudinal end mismatch. It is
 historical evidence, not approval. No model or numeric specification changes.

@@ -37,3 +37,10 @@ This update does not approve new curb drawings or produce models.
 ## Historical material
 
 `orthoviews/`, `street-stage-02-review.png`, v1 images, and v3 images with road backing remain historical records only. Old road corners, fixed crosswalk arrays, spherical canopies, side-arm lanterns, and fixed pavement assemblies are no longer production specifications. Do not build new models from old sheets.
+
+## Planar curb generation
+
+Straight and curved curbs now share a section swept along a planar path.
+See [the shared section and path presets](PLANAR-CURBS.md). Existing preset
+dimensions remain, while both use the shared 0.008 m bevel. Reference image:
+none for the shared cross-section and curved path example. This is documentation only.

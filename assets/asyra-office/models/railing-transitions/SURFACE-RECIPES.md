@@ -11,8 +11,8 @@ Recoloured review sheets are geometry-inspection aids only. Their display
 colour does not replace this default and must not be sampled into the model.
 All faces retain the same default material, including both top planes.
 
-For the lower transition post specifically, the original charcoal v2 drawing
-remains the default appearance reference. The accepted light-grey v14 review sheet uses
+For the lower transition post specifically, the original charcoal v2 image was removed;
+the numeric material recipe owns the default appearance. The accepted light-grey v14 review sheet uses
 `#C8CCD0` as its requested display colour only; the material default remains
 `#383A38` with metallic 0.15 and roughness 0.80. The same distinction applies
 to the upper post's light-grey review sheet.

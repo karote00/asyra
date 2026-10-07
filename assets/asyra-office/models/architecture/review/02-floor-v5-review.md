@@ -1,5 +1,7 @@
 # Floor Plank - Shape Correction Review
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: self-review failed; not approved. Numeric specification remains unchanged.
 
 ## Scope and reference

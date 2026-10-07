@@ -129,15 +129,14 @@ production mask or a source of baked glow, lighting or receiving-surface colour.
 
 ### Pavement and curb
 
-Paver bevel 0.004 m, straight curb 0.008 m, curved curb 0.004 m, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
+Paver bevel is 0.004 m; both curb presets use the shared 0.008 m bevel, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
 
 ### Paving stone - single model component
 
 The new [single-unit sheet](review/04-paving-stone-single-v1.png) was approved on 2026-10-07. It depicts one paving stone from six views.
 The [annotated layout](review/04-pavement-layout-v3.png) is an assembly reference
 only; its mixed sizes, apparent front/side perspectives and arrangement must
-not override the single-unit dimensions. Original v2 remains historical
-approved laying-style evidence. No fixed L-shaped mesh is authored.
+not override the single-unit dimensions. The obsolete v2 image was removed; the annotated layout replaces it. No fixed L-shaped mesh is authored.
 
 The existing dimensions remain X=0.60, Y=0.30, Z=0.05 m. With the origin at the
 bottom face centre, bounds are (-0.30,-0.15,0) to (0.30,0.15,0.05). Use one
@@ -162,29 +161,26 @@ For aligned placement, centre spacing is 0.60 m plus the selected X gap and
 Rotation, staggering, counts, base elevation and supporting foundation are
 app-owned. Do not distort a brick to fill a leftover boundary. Arbitrary edge
 cutting or additional edge-shaped pieces require separate specifications.
-Straight and curved curbs are separate model components.
+Straight and curved curbs are presets of one planar path-generated solid family.
 
-### Straight curb - single model component
+### Curbs - shared cross-section and planar paths
 
-The [single-unit sheet](review/04-curb-straight-single-v1.png) illustrates one
-closed rectangular block. It is not calibrated: view proportions differ and
-the three-quarter bottom bevel is unclear. Numeric dimensions govern modeling;
-this document review does not certify the raster as an exact geometric drawing.
+The [planar curb specification](PLANAR-CURBS.md) owns the shared section,
+path frame, ends, bevels and generation limits. Both presets use a 0.16 m wide,
+0.12 m high section with 0.008 m edge treatment. The former curved preset's
+0.004 m bevel is superseded to make the cross-section consistent.
 
-Dimensions remain X=0.30, Y=0.16, Z=0.12 m. Origin is the bottom face centre;
-bounds are (-0.15,-0.08,0) to (0.15,0.08,0.12). Bevel all outer edges inward
-by 0.008 m with two segments while preserving those bounds. Top and bottom
-remain planar away from edge relief. Use a closed mesh with outward normals,
-without a cap, step, groove, foundation, mortar or adjoining stones.
+`curb-straight` retains its 0.30 m length and bottom-centre origin.
+`curb-curved` retains its 0.77 m centreline radius, 0-to-18-degree span and
+arc-centre origin; its nominal inner/outer radii remain 0.69/0.85 m.
+These are generated examples, not independently authored fixed meshes.
+The JSON retains their names and checking dimensions; no runtime API or
+persisted model migration is implemented by this documentation change.
 
-Default material is stone-grey, sRGB #C9C4B9, roughness 0.90, metallic 0.
-Colour and material are independently replaceable without changing geometry;
-stone-cream and stone-pale remain alternatives. Drawing outlines, shading and
-face-tone differences must not be baked into material maps.
-
-The app owns count, rotation, elevation and arrangement. For an aligned row,
-centre spacing along X is 0.30 m plus the chosen gap. Bevel relief remains at
-zero gap. This unit is not stretched into a curve or an arbitrary corner.
+The [straight sheet](review/04-curb-straight-single-v1.png) remains illustrative,
+not calibrated. Reference image: none for the shared cross-section and curved
+path example. Use PLANAR-CURBS.md and the numeric specification. A section
+drawing and consistent generated examples have not yet been produced.
 
 ### Round manhole
 

@@ -5,7 +5,7 @@ The user approved committing five furniture items. Each sheet shows five views o
 1. [Wooden writing desk](01-desk-v1.png)
 2. [Work chair](02-work-chair-v1.png)
 3. [Green two-seat sofa](03-sofa-v1.png)
-4. [Orange lounge armchair](04-armchair-v1.png)
+4. [Orange lounge armchair - approved widened revision](../source/side-source-reset/five-views-v3-wider.png)
 5. [Round coffee table](05-coffee-table-v1.png)
 
 The [original reference](../../architecture/review/approved-office-reference.jpg) prioritizes the central office. Hidden chair supports, sofa underside, and table leg count are explicit completions in the [document](../GEOMETRY-SUPPLEMENT.md). Review appearance and these choices together.

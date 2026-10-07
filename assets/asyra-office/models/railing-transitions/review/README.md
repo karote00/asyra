@@ -7,7 +7,7 @@ Status: user-approved reference sheets. Each sheet represents one independent po
 0.04 x 0.04 x 0.90 m. In front view the left top half rises, then the right half is level.
 
 The light-grey v2 sheet was approved for commit on 2026-10-07; default material remains
-charcoal `#383A38`. The original v1 remains the default appearance reference.
+charcoal `#383A38`. The original v1 image was removed. The surface recipe owns the default appearance.
 See the [specification review](01-upper-transition-post-v2-review.md).
 
 ![Upper transition post - review colour v2](01-upper-transition-post-v2.png)

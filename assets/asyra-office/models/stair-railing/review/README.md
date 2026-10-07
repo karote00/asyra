@@ -18,7 +18,7 @@ match the main THREE-QUARTER projection. Its
 [review record](01-stair-baluster-v3-geometry-review.md) records that failure.
 The approved v4 sheet uses a direct 3x enlargement of the main view's top.
 See the [v4 review](01-stair-baluster-v4-geometry-review.md).
-Earlier sheets are retained as historical evidence.
+Earlier reference images were removed; reference image: none for those failed revisions.
 
 ![Stair baluster - approved v4](01-stair-baluster-v4.png)
 
@@ -32,7 +32,7 @@ The user approved the calculated v3 technical diagram on 2026-10-06. Its oblique
 from the same numeric vertices as the side profile, with vertical end cuts.
 The dashed run/rise construction lines are review annotations, not extra parts.
 See the [geometry review](02-sloped-handrail-v3-geometry-review.md).
-The earlier v1 sheet and unsuccessful imagegen v2 are historical evidence.
+The earlier v1 and unsuccessful v2 images were removed; reference image: none for those revisions.
 
 ![Sloped handrail - approved calculated v3](02-sloped-handrail-v3.png)
 

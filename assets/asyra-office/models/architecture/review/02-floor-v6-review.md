@@ -1,5 +1,7 @@
 # Floor Plank - Dimension-Driven Drawing
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: historical geometric evidence; the user rejected the regular wood grain.
 V7 preserves these projection coordinates while replacing the material. The
 current authoring script now emits v7; this record describes the saved v6 files.
@@ -14,14 +16,14 @@ The generator reads the existing `floor-plank` module from
 dimensions, materials, and production surface specification remain unchanged.
 Internal drawing identifiers belong only to this local authoring script.
 
-- [Review image](02-floor-v6.png): 2400 x 1240 pixels.
+- Review image - reference image: none (obsolete image removed): 2400 x 1240 pixels.
 - [Editable projection sheet](02-floor-v6.svg): vector boundaries with embedded
   intrinsic-colour face textures; contains no external dependencies.
 - [Projection data](02-floor-v6.json): physical dimensions, scale and coordinates.
 - [Authoring script](draw_floor_sheet.py): uses the existing Pillow and NumPy
   installations. No new dependency was installed.
-- [Grain detail](02-floor-v6-grain-detail.png): unretouched 3x crop.
-- [Short-end detail](02-floor-v6-side-detail.png): unretouched 6x crop.
+- Grain detail - reference image: none (obsolete image removed): unretouched 3x crop.
+- Short-end detail - reference image: none (obsolete image removed): unretouched 6x crop.
 
 Run `python3 assets/asyra-office/models/architecture/review/draw_floor_sheet.py`
 from the worktree. The font path may be supplied with `DRAWING_FONT_PATH`.
