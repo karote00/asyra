@@ -18,7 +18,7 @@
 - [Single leaf](06-single-leaf-v1.png): one shared thick rounded leaf. Numeric contour, shallow bulge and shell are now fixed under user delegation in the [construction contract](../TREE-CONSTRUCTION.md); the drawn SIDE arch is not calibrated.
 - [Natural leaf cluster](06-leaf-cluster-v2.png): selected by the user as the improved composition. Mixed sizes, local overlap and irregular outline guide the deterministic assembly; v1 is historical.
 - [Bare-tree structure - selected reference](06-bare-tree-selected-v1.png): fuller two-level version explicitly selected on 2026-10-07 and preserved unchanged. The [branch inventory](../BARE-TREE.md) and [numeric data](../tree-construction-spec.json) replace the superseded six-plus-six proposal. No rendered model approval is implied.
-- [Street lantern](07-street-lantern-v2.png): one complete light.
+- [Street lantern](07-street-lantern-v2.png): one complete light; unchanged reference. The [recalculated geometry and appearance contract](../LANTERN-SPEC.md) corrects proportions and fixes joints, panes and replacement rules. See [document review](07-street-lantern-review.md); numeric review is not rendered-model approval.
 
 The paving stone's smooth review fill shows geometry, not final surface finish.
 Future replaceable stone materials may supply grain, roughness and micro-normal

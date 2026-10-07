@@ -29,7 +29,7 @@ Seven categories retain eleven unit/preset entries, including three presets of o
 | Pavement and curb | One curved curb block | inner radius 0.69, outer radius 0.85, 18-degree arc, height 0.12 |
 | Manhole | One cover-and-frame assembly | diameter 0.66, thickness 0.026 |
 | Tree | One complete tree | maximum envelope X 3.00 × Y 1.90 × Z 3.55 |
-| Lantern | One complete street lantern | maximum width/depth 0.38, height 2.74 |
+| Lantern | One complete street lantern | maximum width/depth 0.53, height 2.74 |
 
 The app chooses counts, arrangement, spacing, rotation, receiving surfaces, and foundations. Do not fix five stripes into a crosswalk or combine a row of lights or an L-shaped pavement into a basic unit. A manhole cover/frame and a lantern pole/head are named structural parts of their respective placeable units.
 
@@ -339,7 +339,24 @@ No model generation, runtime change or visual model acceptance is included.
 
 ### Street lantern
 
-Lathe the base, neck, and finial from JSON Z/radius profiles and close endpoints. Pole Z=0.20–1.88 m, radius 0.037 m. Glass spans Z=2.05–2.45 m; lower outer width 0.20 m, upper 0.30 m, four panes each 0.003 m thick. Frame strips are 0.018 m square, joining corresponding corners of the lower and upper frames, with 0.002 m bevels. Roof eave width 0.38 m at Z=2.45–2.48 m, tapering to a 0.055 m square top at Z=2.62; shell thickness 0.012 m, underside closed. Finial maximum Z=2.74 m. Head is centred with no side arm. Glass uses opaque amber stylized material without emission, internal bulbs, or lights.
+Follow [LANTERN-SPEC.md](LANTERN-SPEC.md) with the lantern module in
+`street-model-spec.json`. The 2026-10-08 recalculation retains total height
+2.74 m and uses the current FRONT drawing to correct the overly thin proportions.
+The local envelope is now 0.53 x 0.53 x 2.74 m, foot maximum diameter 0.44 m,
+and shaft diameter tapers from 0.16 to 0.15 m. The drawing remains unchanged.
+
+All part heights, revolved profiles, frame corner sections, glass seats, roof
+cavity and finial curves are specified in the guide. Four panes have 3 mm
+face-normal thickness. Their visible openings extend from Z=1.985 to 2.375 m;
+the outer frame extends from Z=1.940 to 2.400 m, with square side 0.30 to 0.44 m.
+The roof overhang is 45 mm per side. The enclosed roof has nominal 12 mm walls.
+
+Default materials are lamp-metal #373733, lower collar accent #60594B and
+amber panes #C7A15B. Each component and each pane supports independently
+replaceable colour/material with explicit precedence and stable geometry.
+The upper collar uses dark lamp-metal. No side arm, bulb, light object or
+baked illumination is included. See the [document review](review/07-street-lantern-review.md).
+No model generation or rendered acceptance is claimed.
 
 ## Materials and lighting
 
