@@ -109,6 +109,24 @@ the authored geometry. Road markings remain independent units.
 
 Default straight and dash paths extend symmetrically along X. The default curve footprint is a planar annular sector with radii 1.00–1.10 m, angles 180–270 degrees, and 32 segments. These are path presets sharing paint, not separate authored fixed meshes or shape-specific textures. A crosswalk stripe is 0.40 × 2.80 m, long axis Y; traffic travels along Y and pedestrians cross along X, subject to app rotation. Do not fix total crossing width, repetition count, or spacing. Wear becomes alpha holes, not road-coloured dots. Maximum inward long-edge perturbation is 0.003 m.
 
+### Crosswalk stripe - rectangular decal
+
+The independently placeable unit is one rectangular decal, not a solid box or
+an entire crossing. Its local footprint is X=-0.20..0.20, Y=-1.40..1.40 at Z=0;
+the origin is its centre. There are no side walls or physical thickness. The
+0.0005 m receiving-normal offset is only for display, not part of its dimensions.
+
+Use the shared ivory-paint default: sRGB #E4DECF, roughness 0.86, metallic 0.
+Keep this stripe's seed 303, wear coverage 0.025 and inward long-edge variation
+of at most 0.003 m. Sharing pigment with a lane dash does not substitute the
+lane dash's dimensions or wear settings. Colour/material changes preserve the
+stripe's contour and transparency; wear exposes the actual receiving surface.
+
+For an unrotated array along local X, centre spacing is 0.40 m plus the chosen
+clear gap. Count and gap belong to the app/user; no array or fixed spacing is
+stored in this unit. The v4 PNG is an appearance reference, not a calibrated
+production mask or a source of baked glow, lighting or receiving-surface colour.
+
 ### Pavement and curb
 
 Paver bevel 0.004 m, straight curb 0.008 m, curved curb 0.004 m, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
