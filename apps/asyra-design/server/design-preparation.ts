@@ -7,6 +7,8 @@ import {
 import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
 import { constructDesign } from './design-construction'
+import { createDesignTargetIndex } from './design-target-index'
+import { createDesignDraftRepairStore } from './design-draft-repair'
 import {
   measureVectorPath,
   type LocalVectorArtifact
@@ -651,7 +653,14 @@ export const createDesignPreparationSession = (
   compile: typeof prepareDesign = prepareDesign
 ) => {
   const artifacts = new Map<string, PreparedDesign>()
+  const rejectedDrafts = createDesignDraftRepairStore()
+  const targetIndexes = new Map<
+    string,
+    ReturnType<typeof createDesignTargetIndex>
+  >()
   return {
+    retainRejectedDraft: rejectedDrafts.retain,
+    repairDraft: rejectedDrafts.repair,
     prepare(input: unknown) {
       const artifactId = randomUUID()
       let sourceWork:
@@ -683,12 +692,25 @@ export const createDesignPreparationSession = (
     release(artifactIds: readonly string[]) {
       const releasedArtifactIds: string[] = [],
         missingArtifactIds: string[] = []
-      for (const artifactId of new Set(artifactIds))
-        (artifacts.delete(artifactId)
+      for (const artifactId of new Set(artifactIds)) {
+        targetIndexes.delete(artifactId)
+        const result = artifacts.delete(artifactId)
           ? releasedArtifactIds
           : missingArtifactIds
-        ).push(artifactId)
+        result.push(artifactId)
+      }
       return { releasedArtifactIds, missingArtifactIds }
+    },
+    selectKeys(artifactId: string, prefix?: string): string[] {
+      const artifact = artifacts.get(artifactId)
+      if (!artifact)
+        throw new Error('Design artifact is unavailable in this request')
+      let index = targetIndexes.get(artifactId)
+      if (!index) {
+        index = createDesignTargetIndex(artifact.keyToId)
+        targetIndexes.set(artifactId, index)
+      }
+      return index.keys(prefix)
     },
     resolve(artifactId: string): PreparedDesign {
       const artifact = artifacts.get(artifactId)

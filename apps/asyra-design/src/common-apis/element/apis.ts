@@ -163,15 +163,6 @@ const getWorkspaceOrderedElementIds = (): string[] => {
   return orderedIds
 }
 
-const boundsIntersect = (a: ElementBounds, b: ElementBounds): boolean => {
-  const aMaxX = a.x + a.width
-  const aMaxY = a.y + a.height
-  const bMaxX = b.x + b.width
-  const bMaxY = b.y + b.height
-
-  return a.x <= bMaxX && aMaxX >= b.x && a.y <= bMaxY && aMaxY >= b.y
-}
-
 const createElementAtWorkspacePos = (
   type: EntityType,
   workspacePos: PositionData,
@@ -264,30 +255,8 @@ export const elementApis = {
     return null
   },
 
-  getElementIdsInBounds: (bounds: ElementBounds): string[] => {
-    if (!bounds) {
-      return []
-    }
-
-    const orderedIds = getWorkspaceOrderedElementIds()
-    return orderedIds.filter((elementId) => {
-      const element = core.getElementData(elementId)
-      if (!element) {
-        return false
-      }
-
-      if (element.type === EntityTypes.WORKSPACE) {
-        return false
-      }
-
-      const elementBounds = elementApis.getElementBounds(elementId)
-      if (!elementBounds) {
-        return false
-      }
-
-      return boundsIntersect(elementBounds, bounds)
-    })
-  },
+  getElementIdsInBounds: (bounds: ElementBounds): string[] =>
+    core.getElementIdsInBounds(bounds),
 
   getElementIdAtClientPos: (clientPos: PositionData): string | null => {
     const renderHit = core.getElementIdAtClientPos(clientPos)

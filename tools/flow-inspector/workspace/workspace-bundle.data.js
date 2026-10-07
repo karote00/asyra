@@ -184,6 +184,7 @@
               "Keep shared guidance concise and expose task-specific image procedures through discovered tool definitions",
               "Startup guidance defers stage procedures to tool contracts; a ready first part requires no model-authored plan, and chosen spatial projection uses the existing preparation owner without prescribing a viewpoint",
               "The existing combined workflow owns deterministic handoffs, preserves prepared identities and completed step outcomes on later failure, observes each internal call and never replays uncertain writes",
+              "The combined preparation route accepts either complete source or an explicit retained-draft repair and forwards the same input to preparation; invalid repair never reaches apply",
               "Compose optional first-write criteria through the existing review owner after preparation and before mutation; reject invalid criteria without canvas writes",
               "Explain construction choices from supplied coordinate and repetition semantics; preserve direct edits and arbitrary 2D paths, with executable examples and no forced camera or subject-based routing",
               "Preserve original request terms and constraints when organizing the existing plan; separate assumptions without an extra translation call",
@@ -276,6 +277,8 @@
               "An explicit preserve-vectors image region extracts oriented source pixels without resampling, returns region-local coordinates and source region; oversized conversion reports observed and allowed bytes, not an unavailable converter; successful request-local reuse distinguishes attachment and region",
               "Admit signed curve controls against measured curve bounds and report malformed pairs by semantic node and edge",
               "Draft keys are optional root selectors, never canonical IDs; unnamed roots use the generated element ID and no root name is reserved",
+              "Resolve exact keys directly and repeated prefixes through an immutable artifact-owned index; preserve source order, reject misses and release index state with the artifact",
+              "Rejected source drafts identify exact conflict paths; explicit bounded request-local field repairs re-enter the same admission without canonical writes or mutation of prepared artifacts",
               "Reference reuse preserves the current source attribution and exposes source-local rejection stages",
               "Acquire candidate image URLs in one batch with bounded concurrent I/O, ordered per-source receipts, original images and request-local in-flight reuse; one source failure does not discard siblings; cancellation prevents attachment admission",
               "No cross-request retention without measured reuse and equivalence",
@@ -295,6 +298,7 @@
               "automatic detail removal"
             ],
             "cacheDimensions": [
+              "request-local immutable prepared artifact identity and key map; lazy prefix index retires with the artifact; rejected draft revision retains bounded source only for explicit revalidation",
               "request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failures removed; original image delivery once per attachment with explicit refresh"
             ],
             "implementationBoundary": [
@@ -305,6 +309,11 @@
               "apps/asyra-design/server/__tests__/local-image-layer-separation.test.ts",
               "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
               "apps/asyra-design/server/design-preparation.ts",
+              "apps/asyra-design/server/design-target-index.ts",
+              "apps/asyra-design/server/design-draft-repair.ts",
+              "apps/asyra-design/server/__tests__/design-target-index.test.ts",
+              "apps/asyra-design/server/__tests__/design-draft-repair.test.ts",
+              "apps/asyra-design/src/ai/prepared-design.ts",
               "apps/asyra-design/src/ai/design-fill.ts",
               "apps/asyra-design/server/design-budget.ts",
               "apps/asyra-design/server/local-reference-tools.ts",
@@ -344,6 +353,8 @@
               "artifact:execution-receipt"
             ],
             "conditions": [
+              "Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets",
+              "Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior",
               "Reject duplicate Fill-row destination IDs before reads or writes; resolve each current row and apply aligned or uniform new patches in one batch; plural visibility reports ordered changed/unchanged/unavailable outcomes in one receipt",
               "Status-item receipts validate input/output alignment and emit reviewElementIds only for changed or unchanged targets without additional canonical reads",
               "Overlap only proven independent access",
@@ -372,8 +383,30 @@
               "direct renderer writes",
               "second transaction manager"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Render runtime, current workspace, projected geometry and hierarchy; never viewport pan/zoom"
+            ],
             "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/__tests__/design-context.test.ts",
+              "apps/asyra-design/src/common-apis/__tests__/hierarchy.test.ts",
+              "apps/asyra-design/src/ai/context-action.ts",
+              "packages/core/src/__tests__/app-runtime-facade.test.ts",
+              "apps/asyra-design/e2e/indexed-design-query.spec.ts",
+              "apps/asyra-design/src/common-apis/design-context.ts",
+              "apps/asyra-design/src/common-apis/hierarchy.ts",
+              "packages/render/src/queries/region-index.ts",
+              "packages/render/src/queries/scene-region-query.ts",
+              "packages/render/src/types/render-object.ts",
+              "packages/render/src/render.ts",
+              "packages/render/src/layers/scene/render-layer.ts",
+              "packages/render/src/layers/viewport/viewport-layer.ts",
+              "packages/render/src/__tests__/region-index.test.ts",
+              "packages/render/src/__tests__/scene-region-query.test.ts",
+              "packages/core/src/core.ts",
+              "packages/core/src/apis/render.ts",
+              "packages/core/src/apis/create-apis.ts",
+              "packages/core/src/types/render.ts",
+              "packages/core/src/index.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/local-tool-scheduler.ts",
               "apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts",

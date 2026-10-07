@@ -1,7 +1,15 @@
 import core from '../contexts'
+import type { Rect } from '@asyra/utils'
 
 export interface DesignContextQuery {
-  scope: 'selection' | 'children' | 'ids'
+  scope: 'selection' | 'children' | 'ids' | 'region'
+  bounds?: Rect
+  filter?: {
+    type?: string
+    parentId?: string
+    ancestorId?: string
+    locked?: boolean
+  }
   elementIds?: string[]
   fields?: string[]
   parentId?: string
@@ -11,14 +19,25 @@ export interface DesignContextQuery {
 interface DesignContextSource {
   getCurrentWorkspaceId(): string | null | undefined
   getSelectedElementIds(): string[]
-  getElementData(id: string):
+  getElementChildren(
+    id: string,
+    offset: number,
+    limit: number
+  ): {
+    available: boolean
+    elementIds: string[]
+    total: number
+    nextOffset: number | null
+  }
+  getElementIdsInBounds(bounds: Rect): string[]
+  getElementMetadata(id: string):
     | {
         name?: unknown
         type?: unknown
         parentId?: unknown
         visible?: unknown
         lock?: unknown
-        children?: unknown
+        childCount?: number
       }
     | undefined
   getElementComputedData(
@@ -58,10 +77,12 @@ export const createDesignContextReader =
             'offset',
             'limit',
             'elementIds',
-            'fields'
+            'fields',
+            'bounds',
+            'filter'
           ].includes(key)
       ) ||
-      !['selection', 'children', 'ids'].includes(query.scope) ||
+      !['selection', 'children', 'ids', 'region'].includes(query.scope) ||
       (query.parentId !== undefined &&
         (query.scope !== 'children' ||
           typeof query.parentId !== 'string' ||
@@ -84,6 +105,52 @@ export const createDesignContextReader =
           new Set(query.fields).size !== query.fields.length))
     )
       throw new Error('Invalid document context targets or fields.')
+    if (query.scope === 'region') {
+      const bounds = query.bounds
+      if (
+        !bounds ||
+        Object.keys(bounds).some(
+          (key) => !['x', 'y', 'width', 'height'].includes(key)
+        ) ||
+        ![
+          bounds.x,
+          bounds.y,
+          bounds.width,
+          bounds.height,
+          bounds.x + bounds.width,
+          bounds.y + bounds.height
+        ].every(Number.isFinite) ||
+        bounds.width < 0 ||
+        bounds.height < 0
+      )
+        throw new Error(
+          'Region requires finite workspace bounds with nonnegative dimensions.'
+        )
+      if (
+        query.filter !== undefined &&
+        (!query.filter ||
+          typeof query.filter !== 'object' ||
+          Array.isArray(query.filter) ||
+          Object.entries(query.filter).some(([key, value]) =>
+            key === 'locked'
+              ? typeof value !== 'boolean'
+              : !['type', 'parentId', 'ancestorId'].includes(key) ||
+                typeof value !== 'string' ||
+                !value.length ||
+                value.length > 256
+          ))
+      )
+        throw new Error('Invalid region filter.')
+    } else if (query.bounds !== undefined || query.filter !== undefined)
+      throw new Error('Region bounds and filters require scope=region.')
+    const metadata = new Map<
+      string,
+      ReturnType<DesignContextSource['getElementMetadata']>
+    >()
+    const readMetadata = (id: string) => {
+      if (!metadata.has(id)) metadata.set(id, source.getElementMetadata(id))
+      return metadata.get(id)
+    }
     const fields = query.fields ?? []
     const elementIds = query.elementIds ?? []
     const offset = query.offset === undefined ? 0 : query.offset
@@ -102,13 +169,45 @@ export const createDesignContextReader =
       query.scope === 'children'
         ? (query.parentId ?? source.getCurrentWorkspaceId() ?? null)
         : null
-    const parent = parentId ? source.getElementData(parentId) : undefined
-    const available = query.scope !== 'children' || Boolean(parent)
+    const childPage =
+      query.scope === 'children' && parentId
+        ? source.getElementChildren(parentId, offset, limit)
+        : undefined
+    const available =
+      query.scope !== 'children' || Boolean(childPage?.available)
     let ids: string[] = []
     if (query.scope === 'ids') ids = elementIds
     else if (query.scope === 'selection') ids = source.getSelectedElementIds()
-    else if (Array.isArray(parent?.children))
-      ids = parent.children.filter((id): id is string => typeof id === 'string')
+    else if (query.scope === 'children') ids = childPage?.elementIds ?? []
+    else
+      ids = source.getElementIdsInBounds(query.bounds as Rect).filter((id) => {
+        const data = readMetadata(id)
+        if (!data) return false
+        const filter = query.filter
+        if (filter?.type !== undefined && data.type !== filter.type)
+          return false
+        if (filter?.parentId !== undefined && data.parentId !== filter.parentId)
+          return false
+        if (
+          filter?.locked !== undefined &&
+          (data.lock === true) !== filter.locked
+        )
+          return false
+        if (filter?.ancestorId !== undefined) {
+          let parent = data.parentId
+          const visited = new Set<string>()
+          while (typeof parent === 'string' && parent && !visited.has(parent)) {
+            if (parent === filter.ancestorId) return true
+            visited.add(parent)
+            parent = readMetadata(parent)?.parentId
+          }
+          return false
+        }
+        return true
+      })
+    const total = childPage?.total ?? ids.length
+    const pageIds =
+      query.scope === 'children' ? ids : ids.slice(offset, offset + limit)
     const missingIds: string[] = []
     const elements: {
       id: string
@@ -121,8 +220,8 @@ export const createDesignContextReader =
       properties: Record<string, unknown>
       truncatedFields: string[]
     }[] = []
-    for (const id of ids.slice(offset, offset + limit)) {
-      const data = source.getElementData(id)
+    for (const id of pageIds) {
+      const data = readMetadata(id)
       if (!data) {
         missingIds.push(id)
         continue
@@ -160,7 +259,7 @@ export const createDesignContextReader =
         parentId: data.parentId,
         visible: data.visible !== false,
         locked: data.lock === true,
-        childCount: Array.isArray(data.children) ? data.children.length : 0,
+        childCount: data.childCount ?? 0,
         properties,
         truncatedFields
       })
@@ -170,8 +269,8 @@ export const createDesignContextReader =
       scope: query.scope,
       parentId,
       offset,
-      total: ids.length,
-      nextOffset: offset + limit < ids.length ? offset + limit : null,
+      total,
+      nextOffset: offset + limit < total ? offset + limit : null,
       elements,
       missingIds
     }

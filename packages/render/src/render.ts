@@ -130,6 +130,14 @@ class Render {
     return this.engine ?? this.providedEngine
   }
 
+  getElementIdsInBounds(
+    bounds: import('./types/render-object.js').RenderBounds
+  ): string[] {
+    this.requireEngine()
+    this.flushFrame()
+    return this.viewport.getElementIdsInBounds(bounds)
+  }
+
   measureElementContentBounds(
     elementIds: readonly string[]
   ): RenderContentMeasurement[] {

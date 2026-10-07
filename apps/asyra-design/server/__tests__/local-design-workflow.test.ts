@@ -75,6 +75,32 @@ const setup = () => {
   }
 }
 
+it('composes compact rejected-draft repair through preparation before one canonical dispatch', async () => {
+  const { workflow, execute } = setup()
+  const source = {
+    ...draft,
+    children: [draft.children[0], { ...draft.children[0] }]
+  }
+  const signal = new AbortController().signal
+  const rejected = JSON.parse(
+    await workflow.call('prepare_and_apply_design', { draft: source }, signal)
+  )
+  expect(rejected.failedStep).toBe('prepare_design')
+  expect(execute).not.toHaveBeenCalled()
+  const request = {
+    repair: {
+      draftId: rejected.draftId,
+      replacements: [{ path: '/children/1/key', value: 'second-face' }]
+    }
+  }
+  const repaired = JSON.parse(
+    await workflow.call('prepare_and_apply_design', request, signal)
+  )
+  expect(repaired.failedStep).toBeUndefined()
+  expect(execute).toHaveBeenCalledOnce()
+  expect(repaired.completedSteps).toContain('prepare_design')
+})
+
 it('keeps combined preparation and canvas application behind independent work', async () => {
   const { workflow, execute } = setup()
   const controller = new AbortController()

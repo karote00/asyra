@@ -387,3 +387,25 @@ and object-local; new attachment cannot reuse a previous runtime measurement.
 Engines without local-content measurement use their existing world-bounds query.
 The logical `getLocalBounds` used for pre-engine diagnostics remains independent
 of native queries and does not trigger draw delivery.
+
+## Workspace region lookup
+
+`Render.getElementIdsInBounds(bounds)` settles pending projection and queries the
+current workspace in document coordinates. Core exposes the same method; App
+code does not inspect engine objects. Missing runtime/local-content-bounds
+capability rejects explicitly. Results are visible, renderable projected
+identities in child-before-parent document order. Bounds intersections are
+conservative candidates, not path-level hit tests or occlusion decisions.
+
+The runtime owns a lazy multilevel spatial hash with one cell per node. Extents
+use document coordinates consistent with `elementLocalToWorkspace`, including
+the workspace origin but excluding viewport pan/zoom. Geometry invalidates the
+changed node, ancestors and descendants whose dimension scaling can change;
+transforms also invalidate descendants. Membership/reorder invalidates ordering separately. Queries reuse
+unchanged extents; disposal/replacement retires the runtime's index. No index is
+serialized and no rendering, resolution or tile policy changes.
+
+Permanent proofs: `region-index.test.ts`, `scene-region-query.test.ts`, and Design
+`indexed-design-query.spec.ts`. Diagnostic counters distinguish bounds reads,
+order visits, cell visits and candidate checks; CI assertions use work counts,
+not elapsed-time budgets.

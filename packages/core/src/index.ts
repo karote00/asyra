@@ -312,6 +312,8 @@ type CoreBasicApiKeys =
   | 'registerCollaborationSession'
   | 'registerInputKeyCombinations'
   | 'getElementData'
+  | 'getElementMetadata'
+  | 'getElementChildren'
   | 'getCurrentWorkspaceId'
   | 'getAllElementData'
   | 'getCanonicalElementCount'

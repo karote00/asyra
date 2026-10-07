@@ -37,6 +37,93 @@ import { createLocalToolScheduler } from '../local-tool-scheduler'
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
 
+it('execution proof reuses artifact prefix lookup without rereading every key', () => {
+  const session = createDesignPreparationSession()
+  const prepared = session.prepare({
+    type: 'frame',
+    name: 'Indexed targets',
+    layout: 'absolute',
+    width: 10000,
+    height: 20,
+    children: Array.from({ length: 2048 }, (_, index) => ({
+      key: `part-${index}`,
+      name: `Part ${index}`,
+      type: 'rect',
+      x: index * 4,
+      y: 0,
+      width: 2,
+      height: 2
+    }))
+  })
+  const tools = createLocalDesignTools([], session)
+  const keyMap = session.resolve(prepared.artifactId).keyToId
+  const expected = Object.keys(keyMap)
+    .filter((key) => key.startsWith('part-10'))
+    .map((key) => keyMap[key])
+  const query = { artifactId: prepared.artifactId, keyPrefix: 'part-10' }
+  const keys = vi.spyOn(Object, 'keys')
+  try {
+    expect(tools.resolveTargets(query)).toEqual(expected)
+    keys.mockClear()
+    expect(tools.resolveTargets(query)).toEqual(expected)
+    expect(keys.mock.calls.filter(([value]) => value === keyMap)).toHaveLength(
+      0
+    )
+    session.release([prepared.artifactId])
+    expect(() => tools.resolveTargets(query)).toThrow(/unavailable/)
+  } finally {
+    keys.mockRestore()
+  }
+})
+
+it('execution proof repairs rejected source through the same request preparation owner', async () => {
+  const tools = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply prepared document elements',
+      inputSchema: {}
+    }
+  ])
+  const signal = new AbortController().signal
+  const source = {
+    type: 'group',
+    name: 'Parts',
+    children: [0, 1].map(() => ({
+      type: 'rect',
+      name: 'Part',
+      key: 'part',
+      width: 10,
+      height: 10
+    }))
+  }
+  const rejected = JSON.parse(
+    await tools.call(AiDesignToolIds.PREPARE_DESIGN, { draft: source }, signal)
+  )
+  expect(rejected.conflicts).toEqual([
+    { key: 'part', paths: ['/children/0/key', '/children/1/key'] }
+  ])
+  const repaired = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.PREPARE_DESIGN,
+      {
+        repair: {
+          draftId: rejected.draftId,
+          replacements: [{ path: '/children/1/key', value: 'second' }]
+        }
+      },
+      signal
+    )
+  )
+  expect(repaired.available).toBe(true)
+  expect(
+    tools.resolveTargets({
+      artifactId: repaired.artifactId,
+      keys: ['part', 'second']
+    })
+  ).toHaveLength(2)
+  expect(source.children[1].key).toBe('part')
+})
+
 it('execution proof preserves partial lookup full recovery and declaration constraints', async () => {
   const action = {
     name: AiActionNames.ORGANIZE_DESIGN,

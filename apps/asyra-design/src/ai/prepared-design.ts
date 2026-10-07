@@ -23,7 +23,9 @@ export const DesignPreparationLimits = Object.freeze({
   pathCommands: 20000,
   dimension: 100000,
   relations: 256,
-  checks: 64
+  checks: 64,
+  retainedDrafts: 4,
+  retainedDraftBytes: 8 * 1024 * 1024
 })
 export interface PreparedDesignEntry {
   readonly key: string

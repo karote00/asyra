@@ -28,6 +28,18 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
     }
   )
   const sceneElement = {
+    get: (key: string) =>
+      (
+        ({
+          id: 'element-1',
+          name: 'Rectangle',
+          type: 'group',
+          parentId: 'workspace-1',
+          visible: true,
+          lock: false,
+          children: ['a', 'b', 'c']
+        }) as Record<string, unknown>
+      )[key],
     save: vi.fn(() => ({
       id: 'element-1',
       type: 'rect',
@@ -136,6 +148,25 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
 }
 
 describe('Core app runtime facade', () => {
+  it('reads metadata and a child page without saving property data or copying the full child list', () => {
+    const { core, sceneElement } = createCoreForTest()
+    expect(core.getElementMetadata('element-1')).toMatchObject({
+      name: 'Rectangle',
+      childCount: 3
+    })
+    expect(core.getElementChildren('element-1', 1, 1)).toEqual({
+      available: true,
+      elementIds: ['b'],
+      total: 3,
+      nextOffset: 2
+    })
+    expect(sceneElement.save).not.toHaveBeenCalled()
+    const page = core.getElementChildren('element-1', 0, 1)
+    page.elementIds.push('changed')
+    expect(core.getElementChildren('element-1', 0, 1).elementIds).toEqual(['a'])
+    expect(() => core.getElementChildren('element-1', -1, 1)).toThrow()
+  })
+
   it('forwards bounded content measurement to the render owner without document scans', () => {
     const { core, measureElementContentBounds, getAllElements } =
       createCoreForTest()

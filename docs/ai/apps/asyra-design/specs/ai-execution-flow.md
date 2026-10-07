@@ -122,6 +122,27 @@ information needed by the requested operation still requires an appropriate read
 
 ## Preparation and execution
 
+Prepared target selectors use exact immutable artifact identities. Repeated prefix
+queries reuse an artifact-owned key index and preserve source order; releasing
+an artifact releases its lookup state. A prefix miss remains a recoverable error,
+not permission to select the entire artifact. Exact keys require no full-key walk.
+
+Local corrections may query a workspace region, then filter candidate identities
+by current type, hierarchy and flags before using registered batch mutations.
+Spatial bounds are a conservative candidate test, not a pixel hit or an occlusion
+decision. Query state follows object changes, parent transforms, deletion, replay
+and load; viewport navigation does not change workspace region membership.
+Missing projection or stale identity must be explicit, never an empty success.
+Relative hierarchy placement resolves a live before/after anchor inside the
+existing hierarchy owner without sending all sibling IDs to the model.
+
+Preparation rejection reports the invalid source location. Duplicate semantic
+keys identify both conflicting locations. An explicit request-local draft repair
+may submit only replacement fields; the same preparation validation and budgets
+apply before an immutable artifact is created. Rejected drafts are not executable
+artifacts. Missing or stale repair references reject recoverably. Repair never
+replays an uncertain write or changes a successfully prepared artifact.
+
 Plural creation supports the same valid target parents as scalar creation and
 returns results in input order. Consecutive compatible items may share an owner
 call; grouping must not reorder intervening objects or split the intended Undo.

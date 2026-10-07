@@ -20,7 +20,29 @@ const fixture = () => {
   const source = {
     getCurrentWorkspaceId: vi.fn(() => 'workspace'),
     getSelectedElementIds: vi.fn(() => ['b', 'a']),
-    getElementData: vi.fn((id: string) => records[id]),
+    getElementMetadata: vi.fn((id: string) =>
+      records[id]
+        ? {
+            ...records[id],
+            childCount: Array.isArray(records[id].children)
+              ? records[id].children.length
+              : 0
+          }
+        : undefined
+    ),
+    getElementData: vi.fn(() => {
+      throw new Error('Full snapshot must not be read')
+    }),
+    getElementChildren: vi.fn((id: string, offset: number, limit: number) => {
+      const children = (records[id]?.children ?? []) as string[]
+      return {
+        available: Boolean(records[id]),
+        elementIds: children.slice(offset, offset + limit),
+        total: children.length,
+        nextOffset: offset + limit < children.length ? offset + limit : null
+      }
+    }),
+    getElementIdsInBounds: vi.fn(() => ['a', 'b']),
     getElementComputedData: vi.fn((_id: string, fields: readonly string[]) => {
       expect(fields).not.toContain('points')
       expect(fields).not.toContain('segments')
@@ -48,11 +70,7 @@ describe('bounded document context', () => {
         }
       ]
     })
-    expect(source.getElementData.mock.calls).toEqual([
-      ['workspace'],
-      ['a'],
-      ['gone']
-    ])
+    expect(source.getElementMetadata.mock.calls).toEqual([['a'], ['gone']])
     expect(source.getElementComputedData).toHaveBeenCalledTimes(1)
     expect(read({ scope: 'children', offset: 2 }).nextOffset).toBeNull()
   })
@@ -65,7 +83,7 @@ describe('bounded document context', () => {
       read({ scope: 'selection', fields: ['text'] }).elements[0].properties.text
     ).toBe('Changed')
     expect(first.elements[0].properties.text).toBe('Hello')
-    expect(source.getElementData).toHaveBeenCalledTimes(4)
+    expect(source.getElementMetadata).toHaveBeenCalledTimes(4)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(4)
   })
   it('reads native textColor using its canonical field name', () => {
@@ -109,7 +127,7 @@ describe('bounded document context', () => {
     const { read, source } = fixture()
     expect(() => read(query as never)).toThrow()
     expect(source.getCurrentWorkspaceId).not.toHaveBeenCalled()
-    expect(source.getElementData).not.toHaveBeenCalled()
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
   })
   it('reports unavailable parent without a fallback document scan', () => {
     const { read, source } = fixture()
@@ -118,7 +136,8 @@ describe('bounded document context', () => {
       elements: [],
       nextOffset: null
     })
-    expect(source.getElementData.mock.calls).toEqual([['missing']])
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
+    expect(source.getElementChildren).toHaveBeenCalledWith('missing', 0, 50)
     expect(source.getElementComputedData).not.toHaveBeenCalled()
   })
 })
@@ -127,7 +146,7 @@ it('reads explicit identities without traversing parents or calculating unused p
   const { read, source, records } = fixture()
   const query = { scope: 'ids', elementIds: ['b', 'a'], fields: [] } as never
   expect(read(query).elements.map((e) => e.id)).toEqual(['b', 'a'])
-  expect(source.getElementData.mock.calls).toEqual([['b'], ['a']])
+  expect(source.getElementMetadata.mock.calls).toEqual([['b'], ['a']])
   expect(source.getElementComputedData).not.toHaveBeenCalled()
   expect(source.getCurrentWorkspaceId).not.toHaveBeenCalled()
   delete records.b
@@ -144,7 +163,7 @@ it('computes only requested fields and does not split a known identity set into 
   const result = read({ scope: 'ids', elementIds: ids, fields: ['x'] } as never)
   expect(result.elements).toHaveLength(250)
   expect(result.nextOffset).toBeNull()
-  expect(source.getElementData).toHaveBeenCalledTimes(250)
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(250)
   expect(source.getElementComputedData).toHaveBeenCalledTimes(250)
   expect(
     source.getElementComputedData.mock.calls.every(
@@ -160,7 +179,7 @@ it.each([
 ])('rejects invalid narrow queries before reads: %j', (query) => {
   const { read, source } = fixture()
   expect(() => read(query as never)).toThrow()
-  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
 })
 
 it('defaults to identity metadata without unused computed data', () => {
@@ -171,4 +190,40 @@ it('defaults to identity metadata without unused computed data', () => {
     )
   ).toBe(true)
   expect(source.getElementComputedData).not.toHaveBeenCalled()
+})
+
+it('filters region candidates before paging and never reads unrelated geometry or full element snapshots', () => {
+  const { read, source, records } = fixture()
+  records.b.lock = true
+  records.other = { id: 'other', type: 'vector', parentId: 'elsewhere' }
+  const result = read({
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    filter: { type: 'vector', ancestorId: 'workspace', locked: true },
+    fields: ['x']
+  })
+  expect(result.elements.map((e) => e.id)).toEqual(['b'])
+  expect(result.total).toBe(1)
+  expect(source.getElementComputedData).toHaveBeenCalledExactlyOnceWith('b', [
+    'x'
+  ])
+  expect(source.getElementMetadata.mock.calls.flat()).not.toContain('other')
+  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(
+    source.getElementMetadata.mock.calls.filter(([id]) => id === 'b')
+  ).toHaveLength(1)
+})
+it.each([
+  { scope: 'region' },
+  { scope: 'region', bounds: { x: 0, y: 0, width: -1, height: 1 } },
+  { scope: 'selection', bounds: { x: 0, y: 0, width: 1, height: 1 } },
+  {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 },
+    filter: { typo: true }
+  }
+])('rejects invalid region contracts before reading %j', (query) => {
+  const { read, source } = fixture()
+  expect(() => read(query as never)).toThrow()
+  expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
 })

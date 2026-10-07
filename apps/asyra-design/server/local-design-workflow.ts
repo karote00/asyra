@@ -84,11 +84,12 @@ export const createLocalDesignWorkflow = (
         )
       const input = args as Record<string, unknown>
       if (
-        !('draft' in input) ||
+        'draft' in input === 'repair' in input ||
         Object.keys(input).some(
           (key) =>
             ![
               'draft',
+              'repair',
               ...(review ? ['plan'] : []),
               'message',
               'inspection',
@@ -108,7 +109,7 @@ export const createLocalDesignWorkflow = (
             input.message.length > 1000))
       )
         throw new LocalOperationPreparationError(
-          'Provide draft and optional registered plan, parentId, message, inspection, response only.'
+          'Provide draft or repair, and optional registered plan, parentId, message, inspection, response only.'
         )
       if (input.plan !== undefined) {
         const issue = operationInputIssue(input.plan, reviewPlanSchema)
@@ -142,9 +143,9 @@ export const createLocalDesignWorkflow = (
           completedSteps.push(step.name)
         return result
       }
-      const prepared = await runStep(designs, preparation, {
-        draft: input.draft
-      })
+      const preparationInput =
+        'repair' in input ? { repair: input.repair } : { draft: input.draft }
+      const prepared = await runStep(designs, preparation, preparationInput)
       const stoppedAt = (result: Record<string, unknown>, step: string) => ({
         ...result,
         ...(prepared.artifactId ? { artifactId: prepared.artifactId } : {}),

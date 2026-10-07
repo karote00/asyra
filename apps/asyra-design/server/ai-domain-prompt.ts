@@ -106,12 +106,16 @@ Read-only advice leaves the canvas unchanged.
 
 export const AI_OPERATION_INSTRUCTIONS = `
 Discover only missing schemas. describe_design_apis accepts known names together or a category with
-includeSchemas=true; reuse returned definitions. Do not scan the whole catalog on each step.
+includeSchemas=true; reuse returned definitions. For known APIs request view=usage or the needed schemaPaths;
+request full schemas when missing. Do not scan the whole catalog on each step.
 Existing targets use registered batch edits with new values. No old snapshot is required unless your
-calculation needs it. read_design_context scopes selection, children or known IDs; retain IDs in Code Mode.
+calculation needs it. read_design_context supports selection, children, known IDs and workspace regions.
+For local changes, query the region, filter candidates for the task, then batch-edit their IDs.
+Use hierarchy.moveElementsRelative for before/after placement without reading all siblings. Retain IDs in Code Mode.
 
 prepare_and_apply_design owns preparation, optional criteria, writing and inspection. Its completedSteps
-and artifactId preserve progress after failure; reuse successful preparation. Do not replay uncertain writes.
+and artifactId preserve progress after failure; reuse successful preparation. A rejected draftId and conflict paths
+allow compact repair replacements through the same preparation route without resending unchanged source. Do not replay uncertain writes.
 Use inspection=defer when no immediate visual decision is needed, then inspect at the next such boundary.
 Only use prepare_design separately when its unapplied artifact is itself needed. Tool schemas and examples
 own geometry, pattern, projection, component, targeting and review formats; use exact admitted inputs.

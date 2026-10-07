@@ -17,6 +17,14 @@ export interface DesignBrief {
   }[]
 }
 type Node = Record<string, unknown>
+export class DesignKeyConflictError extends Error {
+  constructor(readonly conflicts: { key: string; paths: string[] }[]) {
+    super(
+      'Invalid design construction: duplicate keys. Replace the conflicting source keys at the reported paths.'
+    )
+    this.name = 'DesignKeyConflictError'
+  }
+}
 interface Point3 {
   x: number
   y: number
@@ -168,6 +176,7 @@ export const constructDesign = (
   const brief = readBrief(input.brief),
     project = camera(input.projection)
   const nodes = new Map<string, { node: Node; parent?: string }>()
+  const keyPaths = new Map<string, string[]>()
   const sourceWork = createDesignSourceWork()
   let nodeCount = 0,
     vertexCount = 0
@@ -475,7 +484,8 @@ export const constructDesign = (
     value: unknown,
     parent?: string,
     depth = 1,
-    generated = false
+    generated = false,
+    path = ''
   ): Node => {
     if (!generated) consumeSourceNode(value)
     if (!record(value)) return fail('node must be an object')
@@ -489,7 +499,9 @@ export const constructDesign = (
       )
     const root = parent === undefined
     const key = root ? rootKey : label(value.key, 'node key', 160)
-    if (nodes.has(key)) return fail('duplicate key')
+    const paths = keyPaths.get(key) ?? []
+    paths.push(`${path}/key`)
+    keyPaths.set(key, paths)
     let node: Node = { ...value, key }
     if (root) {
       delete node.brief
@@ -505,24 +517,29 @@ export const constructDesign = (
         node.children.length > limits.expandedNodes
       )
         return fail('children limit')
-      node.children = node.children.flatMap((child) => {
+      node.children = node.children.flatMap((child, childIndex) => {
+        const childPath = `${path}/children/${childIndex}`
         if (record(child) && child.type === 'vector-pattern') {
           consumeSourceNode(child)
           return expandVectors(child).map((item) =>
-            copy(item, key, depth + 1, true)
+            copy(item, key, depth + 1, true, childPath)
           )
         }
         if (record(child) && child.type === 'pattern') {
           return expand(child, key).map((item) =>
-            copy(item, key, depth + 1, true)
+            copy(item, key, depth + 1, true, childPath)
           )
         }
-        return [copy(child, key, depth + 1)]
+        return [copy(child, key, depth + 1, false, childPath)]
       })
     }
     return node
   }
   const draft = copy(input)
+  const conflicts = [...keyPaths]
+    .filter(([, paths]) => paths.length > 1)
+    .map(([key, paths]) => ({ key, paths }))
+  if (conflicts.length) throw new DesignKeyConflictError(conflicts)
   const raw = input.relations ?? []
   if (!Array.isArray(raw) || raw.length > limits.relations)
     return fail('relation limit')

@@ -47,11 +47,25 @@ export class RenderLayer {
     return instance
   }
 
+  private readonly includesRegionElement = (
+    node: import('../../types/render-object.js').RenderNode
+  ): boolean => this._elements.get(node.label) === node
+
+  getElementIdsInBounds(
+    bounds: import('../../types/render-object.js').RenderBounds
+  ): string[] {
+    return this.currentWorkspace
+      .queryRegion(bounds, this.includesRegionElement)
+      .filter((node) => this._elements.get(node.label) === node)
+      .map((node) => node.label)
+  }
+
   getAllElements() {
     return this._elements
   }
 
   clearElements() {
+    this.currentWorkspace.releaseRegionQuery()
     this._elements.forEach((element) => {
       element.eventMode = 'none'
       element.removeAllListeners()

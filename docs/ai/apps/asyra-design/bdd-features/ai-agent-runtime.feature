@@ -113,3 +113,24 @@ Feature: Optional AI agent runtime
     When the app selects a deterministic fake provider or generic HTTP provider
     Then registry, preflight, transaction, action, and result contracts are unchanged
     And formal tests require no live endpoint or API key
+
+  Scenario: Local edits select current regional candidates
+    Given a large editable document with nested transformed containers
+    When AI queries a workspace region and filters by type, ancestor and lock
+    Then only matching current candidate identities are returned
+    And repeated queries reuse unchanged spatial extents
+    And pan or zoom does not rebuild document extents
+    And a canonical edit, Undo or Redo updates the affected query results
+
+  Scenario: Relative placement does not transfer the parent's child list
+    Given known target identities and a separate current anchor
+    When AI moves the targets before or after the anchor
+    Then the hierarchy owner resolves the current insertion index
+    And ordinary Group geometry normalization and Undo remain in effect
+
+  Scenario: Repair a rejected draft without retransmitting unchanged source
+    Given a request-local draft rejected for duplicate construction keys
+    When AI supplies replacement values at the reported conflict paths
+    Then the same preparation owner validates and compiles the repaired source
+    And only successful preparation can proceed to apply
+    And missing or expired references return a recoverable failure

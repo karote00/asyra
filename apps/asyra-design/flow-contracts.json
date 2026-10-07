@@ -42,6 +42,16 @@
       ],
       "cases": [
         {
+          "id": "prepare.indexed-targets",
+          "stepId": "prepare",
+          "testName": "execution proof reuses artifact prefix lookup without rereading every key"
+        },
+        {
+          "id": "prepare.compact-repair",
+          "stepId": "prepare",
+          "testName": "execution proof repairs rejected source through the same request preparation owner"
+        },
+        {
           "id": "compose.definition-delivery",
           "stepId": "compose",
           "testName": "execution proof preserves partial lookup full recovery and declaration constraints"

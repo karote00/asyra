@@ -1,3 +1,4 @@
+import { SceneRegionQuery } from '../queries/scene-region-query.js'
 import type { Rect } from '@asyra/utils'
 import {
   RenderEngineCapabilities,
@@ -170,7 +171,32 @@ interface RenderRuntimeResourceRecord {
   unsubscribe?: () => void
 }
 
+const includeAllRegionNodes = (_node: RenderNode): boolean => true
+
 export class RenderObjectRuntime {
+  private readonly regionQueries = new Map<RenderNode, SceneRegionQuery>()
+
+  queryRegion(
+    root: RenderNode,
+    bounds: RenderBounds,
+    includes = includeAllRegionNodes
+  ): RenderNode[] {
+    assertRenderEngineCapabilities(this.engine, [
+      RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+    ])
+    let query = this.regionQueries.get(root)
+    if (!query || query.includes !== includes)
+      this.regionQueries.set(
+        root,
+        (query = new SceneRegionQuery(root, includes))
+      )
+    return query.query(bounds)
+  }
+
+  releaseRegionQuery(root: RenderNode): void {
+    this.regionQueries.delete(root)
+  }
+
   private readonly objectByHandle = new Map<
     RenderEngineObjectHandle,
     RenderNode
@@ -271,6 +297,7 @@ export class RenderObjectRuntime {
   }
 
   appendChild(parent: RenderNode, child: RenderNode, index?: number): void {
+    this.regionQueries.forEach((query) => query.membership(parent, child))
     this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
     if (!parentHandle) {
@@ -301,6 +328,7 @@ export class RenderObjectRuntime {
   }
 
   removeChild(parent: RenderNode, child: RenderNode): void {
+    this.regionQueries.forEach((query) => query.membership(parent, child))
     this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
     const childHandle = child.getEngineHandle()
@@ -318,6 +346,7 @@ export class RenderObjectRuntime {
   }
 
   setChildIndex(parent: RenderNode, child: RenderNode, index: number): void {
+    this.regionQueries.forEach((query) => query.reorder(parent, child))
     const parentHandle = parent.getEngineHandle()
     const childHandle = child.getEngineHandle()
     if (parentHandle && childHandle) {
@@ -338,8 +367,12 @@ export class RenderObjectRuntime {
     node: RenderNode,
     properties: RenderEngineObjectProperties
   ): void {
-    if ('geometry' in properties) this.invalidateContentBounds(node)
+    if ('geometry' in properties) {
+      this.regionQueries.forEach((query) => query.change(node, true))
+      this.invalidateContentBounds(node)
+    }
     if (CONTENT_BOUNDS_PARENT_PROPERTY_KEYS.some((key) => key in properties)) {
+      this.regionQueries.forEach((query) => query.change(node, true))
       this.invalidateContentBounds(node.parent)
     }
     const handle = node.getEngineHandle()
@@ -379,6 +412,8 @@ export class RenderObjectRuntime {
 
   destroyObject(node: RenderNode): void {
     this.invalidateContentBounds(node)
+    this.regionQueries.delete(node)
+    this.regionQueries.forEach((query) => query.forget(node))
     const handle = node.getEngineHandle()
     if (!handle) {
       return
@@ -389,6 +424,7 @@ export class RenderObjectRuntime {
   }
 
   markDrawDirty(graphics: RenderGraphics): void {
+    this.regionQueries.forEach((query) => query.change(graphics, true))
     this.invalidateContentBounds(graphics)
     if (graphics.getEngineHandle()) {
       this.dirtyGraphics.add(graphics)
@@ -494,6 +530,7 @@ export class RenderObjectRuntime {
   }
 
   detachResourceLifecycles(): void {
+    this.regionQueries.clear()
     this.resourceReleaseSubscriptions.forEach((unsubscribe) => unsubscribe())
     this.resourceReleaseSubscriptions.clear()
   }
@@ -539,6 +576,9 @@ export class RenderObjectRuntime {
   }
 
   private invalidateContentBounds(node: RenderNode | null): void {
+    const changedNode = node
+    if (changedNode)
+      this.regionQueries.forEach((query) => query.change(changedNode))
     while (node) {
       this.localContentBounds.delete(node)
       node = node.parent
@@ -810,12 +850,12 @@ export class RenderNode {
     this.updateEngineProperties({ transformGroup: value })
   }
 
-  get worldTransform(): RenderMatrix {
+  get localTransform(): RenderMatrix {
     const rotationPlusSkewY = this.rotation + this.skew.y
     const rotationMinusSkewX = this.rotation - this.skew.x
     const scaleX = this.scale.x * this.getDimensionScaleX()
     const scaleY = this.scale.y * this.getDimensionScaleY()
-    const local = new RenderMatrix(
+    return new RenderMatrix(
       Math.cos(rotationPlusSkewY) * scaleX,
       Math.sin(rotationPlusSkewY) * scaleX,
       -Math.sin(rotationMinusSkewX) * scaleY,
@@ -823,9 +863,12 @@ export class RenderNode {
       this.x,
       this.y
     )
+  }
+
+  get worldTransform(): RenderMatrix {
     return this.parent
-      ? multiplyMatrices(this.parent.worldTransform, local)
-      : local
+      ? multiplyMatrices(this.parent.worldTransform, this.localTransform)
+      : this.localTransform
   }
 
   getEngineProperties(): RenderEngineObjectProperties {
@@ -1005,6 +1048,44 @@ export class RenderNode {
       this.runtime?.queryBounds(this, 'get-local-content-bounds') ??
       this.getLocalBounds()
     )
+  }
+
+  queryRegion(
+    bounds: RenderBounds,
+    includes = includeAllRegionNodes
+  ): RenderNode[] {
+    if (!this.runtime || !this.handle)
+      throw new Error('Workspace projection is unavailable')
+    return this.runtime.queryRegion(this, bounds, includes)
+  }
+
+  releaseRegionQuery(): void {
+    this.runtime?.releaseRegionQuery(this)
+  }
+
+  getBoundsRelativeTo(ancestor: RenderNode): RenderBounds {
+    let transform = this === ancestor ? new RenderMatrix() : this.localTransform
+    let parent = this === ancestor ? ancestor : this.parent
+    while (parent && parent !== ancestor) {
+      transform = multiplyMatrices(parent.localTransform, transform)
+      parent = parent.parent
+    }
+    if (!parent) throw new Error('Region target is outside the workspace')
+    const local = this.getPresentationLocalBounds()
+    const points = [
+      { x: local.x, y: local.y },
+      { x: local.x + local.width, y: local.y },
+      { x: local.x, y: local.y + local.height },
+      { x: local.x + local.width, y: local.y + local.height }
+    ].map((point) => transform.apply(point))
+    const x = Math.min(...points.map((point) => point.x))
+    const y = Math.min(...points.map((point) => point.y))
+    return {
+      x,
+      y,
+      width: Math.max(...points.map((point) => point.x)) - x,
+      height: Math.max(...points.map((point) => point.y)) - y
+    }
   }
 
   getBounds(): RenderBounds {

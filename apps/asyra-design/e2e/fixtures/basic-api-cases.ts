@@ -234,6 +234,21 @@ export const createBasicApiCases = async () => {
   add('core', 'hasRenderEngineProvider', {}, eq(true))
   add('core', 'isCompositionOpen', {}, eq(false))
   add('core', 'getRuntimeState', {}, defined)
+  add('core', 'getElementMetadata', { elementId: rect }, (v) => {
+    equal(v.id, rect)
+    equal(v.childCount, 0)
+    assert(!('props' in v), 'Metadata copied property data')
+  })
+  add(
+    'core',
+    'getElementChildren',
+    { elementId: workspace, offset: 0, limit: 1 },
+    (v) => {
+      equal(v.available, true)
+      equal(v.elementIds.length, 1)
+      assert(v.total >= 1, 'Missing children')
+    }
+  )
   add('core', 'getElementData', { elementId: rect }, (v) => {
     equal(v.id, rect)
     equal(v.type, 'rect')
@@ -707,6 +722,16 @@ export const createBasicApiCases = async () => {
     equal(core.getElementData(other)?.parentId, workspace)
   )
   add('hierarchy', 'moveElements', { request: move }, moved)
+  add(
+    'hierarchy',
+    'moveElementsRelative',
+    { request: { elementIds: [rect], anchorId: other, placement: 'after' } },
+    () => {
+      equal(core.getElementMetadata(rect)?.parentId, groupId)
+      const children = core.getElementChildren(groupId, 0, 20).elementIds
+      equal(children.indexOf(rect), children.indexOf(other) + 1)
+    }
+  )
   add('hierarchy', 'removeSubtree', { elementId: rect }, removed)
   add(
     'selection',
