@@ -16,7 +16,14 @@ See the [specification review](01-upper-transition-post-v2-review.md).
 
 0.04 x 0.04 x 0.91 m. In front view the left top half is level, then the right half rises.
 
-![Lower transition post - multiple views](02-lower-transition-post-v2.png)
+The user accepted the v14 single-sheet redraw on 2026-10-07. It is the current
+lower-post reference, retaining the original six-view arrangement, annotations
+and large front top-profile detail. Earlier candidate layouts are superseded.
+Default colour remains `#383A38`; review grey `#C8CCD0` is an inspection aid.
+
+![Lower transition post - approved single sheet v14](02-lower-transition-post-v14.png)
+
+See the [review record](02-lower-transition-post-review.md).
 
 ## Review scope
 
@@ -32,4 +39,4 @@ full-view top profile to agree with the enlarged detail.
 - [Numeric specification](../railing-transitions-model-spec.json)
 - [Generation and correction prompts](PROMPTS.md)
 
-These are supplementary designs, not recovered geometry from the original image. Drawings are not calibrated projections; use the documented polygons for reconstruction. No model or app implementation is included.
+These are supplementary designs, not recovered geometry from the original image. The accepted sheets are non-calibrated appearance references. Use the documented polygons and numeric dimensions for reconstruction, not measured raster lengths or angles. No model or app implementation is included.
