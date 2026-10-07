@@ -508,7 +508,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine-pixi.md",
-          "sha256": "26e31e0535a3045ead4d79828ba54db13ba4b9a1a123820317224d1be89df2b9"
+          "sha256": "dd35edcdf0958f0b5f3a10261bcdd8e827bd240ad7464f2d1fea129c1bf99032"
         },
         {
           "path": "packages/render-engine-pixi/package.json",

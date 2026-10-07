@@ -81,11 +81,21 @@ Registered supervised owners in `scripts/ci-relationships.json` use one
 invocation-owned TypeScript syntax dependency graph. Ordinary and profile test
 files are discovered from the owner source tree, including nested tests. Relative
 imports, re-exports and literal dynamic imports propagate to transitive consumers;
-unresolved dynamic edges retain their consumer tests. Upstream workspaces,
-deletions, shared configuration and non-code resources retain complete owner
-coverage. The classifier never executes app modules or reuses a graph across
-source revisions. CI installs the declared parser dependency before classification only when a
-registered source path needs parsing; unrelated PRs retain pre-install selection.
+unresolved dynamic edges retain their consumer tests. Known upstream source
+changes resolve discovered workspace exports and subpaths through the compiler's
+source-to-output mapping, including when dist artifacts do not exist. Runtime
+imports and re-exports propagate upstream changes; explicit type-only declarations
+do not execute the imported module. Owner-local edits retain type and value edges,
+and owner lint/build remains complete. Each reached source is parsed once and
+workspace output maps live only for that classifier invocation.
+
+Missing or unsupported package entry mappings retain their importing consumers.
+Owner-local or unknown-workspace deletions, shared configuration and unknown
+non-code resources retain complete owner coverage. No workspace names or numerical-test filenames are allowlisted. The
+classifier never executes app modules or reuses a graph across source revisions.
+CI installs the declared parser before classification when a discovered local or
+upstream workspace source path needs parsing; unrelated PRs retain pre-install
+selection.
 
 FieldScope's ordinary files run through `test:affected` and its existing
 supervisor. Profile selection is partitioned by the existing profile owner;
@@ -97,3 +107,13 @@ invocations. Selected profile runs cannot claim full-suite coverage.
 Browser spec edits select exact specs within their existing process groups.
 Runtime changes keep the complete browser suite because browser-to-app feature
 relationships are not inferred from TypeScript imports.
+
+Workspace-local tests and registered `workspaceLocalInputPatterns` remain inputs
+of their own validation owner. They do not broaden a downstream runtime owner's
+selection when mixed with source changes. Coverage/navigation flow manifests
+use this relationship-map contract; unknown resources still select conservatively.
+
+A removed source in a known upstream workspace broadens to all value-import
+consumers of that workspace, including subpaths and transitive re-exports.
+It never assumes that a removed file was unused. Owner-local or unknown-workspace
+deletions still select the full owner. No historical implementation is required.

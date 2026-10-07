@@ -14,12 +14,11 @@ import {
 } from 'pixi.js'
 
 const glEvaluation = `
-float parameter(sampler2D source, int index) {
-  ivec2 size = textureSize(source, 0);
-  uvec4 bytes = uvec4(round(texelFetch(source, ivec2(index % size.x, index / size.x), 0) * 255.0));
+float parameter(int source, int index) {
+  uvec4 bytes = uvec4(round(parameterBytes(source, index) * 255.0));
   return uintBitsToFloat(bytes.r | (bytes.g << 8u) | (bytes.b << 16u) | (bytes.a << 24u));
 }
-vec4 recordAt(sampler2D source, int index) {
+vec4 recordAt(int source, int index) {
   int offset = index * 4;
   return vec4(parameter(source, offset), parameter(source, offset+1), parameter(source, offset+2), parameter(source, offset+3));
 }
@@ -41,7 +40,7 @@ float phaseAt(int mode, vec2 uv, vec4 axis, vec4 side) {
   if(mode == 2) return length(q);
   return abs(q.x)+abs(q.y);
 }
-vec4 stopColor(sampler2D source, int start, int count, float phase) {
+vec4 stopColor(int source, int start, int count, float phase) {
   if(count == 0) return vec4(0.0);
   vec4 previous = recordAt(source, start+1);
   float position = recordAt(source, start).x;
@@ -55,7 +54,7 @@ vec4 stopColor(sampler2D source, int start, int count, float phase) {
   }
   return previous;
 }
-vec4 materialColor(sampler2D source, vec2 uv) {
+vec4 materialColor(int source, vec2 uv) {
   int count = int(recordAt(source,0).x);
   int offset = 1;
   vec4 result = vec4(0.0);
@@ -71,12 +70,11 @@ vec4 materialColor(sampler2D source, vec2 uv) {
 }`
 
 const gpuEvaluation = `
-fn parameter(source: texture_2d<f32>, index: i32) -> f32 {
-  let size = textureDimensions(source);
-  let bytes = vec4<u32>(round(textureLoad(source, vec2<i32>(index % i32(size.x), index / i32(size.x)), 0)*255.0));
+fn parameter(source: u32, index: i32) -> f32 {
+  let bytes = vec4<u32>(round(parameterBytes(source, index)*255.0));
   return bitcast<f32>(bytes.r | (bytes.g << 8u) | (bytes.b << 16u) | (bytes.a << 24u));
 }
-fn recordAt(source: texture_2d<f32>, index: i32) -> vec4<f32> {
+fn recordAt(source: u32, index: i32) -> vec4<f32> {
   let offset = index*4;
   return vec4<f32>(parameter(source,offset),parameter(source,offset+1),parameter(source,offset+2),parameter(source,offset+3));
 }
@@ -98,7 +96,7 @@ fn phaseAt(mode: i32, uv: vec2<f32>, axis: vec4<f32>, side: vec4<f32>) -> f32 {
   if(mode == 2) { return length(q); }
   return abs(q.x)+abs(q.y);
 }
-fn stopColor(source: texture_2d<f32>, start: i32, count: i32, phase: f32) -> vec4<f32> {
+fn stopColor(source: u32, start: i32, count: i32, phase: f32) -> vec4<f32> {
   if(count == 0) { return vec4<f32>(0.0); }
   var previous = recordAt(source,start+1);
   var position = recordAt(source,start).x;
@@ -112,7 +110,7 @@ fn stopColor(source: texture_2d<f32>, start: i32, count: i32, phase: f32) -> vec
   }
   return previous;
 }
-fn materialColor(source: texture_2d<f32>, uv: vec2<f32>) -> vec4<f32> {
+fn materialColor(source: u32, uv: vec2<f32>) -> vec4<f32> {
   let count = i32(recordAt(source,0).x);
   var offset = 1;
   var result = vec4<f32>(0.0);
@@ -138,15 +136,16 @@ export const createMeshMaterialShader = (maxTextures: number): Shader => {
       end: 'if(mod(aTextureIdAndRound.x,2.0) == 1.0) { gl_Position.xy = roundPixels(gl_Position.xy, uResolution); }'
     },
     fragment: {
-      header: `in float vTextureId; flat in float vMaterial; uniform sampler2D uTextures[${maxTextures}];\n${glEvaluation}`,
+      header: `in float vTextureId; flat in float vMaterial; uniform sampler2D uTextures[${maxTextures}];\nvec4 parameterBytes(int source, int index) {\nswitch(source) {\n${textureIds.map((i) => `case ${i}: { ivec2 size = textureSize(uTextures[${i}],0); return texelFetch(uTextures[${i}],ivec2(index % size.x,index / size.x),0); }`).join('\n')}\n}\nreturn vec4(0.0);\n}\n${glEvaluation}`,
       main:
-        'vec2 uvDx = dFdx(vUV); vec2 uvDy = dFdy(vUV);\n' +
+        'vec2 uvDx = dFdx(vUV); vec2 uvDy = dFdy(vUV);\nif(vMaterial > 0.5) { outColor = materialColor(int(vTextureId+0.5),vUV); } else {\n' +
         textureIds
           .map(
             (i) =>
-              `${i ? 'else ' : ''}if(vTextureId < ${i}.5) { if(vMaterial > 0.5) { outColor = materialColor(uTextures[${i}],vUV); } else { outColor = textureGrad(uTextures[${i}],vUV,uvDx,uvDy); } }`
+              `${i ? 'else ' : ''}if(vTextureId < ${i}.5) { outColor = textureGrad(uTextures[${i}],vUV,uvDx,uvDy); }`
           )
-          .join('\n')
+          .join('\n') +
+        '\n}'
     }
   }
   const gpuMaterial = {
@@ -158,8 +157,8 @@ export const createMeshMaterialShader = (maxTextures: number): Shader => {
       end: 'if((aTextureIdAndRound.x & 1u) == 1u) { vPosition = vec4<f32>(roundPixels(vPosition.xy,globalUniforms.uResolution),vPosition.zw); }'
     },
     fragment: {
-      header: `@in @interpolate(flat) vTextureId: u32;\n@in @interpolate(flat) vMaterial: u32;\n${textureIds.map((i) => `@group(1) @binding(${i * 2}) var materialSource${i}: texture_2d<f32>;\n@group(1) @binding(${i * 2 + 1}) var materialSampler${i}: sampler;`).join('\n')}\n${gpuEvaluation}`,
-      main: `let uvDx = dpdx(vUV); let uvDy = dpdy(vUV);\nswitch vTextureId { ${textureIds.map((i) => `${i === maxTextures - 1 ? 'default' : `case ${i}`}:{ if(vMaterial == 1u) { outColor = materialColor(materialSource${i},vUV); } else { outColor = textureSampleGrad(materialSource${i},materialSampler${i},vUV,uvDx,uvDy); } break; }`).join('\n')} }`
+      header: `@in @interpolate(flat) vTextureId: u32;\n@in @interpolate(flat) vMaterial: u32;\n${textureIds.map((i) => `@group(1) @binding(${i * 2}) var materialSource${i}: texture_2d<f32>;\n@group(1) @binding(${i * 2 + 1}) var materialSampler${i}: sampler;`).join('\n')}\nfn parameterBytes(source: u32,index: i32) -> vec4<f32> { switch source { ${textureIds.map((i) => `${i === maxTextures - 1 ? 'default' : `case ${i}`}: { let size = textureDimensions(materialSource${i}); return textureLoad(materialSource${i},vec2<i32>(index % i32(size.x),index / i32(size.x)),0); }`).join('\n')} } }\n${gpuEvaluation}`,
+      main: `let uvDx = dpdx(vUV); let uvDy = dpdy(vUV);\nif(vMaterial == 1u) { outColor = materialColor(vTextureId,vUV); } else { switch vTextureId { ${textureIds.map((i) => `${i === maxTextures - 1 ? 'default' : `case ${i}`}:{ outColor = textureSampleGrad(materialSource${i},materialSampler${i},vUV,uvDx,uvDy); break; }`).join('\n')} } }`
     }
   }
   return new Shader({

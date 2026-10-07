@@ -134,3 +134,16 @@ and layers, never element area. A custom shader per element that disables mesh
 batching is not an accepted production route. Geometry, hit topology and
 canonical state remain upstream responsibilities. Unsupported engine execution
 fails explicitly; it never silently substitutes a raster or simplified fill.
+
+Analytic batches use an engine-owned four-texture capacity instead of treating
+the hardware sampler maximum as a shader-complexity budget. Overflow emits the
+next ordered batch with all geometry and material data intact. The shared
+material evaluator dispatches parameter reads; it is not duplicated per sampler.
+Batches without analytic materials select Pixi's ordinary program. Both programs
+are retained for the batcher's lifetime and released on destruction. Switching
+programs within an instruction sequence must rebind the selected program.
+
+`apps/asyra-design/playwright.software-renderer.config.ts` replays the existing
+material, AI transaction, collaboration and dense-vector product tests on
+SwiftShader. It preserves ordinary suite watchdogs and is a correctness/regression
+reproduction configuration, not a machine-specific performance threshold.

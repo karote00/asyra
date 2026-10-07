@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { chromium, expect, test } from '@playwright/test'
 import { createTestDocumentURL, waitForAppReady } from './test-utils'
 
 interface ShaderProgramSource {
@@ -31,101 +31,133 @@ interface ShaderProbeGpu {
   }>
 }
 
-// Exercise the neutral engine boundary with real GPU programs and two faces.
-test('evaluates mesh material across triangles without baking a color image', async ({
-  page
-}, testInfo) => {
-  const errors: string[] = []
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
-  })
-  page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto(createTestDocumentURL())
-  await waitForAppReady(page)
-  const pixels = await page.evaluate(async () => {
-    const { PixiRenderEngine, requireEngineObject } =
-      await import('../e2e/fixtures/__tests__/render-engine-access')
-    const engine = new PixiRenderEngine()
-    const initialized = await engine.initialize({
-      width: 200,
-      height: 100,
-      resolution: 1
-    })
+for (const renderer of ['default', 'software'] as const) {
+  // Exercise the neutral engine boundary with real GPU programs and two faces.
+  test(`evaluates mesh material across triangles without baking a color image - ${renderer}`, async ({
+    page: defaultPage
+  }, testInfo) => {
+    const browser =
+      renderer === 'software'
+        ? await chromium.launch({
+            channel: 'chrome',
+            args: [
+              '--use-gl=angle',
+              '--use-angle=swiftshader',
+              '--enable-unsafe-swiftshader'
+            ]
+          })
+        : undefined
+    const page = browser
+      ? await browser.newPage({ baseURL: testInfo.project.use.baseURL })
+      : defaultPage
     try {
-      const mesh = requireEngineObject(
-        engine.execute({
-          type: 'create-object',
-          objectType: 'mesh',
-          properties: {
-            batched: true,
-            geometry: {
-              positions: [0, 0, 200, 0, 200, 100, 0, 100],
-              indices: [0, 1, 2, 0, 2, 3],
-              uvs: [0, 0, 1, 0, 1, 1, 0, 1]
-            },
-            material: {
-              fills: [
-                {
-                  kind: 'gradient',
-                  type: 'linear',
-                  start: { x: 0, y: 0 },
-                  end: { x: 1, y: 0 },
-                  stops: [
-                    { position: 0, color: [1, 0, 0, 1] },
-                    { position: 1, color: [0, 0, 1, 1] }
+      if (renderer === 'software') {
+        const driver = await page.evaluate(() => {
+          const gl = document.createElement('canvas').getContext('webgl2')
+          const debug = gl?.getExtension('WEBGL_debug_renderer_info')
+          const name = debug
+            ? gl?.getParameter(debug.UNMASKED_RENDERER_WEBGL)
+            : ''
+          gl?.getExtension('WEBGL_lose_context')?.loseContext()
+          return name
+        })
+        expect(driver).toContain('SwiftShader')
+      }
+      const errors: string[] = []
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text())
+      })
+      page.on('pageerror', (error) => errors.push(error.message))
+      await page.goto(createTestDocumentURL())
+      await waitForAppReady(page)
+      const pixels = await page.evaluate(async () => {
+        const { PixiRenderEngine, requireEngineObject } =
+          await import('../e2e/fixtures/__tests__/render-engine-access')
+        const engine = new PixiRenderEngine()
+        const initialized = await engine.initialize({
+          width: 200,
+          height: 100,
+          resolution: 1
+        })
+        try {
+          const mesh = requireEngineObject(
+            engine.execute({
+              type: 'create-object',
+              objectType: 'mesh',
+              properties: {
+                batched: true,
+                geometry: {
+                  positions: [0, 0, 200, 0, 200, 100, 0, 100],
+                  indices: [0, 1, 2, 0, 2, 3],
+                  uvs: [0, 0, 1, 0, 1, 1, 0, 1]
+                },
+                material: {
+                  fills: [
+                    {
+                      kind: 'gradient',
+                      type: 'linear',
+                      start: { x: 0, y: 0 },
+                      end: { x: 1, y: 0 },
+                      stops: [
+                        { position: 0, color: [1, 0, 0, 1] },
+                        { position: 1, color: [0, 0, 1, 1] }
+                      ]
+                    }
                   ]
                 }
-              ]
-            }
-          }
-        })
-      )
-      engine.execute({
-        type: 'append-child',
-        parent: initialized.root,
-        child: mesh
+              }
+            })
+          )
+          engine.execute({
+            type: 'append-child',
+            parent: initialized.root,
+            child: mesh
+          })
+          engine.execute({ type: 'flush' })
+          const snapshot = engine.query({
+            type: 'snapshot',
+            object: mesh,
+            maxDimension: 256,
+            nativeResolution: true
+          })
+          if (snapshot.type !== 'snapshot')
+            throw new Error('Missing material snapshot')
+          const bitmap = await createImageBitmap(
+            await (await fetch(snapshot.dataUrl)).blob()
+          )
+          const canvas = document.createElement('canvas')
+          canvas.width = bitmap.width
+          canvas.height = bitmap.height
+          const context = canvas.getContext('2d')
+          if (!context) throw new Error('Missing pixel observation context')
+          context.drawImage(bitmap, 0, 0)
+          bitmap.close()
+          return [
+            [50, 25],
+            [50, 75],
+            [150, 25],
+            [150, 75]
+          ].map(([x, y]) => [...context.getImageData(x, y, 1, 1).data])
+        } finally {
+          engine.destroy()
+        }
       })
-      engine.execute({ type: 'flush' })
-      const snapshot = engine.query({
-        type: 'snapshot',
-        object: mesh,
-        maxDimension: 256,
-        nativeResolution: true
+      await testInfo.attach('material-pixels', {
+        body: JSON.stringify({ pixels, errors }),
+        contentType: 'application/json'
       })
-      if (snapshot.type !== 'snapshot')
-        throw new Error('Missing material snapshot')
-      const bitmap = await createImageBitmap(
-        await (await fetch(snapshot.dataUrl)).blob()
-      )
-      const canvas = document.createElement('canvas')
-      canvas.width = bitmap.width
-      canvas.height = bitmap.height
-      const context = canvas.getContext('2d')
-      if (!context) throw new Error('Missing pixel observation context')
-      context.drawImage(bitmap, 0, 0)
-      bitmap.close()
-      return [
-        [50, 25],
-        [50, 75],
-        [150, 25],
-        [150, 75]
-      ].map(([x, y]) => [...context.getImageData(x, y, 1, 1).data])
+      expect(errors).toEqual([])
+      for (let i = 0; i < pixels.length; i++) {
+        const expected = i < 2 ? [191, 0, 64, 255] : [63, 0, 192, 255]
+        pixels[i].forEach((channel, j) =>
+          expect(Math.abs(channel - expected[j])).toBeLessThanOrEqual(2)
+        )
+      }
     } finally {
-      engine.destroy()
+      await browser?.close()
     }
   })
-  await testInfo.attach('material-pixels', {
-    body: JSON.stringify({ pixels, errors }),
-    contentType: 'application/json'
-  })
-  expect(errors).toEqual([])
-  for (let i = 0; i < pixels.length; i++) {
-    const expected = i < 2 ? [191, 0, 64, 255] : [63, 0, 192, 255]
-    pixels[i].forEach((channel, j) =>
-      expect(Math.abs(channel - expected[j])).toBeLessThanOrEqual(2)
-    )
-  }
-})
+}
 
 for (const mode of ['linear', 'radial', 'diamond', 'angular'] as const) {
   test(`uses control-point geometry for ${mode} mesh materials`, async ({
@@ -248,8 +280,9 @@ test('batches mixed materials and retains the batch across camera changes', asyn
     let gpuProgram: ShaderProgramSource | undefined
     batch.execute = (instruction: BatchProbeInstruction) => {
       draws++
+      const result = execute(instruction)
       gpuProgram = instruction.batcher.shader.gpuProgram
-      return execute(instruction)
+      return result
     }
     batch.addToBatch = (...args: unknown[]) => {
       packs++
@@ -576,4 +609,173 @@ test('rebuilds batch boundaries after explicit mesh batching changes', async ({
     }
   })
   expect(counts).toEqual([1, 3, 1])
+})
+
+test('preserves every material across texture overflow and ordinary-program transitions', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentURL())
+  await waitForAppReady(page)
+  const observed = await page.evaluate(async () => {
+    const { PixiRenderEngine, requireEngineObject } =
+      await import('../e2e/fixtures/__tests__/render-engine-access')
+    const engine = new PixiRenderEngine()
+    const ready = await engine.initialize({
+      width: 120,
+      height: 20,
+      resolution: 1
+    })
+    const runtime = ready.runtime as BatchProbeRuntime
+    const batch = runtime.renderer.renderPipes.batch
+    const execute = batch.execute.bind(batch)
+    let programs: boolean[] = []
+    const programsUsed = new Map<
+      object,
+      { ordinary: Set<object>; material: Set<object> }
+    >()
+    batch.execute = (instruction: BatchProbeInstruction) => {
+      const result = execute(instruction)
+      const source = instruction.batcher.shader.gpuProgram.fragment.source
+      const isMaterial = source.includes('fn materialColor(')
+      let owned = programsUsed.get(instruction.batcher)
+      if (!owned) {
+        owned = { ordinary: new Set(), material: new Set() }
+        programsUsed.set(instruction.batcher, owned)
+      }
+      owned[isMaterial ? 'material' : 'ordinary'].add(
+        instruction.batcher.shader
+      )
+      programs.push(isMaterial)
+      return result
+    }
+    const material = (i: number) => ({
+      fills: [
+        {
+          kind: 'gradient' as const,
+          type: 'linear' as const,
+          start: { x: 0, y: 0 },
+          end: { x: 1, y: 0 },
+          stops: [
+            {
+              position: 0,
+              color: [i / 24, 0, 0, 1] as [number, number, number, number]
+            },
+            {
+              position: 1,
+              color: [i / 24, 0, 0, 1] as [number, number, number, number]
+            }
+          ]
+        }
+      ]
+    })
+    try {
+      const root = requireEngineObject(
+        engine.execute({ type: 'create-object', objectType: 'container' })
+      )
+      engine.execute({ type: 'append-child', parent: ready.root, child: root })
+      const meshes = Array.from({ length: 25 }, (_, i) => {
+        const mesh = requireEngineObject(
+          engine.execute({
+            type: 'create-object',
+            objectType: 'mesh',
+            properties: {
+              x: i * 4,
+              batched: true,
+              tint: 0x00ff00,
+              geometry: {
+                positions: [0, 0, 4, 0, 4, 20, 0, 20],
+                indices: [0, 1, 2, 0, 2, 3],
+                uvs: [0, 0, 1, 0, 1, 1, 0, 1]
+              }
+            }
+          })
+        )
+        engine.execute({ type: 'append-child', parent: root, child: mesh })
+        return mesh
+      })
+      const flushPrograms = () => {
+        programs = []
+        engine.execute({ type: 'flush' })
+        return [...programs]
+      }
+      const ordinary = flushPrograms()
+      meshes.forEach((mesh, i) =>
+        engine.execute({
+          type: 'update-object',
+          object: mesh,
+          properties: { tint: 0xffffff, material: material(i) }
+        })
+      )
+      const overflow = flushPrograms()
+      const snapshot = engine.query({
+        type: 'snapshot',
+        object: root,
+        nativeResolution: true,
+        maxDimension: 128
+      })
+      if (snapshot.type !== 'snapshot')
+        throw new Error('Missing overflow snapshot')
+      const bitmap = await createImageBitmap(
+        await (await fetch(snapshot.dataUrl)).blob()
+      )
+      const canvas = document.createElement('canvas')
+      canvas.width = bitmap.width
+      canvas.height = bitmap.height
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Missing pixel context')
+      context.drawImage(bitmap, 0, 0)
+      bitmap.close()
+      const pixels = meshes.map((_, i) => [
+        ...context.getImageData(i * 4 + 2, 10, 1, 1).data
+      ])
+      meshes.forEach((mesh) =>
+        engine.execute({
+          type: 'update-object',
+          object: mesh,
+          properties: { material: null, tint: 0x0000ff }
+        })
+      )
+      const restored = flushPrograms()
+      engine.execute({
+        type: 'update-object',
+        object: meshes[0],
+        properties: { material: material(24), tint: 0xffffff }
+      })
+      const mixed = flushPrograms()
+      return {
+        ordinary,
+        overflow,
+        restored,
+        mixed,
+        pixels,
+        programsByBatcher: [...programsUsed.values()].map((owned) => ({
+          ordinary: owned.ordinary.size,
+          material: owned.material.size
+        }))
+      }
+    } finally {
+      engine.destroy()
+    }
+  })
+  expect(observed.ordinary).toEqual([false])
+  expect(observed.restored).toEqual([false])
+  expect(observed.mixed).toEqual([true])
+  expect(observed.overflow.length).toBeGreaterThan(1)
+  expect(observed.overflow.every(Boolean)).toBe(true)
+  // Main-surface and snapshot instruction sets may own different batchers.
+  // Each live batcher retains exactly one shader for each mode it has used.
+  expect(observed.programsByBatcher).toContainEqual({
+    ordinary: 1,
+    material: 1
+  })
+  for (const owned of observed.programsByBatcher) {
+    expect(owned.ordinary).toBeLessThanOrEqual(1)
+    expect(owned.material).toBeLessThanOrEqual(1)
+  }
+  observed.pixels.forEach((pixel, i) => {
+    expect(Math.abs(pixel[0] - Math.round((i / 24) * 255))).toBeLessThanOrEqual(
+      1
+    )
+    expect(pixel.slice(1)).toEqual([0, 0, 255])
+  })
 })

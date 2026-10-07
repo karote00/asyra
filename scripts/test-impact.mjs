@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { createWorkspaceSourceResolver } from './test-impact-workspaces.mjs'
 
 const require = createRequire(import.meta.url)
 const code = /\.[cm]?[jt]sx?$/
@@ -15,16 +16,39 @@ function discover(directory) {
   })
 }
 
-export function requiresTestParser(inputs, directories) {
+export function requiresTestParser(
+  inputs,
+  directories,
+  upstreamDirectories = []
+) {
   return inputs.some(
     (input) =>
       code.test(input) &&
-      directories.some((directory) => input.startsWith(`${directory}/src/`))
+      [...directories, ...upstreamDirectories].some((directory) =>
+        input.startsWith(`${directory}/src/`)
+      )
   )
 }
 
 // One invocation-owned graph. It selects tests only; it never loads app modules.
-export function selectTestImpact(root, directory, inputs, forceFull = false) {
+export function selectTestImpact(
+  root,
+  directory,
+  inputs,
+  forceFull = false,
+  upstream = {}
+) {
+  const sourcePaths = upstream.sourcePaths ?? new Set()
+  const workspaces = upstream.workspaces ?? new Map()
+  const removedSourceOwners = new Set(
+    [...sourcePaths]
+      .filter((input) => !fs.existsSync(path.resolve(root, input)))
+      .flatMap((input) =>
+        [...workspaces.values()]
+          .filter((owner) => input.startsWith(`${owner.directory}/src/`))
+          .map((owner) => owner.name)
+      )
+  )
   const app = path.resolve(root, directory)
   const files = discover(path.join(app, 'src')).filter((file) =>
     code.test(file)
@@ -50,9 +74,18 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
     forceFull ||
     relevant.some(
       (input) =>
-        !input.startsWith(`${directory}/src/`) ||
+        (!input.startsWith(`${directory}/src/`) &&
+          !(sourcePaths.has(input) && workspaces.size > 0)) ||
         !code.test(input) ||
-        !fs.existsSync(path.resolve(root, input))
+        (!fs.existsSync(path.resolve(root, input)) &&
+          !(
+            sourcePaths.has(input) &&
+            [...workspaces.values()].some(
+              (owner) =>
+                removedSourceOwners.has(owner.name) &&
+                input.startsWith(`${owner.directory}/src/`)
+            )
+          ))
     )
   )
     return result(tests, 'full-owner-input')
@@ -70,8 +103,12 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
       return result(tests, 'full-owner-input')
   }
   const dependents = new Map()
+  const runtimeDependents = new Map()
   let parsedFiles = 0
   const uncertain = new Set()
+  const pendingFiles = [...files]
+  const discovered = new Set(files)
+  const resolveWorkspace = createWorkspaceSourceResolver(root, workspaces, ts)
   const resolve = (from, specifier) => {
     const base = path.resolve(path.dirname(from), specifier)
     const withoutJs = base.replace(/\.[cm]?jsx?$/, '')
@@ -91,7 +128,7 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
       (file) => fs.existsSync(file) && fs.statSync(file).isFile()
     )
   }
-  for (const file of files) {
+  for (const file of pendingFiles) {
     parsedFiles++
     const source = ts.createSourceFile(
       file,
@@ -100,8 +137,29 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
       true
     )
     if (source.parseDiagnostics.length) uncertain.add(file)
-    const add = (specifier) => {
+    const add = (specifier, typeOnly = false) => {
       if (!specifier.startsWith('.')) {
+        if (sourcePaths.size && !typeOnly) {
+          if (
+            [...removedSourceOwners].some(
+              (name) => specifier === name || specifier.startsWith(`${name}/`)
+            )
+          )
+            uncertain.add(file)
+          const resolved = resolveWorkspace(specifier)
+          if (resolved.kind === 'unknown') uncertain.add(file)
+          for (const target of resolved.files) {
+            if (!dependents.has(target)) dependents.set(target, new Set())
+            dependents.get(target).add(file)
+            if (!runtimeDependents.has(target))
+              runtimeDependents.set(target, new Set())
+            runtimeDependents.get(target).add(file)
+            if (!discovered.has(target)) {
+              discovered.add(target)
+              pendingFiles.push(target)
+            }
+          }
+        }
         if (
           !specifier.startsWith('@asyra/') &&
           !specifier.startsWith('node:') &&
@@ -117,6 +175,15 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
       }
       if (!dependents.has(target)) dependents.set(target, new Set())
       dependents.get(target).add(file)
+      if (!typeOnly) {
+        if (!runtimeDependents.has(target))
+          runtimeDependents.set(target, new Set())
+        runtimeDependents.get(target).add(file)
+        if (sourcePaths.size && code.test(target) && !discovered.has(target)) {
+          discovered.add(target)
+          pendingFiles.push(target)
+        }
+      }
     }
     const visit = (node) => {
       if (
@@ -124,13 +191,18 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
         node.moduleSpecifier
       ) {
         if (ts.isStringLiteralLike(node.moduleSpecifier))
-          add(node.moduleSpecifier.text)
+          add(
+            node.moduleSpecifier.text,
+            ts.isImportDeclaration(node)
+              ? node.importClause?.isTypeOnly
+              : node.isTypeOnly
+          )
         else uncertain.add(file)
       }
       if (ts.isImportEqualsDeclaration(node)) {
         const expression = node.moduleReference.expression
         if (expression && ts.isStringLiteralLike(expression))
-          add(expression.text)
+          add(expression.text, node.isTypeOnly)
         else uncertain.add(file)
       }
       if (
@@ -154,18 +226,33 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
     }
     visit(source)
   }
-  const affected = new Set([
-    ...relevant.map((input) => path.resolve(root, input)),
-    ...uncertain
-  ])
-  const queue = [...affected]
-  for (const file of queue)
-    for (const consumer of dependents.get(file) ?? []) {
-      if (!affected.has(consumer)) {
-        affected.add(consumer)
-        queue.push(consumer)
+  const closure = (roots, edges) => {
+    const reached = new Set(roots)
+    const queue = [...reached]
+    for (const file of queue)
+      for (const consumer of edges.get(file) ?? []) {
+        if (!reached.has(consumer)) {
+          reached.add(consumer)
+          queue.push(consumer)
+        }
       }
-    }
+    return reached
+  }
+  const affected = new Set([
+    ...closure(
+      [
+        ...relevant
+          .filter((input) => !sourcePaths.has(input))
+          .map((input) => path.resolve(root, input)),
+        ...uncertain
+      ],
+      dependents
+    ),
+    ...closure(
+      [...sourcePaths].map((input) => path.resolve(root, input)),
+      runtimeDependents
+    )
+  ])
   return {
     ...result(
       tests.filter((file) => affected.has(file)),
@@ -173,8 +260,8 @@ export function selectTestImpact(root, directory, inputs, forceFull = false) {
     ),
     work: {
       parsedFiles,
-      sourceFiles: files.length,
-      traversedFiles: queue.length
+      sourceFiles: pendingFiles.length,
+      traversedFiles: affected.size
     }
   }
 }

@@ -451,3 +451,113 @@ only when a WebGPU adapter is available, not claimed as WebGPU visual parity.
   exact source preservation, invalidation and work counts remain formal tests.
 - Kept test process ownership and cleanup. Original user files and site data
   were not reset. No dependency, environment upgrade or remote operation occurred.
+
+## CI repair - 2026-10-07
+
+PR #298 run 37583227170 contradicts the local-browser completion evidence:
+functional dependent batches remain active, five collaboration cases do not
+settle/converge, and dense-vector screenshot capture exceeds the existing
+watchdog. Aggregate failures are consequences, not independent defects.
+
+Bounded objective: reproduce these failures at the affected engine submission
+boundary, correct the first faulty owner, and rerun the failed producers plus
+applicable local validation before pushing. Discovery is limited to those CI
+logs, direct renderer/consumer paths, browser configuration and formal tests.
+No change to AI behavior, canonical data, image resolution, test watchdogs or
+assertions is authorized by this repair. Stop after the repaired owners pass
+review and the updated PR is delivered; do not merge.
+
+### Step execution - execute-render-engine
+
+Source: render-engine-pixi.md, Analytic mesh fill contract; Inspector
+render-engine-boundary-flow, execute-render-engine. Inputs are neutral mesh
+geometry/material and normal Graphics/image submissions. Outputs must preserve
+pixels, painter order, batched work and disposal. Unsupported capabilities still
+fail explicitly. Only Pixi and neutral render-engine contracts contribute;
+App/domain decisions, state subscriptions and fallback visuals remain excluded.
+Implementation boundary: packages/render-engine-pixi/src/** and the existing
+mesh-material.spec.ts real-engine tests. Failure owner is execute-render-engine.
+
+First add software-renderer coverage to the existing exact pixel oracle and
+reproduce before production edits. Inspect shader construction and submission
+work, including whether texture-slot count repeats the material evaluator.
+Gates: real software/hardware material pixels, mixed batching/camera retention,
+engine unit/lint/build, failed functional/collaboration/render-contract suites,
+and affected local validation. Source proof is refreshed if its runtime changes.
+No new API/data identity or cache is planned. Naming gate passes before edits.
+
+CI repair experiment review: the new software-renderer pixel oracle fails the
+original implementation at its existing 30-second watchdog. A single-evaluator
+candidate still stalls at readPixels (GPU work completion), not App startup.
+Temporary slot-count diagnostics with unchanged pixels complete at 1, 4 and 8
+slots; they are not acceptance tests and their renderer overrides will be
+removed. Revise the same execute-render-engine slice to bound shader dispatch
+complexity, verify normal hardware capacity without overrides first, and retain
+all material/stop/geometry semantics. Do not change consumer timeouts. Evidence
+is in tmp/document-load/ci-298/software-*.log.
+
+Revised engine slice after dispatch experiments: a 32-slot shader still spends
+27 seconds waiting for GPU completion even after a single evaluator and switch
+selection. The same exact pixels with 1/4/8 slots complete that operation in
+approximately 1.1/1.1/2.6 seconds on the software renderer. Hardware's maximum
+sampler count is not a usable complexity budget for an analytic material shader.
+Use an engine-owned four-texture batch budget (ordinary overflow emits another
+ordered batch, never drops material data), retain one evaluator, and select the
+ordinary Pixi shader for batches with no analytic materials. This removes the
+new analytic-program cost from ordinary AI/pen vectors. Shader variants live
+with their batcher and are disposed together; camera-only draws reuse them.
+Verify mixed content, overflow, plain/material transitions and complete 101
+load/navigation before accepting the tradeoff. No driver-name special case,
+material/stop limit, pixel reduction, test wait increase or per-element shader.
+
+The repaired engine passes the software pixel oracle without any renderer-limit
+override and the original watchdog. Hardware material/AI conversation focused
+run: 30 passed, 3 original conditional skips. Added permanent ordered-overflow
+and ordinary/material-transition assertions, including one retained ordinary shader and one retained analytic shader per
+batcher (independent surface/snapshot instruction sets own separate batchers). Test infrastructure scope also includes the new
+playwright.software-renderer.config.ts: it selects the existing product tests
+with software rendering and retains each suite's original watchdog. This is
+reproduction configuration only; it changes no product/Inspector semantics.
+
+### CI repair result and authorized routing extension
+
+Engine source is unchanged since the successful software pixel, complete 101
+load/navigation and refreshed source proofs. The 101 load is 10.614 seconds with
+zero CPU color rasters and unchanged canonical save hash. The shader complexity
+tradeoff changes the early candidate's 9 draws to 49 draws per submission (original
+baseline 72); navigation measures 59.2–59.6 submissions/s at DPR 1/2, no long tasks
+or geometry re-upload. These remain local observations, not CI timing gates.
+
+The full local run d033272e-8583-4cc8-bd4f-13d5272f3e98 passed dependencies,
+declarations, shared validation, all selected workspace checks, all 30 FieldScope
+profiles and collaboration. Its functional failure exposed a test assumption:
+shader identity must be retained per batcher, not globally across independent
+surface/snapshot instruction sets. After correcting that owner assertion, the
+entire functional suite passed 384 cases with 18 existing conditional skips;
+render contracts passed all 3 cases. Material coverage passed all 10 cases.
+A separate combined software run had a navigation/context-destroyed failure;
+the isolated traced case and full software collaboration rerun passed. Do not
+represent that first attempt as a flawless run.
+
+The user also authorized CI selection repair before push. Its bounded owner is
+local-affected-validation/select; see FieldScope's test-routing plan and the local
+validation contract. It uses actual workspace export/source mappings and runtime
+imports, retains unknown consumers, and separates owner-local validation inputs.
+The actual full PR selects 42 ordinary FieldScope files and 25 profiles rather
+than all 30 profiles. A Pixi-material-only change selects 3 ordinary files and 2
+profiles. Shared RenderEngine and removed Preset inputs in this PR conservatively
+retain the spatial consumers; no robot, numerical assertion or watchdog changes.
+93 routing/runner/parity cases pass; selected small ordinary/profile suites also
+execute through the existing guards. Unchanged FieldScope runtime inputs retain
+the full passing run's evidence. Regenerate the Inspector workspace bundle and
+public docs, then rerun affected shared/Inspector checks before commit/push.
+Evidence root: tmp/document-load/ci-298. Remote CI remains separate; no merge.
+
+Final scoped closure: shared lint/scripts/naming and Flow Inspector lint/build/tests
+passed after regeneration. The actual 42-file ordinary FieldScope selection also
+passed through its existing supervisor. Hash comparison against the earlier full
+local run confirms its only changed original inputs are the separately reverified
+material test and this plan; all 25 selected profiles are contained in that run's
+30-file passing receipt. Preserve that run's failed aggregate as historical
+evidence, rather than rewriting it green. Full functional and render-contract
+replacement runs and the final routing gates establish the current local result.

@@ -5,6 +5,8 @@ import {
   type BatchableElement,
   BatchableMesh,
   DefaultBatcher,
+  DefaultShader,
+  type Batch,
   ExtensionType,
   Mesh,
   extensions,
@@ -17,13 +19,33 @@ import { meshMaterialSources } from './mesh-material-resources.js'
 import { createMeshMaterialShader } from './mesh-material-shader.js'
 
 const materialBatchName = 'analytic-mesh-material'
+// Analytic programs have dynamic layer/stop loops, unlike Pixi texture sampling.
+// Keep shader complexity bounded independently of the driver's sampler maximum.
+const materialBatchTextureCapacity = 4
 
 export class MeshMaterialBatcher extends Batcher {
   static extension = { type: ExtensionType.Batcher, name: materialBatchName }
   readonly name = materialBatchName
   readonly geometry = new BatchGeometry()
   readonly vertexSize = 6
-  shader: ReturnType<typeof createMeshMaterialShader>
+  shader: DefaultShader | ReturnType<typeof createMeshMaterialShader>
+  private readonly ordinaryShader: DefaultShader
+  private materialShader?: ReturnType<typeof createMeshMaterialShader>
+
+  selectShader(batch: Batch): void {
+    const { textures, count } = batch.textures
+    let hasMaterial = false
+    for (let i = 0; i < count; i++) {
+      if (meshMaterialSources.has(textures[i])) {
+        hasMaterial = true
+        break
+      }
+    }
+    if (hasMaterial) {
+      this.materialShader ??= createMeshMaterialShader(this.maxTextures)
+      this.shader = this.materialShader
+    } else this.shader = this.ordinaryShader
+  }
 
   // The standard vertex layout and packing remain owned by Pixi.
   packAttributes(...args: Parameters<DefaultBatcher['packAttributes']>): void {
@@ -46,12 +68,18 @@ export class MeshMaterialBatcher extends Batcher {
     for (let i = 0; i < count; i++) attributes[offset + i * 6 + 5] |= 2
   }
   override destroy(): void {
-    super.destroy({ shader: true })
+    super.destroy()
+    this.ordinaryShader.destroy()
+    this.materialShader?.destroy()
   }
 
   constructor(options: BatcherOptions) {
-    super(options)
-    this.shader = createMeshMaterialShader(options.maxTextures)
+    super({
+      ...options,
+      maxTextures: Math.min(options.maxTextures, materialBatchTextureCapacity)
+    })
+    this.ordinaryShader = new DefaultShader(this.maxTextures)
+    this.shader = this.ordinaryShader
   }
 }
 
@@ -149,6 +177,23 @@ export class MeshMaterialPipe implements RenderPipe<MaterialMesh> {
 
 /** Shared public submission boundary keeps ordinary strokes/images in order. */
 export class MeshMaterialBatchPipe extends BatcherPipe {
+  override execute(batch: Batch): void {
+    if (!(batch.batcher instanceof MeshMaterialBatcher)) {
+      super.execute(batch)
+      return
+    }
+    batch.batcher.selectShader(batch)
+    // Texture overflow may switch ordinary/material programs inside one batcher.
+    // Let the public adaptor bind the matching program for every instruction.
+    const action = batch.action
+    batch.action = 'startBatch'
+    try {
+      super.execute(batch)
+    } finally {
+      batch.action = action
+    }
+  }
+
   override addToBatch(
     element: BatchableElement,
     instructions: InstructionSet

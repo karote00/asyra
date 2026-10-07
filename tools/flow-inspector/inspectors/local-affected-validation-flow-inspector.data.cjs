@@ -46,6 +46,9 @@
     conditions: [
       'Reuse the CI classifier and related/full-owner contracts',
       'Select registered supervised owner tests and profiles from one source graph; unknown edges broaden selection',
+      'Known upstream source inputs resolve workspace exports and compiler output mappings; value imports propagate across package entries while erased type-only edges do not execute upstream modules. Owner-local edits retain type/value edges and full owner lint/build remains selected.',
+      'Workspace-local tests and registered validation inputs select their owner without broadening downstream runtime consumers; unknown resources remain conservative',
+      'Removed sources in a known upstream workspace retain every value-import consumer of that workspace; unknown or owner-local deletions keep full owner selection',
       'Unknown relations and missing local command contracts are unresolved'
     ],
     bypasses: ['Not-defined E2E and unselected owners are explicit'],
@@ -64,6 +67,7 @@
       'scripts/ci-relationships.json',
       'scripts/ci-scope.mjs',
       'scripts/test-impact.mjs',
+      'scripts/test-impact-workspaces.mjs',
       'scripts/__tests__/test-impact.test.mjs',
       'scripts/__tests__/ci-scope.test.mjs',
       'scripts/__tests__/local-validation.test.mjs'
