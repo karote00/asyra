@@ -986,7 +986,11 @@
         },
         "defaultMaterialsFrom": "top-level materials: lamp-metal, collar-metal, amber-glass",
         "defaultLighting": "opaque panes; no emission, bulb geometry, light objects or baked shadows/AO/highlights. App owns optional illumination."
-      }
+      },
+      "dimensionedDrawing": "review/07-street-lantern-dimensioned-v2.png",
+      "dimensionedDrawingRole": "Deterministic annotation companion for user review. Original raster retained pixel-for-pixel; annotations and computed sections are separate. Original approvedDrawing remains the appearance source; numeric geometry unchanged. Generated dimensioned-v1 rejected.",
+      "annotationLayer": "review/07-street-lantern-annotation-layer-v2.svg",
+      "annotationSource": "review/draw-lantern-annotations.py"
     }
   ],
   "verification": {
