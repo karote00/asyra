@@ -6,8 +6,8 @@ The user also approved the four transparent v4 single-unit images. The specifica
 
 ## Data authority
 
-- `street-model-spec.json`: sole authority for exact dimensions, coordinates, structure, and material values.
-- `SURFACE-RECIPES.md`: reproducible textures and leaf distribution.
+- `street-model-spec.json`: entry point for exact dimensions, coordinates, structure, and material values; its tree module delegates to `tree-construction-spec.json` and `TREE-CONSTRUCTION.md`.
+- `SURFACE-RECIPES.md`: reproducible textures and the link to the canonical tree assembly recipe.
 - `review/README.md`: appearance sheets, latest unit corrections, and approval status.
 - `review/approved-office-reference.jpg`: original scene, prioritizing the central office surroundings.
 
@@ -28,7 +28,7 @@ Seven categories retain eleven unit/preset entries, including three presets of o
 | Pavement and curb | One straight curb block | X 0.30 × Y 0.16 × height 0.12 |
 | Pavement and curb | One curved curb block | inner radius 0.69, outer radius 0.85, 18-degree arc, height 0.12 |
 | Manhole | One cover-and-frame assembly | diameter 0.66, thickness 0.026 |
-| Tree | One complete tree | maximum envelope X 2.36 × Y 1.80 × Z 3.55 |
+| Tree | One complete tree | maximum envelope X 3.00 × Y 1.90 × Z 3.55 |
 | Lantern | One complete street lantern | maximum width/depth 0.38, height 2.74 |
 
 The app chooses counts, arrangement, spacing, rotation, receiving surfaces, and foundations. Do not fix five stripes into a crosswalk or combine a row of lights or an L-shaped pavement into a basic unit. A manhole cover/frame and a lantern pole/head are named structural parts of their respective placeable units.
@@ -306,7 +306,36 @@ Cutting, receiving-ground appearance and interactions are not implemented here.
 
 ### Street tree
 
-One tree includes a trunk, twelve branches, and leaves. JSON defines trunk centreline/radii, branch starts, and twelve canopy distribution regions. Use 12-sided trunk and 8-sided branch cross-sections; interpolate centrelines piecewise linearly and subdivide each trunk segment into 4. Transport cross-sections in parallel, initial reference axis +X, to avoid uncontrolled twisting. Each canopy region contains 96 leaves, totalling 1,152; formulas are in the surface/leaf recipe. Regions are not visible spheres. Include rear leaves and close the trunk bottom; no soil mound, pot, or exposed roots. This is a design master, not a runtime performance claim. No LoD or animation is implemented here.
+One unit is one complete tree with origin at its trunk base, Z=0. Read
+[TREE-CONSTRUCTION.md](TREE-CONSTRUCTION.md) and
+[tree-construction-spec.json](tree-construction-spec.json) together. They replace
+the old six-plus-six branches, twelve-guide layout, incomplete leaf outline and
+uniform 0.75..1.15 scale recipe. Do not combine old and new construction rules.
+
+The user selected the fuller bare tree and natural leaf cluster, then delegated
+remaining dimensions and construction choices. The selected images are retained
+unchanged. The new numeric layout is authored, not an inferred original mesh.
+
+| Part | Current construction |
+| --- | --- |
+| Trunk | Seven stations, 2.55 m height, 0.23 m base diameter |
+| Branches | Seven primary plus thirteen secondary; maximum depth two |
+| Required relationship | B7 is a child of B11; the parent continues beyond the fork |
+| Wood | Tapered curve fields with local smooth junctions and a flat ground base |
+| Leaf prototype | One rounded closed surface; 100 x 58 mm, 1 mm shell translation, 3 mm bulge |
+| Leaf instances | Uniform scale 0.30..1.20; no per-leaf geometry changes |
+| Foliage | 23 groups, 1,744 instances; fixed seeded subgroup placement and orientation |
+| Maximum envelope | X 3.00 x Y 1.90 x Z 3.55 m; never scale or clip to fill it |
+
+The leaf's curves, shell, sampling and normals; branch attachments, radii and
+junctions; and foliage frames, positions, rotations and colour selection are
+explicitly defined in the linked contract. Hidden guide volumes do not render.
+The default master leaf contributes 128 triangles per instance, 223,232 across
+the assembly before wood. This authoring definition is not runtime LoD approval.
+
+Defaults remain replaceable: bark #806144 and leaves #829347, #A7AD58, #596D3D.
+No reference shadows, outlines or AO are baked. See the [document review](review/06-street-tree-review.md).
+No model generation, runtime change or visual model acceptance is included.
 
 ### Street lantern
 
@@ -333,4 +362,4 @@ Old complete 90-degree road bends, double-line arrays, five/six-stripe assemblie
 
 ## Complete modeling handoff
 
-Provide this document, `street-model-spec.json`, `SURFACE-RECIPES.md`, and the latest approved images identified in `review/README.md`. Prompt logs and old drafts are not production instructions. Confirm units, read dimensions and origins, create named structural parts, apply materials, then produce acceptance comparisons. This is the sequence for future modeling; no modeling was performed in this delivery.
+Provide this document, `street-model-spec.json`, `SURFACE-RECIPES.md`, the tree-specific `TREE-CONSTRUCTION.md` and `tree-construction-spec.json` when building trees, and the latest approved images identified in `review/README.md`. Prompt logs and old drafts are not production instructions. Confirm units, read dimensions and origins, create named structural parts, apply materials, then produce acceptance comparisons. This is the sequence for future modeling; no modeling was performed in this delivery.

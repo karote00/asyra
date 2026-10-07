@@ -14,7 +14,10 @@
 - [Shared curb cross-section](04-curb-shared-section-v1.png) - user-approved on 2026-10-07; schematic, not calibrated. Straight and curved paths are program-generated; separate multiview sheets are not required. See [construction specification](../PLANAR-CURBS.md).
 - [Round manhole](05-manhole-cover-v2.png): original reference retained unchanged; magnified review confirms six slots in both upper views. Raised/flat ring topology and cover/frame separation are now user-confirmed; numeric relief dimensions are now specified, with image-derived estimates distinguished from authored height/edge decisions. See [review findings](05-manhole-review.md).
 - [Manhole - dimensioned reference sheet](05-manhole-dimensioned-v2.png): current handoff with accepted dimensions and topology; final annotation layout user-approved on 2026-10-07. Annotated v1 remains historical approval evidence; original v2 remains the appearance source.
-- [Street tree](06-street-tree-v2.png): one complete tree.
+- [Street tree](06-street-tree-v2.png): overall character reference; unchanged. The [document review](06-street-tree-review.md) records the new construction contract and its validation boundary.
+- [Single leaf](06-single-leaf-v1.png): one shared thick rounded leaf. Numeric contour, shallow bulge and shell are now fixed under user delegation in the [construction contract](../TREE-CONSTRUCTION.md); the drawn SIDE arch is not calibrated.
+- [Natural leaf cluster](06-leaf-cluster-v2.png): selected by the user as the improved composition. Mixed sizes, local overlap and irregular outline guide the deterministic assembly; v1 is historical.
+- [Bare-tree structure - selected reference](06-bare-tree-selected-v1.png): fuller two-level version explicitly selected on 2026-10-07 and preserved unchanged. The [branch inventory](../BARE-TREE.md) and [numeric data](../tree-construction-spec.json) replace the superseded six-plus-six proposal. No rendered model approval is implied.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
 
 The paving stone's smooth review fill shows geometry, not final surface finish.

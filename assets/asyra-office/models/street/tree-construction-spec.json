@@ -1,0 +1,937 @@
+{
+  "moduleId": "street-tree-leafy",
+  "revision": 1,
+  "units": "metres",
+  "status": "Construction values authored under user delegation, finalized 2026-10-08; selected pictures unchanged. Numeric contract defined; not a rendered-model approval.",
+  "references": {
+    "leaf": "review/06-single-leaf-v1.png",
+    "cluster": "review/06-leaf-cluster-v2.png",
+    "bareTree": "review/06-bare-tree-selected-v1.png",
+    "overallCharacter": "review/06-street-tree-v2.png"
+  },
+  "axes": {
+    "up": "+Z",
+    "right": "+X",
+    "frontCameraPosition": "-Y",
+    "origin": "trunk base centre",
+    "reviewProjection": "orthographic"
+  },
+  "maximumEnvelope": {
+    "min": [
+      -1.5,
+      -0.95,
+      0
+    ],
+    "max": [
+      1.5,
+      0.95,
+      3.55
+    ],
+    "role": "validation bound, never a scaling or clipping instruction"
+  },
+  "leaf": {
+    "prototypeCount": 1,
+    "length": 0.1,
+    "width": 0.058,
+    "shellTranslation": 0.001,
+    "bulge": 0.003,
+    "outlineCubicBezierCCW": [
+      [
+        [
+          -0.05,
+          0
+        ],
+        [
+          -0.05,
+          -0.008
+        ],
+        [
+          -0.026,
+          -0.029
+        ],
+        [
+          0.012,
+          -0.029
+        ]
+      ],
+      [
+        [
+          0.012,
+          -0.029
+        ],
+        [
+          0.034,
+          -0.029
+        ],
+        [
+          0.05,
+          -0.019
+        ],
+        [
+          0.05,
+          0
+        ]
+      ],
+      [
+        [
+          0.05,
+          0
+        ],
+        [
+          0.05,
+          0.019
+        ],
+        [
+          0.034,
+          0.029
+        ],
+        [
+          0.012,
+          0.029
+        ]
+      ],
+      [
+        [
+          0.012,
+          0.029
+        ],
+        [
+          -0.026,
+          0.029
+        ],
+        [
+          -0.05,
+          0.008
+        ],
+        [
+          -0.05,
+          0
+        ]
+      ]
+    ],
+    "surface": "For boundary b(t), radial coordinate rho in [0,1]: front=(rho*b.x,rho*b.y,bulge*(1-rho^2)^2); back=front-(0,0,shellTranslation). Join boundary rims. Each face has its own centre shared by its radial sectors; no stem, vein, notch, bevel or additional noise.",
+    "masterSampling": {
+      "samplesPerBezierArc": 4,
+      "radialRings": [
+        0.5,
+        1
+      ],
+      "frontCentre": true,
+      "triangles": 128,
+      "verticesBeforeNormalSplits": 66
+    },
+    "normalRule": "Area-weighted smooth vertex normals within front and within back; separate edge-strip normals. No smoothing across front/rim/back boundaries.",
+    "instanceScale": [
+      0.3,
+      1.2
+    ],
+    "instanceGeometry": "One shared master vertex/index buffer; uniform XYZ scale only, rotation and translation. Appearance overrides never deform geometry."
+  },
+  "trunk": {
+    "stationsXYZRadius": [
+      [
+        0,
+        0,
+        0,
+        0.115
+      ],
+      [
+        -0.02,
+        0.005,
+        0.28,
+        0.095
+      ],
+      [
+        0.015,
+        0,
+        0.72,
+        0.08
+      ],
+      [
+        0.035,
+        0.01,
+        1.1,
+        0.067
+      ],
+      [
+        -0.025,
+        0.015,
+        1.5,
+        0.05
+      ],
+      [
+        0.01,
+        0.02,
+        1.95,
+        0.034
+      ],
+      [
+        0.03,
+        0.035,
+        2.55,
+        0.012
+      ]
+    ],
+    "interpolation": "Cubic Hermite in station Z for X,Y; derivatives defined in TREE-CONSTRUCTION.md. Radius interpolates linearly in Z. Flat ground cap at 0 and top cap at 2.55."
+  },
+  "branches": {
+    "maximumDepth": 2,
+    "primaryCount": 7,
+    "secondaryCount": 13,
+    "entries": [
+      {
+        "id": "B1",
+        "visualRole": "lower-left long limb",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 1.0,
+        "end": [
+          -0.95,
+          0.3,
+          1.55
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B2",
+        "visualRole": "lower-left upright offshoot",
+        "level": 2,
+        "parent": "B1",
+        "parentT": 0.55,
+        "end": [
+          -0.53,
+          0.48,
+          1.78
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B3",
+        "visualRole": "lower-left short outward fork",
+        "level": 2,
+        "parent": "B1",
+        "parentT": 0.76,
+        "end": [
+          -0.86,
+          0.13,
+          1.65
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B4",
+        "visualRole": "low-left descending offshoot",
+        "level": 2,
+        "parent": "B1",
+        "parentT": 0.38,
+        "end": [
+          -0.68,
+          -0.12,
+          1.18
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B5",
+        "visualRole": "lower-right long limb",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 1.08,
+        "end": [
+          0.98,
+          -0.28,
+          1.73
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B6",
+        "visualRole": "lower-right rising offshoot",
+        "level": 2,
+        "parent": "B5",
+        "parentT": 0.62,
+        "end": [
+          0.68,
+          -0.48,
+          1.88
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B7",
+        "visualRole": "user-confirmed child of B11",
+        "level": 2,
+        "parent": "B11",
+        "parentT": 0.68,
+        "end": [
+          0.72,
+          0.48,
+          2.31
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B8",
+        "visualRole": "lower-right descending fork",
+        "level": 2,
+        "parent": "B5",
+        "parentT": 0.78,
+        "end": [
+          0.91,
+          -0.1,
+          1.43
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B9",
+        "visualRole": "middle-left rising limb",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 1.43,
+        "end": [
+          -0.92,
+          -0.2,
+          2.48
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B10",
+        "visualRole": "middle-left outward offshoot",
+        "level": 2,
+        "parent": "B9",
+        "parentT": 0.34,
+        "end": [
+          -1.09,
+          -0.34,
+          1.85
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B11",
+        "visualRole": "middle-right primary supporting B7",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 1.46,
+        "end": [
+          0.98,
+          0.22,
+          2.26
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B12",
+        "visualRole": "middle-left higher outward offshoot",
+        "level": 2,
+        "parent": "B9",
+        "parentT": 0.52,
+        "end": [
+          -0.96,
+          -0.04,
+          2.09
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B13",
+        "visualRole": "middle-right upright offshoot",
+        "level": 2,
+        "parent": "B11",
+        "parentT": 0.43,
+        "end": [
+          0.37,
+          0.08,
+          2.35
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B14",
+        "visualRole": "middle-right inner depth offshoot",
+        "level": 2,
+        "parent": "B11",
+        "parentT": 0.2,
+        "end": [
+          0.18,
+          0.38,
+          2.13
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B15",
+        "visualRole": "middle-left upper short fork",
+        "level": 2,
+        "parent": "B9",
+        "parentT": 0.72,
+        "end": [
+          -0.56,
+          -0.12,
+          2.32
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B16",
+        "visualRole": "upper-left primary",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 2.05,
+        "end": [
+          -0.48,
+          0.35,
+          2.72
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B17",
+        "visualRole": "upper-left upright child",
+        "level": 2,
+        "parent": "B16",
+        "parentT": 0.6,
+        "end": [
+          -0.3,
+          0.52,
+          2.66
+        ],
+        "controlLift": 0.035
+      },
+      {
+        "id": "B18",
+        "visualRole": "upper-right short primary",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 2.37,
+        "end": [
+          0.26,
+          -0.32,
+          2.66
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B19",
+        "visualRole": "upper leader above trunk",
+        "level": 1,
+        "parent": "trunk",
+        "attachmentZ": 2.43,
+        "end": [
+          0.16,
+          0.06,
+          2.93
+        ],
+        "controlLift": 0.1
+      },
+      {
+        "id": "B20",
+        "visualRole": "small fork at crown apex",
+        "level": 2,
+        "parent": "B19",
+        "parentT": 0.68,
+        "end": [
+          0.06,
+          -0.1,
+          2.94
+        ],
+        "controlLift": 0.035
+      }
+    ],
+    "curve": "Quadratic Bezier (S,C,E), C=(S+E)/2+(0,0,controlLift). No forced upward end: downward terminal twigs are intentional.",
+    "rootRadius": "level1=min(0.055,0.82*parentRadius); level2=0.58*parentRadius",
+    "tipRadius": "level1=min(0.007,0.22*rootRadius); level2=min(0.004,0.28*rootRadius)",
+    "radius": "r(t)=tipRadius+(rootRadius-tipRadius)*(1-t)^1.2; t is Bezier parameter, not arc length",
+    "attachment": "Level1 samples trunk at attachmentZ. Level2 samples parent Q(parentT). Evaluate parents before children; no cycles. Endpoints are rounded-cap centres."
+  },
+  "woodSurface": {
+    "construction": "implicit swept-ball union, locally smoothed only at actual parent-child roots; see TREE-CONSTRUCTION.md",
+    "blendWidthFactor": 0.65,
+    "blendSupportInnerRootRadii": 1.5,
+    "blendSupportOuterRootRadii": 4,
+    "distanceMinimizationTolerance": 1e-05,
+    "isosurface": 0,
+    "smoothingAfterMeshing": false,
+    "surfaceDisplacement": false,
+    "basePlane": 0,
+    "maximumMeshingCell": 0.001,
+    "thinFeatureCellRule": "at most min(0.001,local minimum contributing radius/3)",
+    "maximumSurfaceDeviation": 0.00025,
+    "meshMethod": "Adaptive extraction of the specified zero field; topology may vary while preserving surface tolerance, all tips and closed connected wood. See TREE-CONSTRUCTION.md."
+  },
+  "foliage": {
+    "seed": 606,
+    "sampling": "8 LCG values per leaf; cluster-local independent streams. Full formulas in TREE-CONSTRUCTION.md.",
+    "subgroups": [
+      [
+        -0.45,
+        -0.1,
+        0.05
+      ],
+      [
+        0.3,
+        -0.3,
+        0.28
+      ],
+      [
+        0.05,
+        0.32,
+        0.35
+      ],
+      [
+        -0.08,
+        0.03,
+        -0.38
+      ],
+      [
+        0.42,
+        0.22,
+        -0.18
+      ]
+    ],
+    "jitterRadiusFraction": 0.35,
+    "clusters": [
+      {
+        "id": "C1",
+        "branch": "B1",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C2",
+        "branch": "B2",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C3",
+        "branch": "B3",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C4",
+        "branch": "B4",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C5",
+        "branch": "B5",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C6",
+        "branch": "B6",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C7",
+        "branch": "B7",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C8",
+        "branch": "B8",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C9",
+        "branch": "B9",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C10",
+        "branch": "B10",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C11",
+        "branch": "B11",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C12",
+        "branch": "B12",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C13",
+        "branch": "B13",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C14",
+        "branch": "B14",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C15",
+        "branch": "B15",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C16",
+        "branch": "B16",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C17",
+        "branch": "B17",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C18",
+        "branch": "B18",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C19",
+        "branch": "B19",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.24,
+          0.19,
+          0.26
+        ],
+        "count": 96
+      },
+      {
+        "id": "C20",
+        "branch": "B20",
+        "branchT": 0.9,
+        "localOffset": [
+          0,
+          0,
+          0.025
+        ],
+        "radii": [
+          0.18,
+          0.15,
+          0.2
+        ],
+        "count": 64
+      },
+      {
+        "id": "C21",
+        "branch": "trunk",
+        "attachmentZ": 1.78,
+        "localOffset": [
+          0,
+          0,
+          0.04
+        ],
+        "radii": [
+          0.25,
+          0.23,
+          0.25
+        ],
+        "count": 80
+      },
+      {
+        "id": "C22",
+        "branch": "trunk",
+        "attachmentZ": 2.17,
+        "localOffset": [
+          0,
+          0,
+          0.04
+        ],
+        "radii": [
+          0.25,
+          0.23,
+          0.25
+        ],
+        "count": 80
+      },
+      {
+        "id": "C23",
+        "branch": "trunk",
+        "attachmentZ": 2.55,
+        "localOffset": [
+          0,
+          0,
+          0.04
+        ],
+        "radii": [
+          0.25,
+          0.23,
+          0.25
+        ],
+        "count": 80
+      }
+    ],
+    "totalInstances": 1744,
+    "sizeMixture": [
+      {
+        "probability": 0.45,
+        "scale": [
+          0.3,
+          0.5
+        ]
+      },
+      {
+        "probability": 0.4,
+        "scale": [
+          0.5,
+          0.85
+        ]
+      },
+      {
+        "probability": 0.15,
+        "scale": [
+          0.85,
+          1.2
+        ]
+      }
+    ],
+    "budSubgroupIndex": 2,
+    "budScale": [
+      0.3,
+      0.55
+    ],
+    "dominantColourProbability": 0.75,
+    "rollLimitDegrees": 80,
+    "materials": [
+      "leaf-olive",
+      "leaf-pale",
+      "leaf-deep"
+    ],
+    "dominantMaterialProbabilities": [
+      0.5,
+      0.3,
+      0.2
+    ],
+    "attachmentRule": "Cluster frame follows owner curve tangent; subgroup volumes are invisible arrangement guides. No extra twigs or visible support meshes are generated."
+  },
+  "materials": {
+    "bark": {
+      "sRGB": "#806144",
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "leaf-olive": {
+      "sRGB": "#829347",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "leaf-pale": {
+      "sRGB": "#A7AD58",
+      "roughness": 0.9,
+      "metallic": 0
+    },
+    "leaf-deep": {
+      "sRGB": "#596D3D",
+      "roughness": 0.9,
+      "metallic": 0
+    }
+  },
+  "lighting": {
+    "bakedShadows": false,
+    "bakedAO": false,
+    "bakedHighlights": false,
+    "owner": "app scene"
+  },
+  "scope": "Authoring master geometry and deterministic assembly. Runtime LoD, exporter and performance implementation are outside this document task; master is not a runtime performance approval."
+}
