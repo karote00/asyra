@@ -208,7 +208,7 @@
         "./spatial"
       ],
       "sourceDigests": {
-        "contract": "1983978ea606dc283613b218593c123c6dc60c6b00f69823770e3f85a8a28a2d",
+        "contract": "8a84d4e4092e561520cd5eca11c3ace7e2546bd17ab2d1d19684d83606c294bb",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
         "manifest": "c23748d886dbff1a51569feb6c2dc069cebb9c6c9b1307baef2ac64c1211b4b4"
       },
@@ -279,7 +279,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "81b95d828781382288e082aed0fa339f74f7a0de32de45ae8be41b012bff1f62",
+        "contract": "881e4b2e8273fa161b10f00badc1ef6d831037e8fdde156f7535ba0f631e202e",
         "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
         "manifest": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
       },
@@ -299,7 +299,7 @@
         "./testing"
       ],
       "sourceDigests": {
-        "contract": "7526027d53c2face4ecd905ae3b8a628007babc44e57ec8320279db908e8334c",
+        "contract": "ff1ee0b91ca601c5679d391c0e04b07b963882c00862b5029c3692f05d4c0113",
         "guide": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
         "manifest": "1bd7687ec05a2c910791d8674bd691d694f0fb9a35d8f182c4f0e8c7e387849d"
       },
@@ -320,7 +320,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "cdf076b55a41294ba8ce4ff5be3fba0f0e5b439036c2685dc6cd0dac7f8c291d",
+        "contract": "dd35edcdf0958f0b5f3a10261bcdd8e827bd240ad7464f2d1fea129c1bf99032",
         "guide": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
         "manifest": "a7c7c847e74f04054de4197b391a844086f120276505272162f6f738724db31e"
       },

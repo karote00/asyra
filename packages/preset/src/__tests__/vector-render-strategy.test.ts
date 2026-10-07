@@ -748,17 +748,12 @@ describe('vector render strategy', () => {
       }
     })
 
-    const operations = graphic.getDrawOperations()
-    const firstFillIndex = operations.findIndex(
-      (operation) => operation.type === 'fill'
-    )
-    expect(firstFillIndex).toBeGreaterThan(0)
-    expect(operations.slice(0, firstFillIndex)).toContainEqual({
-      type: 'bezier-curve-to',
-      controlPoint1: { x: 25, y: 0 },
-      controlPoint2: { x: 75, y: 80 },
-      destination: { x: 100, y: 80 }
-    })
+    // The cubic bows below the closing diagonal near the first quarter and
+    // above it near the third quarter. A straight endpoint chord loses both lobes.
+    expect(graphic.hitArea?.contains(22.66, 15)).toBe(true)
+    expect(graphic.hitArea?.contains(22.66, 10)).toBe(false)
+    expect(graphic.hitArea?.contains(77.34, 65)).toBe(true)
+    expect(graphic.hitArea?.contains(77.34, 70)).toBe(false)
   })
 
   it('projects each ordinary Vector slice through at most one visible frame', async () => {

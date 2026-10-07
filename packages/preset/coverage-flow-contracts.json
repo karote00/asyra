@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "manifestPath": "packages/preset/coverage-flow-contracts.json",
+  "targetId": "render-delta-update",
+  "architecturePath": "tools/flow-inspector/inspectors/render-delta-update-flow-inspector.data.cjs",
+  "specPath": "docs/ai/framework/packages/preset.md",
+  "testFile": "packages/preset/src/__tests__/vector-compound-fill.test.ts",
+  "configFile": "packages/preset/src/__tests__/coverage-flow.config.ts",
+  "workspaceSources": [
+    {
+      "name": "@asyra/preset",
+      "inputs": ["src/**"],
+      "entry": "src/index.ts"
+    }
+  ],
+  "externalInputs": ["artifact:vector-strategy-request"],
+  "negativeCaseIds": [
+    "coverage.holes.evenodd",
+    "coverage.overlap",
+    "coverage.cross.evenodd"
+  ],
+  "flows": [
+    {
+      "id": "vector-coverage",
+      "title": "Paint-independent vector coverage",
+      "goal": "Resolve both fill rules into disjoint faces and identical hit coverage without changing canonical contours.",
+      "stepIds": ["evaluate-vector-material"],
+      "cases": [
+        {
+          "id": "coverage.holes.nonzero",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage preserves declared nonzero coverage for same-winding holes"
+        },
+        {
+          "id": "coverage.holes.evenodd",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage preserves declared evenodd coverage for same-winding holes"
+        },
+        {
+          "id": "coverage.overlap",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage resolves evenodd overlap and nested islands without double filling"
+        },
+        {
+          "id": "coverage.cross.nonzero",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using nonzero coverage"
+        },
+        {
+          "id": "coverage.cross.evenodd",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using evenodd coverage"
+        },
+        {
+          "id": "coverage.empty.nonzero",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage keeps empty nonzero coverage empty"
+        },
+        {
+          "id": "coverage.empty.evenodd",
+          "stepId": "evaluate-vector-material",
+          "testName": "paint-independent vector coverage keeps empty evenodd coverage empty"
+        },
+        {
+          "id": "coverage.preserve.7",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (false)"
+        },
+        {
+          "id": "coverage.preserve.8",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (true)"
+        },
+        {
+          "id": "coverage.preserve.9",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection fills same-winding interiors exactly once and keeps hit testing consistent"
+        },
+        {
+          "id": "coverage.preserve.10",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection preserves nested islands"
+        },
+        {
+          "id": "coverage.preserve.11",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (false)"
+        },
+        {
+          "id": "coverage.preserve.12",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (true)"
+        },
+        {
+          "id": "coverage.preserve.13",
+          "stepId": "evaluate-vector-material",
+          "testName": "solid nonzero compound Vector projection splits slabs at diagonal crossings rather than only contour vertices"
+        },
+        {
+          "id": "coverage.preserve.14",
+          "stepId": "evaluate-vector-material",
+          "testName": "projects curved compound contours within the declared subdivision tolerance"
+        },
+        {
+          "id": "coverage.preserve.15",
+          "stepId": "evaluate-vector-material",
+          "testName": "prepares one fill geometry shared by rendering and repeated hit queries"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "dispatch-vector-material",
+          "decision": "required",
+          "caseIds": [
+            "coverage.holes.nonzero",
+            "coverage.holes.evenodd",
+            "coverage.overlap",
+            "coverage.cross.nonzero",
+            "coverage.cross.evenodd",
+            "coverage.empty.nonzero",
+            "coverage.empty.evenodd",
+            "coverage.preserve.7",
+            "coverage.preserve.8",
+            "coverage.preserve.9",
+            "coverage.preserve.10",
+            "coverage.preserve.11",
+            "coverage.preserve.12",
+            "coverage.preserve.13",
+            "coverage.preserve.14",
+            "coverage.preserve.15"
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "omit-evenodd",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current owner source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "omit-evenodd",
+      "title": "Ignore declared parity rule",
+      "expectedFailedCaseIds": [
+        "coverage.holes.evenodd",
+        "coverage.overlap",
+        "coverage.cross.evenodd"
+      ],
+      "mutation": {
+        "file": "packages/preset/src/components/vector-compound-fill.ts",
+        "from": "fillRule === 'evenodd'",
+        "to": "false && fillRule === 'evenodd'"
+      }
+    }
+  ]
+}

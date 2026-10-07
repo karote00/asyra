@@ -1,8 +1,35 @@
-import { RenderGraphics } from '@asyra/render'
+import { RenderGraphics, RenderMesh } from '@asyra/render'
 import { createDefaultFill } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import * as compoundFill from '../components/vector-compound-fill.js'
 import { VECTOR_RENDER_STRATEGY } from '../components/vector.js'
+
+// Self-contained observer: the source-proof runner captures this test file.
+const vectorFillMeshes = (graphic: RenderGraphics): RenderMesh[] =>
+  graphic.children
+    .flatMap((child) => child.children)
+    .filter((child): child is RenderMesh => child instanceof RenderMesh)
+
+const vectorFillTriangles = (graphic: RenderGraphics) =>
+  vectorFillMeshes(graphic).flatMap((mesh) => {
+    const geometry = mesh.getEngineProperties().geometry as {
+      positions: ArrayLike<number>
+      indices: ArrayLike<number>
+    }
+    const triangles: { x: number; y: number }[][] = []
+    for (let i = 0; i < geometry.indices.length; i += 3) {
+      triangles.push(
+        [0, 1, 2].map((j) => {
+          const offset = geometry.indices[i + j] * 2
+          return {
+            x: geometry.positions[offset],
+            y: geometry.positions[offset + 1]
+          }
+        })
+      )
+    }
+    return triangles
+  })
 
 interface Point {
   x: number
@@ -74,21 +101,7 @@ const render = (contours: Point[][]) => {
   const original = JSON.stringify(data)
   VECTOR_RENDER_STRATEGY(graphic, data)
   expect(JSON.stringify(data)).toBe(original)
-  const operations = graphic.getDrawOperations()
-  const fillIndex = operations.findIndex(
-    (operation) => operation.type === 'fill'
-  )
-  const faces: (readonly Point[])[] = []
-  let path: Point[] = []
-  for (const operation of operations.slice(0, fillIndex)) {
-    if (operation.type === 'poly') faces.push(operation.points)
-    if (operation.type === 'move-to') {
-      path = [{ x: operation.x, y: operation.y }]
-      faces.push(path)
-    }
-    if (operation.type === 'line-to')
-      path.push({ x: operation.x, y: operation.y })
-  }
+  const faces = vectorFillTriangles(graphic)
   return {
     graphic,
     filledArea: faces.reduce((sum, face) => sum + area(face), 0)
@@ -212,4 +225,99 @@ it('prepares one fill geometry shared by rendering and repeated hit queries', ()
   } finally {
     prepare.mockRestore()
   }
+})
+
+const contourShape = (contours: Point[][]) => ({
+  paths: contours.map((contour) => ({
+    segments: contour.map((point, index) => {
+      const next = contour[(index + 1) % contour.length]
+      return {
+        type: 'line' as const,
+        points: [point.x, point.y, next.x, next.y]
+      }
+    })
+  }))
+})
+
+// A fill rule is a coverage input, not a property of the chosen paint.
+describe('paint-independent vector coverage', () => {
+  it.each(['nonzero', 'evenodd'] as const)(
+    'preserves declared %s coverage for same-winding holes',
+    (rule) => {
+      const shape = contourShape([
+        rectangle(0, 0, 100, 100),
+        rectangle(20, 20, 60, 60)
+      ])
+      const original = JSON.stringify(shape)
+      const prepared = compoundFill.prepareVectorCompoundFill(shape, rule)
+      expect(prepared.faces.reduce((sum, face) => sum + area(face), 0)).toBe(
+        rule === 'evenodd' ? 6400 : 10000
+      )
+      expect(prepared.contains(50, 50)).toBe(rule === 'nonzero')
+      expect(prepared.contains(10, 50)).toBe(true)
+      expect(prepared.contains(110, 50)).toBe(false)
+      expect(JSON.stringify(shape)).toBe(original)
+    }
+  )
+
+  it('resolves evenodd overlap and nested islands without double filling', () => {
+    const overlap = compoundFill.prepareVectorCompoundFill(
+      contourShape([rectangle(0, 0, 50, 50), rectangle(25, 25, 50, 50)]),
+      'evenodd'
+    )
+    expect(overlap.faces.reduce((sum, face) => sum + area(face), 0)).toBe(3750)
+    expect(overlap.contains(30, 30)).toBe(false)
+    expect(overlap.contains(10, 10)).toBe(true)
+    const nested = compoundFill.prepareVectorCompoundFill(
+      contourShape([
+        rectangle(0, 0, 100, 100),
+        rectangle(20, 20, 60, 60),
+        rectangle(40, 40, 20, 20)
+      ]),
+      'evenodd'
+    )
+    expect(nested.faces.reduce((sum, face) => sum + area(face), 0)).toBe(6800)
+    expect(nested.contains(50, 50)).toBe(true)
+    expect(nested.contains(30, 50)).toBe(false)
+  })
+
+  it.each(['nonzero', 'evenodd'] as const)(
+    'splits self-crossings and coincident edges using %s coverage',
+    (rule) => {
+      const bowtie = compoundFill.prepareVectorCompoundFill(
+        contourShape([
+          [
+            { x: 0, y: 0 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 },
+            { x: 100, y: 0 }
+          ]
+        ]),
+        rule
+      )
+      expect(bowtie.faces.reduce((sum, face) => sum + area(face), 0)).toBe(5000)
+      expect(bowtie.contains(50, 10)).toBe(true)
+      expect(bowtie.contains(10, 50)).toBe(false)
+      const duplicate = compoundFill.prepareVectorCompoundFill(
+        contourShape([rectangle(0, 0, 100, 100), rectangle(0, 0, 100, 100)]),
+        rule
+      )
+      expect(duplicate.faces.reduce((sum, face) => sum + area(face), 0)).toBe(
+        rule === 'evenodd' ? 0 : 10000
+      )
+      expect(duplicate.contains(50, 50)).toBe(rule === 'nonzero')
+    }
+  )
+
+  it.each(['nonzero', 'evenodd'] as const)(
+    'keeps empty %s coverage empty',
+    (rule) => {
+      const prepared = compoundFill.prepareVectorCompoundFill(
+        { paths: [] },
+        rule
+      )
+      expect(prepared.faces).toEqual([])
+      expect(prepared.contains(0, 0)).toBe(false)
+    }
+  )
 })

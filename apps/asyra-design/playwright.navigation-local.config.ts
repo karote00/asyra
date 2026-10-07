@@ -26,6 +26,10 @@ export default defineConfig({
   webServer: Array.isArray(ordinaryConfig.webServer)
     ? ordinaryConfig.webServer.map((server) => ({
         ...server,
+        ...(process.env.NAVIGATION_APP_DIR &&
+        server.url === ordinaryConfig.use?.baseURL
+          ? { cwd: process.env.NAVIGATION_APP_DIR }
+          : {}),
         reuseExistingServer: false
       }))
     : ordinaryConfig.webServer

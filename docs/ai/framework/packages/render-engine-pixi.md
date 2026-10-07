@@ -116,3 +116,34 @@ handles/centers, radii and rotation. Object-valued colors are not interned.
 Each opaque resource handle owns a lease. The final release destroys the resource
 and removes the key; engine destruction releases every lease. Raster patterns
 remain shape-specific and are not interned by fill identity.
+
+## Analytic mesh fill contract
+
+A mesh material describes paint independently of tessellation. All triangles
+share the supplied object-normalized material coordinates. Solid and gradient
+layers compose in declared order with source-over alpha; linear, radial,
+angular and diamond modes use the same stop and control-point definitions.
+Equal-position stops are right-continuous, positions outside the stop interval
+clamp, and degenerate handle bases use the first stop. Radial/diamond coordinates
+use primary and secondary handles; an absent secondary handle is perpendicular
+to the primary. Angular phase zero is the primary direction; a full turn wraps.
+
+The concrete engine owns parameter upload, analytic pixel evaluation, batching,
+reference-counted resources and cleanup. Parameter storage scales with stops
+and layers, never element area. A custom shader per element that disables mesh
+batching is not an accepted production route. Geometry, hit topology and
+canonical state remain upstream responsibilities. Unsupported engine execution
+fails explicitly; it never silently substitutes a raster or simplified fill.
+
+Analytic batches use an engine-owned four-texture capacity instead of treating
+the hardware sampler maximum as a shader-complexity budget. Overflow emits the
+next ordered batch with all geometry and material data intact. The shared
+material evaluator dispatches parameter reads; it is not duplicated per sampler.
+Batches without analytic materials select Pixi's ordinary program. Both programs
+are retained for the batcher's lifetime and released on destruction. Switching
+programs within an instruction sequence must rebind the selected program.
+
+`apps/asyra-design/playwright.software-renderer.config.ts` replays the existing
+material, AI transaction, collaboration and dense-vector product tests on
+SwiftShader. It preserves ordinary suite watchdogs and is a correctness/regression
+reproduction configuration, not a machine-specific performance threshold.

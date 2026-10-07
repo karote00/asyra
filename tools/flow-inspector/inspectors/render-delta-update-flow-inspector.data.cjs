@@ -484,7 +484,6 @@
         'packages/render/src/__tests__/**',
         'packages/preset/src/__tests__/**',
         'packages/preset/src/components/vector.ts',
-        'packages/preset/src/components/vector-native-fill.ts',
         'apps/asyra-design/e2e/render-delta-performance.spec.ts',
         'docs/ai/framework/packages/render.md',
         'docs/ai/framework/plans/completed/render-delta-update-plan.md'
@@ -507,13 +506,15 @@
       inputs: ['artifact:vector-strategy-request'],
       outputs: ['artifact:vector-draw-result'],
       conditions: [
-        'Only closed convex linear polygons with one opaque eligible linear gradient use the native material descriptor.',
+        'All supported vector fills use coverage faces plus one complete neutral mesh material in a common object-local coordinate domain; no topology-dependent CPU color raster is selected.',
         'Geometry, colors, shared identities and canonical state are unchanged.',
-        'Computed material edits rebuild from the complete current input.'
+        'Computed material edits update paint without preparing coverage; immutable geometry or fill-rule changes invalidate the retained coverage and triangulation.',
+        'The fill projection precedes the retained base-stroke child; element destruction releases both.',
+        'Compound coverage preparation accepts explicit nonzero or evenodd fill rules and returns non-overlapping faces and a matching hit predicate independently of paint.'
       ],
       bypasses: [
         'Other strategies do not invoke the vector evaluator.',
-        'Curves, multiple contours, alpha and sharp color transitions use the existing canonical material evaluator.'
+        'Empty topology or no visible fills hides the fill projection without creating a substituted rectangle.'
       ],
       allowedContributors: [
         'complete RenderElementData',
@@ -525,10 +526,16 @@
         'document mutation',
         'simplified or substituted geometry'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'live graphic',
+        'immutable points, segments and networks',
+        'fill rule',
+        'material input identity'
+      ],
       implementationBoundary: [
         'packages/preset/src/components/vector.ts',
-        'packages/preset/src/components/vector-native-fill.ts',
+        'packages/preset/src/components/fills.ts',
+        'packages/preset/src/components/vector-compound-fill.ts',
         'packages/preset/src/__tests__/**',
         'docs/ai/framework/packages/preset.md'
       ],

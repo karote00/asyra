@@ -102,3 +102,15 @@ forwards this optimization hint only to engines advertising that capability.
 Engines without it continue receiving ordinary position/scale commands; an
 unsupported hint-only update sends no command. It is not a startup requirement
 and does not change required-capability errors, painter order or coordinates.
+
+## Mesh material descriptors
+
+`RenderEngineMeshMaterial` is transient engine-neutral paint data for the mesh
+`material` property. Its ordered fills are solid RGBA or gradient descriptors
+(linear/radial/angular/diamond, start/end/optional side, ordered stops). RGBA
+channels are straight values in [0,1]. UVs supplied with mesh geometry define
+one object-local material domain across all triangles. These descriptors never
+contain Pixi objects, document IDs, shape topology or editable canonical state.
+The concrete engine owns GPU representation and resource lifetime. Omitting a
+material retains existing solid mesh tint/alpha behavior. This is an additive
+runtime property contract, not a saved-file format change.

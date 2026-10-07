@@ -1,4 +1,5 @@
 import earcut from 'earcut'
+import type { RenderEngineMeshMaterial } from '@asyra/render-engine'
 import {
   getPointDistanceSquared,
   type Bounds,
@@ -19,7 +20,12 @@ export interface MeshProjectionPaintSolid {
   alpha: number
 }
 
-export type MeshProjectionPaint = MeshProjectionPaintSolid
+export type MeshProjectionPaint =
+  | MeshProjectionPaintSolid
+  | {
+      kind: 'material'
+      material: RenderEngineMeshMaterial
+    }
 
 export interface CreateMeshProjectionOptions {
   model: GeometryModel
@@ -228,6 +234,7 @@ export const createMeshProjection = (
   const initialGeometry = buildProjectionMeshData(options.model)
   const root = new RenderContainer()
   const mesh = new RenderMesh({
+    batched: true,
     geometry: initialGeometry
       ? toRenderMeshGeometry(initialGeometry)
       : {
@@ -239,10 +246,11 @@ export const createMeshProjection = (
   root.addChild(mesh)
 
   const applyPaint = (paint: MeshProjectionPaint) => {
-    mesh.update({
-      tint: paint.color,
-      alpha: paint.alpha
-    })
+    mesh.update(
+      paint.kind === 'solid'
+        ? { material: null, tint: paint.color, alpha: paint.alpha }
+        : { material: paint.material, tint: 0xffffff, alpha: 1 }
+    )
   }
 
   const update = (next: CreateMeshProjectionOptions) => {
@@ -255,10 +263,9 @@ export const createMeshProjection = (
 
     root.visible = true
     mesh.update({
-      geometry: toRenderMeshGeometry(geometry),
-      tint: next.paint.color,
-      alpha: next.paint.alpha
+      geometry: toRenderMeshGeometry(geometry)
     })
+    applyPaint(next.paint)
   }
 
   applyPaint(options.paint)

@@ -19,24 +19,24 @@ transform-only property capability for position, dimension, rotation, scale,
 and skew. Transform deltas retain existing path/fill/stroke/hit geometry;
 selection and path-edit overlays continue to follow the same Render result.
 
-Solid nonzero compound Vector contours are projected into disjoint winding-filled
-regions. Opposite winding leaves transparent holes; same winding stays filled
-once, including nested islands and intersecting contours. Curves remain canonical
-editable controls. Render-only adaptive subdivision uses a 0.05 local-unit
-flatness bound and a 16-level recursion guard. One prepared geometry supplies
-both fill faces and hit testing per strategy invocation; transform-only updates
-continue to reuse the existing Render projection.
+Vector contours are projected into disjoint filled regions according to their
+explicit nonzero or evenodd rule. The same retained coverage supplies mesh
+triangles and hit testing. Curves remain canonical editable controls; existing
+render-only adaptive subdivision uses a 0.05 local-unit flatness bound and a
+16-level recursion guard. Geometry preparation is retained by immutable points,
+segments, networks and fill rule. Fill-only edits replace material; transforms
+do not rebuild coverage or paint. Empty/no-fill coverage is not replaced by a
+bounding rectangle. The fill mesh precedes the vector's base-stroke projection.
 
-Vectors request native auto-batching; the concrete engine retains bounded
-submission partitions without changing element identities. A single closed
-convex linear contour with one opaque linear gradient can use native vector
-coverage and the existing gradient resource. Its complete local bounds remain
-the material coordinate domain. Eligibility excludes degenerate or self-crossing
-contours, curves/holes, alpha transitions, duplicate/close stops and color slopes
-beyond the native ramp precision bound. Those cases keep the established raster
-material evaluator. Geometry, colors and gradient resolution are not reduced
-for interaction. Canonical fill records and shared references are unchanged;
-resource sharing belongs to the engine's live resource lifetime.
+All vector paint uses the neutral mesh paint contract. One solid layer uses
+the existing constant color/alpha paint without a parameter texture. Ordered
+multiple layers use the material descriptor, including solid,
+linear, radial, angular and diamond modes, alpha layers and hard stops. All
+faces share the actual local geometry bounds as their material coordinate domain.
+No topology-dependent native/raster routing, dimension equality admission,
+source snapping or CPU color image is used. Canonical data and shared references
+remain unchanged. Engine-owned parameter resources are shared for their live
+reference-counted lifetime; renderer internals remain behind Core APIs.
 
 Fill and Stroke child-record adapters preserve sparse patches. They do not
 expand creation defaults into updates of existing children; component defaults
@@ -198,7 +198,10 @@ recovery policy.
   affected entries and hierarchy order, display-property changes replace only
   affected entries without rebuilding flattened hierarchy, and unrelated
   geometry changes do not republish either projection. Validated file load
-  remains the sole full canonical refresh. These values are App-facing
+  remains the sole full canonical refresh; its depth-first index follows each
+  canonical child list regardless of container type (including Frame and custom
+  containers), preserving the same descendants and order as incremental updates.
+  These values are App-facing
   projections only and never validate, repair, reorder, or become a second
   canonical hierarchy.
 
@@ -314,3 +317,13 @@ bounded presentation flushes notify only changed agents. The module creates no
 provider connection, credential, task execution, reward grant or React state.
 Apps own authorized transport, durable history, retention, source permissions
 and scene policy. This optional subpath does not load a rendering engine.
+
+### Shared vector coverage preparation
+
+The vector coverage owner accepts the declared `nonzero` or `evenodd` fill rule
+independently of paint. It produces disjoint filled faces and a matching hit
+predicate from line/cubic contours; holes contain no filled faces and overlapping
+interiors are emitted once. The default remains `nonzero` for existing compound
+callers. Preparation preserves source anchors/controls; empty contours produce
+empty coverage. GPU material integration must preserve these same coverage
+semantics and must not select topology from the gradient mode or opacity.

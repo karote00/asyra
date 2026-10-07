@@ -115,6 +115,29 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     core.selectElements([], { undoable: false })
     return ids
   }, fills)
+  // A loaded mesh fill must remain an ordinary selectable element. Pixel
+  // parity alone does not prove the loaded hierarchy can resolve that hit.
+  const frameId = await page.evaluate(async (ids) => {
+    const { core, elementApis } = await import('../src/testing/runtime-access')
+    const frameId = elementApis.createElement(
+      {
+        type: 'frame',
+        workspacePosition: { x: 0, y: 0 },
+        width: 600,
+        height: 600,
+        fills: [],
+        strokes: []
+      },
+      { undoable: false }
+    )
+    if (!frameId) throw new Error('Frame creation failed')
+    core.moveElements(
+      { elementIds: ids, targetParentId: frameId, targetIndex: 0 },
+      { undoable: false }
+    )
+    core.load(await core.save())
+    return frameId
+  }, ids)
   const focus = await getCanvasPosition(page, 0.02, 0.02)
   await page.mouse.click(focus.x, focus.y)
   await page.keyboard.press('Meta+1')
@@ -138,6 +161,48 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       )
     )
     .toEqual(['linear', 'radial', 'angular', 'diamond'])
+  for (const id of ids) {
+    const target = await page.evaluate(async (id) => {
+      const { core } = await import('../src/testing/runtime-access')
+      const element = core.deps.sceneTree.getElementById(id)
+      if (!element) throw new Error('Missing loaded vector')
+      const data = element.getAllComputedData()
+      const point = core.workspaceToCanvas({ x: data.x + 20, y: data.y + 100 })
+      return { point, hit: core.getElementIdAtClientPos(point) }
+    }, id)
+    expect(target.hit).toBe(id)
+    const canvas = await page.locator('canvas').first().boundingBox()
+    if (!canvas) throw new Error('Missing canvas')
+    if (id === ids[0]) {
+      await page.mouse.click(
+        canvas.x + target.point.x,
+        canvas.y + target.point.y
+      )
+      await expect
+        .poll(() =>
+          page.evaluate(async () => {
+            const { core } = await import('../src/testing/runtime-access')
+            return core.getSelectedElementIds()
+          })
+        )
+        .toEqual([frameId])
+    }
+    await page.keyboard.down('Meta')
+    await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y)
+    await page.keyboard.up('Meta')
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { core } = await import('../src/testing/runtime-access')
+          return core.getSelectedElementIds()
+        })
+      )
+      .toEqual([id])
+  }
+  await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    core.selectElements([], { undoable: false })
+  })
   await page.waitForTimeout(150)
   const before = await page
     .locator('canvas')

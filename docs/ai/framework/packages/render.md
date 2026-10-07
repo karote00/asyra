@@ -200,6 +200,14 @@ by `worldTransform`, `toGlobal`, `toLocal`, and the concrete engine adapter.
   engine append or set-child-index handoff succeeds; a failed handoff preserves
   the pre-command local hierarchy so the same complete snapshot can retry it
 
+### Mesh projection material
+
+Mesh projection accepts solid paint or a complete engine-neutral mesh material.
+All polygon faces share the model bounds as their material coordinate domain.
+`updatePaint` does not triangulate or replace geometry. Switching to solid paint
+clears the prior material descriptor. Projection disposal releases its child
+mesh and its engine-owned material reference.
+
 ### Canonical hierarchy projection
 
 - `projectHierarchy(parentId, childIds)` accepts one exact canonical final child

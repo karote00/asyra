@@ -420,6 +420,9 @@ function classifyChanges(
     runtimeNames.add(name)
   }
   const isRuntime = (file) =>
+    !relationshipPolicy.workspaceLocalInputPatterns.some(
+      (pattern) => matchesPattern(file, pattern).matched
+    ) &&
     !file.endsWith('.md') &&
     !testFilePattern.test(file) &&
     !/(?:^|\/)(?:__tests__|e2e|fixtures?|__fixtures__|__mocks__|test-utils)\//.test(
@@ -592,7 +595,11 @@ function classifyChanges(
           const pathOwner = allManifestViews
             .map((manifests) => workspaceForPath(changedPath, manifests))
             .find(Boolean)
-          if (pathOwner) return dependencyOwners.has(pathOwner.name)
+          if (pathOwner)
+            return (
+              pathOwner.name === name ||
+              (dependencyOwners.has(pathOwner.name) && isRuntime(changedPath))
+            )
           return relationshipPolicy.workspaceInputRules.some((rule) => {
             const matched = matchesPattern(changedPath, rule.pattern)
             return (
@@ -684,13 +691,29 @@ function classifyChanges(
         const supervised = relationshipPolicy.supervisedTestOwners?.[directory]
         let profileSelection
         if (supervised) {
+          const upstreamSourcePaths = new Set(
+            ownerPaths.filter((input) => {
+              const owner = workspaceForPath(input, headManifests)
+              return (
+                owner &&
+                owner.name !== name &&
+                input.startsWith(`${owner.directory}/src/`) &&
+                isVitestRelatedInput(input) &&
+                isRuntime(input)
+              )
+            })
+          )
           const impact = selectTestImpact(
             options.repositoryRoot ?? process.cwd(),
             directory,
             !sharedOwnerInput && (e2eOnlyInputs || onlyDocumentation)
               ? []
               : ownerPaths,
-            sharedOwnerInput
+            sharedOwnerInput,
+            {
+              sourcePaths: upstreamSourcePaths,
+              workspaces: headManifests
+            }
           )
           profileSelection = {
             files: impact.profiles,
@@ -1201,7 +1224,10 @@ function main() {
         process.env.CI_SCOPE_FULL_VALIDATION !== 'true' &&
           requiresTestParser(
             changedPaths,
-            Object.keys(relationshipPolicy.supervisedTestOwners)
+            Object.keys(relationshipPolicy.supervisedTestOwners),
+            [...readWorkspaceManifests(root).values()].map(
+              (owner) => owner.directory
+            )
           )
       )
     )

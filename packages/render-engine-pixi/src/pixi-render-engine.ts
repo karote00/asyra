@@ -1,3 +1,5 @@
+import { MaterialMesh } from './mesh-material-batch.js'
+import { MeshMaterialResources } from './mesh-material-resources.js'
 import { PixiBatchPartitions } from './pixi-batch-partitions.js'
 import {
   RenderEngineCapabilities,
@@ -16,6 +18,7 @@ import {
   type RenderEngineObjectHandle,
   type RenderEngineObjectProperties,
   type RenderEnginePaint,
+  type RenderEngineMeshMaterial,
   type RenderEngineQuery,
   type RenderEngineQueryResult,
   type RenderEngineResourceDescriptor,
@@ -81,6 +84,8 @@ const toUint32Array = (value: ArrayLike<number> | undefined) =>
   value ? Uint32Array.from(value) : new Uint32Array(0)
 
 export class PixiRenderEngine implements RenderEngine {
+  private readonly meshMaterials = new MeshMaterialResources()
+  private readonly meshMaterialKeys = new WeakMap<Mesh, string>()
   private readonly textChildren = new WeakMap<Graphics, Text[]>()
   private readonly liveText = new Set<Text>()
   private textResolutionDirty = false
@@ -526,7 +531,7 @@ export class PixiRenderEngine implements RenderEngine {
           indices: toUint32Array(mesh?.indices),
           uvs: toFloat32Array(mesh?.uvs)
         })
-        object = new Mesh({ geometry, texture: Texture.WHITE })
+        object = new MaterialMesh({ geometry, texture: Texture.WHITE })
         break
       }
     }
@@ -584,6 +589,8 @@ export class PixiRenderEngine implements RenderEngine {
           object.context.batchMode = batchMode
           object.context.dirty = true
         }
+      } else if (object instanceof MaterialMesh) {
+        object.setBatching(properties.batched)
       } else {
         ;(object as PixiObject & { batched?: boolean }).batched =
           properties.batched
@@ -621,6 +628,19 @@ export class PixiRenderEngine implements RenderEngine {
       this.textResolutionDirty = true
 
     if (object instanceof Mesh) {
+      if ('material' in properties) {
+        const material = properties.material as RenderEngineMeshMaterial | null
+        const previousKey = this.meshMaterialKeys.get(object)
+        if (material) {
+          const next = this.meshMaterials.acquire(material)
+          object.texture = next.texture
+          this.meshMaterialKeys.set(object, next.key)
+        } else {
+          object.texture = Texture.WHITE
+          this.meshMaterialKeys.delete(object)
+        }
+        if (previousKey) this.meshMaterials.release(previousKey)
+      }
       const geometry = properties.geometry as MeshProperties | undefined
       if (geometry && updateGeometry) {
         object.geometry.positions = toFloat32Array(geometry.positions)
@@ -870,6 +890,11 @@ export class PixiRenderEngine implements RenderEngine {
     const parent = this.batchPartitions.parentOf(object)
     if (parent) this.batchPartitions.remove(parent, object)
     this.batchPartitions.dispose(object)
+    if (object instanceof Mesh) {
+      const key = this.meshMaterialKeys.get(object)
+      if (key) this.meshMaterials.release(key)
+      this.meshMaterialKeys.delete(object)
+    }
     const ownedGeometry = object instanceof Mesh ? object.geometry : null
     try {
       object.destroy({

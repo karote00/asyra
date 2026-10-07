@@ -6,6 +6,10 @@
   },
   "sharedInputPaths": [".yarnrc.yml", "tsconfig.json", "scripts/gen-turbo.js"],
   "sharedInputPatterns": [],
+  "workspaceLocalInputPatterns": [
+    "**/coverage-flow-contracts.json",
+    "**/navigation-flow-contracts.json"
+  ],
   "rootDocumentationPaths": [
     "README.md",
     "SUPPORT.md",
@@ -251,7 +255,8 @@
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
         "docs/ai/workflows/local-affected-validation.md",
-        "scripts/test-impact.mjs"
+        "scripts/test-impact.mjs",
+        "scripts/test-impact-workspaces.mjs"
       ],
       "tests": [
         "scripts/__tests__/ci-scope.test.mjs",

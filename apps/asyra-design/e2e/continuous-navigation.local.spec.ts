@@ -12,6 +12,11 @@ test('measures sustained native wheel pan and zoom on the full document', async 
 }, testInfo) => {
   test.skip(Boolean(process.env.CI), 'Local machine measurement only')
   test.setTimeout(180_000)
+  const inputHz = Number(process.env.NAVIGATION_INPUT_HZ ?? 60)
+  if (![60, 120].includes(inputHz))
+    throw new Error('Navigation input cadence must be 60 or 120 Hz')
+  const inputCount = inputHz * 5
+  const deltaScale = 60 / inputHz
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
@@ -121,19 +126,19 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     const started = performance.now()
     const pending: Promise<unknown>[] = []
     if (phase !== 'idle') {
-      for (let index = 0; index < 300; index++) {
+      for (let index = 0; index < inputCount; index++) {
         await delay(
-          Math.max(0, started + index * (1000 / 60) - performance.now())
+          Math.max(0, started + index * (1000 / inputHz) - performance.now())
         )
-        const direction = index < 150 ? 1 : -1
+        const direction = index < inputCount / 2 ? 1 : -1
         offered.push(performance.now() - started)
         pending.push(
           cdp.send('Input.dispatchMouseEvent', {
             type: 'mouseWheel',
             x: 1000,
             y: 450,
-            deltaX: phase === 'pan' ? direction * 2 : 0,
-            deltaY: phase === 'pan' ? direction : -direction,
+            deltaX: phase === 'pan' ? direction * 2 * deltaScale : 0,
+            deltaY: (phase === 'pan' ? direction : -direction) * deltaScale,
             modifiers: phase === 'zoom' ? 4 : 0
           })
         )
@@ -173,6 +178,7 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     const duration = active[active.length - 1].time - active[0].time
     const summary = {
       phase,
+      inputHz,
       profiled: withProfiler,
       offeredEvents: offered.length,
       deliveredEvents: report.inputs.length,

@@ -1345,6 +1345,112 @@ test('developer Agent inputs select their packaging contract without product bui
   }
 })
 
+test('upstream renderer changes retain FieldScope render consumers without pure numerical profiles', () => {
+  const result = classifyChanges(
+    ['packages/render-engine-pixi/src/mesh-material-shader.ts'],
+    manifests
+  )
+  const owner = result.relationshipMap.workspaceMatrix.find(
+    (w) => w.name === '@asyra/fieldscope'
+  )
+  assert.equal(owner.testSelection.mode, 'files')
+  assert.ok(
+    !owner.profileSelection.files.includes(
+      'src/domain/__tests__/kinematic-trigonometry.profile.test.ts'
+    )
+  )
+  assert.ok(
+    !owner.profileSelection.files.includes(
+      'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+    )
+  )
+  assert.ok(
+    owner.profileSelection.files.includes(
+      'src/runtime/__tests__/bootstrap.profile.test.ts'
+    )
+  )
+  assert.equal(owner.e2eSelection.mode, 'full')
+})
+
+test('upstream validation-only inputs do not broaden unrelated runtime consumers', () => {
+  const runtime = 'packages/render-engine-pixi/src/mesh-material-shader.ts'
+  const validation = [
+    'packages/preset/coverage-flow-contracts.json',
+    'packages/preset/navigation-flow-contracts.json',
+    'packages/preset/src/__tests__/coverage-flow.config.ts',
+    'packages/preset/src/__tests__/vector-compound-fill.test.ts'
+  ]
+  const select = (paths) => classifyChanges(paths, manifests)
+  const fieldscope = (scope) =>
+    scope.relationshipMap.workspaceMatrix.find(
+      (owner) => owner.name === '@asyra/fieldscope'
+    )
+  const mixed = select([runtime, ...validation])
+  assert.deepEqual(
+    fieldscope(mixed).profileSelection,
+    fieldscope(select([runtime])).profileSelection
+  )
+  assert.deepEqual(
+    fieldscope(mixed).testSelection,
+    fieldscope(select([runtime])).testSelection
+  )
+  assert.ok(names(mixed).includes('@asyra/preset'))
+  const local = select(validation)
+  assert.ok(names(local).includes('@asyra/preset'))
+  assert.ok(!names(local).includes('@asyra/fieldscope'))
+  const unknown = fieldscope(
+    select([runtime, 'packages/preset/unknown-resource.json'])
+  )
+  assert.equal(unknown.testSelection.mode, 'full')
+})
+
+test('mixed material delivery retains shared spatial consumers without unrelated numerical profiles', () => {
+  const result = classifyChanges(
+    [
+      'packages/core/src/index.ts',
+      'packages/render-engine/src/capabilities.ts',
+      'packages/render-engine/src/index.ts',
+      'packages/render-engine/src/mesh-material.ts',
+      'packages/preset/src/components/vector.ts',
+      'packages/preset/src/components/vector-native-fill.ts',
+      'packages/preset/coverage-flow-contracts.json',
+      'packages/preset/navigation-flow-contracts.json',
+      'packages/preset/src/__tests__/vector-compound-fill.test.ts',
+      'packages/render-engine-pixi/src/mesh-material-shader.ts'
+    ],
+    manifests
+  )
+  const owner = result.relationshipMap.workspaceMatrix.find(
+    (entry) => entry.name === '@asyra/fieldscope'
+  )
+  assert.equal(owner.testSelection.mode, 'files')
+  assert.equal(
+    owner.profileSelection.reason,
+    'source-graph-with-conservative-edges'
+  )
+  assert.ok(
+    owner.profileSelection.files.includes(
+      'src/runtime/__tests__/bootstrap.profile.test.ts'
+    )
+  )
+  assert.ok(
+    owner.profileSelection.files.includes(
+      'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+    )
+  )
+  assert.ok(
+    !owner.profileSelection.files.includes(
+      'src/domain/__tests__/kinematic-trigonometry.profile.test.ts'
+    )
+  )
+  assert.ok(
+    !owner.profileSelection.files.includes(
+      'src/domain/__tests__/crop-models.source.profile.test.ts'
+    )
+  )
+  assert.equal(owner.e2eSelection.mode, 'full')
+})
+
 test('FieldScope uses exact supervised selections for ordinary tests and profiles', () => {
   const result = classifyChanges(
     ['apps/fieldscope/src/ui/walking-runtime-selector.tsx'],

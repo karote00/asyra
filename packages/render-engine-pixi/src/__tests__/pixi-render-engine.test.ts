@@ -76,6 +76,7 @@ interface MockMeshGeometryRecord {
   positionUpdate: MockFunction
   uvUpdate: MockFunction
   indexUpdate: MockFunction
+  batchMode: string
   destroy: MockFunction
 }
 
@@ -111,7 +112,8 @@ const pixiState = vi.hoisted(() => ({
   nextDestroyError: null as Error | null
 }))
 
-vi.mock('pixi.js', () => {
+vi.mock('pixi.js', async () => {
+  const actual = await vi.importActual<typeof import('pixi.js')>('pixi.js')
   class MockContainer {
     isRenderGroup = false
     readonly children: MockContainer[] = []
@@ -346,6 +348,7 @@ vi.mock('pixi.js', () => {
   }
 
   class MockMesh extends MockContainer {
+    onViewUpdate = vi.fn()
     tint = 0xffffff
     readonly geometry: MockMeshGeometry
 
@@ -491,6 +494,7 @@ vi.mock('pixi.js', () => {
   }
 
   return {
+    ...actual,
     Text: MockText,
     Application: MockApplication,
     CanvasSource: MockCanvasSource,
@@ -1634,7 +1638,7 @@ describe('PixiRenderEngine', () => {
       cursor: 'pointer',
       width: 20,
       height: 30,
-      batched: false
+      geometry: expect.objectContaining({ batchMode: 'no-batch' })
     })
   })
 

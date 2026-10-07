@@ -9,13 +9,13 @@ import {
 import type { FillAttrs, PositionData, StrokeAttrs } from '@asyra/utils'
 import core, {
   VECTOR_TOKENS,
+  RenderGraphics,
+  type MeshProjection,
+  type MeshProjectionPaint,
   isVectorAnchorNode as isAnchorNode,
-  isPointInsidePreparedEvenOddShape,
-  prepareEvenOddShape,
   sortVectorItemsById,
   type EvenOddSegment,
-  type EvenOddShape,
-  type PreparedEvenOddShape
+  type EvenOddShape
 } from '@asyra/core'
 import type {
   ComponentDefinition,
@@ -26,13 +26,11 @@ import type {
 } from '@asyra/core'
 import {
   DEFAULT_VECTOR_FILLS,
-  applyRenderableFill,
   getRenderableFill,
-  getRenderableFills
+  toMeshProjectionPaint
 } from './fills.js'
 import { PRESET_REGISTRATION } from '../registration.js'
 import { prepareVectorCompoundFill } from './vector-compound-fill.js'
-import { canUseNativeVectorFill } from './vector-native-fill.js'
 
 const emitVectorRenderCounter = emitDiagnosticCounter
 
@@ -175,25 +173,6 @@ export const getVectorRenderWorkspacePoint = (
     : null
 }
 
-interface FillFaceCache {
-  faces: Vec2[][]
-  segmentKeyMap?: Record<string, string>
-  segmentLinesMap?: Record<string, LineSegment[]>
-}
-
-interface EvenOddFillCache {
-  fill: { style: unknown; dispose: () => void } | null
-  width?: number
-  height?: number
-  fillId?: string
-  fillPayload?: FillAttrs[]
-  points?: Record<string, VectorPointNode>
-  segments?: Record<string, VectorSegment>
-  networks?: Record<string, VectorNetwork>
-  pointOffsetX?: number
-  pointOffsetY?: number
-}
-
 const getAnchorNode = (
   points: Record<string, VectorPointNode>,
   pointId: string | undefined
@@ -225,18 +204,6 @@ const getControlNode = (
 
   return point
 }
-
-const MIN_FLATTEN_STEPS = 12
-
-const MAX_FLATTEN_STEPS = 64
-
-const DEFAULT_FLATTEN_SEGMENT_LENGTH = 12
-
-const INTERSECTION_EPS = 1e-6
-
-const NODE_KEY_EPS = 1e-4
-
-const MAX_OPEN_SEGMENTS = 1200
 
 const MIN_VECTOR_RENDER_SIZE = 0.1
 
@@ -350,565 +317,6 @@ const calculateVectorLocalBounds = (
     width: bounds.maxX - bounds.minX || MIN_VECTOR_RENDER_SIZE,
     height: bounds.maxY - bounds.minY || MIN_VECTOR_RENDER_SIZE
   }
-}
-
-const estimateCurveLength = (p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2) =>
-  Math.hypot(p1.x - p0.x, p1.y - p0.y) +
-  Math.hypot(p2.x - p1.x, p2.y - p1.y) +
-  Math.hypot(p3.x - p2.x, p3.y - p2.y)
-
-const getFlattenStepsForTarget = (
-  p0: Vec2,
-  p1: Vec2,
-  p2: Vec2,
-  p3: Vec2,
-  targetSegmentLength: number,
-  minSteps: number,
-  maxSteps: number
-) => {
-  const length = estimateCurveLength(p0, p1, p2, p3)
-  const steps = Math.ceil(length / targetSegmentLength)
-  return Math.max(minSteps, Math.min(maxSteps, steps))
-}
-
-const getFlattenSteps = (p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2) =>
-  getFlattenStepsForTarget(
-    p0,
-    p1,
-    p2,
-    p3,
-    DEFAULT_FLATTEN_SEGMENT_LENGTH,
-    MIN_FLATTEN_STEPS,
-    MAX_FLATTEN_STEPS
-  )
-
-const toSegmentKeyCoord = (value: number | null | undefined) =>
-  value === null || value === undefined ? 'n' : `${value}`
-
-const buildSegmentKey = (
-  start: Vec2,
-  end: Vec2,
-  outControl: Vec2 | null,
-  inControl: Vec2 | null
-) =>
-  [
-    toSegmentKeyCoord(start.x),
-    toSegmentKeyCoord(start.y),
-    toSegmentKeyCoord(end.x),
-    toSegmentKeyCoord(end.y),
-    toSegmentKeyCoord(outControl?.x),
-    toSegmentKeyCoord(outControl?.y),
-    toSegmentKeyCoord(inControl?.x),
-    toSegmentKeyCoord(inControl?.y)
-  ].join('|')
-
-const polygonArea = (points: Vec2[]): number => {
-  if (points.length < 3) {
-    return 0
-  }
-
-  let area = 0
-  for (let i = 0; i < points.length; i += 1) {
-    const next = (i + 1) % points.length
-    area += points[i].x * points[next].y - points[next].x * points[i].y
-  }
-
-  return area / 2
-}
-
-const flattenCubic = (
-  p0: Vec2,
-  p1: Vec2,
-  p2: Vec2,
-  p3: Vec2,
-  steps: number
-) => {
-  const points: Vec2[] = [p0]
-  for (let i = 1; i <= steps; i += 1) {
-    const t = i / steps
-    points.push(cubicBezierPoint(p0, p1, p2, p3, t))
-  }
-  return points
-}
-
-const cross = (a: Vec2, b: Vec2) => a.x * b.y - a.y * b.x
-
-const segmentIntersection = (
-  a: Vec2,
-  b: Vec2,
-  c: Vec2,
-  d: Vec2
-): { t: number; u: number; point: Vec2 } | null => {
-  const r = { x: b.x - a.x, y: b.y - a.y }
-  const s = { x: d.x - c.x, y: d.y - c.y }
-  const denom = cross(r, s)
-  if (Math.abs(denom) <= INTERSECTION_EPS) {
-    return null
-  }
-
-  const cma = { x: c.x - a.x, y: c.y - a.y }
-  const t = cross(cma, s) / denom
-  const u = cross(cma, r) / denom
-  if (
-    t <= INTERSECTION_EPS ||
-    t >= 1 - INTERSECTION_EPS ||
-    u <= INTERSECTION_EPS ||
-    u >= 1 - INTERSECTION_EPS
-  ) {
-    return null
-  }
-
-  return {
-    t,
-    u,
-    point: {
-      x: a.x + r.x * t,
-      y: a.y + r.y * t
-    }
-  }
-}
-
-const uniqueSorted = (values: number[]) => {
-  const sorted = [...values].sort((a, b) => a - b)
-  const result: number[] = []
-  sorted.forEach((value) => {
-    const last = result[result.length - 1]
-    if (last === undefined || Math.abs(value - last) > INTERSECTION_EPS) {
-      result.push(value)
-    }
-  })
-  return result
-}
-
-const toNodeKey = (point: Vec2) =>
-  `${Math.round(point.x / NODE_KEY_EPS)},${Math.round(point.y / NODE_KEY_EPS)}`
-
-interface LineSegment {
-  start: Vec2
-  end: Vec2
-}
-
-const splitSegmentsByIntersections = (
-  segments: LineSegment[]
-): LineSegment[] => {
-  const splitParams = segments.map(() => [0, 1])
-  if (segments.length < 2) {
-    return segments
-  }
-
-  const bounds = segments.map((segment) => {
-    const minX = Math.min(segment.start.x, segment.end.x)
-    const maxX = Math.max(segment.start.x, segment.end.x)
-    const minY = Math.min(segment.start.y, segment.end.y)
-    const maxY = Math.max(segment.start.y, segment.end.y)
-    return { minX, maxX, minY, maxY }
-  })
-
-  const avgLength =
-    segments.reduce(
-      (sum, segment) =>
-        sum +
-        Math.hypot(
-          segment.end.x - segment.start.x,
-          segment.end.y - segment.start.y
-        ),
-      0
-    ) / segments.length
-  const cellSize = Math.max(12, Math.min(64, avgLength || 12))
-  const toCell = (value: number) => Math.floor(value / cellSize)
-  const cellMap = new Map<string, number[]>()
-
-  bounds.forEach((box, index) => {
-    const startX = toCell(box.minX)
-    const endX = toCell(box.maxX)
-    const startY = toCell(box.minY)
-    const endY = toCell(box.maxY)
-    for (let x = startX; x <= endX; x += 1) {
-      for (let y = startY; y <= endY; y += 1) {
-        const key = `${x},${y}`
-        const list = cellMap.get(key)
-        if (list) {
-          list.push(index)
-        } else {
-          cellMap.set(key, [index])
-        }
-      }
-    }
-  })
-
-  const seen = new Int32Array(segments.length)
-  let stamp = 0
-
-  for (let i = 0; i < segments.length; i += 1) {
-    stamp += 1
-    const candidateIndices: number[] = []
-    const box = bounds[i]
-    const startX = toCell(box.minX)
-    const endX = toCell(box.maxX)
-    const startY = toCell(box.minY)
-    const endY = toCell(box.maxY)
-    for (let x = startX; x <= endX; x += 1) {
-      for (let y = startY; y <= endY; y += 1) {
-        const list = cellMap.get(`${x},${y}`)
-        if (!list) {
-          continue
-        }
-        for (const j of list) {
-          if (j <= i) {
-            continue
-          }
-          if (seen[j] === stamp) {
-            continue
-          }
-          seen[j] = stamp
-          candidateIndices.push(j)
-        }
-      }
-    }
-
-    for (const j of candidateIndices) {
-      const other = bounds[j]
-      if (
-        box.maxX < other.minX - INTERSECTION_EPS ||
-        box.minX > other.maxX + INTERSECTION_EPS ||
-        box.maxY < other.minY - INTERSECTION_EPS ||
-        box.minY > other.maxY + INTERSECTION_EPS
-      ) {
-        continue
-      }
-      const hit = segmentIntersection(
-        segments[i].start,
-        segments[i].end,
-        segments[j].start,
-        segments[j].end
-      )
-      if (!hit) {
-        continue
-      }
-      splitParams[i].push(hit.t)
-      splitParams[j].push(hit.u)
-    }
-  }
-
-  const result: LineSegment[] = []
-  segments.forEach((segment, index) => {
-    const params = uniqueSorted(splitParams[index])
-    for (let i = 0; i < params.length - 1; i += 1) {
-      const t0 = params[i]
-      const t1 = params[i + 1]
-      if (t1 - t0 <= INTERSECTION_EPS) {
-        continue
-      }
-      const start = {
-        x: segment.start.x + (segment.end.x - segment.start.x) * t0,
-        y: segment.start.y + (segment.end.y - segment.start.y) * t0
-      }
-      const end = {
-        x: segment.start.x + (segment.end.x - segment.start.x) * t1,
-        y: segment.start.y + (segment.end.y - segment.start.y) * t1
-      }
-      if (Math.hypot(end.x - start.x, end.y - start.y) <= INTERSECTION_EPS) {
-        continue
-      }
-      result.push({ start, end })
-    }
-  })
-
-  return result
-}
-
-interface DirectedEdge {
-  from: number
-  to: number
-  angle: number
-  rev: number
-}
-
-interface DirectedSegment {
-  start: Vec2
-  end: Vec2
-}
-
-const buildFlattenedSegmentsWithCache = (
-  orderedNetworks: VectorNetwork[],
-  points: Record<string, VectorPointNode>,
-  segments: Record<string, VectorSegment>,
-  cache: Pick<FillFaceCache, 'segmentKeyMap' | 'segmentLinesMap'> | undefined,
-  pointOffset: PositionData
-) => {
-  const prevKeyMap = cache?.segmentKeyMap ?? {}
-  const prevLinesMap = cache?.segmentLinesMap ?? {}
-  const nextKeyMap: Record<string, string> = {}
-  const nextLinesMap: Record<string, LineSegment[]> = {}
-  const flattenedSegments: LineSegment[] = []
-
-  orderedNetworks.forEach((network) => {
-    network.segmentIds.forEach((segmentId) => {
-      const segment = segments[segmentId]
-      if (!segment) {
-        return
-      }
-
-      const start = getAnchorNode(points, segment.startId)
-      const end = getAnchorNode(points, segment.endId)
-      if (!start || !end) {
-        return
-      }
-
-      const outControl = getControlNode(points, segment.outControlId)
-      const inControl = getControlNode(points, segment.inControlId)
-      const startPos = {
-        x: start.x - pointOffset.x,
-        y: start.y - pointOffset.y
-      }
-      const endPos = {
-        x: end.x - pointOffset.x,
-        y: end.y - pointOffset.y
-      }
-      const outControlPos = outControl
-        ? {
-            x: outControl.x - pointOffset.x,
-            y: outControl.y - pointOffset.y
-          }
-        : null
-      const inControlPos = inControl
-        ? {
-            x: inControl.x - pointOffset.x,
-            y: inControl.y - pointOffset.y
-          }
-        : null
-      const key = buildSegmentKey(startPos, endPos, outControlPos, inControlPos)
-
-      let lines = prevLinesMap[segmentId]
-      if (!lines || prevKeyMap[segmentId] !== key) {
-        if (!outControlPos && !inControlPos) {
-          lines = [{ start: startPos, end: endPos }]
-        } else {
-          const p0 = startPos
-          const p1 = outControlPos ?? p0
-          const p3 = endPos
-          const p2 = inControlPos ?? p3
-          const pointsOnCurve = flattenCubic(
-            p0,
-            p1,
-            p2,
-            p3,
-            getFlattenSteps(p0, p1, p2, p3)
-          )
-          lines = []
-          for (let i = 0; i < pointsOnCurve.length - 1; i += 1) {
-            lines.push({
-              start: pointsOnCurve[i],
-              end: pointsOnCurve[i + 1]
-            })
-          }
-        }
-      }
-
-      if (!lines) {
-        return
-      }
-
-      nextKeyMap[segmentId] = key
-      nextLinesMap[segmentId] = lines
-      flattenedSegments.push(...lines)
-    })
-  })
-
-  const directedSegments: DirectedSegment[] = flattenedSegments
-
-  return {
-    flattenedSegments,
-    directedSegments,
-    segmentKeyMap: nextKeyMap,
-    segmentLinesMap: nextLinesMap
-  }
-}
-
-const polygonCentroid = (points: Vec2[]) => {
-  const area = polygonArea(points)
-  if (Math.abs(area) <= INTERSECTION_EPS) {
-    const sum = points.reduce(
-      (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
-      { x: 0, y: 0 }
-    )
-    return {
-      x: sum.x / points.length,
-      y: sum.y / points.length
-    }
-  }
-
-  let cx = 0
-  let cy = 0
-  for (let i = 0; i < points.length; i += 1) {
-    const next = (i + 1) % points.length
-    const crossValue =
-      points[i].x * points[next].y - points[next].x * points[i].y
-    cx += (points[i].x + points[next].x) * crossValue
-    cy += (points[i].y + points[next].y) * crossValue
-  }
-
-  const factor = 1 / (6 * area)
-  return { x: cx * factor, y: cy * factor }
-}
-
-const evenOddContains = (point: Vec2, segments: DirectedSegment[]) => {
-  let inside = false
-  const { x, y } = point
-
-  segments.forEach((segment) => {
-    const p1 = segment.start
-    const p2 = segment.end
-
-    if (p1.y > y === p2.y > y) {
-      return
-    }
-
-    const t = (y - p1.y) / (p2.y - p1.y)
-    if (t <= INTERSECTION_EPS || t >= 1 - INTERSECTION_EPS) {
-      return
-    }
-
-    const intersectX = p1.x + (p2.x - p1.x) * t
-    if (intersectX > x + INTERSECTION_EPS) {
-      inside = !inside
-    }
-  })
-
-  return inside
-}
-
-const buildFillFaces = (
-  flattenedSegments: LineSegment[],
-  directedSegments: DirectedSegment[]
-): Vec2[][] => {
-  if (flattenedSegments.length > MAX_OPEN_SEGMENTS) {
-    return []
-  }
-
-  const splitSegments = splitSegmentsByIntersections(flattenedSegments)
-  if (splitSegments.length === 0) {
-    return []
-  }
-
-  const nodes = new Map<string, number>()
-  const pointsList: Vec2[] = []
-  const getNodeId = (point: Vec2) => {
-    const key = toNodeKey(point)
-    const existing = nodes.get(key)
-    if (existing !== undefined) {
-      return existing
-    }
-    const id = pointsList.length
-    nodes.set(key, id)
-    pointsList.push(point)
-    return id
-  }
-
-  const edges: DirectedEdge[] = []
-  const adjacency: number[][] = []
-
-  const ensureAdj = (nodeId: number) => {
-    if (!adjacency[nodeId]) {
-      adjacency[nodeId] = []
-    }
-  }
-
-  splitSegments.forEach((segment) => {
-    const from = getNodeId(segment.start)
-    const to = getNodeId(segment.end)
-    if (from === to) {
-      return
-    }
-    const angleForward = Math.atan2(
-      segment.end.y - segment.start.y,
-      segment.end.x - segment.start.x
-    )
-    const angleBackward = Math.atan2(
-      segment.start.y - segment.end.y,
-      segment.start.x - segment.end.x
-    )
-    const forwardIndex = edges.length
-    const backwardIndex = edges.length + 1
-    edges.push({
-      from,
-      to,
-      angle: angleForward,
-      rev: backwardIndex
-    })
-    edges.push({
-      from: to,
-      to: from,
-      angle: angleBackward,
-      rev: forwardIndex
-    })
-    ensureAdj(from)
-    ensureAdj(to)
-    adjacency[from].push(forwardIndex)
-    adjacency[to].push(backwardIndex)
-  })
-
-  adjacency.forEach((edgeIds) => {
-    edgeIds.sort((a, b) => edges[a].angle - edges[b].angle)
-  })
-
-  const visited = new Array(edges.length).fill(false)
-  const faces: Vec2[][] = []
-
-  for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex += 1) {
-    if (visited[edgeIndex]) {
-      continue
-    }
-
-    const face: Vec2[] = []
-    let currentEdge = edgeIndex
-    let guard = 0
-
-    while (!visited[currentEdge] && guard < edges.length * 2) {
-      guard += 1
-      visited[currentEdge] = true
-      const edge = edges[currentEdge]
-      face.push(pointsList[edge.from])
-
-      const outgoing = adjacency[edge.to] ?? []
-      if (outgoing.length === 0) {
-        break
-      }
-      const revIndex = outgoing.indexOf(edge.rev)
-      if (revIndex === -1) {
-        break
-      }
-      const nextIndex = (revIndex - 1 + outgoing.length) % outgoing.length
-      currentEdge = outgoing[nextIndex]
-      if (currentEdge === edgeIndex) {
-        break
-      }
-    }
-
-    if (face.length < 3) {
-      continue
-    }
-
-    const area = polygonArea(face)
-    if (Math.abs(area) <= INTERSECTION_EPS) {
-      continue
-    }
-
-    faces.push(face)
-  }
-
-  if (faces.length === 0) {
-    return []
-  }
-
-  if (directedSegments.length === 0) {
-    return []
-  }
-
-  return faces.filter((face) => {
-    const centroid = polygonCentroid(face)
-    return evenOddContains(centroid, directedSegments)
-  })
 }
 
 const buildEvenOddShape = (
@@ -1061,25 +469,6 @@ const drawVectorPath = (
   )
 }
 
-const drawFillFaces = (
-  graphic: Parameters<EngineNeutralRenderStrategy>[0],
-  faces: Vec2[][]
-) => {
-  faces.forEach((face) => {
-    if (face.length < 3) {
-      return
-    }
-    graphic.moveTo(face[0].x, face[0].y)
-    for (let i = 1; i < face.length; i += 1) {
-      graphic.lineTo(face[i].x, face[i].y)
-    }
-    graphic.closePath()
-  })
-}
-
-const getFillPayload = (fills: FillAttrs[]): FillAttrs[] =>
-  Array.isArray(fills) && fills.length > 0 ? fills : []
-
 const applyBaseVectorStroke = (
   graphic: Parameters<EngineNeutralRenderStrategy>[0],
   strokes: StrokeAttrs[],
@@ -1106,287 +495,129 @@ const applyBaseVectorStroke = (
   }
 }
 
-interface VectorFillHitCache {
-  preparedFillShape: PreparedEvenOddShape
-  points: Record<string, VectorPointNode>
-  segments: Record<string, VectorSegment>
-  networks: Record<string, VectorNetwork>
-  pointOffsetX: number
-  pointOffsetY: number
-  hasVisibleFill: boolean
-  hitArea: { contains: (x: number, y: number) => boolean }
+interface VectorFillProjection {
+  points: VectorComputedData['points']
+  segments: VectorComputedData['segments']
+  networks: VectorComputedData['networks']
+  fillRule: VectorComputedData['fillRule']
+  orderedNetworks: VectorNetwork[]
+  bounds: ReturnType<typeof calculateVectorLocalBounds>
+  coverage: ReturnType<typeof prepareVectorCompoundFill>
+  projection: MeshProjection
+  fills: FillAttrs[]
+  paint: MeshProjectionPaint
+  stroke?: RenderGraphics
 }
+
+const vectorFillProjections = new WeakMap<object, VectorFillProjection>()
 
 const renderVectorGraphic = (
   graphic: Parameters<EngineNeutralRenderStrategy>[0],
   data: unknown
 ): void => {
   const renderData = normalizeVectorRenderData(data)
-  const cache = graphic as typeof graphic & {
-    __vectorFillCache?: FillFaceCache
-    __evenOddFillCache?: EvenOddFillCache
-    __vectorFillHitCache?: VectorFillHitCache
+  const { points, segments, networks, fillRule, fills } = renderData
+  let state = vectorFillProjections.get(graphic)
+  const geometryChanged =
+    !state ||
+    state.points !== points ||
+    state.segments !== segments ||
+    state.networks !== networks ||
+    state.fillRule !== fillRule
+  const orderedNetworks =
+    state && !geometryChanged
+      ? state.orderedNetworks
+      : sortVectorItemsById(Object.values(networks))
+  const bounds =
+    state && !geometryChanged
+      ? state.bounds
+      : calculateVectorLocalBounds(points, segments, orderedNetworks)
+  const pointOffset = { x: bounds.x, y: bounds.y }
+  const paint =
+    state?.fills === fills ? state.paint : toMeshProjectionPaint(fills)
+  const hasPaint = paint.kind === 'solid' || paint.material.fills.length > 0
+  const coverage =
+    state && !geometryChanged
+      ? state.coverage
+      : prepareVectorCompoundFill(
+          buildEvenOddShape(orderedNetworks, points, segments, pointOffset),
+          fillRule
+        )
+  const model = {
+    polygons: coverage.faces,
+    bounds: { minX: 0, minY: 0, maxX: bounds.width, maxY: bounds.height }
   }
-
+  if (!state) {
+    state = {
+      points,
+      segments,
+      networks,
+      fillRule,
+      orderedNetworks,
+      bounds,
+      coverage,
+      fills,
+      paint,
+      projection: core.createMeshProjection({ model, paint })
+    }
+    state.projection.attach(graphic)
+    vectorFillProjections.set(graphic, state)
+  } else {
+    if (geometryChanged) state.projection.update({ model, paint })
+    else if (state.paint !== paint) state.projection.updatePaint(paint)
+    Object.assign(state, {
+      points,
+      segments,
+      networks,
+      fillRule,
+      orderedNetworks,
+      bounds,
+      coverage,
+      fills,
+      paint
+    })
+  }
   graphic.clear()
-  ;(graphic as { hitArea: unknown | null }).hitArea = null
-  setElementGeometryLocalBounds(
-    graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
-    null
-  )
-
-  const renderStateGraphic = graphic as typeof graphic & {
-    geometry?: { clear?: () => void }
-    batched?: boolean
-    _transform?: { updateLocalTransform?: () => void }
-  }
-  renderStateGraphic.geometry?.clear?.()
-  renderStateGraphic.batched = true
-  renderStateGraphic._transform?.updateLocalTransform?.()
-
-  const {
-    fills,
-    x,
-    y,
-    points,
-    segments,
-    networks,
-    rotation,
-    scaleX,
-    scaleY,
-    skewX,
-    skewY
-  } = renderData
-  const orderedNetworks = sortVectorItemsById(Object.values(networks))
-  const workspaceGeometryBounds = calculateVectorLocalBounds(
-    points,
-    segments,
-    orderedNetworks
-  )
-  const pointOffset = {
-    x: workspaceGeometryBounds.x,
-    y: workspaceGeometryBounds.y
-  }
+  graphic.batched = true
+  graphic.hitArea = hasPaint ? { contains: coverage.contains } : null
+  state.projection.setVisible(coverage.faces.length > 0 && hasPaint)
   graphic.setSourceSpaceOrigin(pointOffset)
   vectorRenderGeometryProjectionCache.set(graphic, {
     workspaceOrigin: pointOffset
   })
-
-  graphic.x = x
-  graphic.y = y
-  graphic.rotation = rotation
   setElementGeometryLocalBounds(
     graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
-    {
-      x: 0,
-      y: 0,
-      width: workspaceGeometryBounds.width,
-      height: workspaceGeometryBounds.height
-    }
+    { x: 0, y: 0, width: bounds.width, height: bounds.height }
   )
+  graphic.x = renderData.x
+  graphic.y = renderData.y
+  graphic.rotation = renderData.rotation
   graphic.width = renderData.width
   graphic.height = renderData.height
-  graphic.scale.set(scaleX, scaleY)
-  graphic.skew.set(skewX, skewY)
+  graphic.scale.set(renderData.scaleX, renderData.scaleY)
+  graphic.skew.set(renderData.skewX, renderData.skewY)
 
-  if (orderedNetworks.length === 0) {
-    return
-  }
-
-  const fillPayload = getFillPayload(fills)
-  const hasRenderableFill = getRenderableFills(fillPayload).length > 0
-  const hasClosedNetwork =
-    renderData.closed === true ||
-    orderedNetworks.some(
-      (network) => network.closed && network.pointIds.length > 2
-    )
-  const shape = buildEvenOddShape(
-    orderedNetworks,
-    points,
-    segments,
-    pointOffset
-  )
-
-  const compoundFill =
-    hasRenderableFill &&
-    renderData.fillRule === 'nonzero' &&
-    hasClosedNetwork &&
-    shape.paths.length > 1 &&
-    !fillPayload.some((fill) => fill.kind === 'gradient')
-      ? prepareVectorCompoundFill(shape)
-      : undefined
-
-  if (compoundFill) {
-    cache.__vectorFillHitCache = undefined
-    ;(
-      graphic as { hitArea: { contains: (x: number, y: number) => boolean } }
-    ).hitArea = {
-      contains: compoundFill.contains
-    }
-  } else if (hasRenderableFill) {
-    const preparedFillShape = prepareEvenOddShape(shape)
-    const hitCache = cache.__vectorFillHitCache
-    const reuseHitArea =
-      hitCache?.points === points &&
-      hitCache.segments === segments &&
-      hitCache.networks === networks &&
-      hitCache.pointOffsetX === pointOffset.x &&
-      hitCache.pointOffsetY === pointOffset.y &&
-      hitCache.hasVisibleFill === true
-    const hitArea = reuseHitArea
-      ? hitCache.hitArea
-      : {
-          contains: (hitX: number, hitY: number) =>
-            isPointInsidePreparedEvenOddShape(
-              { x: hitX, y: hitY },
-              preparedFillShape
-            )
-        }
-    cache.__vectorFillHitCache = {
-      preparedFillShape,
-      points,
-      segments,
-      networks,
-      pointOffsetX: pointOffset.x,
-      pointOffsetY: pointOffset.y,
-      hasVisibleFill: true,
-      hitArea
-    }
-    ;(graphic as { hitArea: typeof hitArea }).hitArea = hitArea
-  } else {
-    cache.__vectorFillHitCache = undefined
-  }
-
-  if (fillPayload.length === 0) {
-    if (cache.__evenOddFillCache?.fill) {
-      cache.__evenOddFillCache.fill.dispose()
-      cache.__evenOddFillCache = undefined
-    }
+  // Unfilled paths keep their ordinary graphics path. A filled path's stroke
+  // is a later child, above its mesh; material changes cannot reverse order.
+  const hasFill = hasPaint && coverage.faces.length > 0
+  if (!hasFill)
     applyBaseVectorStroke(graphic, renderData.strokes ?? [], () =>
       drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
     )
-    return
+  if (hasFill && renderData.strokes?.length && !state.stroke) {
+    state.stroke = new RenderGraphics()
+    graphic.addChild(state.stroke)
   }
-
-  const hasGradient = fillPayload.some((fill) => fill.kind === 'gradient')
-  let previewFill = false
-  const nativeFill =
-    hasClosedNetwork &&
-    workspaceGeometryBounds.width === renderData.width &&
-    workspaceGeometryBounds.height === renderData.height &&
-    canUseNativeVectorFill(shape, fillPayload)
-  if (nativeFill) {
-    cache.__evenOddFillCache?.fill?.dispose()
-    cache.__evenOddFillCache = undefined
-    drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
-    applyRenderableFill(graphic as { fill: unknown }, fillPayload)
-  } else if (hasGradient) {
-    const evenOddCache = cache.__evenOddFillCache ?? { fill: null }
-    const reuseEvenOddFill =
-      evenOddCache.fill &&
-      evenOddCache.width === renderData.width &&
-      evenOddCache.height === renderData.height &&
-      evenOddCache.fillPayload === fillPayload &&
-      evenOddCache.points === points &&
-      evenOddCache.segments === segments &&
-      evenOddCache.networks === networks &&
-      evenOddCache.pointOffsetX === pointOffset.x &&
-      evenOddCache.pointOffsetY === pointOffset.y
-
-    if (!reuseEvenOddFill) {
-      evenOddCache.fill?.dispose()
-      evenOddCache.fill = core.createEvenOddFillStyle({
-        width: renderData.width,
-        height: renderData.height,
-        offsetX: 0,
-        offsetY: 0,
-        shape,
-        fills: fillPayload
-      })
-      evenOddCache.width = renderData.width
-      evenOddCache.height = renderData.height
-      evenOddCache.fillPayload = fillPayload
-      evenOddCache.points = points
-      evenOddCache.segments = segments
-      evenOddCache.networks = networks
-      evenOddCache.pointOffsetX = pointOffset.x
-      evenOddCache.pointOffsetY = pointOffset.y
-    }
-    cache.__evenOddFillCache = evenOddCache
-
-    if (evenOddCache.fill) {
-      graphic.rect(0, 0, renderData.width, renderData.height)
-      ;(graphic as { fill: (style: unknown) => void }).fill(
-        evenOddCache.fill.style
+  if (state.stroke) {
+    const stroke = state.stroke
+    stroke.clear()
+    stroke.visible =
+      hasFill && orderedNetworks.length > 0 && !!renderData.strokes?.length
+    if (stroke.visible)
+      applyBaseVectorStroke(stroke, renderData.strokes ?? [], () =>
+        drawVectorPath(stroke, orderedNetworks, points, segments, pointOffset)
       )
-    } else if (hasClosedNetwork) {
-      previewFill = true
-    }
-  } else {
-    cache.__evenOddFillCache?.fill?.dispose()
-    cache.__evenOddFillCache = undefined
-    if (compoundFill) {
-      cache.__vectorFillCache = undefined
-      drawFillFaces(graphic, compoundFill.faces)
-      if (compoundFill.faces.length > 0) {
-        applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
-          replayPath: () => drawFillFaces(graphic, compoundFill.faces)
-        })
-      }
-    } else if (renderData.fillRule === 'nonzero' && hasClosedNetwork) {
-      cache.__vectorFillCache = undefined
-      drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
-      applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
-        replayPath: () =>
-          drawVectorPath(
-            graphic,
-            orderedNetworks,
-            points,
-            segments,
-            pointOffset
-          )
-      })
-    } else {
-      const fillCache = cache.__vectorFillCache ?? { faces: [] }
-      const {
-        flattenedSegments,
-        directedSegments,
-        segmentKeyMap,
-        segmentLinesMap
-      } = buildFlattenedSegmentsWithCache(
-        orderedNetworks,
-        points,
-        segments,
-        fillCache,
-        pointOffset
-      )
-      const fillFaces = buildFillFaces(flattenedSegments, directedSegments)
-      fillCache.faces = fillFaces
-      fillCache.segmentKeyMap = segmentKeyMap
-      fillCache.segmentLinesMap = segmentLinesMap
-      cache.__vectorFillCache = fillCache
-
-      if (fillFaces.length > 0) {
-        drawFillFaces(graphic, fillFaces)
-        applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
-          replayPath: () => drawFillFaces(graphic, fillFaces)
-        })
-      } else if (hasClosedNetwork) {
-        previewFill = true
-      }
-    }
   }
-
-  if (previewFill) {
-    applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
-      replayPath: () =>
-        drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
-    })
-  }
-
-  applyBaseVectorStroke(graphic, renderData.strokes ?? [], () =>
-    drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
-  )
 }
 
 export const VECTOR_RENDER_STRATEGY: EngineNeutralRenderStrategy =
