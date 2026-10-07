@@ -2,6 +2,17 @@
 
 2026-10-04: all seven appearance categories and four transparent single-unit corrections are approved. Specification version 2.1.0. Each placeable unit is independent; paint is completely separate from receiving road surfaces. This delivery contains drawings and reconstruction documents, not built or verified 3D models.
 
+## Asset classification
+
+Follow the [shared asset types](../ASSET-TYPES.md). The asphalt tile is a model
+component; asphalt is its independent default material recipe. Straight edge
+lines, curved edge lines, short dashes and crosswalk stripes are **decal
+components**, each with its own dimensions, contour, alpha mask and pigment
+material. No marking includes receiving geometry or physical thickness.
+
+This classification preserves the existing identifiers, parameters and approval
+states; it does not create a runtime decal system or finish the current review.
+
 ## Modeling inputs
 
 1. [Reconstruction specification and unit table](STREET-SUPPLEMENT.md): read order, origins, structure, and acceptance criteria.

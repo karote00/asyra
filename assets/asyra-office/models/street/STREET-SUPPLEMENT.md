@@ -33,6 +33,15 @@ Seven categories contain eleven basic units. Categories, presentation boards, an
 
 The app chooses counts, arrangement, spacing, rotation, receiving surfaces, and foundations. Do not fix five stripes into a crosswalk or combine a row of lights or an L-shaped pavement into a basic unit. A manhole cover/frame and a lantern pole/head are named structural parts of their respective placeable units.
 
+## Asset types
+
+The asphalt tile is a model component with a separately replaceable material.
+The four independently placeable paint units below are decal components, not
+thin solid boxes and not complete road materials. Their pigment is a material
+input; their dimensions, outline and alpha mask belong to each decal unit.
+See the [classification](../ASSET-TYPES.md) for reviewed-component mappings.
+Existing numeric identifiers and geometry remain unchanged.
+
 ## Paint is completely independent of its receiving surface
 
 Paint contains only its own colour, contour, and alpha. Transparency must expose the actual surface beneath it; grey pixels must not simulate wear. Include no asphalt backing, stone texture, receiving material, shadows, or fixed base. The app may place markings on asphalt, red brick, stone slabs, or other materials.

@@ -55,6 +55,15 @@ fraction of that band. It is pigment and never follows the light direction.
 
 ## Paint masks
 
+These masks belong to independent decal components. Ochre or ivory is the
+default pigment material, separately replaceable from the receiving surface.
+Colour/material overrides must retain the decal contour, physical dimensions
+and alpha-mask coverage, including transparent wear. A material override must
+not turn a masked marking into an opaque rectangular patch. No backing mesh
+or receiving-surface pixels belong to this material. See the
+[shared classification](../ASSET-TYPES.md).
+
+
 Paint has uniform intrinsic ochre or ivory pigment, not asphalt grain.
 Use the dot algorithm only to cut transparent wear holes. Outside the marking
 and in wear holes, alpha=0 and RGB=0; opaque pixels retain pigment RGB. Use
