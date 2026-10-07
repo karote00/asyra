@@ -418,6 +418,8 @@
             0.05
           ],
           "bevelMetres": 0.004,
+          "bevelScope": "all outer edges, inward within unchanged overall bounds",
+          "material": "stone-cream",
           "materialOptions": [
             "stone-cream",
             "stone-pale",

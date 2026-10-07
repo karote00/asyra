@@ -25,6 +25,15 @@ A crosswalk unit is one stripe; a road line is one segment; a tree is one tree; 
 
 Dimensions are production decisions, not image measurements. Generated view labels and perspective do not override geometry specifications. No model comparison has been performed, so no 100% pixel or unknown-model reconstruction is claimed.
 
+## Paving stone review inputs
+
+- [Single-unit multiview sheet](review/04-paving-stone-single-v1.png): one paving stone, dimensions and default colour; approved on 2026-10-07.
+- [Annotated paving layout](review/04-pavement-layout-v3.png): arrangement example, not one model; annotation revision approved on 2026-10-07.
+
+Read these with the [single-stone specification](STREET-SUPPLEMENT.md#paving-stone---single-model-component).
+The foundation, layout, quantity and curbs are not included in the stone unit.
+This update does not approve new curb drawings or produce models.
+
 ## Historical material
 
 `orthoviews/`, `street-stage-02-review.png`, v1 images, and v3 images with road backing remain historical records only. Old road corners, fixed crosswalk arrays, spherical canopies, side-arm lanterns, and fixed pavement assemblies are no longer production specifications. Do not build new models from old sheets.

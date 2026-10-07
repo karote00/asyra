@@ -7,10 +7,17 @@
 - [Asphalt](01-asphalt-v2.png): one unmarked surface tile.
 - [Road-marking appearance](02-road-markings-v2.png): historical colour reference; approved v4 units take precedence.
 - [Crosswalk appearance](03-zebra-crossing-v2.png): historical white-paint reference; approved v4 stripe takes precedence.
-- [Pavement and curb appearance](04-pavement-curb-v2.png): laying-style reference; each block remains independent.
+- [Pavement layout - annotated assembly reference](04-pavement-layout-v3.png): not a single component; annotation revision approved on 2026-10-07.
+- [Paving stone - one independent unit](04-paving-stone-single-v1.png): six-view sheet, 0.60 x 0.30 x 0.05 m; approved on 2026-10-07.
+- [Original pavement and curb appearance](04-pavement-curb-v2.png): retained approved laying-style evidence; not unit geometry.
 - [Round manhole](05-manhole-cover-v2.png): one cover/frame assembly.
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
+
+The paving stone's smooth review fill shows geometry, not final surface finish.
+Future replaceable stone materials may supply grain, roughness and micro-normal
+or bump detail. These are not yet authored; the current geometry and defaults
+remain unchanged. See the [surface-detail note](../SURFACE-RECIPES.md#paving-stone-surface-detail-note).
 
 ## Path-marking presets and the rectangular crosswalk decal
 
@@ -35,6 +42,8 @@ No redraw or production texture generation accompanies this classification.
 See parent specifications for dimensions, origins, unit counts, and hidden structure. Do not bake cast shadows, AO, reflections, or glow into materials. Transparent wear reveals arbitrary ground rather than grey simulated asphalt. Views are concept drawings, not calibrated projections with verified consistency.
 
 ## Sources
+
+- [Single paving stone and layout annotation prompts](PAVING-STONE-PROMPTS.md)
 
 - [Original approved scene](approved-office-reference.jpg)
 - [Initial generation record](PROMPTS.md)
