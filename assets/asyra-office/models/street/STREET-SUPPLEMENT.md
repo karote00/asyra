@@ -2,7 +2,7 @@
 
 After approving the v2 appearance on 2026-10-04, the user added two overriding rules: define each component as one placeable unit, and keep every road line and crosswalk stripe independent of asphalt or any other receiving surface. This delivery contains drawings and documents; no 3D models were built or verified.
 
-The user also approved the four transparent v4 single-unit images. The specification is now 2.1.0. Approval covers appearance and unit definitions; the following numbers and methods are production decisions derived from those approvals.
+The user also approved the four transparent v4 single-unit images. The specification is now 2.2.0. Road-line production follows the 2026-10-07 [path-marking decision](PATH-MARKINGS.md). Approval covers appearance and unit definitions; the following numbers and methods are production decisions derived from those approvals.
 
 ## Data authority
 
@@ -15,14 +15,14 @@ The v2 sheets establish appearance; dimensions are authored production decisions
 
 ## One unit
 
-Seven categories contain eleven basic units. Categories, presentation boards, and assembly examples are not inventory units.
+Seven categories retain eleven unit/preset entries, including three presets of one path-marking family. These are not eleven mandatory fixed meshes. Categories, presentation boards, and assembly examples are not inventory units.
 
 | Category | One placeable unit | Dimensions (metres) |
 | --- | --- | --- |
 | Asphalt | One unmarked surface tile | X 6 × Y 4 × thickness 0.08 |
-| Road marking | One straight edge line | length 1 × width 0.10, zero thickness |
-| Road marking | One curved edge line | centre radius 1.05, width 0.10, 90-degree arc, zero thickness |
-| Road marking | One short dash | length 0.60 × width 0.12, zero thickness |
+| Path-marking preset | Straight edge line | length 1 × width 0.10, zero thickness |
+| Path-marking preset | Curved edge line | centre radius 1.05, width 0.10, 90-degree arc, zero thickness |
+| Path-marking preset | Short dash | length 0.60 × width 0.12, zero thickness |
 | Crosswalk | One white stripe | X 0.40 × Y 2.80, zero thickness |
 | Pavement and curb | One paving slab | X 0.60 × Y 0.30 × height 0.05 |
 | Pavement and curb | One straight curb block | X 0.30 × Y 0.16 × height 0.12 |
@@ -36,9 +36,10 @@ The app chooses counts, arrangement, spacing, rotation, receiving surfaces, and 
 ## Asset types
 
 The asphalt tile is a model component with a separately replaceable material.
-The four independently placeable paint units below are decal components, not
-thin solid boxes and not complete road materials. Their pigment is a material
-input; their dimensions, outline and alpha mask belong to each decal unit.
+The three road-line entries are independently placeable presets of one path-marking
+decal family; the crosswalk stripe is a rectangular decal. They are not thin
+solid boxes or complete road materials. Shared paint supplies pigment; a path
+and width generate a road-line contour. See [path markings](PATH-MARKINGS.md).
 See the [classification](../ASSET-TYPES.md) for reviewed-component mappings.
 Existing numeric identifiers and geometry remain unchanged.
 
@@ -106,7 +107,7 @@ the authored geometry. Road markings remain independent units.
 
 ### Road and crosswalk markings
 
-Straight edge lines and dashes extend symmetrically along X. The curve is a planar annular sector with radii 1.00–1.10 m, angles 180–270 degrees, and 32 segments. Each is independent. A crosswalk stripe is 0.40 × 2.80 m, long axis Y; traffic travels along Y and pedestrians cross along X, subject to app rotation. Do not fix total crossing width, repetition count, or spacing. Wear becomes alpha holes, not road-coloured dots. Maximum inward long-edge perturbation is 0.003 m.
+Default straight and dash paths extend symmetrically along X. The default curve footprint is a planar annular sector with radii 1.00–1.10 m, angles 180–270 degrees, and 32 segments. These are path presets sharing paint, not separate authored fixed meshes or shape-specific textures. A crosswalk stripe is 0.40 × 2.80 m, long axis Y; traffic travels along Y and pedestrians cross along X, subject to app rotation. Do not fix total crossing width, repetition count, or spacing. Wear becomes alpha holes, not road-coloured dots. Maximum inward long-edge perturbation is 0.003 m.
 
 ### Pavement and curb
 

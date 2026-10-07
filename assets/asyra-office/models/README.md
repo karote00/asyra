@@ -13,8 +13,9 @@ All listed batches have user approval for their drawings and documentation. **No
 Use the [asset type classification](ASSET-TYPES.md) alongside the existing
 scene-category catalog. Model components own geometry; material assets own
 replaceable surface recipes and texture inputs; decal components own independent
-surface markings, dimensions and alpha masks. Road lines and crosswalk stripes
-are decal components. Floor planks and asphalt tiles remain model components;
+surface markings, dimensions and alpha masks. Road lines are [path-marking presets](street/PATH-MARKINGS.md) that share paint
+and generate their contour from path and width; crosswalk stripes remain
+rectangular decal components. Floor planks and asphalt tiles remain model components;
 their wood/asphalt appearances are independent material assets.
 
 The classification includes the already reviewed architectural and railing
@@ -116,7 +117,7 @@ Every row has approved drawings/documents; model construction and verification r
 
 | Batch | Current sheets | Reconstruction documents |
 | --- | --- | --- |
-| Asyra Office - Street Components - Group 2 | [Asphalt](street/review/01-asphalt-v2.png)<br>[Pavement and curb appearance](street/review/04-pavement-curb-v2.png)<br>[Round manhole](street/review/05-manhole-cover-v2.png)<br>[Street tree](street/review/06-street-tree-v2.png)<br>[Street lantern](street/review/07-street-lantern-v2.png)<br>[One straight edge line](street/review/02-road-line-single-v4.png)<br>[One curved edge line](street/review/02-road-curve-single-v4.png)<br>[One short dash](street/review/02-road-dash-single-v4.png)<br>[One crosswalk stripe](street/review/03-crossing-single-v4.png) | [Overview](street/README.md), [gallery](street/review/README.md), [geometry](street/STREET-SUPPLEMENT.md), [numbers](street/street-model-spec.json), [surfaces](street/SURFACE-RECIPES.md) |
+| Asyra Office - Street Components - Group 2 | [Asphalt](street/review/01-asphalt-v2.png)<br>[Pavement and curb appearance](street/review/04-pavement-curb-v2.png)<br>[Round manhole](street/review/05-manhole-cover-v2.png)<br>[Street tree](street/review/06-street-tree-v2.png)<br>[Street lantern](street/review/07-street-lantern-v2.png)<br>[Straight path preset](street/review/02-road-line-single-v4.png)<br>[Arc path preset](street/review/02-road-curve-single-v4.png)<br>[Short path preset](street/review/02-road-dash-single-v4.png)<br>[One crosswalk stripe](street/review/03-crossing-single-v4.png) | [Overview](street/README.md), [gallery](street/review/README.md), [geometry](street/STREET-SUPPLEMENT.md), [numbers](street/street-model-spec.json), [surfaces](street/SURFACE-RECIPES.md) |
 | Asyra Office - Group 4N - Street Sign and Bollard | [Street sign](street-details/review/01-street-sign-v1.png)<br>[Roadside bollard](street-details/review/02-roadside-bollard-v1.png) | [Overview](street-details/README.md), [gallery](street-details/review/README.md), [geometry](street-details/GEOMETRY-SUPPLEMENT.md), [numbers](street-details/street-details-model-spec.json), [surfaces](street-details/SURFACE-RECIPES.md) |
 | Group 2C - Red Clay Paver | [Red clay paver - multiple views](clay-paving/review/01-red-clay-paver-v1.png) | [Overview](clay-paving/README.md), [gallery](clay-paving/review/README.md), [geometry](clay-paving/GEOMETRY-SUPPLEMENT.md), [numbers](clay-paving/clay-paving-model-spec.json), [surfaces](clay-paving/SURFACE-RECIPES.md) |
 | Asyra Office - Group 2B - Garden Masonry | [Masonry block](garden-masonry/review/01-masonry-block-v1.png)<br>[Wall coping slab](garden-masonry/review/02-wall-coping-v1.png) | [Overview](garden-masonry/README.md), [gallery](garden-masonry/review/README.md), [geometry](garden-masonry/GEOMETRY-SUPPLEMENT.md), [numbers](garden-masonry/garden-masonry-model-spec.json), [surfaces](garden-masonry/SURFACE-RECIPES.md) |

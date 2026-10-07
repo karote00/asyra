@@ -1,5 +1,5 @@
 {
-  "specVersion": "2.1.0",
+  "specVersion": "2.2.0",
   "scope": "seven approved street component designs; documentation only",
   "approval": {
     "date": "2026-10-04",
@@ -200,7 +200,7 @@
     },
     {
       "moduleId": "road-marking-segments",
-      "name": "Road markings - independent segments",
+      "name": "Road markings - shared paint with path presets",
       "approvedDrawing": "review/02-road-line-single-v4.png",
       "origin": "each straight piece at centre; curved piece at arc centre; all on Z=0",
       "pieces": [
@@ -338,10 +338,10 @@
         "surfaceMaterialOwner": "future app; material-agnostic",
         "reviewProjection": "top only; no thickness or road slab needed for side views",
         "materialAlphaSource": "marking mask; overrides materialConvention.alpha=1",
-        "sourcePNGRole": "approved appearance reference; not dimensionally calibrated production texture",
+        "sourcePNGRole": "appearance reference only; not a seamless shared paint texture or a production mask for arbitrary paths",
         "lightingContent": "no lights, emission, shadow, AO, ground fill or halo in production texture"
       },
-      "drawingInterpretation": "The v4 transparent single-unit drawings are approved appearance references. Use one independently placeable piece; no receiving material. Numeric local dimensions remain authoritative.",
+      "drawingInterpretation": "The three pieces are independently placeable path presets sharing paint, not separate fixed mesh or shape-specific material deliverables. Existing dimensions are preset defaults. See PATH-MARKINGS.md for path, width, contour and material ownership. v4 images remain appearance examples; no receiving material is included.",
       "singleUnitDrawing": "review/02-road-line-single-v4.png",
       "inventoryUnitsPerPiece": 1,
       "combinedKitMesh": false
