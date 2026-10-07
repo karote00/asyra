@@ -482,6 +482,82 @@ describe('Preset Selection Subscriptions', () => {
     }
   })
 
+  it.each([EntityTypes.GROUP, EntityTypes.FRAME, 'custom-container'])(
+    'projects all canonical descendants of a loaded %s container',
+    (type) => {
+      const core = {
+        getSelection: () => undefined,
+        registerDataChannelObserver: vi.fn(),
+        unregisterDataChannelObserver: vi.fn()
+      } as unknown as PresetCoreAPIs
+      const rows = [
+        {
+          id: 'workspace',
+          type: EntityTypes.WORKSPACE,
+          children: ['outer', 'sibling']
+        },
+        { id: 'outer', type, parentId: 'workspace', children: ['nested'] },
+        { id: 'nested', type, parentId: 'outer', children: ['leaf'] },
+        { id: 'leaf', type: VECTOR_TYPE, parentId: 'nested' },
+        { id: 'sibling', type: VECTOR_TYPE, parentId: 'workspace' }
+      ]
+      const elements = new Map(
+        rows.map((data) => [
+          data.id,
+          {
+            get: (key: string) => data[key as keyof typeof data],
+            save: vi.fn(() => data)
+          }
+        ])
+      )
+      const dependencies = {
+        ...createDeps(),
+        sceneTree: {
+          ...createDeps().sceneTree,
+          currentWorkspace: elements.get('workspace'),
+          getElementById: (id: string) => elements.get(id),
+          getAllElements: () => elements
+        }
+      } as unknown as PresetDependencies
+      propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+      propertyRegistry.register('elementDataMap', { defaultValue: {} })
+      const dispose = registerDefaultDataChannelObservers(
+        core,
+        dependencies,
+        undefined,
+        { uiContext: true }
+      )
+      try {
+        // The event subject may replay the preceding load at registration.
+        elements.forEach((element) => element.save.mockClear())
+        publishEventsToObservers([{ type: EventTypes.FILE_LOAD_COMPLETE }])
+        expect(uiContext.get('flattenedElementIds')).toEqual([
+          'outer',
+          'nested',
+          'leaf',
+          'sibling'
+        ])
+        expect(
+          Object.keys(
+            uiContext.get<Record<string, unknown>>('elementDataMap') ?? {}
+          )
+        ).toEqual(['outer', 'nested', 'leaf', 'sibling'])
+        // Each owner traverses once; pointer movement never rebuilds this index.
+        expect(elements.get('leaf')?.save).toHaveBeenCalledTimes(2)
+        rows[0].children = []
+        for (const id of ['outer', 'nested', 'leaf', 'sibling'])
+          elements.delete(id)
+        publishEventsToObservers([{ type: EventTypes.FILE_LOAD_COMPLETE }])
+        expect(uiContext.get('flattenedElementIds')).toEqual([])
+        expect(uiContext.get('elementDataMap')).toEqual({})
+      } finally {
+        dispose()
+        propertyRegistry.unregister('flattenedElementIds')
+        propertyRegistry.unregister('elementDataMap')
+      }
+    }
+  )
+
   it('propagates a file-load Render rebuild failure to the lifecycle caller', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {

@@ -608,8 +608,10 @@ const collectChildrenIds = (
   ids.push(elementId)
   const elementData = element.save() as GroupRawData
 
-  if (elementData.type === EntityTypes.GROUP) {
-    const children = elementData.children ?? []
+  // Loaded canonical child lists also belong to Frame and registered containers.
+  // Match the incremental projection instead of using a component-name filter.
+  if (Array.isArray(elementData.children)) {
+    const children = elementData.children
     children.forEach((childId: string) => {
       collectChildrenIds(deps, childId, ids)
     })

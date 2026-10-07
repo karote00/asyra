@@ -561,3 +561,60 @@ material test and this plan; all 25 selected profiles are contained in that run'
 30-file passing receipt. Preserve that run's failed aggregate as historical
 evidence, rather than rewriting it green. Full functional and render-contract
 replacement runs and the final routing gates establish the current local result.
+
+## Post-load canvas selection regression
+
+User report: loaded elements are visible but cannot be selected on the canvas.
+Bounded correction follows canonical saved data → scene projection → engine hit
+query → ordinary pointer selection. Preserve the full 101 document, mesh
+materials, transforms, holes, painter order and load performance. No AI flow,
+selection policy redesign, schema migration or unrelated CI changes.
+
+First execution card: `orchestrate-render-adapter` and its downstream
+`execute-render-engine` hit-query handoff (render-engine-boundary Inspector).
+Readiness references: Render Runtime Contracts and Pixi Runtime Contracts
+`query(...)`, plus this plan's existing edit/load preservation acceptance.
+Inputs are registered local strategy geometry and ordinary pointer coordinates;
+outputs are exact opaque hit targets resolved to the authored element ID.
+Render owns neutral property delivery; only Pixi adapter interprets SDK objects.
+Absent paint/hole/outside points must not become a bounding-box hit. No
+app-specific geometry, stored-data mutation or Pixi imports in Render/App.
+First segment is formal browser regression in the existing vector gradient
+product case, through save/load and actual click; follow with the failing owner
+unit gate before modifying that owner's allowlisted source. Then exact mapping,
+replacement/removal, transforms and full 101 replay are the bounded review.
+Stop if evidence requires a different product policy; no approximation fallback.
+
+Confirmed owner revision: real 101 socket load returns valid mesh hit IDs, but
+click selection stays empty. The file's root is Frame; the full-load UI index
+walks descendants only for the literal Group type, unlike ordinary batch
+projection which follows canonical child lists. The material/hitArea lead is
+not required to fix this report and remains outside this correction.
+
+Execution card: `project-render-state` in the canonical-projection-and-
+collaboration-contract Inspector, Preset UI-context projection section. Input:
+validated current Scene Tree after FILE_LOAD_COMPLETE. Output: complete ordered
+flattened IDs and the matching element map. Reuse canonical container `children`
+data, as the incremental projection already does, without a type-name allowlist
+or a second registry. No new cache or document writes; one walk per load and
+no extra full traversal for ordinary changes. Boundary: Preset data-channel
+subscription, its formal tests and current Preset contract. Failure owner is
+this projection, not renderer or app selection. Gates: failing mixed-container
+file-load projection unit case, existing batch work-count/invalidation suite,
+real 101 socket-load/click and small vector save/load selection. Preserve
+empty-workspace handling, sibling order and successor-document replacement.
+
+Post-load correction evidence: the new full-document test failed before the fix
+with real mesh hits but zero selected elements. The owner unit cases failed for
+Frame and a custom container while Group passed. Following canonical children
+fixes both without changing authored data or the renderer. Preset's full 208
+tests pass, including existing batch work-count/invalidation gates. Browser
+coverage now saves/loads a Frame with four gradient vectors, selects the Frame
+normally and each vector with the ordinary modifier gesture, then retains the
+existing fill Undo/Redo pixel checks. The real 101 load/click test passes and
+its selected-frame screenshot was inspected. It retains 18,287 elements,
+381,294 properties and the exact canonical digest
+`0b5773e3d2127cb50870376dd754deb82441bd15294935403e41c09bc861877e`.
+Local load observation was 11.10 seconds with zero CPU raster allocations;
+this is not a timing acceptance threshold. Evidence is under
+`tmp/document-load/ci-298/selection-*`. Original user storage was untouched.

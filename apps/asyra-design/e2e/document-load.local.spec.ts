@@ -143,6 +143,44 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       (await import('../src/common-apis/viewport')).viewportApis.zoomFit()
     )
     await page.screenshot({ path: info.outputPath('loaded.png') })
+    const hits = await page.evaluate(async () => {
+      const { core } = await import('../src/testing/runtime-access')
+      const bounds = core.getAllElementsBounds()
+      if (!bounds) throw new Error('Document bounds missing')
+      const samples = []
+      for (const y of [0.25, 0.5, 0.75]) {
+        for (const x of [0.4, 0.5, 0.6]) {
+          const point = core.workspaceToCanvas({
+            x: bounds.minX + (bounds.maxX - bounds.minX) * x,
+            y: bounds.minY + (bounds.maxY - bounds.minY) * y
+          })
+          samples.push({ point, hit: core.getElementIdAtClientPos(point) })
+        }
+      }
+      return samples
+    })
+    await writeFile(
+      info.outputPath('selection.json'),
+      JSON.stringify(hits, null, 2)
+    )
+    const target = hits.find((sample) => sample.hit)
+    expect(
+      target,
+      'visible tower must expose a selectable target'
+    ).toBeDefined()
+    const canvas = await page.locator('canvas').first().boundingBox()
+    if (!canvas || !target) throw new Error('Missing selectable canvas target')
+    await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y)
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { core } = await import('../src/testing/runtime-access')
+          return core.getSelectedElementIds().length
+        })
+      )
+      .toBeGreaterThan(0)
+    await page.screenshot({ path: info.outputPath('loaded-selected.png') })
+
     for (const fraction of [0.15, 0.5, 0.85]) {
       await page.evaluate(async (fraction) => {
         const { core } = await import('../src/testing/runtime-access')

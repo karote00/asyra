@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "06b07dabb0e134e69bf0dc6d7b1beef1468d838bf2ec5d2bca08243faef24e6e"
+          "sha256": "8a84d4e4092e561520cd5eca11c3ace7e2546bd17ab2d1d19684d83606c294bb"
         }
       ]
     },
@@ -438,7 +438,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "06b07dabb0e134e69bf0dc6d7b1beef1468d838bf2ec5d2bca08243faef24e6e"
+          "sha256": "8a84d4e4092e561520cd5eca11c3ace7e2546bd17ab2d1d19684d83606c294bb"
         },
         {
           "path": "packages/preset/package.json",

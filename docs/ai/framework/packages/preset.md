@@ -198,7 +198,10 @@ recovery policy.
   affected entries and hierarchy order, display-property changes replace only
   affected entries without rebuilding flattened hierarchy, and unrelated
   geometry changes do not republish either projection. Validated file load
-  remains the sole full canonical refresh. These values are App-facing
+  remains the sole full canonical refresh; its depth-first index follows each
+  canonical child list regardless of container type (including Frame and custom
+  containers), preserving the same descendants and order as incremental updates.
+  These values are App-facing
   projections only and never validate, repair, reorder, or become a second
   canonical hierarchy.
 
