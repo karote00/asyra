@@ -178,9 +178,10 @@ The JSON retains their names and checking dimensions; no runtime API or
 persisted model migration is implemented by this documentation change.
 
 The [straight sheet](review/04-curb-straight-single-v1.png) remains illustrative,
-not calibrated. Reference image: none for the shared cross-section and curved
-path example. Use PLANAR-CURBS.md and the numeric specification. A section
-drawing and consistent generated examples have not yet been produced.
+not calibrated. The [shared section drawing](review/04-curb-shared-section-v1.png)
+was approved on 2026-10-07 and is schematic, not a scale drawing. Use PLANAR-CURBS.md
+and numeric dimensions. Separate straight/curved multiview sheets are not
+required for this path-generated family.
 
 ### Round manhole
 

@@ -32,7 +32,7 @@ Dimensions are production decisions, not image measurements. Generated view labe
 
 Read these with the [single-stone specification](STREET-SUPPLEMENT.md#paving-stone---single-model-component).
 The foundation, layout, quantity and curbs are not included in the stone unit.
-This update does not approve new curb drawings or produce models.
+The paving-stone update does not itself approve curb drawings or produce models; the subsequent shared-section approval is recorded below.
 
 ## Historical material
 
@@ -42,5 +42,5 @@ This update does not approve new curb drawings or produce models.
 
 Straight and curved curbs now share a section swept along a planar path.
 See [the shared section and path presets](PLANAR-CURBS.md). Existing preset
-dimensions remain, while both use the shared 0.008 m bevel. Reference image:
-none for the shared cross-section and curved path example. This is documentation only.
+dimensions remain, while both use the shared 0.008 m bevel. The [shared section drawing](review/04-curb-shared-section-v1.png) was approved on 2026-10-07 and is schematic, not calibrated. Separate straight/curved model sheets
+are not required; paths generate their geometry. This is documentation only.

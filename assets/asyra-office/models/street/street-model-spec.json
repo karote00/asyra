@@ -429,6 +429,7 @@
         },
         {
           "partId": "curb-straight",
+          "singleUnitDrawing": "review/04-curb-shared-section-v1.png",
           "origin": "bottom face centre",
           "sizeMetres": [
             0.3,
@@ -447,6 +448,7 @@
         },
         {
           "partId": "curb-curved",
+          "singleUnitDrawing": "review/04-curb-shared-section-v1.png",
           "origin": "arc centre at bottom Z=0",
           "centreMetres": [
             0,

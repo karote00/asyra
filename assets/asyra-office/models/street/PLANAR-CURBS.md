@@ -1,7 +1,7 @@
 # Planar Curbs - Shared Section and Path Presets
 
-Status: Design specification following the user's planar-only decision.
-No generator, model, runtime API or visual acceptance is delivered here.
+Status: The user approved the shared section drawing on 2026-10-07.
+Approval covers this section design, not a generated model or runtime API.
 
 ## Ownership and coordinates
 
@@ -78,7 +78,57 @@ stretch when path length changes. Production maps and UV packing are not authore
 Path sampling and LoD may change tessellation, never section dimensions or path
 parameters. Future implementation must define and validate error budgets before
 selecting runtime LoD counts. No runtime performance claim is made here.
-Review the shared section first, then consistent straight and circular examples,
-including caps, endpoint bevels, width preservation and rejected invalid paths.
-Reference image: none for the shared cross-section and curved path example.
-Use this specification until a new reference has been drawn and reviewed.
+Review the [shared section drawing](review/04-curb-shared-section-v1.png) first.
+The user approved this single sheet on 2026-10-07. It marks the 160 x 120 mm section, four 8 mm
+corner offsets and bottom-centre path origin. The raster is schematic, not
+calibrated: its displayed width/height ratio is not exactly 4:3. Numeric
+coordinates govern construction, not image measurements. At the top-right
+corner the two-segment profile runs through (u,v)=(72,120),
+(77.656854,117.656854), (80,112) mm; mirror about u=0 and v=60 mm for
+other corners. These coordinates describe the existing circular profile,
+not a change to dimensions.
+
+## Exact section outline and drawing interpretation
+
+Use millimetres in the following table, convert once to metres for modeling.
+The twelve vertices are ordered clockwise in the displayed u-right/v-up plane;
+close vertex 12 to vertex 1. Correct face winding for the sweep and each cap
+so normals point outward; this list is not a universal triangle winding order.
+
+| Vertex | u (mm) | v (mm) |
+| --- | --- | --- |
+| 1 | -72 | 120 |
+| 2 | 72 | 120 |
+| 3 | 77.656854 | 117.656854 |
+| 4 | 80 | 112 |
+| 5 | 80 | 8 |
+| 6 | 77.656854 | 2.343146 |
+| 7 | 72 | 0 |
+| 8 | -72 | 0 |
+| 9 | -77.656854 | 2.343146 |
+| 10 | -80 | 8 |
+| 11 | -80 | 112 |
+| 12 | -77.656854 | 117.656854 |
+
+The intermediate offsets are 8/sqrt(2) mm from each corner-profile centre;
+use that formula rather than rounding coordinates before mesh generation.
+Straight top/bottom spans are 144 mm; straight left/right spans are 104 mm.
+Each corner consists of two facets. It is not a single diagonal chamfer or
+an unspecified smooth arc. The four corners share one profile, reflected
+symmetrically; no corner is authored independently.
+
+The blue dot and coordinate arrows are annotations, not model geometry.
+The dot marks the bottom midpoint, not the area centre at (u,v)=(0,60 mm).
+Local u follows the path's horizontal normal; local v follows world +Z.
+Do not treat v as the path plane's global Y or rotate the section flat into XY.
+The shown section describes an interior slice normal to the path tangent;
+end-cap edge treatment is separate and must not shrink every sample ring.
+No duplicate cap or shell is added to the section. Its nominal height includes
+all section geometry; there is no additional base layer.
+
+This drawing is the sole shared-section review reference. The older straight
+multiview sheet remains an optional preset illustration, not a competing
+cross-section definition. Separate straight and curved multiview reference
+sheets are not required: the app generates their shapes from this section and
+planar paths. Future generated models still require validation of caps,
+endpoint bevels, width preservation and invalid-path handling.

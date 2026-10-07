@@ -11,7 +11,7 @@
 - [Paving stone - one independent unit](04-paving-stone-single-v1.png): six-view sheet, 0.60 x 0.30 x 0.05 m; approved on 2026-10-07.
 - Original pavement and curb appearance - reference image: none (obsolete image removed): retained approved laying-style evidence; not unit geometry.
 - [Straight curb - one independent unit](04-curb-straight-single-v1.png): 0.30 x 0.16 x 0.12 m; specification reviewed on 2026-10-07. Illustrative, not calibrated; see [review limitations](CURB-STRAIGHT-PROMPTS.md#initial-review).
-- Curved curb and shared cross-section - reference image: none. Use the [construction specification](../PLANAR-CURBS.md).
+- [Shared curb cross-section](04-curb-shared-section-v1.png) - user-approved on 2026-10-07; schematic, not calibrated. Straight and curved paths are program-generated; separate multiview sheets are not required. See [construction specification](../PLANAR-CURBS.md).
 - [Round manhole](05-manhole-cover-v2.png): one cover/frame assembly.
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
