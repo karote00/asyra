@@ -162,7 +162,29 @@ For aligned placement, centre spacing is 0.60 m plus the selected X gap and
 Rotation, staggering, counts, base elevation and supporting foundation are
 app-owned. Do not distort a brick to fill a leftover boundary. Arbitrary edge
 cutting or additional edge-shaped pieces require separate specifications.
-The existing straight and curved curbs remain separate later review items.
+Straight and curved curbs are separate model components.
+
+### Straight curb - single model component
+
+The [single-unit sheet](review/04-curb-straight-single-v1.png) illustrates one
+closed rectangular block. It is not calibrated: view proportions differ and
+the three-quarter bottom bevel is unclear. Numeric dimensions govern modeling;
+this document review does not certify the raster as an exact geometric drawing.
+
+Dimensions remain X=0.30, Y=0.16, Z=0.12 m. Origin is the bottom face centre;
+bounds are (-0.15,-0.08,0) to (0.15,0.08,0.12). Bevel all outer edges inward
+by 0.008 m with two segments while preserving those bounds. Top and bottom
+remain planar away from edge relief. Use a closed mesh with outward normals,
+without a cap, step, groove, foundation, mortar or adjoining stones.
+
+Default material is stone-grey, sRGB #C9C4B9, roughness 0.90, metallic 0.
+Colour and material are independently replaceable without changing geometry;
+stone-cream and stone-pale remain alternatives. Drawing outlines, shading and
+face-tone differences must not be baked into material maps.
+
+The app owns count, rotation, elevation and arrangement. For an aligned row,
+centre spacing along X is 0.30 m plus the chosen gap. Bevel relief remains at
+zero gap. This unit is not stretched into a curve or an arbitrary corner.
 
 ### Round manhole
 

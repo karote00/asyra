@@ -436,6 +436,8 @@
             0.12
           ],
           "bevelMetres": 0.008,
+          "bevelScope": "all outer edges, inward within unchanged overall bounds",
+          "material": "stone-grey",
           "materialOptions": [
             "stone-grey",
             "stone-cream",

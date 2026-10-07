@@ -10,6 +10,7 @@
 - [Pavement layout - annotated assembly reference](04-pavement-layout-v3.png): not a single component; annotation revision approved on 2026-10-07.
 - [Paving stone - one independent unit](04-paving-stone-single-v1.png): six-view sheet, 0.60 x 0.30 x 0.05 m; approved on 2026-10-07.
 - [Original pavement and curb appearance](04-pavement-curb-v2.png): retained approved laying-style evidence; not unit geometry.
+- [Straight curb - one independent unit](04-curb-straight-single-v1.png): 0.30 x 0.16 x 0.12 m; specification reviewed on 2026-10-07. Illustrative, not calibrated; see [review limitations](CURB-STRAIGHT-PROMPTS.md#initial-review).
 - [Round manhole](05-manhole-cover-v2.png): one cover/frame assembly.
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
