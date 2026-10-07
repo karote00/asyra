@@ -282,7 +282,7 @@ Revised - authorized for commit.
 
 Revised - authorized for commit.
 
-![05-manhole-cover-v2](street/review/05-manhole-cover-v2.png)
+[05-manhole-cover-v2](street/review/05-manhole-cover-v2.png)
 
 ### 06-street-tree-v2
 

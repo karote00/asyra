@@ -12,7 +12,8 @@
 - Original pavement and curb appearance - reference image: none (obsolete image removed): retained approved laying-style evidence; not unit geometry.
 - [Straight curb - one independent unit](04-curb-straight-single-v1.png): 0.30 x 0.16 x 0.12 m; specification reviewed on 2026-10-07. Illustrative, not calibrated; see [review limitations](CURB-STRAIGHT-PROMPTS.md#initial-review).
 - [Shared curb cross-section](04-curb-shared-section-v1.png) - user-approved on 2026-10-07; schematic, not calibrated. Straight and curved paths are program-generated; separate multiview sheets are not required. See [construction specification](../PLANAR-CURBS.md).
-- [Round manhole](05-manhole-cover-v2.png): one cover/frame assembly.
+- [Round manhole](05-manhole-cover-v2.png): original reference retained unchanged; magnified review confirms six slots in both upper views. Raised/flat ring topology and cover/frame separation are now user-confirmed; numeric relief dimensions are now specified, with image-derived estimates distinguished from authored height/edge decisions. See [review findings](05-manhole-review.md).
+- [Manhole - dimensioned reference sheet](05-manhole-dimensioned-v2.png): current handoff with accepted dimensions and topology; final annotation layout user-approved on 2026-10-07. Annotated v1 remains historical approval evidence; original v2 remains the appearance source.
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
 

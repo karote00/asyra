@@ -185,7 +185,124 @@ required for this path-generated family.
 
 ### Round manhole
 
-Frame radii 0.29–0.33 m; cover radius 0.286 m leaves a 0.004 m gap. Cover top is 0.001 m below frame top. Close the underside. Circular grooves have radii 0.065, 0.10, 0.14, 0.265 m, width 0.003 m, depth 0.0015 m. Six capsule-shaped blind slots lie at centre radius 0.21 m, starting at 30 degrees and spaced 60 degrees apart; each is 0.055 long, 0.013 wide, 0.002 m deep, aligned radially. Add no text, handles, or screws. The future receiving ground needs a diameter 0.66, depth 0.026 m opening; do not stack the cover on an uncut solid road. Ground cutting and opening interaction are not implemented here.
+The [dimensioned reference sheet](review/05-manhole-dimensioned-v2.png) contains
+the centre-outward legend and a radial half-section between the six recesses.
+The user approved the earlier annotation topology and subsequently accepted the
+numeric specification on 2026-10-07. This updated sheet synchronizes those
+values; the user approved this final dimensioned sheet on 2026-10-07. The original v2 remains
+the unchanged appearance source, and annotated v1 is historical evidence.
+The bottom section depicts C raised, 1 flat, 2 raised, 3 flat, 4 raised, then
+the outer base field, an open gap and the separate frame. C is not ring 1.
+The dashed baseline represents the upper surfaces of rings 1/3 and the outer
+field; it is not the cover underside. The drawing is schematic, not to scale.
+Its symbolic slopes, heights and band widths are not numeric geometry. The
+current sheet replaces the former TBD labels with the accepted dimensions.
+The common 1 mm rise is an accepted modeling decision, not a height measured
+from the source image.
+The section passes between slots, so slots are not cut into this section.
+Retain the independent cover and frame outlines; no supporting bridge is shown.
+
+The [original reference](review/05-manhole-cover-v2.png) remains unchanged.
+Magnified review on 2026-10-07 confirms six slots in both TOP and THREE-QUARTER.
+The earlier four-slot finding was incorrect and is withdrawn; it is not a
+reason to redraw or delete this sheet. FRONT is elevated, not a true eye-level
+orthographic projection. See the [review findings](review/05-manhole-review.md)
+for the user-confirmed ring topology and dimension provenance. Existing outer
+dimensions remain authored decisions; the new ring radii use approximate image
+proportions. Height and hidden geometry are explicitly specified below.
+
+One placeable assembly contains two separately closed solids: an annular frame
+and a circular cover. Origin is the centre of the frame top at road Z=0.
+Frame radii are 0.29 to 0.33 m, spanning Z=-0.026 to 0. Cover radius is
+0.286 m; its base body spans Z=-0.021 to -0.001. Thus the diameter is 0.66 m,
+frame height 0.026 m, base-body thickness 0.020 m, radial clearance 0.004 m
+(diametral clearance 0.008 m), and base-plane recess 0.001 m. Raised details
+rise 0.001 m above that base plane to Z=0, flush with the frame top. The cover
+maximum thickness is 0.021 m and the final assembly envelope remains
+X/Y=-0.33 to +0.33 m, Z=-0.026 to 0 m.
+These are nominal pre-bevel dimensions. Seal each solid's underside separately;
+do not bridge the annular clearance with a shared bottom face. No supporting
+ledge is specified or implied. The user confirmed that cover and outer frame
+are separable: maintain independent meshes/transforms with no shared vertices,
+welded ring, connecting bottom face or geometry filling the clearance. The
+4 mm radial gap is real empty space, not a painted dark line; bevels may widen
+its mouth. Moving the cover must leave the frame intact. No hinge, latch,
+opening animation or physical support is specified or implemented.
+
+Bevel the frame's four circular boundary edges by 0.0015 m and the cover's
+top/bottom outer perimeter by 0.001 m, inward surface offset, two segments,
+circular profile 0.5. Do not expand nominal envelopes or bevel tessellation
+seams. Relief edges use the separate 0.0002 m definition below; slot edges
+remain sharp. There are no narrow annular grooves.
+
+The user confirmed the following radial order on 2026-10-07. The central disk
+is not counted as ring 1; count annular bands outward from that disk.
+
+All table values are millimetres. Radii are measured from the common axis;
+heights are relative to the road/frame top at Z=0, before edge bevels.
+
+| Region, centre outward | Inner radius | Outer radius | Radial width | Top Z |
+| --- | --- | --- | --- | --- |
+| Central disk | 0 | 45 | 45 | 0 |
+| Ring 1 | 45 | 70 | 25 | -1 |
+| Ring 2 | 70 | 90 | 20 | 0 |
+| Ring 3 | 90 | 125 | 35 | -1 |
+| Ring 4 | 125 | 160 | 35 | 0 |
+| Outer field carrying six slots | 160 | 286 | 126 | -1 |
+| Empty annular gap | 286 | 290 | 4 | No surface |
+| Separate frame | 290 | 330 | 40 | 0 |
+
+Flat bands are not blind circular grooves. Raised bands and the central disk
+are relief on the same cover, not loose stacked objects. The former four
+3 mm-wide circular grooves and their radii/depth are withdrawn. Do not reuse
+their centreline radii as ring boundaries. Preserve the original image.
+
+**Dimension derivation and authority:** use the original TOP view, not the
+regenerated annotation, for proportions. Approximate original-pixel centre is
+(1161,326); horizontal outer radius is about 235 px. Calibrating this to the
+existing 330 mm outer radius gives approximately 1.40 mm/px. The five central
+boundary radii are approximately 32,50,65,88,113 px, yielding roughly
+45,70,91,124,159 mm. Freeze these to 45,70,90,125,160 mm respectively for the
+model. These are visually estimated contours, not sub-pixel measurements or
+manufacturing tolerances. Texture, strokes and the slightly elliptical TOP
+projection limit precision. The drawing is illustrative: do not independently
+rescale its apparent gap or outer frame to override the existing 286/290/330 mm
+radii. The 4 mm gap is the numeric fit check, not proof of every image dimension.
+
+Common rise is fixed to 1 mm for C/2/4 so all raised surfaces reach the road
+plane without changing the assembly height. This height, the existing underside
+and recess depths, and the edge treatment are authored construction decisions;
+a single TOP image cannot determine them uniquely. The user accepted these
+previously proposed numeric choices on 2026-10-07 and requested synchronized
+documents and reference annotations. Acceptance fixes the construction contract;
+it does not turn estimates into measured source dimensions.
+
+At each listed relief boundary, use a vertical 1 mm step, then bevel only its
+convex upper circular edge by 0.2 mm inward surface offset, two segments,
+profile 0.5. Keep concave feet sharp and never lower the base plane to form a
+groove. This produces 0.8 mm of straight vertical step below the bevel.
+Do not bevel tessellation seams. The table specifies nominal pre-bevel boundaries;
+the 0.2 mm rounding stays within the raised solid. Raised plateaus remain at
+Z=0; low bands remain at Z=-1 mm. JSON boundary pairs follow the table order
+through the outer field; the frame is defined separately.
+
+Six blind capsule recesses have centres at radius 0.21 m and angles
+30,90,150,210,270,330 degrees counterclockwise from +X. Their long axes
+are radial. Total end-to-end length is 0.055 m, width 0.013 m, semicircle
+radius 0.0065 m, and straight middle length 0.042 m. Vertical sides meet a
+flat bottom at Z=-0.003: depth 0.002 m below the cover base plane. These are not
+through-holes. Their radial extents are 0.1825 to 0.2375 m; the fourth raised
+ring ends at 0.160 m, leaving 0.0225 m to the nearest slot end. Remaining
+base-body thickness below slots is 0.018 m. No text, handles, screws or extra holes are specified.
+
+Frame and cover default to iron, sRGB #49433F, roughness 0.65, metallic 0.55.
+The existing edge-wear recipe uses iron-worn, #726456, roughness 0.72,
+metallic 0.45. Both colour and material are replaceable independently of
+geometry; no shading or surface grain creates additional recesses.
+
+The app owns a receiving-ground cutout of radius 0.33 m and depth 0.026 m,
+with the frame top flush to the road. Do not place the unit atop an uncut road.
+Cutting, receiving-ground appearance and interactions are not implemented here.
 
 ### Street tree
 
