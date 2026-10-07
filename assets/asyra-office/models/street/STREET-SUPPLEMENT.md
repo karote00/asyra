@@ -75,7 +75,25 @@ Retain metre scale and apply scaling. Do not automatically recenter to bounding-
 
 ### Asphalt
 
-Closed box. Bevel vertical outer corners and bottom edges by 0.003 m with two segments. Keep the top boundary straight for planar tiling. No preset bend, paint, or manhole opening. Use JSON fine-grain texture.
+Closed box, 6 x 4 x 0.08 m, with origin at the top centre. Bevel only the
+four bottom perimeter edges at Z=-0.08 by 0.003 m with two segments. Exclude
+all top and vertical edges from bevel selection. Bottom corner blends must
+remain within Z=-0.08..-0.077; the remainder of each vertical corner stays
+sharp. Preserve the full rectangular top boundary X=-3..3, Y=-2..2 at Z=0.
+The bevel must not change the outer bounds or cut gaps into the top corners.
+
+For an aligned grid, translate origins by 6 m along X or 4 m along Y. Adjacent
+top edges meet without gaps or overlap; bottom-edge relief is intentional.
+No preset bend, paint, or manhole opening is included. Use the JSON fine-grain
+recipe only as the default appearance, not as geometric bumps or displacement.
+
+Default colour is sRGB #55545D, roughness 0.94 and metallic 0. Colour and the
+entire material, including its grain texture, must be independently
+replaceable through future creation parameters without changing bounds,
+origin, bevel or another instance. A colour-only override changes the base
+tint; a material override replaces the asphalt recipe rather than adding
+asphalt grain on top of the replacement. Material overrides must preserve
+the authored geometry. Road markings remain independent units.
 
 ### Road and crosswalk markings
 

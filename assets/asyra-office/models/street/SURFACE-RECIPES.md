@@ -3,6 +3,21 @@
 Authoring recipes only; no executable models. Dimensions and seeds are in
 street-model-spec.json. All color variation is intrinsic pigment, never lighting.
 
+## Asphalt default and overrides
+
+For `road-asphalt-straight`, the default is sRGB #55545D, roughness 0.94 and
+metallic 0, matching the JSON asphalt material. The grain and macro variation
+below are default appearance recipes only. They do not create geometric
+bumps, normals or displacement, and are not baked into the mesh.
+
+Future creation parameters must allow a base-colour override or replacement
+of the complete material independently of geometry. A complete material
+replacement disables the default asphalt grain and macro recipe. Overrides
+must not change dimensions, origin, bottom bevel, tiling boundaries or other
+instances. Scene lighting and independently placed markings remain separate.
+The current reference image is unchanged and illustrates the default surface;
+it is not a production texture to be stretched over the mesh.
+
 ## Random sequence
 
 Use unsigned 32-bit integer state initialized to the listed seed. Each sample:
