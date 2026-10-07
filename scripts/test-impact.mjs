@@ -50,13 +50,18 @@ export function selectTestImpact(
       )
   )
   const app = path.resolve(root, directory)
-  const files = discover(path.join(app, 'src')).filter((file) =>
-    code.test(file)
+  const targetFiles = new Set(
+    (upstream.targets ?? []).map(({ file }) => path.resolve(app, file))
   )
-  const tests = files.filter(
-    (file) =>
-      file.includes(`${path.sep}__tests__${path.sep}`) && testFile.test(file)
+  const files = discover(path.join(app, 'src')).filter(
+    (file) => code.test(file) && !targetFiles.has(file)
   )
+  const tests =
+    upstream.targets?.map(({ file }) => path.resolve(app, file)) ??
+    files.filter(
+      (file) =>
+        file.includes(`${path.sep}__tests__${path.sep}`) && testFile.test(file)
+    )
   const relative = (file) => path.relative(app, file).split(path.sep).join('/')
   const result = (selected, reason) => ({
     ordinary: selected
@@ -106,8 +111,29 @@ export function selectTestImpact(
   const runtimeDependents = new Map()
   let parsedFiles = 0
   const uncertain = new Set()
-  const pendingFiles = [...files]
-  const discovered = new Set(files)
+  for (const target of upstream.targets ?? []) {
+    const test = path.resolve(app, target.file)
+    for (const input of target.inputs) {
+      const source = path.resolve(app, input)
+      if (!fs.existsSync(source)) uncertain.add(test)
+      for (const edges of [dependents, runtimeDependents]) {
+        if (!edges.has(source)) edges.set(source, new Set())
+        edges.get(source).add(test)
+      }
+    }
+    if (!target.inputs.length) uncertain.add(test)
+  }
+  const pendingFiles = [
+    ...new Set([
+      ...files,
+      ...(upstream.targets ?? []).flatMap(({ inputs }) =>
+        inputs
+          .map((input) => path.resolve(app, input))
+          .filter((file) => fs.existsSync(file))
+      )
+    ])
+  ]
+  const discovered = new Set(pendingFiles)
   const resolveWorkspace = createWorkspaceSourceResolver(root, workspaces, ts)
   const resolve = (from, specifier) => {
     const base = path.resolve(path.dirname(from), specifier)
@@ -127,6 +153,24 @@ export function selectTestImpact(
     return candidates.find(
       (file) => fs.existsSync(file) && fs.statSync(file).isFile()
     )
+  }
+  const erasedTypeImports = new Map()
+  const erasesNamedTypes = (file) => {
+    const configPath = ts.findConfigFile(path.dirname(file), ts.sys.fileExists)
+    if (!configPath) return true
+    if (!erasedTypeImports.has(configPath)) {
+      const config = ts.readConfigFile(configPath, ts.sys.readFile)
+      const options = config.config?.compilerOptions ?? {}
+      erasedTypeImports.set(
+        configPath,
+        !config.error &&
+          !config.config?.extends &&
+          !options.verbatimModuleSyntax &&
+          !options.preserveValueImports &&
+          !options.importsNotUsedAsValues
+      )
+    }
+    return erasedTypeImports.get(configPath)
   }
   for (const file of pendingFiles) {
     parsedFiles++
@@ -194,8 +238,23 @@ export function selectTestImpact(
           add(
             node.moduleSpecifier.text,
             ts.isImportDeclaration(node)
-              ? node.importClause?.isTypeOnly
-              : node.isTypeOnly
+              ? node.importClause?.isTypeOnly ||
+                  (erasesNamedTypes(file) &&
+                    !node.importClause?.name &&
+                    node.importClause?.namedBindings &&
+                    ts.isNamedImports(node.importClause.namedBindings) &&
+                    node.importClause.namedBindings.elements.length > 0 &&
+                    node.importClause.namedBindings.elements.every(
+                      (entry) => entry.isTypeOnly
+                    ))
+              : node.isTypeOnly ||
+                  (erasesNamedTypes(file) &&
+                    node.exportClause &&
+                    ts.isNamedExports(node.exportClause) &&
+                    node.exportClause.elements.length > 0 &&
+                    node.exportClause.elements.every(
+                      (entry) => entry.isTypeOnly
+                    ))
           )
         else uncertain.add(file)
       }

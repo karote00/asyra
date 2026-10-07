@@ -58,6 +58,7 @@ Feature: Element Selection
     And a selected <container> contains a nested container with a visible unlocked vector
     When I double-click the vector's visible geometry without modifiers
     Then only the immediate child of the selected container should be selected
+    And its blue selection outline should surround its visible content
     And the same double-click should not enter vector path editing
     And the document geometry and hierarchy should remain unchanged
     Examples:
@@ -96,3 +97,11 @@ Feature: Element Selection
     Given another drawing tool or path editing is active, or a selection modifier is held
     When I double-click on a container
     Then container drill-down should not take over that interaction
+
+  Scenario: Drill-down replaces ancestor hover without pointer movement
+    Given a selected Group with a visible unlocked child under the pointer
+    And the Group is currently hovered
+    When I double-click to select the child and leave the pointer still
+    Then the hovered element is the selected child
+    And ordinary canvas hover and selection cannot target its ancestors
+    And siblings remain available within the selected parent scope

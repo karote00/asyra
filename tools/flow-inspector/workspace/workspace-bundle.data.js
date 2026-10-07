@@ -9229,7 +9229,8 @@
             "conditions": [
               "Select tool, no modifiers or active path editing, exactly one selected registered container.",
               "The visible unlocked hit descends from that container; select only its immediate child.",
-              "Successful priority 100 exclusive execution consumes the double-click before vector path editing."
+              "Successful priority 100 exclusive execution consumes the double-click before vector path editing.",
+              "Selection and hover both publish the validated immediate child in the same gesture; no stationary ancestor hover survives the new parent scope."
             ],
             "bypasses": [
               "Invalid projection, no hit, self/outside hit, hidden or locked ancestry produces no drill-down selection.",
@@ -22893,6 +22894,7 @@
             ],
             "conditions": [
               "Reuse the CI classifier and related/full-owner contracts",
+              "Registered isolated browser proofs use declared computation source inputs for upstream changes; unregistered and new specs retain integration coverage. Missing or unknown inputs remain conservative. Supervised owners retain their declared task and file argument interface. Without a separate profile runner, profile-named tests stay in the supervised selection.",
               "Select registered supervised owner tests and profiles from one source graph; unknown edges broaden selection",
               "Known upstream source inputs resolve workspace exports and compiler output mappings; value imports propagate across package entries while erased type-only edges do not execute upstream modules. Owner-local edits retain type/value edges and full owner lint/build remains selected.",
               "Workspace-local tests and registered validation inputs select their owner without broadening downstream runtime consumers; unknown resources remain conservative",
@@ -22968,6 +22970,10 @@
               "scripts/local-validation.mjs",
               "scripts/local-validation-runner.mjs",
               "scripts/run-workspace-checks.mjs",
+              "apps/asyra-sim/scripts/run-e2e-ci.mjs",
+              "apps/asyra-sim/scripts/e2e-ci-groups.mjs",
+              "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
+              "scripts/__tests__/ci-scope.test.mjs",
               "tools/flow-inspector/control-plane/workflow-results.cjs",
               "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
               "apps/fieldscope/scripts/run-profile-groups.py",
@@ -27386,6 +27392,7 @@
               "Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.",
               "Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.",
               "Mesh projection retains geometry across material-only updates and explicitly removes the previous descriptor when replacing material with a solid paint.",
+              "Presentation bounds are measured lazily through the current engine, shared by selection and content APIs, and invalidated only by affected object geometry, descendants or membership. Viewport motion reuses descendant-local bounds.",
               "A successful concrete result is normalized before Core observes adapter initialization success."
             ],
             "bypasses": [
@@ -27407,7 +27414,9 @@
               "fallback product output",
               "3D or Hybrid mode branches"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Bound object lifetime and current local content after descendant geometry, transform, visibility or membership changes; world transforms are projected at read time."
+            ],
             "implementationBoundary": [
               "yarn.lock",
               "turbo.json",
@@ -38631,6 +38640,7 @@
             "conditions": [
               "Derive changed paths from Git base/head and classify them against discovered first-level apps/packages/tools workspace manifests, their declared dependency edges, manifest canonical build/test scripts, and the versioned CI relationship policy. Derive affected consumers transitively from the union of base and head dependency edges so deletions and renames preserve old consumers. Root shared inputs select every discovered workspace. Public documentation selects its configured site workspace; docs under app/package/tool roots select their matching workspace when defined, and other discovered documentation roots require shared validation. Never infer workspace ownership from a fixed workspace-name category list. Unknown paths, missing build/test tasks, or unclassified consumers invalidate scope and fail the total even if conservative jobs ran.",
               "Use one derived execution plan for repository lint, repository script tests, naming, per-workspace lint/build/test, standard E2E tasks discovered from each manifest test:e2e:ci script, specialized E2E suites, dynamic matrix scheduling, specialized gates, and final aggregation. Full validation selects every declared check and owner. Incremental validation selects changed applicable lint files, repository script tests for their declared owner inputs, workspace related tests only for supported source changes with existing test inputs, and E2E owners from their manifest scripts and declared suite input paths; configs, fixtures, deleted or renamed files, unsupported runners, shared inputs, and unknown paths use full owner checks or remain blockers. For each selected workspace, run lint, then its canonical build task to completion, then its declared test preflight and test:ci, followed by its selected test:e2e:ci; never schedule tests alongside builds. Bind every result to the plan and map digests plus the same repository/base/head/integration/run identity and an admitted producer attempt. Require exact selected success and declared unselected skips; missing, duplicate, unexpected, stale, failed, zero-tests, zero-evidence, or omitted outcomes cannot pass. Run Framework release readiness when Framework workspaces or release-validation owner inputs are affected. create-app CLI packages remain outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects its control-plane validation suite.",
+              "Supervised exact-file results preserve the declared flagged test:affected or positional test:ci owner task. Both require identical selected and executed files. Declared isolated browser computation proofs use the shared source graph for known upstream inputs; ordinary and new integration specs remain selected, and unknown or removed inputs retain conservative checks.",
               "Flow Inspector validation runs its control-plane contracts, prove and candidate commands against the candidate. This producer never selects a new accepted base or grants protected delivery; accepted-base admission and its policy mismatch blockers remain separate.",
               "Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.",
               "Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision and run id. Partial reruns may reuse successful evidence from earlier positive integer attempts with unchanged plan/map digests; preserve the original producer attempt and reject future or malformed attempts. Local evidence requires the exact local run/attempt pair. Latest GitHub dependency outcomes must succeed: an older successful receipt cannot override a later failed, cancelled, missing or skipped selected job.",

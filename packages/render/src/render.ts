@@ -149,17 +149,9 @@ class Render {
     ])
     this.flushFrame()
     return elementIds.map((elementId) => {
-      const object = this.viewport.getElementById(elementId)?.getEngineHandle()
-      if (!object) return { elementId, bounds: null }
-      const result = engine.query({ type: 'get-local-content-bounds', object })
-      if (
-        result.type !== 'bounds' ||
-        !Object.values(result.bounds).every(Number.isFinite) ||
-        result.bounds.width < 0 ||
-        result.bounds.height < 0
-      )
-        throw new Error('Invalid native content bounds')
-      return { elementId, bounds: { ...result.bounds } }
+      const node = this.viewport.getElementById(elementId)
+      if (!node?.getEngineHandle()) return { elementId, bounds: null }
+      return { elementId, bounds: node.getPresentationLocalBounds() }
     })
   }
 

@@ -17,7 +17,8 @@ const mocks = vi.hoisted(() => ({
   isContainerType: vi.fn(() => true),
   getPathEditingMode: vi.fn(() => false),
   resolveChild: vi.fn(() => 'child' as string | null),
-  selectElements: vi.fn()
+  selectElements: vi.fn(),
+  updateHoveredElementId: vi.fn()
 }))
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
@@ -35,7 +36,10 @@ vi.mock('../../../common-apis', () => ({
     getSelectedIds: mocks.getSelectedIds,
     selectElements: mocks.selectElements
   },
-  systemContextApis: { getPathEditingMode: mocks.getPathEditingMode },
+  systemContextApis: {
+    getPathEditingMode: mocks.getPathEditingMode,
+    updateHoveredElementId: mocks.updateHoveredElementId
+  },
   transactionApis: {}
 }))
 vi.mock('../../../controllers/canvas-hierarchy-target', () => ({
@@ -81,6 +85,16 @@ describe('container double-click selection Feature', () => {
       snapshot.mousePosition
     )
     expect(mocks.selectElements).toHaveBeenCalledExactlyOnceWith(['child'])
+  })
+
+  it('replaces the parent hover in the same gesture without waiting for mouse movement', () => {
+    definition().execution(snapshot)
+    expect(mocks.updateHoveredElementId).toHaveBeenCalledExactlyOnceWith(
+      'child'
+    )
+    expect(mocks.selectElements.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.updateHoveredElementId.mock.invocationCallOrder[0]
+    )
   })
 
   it('recognizes a custom registration derived from the Group definition', () => {
@@ -139,5 +153,6 @@ describe('container double-click selection Feature', () => {
     mocks.resolveChild.mockReturnValue(null)
     expect(definition().execution(snapshot)).toBeNull()
     expect(mocks.selectElements).not.toHaveBeenCalled()
+    expect(mocks.updateHoveredElementId).not.toHaveBeenCalled()
   })
 })

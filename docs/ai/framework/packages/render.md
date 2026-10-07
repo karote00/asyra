@@ -367,3 +367,23 @@ The viewport RenderContainer projects `transformGroup: true` through ordinary
 engine-neutral object properties. It is an optimization hint, not authored Group
 state; engines may ignore it while preserving output. Screen-space layers keep
 their current registration and remain outside the camera transform domain.
+
+## Presentation bounds
+
+`RenderObjectRuntime` owns lazy local-content measurement for a bound object.
+Selection world bounds and `measureElementContentBounds` share that measurement
+through the existing engine `local-content-bounds` capability. A clean read does
+not query the engine or revisit descendants. Each world read projects the cached
+local rectangle with the current transform; pan, zoom and ancestor-only motion
+do not invalidate descendant-local bounds.
+
+Own draw/mesh geometry changes invalidate that object and its ancestors. Child
+transform, dimension, visibility, renderability or alpha changes invalidate
+ancestors; attach, remove, reparent and destruction invalidate affected parents.
+Multiple changes before a read coalesce. Mesh material-only changes retain bounds.
+Pending draws are delivered before a dirty measurement, without a nested Render
+frame. Invalid native bounds throw and are never cached. Cache ownership is weak
+and object-local; new attachment cannot reuse a previous runtime measurement.
+Engines without local-content measurement use their existing world-bounds query.
+The logical `getLocalBounds` used for pre-engine diagnostics remains independent
+of native queries and does not trigger draw delivery.

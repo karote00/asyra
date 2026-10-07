@@ -45,6 +45,7 @@
     outputs: ['artifact:local-plan'],
     conditions: [
       'Reuse the CI classifier and related/full-owner contracts',
+      'Registered isolated browser proofs use declared computation source inputs for upstream changes; unregistered and new specs retain integration coverage. Missing or unknown inputs remain conservative. Supervised owners retain their declared task and file argument interface. Without a separate profile runner, profile-named tests stay in the supervised selection.',
       'Select registered supervised owner tests and profiles from one source graph; unknown edges broaden selection',
       'Known upstream source inputs resolve workspace exports and compiler output mappings; value imports propagate across package entries while erased type-only edges do not execute upstream modules. Owner-local edits retain type/value edges and full owner lint/build remains selected.',
       'Workspace-local tests and registered validation inputs select their owner without broadening downstream runtime consumers; unknown resources remain conservative',
@@ -111,6 +112,10 @@
       'scripts/local-validation.mjs',
       'scripts/local-validation-runner.mjs',
       'scripts/run-workspace-checks.mjs',
+      'apps/asyra-sim/scripts/run-e2e-ci.mjs',
+      'apps/asyra-sim/scripts/e2e-ci-groups.mjs',
+      'apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs',
+      'scripts/__tests__/ci-scope.test.mjs',
       'tools/flow-inspector/control-plane/workflow-results.cjs',
       'tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs',
       'apps/fieldscope/scripts/run-profile-groups.py',

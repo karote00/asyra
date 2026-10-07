@@ -45,7 +45,8 @@ module.exports = {
       conditions: [
         'Select tool, no modifiers or active path editing, exactly one selected registered container.',
         'The visible unlocked hit descends from that container; select only its immediate child.',
-        'Successful priority 100 exclusive execution consumes the double-click before vector path editing.'
+        'Successful priority 100 exclusive execution consumes the double-click before vector path editing.',
+        'Selection and hover both publish the validated immediate child in the same gesture; no stationary ancestor hover survives the new parent scope.'
       ],
       bypasses: [
         'Invalid projection, no hit, self/outside hit, hidden or locked ancestry produces no drill-down selection.',

@@ -117,3 +117,20 @@ A removed source in a known upstream workspace broadens to all value-import
 consumers of that workspace, including subpaths and transitive re-exports.
 It never assumes that a removed file was unused. Owner-local or unknown-workspace
 deletions still select the full owner. No historical implementation is required.
+
+### Isolated browser proofs and supervised consumers
+
+The relationship map may declare an isolated browser proof's source inputs.
+Those inputs describe its tested computation, while ordinary App E2E retain
+startup and rendering integration coverage. Only known upstream source changes
+may narrow these proofs through the shared source graph. Unregistered specs,
+including newly added specs, stay selected. Local edits, configuration, missing
+inputs and unknown source edges retain conservative coverage. No App is excluded
+by name or rendering engine. Workspace lint/build remains complete.
+
+Supervised test owners declare their existing task and argument style. Exact
+file selections preserve the supervisor's resource limits and full-file proofs.
+Without a separate profile runner, profile-named tests remain in that owner's
+supervised selection.
+Grouped browser runners must consume the exact selected files, reject duplicate
+or unknown paths, and retain their process isolation and result checks.

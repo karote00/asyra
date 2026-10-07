@@ -287,7 +287,10 @@ function aggregateScope(evidence, identity, jobs) {
     typeof selection.reason === 'string' &&
     (selection.mode !== 'files' ||
       (selection.inputs.length > 0 &&
-        selection.runner?.command === 'test:affected' &&
+        ((selection.runner?.command === 'test:affected' &&
+          !selection.runner.argumentStyle) ||
+          (selection.runner?.command === 'test:ci' &&
+            selection.runner.argumentStyle === 'positional')) &&
         selection.inputs.every(
           (file) =>
             /^src\/.*\.test\.[jt]sx?$/.test(file) &&

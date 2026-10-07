@@ -9,7 +9,8 @@ import { createRequire } from 'node:module'
 import {
   CI_E2E_GROUPS,
   collectBrowserSpecFiles,
-  mergePlaywrightReports
+  mergePlaywrightReports,
+  selectBrowserGroups
 } from './e2e-ci-groups.mjs'
 
 const require = createRequire(import.meta.url)
@@ -85,9 +86,10 @@ function runPlaywright(command, environment) {
   })
 }
 
+const selectedGroups = selectBrowserGroups(process.argv.slice(2))
 const groupRuns = []
 const groupFailures = []
-for (const group of CI_E2E_GROUPS) {
+for (const group of selectedGroups) {
   const startedAt = new Date().toISOString()
   const outputDirectory = path.posix.join(
     'test-results',
@@ -183,8 +185,8 @@ for (const group of CI_E2E_GROUPS) {
   }
 }
 
-if (groupRuns.length < CI_E2E_GROUPS.length) {
-  for (const group of CI_E2E_GROUPS.slice(groupRuns.length)) {
+if (groupRuns.length < selectedGroups.length) {
+  for (const group of selectedGroups.slice(groupRuns.length)) {
     const outputDirectory = path.posix.join(
       'test-results',
       'ci',

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { createDefaultFill } from '@asyra/utils'
+import sharp from 'sharp'
 import {
   createTestDocumentURL,
   getContentsPanel,
@@ -561,9 +562,62 @@ for (const containerType of ['group', 'frame'] as const) {
     await page.mouse.dblclick(x, y)
     await expect.poll(selection).toEqual([ids.inner])
     await expect.poll(editing).toBe(false)
+    // A stationary pointer must not retain the parent hover after drill-down.
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { core } = await import('../src/testing/runtime-access')
+          return core.getSystemProperty('hoveredElementId')
+        })
+      )
+      .toBe(ids.inner)
+    await page.mouse.move(260, 50)
+    const innerBounds = await page.evaluate(async (id) => {
+      const { elementApis } = await import('../src/testing/runtime-access')
+      return elementApis.getElementClientBounds(id)
+    }, ids.inner)
+    if (!innerBounds) throw new Error('Missing selected Group bounds')
+    await expect
+      .poll(
+        async () => {
+          const pixels = await sharp(await page.screenshot())
+            .extract({
+              left: Math.round(innerBounds.x + innerBounds.width / 2) - 3,
+              top: Math.round(innerBounds.y) - 3,
+              width: 7,
+              height: 7
+            })
+            .removeAlpha()
+            .raw()
+            .toBuffer()
+          for (let offset = 0; offset < pixels.length; offset += 3) {
+            if (
+              pixels[offset] < 35 &&
+              pixels[offset + 1] > 90 &&
+              pixels[offset + 1] < 160 &&
+              pixels[offset + 2] > 215
+            )
+              return true
+          }
+          return false
+        },
+        { message: 'Selected inner Group has a visible blue outline' }
+      )
+      .toBe(true)
+    await page.screenshot({
+      path: testInfo.outputPath('inner-group-selected.png')
+    })
     await page.mouse.dblclick(x, y)
     await expect.poll(selection).toEqual([ids.front])
     await expect.poll(editing).toBe(false)
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { core } = await import('../src/testing/runtime-access')
+          return core.getSystemProperty('hoveredElementId')
+        })
+      )
+      .toBe(ids.front)
     await page.mouse.move(260, 50)
     await canvas.screenshot({
       path: testInfo.outputPath('container-child-selected.png')

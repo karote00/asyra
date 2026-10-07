@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  selectUpstreamBrowserProofs,
   classifyChanges,
   readCreateAppManifests,
   readDocumentationDirectories,
@@ -1510,4 +1511,161 @@ test('profile workflow ownership supplies local build prerequisites', () => {
       (w) => w.directory === 'apps/fieldscope'
     )
   )
+})
+
+test('Render changes keep compatibility checks but select Sim source consumers and browser integration separately', () => {
+  const scoped = classifyChanges(
+    ['packages/render/src/types/render-object.ts'],
+    manifests
+  )
+  const sim = scoped.relationshipMap.workspaceMatrix.find(
+    (entry) => entry.directory === 'apps/asyra-sim'
+  )
+  assert.equal(sim.lintSelection.mode, 'full')
+  assert.equal(sim.testSelection.mode, 'files')
+  assert.ok(
+    sim.testSelection.inputs.some((file) => file.includes('spatial-layer'))
+  )
+  assert.ok(
+    !sim.testSelection.inputs.some((file) =>
+      file.includes('representative-resource')
+    )
+  )
+  assert.equal(sim.e2eSelection.mode, 'related')
+  assert.ok(
+    sim.e2eSelection.inputs.includes(
+      'apps/asyra-sim/e2e/__tests__/viewport-navigation.spec.ts'
+    )
+  )
+  assert.ok(
+    !sim.e2eSelection.inputs.some((file) =>
+      file.includes('representative-resource-candidate')
+    )
+  )
+  for (const input of [
+    'apps/asyra-sim/vite.config.ts',
+    'packages/render/src/deleted.ts'
+  ]) {
+    const entry = classifyChanges(
+      [input],
+      manifests
+    ).relationshipMap.workspaceMatrix.find(
+      (entry) => entry.directory === 'apps/asyra-sim'
+    )
+    assert.equal(entry.e2eSelection.mode, 'full')
+  }
+})
+
+test('supervised positional selections reach execution without bypassing the owner', async () => {
+  const entry = classifyChanges(
+    ['packages/render/src/types/render-object.ts'],
+    manifests
+  ).relationshipMap.workspaceMatrix.find(
+    (entry) => entry.directory === 'apps/asyra-sim'
+  )
+  const calls = []
+  const record = await executeWorkspaceChecks(entry, {
+    relationshipMapDigest: 'a'.repeat(64),
+    identity: {},
+    runTask: async (_name, task, selection) => {
+      calls.push({ task, selection })
+      return { testCount: 1, passedCount: 1, failedCount: 0 }
+    }
+  })
+  assert.equal(record.status, 'success')
+  assert.deepEqual(
+    calls.find((entry) => entry.task === 'test:ci').selection.runner,
+    { command: 'test:ci', argumentStyle: 'positional' }
+  )
+})
+
+test('unregistered browser specs stay selected and unknown proof inputs retain coverage', (t) => {
+  const parent = path.join(repositoryRoot, 'tmp/browser-routing-fixtures')
+  fs.mkdirSync(parent, { recursive: true })
+  const root = fs.mkdtempSync(path.join(parent, 'case-'))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const directory = 'apps/new-owner'
+  for (const folder of [
+    'apps/new-owner/src',
+    'apps/new-owner/e2e',
+    'packages/new-owner/src'
+  ])
+    fs.mkdirSync(path.join(root, folder), { recursive: true })
+  fs.writeFileSync(
+    path.join(root, directory, 'src/math.ts'),
+    'export const x = 1'
+  )
+  fs.writeFileSync(path.join(root, directory, 'e2e/math.spec.ts'), '')
+  fs.writeFileSync(path.join(root, directory, 'e2e/new.spec.ts'), '')
+  const input = 'packages/new-owner/src/render.ts'
+  fs.writeFileSync(path.join(root, input), 'export const y = 2')
+  const workspaces = new Map([
+    ['@new/core', { name: '@new/core', directory: 'packages/new-owner' }]
+  ])
+  const contract = {
+    inventoryRoots: ['e2e', 'src'],
+    groups: [
+      { proofPatterns: ['e2e/math.spec.ts'], sourcePatterns: ['src/math.ts'] }
+    ]
+  }
+  const fallback = { mode: 'full', inputs: [], reason: 'fallback' }
+  const select = () =>
+    selectUpstreamBrowserProofs(
+      directory,
+      [input],
+      workspaces,
+      root,
+      fallback,
+      contract
+    )
+  assert.deepEqual(select().inputs, ['apps/new-owner/e2e/new.spec.ts'])
+  fs.writeFileSync(
+    path.join(root, directory, 'src/math.ts'),
+    'export const x = (p: string) => import(p)'
+  )
+  assert.deepEqual(select().inputs, [
+    'apps/new-owner/e2e/math.spec.ts',
+    'apps/new-owner/e2e/new.spec.ts'
+  ])
+  fs.rmSync(path.join(root, directory, 'src/math.ts'))
+  assert.deepEqual(select(), fallback)
+  fs.rmSync(path.join(root, input))
+  assert.deepEqual(select(), fallback)
+})
+
+test('owners without a separate profile runner retain profile-named tests in their supervised suite', (t) => {
+  const parent = path.join(repositoryRoot, 'tmp/browser-routing-fixtures')
+  fs.mkdirSync(parent, { recursive: true })
+  const root = fs.mkdtempSync(path.join(parent, 'profile-'))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const directory = 'apps/asyra-sim'
+  fs.mkdirSync(path.join(root, directory, 'src/domain/__tests__'), {
+    recursive: true
+  })
+  fs.writeFileSync(
+    path.join(root, directory, 'src/domain/math.ts'),
+    'export const x = 1'
+  )
+  fs.writeFileSync(
+    path.join(root, directory, 'src/domain/__tests__/new.profile.test.ts'),
+    "import '../math'"
+  )
+  const result = classifyChanges(
+    [`${directory}/src/domain/math.ts`],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    [],
+    [],
+    { repositoryRoot: root }
+  )
+  const entry = result.relationshipMap.workspaceMatrix.find(
+    (entry) => entry.directory === directory
+  )
+  assert.equal(entry.testSelection.mode, 'files')
+  assert.deepEqual(entry.testSelection.inputs, [
+    'src/domain/__tests__/new.profile.test.ts'
+  ])
+  assert.equal(entry.profileSelection, undefined)
 })

@@ -302,6 +302,8 @@ export const selectContainerChildFeature = defineFeature(
       )
       if (!childId) return null
       selectionApis.selectElements([childId])
+      // The pointer can stay still after entering a new parent scope.
+      systemContextApis.updateHoveredElementId(childId)
       // Consume this gesture; vector editing belongs to a later double-click.
       return { selectedElementId: childId }
     }

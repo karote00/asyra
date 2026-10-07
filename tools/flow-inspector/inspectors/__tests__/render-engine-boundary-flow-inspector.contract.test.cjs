@@ -87,7 +87,10 @@ test('render consumes only the abstract engine contract', () => {
   assert.equal(adapter.ownerPackage, '@asyra/render')
   assert.match(contract, /@asyra\/render-engine/)
   assert.match(contract, /Pixi/i)
-  assert.equal(adapter.cacheDimensions.length, 0)
+  assert.equal(adapter.cacheDimensions.length, 1)
+  assert.match(adapter.cacheDimensions[0], /Bound object lifetime.*local content/)
+  assert.match(adapter.cacheDimensions[0], /geometry, transform, visibility or membership/)
+  assert.match(adapter.cacheDimensions[0], /world transforms are projected at read time/)
   assert.ok(adapter.implementationBoundary.includes('yarn.lock'))
   assert.ok(adapter.implementationBoundary.includes('turbo.json'))
   assert.ok(

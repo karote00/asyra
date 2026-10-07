@@ -31,7 +31,12 @@ function validateWorkspaceEntry(workspace) {
         workspace.testSelection.runner?.command !== 'vitest' ||
         !Array.isArray(workspace.testSelection.runner.args))) ||
     (workspace.testSelection.mode === 'files' &&
-      (workspace.testSelection.runner?.command !== 'test:affected' ||
+      (!(
+        (workspace.testSelection.runner?.command === 'test:affected' &&
+          !workspace.testSelection.runner.argumentStyle) ||
+        (workspace.testSelection.runner?.command === 'test:ci' &&
+          workspace.testSelection.runner.argumentStyle === 'positional')
+      ) ||
         !workspace.testSelection.inputs.length ||
         workspace.testSelection.inputs.some(
           (f) =>
@@ -264,8 +269,10 @@ async function main() {
           [
             'workspace',
             name,
-            'test:affected',
-            ...selection.inputs.flatMap((file) => ['--file', file])
+            selection.runner.command,
+            ...(selection.runner.argumentStyle === 'positional'
+              ? selection.inputs
+              : selection.inputs.flatMap((file) => ['--file', file]))
           ],
           { cwd: repositoryRoot, stdio: 'inherit' }
         )

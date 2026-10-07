@@ -102,6 +102,15 @@ describe('canvas hierarchy target resolution', () => {
     expect(resolve('rect-3a', ['rect-2a'])).toBeNull()
   })
 
+  it('rejects ancestors for both hover and ordinary selection after entering a child', () => {
+    expect(resolve('group-1', ['group-2'])).toBeNull()
+    expect(resolve('group-2', ['rect-2a'])).toBeNull()
+    expect(resolve('group-1', ['rect-2a'])).toBeNull()
+    expect(resolve('rect-2b', ['rect-2a'])).toBe('rect-2b')
+    expect(resolve('rect-3a', ['group-2'])).toBe('group-3')
+    expect(resolve('rect-2a', [])).toBe('group-1')
+  })
+
   it('uses every selected parent scope and picks the nearest matching ancestor', () => {
     const selection = ['rect-2a', 'rect-3a']
 

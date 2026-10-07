@@ -188,6 +188,102 @@ function e2eOwnerSelection(workspace, ownerPaths, sharedOwnerInput) {
   }
 }
 
+function selectUpstreamBrowserProofs(
+  directory,
+  inputs,
+  workspaces,
+  root,
+  fallback,
+  contract = relationshipPolicy.isolatedBrowserProofs?.[directory]
+) {
+  if (
+    !contract ||
+    !inputs.length ||
+    inputs.some((input) => {
+      const owner = workspaceForPath(input, workspaces)
+      return (
+        !owner ||
+        owner.directory === directory ||
+        !input.startsWith(`${owner.directory}/src/`) ||
+        !/\.[cm]?[jt]sx?$/.test(input) ||
+        !fs.existsSync(path.join(root, input))
+      )
+    })
+  )
+    return fallback
+  const inventory = contract.inventoryRoots.flatMap((relative) => {
+    const base = path.join(root, directory, relative)
+    if (!fs.existsSync(base)) return []
+    return fs
+      .readdirSync(base, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) =>
+        path
+          .relative(
+            path.join(root, directory),
+            path.join(entry.parentPath, entry.name)
+          )
+          .split(path.sep)
+          .join('/')
+      )
+  })
+  const specs = inventory.filter(
+    (file) =>
+      /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(file) &&
+      (file.startsWith('e2e/') || file.endsWith('.browser.spec.ts'))
+  )
+  if (
+    contract.groups.some((group) =>
+      group.sourcePatterns.some(
+        (pattern) =>
+          !inventory.some((file) => matchesPattern(file, pattern).matched)
+      )
+    )
+  )
+    return fallback
+  const targets = contract.groups.flatMap((group) => {
+    const sources = inventory.filter(
+      (file) =>
+        /\.[cm]?[jt]sx?$/.test(file) &&
+        (!file.includes('/__tests__/') ||
+          group.sourcePatterns.includes(file)) &&
+        group.sourcePatterns.some(
+          (pattern) => matchesPattern(file, pattern).matched
+        )
+    )
+    return specs
+      .filter((file) =>
+        group.proofPatterns.some(
+          (pattern) => matchesPattern(file, pattern).matched
+        )
+      )
+      .map((file) => ({ file, inputs: sources }))
+  })
+  if (
+    !targets.length ||
+    targets.some(({ inputs }) => !inputs.length) ||
+    new Set(targets.map(({ file }) => file)).size !== targets.length
+  )
+    return fallback
+  const proofs = targets.map(({ file }) => file)
+  const impact = selectTestImpact(root, directory, inputs, false, {
+    sourcePaths: new Set(inputs),
+    workspaces,
+    targets
+  })
+  if (impact.reason === 'full-owner-input') return fallback
+  const selected = new Set([
+    ...specs.filter((file) => !proofs.includes(file)),
+    ...impact.ordinary
+  ])
+  return {
+    mode: selected.size ? 'related' : 'not-selected',
+    inputs: [...selected].map((file) => `${directory}/${file}`).sort(),
+    reason: 'upstream source graph with declared isolated browser proofs',
+    ...(selected.size ? { runner: { command: 'playwright' } } : {})
+  }
+}
+
 function readWorkspaceManifests(root) {
   const manifests = new Map()
   for (const group of relationshipPolicy.workspaceRoots) {
@@ -715,26 +811,45 @@ function classifyChanges(
               workspaces: headManifests
             }
           )
-          profileSelection = {
-            files: impact.profiles,
-            reason: impact.reason,
-            command: supervised.profileCommand
-          }
+          if (supervised.profileCommand)
+            profileSelection = {
+              files: impact.profiles,
+              reason: impact.reason,
+              command: supervised.profileCommand
+            }
+          const selectedTests = supervised.profileCommand
+            ? impact.ordinary
+            : [...impact.ordinary, ...impact.profiles].sort()
           if (impact.reason !== 'full-owner-input')
             testSelection = {
-              mode: impact.ordinary.length ? 'files' : 'not-selected',
-              inputs: impact.ordinary,
+              mode: selectedTests.length ? 'files' : 'not-selected',
+              inputs: selectedTests,
               reason: impact.reason,
-              ...(impact.ordinary.length
-                ? { runner: { command: supervised.task } }
+              ...(selectedTests.length
+                ? {
+                    runner: {
+                      command: supervised.task,
+                      ...(supervised.argumentStyle
+                        ? { argumentStyle: supervised.argumentStyle }
+                        : {})
+                    }
+                  }
                 : {})
             }
         }
-        const e2eSelection = e2eOwnerSelection(
+        let e2eSelection = e2eOwnerSelection(
           { directory, e2eTask },
           ownerPaths,
           sharedOwnerInput
         )
+        if (!sharedOwnerInput && e2eSelection.mode === 'full')
+          e2eSelection = selectUpstreamBrowserProofs(
+            directory,
+            ownerPaths,
+            headManifests,
+            options.repositoryRoot ?? process.cwd(),
+            e2eSelection
+          )
         return {
           name,
           directory,
@@ -1320,6 +1435,7 @@ function main() {
 }
 
 export {
+  selectUpstreamBrowserProofs,
   classifyChanges,
   readWorkspaceManifests,
   readWorkspaceManifestsAtCommit,

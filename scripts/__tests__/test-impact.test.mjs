@@ -267,3 +267,76 @@ test('pre-install parser admission includes discovered upstream workspace source
     false
   )
 })
+
+test('named type-only imports do not execute upstream sources', (t) => {
+  const parent = path.join(root, 'tmp/fieldscope-routing')
+  fs.mkdirSync(parent, { recursive: true })
+  const folder = fs.mkdtempSync(path.join(parent, 'named-type-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  const dir = path.relative(root, folder)
+  fs.mkdirSync(path.join(folder, 'src/__tests__'), { recursive: true })
+  fs.writeFileSync(
+    path.join(folder, 'src/value.ts'),
+    'export interface Value {}'
+  )
+  fs.writeFileSync(
+    path.join(folder, 'src/__tests__/type.test.ts'),
+    "import { type Value } from '../value'"
+  )
+  const input = `${dir}/src/value.ts`
+  const result = selectTestImpact(root, dir, [input], false, {
+    sourcePaths: new Set([input])
+  })
+  assert.deepEqual(result.ordinary, [])
+  assert.deepEqual(selectTestImpact(root, dir, [input]).ordinary, [
+    'src/__tests__/type.test.ts'
+  ])
+  fs.writeFileSync(
+    path.join(folder, 'tsconfig.json'),
+    JSON.stringify({ compilerOptions: { verbatimModuleSyntax: true } })
+  )
+  assert.deepEqual(
+    selectTestImpact(root, dir, [input], false, {
+      sourcePaths: new Set([input])
+    }).ordinary,
+    ['src/__tests__/type.test.ts']
+  )
+})
+
+test('declared browser proof inputs retain dependencies without unrelated upstream work', (t) => {
+  const parent = path.join(root, 'tmp/fieldscope-routing')
+  fs.mkdirSync(parent, { recursive: true })
+  const folder = fs.mkdtempSync(path.join(parent, 'proof-inputs-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  const dir = path.relative(root, folder)
+  fs.mkdirSync(path.join(folder, 'src'), { recursive: true })
+  fs.writeFileSync(path.join(folder, 'src/math.ts'), 'export const x = 1')
+  fs.writeFileSync(path.join(folder, 'src/render.ts'), 'export const y = 2')
+  const options = {
+    targets: [{ file: 'e2e/math.spec.ts', inputs: ['src/math.ts'] }]
+  }
+  assert.deepEqual(
+    selectTestImpact(root, dir, [`${dir}/src/render.ts`], false, options)
+      .ordinary,
+    []
+  )
+  assert.deepEqual(
+    selectTestImpact(root, dir, [`${dir}/src/math.ts`], false, options)
+      .ordinary,
+    ['e2e/math.spec.ts']
+  )
+  assert.deepEqual(
+    selectTestImpact(root, dir, [`${dir}/missing.json`], false, options)
+      .ordinary,
+    ['e2e/math.spec.ts']
+  )
+  fs.writeFileSync(
+    path.join(folder, 'src/math.ts'),
+    'export const x = (p: string) => import(p)'
+  )
+  assert.deepEqual(
+    selectTestImpact(root, dir, [`${dir}/src/render.ts`], false, options)
+      .ordinary,
+    ['e2e/math.spec.ts']
+  )
+})

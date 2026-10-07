@@ -21,6 +21,22 @@ import type {
 
 export type RenderBounds = Rect
 
+const CONTENT_BOUNDS_PARENT_PROPERTY_KEYS = [
+  'x',
+  'y',
+  'width',
+  'height',
+  'scaleX',
+  'scaleY',
+  'skewX',
+  'skewY',
+  'rotation',
+  'angle',
+  'visible',
+  'renderable',
+  'alpha'
+] as const
+
 export interface RenderResourceStyle {
   readonly __renderResourceDescriptor: RenderEngineResourceDescriptor
   readonly __subscribeRenderResourceRelease?: (
@@ -160,6 +176,7 @@ export class RenderObjectRuntime {
     RenderNode
   >()
   private readonly dirtyGraphics = new Set<RenderGraphics>()
+  private readonly localContentBounds = new WeakMap<RenderNode, RenderBounds>()
   private readonly resourceByStyle = new WeakMap<
     object,
     RenderRuntimeResourceRecord
@@ -220,6 +237,7 @@ export class RenderObjectRuntime {
     if (existingHandle) {
       return existingHandle
     }
+    this.localContentBounds.delete(node)
     const result = this.execute(
       {
         type: 'create-object',
@@ -253,6 +271,7 @@ export class RenderObjectRuntime {
   }
 
   appendChild(parent: RenderNode, child: RenderNode, index?: number): void {
+    this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
     if (!parentHandle) {
       return
@@ -282,6 +301,7 @@ export class RenderObjectRuntime {
   }
 
   removeChild(parent: RenderNode, child: RenderNode): void {
+    this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
     const childHandle = child.getEngineHandle()
     if (parentHandle && childHandle) {
@@ -318,6 +338,10 @@ export class RenderObjectRuntime {
     node: RenderNode,
     properties: RenderEngineObjectProperties
   ): void {
+    if ('geometry' in properties) this.invalidateContentBounds(node)
+    if (CONTENT_BOUNDS_PARENT_PROPERTY_KEYS.some((key) => key in properties)) {
+      this.invalidateContentBounds(node.parent)
+    }
     const handle = node.getEngineHandle()
     if (handle) {
       const supportedProperties = this.getSupportedProperties(properties)
@@ -354,6 +378,7 @@ export class RenderObjectRuntime {
   }
 
   destroyObject(node: RenderNode): void {
+    this.invalidateContentBounds(node)
     const handle = node.getEngineHandle()
     if (!handle) {
       return
@@ -364,6 +389,7 @@ export class RenderObjectRuntime {
   }
 
   markDrawDirty(graphics: RenderGraphics): void {
+    this.invalidateContentBounds(graphics)
     if (graphics.getEngineHandle()) {
       this.dirtyGraphics.add(graphics)
     }
@@ -510,6 +536,48 @@ export class RenderObjectRuntime {
       record.unsubscribe()
       this.resourceReleaseSubscriptions.delete(record.unsubscribe)
     }
+  }
+
+  private invalidateContentBounds(node: RenderNode | null): void {
+    while (node) {
+      this.localContentBounds.delete(node)
+      node = node.parent
+    }
+  }
+
+  queryBounds(
+    node: RenderNode,
+    type: 'get-bounds' | 'get-local-content-bounds'
+  ): RenderBounds | null {
+    const handle = node.getEngineHandle()
+    if (!handle) return null
+    const local = type === 'get-local-content-bounds'
+    if (
+      local &&
+      !this.engine.capabilities.has(
+        RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+      )
+    )
+      return null
+    const cached = local ? this.localContentBounds.get(node) : undefined
+    if (cached) return { ...cached }
+    this.flushDraws()
+    const result = this.engine.query({ type, object: handle })
+    if (
+      result.type !== 'bounds' ||
+      ![
+        result.bounds.x,
+        result.bounds.y,
+        result.bounds.width,
+        result.bounds.height
+      ].every(Number.isFinite) ||
+      result.bounds.width < 0 ||
+      result.bounds.height < 0
+    ) {
+      throw new Error('Invalid render content bounds')
+    }
+    if (local) this.localContentBounds.set(node, { ...result.bounds })
+    return { ...result.bounds }
   }
 
   queryPoint(
@@ -918,7 +986,9 @@ export class RenderNode {
     if (this.children.length === 0) {
       return { x: 0, y: 0, width: this._width, height: this._height }
     }
-    const childBounds = this.children.map((child) => child.getBounds())
+    const childBounds = this.children.map((child) =>
+      child.projectLocalBounds(child.getLocalBounds())
+    )
     const minX = Math.min(...childBounds.map((bounds) => bounds.x))
     const minY = Math.min(...childBounds.map((bounds) => bounds.y))
     const maxX = Math.max(
@@ -930,8 +1000,27 @@ export class RenderNode {
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 
+  getPresentationLocalBounds(): RenderBounds {
+    return (
+      this.runtime?.queryBounds(this, 'get-local-content-bounds') ??
+      this.getLocalBounds()
+    )
+  }
+
   getBounds(): RenderBounds {
-    const local = this.getLocalBounds()
+    if (
+      this.runtime &&
+      !this.runtime.engine.capabilities.has(
+        RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+      )
+    ) {
+      const measured = this.runtime.queryBounds(this, 'get-bounds')
+      if (measured) return measured
+    }
+    return this.projectLocalBounds(this.getPresentationLocalBounds())
+  }
+
+  private projectLocalBounds(local: RenderBounds): RenderBounds {
     const corners = [
       this.toGlobal({ x: local.x, y: local.y }),
       this.toGlobal({ x: local.x + local.width, y: local.y }),

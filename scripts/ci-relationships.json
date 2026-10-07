@@ -538,6 +538,53 @@
         "python3",
         "apps/fieldscope/scripts/run-profile-groups.py"
       ]
+    },
+    "apps/asyra-sim": {
+      "task": "test:ci",
+      "argumentStyle": "positional"
+    }
+  },
+  "isolatedBrowserProofs": {
+    "apps/asyra-sim": {
+      "inventoryRoots": ["e2e", "src", "samples"],
+      "groups": [
+        {
+          "proofPatterns": [
+            "src/analysis/__tests__/budget-baseline.browser.spec.ts",
+            "src/analysis/__tests__/runner.browser.spec.ts",
+            "src/analysis/methods/__tests__/representative-resource-candidate-1.browser.spec.ts",
+            "src/analysis/methods/__tests__/representative-resource-candidate-2.browser.spec.ts",
+            "src/analysis/methods/__tests__/representative-resource-candidate-3.browser.spec.ts",
+            "src/analysis/methods/__tests__/runtime.browser.spec.ts",
+            "src/domain/__tests__/runtime.browser.spec.ts"
+          ],
+          "sourcePatterns": [
+            "src/analysis/**",
+            "src/domain/**",
+            "src/constants/**",
+            "src/extensions/**",
+            "src/engine/glb/**",
+            "samples/**",
+            "src/analysis/methods/__tests__/representative-fixture.ts"
+          ]
+        },
+        {
+          "proofPatterns": ["src/engine/glb/__tests__/runtime.browser.spec.ts"],
+          "sourcePatterns": [
+            "src/engine/glb/**",
+            "src/domain/**",
+            "src/constants/**"
+          ]
+        },
+        {
+          "proofPatterns": ["src/storage/__tests__/runtime.browser.spec.ts"],
+          "sourcePatterns": [
+            "src/storage/**",
+            "src/domain/**",
+            "src/constants/**"
+          ]
+        }
+      ]
     }
   }
 }

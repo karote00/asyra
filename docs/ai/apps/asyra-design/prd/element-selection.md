@@ -56,6 +56,10 @@ parent chain. Container eligibility uses the registered Core container capabilit
 including Group, Frame and custom Group-derived types. Repeated double-clicks
 enter one level per gesture. The normal preceding click selects an unselected
 outer container; no separate gesture timer or selection cache is needed.
+Successful drill-down updates hover to that same validated child immediately,
+even without subsequent pointer movement. Ordinary canvas hover and selection
+continue to use the selected parent scope, excluding its ancestors; deselection
+restores the normal workspace scope. Existing modifier bypass remains unchanged.
 
 Missing, stale or invalid hierarchy, a self/outside hit, a locked or hidden path,
 an empty position, multiple selection, modifiers, other tools or active path
