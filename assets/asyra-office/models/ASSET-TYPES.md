@@ -27,6 +27,15 @@ material must preserve that mask and physical bounds unless the user separately
 changes the decal design. A material replacement must not fill transparent
 pixels or introduce receiving-surface colour into the marking.
 
+## Path-generated decals
+
+Straight, arc and short road markings are presets of one path-marking decal
+family, not separate fixed models or shape-specific materials. Each instance
+uses a centreline, width and shared paint; the app derives its contour.
+See [path markings](street/PATH-MARKINGS.md). Material replacement retains the
+current contour, while explicit path/width editing changes geometry. Crosswalk
+stripes remain independently placed rectangular decals sharing the ivory paint.
+
 ## Reclassification of reviewed components
 
 | Existing component or group | Component type | Independent appearance and source |
@@ -44,9 +53,9 @@ pixels or introduce receiving-surface colour into the marking.
 | Level handrail corner | Model component | Painted-metal default in [corner surfaces](railing-corner/SURFACE-RECIPES.md); the L-shaped solid remains one unit |
 | Lounge armchair | Model component | Upholstery and wooden feet use the existing [default appearance](furniture/ARMCHAIR-DEFAULT-APPEARANCE.md); no new geometry or model approval is implied |
 | Asphalt surface tile | Model component | Asphalt is a separate default material recipe in [street surfaces](street/SURFACE-RECIPES.md#asphalt-default-and-overrides); tile dimensions and bottom bevel remain geometry |
-| Straight edge line | Decal component | One 1.00 x 0.10 m marking; ochre pigment and independent alpha mask |
-| Curved edge line | Decal component | One quarter-circle marking, centre radius 1.05 m and width 0.10 m; ochre pigment and independent alpha mask |
-| Short lane dash | Decal component | One 0.60 x 0.12 m marking; ivory pigment and independent alpha mask |
+| Straight edge line | Path-marking preset | One 1.00 x 0.10 m marking; shared ochre paint; contour generated from path |
+| Curved edge line | Path-marking preset | One quarter-circle marking, centre radius 1.05 m and width 0.10 m; shared ochre paint; contour generated from path |
+| Short lane dash | Path-marking preset | One 0.60 x 0.12 m marking; shared ivory paint; contour generated from path |
 | Crosswalk stripe | Decal component | One 0.40 x 2.80 m marking; ivory pigment and independent alpha mask |
 
 Road marking dimensions, origins, masks and defaults remain defined by the

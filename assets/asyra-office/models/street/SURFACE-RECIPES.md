@@ -55,6 +55,13 @@ fraction of that band. It is pigment and never follows the light direction.
 
 ## Paint masks
 
+Road straight/arc/dash presets share paint independently of their contour.
+See [path markings](PATH-MARKINGS.md): the app derives contours from path and
+width, while pigment and default wear are reusable. v4 PNGs are appearance
+references, not seamless source materials. Production texture coordinates must
+follow physical path distance, retaining speck scale as length changes.
+
+
 These masks belong to independent decal components. Ochre or ivory is the
 default pigment material, separately replaceable from the receiving surface.
 Colour/material overrides must retain the decal contour, physical dimensions
@@ -74,7 +81,7 @@ interpolated linearly. Use abs(offset) inward, up to the JSON maximum, keeping
 first/last samples zero. Short ends remain straight. The maximum authored
 rectangle is unchanged. No paint extrusion or side faces.
 
-For future production masks, use density 1024 pixels/metre with 16-pixel
+For optional baked/exported per-instance masks (not the reusable path material), use density 1024 pixels/metre with 16-pixel
 transparent padding, round image dimensions upward to a multiple of four.
 Keep local UV axes aligned to local X and Y; record padding separately.
 Generated review PNGs illustrate appearance, not calibrated production masks.

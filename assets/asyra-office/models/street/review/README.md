@@ -12,14 +12,23 @@
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
 
-## Decal components - approved transparent units
+## Path-marking presets and the rectangular crosswalk decal
 
-- [One straight edge line](02-road-line-single-v4.png)
-- [One curved edge line](02-road-curve-single-v4.png)
-- [One short dash](02-road-dash-single-v4.png)
+- [Straight path preset](02-road-line-single-v4.png)
+- [Arc path preset](02-road-curve-single-v4.png)
+- [Short path preset](02-road-dash-single-v4.png)
 - [One crosswalk stripe](03-crossing-single-v4.png)
 
-Each is one independently placeable decal component: a planar marking with dimensions, a contour/alpha mask and a default pigment material, without receiving ground. See the [asset types](../../ASSET-TYPES.md). These PNGs are appearance references, not dimensionally calibrated production masks. Image proportions or antialiasing cannot replace JSON dimensions and transparency rules. Paint does not require a 3D asphalt slab for illustration; a planar top view is sufficient.
+The first three images are appearance examples for presets of one shared
+[path-marking family](../PATH-MARKINGS.md). They no longer require separate
+fixed models or shape-specific paint materials. Keep their existing default
+dimensions and origins; generate contours from path and width. The crosswalk
+remains one independently placeable rectangular stripe.
+
+These PNGs are not seamless paint textures or calibrated production masks.
+Do not stretch them around arbitrary curves or include receiving ground.
+No redraw or production texture generation accompanies this classification.
+
 
 ## Production rules
 
