@@ -1881,3 +1881,28 @@ test('exact supervised file selections require the same executed files at aggreg
     'passed'
   )
 })
+
+test('positional supervised file selections preserve exact aggregate evidence', () => {
+  const entry = workspaceEntry(
+    '@asyra/asyra-sim',
+    'apps/asyra-sim',
+    'react:build'
+  )
+  entry.testSelection = {
+    mode: 'files',
+    inputs: ['src/render-app/__tests__/spatial-layer.test.ts'],
+    reason: 'source-graph',
+    runner: { command: 'test:ci', argumentStyle: 'positional' }
+  }
+  const scope = makeScope({ workspaceMatrix: [entry], e2eSuites: [] })
+  const record = workspaceResult(entry, scope)
+  assert.equal(
+    assess([], { workspaceResults: [record] }, scope).status,
+    'passed'
+  )
+  record.testResult.inputs = []
+  assert.notEqual(
+    assess([], { workspaceResults: [record] }, scope).status,
+    'passed'
+  )
+})

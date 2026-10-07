@@ -52,3 +52,56 @@ Feature: Element Selection
     When I drag element A across element B without releasing the pointer
     Then element B should not become the hovered target during the drag
     And element A should remain the hovered target during the drag
+
+  Scenario Outline: Enter one child level by double-clicking a container
+    Given the Select tool is active and no path is being edited
+    And a selected <container> contains a nested container with a visible unlocked vector
+    When I double-click the vector's visible geometry without modifiers
+    Then only the immediate child of the selected container should be selected
+    And its blue selection outline should surround its visible content
+    And the same double-click should not enter vector path editing
+    And the document geometry and hierarchy should remain unchanged
+    Examples:
+      | container                         |
+      | Group                             |
+      | Frame                             |
+      | registered type inheriting Group  |
+
+  Scenario: Repeated double-clicks enter nested containers one level at a time
+    Given a selected outer Group contains an inner Group containing a vector
+    When I double-click the vector's visible geometry
+    Then the inner Group should be selected
+    When I double-click the vector's visible geometry again
+    Then the vector should be selected without entering path editing
+    When I double-click the selected vector again
+    Then the existing vector path editing behavior should run
+
+  Scenario: Choose the frontmost child at the pointer
+    Given a selected Group has two overlapping visible unlocked children
+    When I double-click their overlapping visible geometry
+    Then only the frontmost child should be selected
+
+  Scenario Outline: Reject unavailable child targets
+    Given a single container is selected
+    When a double-click resolves to <target>
+    Then the drill-down action should leave selection unchanged
+    Examples:
+      | target                              |
+      | no child at that position           |
+      | the container itself                |
+      | an element outside the container    |
+      | a locked or hidden child            |
+      | a missing or invalid hierarchy      |
+
+  Scenario: Preserve existing interaction modes
+    Given another drawing tool or path editing is active, or a selection modifier is held
+    When I double-click on a container
+    Then container drill-down should not take over that interaction
+
+  Scenario: Drill-down replaces ancestor hover without pointer movement
+    Given a selected Group with a visible unlocked child under the pointer
+    And the Group is currently hovered
+    When I double-click to select the child and leave the pointer still
+    Then the hovered element is the selected child
+    And ordinary canvas hover and selection cannot target its ancestors
+    And siblings remain available within the selected parent scope

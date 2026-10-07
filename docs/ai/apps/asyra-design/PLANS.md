@@ -4,6 +4,8 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active - [Container double-click selection](plans/container-double-click-selection-plan.md).
+
 - Active - locally verified, awaiting review: [Large document load performance](plans/document-load-performance-plan.md) - unified vector fill materials; full Taipei 101 source preserved and applicable local gates passed. No push authorized.
 
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -

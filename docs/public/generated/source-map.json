@@ -166,7 +166,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "881e4b2e8273fa161b10f00badc1ef6d831037e8fdde156f7535ba0f631e202e"
+          "sha256": "733f9ed033a16935fa09856c64671be00e6a67c2aaf912a9cc03bb88cc30ff83"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -238,7 +238,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "881e4b2e8273fa161b10f00badc1ef6d831037e8fdde156f7535ba0f631e202e"
+          "sha256": "733f9ed033a16935fa09856c64671be00e6a67c2aaf912a9cc03bb88cc30ff83"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -480,7 +480,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "881e4b2e8273fa161b10f00badc1ef6d831037e8fdde156f7535ba0f631e202e"
+          "sha256": "733f9ed033a16935fa09856c64671be00e6a67c2aaf912a9cc03bb88cc30ff83"
         },
         {
           "path": "packages/render/package.json",

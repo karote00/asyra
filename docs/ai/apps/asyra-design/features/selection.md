@@ -46,3 +46,19 @@
 
 - selection flow calls path-editing cleanup when selection no longer matches editing vector
 - keeps editing focus when selected vector remains the same single selection
+
+## Container double-click
+
+`selectContainerChild` uses `InputSystemEvents.INPUT_DOUBLE_CLICK` as an exclusive
+one-shot Feature at priority 100, before vector editing at priority 90. It accepts
+one selected registered container in Select mode with no modifiers or active path
+editing. `elementApis.isContainerType` delegates to Core registration; no fixed
+Group/Frame name list exists.
+
+`resolveContainerChildAtClientPos` reads the renderer hit ID and canonical
+hierarchy projection once per gesture. The hierarchy controller validates that
+projection and walks parent IDs to find the immediate child of the selected
+container. Missing, self/outside, locked, hidden or stale paths return null.
+Successful `selectionApis.selectElements` consumes the event. No document writes,
+new subscriptions, timers or retained hierarchy state are introduced. See the
+selection PRD and BDD scenarios for interaction and acceptance requirements.

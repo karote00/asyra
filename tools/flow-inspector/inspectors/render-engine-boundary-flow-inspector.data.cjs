@@ -191,6 +191,7 @@
         'Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.',
         'Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.',
         'Mesh projection retains geometry across material-only updates and explicitly removes the previous descriptor when replacing material with a solid paint.',
+        'Presentation bounds are measured lazily through the current engine, shared by selection and content APIs, and invalidated only by affected object geometry, descendants or membership. Viewport motion reuses descendant-local bounds.',
         'A successful concrete result is normalized before Core observes adapter initialization success.'
       ],
       bypasses: [
@@ -212,7 +213,7 @@
         'fallback product output',
         '3D or Hybrid mode branches'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['Bound object lifetime and current local content after descendant geometry, transform, visibility or membership changes; world transforms are projected at read time.'],
       implementationBoundary: [
         'yarn.lock',
         'turbo.json',

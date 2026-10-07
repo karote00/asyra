@@ -407,3 +407,13 @@ editing flows; the strict JSON review additionally covers 960/600-pixel layouts
 and light/dark themes. Screenshots retain the ordinary viewport/panel overlays,
 selected fixture where applicable, and the exact test-asserted field values.
 The local Vite server remains on port 3020 (PID 13928 for this invocation).
+
+### Affected upstream checks
+
+The shared CI relationship map can select exact unit files through the existing
+supervisor and exact browser specs through the grouped runner. The browser runner
+validates selections, keeps original group isolation and budgets, and accounts
+for cancellation only within the selected groups. An empty argument list still
+runs the full inventory. Declared isolated computation proofs may be unselected
+for unrelated upstream sources; App integration E2E and unknown/new specs remain
+selected. Local source/configuration and runner edits retain full validation.

@@ -125,3 +125,29 @@ test('merged reports preserve every outcome and bind each run command to identit
   assert.equal(merged.ci.groups[1].command.at(-1), 'two.spec.ts')
   assert.equal(merged.ci.groups[1].outputDirectory, 'test-results/ci/second')
 })
+
+test('exact browser selection preserves process groups and rejects invalid inputs', async () => {
+  const { selectBrowserGroups } = await import('../e2e-ci-groups.mjs')
+  assert.equal(typeof selectBrowserGroups, 'function')
+  const file = 'e2e/__tests__/viewport-navigation.spec.ts'
+  assert.deepEqual(selectBrowserGroups([`apps/asyra-sim/${file}`]), [
+    { name: 'browser-navigation', files: [file] }
+  ])
+  assert.deepEqual(selectBrowserGroups([]), CI_E2E_GROUPS)
+  assert.throws(() => selectBrowserGroups([file, file]), /Duplicate/)
+  assert.throws(() => selectBrowserGroups(['unknown.spec.ts']), /Unknown/)
+  const source = fs.readFileSync(
+    path.join(appRoot, 'scripts/run-e2e-ci.mjs'),
+    'utf8'
+  )
+  assert.match(source, /selectBrowserGroups\(process\.argv\.slice\(2\)\)/)
+})
+
+test('incomplete-group accounting uses only the selected browser inventory', () => {
+  const source = fs.readFileSync(
+    path.join(appRoot, 'scripts/run-e2e-ci.mjs'),
+    'utf8'
+  )
+  assert.match(source, /groupRuns\.length < selectedGroups\.length/)
+  assert.match(source, /selectedGroups\.slice\(groupRuns\.length\)/)
+})

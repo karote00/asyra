@@ -26,6 +26,7 @@
       "tools/flow-inspector/inspectors/asyra-website-visual-reimagine-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/container-double-click-selection-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
@@ -9161,6 +9162,204 @@
               "#persisted-vector-data-stays-unchanged",
               "#transactions-persistence-and-collaboration",
               "#definition-of-done"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "container-double-click-selection",
+      "slug": "container-double-click-selection",
+      "title": "Container double-click selection",
+      "kind": "flow-v2",
+      "group": "Apps",
+      "subgroup": "Asyra Design",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/container-double-click-selection-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "container-double-click-selection",
+        "Apps",
+        "Asyra Design",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "container-double-click-selection",
+          "kind": "feature",
+          "title": "Container double-click selection",
+          "subtitle": "Canonical immediate-child selection through the App Feature boundary"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/prd/element-selection.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/container-double-click-selection-flow-inspector.data.cjs",
+          "semanticOwner": "Design selection",
+          "inspectorOwner": "Design selection"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "selection",
+            "title": "App selection",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "select-container-child",
+            "order": 1,
+            "laneId": "selection",
+            "title": "Select the immediate child at the pointer",
+            "ownerPackage": "asyra-design selection Feature and hierarchy controller",
+            "purpose": "Resolve a canonical immediate child from an identity-safe renderer hit and publish local selection.",
+            "inputs": [
+              "current input and path-editing state",
+              "current selected IDs",
+              "Core container capability",
+              "identity-safe renderer hit ID",
+              "canonical hierarchy projection"
+            ],
+            "outputs": [
+              "artifact:container-child-selection"
+            ],
+            "conditions": [
+              "Select tool, no modifiers or active path editing, exactly one selected registered container.",
+              "The visible unlocked hit descends from that container; select only its immediate child.",
+              "Successful priority 100 exclusive execution consumes the double-click before vector path editing.",
+              "Selection and hover both publish the validated immediate child in the same gesture; no stationary ancestor hover survives the new parent scope."
+            ],
+            "bypasses": [
+              "Invalid projection, no hit, self/outside hit, hidden or locked ancestry produces no drill-down selection.",
+              "Other tools, modifiers, multiple selection and active path editing preserve existing handlers."
+            ],
+            "allowedContributors": [
+              "Core container capability through elementApis",
+              "renderer hit identity through elementApis",
+              "canonical projection through hierarchyApis",
+              "selectionApis and systemContextApis",
+              "existing hierarchy projection validation"
+            ],
+            "forbiddenContributors": [
+              "hardcoded container type lists",
+              "render display-object ancestry",
+              "new gesture timers or cached hierarchy",
+              "document geometry or parent writes",
+              "raw leaf fallback after rejection"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/features/selection",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/src/controllers/canvas-hierarchy-target.ts",
+              "apps/asyra-design/src/controllers/__tests__/canvas-hierarchy-target.test.ts",
+              "apps/asyra-design/src/constants/feature-names.ts",
+              "apps/asyra-design/e2e/group-hierarchy.spec.ts"
+            ],
+            "specRefs": [
+              "#container-double-click-selection"
+            ],
+            "failureOwnerStepId": "select-container-child"
+          },
+          {
+            "id": "resolve-element-point-bounds",
+            "order": 2,
+            "laneId": "selection",
+            "title": "Resolve a workspace point against local element bounds",
+            "ownerPackage": "asyra-design element common API",
+            "purpose": "Keep the existing bounds query coordinate-correct for subsequent vector editing and public query callers.",
+            "inputs": [
+              "caller element ID and workspace point",
+              "computed element dimensions",
+              "Core workspace-to-element-local conversion",
+              "optional local padding"
+            ],
+            "outputs": [
+              "artifact:element-point-bounds"
+            ],
+            "conditions": [
+              "Convert the workspace point through the identity-safe Core transform before comparing with zero-origin local width and height.",
+              "Preserve local padding for empty-point vector editing."
+            ],
+            "bypasses": [
+              "Missing element or projection, or non-finite coordinates, yields false."
+            ],
+            "allowedContributors": [
+              "Core computed data and coordinate conversion"
+            ],
+            "forbiddenContributors": [
+              "parent-local position treated as workspace bounds",
+              "Pixi access",
+              "canonical geometry writes"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/element/apis.ts",
+              "apps/asyra-design/src/common-apis/element/__tests__/group-geometry-mutation.test.ts"
+            ],
+            "specRefs": [
+              "#container-double-click-selection"
+            ],
+            "failureOwnerStepId": "resolve-element-point-bounds"
+          }
+        ],
+        "routes": [
+          {
+            "id": "selection-to-ui",
+            "from": "select-container-child",
+            "to": null,
+            "kind": "terminal",
+            "predicate": "Selected immediate child or unchanged local selection",
+            "producedArtifacts": [
+              "artifact:container-child-selection"
+            ]
+          },
+          {
+            "id": "bounds-query-return",
+            "from": "resolve-element-point-bounds",
+            "kind": "terminal",
+            "predicate": "Existing query caller receives the bounds result",
+            "producedArtifacts": [
+              "artifact:element-point-bounds"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:container-child-selection",
+            "ownerStepId": "select-container-child",
+            "channel": "selection common API",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Existing selection channel updates the ordinary overlays and panels; canonical document is unchanged."
+          },
+          {
+            "id": "artifact:element-point-bounds",
+            "ownerStepId": "resolve-element-point-bounds",
+            "channel": "common API return",
+            "consumerStepIds": [],
+            "terminal": true
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": [
+          {
+            "id": "container-double-click-cases",
+            "title": "Container drill-down behavior",
+            "assertions": [
+              "Group, Frame and custom Group inheritance",
+              "Nested progression, frontmost hit and no child",
+              "Locked, hidden, stale and outside targets",
+              "Vector editing, modifier selection, dragging and save/load preservation"
+            ],
+            "stepIds": [
+              "select-container-child"
+            ],
+            "specRefs": [
+              "#container-double-click-selection"
             ]
           }
         ]
@@ -22695,6 +22894,7 @@
             ],
             "conditions": [
               "Reuse the CI classifier and related/full-owner contracts",
+              "Registered isolated browser proofs use declared computation source inputs for upstream changes; unregistered and new specs retain integration coverage. Missing or unknown inputs remain conservative. Supervised owners retain their declared task and file argument interface. Without a separate profile runner, profile-named tests stay in the supervised selection.",
               "Select registered supervised owner tests and profiles from one source graph; unknown edges broaden selection",
               "Known upstream source inputs resolve workspace exports and compiler output mappings; value imports propagate across package entries while erased type-only edges do not execute upstream modules. Owner-local edits retain type/value edges and full owner lint/build remains selected.",
               "Workspace-local tests and registered validation inputs select their owner without broadening downstream runtime consumers; unknown resources remain conservative",
@@ -22770,6 +22970,10 @@
               "scripts/local-validation.mjs",
               "scripts/local-validation-runner.mjs",
               "scripts/run-workspace-checks.mjs",
+              "apps/asyra-sim/scripts/run-e2e-ci.mjs",
+              "apps/asyra-sim/scripts/e2e-ci-groups.mjs",
+              "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
+              "scripts/__tests__/ci-scope.test.mjs",
               "tools/flow-inspector/control-plane/workflow-results.cjs",
               "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
               "apps/fieldscope/scripts/run-profile-groups.py",
@@ -27188,6 +27392,7 @@
               "Load, undo, redo, persistence replay, and local shared projection enter through the same authoritative state synchronization route as ordinary committed state.",
               "Required capabilities are checked through contract identifiers and unsupported behavior fails without Pixi or custom-engine introspection.",
               "Mesh projection retains geometry across material-only updates and explicitly removes the previous descriptor when replacing material with a solid paint.",
+              "Presentation bounds are measured lazily through the current engine, shared by selection and content APIs, and invalidated only by affected object geometry, descendants or membership. Viewport motion reuses descendant-local bounds.",
               "A successful concrete result is normalized before Core observes adapter initialization success."
             ],
             "bypasses": [
@@ -27209,7 +27414,9 @@
               "fallback product output",
               "3D or Hybrid mode branches"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Bound object lifetime and current local content after descendant geometry, transform, visibility or membership changes; world transforms are projected at read time."
+            ],
             "implementationBoundary": [
               "yarn.lock",
               "turbo.json",
@@ -38433,6 +38640,7 @@
             "conditions": [
               "Derive changed paths from Git base/head and classify them against discovered first-level apps/packages/tools workspace manifests, their declared dependency edges, manifest canonical build/test scripts, and the versioned CI relationship policy. Derive affected consumers transitively from the union of base and head dependency edges so deletions and renames preserve old consumers. Root shared inputs select every discovered workspace. Public documentation selects its configured site workspace; docs under app/package/tool roots select their matching workspace when defined, and other discovered documentation roots require shared validation. Never infer workspace ownership from a fixed workspace-name category list. Unknown paths, missing build/test tasks, or unclassified consumers invalidate scope and fail the total even if conservative jobs ran.",
               "Use one derived execution plan for repository lint, repository script tests, naming, per-workspace lint/build/test, standard E2E tasks discovered from each manifest test:e2e:ci script, specialized E2E suites, dynamic matrix scheduling, specialized gates, and final aggregation. Full validation selects every declared check and owner. Incremental validation selects changed applicable lint files, repository script tests for their declared owner inputs, workspace related tests only for supported source changes with existing test inputs, and E2E owners from their manifest scripts and declared suite input paths; configs, fixtures, deleted or renamed files, unsupported runners, shared inputs, and unknown paths use full owner checks or remain blockers. For each selected workspace, run lint, then its canonical build task to completion, then its declared test preflight and test:ci, followed by its selected test:e2e:ci; never schedule tests alongside builds. Bind every result to the plan and map digests plus the same repository/base/head/integration/run identity and an admitted producer attempt. Require exact selected success and declared unselected skips; missing, duplicate, unexpected, stale, failed, zero-tests, zero-evidence, or omitted outcomes cannot pass. Run Framework release readiness when Framework workspaces or release-validation owner inputs are affected. create-app CLI packages remain outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects its control-plane validation suite.",
+              "Supervised exact-file results preserve the declared flagged test:affected or positional test:ci owner task. Both require identical selected and executed files. Declared isolated browser computation proofs use the shared source graph for known upstream inputs; ordinary and new integration specs remain selected, and unknown or removed inputs retain conservative checks.",
               "Flow Inspector validation runs its control-plane contracts, prove and candidate commands against the candidate. This producer never selects a new accepted base or grants protected delivery; accepted-base admission and its policy mismatch blockers remain separate.",
               "Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.",
               "Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision and run id. Partial reruns may reuse successful evidence from earlier positive integer attempts with unchanged plan/map digests; preserve the original producer attempt and reject future or malformed attempts. Local evidence requires the exact local run/attempt pair. Latest GitHub dependency outcomes must succeed: an older successful receipt cannot override a later failed, cancelled, missing or skipped selected job.",

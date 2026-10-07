@@ -7,6 +7,7 @@ export const ElementFeatureNames = {
   MOVE_ELEMENTS: 'moveElements',
   HOVER_ELEMENT: 'hoverElement',
   SELECTION: 'selection',
+  SELECT_CONTAINER_CHILD: 'selectContainerChild',
   DELETE_SELECTED_ELEMENT: 'deleteSelectedElement',
   GROUP_ELEMENTS: 'groupElements',
   MOVE_LAYER_HIERARCHY: 'moveLayerHierarchy'

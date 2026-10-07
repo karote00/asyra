@@ -542,8 +542,9 @@ files, repository script tests for declared repository-test inputs (document
 and code input groups select registered test files), supported
 Vitest related tests only for source/test inputs owned by the consumer
 workspace, and only the E2E suite owners selected by changed paths. Transitive
-dependency-source inputs, configurations, fixtures, deleted or renamed test
-inputs, unsupported runners, and shared inputs retain the complete owner suite.
+dependency-source inputs without a declared source-graph contract, configurations,
+fixtures, deleted or renamed test inputs, unsupported runners, and shared inputs
+retain the complete owner suite.
 Unknown path relations also select repository script tests while remaining a
 CI blocker. The final job requires the same identity and plan/map digests, requires
 every selected producer to succeed, and requires every unselected producer to
@@ -582,6 +583,12 @@ directories select the conditional `npm pack --dry-run --json` step inside
 `validate`, and the aggregate requires that step's result.
 The existing Factory proof remains an independent producer. A successful
 Factory job does not establish Design conformance.
+Supervised source-file selections retain their owner task: flagged `test:affected`
+inputs or positional `test:ci` inputs. The aggregate requires the exact executed
+file set for both interfaces. The shared relationship map can narrow declared
+isolated browser computation proofs for known upstream source changes; ordinary
+integration specs and unregistered/new specs retain coverage. Configuration,
+deleted and unresolved inputs remain conservative.
 
 The existing required check names `e2e-tests` and `collaboration-e2e-tests`
 remain available as result-forwarding jobs after the reusable workflow settles.

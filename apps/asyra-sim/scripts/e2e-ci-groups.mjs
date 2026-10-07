@@ -245,3 +245,17 @@ export function mergePlaywrightReports(groupRuns, identity) {
     ci: { identity, totals, groups }
   }
 }
+
+export function selectBrowserGroups(inputs) {
+  const files = inputs.map((file) => file.replace(/^apps\/asyra-sim\//, ''))
+  if (!files.length) return CI_E2E_GROUPS
+  if (new Set(files).size !== files.length)
+    throw new Error('Duplicate browser selection')
+  const known = new Set(CI_E2E_GROUPS.flatMap((group) => group.files))
+  if (files.some((file) => !known.has(file)))
+    throw new Error('Unknown browser selection')
+  return CI_E2E_GROUPS.map((group) => ({
+    ...group,
+    files: group.files.filter((file) => files.includes(file))
+  })).filter((group) => group.files.length)
+}

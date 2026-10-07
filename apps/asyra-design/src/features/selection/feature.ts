@@ -17,7 +17,10 @@ import {
   InputSystemEvents,
   PrimaryToolType
 } from '../../constants'
-import { resolveCanvasHierarchyTargetAtClientPos } from '../../controllers/canvas-hierarchy-target'
+import {
+  resolveCanvasHierarchyTargetAtClientPos,
+  resolveContainerChildAtClientPos
+} from '../../controllers/canvas-hierarchy-target'
 
 interface SelectionAPI {
   getSelectedIds: () => string[]
@@ -269,3 +272,40 @@ export const selectionFeature = defineFeature<
 })
 
 export default selectionFeature
+
+export const selectContainerChildFeature = defineFeature(
+  FeatureNames.SELECT_CONTAINER_CHILD,
+  InputSystemEvents.INPUT_DOUBLE_CLICK,
+  {
+    priority: 100,
+    exclusive: true,
+    execution: (snapshot: SystemContextSnapshot) => {
+      if (
+        snapshot.primaryTool !== PrimaryToolType.SELECT ||
+        snapshot.keyShift ||
+        snapshot.keyMeta ||
+        snapshot.keyCtrl ||
+        snapshot.keyAlt ||
+        systemContextApis.getPathEditingMode()
+      )
+        return null
+
+      const selectedIds = selectionApis.getSelectedIds()
+      if (selectedIds.length !== 1) return null
+      const containerId = selectedIds[0]
+      const type = elementApis.getElementType(containerId)
+      if (!type || !elementApis.isContainerType(type)) return null
+
+      const childId = resolveContainerChildAtClientPos(
+        containerId,
+        snapshot.mousePosition
+      )
+      if (!childId) return null
+      selectionApis.selectElements([childId])
+      // The pointer can stay still after entering a new parent scope.
+      systemContextApis.updateHoveredElementId(childId)
+      // Consume this gesture; vector editing belongs to a later double-click.
+      return { selectedElementId: childId }
+    }
+  }
+)

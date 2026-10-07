@@ -25,10 +25,13 @@ describe('Render', () => {
   it('measures current content with one flush and one query per present target', async () => {
     await render.init(800, 600, 0xffffff)
     const element = new RenderContainer()
+    const second = new RenderContainer()
     render.viewport.view.addChild(element)
-    render.viewport.getElementById = vi.fn((id) =>
-      id === 'missing' ? undefined : element
-    )
+    render.viewport.view.addChild(second)
+    render.viewport.getElementById = vi.fn((id) => {
+      if (id === 'missing') return undefined
+      return id === 'b' ? second : element
+    })
     Object.defineProperty(engine, 'capabilities', {
       value: new Set([...engine.capabilities, 'local-content-bounds'])
     })
@@ -47,6 +50,8 @@ describe('Render', () => {
       type: 'get-local-content-bounds',
       object: element.getEngineHandle()
     })
+    render.measureElementContentBounds(['a', 'b'])
+    expect(engine.query).toHaveBeenCalledTimes(2)
     bounds.width = 900
     expect(result[0].bounds?.width).toBe(120)
     flush.mockClear()
