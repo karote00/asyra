@@ -18,7 +18,7 @@ states; it does not create a runtime decal system or finish the current review.
 
 1. [Reconstruction specification and unit table](STREET-SUPPLEMENT.md): read order, origins, structure, and acceptance criteria.
 2. [Exact parameters](street-model-spec.json): geometry/material defaults for the existing eleven unit/preset entries across seven categories; three entries are path-marking presets.
-3. [Surface and leaf recipes](SURFACE-RECIPES.md): repeatable textures, leaf placement, and transparency.
+3. [Surface recipes](SURFACE-RECIPES.md): repeatable textures and transparency. Trees use the [construction contract](TREE-CONSTRUCTION.md) and [numeric data](tree-construction-spec.json), including shared leaf geometry and full branch/foliage assembly.
 4. [Drawing index and approval status](review/README.md): approved appearances, transparent units, and original reference.
 
 A crosswalk unit is one stripe; a road line is one segment; a tree is one tree; a light is one light. Pavers and curb blocks are also individual units. The app owns arrangement, count, spacing, ground material, and lighting. No paint unit contains asphalt backing; transparent wear reveals any receiving ground.

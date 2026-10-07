@@ -585,266 +585,27 @@
       "moduleId": "street-tree-leafy",
       "name": "Street tree",
       "approvedDrawing": "review/06-street-tree-v2.png",
+      "constructionSpec": "tree-construction-spec.json",
+      "constructionGuide": "TREE-CONSTRUCTION.md",
+      "bareStructureReference": "review/06-bare-tree-selected-v1.png",
+      "foliageAssemblyReference": "review/06-leaf-cluster-v2.png",
+      "singleLeafReference": "review/06-single-leaf-v1.png",
       "origin": "trunk base centre on planting ground, Z=0",
       "silhouetteEnvelopeMetres": {
         "min": [
-          -1.18,
-          -0.9,
+          -1.5,
+          -0.95,
           0
         ],
         "max": [
-          1.18,
-          0.9,
+          1.5,
+          0.95,
           3.55
         ],
-        "role": "maximum allowed envelope; not an instruction to scale canopy to fill it"
+        "role": "maximum envelope; do not scale or clip to fill it"
       },
-      "trunk": {
-        "material": "bark",
-        "ringSides": 12,
-        "centrelineXYZRadiusMetres": [
-          [
-            0,
-            0,
-            0,
-            0.115
-          ],
-          [
-            -0.02,
-            0.005,
-            0.28,
-            0.095
-          ],
-          [
-            0.015,
-            0,
-            0.72,
-            0.08
-          ],
-          [
-            0.035,
-            0.01,
-            1.1,
-            0.067
-          ],
-          [
-            -0.025,
-            0.015,
-            1.5,
-            0.05
-          ],
-          [
-            0.01,
-            0.02,
-            1.95,
-            0.034
-          ],
-          [
-            0.03,
-            0.035,
-            2.55,
-            0.012
-          ]
-        ],
-        "interpolation": "piecewise linear centreline and radius, segment divisions=4",
-        "capEnds": true
-      },
-      "branches": {
-        "count": 12,
-        "startZMetres": [
-          1.05,
-          1.1,
-          1.2,
-          1.32,
-          1.42,
-          1.6,
-          1.68,
-          1.75,
-          1.9,
-          2.05,
-          2.25,
-          1.65
-        ],
-        "endTargets": "cluster centres in listed order",
-        "midpointRule": "(start+end)/2 + (0,0,0.12)",
-        "radiiMetres": [
-          0.036,
-          0.024,
-          0.01
-        ],
-        "ringSides": 8,
-        "interpolation": "two straight tapered segments",
-        "material": "bark"
-      },
-      "foliage": {
-        "clusterGuidesXYZRadiiMetres": [
-          [
-            -0.62,
-            -0.03,
-            1.72,
-            0.46,
-            0.4,
-            0.45
-          ],
-          [
-            0.56,
-            -0.02,
-            1.8,
-            0.44,
-            0.39,
-            0.43
-          ],
-          [
-            0,
-            -0.37,
-            1.97,
-            0.47,
-            0.37,
-            0.44
-          ],
-          [
-            -0.45,
-            0.32,
-            2.08,
-            0.43,
-            0.36,
-            0.47
-          ],
-          [
-            0.45,
-            0.34,
-            2.12,
-            0.45,
-            0.38,
-            0.48
-          ],
-          [
-            -0.59,
-            -0.1,
-            2.4,
-            0.46,
-            0.38,
-            0.45
-          ],
-          [
-            0.53,
-            -0.1,
-            2.4,
-            0.43,
-            0.36,
-            0.44
-          ],
-          [
-            0,
-            -0.33,
-            2.48,
-            0.46,
-            0.37,
-            0.46
-          ],
-          [
-            -0.22,
-            0.29,
-            2.65,
-            0.44,
-            0.36,
-            0.46
-          ],
-          [
-            0.33,
-            0.22,
-            2.79,
-            0.38,
-            0.35,
-            0.41
-          ],
-          [
-            -0.12,
-            -0.05,
-            3.0,
-            0.37,
-            0.34,
-            0.42
-          ],
-          [
-            0.02,
-            0.12,
-            2.26,
-            0.48,
-            0.39,
-            0.5
-          ]
-        ],
-        "guidesVisible": false,
-        "leafCountPerCluster": 96,
-        "distributionRule": "SURFACE-RECIPES.md#tree-leaves",
-        "leafLengthRangeMetres": [
-          0.075,
-          0.115
-        ],
-        "leafWidthToLength": 0.58,
-        "leafThicknessMetres": 0.001,
-        "leafCentreBulgeMetres": 0.003,
-        "outlineNormalized": [
-          [
-            -0.5,
-            0
-          ],
-          [
-            -0.28,
-            -0.5
-          ],
-          [
-            0.25,
-            -0.5
-          ],
-          [
-            0.5,
-            0
-          ],
-          [
-            0.25,
-            0.5
-          ],
-          [
-            -0.28,
-            0.5
-          ]
-        ],
-        "seed": 606,
-        "materials": [
-          "leaf-olive",
-          "leaf-pale",
-          "leaf-deep"
-        ],
-        "materialProbabilities": [
-          0.5,
-          0.3,
-          0.2
-        ],
-        "billboard": false,
-        "visibleSpheres": false
-      },
-      "hiddenSurfaces": {
-        "trunkBase": "flat closed cap",
-        "canopyRear": "same leaf algorithm over full volume; no flat back",
-        "roots": "no additional roots or soil mesh"
-      },
-      "barkDetail": {
-        "seed": 607,
-        "grainDiameterRangeMetres": [
-          0.001,
-          0.003
-        ],
-        "coverageFraction": 0.04,
-        "albedoValueMultiplierRange": [
-          0.94,
-          1.06
-        ],
-        "textureRule": "SURFACE-RECIPES.md#grain",
-        "grooves": "none; keep trunk taper and branching readable"
-      },
-      "unitCount": 1
+      "unitCount": 1,
+      "status": "User delegated the remaining dimensions and construction choices; finalized 2026-10-08. Canonical tree-only numeric definitions are in tree-construction-spec.json; old sparse branch and uniform foliage recipes are superseded. No model has been generated or visually accepted."
     },
     {
       "moduleId": "streetlight-vintage-lantern",

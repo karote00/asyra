@@ -141,31 +141,26 @@ source of transparent edge data.
 
 ## Tree leaves
 
-Use the twelve ellipsoid guides in listed order; guides never render.
-Each has 96 leaves. For i=0..95, set u=(i+0.5)/96, z=1-2*u,
-theta=i*2.399963229728653 + clusterIndex*0.73;
-d=(sqrt(1-z*z)*cos(theta), sqrt(1-z*z)*sin(theta), z).
-Even i uses radial factor 1; odd i uses
-0.55+0.4*fract((i+1)*0.618033988749895).
-Position = guide center + componentwise(guide radii * d * radial factor).
+The sole current tree geometry and assembly recipe is
+[TREE-CONSTRUCTION.md](TREE-CONSTRUCTION.md), using
+[tree-construction-spec.json](tree-construction-spec.json).
+It defines one rounded solid leaf, 23 groups and 1,744 shared instances,
+including size mixtures, subgroup offsets, orientations and fixed random streams.
+The previous twelve-guide/1,152-leaf recipe is superseded; do not reuse it.
 
-Start the sequence at foliage seed + 1009*clusterIndex. Consume three samples
-per leaf: length within the JSON range, rotation in [0,2*pi), material choice.
-Choose materials[0] for q<0.5, [1] for 0.5<=q<0.8, [2] otherwise.
-Choice is independent of normal, location, camera and lighting.
+### Tree defaults and overrides
 
-Normal = normalized(d.x/rx,d.y/ry,d.z/rz).
-T = normalized(cross(+Z,normal)); if its length is below 0.000001, use
-cross(+X,normal). B=cross(normal,T). Rotate T and B by the sampled rotation.
-Map the six normalized outline points in JSON onto T and B using length and
-width. Add the centre raised along normal by the bulge amount. Form six front
-triangles. Duplicate vertices offset minus thickness along normal, reverse
-back faces, and close the six side edges. Leaves are closed geometry.
-Do not add visible spheres, leaf stems, veins, clusters or a soil pedestal.
+Bark defaults to #806144, roughness 0.94, metallic 0. Leaves use olive #829347,
+pale #A7AD58 and deep #596D3D, all roughness 0.90 and metallic 0. These are
+replaceable intrinsic colours. Their spatial correlation is specified in the
+construction guide and never follows scene lighting. No default displacement.
 
-Each branch starts at the trunk centreline interpolated at its listed Z.
-Its endpoint is the corresponding guide center; midpoint and radii are given
-in JSON. Cap branch ends. Trunk base is a flat closed face.
+Independent bark and leaf colour/material overrides preserve seed, positions,
+dimensions, branch graph and normals. A full material override replaces prior
+textures/shaders. All leaf slots may use one replacement material. Still consume
+the same eight uniforms per leaf and the separate subgroup palette draws, so
+appearance changes cannot alter geometry. No baked cast/contact shadows, AO,
+highlights or drawn reference outlines. The scene owns illumination.
 
 ## Reconstruction limit
 
