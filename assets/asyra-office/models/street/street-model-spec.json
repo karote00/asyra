@@ -173,7 +173,7 @@
       "geometry": {
         "primitive": "closed box",
         "bevelMetres": 0.003,
-        "bevelScope": "outer vertical corners and bottom edges only; top boundary remains planar for tiling"
+        "bevelScope": "four bottom perimeter edges at Z=-0.08 only; exclude top edges and vertical edges; corner blends remain within the bottom 0.003 m band"
       },
       "surface": {
         "seed": 101,
