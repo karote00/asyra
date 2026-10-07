@@ -1,5 +1,16 @@
 # Level Handrail Corner - Actual Prompt
 
+## Review recolour - v2 - 2026-10-07
+
+Built-in imagegen edit of `01-level-handrail-corner-v1.png`; output v2.
+Default material and numeric geometry are unchanged. User approved v2 on 2026-10-07.
+
+```text
+Edit the attached existing single-sheet six-view technical reference ONLY to change object fill color. Replace charcoal fills with uniform light grey #C8CCD0 on EVERY face in FRONT RIGHT BACK TOP BOTTOM and THREE-QUARTER. Preserve the exact existing silhouettes, interior and exterior corners, endpoints, contour lines, camera angle, dimensions, all existing text, layout and aspect ratio. In particular do not redraw, reshape, shorten, lengthen or change the perspective of the L-shaped THREE-QUARTER object. Keep black outlines crisp. Keep white background. No shadows, lighting, gradients, textures or new geometric edges. Add only this caption in the empty white area below the dimension caption: 'REVIEW COLOUR ONLY - DEFAULT: #383A38'. All geometry and other content must remain unchanged. This is a recolor of a reference sheet, not a design revision.
+```
+
+## Original generation - v1
+
 Built-in imagegen, one text-only generation call. Supplementary design, no image input or fallback CLI.
 
 ```text
