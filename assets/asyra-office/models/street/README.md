@@ -16,3 +16,11 @@ Dimensions are production decisions, not image measurements. Generated view labe
 ## Historical material
 
 `orthoviews/`, `street-stage-02-review.png`, v1 images, and v3 images with road backing remain historical records only. Old road corners, fixed crosswalk arrays, spherical canopies, side-arm lanterns, and fixed pavement assemblies are no longer production specifications. Do not build new models from old sheets.
+
+## Shared planar curb section - approved 2026-10-07
+
+[Approved section drawing](review/04-curb-shared-section-v1.png) - one shared
+160 x 120 mm section, four 8 mm two-segment corner treatments and a bottom-centre
+path origin. Straight and curved forms are generated along planar paths;
+separate multiview sheets are not required. See [the current contract](PLANAR-CURBS.md).
+No runtime generator or model is delivered by these reference documents.

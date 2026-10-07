@@ -83,7 +83,20 @@ Straight edge lines and dashes extend symmetrically along X. The curve is a plan
 
 ### Pavement and curb
 
-Paver bevel 0.004 m, straight curb 0.008 m, curved curb 0.004 m, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
+Paver bevel 0.004 m, straight and curved curb presets 0.008 m, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
+
+### Shared planar curb section - approved 2026-10-07
+
+The [shared section drawing](review/04-curb-shared-section-v1.png) and
+[planar curb specification](PLANAR-CURBS.md) supersede separate fixed straight
+and curved curb construction. Both use the 0.16 x 0.12 m section, 0.008 m
+two-segment bevel, bottom-centre path anchor and replaceable stone-grey default.
+The previous curved 0.004 m bevel is superseded. Straight length 0.30 m and
+arc centreline radius 0.77 m over 18 degrees remain presets. The app owns
+path choice, continuous runs and interval-based independent blocks. This curb
+contract overrides earlier fixed-piece restrictions for curbs only; paving
+stones and the other street components are unchanged. Numeric section vertices
+are authoritative; the approved image is schematic, not a scale drawing.
 
 ### Round manhole
 

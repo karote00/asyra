@@ -39,3 +39,11 @@ Created with built-in image_gen. Historical revisions cannot replace the latest 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
 
 See the [complete lighting review](../../SHADOW-FREE-REVIEW.md) for revised images and the shared surface rule. Do not bake shadows, ambient occlusion, highlights or directional lighting into materials.
+
+## Shared planar curb section - approved 2026-10-07
+
+[Approved section drawing](04-curb-shared-section-v1.png) - one shared
+160 x 120 mm section, four 8 mm two-segment corner treatments and a bottom-centre
+path origin. Straight and curved forms are generated along planar paths;
+separate multiview sheets are not required. See [the current contract](../PLANAR-CURBS.md).
+No runtime generator or model is delivered by these reference documents.
