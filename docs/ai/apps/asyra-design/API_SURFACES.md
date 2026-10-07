@@ -995,7 +995,14 @@ retain their separate responsibilities.
 `read_design_context` additionally accepts `scope: "region"` with finite workspace
 `bounds: {x,y,width,height}` and optional `filter: {type,parentId,ancestorId,locked}`.
 The renderer supplies spatial candidates; current canonical metadata applies
-exact filters before pagination. Request only needed computed fields. Region
+exact filters before pagination. `result: "ids"` returns only `elementIds` plus
+pagination metadata (`elements` stays empty); it accepts no computed fields.
+Default `result: "elements"` preserves metadata and explicitly requested fields.
+Use bounds to locate local corrections even when their parent spans a much larger
+area, then pass the returned IDs to ordinary batch actions. Children queries are
+for hierarchy questions. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
+known IDs without a limit remain together);
+continue with the same bounds/filter, not an invented larger limit. Region
 results cover visible projected bounding boxes, not exact contours or occlusion.
 Metadata and child pages avoid full element/property snapshots.
 

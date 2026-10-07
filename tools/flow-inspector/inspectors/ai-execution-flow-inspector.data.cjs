@@ -251,6 +251,7 @@
         outputs: ['artifact:execution-receipt'],
         conditions: [
           'Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets',
+          'Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority',
           'Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior',
           'Reject duplicate Fill-row destination IDs before reads or writes; resolve each current row and apply aligned or uniform new patches in one batch; plural visibility reports ordered changed/unchanged/unavailable outcomes in one receipt',
           'Status-item receipts validate input/output alignment and emit reviewElementIds only for changed or unchanged targets without additional canonical reads',
@@ -403,6 +404,7 @@
           'Validate request-owned scope against current canonical containment; regrouping must neither lose scope nor accept unrelated overview targets',
           'Allow focused intermediate assessments without final approval; require all criteria and current overall/detail evidence before completion',
           'Capture source facts at first adoption; bind them to planned criteria and canonical targets, attaching known fact references to checks and requiring current target coverage',
+          'Forward only valid facts bound to the current visual criteria, including source scope and limitations, to the independent comparison; acquisition success does not establish suitability and facts never approve canvas output',
           'Retain verified source facts with explicit source and requirement dependencies for one invocation; scoped dependency changes invalidate only affected facts; canvas evidence retains its separate current-generation checks'
         ],
         bypasses: ['Read-only advice has no drawing inspection'],
@@ -523,6 +525,7 @@
           'Persist ordered sanitized records locally; incomplete streams never imply success',
           'Retain bounded summaries and separate sanitized App tool payload snapshots locally, with digest, bytes and explicit redactions',
           'Project evidence-linked reports without certifying visuals or inferring missing facts',
+          'Separate transport completion from receipt-based usable, partial, rejected, failed or unknown tool outcomes; report nested action failures separately without double counting or inferred recovery',
           'Extract exact retained plan-echo candidates before grouping tool/phase/failure/configuration evidence for offline investigation; truncation and missing evidence remain unknown, and frequency is not root cause or model improvement'
         ],
         bypasses: ['Missing provider fields remain unavailable'],

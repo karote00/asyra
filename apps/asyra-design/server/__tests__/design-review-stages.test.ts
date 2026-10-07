@@ -1002,7 +1002,8 @@ it('keeps the independent comparison free of self-ratings and construction choic
   const comparison = r.comparisonContext('structure')
   expect(comparison).toEqual({
     criteria: { Viewpoint: { requirement: 'Viewpoint' } },
-    referenceImageIndexes: [1]
+    referenceImageIndexes: [1],
+    sourceFacts: []
   })
   expect(JSON.stringify(comparison)).not.toContain('Assume')
 })
@@ -1219,4 +1220,71 @@ it('records initial criteria after first pixels without accepting or rewriting t
       checks: [check('Viewpoint'), check('Finish')]
     })
   ).toMatchObject({ accepted: false })
+})
+
+it('passes only valid bound source facts and their limitations to independent visual comparison', () => {
+  const review = createLocalDesignReview()
+  const fact = {
+    ...sourceFact,
+    scope:
+      'Establishes tower massing only; construction photo does not establish finished facade detail.'
+  }
+  review.record({
+    ...plan,
+    referenceImageIndexes: [1],
+    criteria: {
+      ...plan.criteria,
+      Scale: {
+        requirement: 'Scale',
+        description: 'Metric scale',
+        verification: 'data'
+      }
+    },
+    facts: [
+      fact,
+      { ...sourceFact, id: 'unrelated' },
+      { ...sourceFact, id: 'data-only' }
+    ],
+    factBindings: [
+      { factId: fact.id, criterionId: 'Viewpoint', elementIds: ['tower'] },
+      { factId: 'data-only', criterionId: 'Scale', elementIds: ['tower'] }
+    ]
+  })
+  review.mutate()
+  const expected = [
+    {
+      id: fact.id,
+      criterionIds: ['Viewpoint'],
+      statement: fact.statement,
+      scope: fact.scope,
+      sources: fact.sources,
+      verification: fact.verification
+    }
+  ]
+  expect(review.comparisonContext('visual')).toMatchObject({
+    referenceImageIndexes: [1],
+    sourceFacts: expected
+  })
+  const detached = review.comparisonContext('visual')
+  const retainedFact = detached.sourceFacts?.[0]
+  if (!retainedFact) throw new Error('Missing bound source fact')
+  retainedFact.sources[0] = 'mutated'
+  expect(review.comparisonContext('structure').sourceFacts).toEqual(expected)
+  review.record({
+    phase: 'facts',
+    referenceImageIndexes: [2],
+    dependencyChanges: [
+      {
+        key: 'reference:survey',
+        version: '2',
+        reason: 'source_changed',
+        evidence: 'Replaced construction image with completed building.'
+      }
+    ]
+  })
+  expect(review.comparisonContext('visual')).toMatchObject({
+    referenceImageIndexes: [2],
+    sourceFacts: []
+  })
+  expect(review.isAccepted()).toBe(false)
 })

@@ -1,6 +1,6 @@
 # Indexed drawing queries and local edits
 
-Status: implemented and locally verified; PR review pending.
+Status: initial implementation and full-run follow-up locally verified; PR #300 remains open. Follow-up changes are local only.
 Base: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6` (PR #299).
 Closeout owner: this task.
 
@@ -212,3 +212,193 @@ The completed contract is bound by target `9cc9b012-d683-4ff6-b8c4-6357d533af0d`
 allocation revision 2. The earlier planning target remains historical because
 its contract binding is immutable. Actual commit evidence is refreshed for PR
 delivery. These deterministic checks do not measure live model duration.
+
+## Task - full-run follow-up
+
+Baseline: `ee7107ce360cac7624c013f782b2262a9dd12534`. The user approved
+continuing the open PR after the full-run trace
+`c65118a8-cc15-4331-99fb-f670650b1828`. Success means correct narrow lookup,
+current canonical writes and complete usable evidence, not a promised duration.
+
+Authorized scope extends the existing App compose/apply/inspect/observe owners:
+context queries and their registered guidance; prepared apply and direct metadata
+consumers; reference applicability and review handoffs; execution report
+classification. Framework changes are limited to a demonstrated repeated-work
+cause on these existing canonical call paths and their direct tests. Preserve
+spatial membership, all admission, cancellation, locks, history, source images,
+geometry, model settings and final whole-request review. No new acquisition
+strategy, rendering strategy, subject-specific camera/shape rules, dependencies,
+CI routing, automatic mutation retry or unrelated cleanup.
+
+Fixed discovery: this saved trace and payloads, named owner call paths above,
+their direct consumers, public APIs and existing formal tests. Findings:
+
+- A region API exists but the live program read 42 child pages from two broad
+  parents. Region candidates must be usable as compact IDs; a known local defect
+  uses workspace bounds, then task filters, rather than enumerating a broad
+  ancestor. Unknown semantic intent remains the model's decision.
+- The same 8,193-object batch took increasing create/yield time. Attachment,
+  type and lock readers currently call full `getElementData`, which serializes
+  growing child arrays. Prove and remove that unnecessary snapshot work using
+  existing metadata APIs, then count the remaining direct canonical work before
+  deciding any further owner change. Do not infer renderer cost from elapsed time.
+- One limit=500 admission failed against maximum=200. Advertise the actual bound
+  and response pagination from the same contract; keep validation strict. Add a
+  compact identity projection, preserving default metadata and explicit fields.
+- The formal evaluator already detects unavailable replies; the earlier manual
+  action-failure count omitted admission. Add a single explicit report summary
+  of admission/execution/partial/unknown outcomes using observed receipts, without
+  labeling unrelated later calls as recovery or transport completion as success.
+- Reference selection already follows the latest facts update. Preserve the
+  model's supported uses and limitations with the selected image identity and
+  pass them into independent review. Download success is not suitability proof;
+  no image-quality heuristic may make the model's decision.
+- Reuse valid source facts and unchanged evidence only under proven lifetime
+  dimensions. Existing global image revision invalidation is conservative and
+  must not be bypassed. First verify its coverage and keep focused intermediate
+  reviews plus fresh final whole-composition assessment. Only introduce narrower
+  reuse if dependency evidence can prove validity; otherwise document that
+  intentional boundary instead of guessing that old pixels are current.
+
+Sequence: apply query -> compose guidance -> apply metadata/work -> observe
+report -> inspect reference/evidence -> bounded integration review. Each segment
+uses the existing Inspector owner and produces its card before edits. Required
+gates: formal failing regressions for new behavior, eight-tier shared-parent
+region-to-batch case, candidate/property/snapshot work counts, missing/invalid/
+locked/filter/page cases, changing-parent/replay freshness, report classification,
+reference-selection and stale-evidence tests, naming, affected owner suites and
+routed local validation. No paid model run is needed to prove these contracts.
+
+Design review: region coordinates come from workspace bounds, not screenshot
+pixels or parent-local coordinates. The index is already runtime-owned; do not
+add a request-local second spatial index. Compact IDs are observations, not
+permission grants. Revalidate at ordinary mutation admission. Metadata projection
+must retain the real parent/type/lock checks at each slice, so interleaved user
+edits still invalidate execution. Reports cannot infer hidden model thinking or
+recovery. Source applicability is retained model evidence, never canonical proof.
+All accepted initial obligations remain; stop for an unresolved authority
+conflict or necessary change outside this scope.
+
+### Step card - local region lookup
+
+Owner `apply`, route compose-to-apply, spec Preparation and execution; Inspector
+apply region condition. Input: admitted workspace bounds, canonical type/ancestor/
+lock filters, requested result projection and page. Output: ordered candidate
+IDs or existing element summaries with truthful pagination. Read-only; no
+transaction. Contributors: Design context action/common API and public Core
+metadata/spatial query. Forbidden: parent children enumeration to resolve a
+region, viewport-coordinate assumptions, canonical writes or pixel-visibility
+claims. Files: existing context action, design-context and their formal tests,
+indexed-design-query E2E. Failure owner: apply via recoverable adapter. Cases:
+one bounds within a shared eight-tier parent, empty/invalid region, filter before
+pagination, zero unrelated property reads, compact IDs into ordinary batch edit.
+Naming: optional `result` wire field (`elements` default / `ids`), existing IDs
+and saved document data unchanged; page constants remain App query-owned.
+
+Region checkpoint: the new shared-parent compact-query and filtered-pagination
+regressions fail on the baseline rejection and pass after the query change
+(32 focused tests). The query owner returns IDs without computed-property reads
+or child-list calls. Runtime browser composition is retained for the integration
+gate. Naming passes before identifiers propagate. Existing metadata output stays
+the default; spatial queries remain current bounds candidates.
+
+### Step card - local query discovery
+
+Owner `compose`, route compose-to-apply; spec Capability discovery and composition.
+Input: registered context schema and original local-edit intent. Output: exact
+region/ID projection usage and actual page limit. Conditions: use known IDs
+without lookup; spatial lookup for unknown local targets; children only for
+actual hierarchy questions. Contributors: existing domain guidance and registered
+context tool description; no semantic classifier or automatic model decision.
+Files: ai-domain-prompt and its formal tests; context action owns detailed schema.
+Gate: advertised guidance keeps exact schema and execution path, full retrieval
+and model freedom; no fixed building or camera semantics.
+
+### Step card - prepared apply metadata
+
+Owner `apply`, existing prepared-to-apply route and normal canonical admission.
+Input: admitted prepared entries and current parent/type/lock observations.
+Output: identical ordered writes/receipts and ordinary grouped Undo. Recheck
+current metadata at each synchronous slice; cancellation and user edits retain
+existing rejection. Use Core metadata instead of cloning full parent snapshots;
+no retained permission cache. Boundary: design-actions, its formal tests and
+public Core metadata facade (already implemented). Test the real default adapter
+with metadata changing between slices, and prove zero snapshot reads regardless
+of growing children. Stop if canonical ownership or admission must change.
+
+Metadata checkpoint: the default-adapter regressions fail on the original
+full-snapshot read, then pass with metadata-only checks, including a parent
+locked during a cooperative yield. 74 query/apply tests pass. Scene Tree's
+insertion preflight validates only incoming descriptors; its parent-order copy
+is rollback evidence, not a redundant permission snapshot. Retain that semantic
+boundary. Remaining wall-clock growth cannot be assigned to this one fix.
+
+### Step card - complete execution outcome reporting
+
+Owner `observe`; spec Diagnostics and Inspector observe input/receipt conditions.
+Input: retained terminal tool receipts, transport stage, action outcomes and
+explicit omission markers. Output: mutually exclusive per-call usable/partial/
+rejected/failed/unknown classification and counts, separate from child action
+failures. Do not infer recovery from the next call or certify visual correctness.
+Boundary: local-ai-evaluation, execution-report-cli and their tests. No execution
+or retry changes. Gates: admission rejection despite completed transport, partial
+with acknowledged work, failed transport, usable reply and absent evidence; keep
+original call identity, timing and privacy.
+
+Observation checkpoint: the new outcome summary regression fails before the
+change and passes afterwards; 26 report/CLI tests pass. Native transport and
+nested actions remain separate counts. Missing outcome evidence remains unknown.
+
+### Step card - source applicability handoff
+
+Owner `inspect`; spec Evidence and completion; existing facts-to-review inputs.
+Input: valid retained source facts, criterion bindings, latest explicit reference
+selection and current inspection images. Output: the independent reviewer receives
+only relevant bound facts, including their source, scope/limitations and recorded
+verification, alongside selected images. Reuse the existing facts schema, not a
+second reference judgment store. Facts remain source evidence, never current
+canvas proof; invalidated facts cannot reach comparison as valid. Image evidence
+still requires the same current revision and final overall check. Boundary:
+local-design-review, local-visual-assessment, local-ai-provider and their tests.
+Gates: fact scope survives drawing changes, unrelated/data facts are excluded,
+changed dependencies retire affected facts, reference replacement is preserved,
+provider actually receives this context without tools; stale images cannot pass.
+No target-local image cache is introduced: the current public evidence stamp has
+only document session/revision, so narrower reuse would be unproven. Focused
+intermediate checks and reusable source facts already have formal support.
+
+### Follow-up verification and bounded review
+
+The eight-tier shared-parent browser case selects and edits only the bounded
+third-tier candidate, reads no parent children, and restores it with Undo. The
+preserved 18,287-element Taipei 101 oracle agrees with the spatial and compact-ID
+results: this region checks 311 candidates and returns 10 IDs after index creation;
+repeated and post-pan queries perform zero fresh bounds reads. These are work
+counts for this fixture, not a universal ratio or promised model-time gain.
+
+Apply regressions preserve current metadata checks after a parent changes during
+yield, with no full snapshot reads. Source-fact tests prove bound/valid visual
+scope handoff, exclude data-only and unrelated facts, retain selection changes,
+and invalidate changed dependencies. The independent reviewer still needs current
+canvas evidence. Report tests use the real recoverable failure envelope: confirmed
+partial work stays partial even when the enclosing result is unavailable.
+Offline replay of the saved live run reports 93 usable App calls, 3 partial and
+1 rejected; 6 external research steps lack result-usability evidence. Four nested
+action failures remain a separate count. No new model drawing run was performed.
+
+Final routed local validation passed with `sourceVerified=true`:
+`tmp/local-validation/dc9dccd4-e30e-47d4-86bb-f7cbc42ffbf5/result.json`.
+Design and Inspector lint/build/tests, shared/dependency checks, functional E2E
+391 passed / 19 conditional skips, collaboration 14 passed / 3 conditional skips,
+and render contracts 3 passed. The isolated large-document milestone separately
+passed all 3 indexed-query cases. Naming and typecheck passed. Validation fixes
+were test assertion lint hygiene and regeneration of the Inspector workspace
+bundle; no product checks were relaxed.
+
+Source candidate `bc947635-5e36-4110-b770-8bfd612533f7` and target assessment
+`d6dc51fb-0ebf-4b8d-b075-32a0737b70f5` passed with eligible=true for target
+`fbad7006-1f59-4c55-ab24-b8b2d895ef94`, allocation revision 2. Bounded review
+covered the diff, direct consumers, source-fact freshness, real partial-result
+semantics and the fixed gates. Final edits after local validation are this plan's
+status/evidence only; runtime and test inputs remain byte-identical. No push or
+merge is included in this follow-up.

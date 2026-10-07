@@ -145,7 +145,24 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
           b.y + b.height >= region.y
         )
       })
+      const { readDesignContext } =
+        await import('../src/common-apis/design-context')
+      const compactIds: string[] = []
+      let offset: number | null = 0
+      while (offset !== null) {
+        const page = readDesignContext({
+          scope: 'region',
+          bounds: region,
+          result: 'ids',
+          offset
+        })
+        if (page.elements.length)
+          throw new Error('Identity query returned element summaries')
+        compactIds.push(...(page.elementIds ?? []))
+        offset = page.nextOffset
+      }
       return {
+        compactIds,
         elements: ids.length,
         first,
         repeats,
@@ -171,10 +188,87 @@ test('indexes the preserved full Taipei 101 without repeated document scans', as
     )
   ).toBe(true)
   expect(report.afterPan).toEqual(report.first)
+  expect(report.compactIds).toEqual(report.first)
   expect(report.repeat['region-query:bounds-read']).toBe(0)
   expect(report.repeat['region-query:order-visit'] ?? 0).toBe(0)
   expect(report.pan['region-query:bounds-read']).toBe(0)
   expect(report.repeat['region-query:candidate-check'] / 10).toBeLessThan(
     report.elements
   )
+})
+
+test('edits a bounded part of one tier without reading its shared parent children', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentURL())
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, elementApis, historyApis } =
+      await import('../src/common-apis')
+    const { createDocumentContextAction } =
+      await import('../src/ai/context-action')
+    const { createBasicApiActions } =
+      await import('../src/ai/basic-api-actions')
+    const workspace = core.getCurrentWorkspaceId()
+    const parent = transactionApis.runTransaction(() =>
+      core.createElementInParent(
+        { type: 'frame', x: 300, y: 100, width: 200, height: 800 },
+        workspace
+      )
+    )
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        Array.from({ length: 16 }, (_, i) => ({
+          type: 'rect',
+          x: (i % 2) * 100,
+          y: Math.floor(i / 2) * 100,
+          width: 40,
+          height: 80
+        })),
+        parent
+      )
+    )
+    const original = core.getElementChildren
+    let childReads = 0
+    core.getElementChildren = (...args) => {
+      childReads++
+      return original.apply(core, args)
+    }
+    try {
+      const context = { signal: new AbortController().signal }
+      const receipt = (await createDocumentContextAction().execute(
+        {
+          scope: 'region',
+          bounds: { x: 300, y: 300, width: 40, height: 80 },
+          filter: { ancestorId: parent, type: 'rect', locked: false },
+          result: 'ids'
+        },
+        context as never
+      )) as { elementIds: string[] }
+      const action = createBasicApiActions().find(
+        (a) => a.name === 'api_element_setElementsVisible'
+      )
+      if (!action) throw new Error('Missing registered visibility action')
+      await action.execute(
+        { elementIds: receipt.elementIds, visible: false },
+        context as never
+      )
+      const hidden = ids.filter((id) => !elementApis.isElementVisible(id))
+      await historyApis.undo()
+      return {
+        ids,
+        candidates: receipt.elementIds,
+        childReads,
+        hidden,
+        restored: ids.every((id) => elementApis.isElementVisible(id))
+      }
+    } finally {
+      core.getElementChildren = original
+    }
+  })
+  expect(result.candidates).toEqual([result.ids[4]])
+  expect(result.hidden).toEqual(result.candidates)
+  expect(result.childReads).toBe(0)
+  expect(result.restored).toBe(true)
 })

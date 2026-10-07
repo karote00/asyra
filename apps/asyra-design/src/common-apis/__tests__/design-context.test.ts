@@ -227,3 +227,87 @@ it.each([
   expect(() => read(query as never)).toThrow()
   expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
 })
+
+it('finds only the left region of one tier under a shared parent without enumerating its children', () => {
+  const { read, source, records } = fixture()
+  records.tower = { type: 'group', parentId: 'workspace', children: [] }
+  for (let tier = 0; tier < 8; tier++) {
+    for (const side of ['left', 'right']) {
+      const id = `tier-${tier}-${side}`
+      records[id] = { type: 'vector', parentId: 'tower', name: id }
+      ;(records.tower.children as string[]).push(id)
+    }
+  }
+  const bounds = { x: 0, y: 200, width: 40, height: 80 }
+  source.getElementIdsInBounds.mockImplementation((...args: unknown[]) => {
+    expect(args[0]).toEqual(bounds)
+    return ['tower', 'tier-2-left']
+  })
+  const result = read({
+    scope: 'region',
+    bounds,
+    filter: { ancestorId: 'tower', type: 'vector' },
+    result: 'ids'
+  } as never)
+  expect(result).toMatchObject({
+    available: true,
+    elementIds: ['tier-2-left'],
+    elements: [],
+    total: 1,
+    nextOffset: null
+  })
+  expect(source.getElementChildren).not.toHaveBeenCalled()
+  expect(source.getElementData).not.toHaveBeenCalled()
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(
+    source.getElementMetadata.mock.calls
+      .flat()
+      .every((id) => ['tower', 'tier-2-left'].includes(id))
+  ).toBe(true)
+})
+
+it('pages compact spatial identities after filtering and observes fresh locks', () => {
+  const { read, source, records } = fixture()
+  records.a.type = 'vector'
+  const query = {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 10, height: 10 },
+    filter: { locked: false },
+    result: 'ids',
+    limit: 1
+  } as const
+  const first = read(query as never)
+  expect(first).toMatchObject({
+    elementIds: ['a'],
+    total: 2,
+    nextOffset: 1,
+    limit: 1
+  })
+  expect(read({ ...query, offset: first.nextOffset } as never)).toMatchObject({
+    elementIds: ['b'],
+    nextOffset: null
+  })
+  records.a.lock = true
+  expect(read(query as never)).toMatchObject({
+    elementIds: ['b'],
+    total: 1,
+    nextOffset: null
+  })
+  source.getElementIdsInBounds.mockReturnValue([])
+  expect(read(query as never)).toMatchObject({
+    elementIds: [],
+    total: 0,
+    nextOffset: null
+  })
+  expect(source.getElementChildren).not.toHaveBeenCalled()
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+})
+
+it.each([
+  { scope: 'selection', result: 'unknown' },
+  { scope: 'selection', result: 'ids', fields: ['fills'] }
+])('rejects contradictory identity projections before reads: %j', (query) => {
+  const { read, source } = fixture()
+  expect(() => read(query as never)).toThrow()
+  expect(source.getSelectedElementIds).not.toHaveBeenCalled()
+})

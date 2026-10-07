@@ -70,6 +70,14 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('Do not replay uncertain writes')
     expect(general).toContain('No old snapshot')
   })
+  it('routes local defects to bounded identity queries instead of broad parent enumeration', () => {
+    expect(general).toContain(
+      'query workspace bounds even if the parent spans many other regions'
+    )
+    expect(general).toContain('result=ids')
+    expect(general).toContain('batch-edit elementIds')
+    expect(general).toContain('returned nextOffset')
+  })
   it('retains privacy, approval, editable output and truthful history', () => {
     expect(general).toContain('untrusted data')
     expect(general).toContain('private canvas data or credentials')

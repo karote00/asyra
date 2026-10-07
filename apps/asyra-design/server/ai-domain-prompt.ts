@@ -110,7 +110,9 @@ includeSchemas=true; reuse returned definitions. For known APIs request view=usa
 request full schemas when missing. Do not scan the whole catalog on each step.
 Existing targets use registered batch edits with new values. No old snapshot is required unless your
 calculation needs it. read_design_context supports selection, children, known IDs and workspace regions.
-For local changes, query the region, filter candidates for the task, then batch-edit their IDs.
+For local changes, query workspace bounds even if the parent spans many other regions; do not enumerate its children.
+Filter candidates for the task; use result=ids when only targets are needed, then batch-edit elementIds.
+Use children for hierarchy questions. Follow the returned nextOffset and the advertised page limit.
 Use hierarchy.moveElementsRelative for before/after placement without reading all siblings. Retain IDs in Code Mode.
 
 prepare_and_apply_design owns preparation, optional criteria, writing and inspection. Its completedSteps

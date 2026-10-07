@@ -1346,6 +1346,8 @@ const requestRecordedLocalAi = async (
         phase: input.context.phase,
         criteria: input.context.criteria,
         previousFindings: input.context.previousFindings,
+        sourceFacts: input.context.sourceFacts,
+        referenceImageIndexes: input.context.referenceImageIndexes,
         images: attachments.map(({ dataUrl }, index) => ({
           role: (input.context as { imageRoles: string[] }).imageRoles[index],
           sha256: createHash('sha256')
@@ -1412,7 +1414,15 @@ export const requestLocalVisualAssessment = async (
     sourceRequestId?: string
   }
 ) => {
-  const { request, phase, criteria, images, previousFindings } = assessment
+  const {
+    request,
+    phase,
+    criteria,
+    images,
+    previousFindings,
+    sourceFacts,
+    referenceImageIndexes
+  } = assessment
   const result = await requestRecordedLocalAi(
     {
       intent: request,
@@ -1420,6 +1430,8 @@ export const requestLocalVisualAssessment = async (
         phase,
         criteria,
         previousFindings,
+        sourceFacts,
+        referenceImageIndexes,
         imageRoles: images.map(({ role }) => role)
       },
       actions: [],

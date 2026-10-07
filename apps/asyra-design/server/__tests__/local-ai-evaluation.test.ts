@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { parseExecutionRecord } from '../local-ai-records'
 import { createLocalAiUsage } from '../local-ai-usage'
+import { localToolFailureReply } from '../local-tool-invocation'
 import {
   evaluateExecution,
   createExecutionPeriodReport
@@ -735,4 +736,128 @@ describe('execution evaluation', () => {
       createExecutionPeriodReport([], { from: '2026-10-04', to: '2026-10-03' })
     ).toThrow('Invalid period')
   })
+})
+
+it('counts receipt outcomes separately from completed transport and nested action failures', () => {
+  const receipts = [
+    {
+      stage: 'admission',
+      settlement: 'not-started',
+      code: 'PREPARATION_REJECTED',
+      available: false,
+      toolOutcome: { status: 'unavailable' }
+    },
+    {
+      stage: 'execution',
+      settlement: 'partial',
+      toolOutcome: { status: 'partial' }
+    },
+    { toolOutcome: { status: 'usable' } },
+    {}
+  ]
+  const events = receipts.flatMap((result, i) => [
+    {
+      stage: 'tool_started',
+      tool: 'read_design_context',
+      callId: `tool-${i}`,
+      elapsedMs: i * 2
+    },
+    {
+      stage: 'tool_completed',
+      tool: 'read_design_context',
+      callId: `tool-${i}`,
+      elapsedMs: i * 2 + 1,
+      evidence: { result }
+    }
+  ])
+  events.push(
+    {
+      stage: 'tool_started',
+      tool: 'import_reference_image',
+      callId: 'transport',
+      elapsedMs: 10
+    },
+    {
+      stage: 'tool_failed',
+      tool: 'import_reference_image',
+      callId: 'transport',
+      elapsedMs: 11
+    } as never,
+    {
+      stage: 'action_started',
+      tool: 'download_reference',
+      callId: 'leaf',
+      elapsedMs: 10
+    } as never,
+    {
+      stage: 'action_failed',
+      tool: 'download_reference',
+      callId: 'leaf',
+      elapsedMs: 11
+    } as never
+  )
+  const report = evaluateExecution(run('outcomes', events))
+  expect(report.toolCalls.map((call) => call.execution.status)).toEqual([
+    'rejected',
+    'partial',
+    'usable',
+    'unknown',
+    'failed'
+  ])
+  expect(report.toolOutcomes).toEqual({
+    usable: 1,
+    partial: 1,
+    rejected: 1,
+    failed: 1,
+    unknown: 1
+  })
+  expect(report.toolCalls[0].execution).toMatchObject({
+    stage: 'admission',
+    code: 'PREPARATION_REJECTED',
+    settlement: 'not-started'
+  })
+  expect(report.actions.filter((a) => a.status === 'failed')).toHaveLength(1)
+})
+
+it('preserves acknowledged partial work from the actual recoverable failure envelope', () => {
+  const reply = localToolFailureReply(
+    'A later action failed',
+    'AI_EXECUTION_FAILED',
+    {
+      stage: 'execution',
+      settlement: 'partial',
+      executionResult: {
+        actionResults: [{ actionId: 'created', result: { id: 'element' } }]
+      }
+    }
+  )
+  const result = JSON.parse(reply.text)
+  expect(result).toMatchObject({
+    available: false,
+    toolOutcome: { status: 'partial' }
+  })
+  const report = evaluateExecution(
+    run('partial-envelope', [
+      {
+        stage: 'tool_started',
+        tool: 'prepare_and_apply_design',
+        callId: 'batch',
+        elapsedMs: 0
+      },
+      {
+        stage: 'tool_completed',
+        tool: 'prepare_and_apply_design',
+        callId: 'batch',
+        elapsedMs: 1,
+        evidence: { result }
+      }
+    ])
+  )
+  expect(report.toolCalls[0].execution).toMatchObject({
+    status: 'partial',
+    recoverable: true,
+    settlement: 'partial'
+  })
+  expect(report.toolOutcomes.partial).toBe(1)
+  expect(report.toolOutcomes.failed).toBe(0)
 })

@@ -73,6 +73,8 @@ describe('execution report CLI', () => {
       ])
       expect(single.output).toContain('run-1')
       expect(single.output).toContain('Unattributed')
+      expect(single.output).toContain('Tool outcomes:')
+      expect(single.output).toContain('nested action failures: 0')
       expect(single.output).toContain('Model rounds: unavailable')
       expect(single.output).toContain('program-to-tool links: unavailable')
       expect(single.output).toContain('unavailable')

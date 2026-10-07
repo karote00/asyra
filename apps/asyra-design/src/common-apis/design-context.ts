@@ -3,6 +3,7 @@ import type { Rect } from '@asyra/utils'
 
 export interface DesignContextQuery {
   scope: 'selection' | 'children' | 'ids' | 'region'
+  result?: 'elements' | 'ids'
   bounds?: Rect
   filter?: {
     type?: string
@@ -45,6 +46,8 @@ interface DesignContextSource {
     fields: readonly string[]
   ): Record<string, unknown> | undefined
 }
+export const designContextPageLimit = 200
+
 export const designContextFields = Object.freeze([
   'x',
   'y',
@@ -79,10 +82,16 @@ export const createDesignContextReader =
             'elementIds',
             'fields',
             'bounds',
-            'filter'
+            'filter',
+            'result'
           ].includes(key)
       ) ||
       !['selection', 'children', 'ids', 'region'].includes(query.scope) ||
+      (query.result !== undefined &&
+        !['elements', 'ids'].includes(query.result)) ||
+      (query.result === 'ids' &&
+        query.fields !== undefined &&
+        (!Array.isArray(query.fields) || query.fields.length > 0)) ||
       (query.parentId !== undefined &&
         (query.scope !== 'children' ||
           typeof query.parentId !== 'string' ||
@@ -161,7 +170,7 @@ export const createDesignContextReader =
       offset < 0 ||
       !Number.isInteger(limit) ||
       limit < 1 ||
-      (query.limit !== undefined && limit > 200) ||
+      (query.limit !== undefined && limit > designContextPageLimit) ||
       query.limit === null
     )
       throw new Error('Invalid document context page.')
@@ -209,6 +218,7 @@ export const createDesignContextReader =
     const pageIds =
       query.scope === 'children' ? ids : ids.slice(offset, offset + limit)
     const missingIds: string[] = []
+    const matchedIds: string[] = []
     const elements: {
       id: string
       name: unknown
@@ -226,6 +236,8 @@ export const createDesignContextReader =
         missingIds.push(id)
         continue
       }
+      matchedIds.push(id)
+      if (query.result === 'ids') continue
       const computed = fields.length
         ? (source.getElementComputedData(id, fields) ?? {})
         : {}
@@ -269,7 +281,9 @@ export const createDesignContextReader =
       scope: query.scope,
       parentId,
       offset,
+      limit,
       total,
+      ...(query.result === 'ids' ? { elementIds: matchedIds } : {}),
       nextOffset: offset + limit < total ? offset + limit : null,
       elements,
       missingIds

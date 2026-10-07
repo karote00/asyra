@@ -42,7 +42,7 @@ const fixture = () =>
   )
 const apis = (): PreparedDesignApis => ({
   getWorkspaceId: () => 'workspace',
-  getElementData: (id) =>
+  getElementMetadata: (id) =>
     id === 'existing'
       ? { type: 'custom-container', parentId: 'workspace' }
       : undefined,
@@ -551,7 +551,7 @@ it.each(['missing', 'leaf', 'outside', 'locked', 'cycle'])(
     let parentId = 'workspace'
     if (kind === 'outside') parentId = 'other'
     if (kind === 'cycle') parentId = 'existing'
-    api.getElementData = (id) =>
+    api.getElementMetadata = (id) =>
       id === 'existing' && kind !== 'missing'
         ? {
             type: kind === 'leaf' ? 'rect' : 'custom-container',
@@ -572,7 +572,7 @@ it('rechecks a continuation parent after each cooperative slice', async () => {
   const api = apis()
   await expect(
     createPreparedDesignAction(api, async () => {
-      api.getElementData = () => undefined
+      api.getElementMetadata = () => undefined
     }).execute({ design: fixture(), parentId: 'existing' }, context())
   ).rejects.toThrow()
   expect(api.create).toHaveBeenCalledTimes(1)
@@ -636,5 +636,59 @@ it.each(['missing', 'element', 'forward', 'duplicate'])(
       createPreparedDesignAction(api).execute({ design }, context())
     ).rejects.toThrow()
     expect(api.create).not.toHaveBeenCalled()
+  }
+)
+
+it.each([false, true])(
+  'default apply reads only live metadata while parents grow - lock=%s',
+  async (lockDuringYield) => {
+    const { default: core } = await import('../../contexts')
+    const { elementApis, selectionApis } = await import('../../common-apis')
+    const records = new Map<
+      string,
+      { type: string; parentId?: string; lock?: boolean; childCount: number }
+    >([
+      ['workspace', { type: 'workspace', childCount: 8000 }],
+      ['existing', { type: 'frame', parentId: 'workspace', childCount: 8000 }]
+    ])
+    const spies = [
+      vi.spyOn(core, 'getCurrentWorkspaceId').mockReturnValue('workspace'),
+      vi
+        .spyOn(core, 'getElementMetadata')
+        .mockImplementation((id) => records.get(id) as never),
+      vi.spyOn(core, 'isContainerType').mockReturnValue(true),
+      vi
+        .spyOn(selectionApis, 'selectElements')
+        .mockImplementation(() => undefined),
+      vi
+        .spyOn(elementApis, 'createElementsInParent')
+        .mockImplementation((entries, parentId) => {
+          for (const entry of entries)
+            records.set(entry.id, { type: entry.type, parentId, childCount: 0 })
+          const parent = records.get(parentId)
+          if (!parent) throw new Error('Missing canonical parent')
+          parent.childCount += entries.length
+          return entries.map((entry) => entry.id)
+        })
+    ]
+    const snapshot = vi.spyOn(core, 'getElementData').mockImplementation(() => {
+      throw new Error('Full growing parent snapshot is not an admission input')
+    })
+    let yields = 0
+    try {
+      const promise = createPreparedDesignAction(undefined, async () => {
+        yields++
+        const parent = records.get('existing')
+        if (!parent) throw new Error('Missing canonical parent')
+        if (lockDuringYield) parent.lock = true
+      }).execute({ design: fixture(), parentId: 'existing' }, context())
+      if (lockDuringYield) await expect(promise).rejects.toThrow('not editable')
+      else expect(await promise).toMatchObject({ status: 'complete' })
+      expect(yields).toBeGreaterThan(0)
+      expect(snapshot).not.toHaveBeenCalled()
+    } finally {
+      snapshot.mockRestore()
+      spies.forEach((spy) => spy.mockRestore())
+    }
   }
 )

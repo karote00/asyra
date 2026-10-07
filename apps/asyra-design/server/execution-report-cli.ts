@@ -80,6 +80,7 @@ const renderRun = (run: ReturnType<typeof evaluateExecution>) => {
     `Exclusive ownership: ${JSON.stringify(run.timing.owners)} (provider wait is not measured model thinking)`,
     `Usage: ${run.usageStatus}; model review: ${run.modelReview.status} (not visual certification)`,
     `Steps: ${run.toolCalls.length}; findings: ${run.findings.length}`,
+    `Tool outcomes: ${JSON.stringify(run.toolOutcomes)}; nested action failures: ${run.actions.filter((action) => action.status === 'failed').length} (separate levels, not additive; recovery requires linked evidence)`,
     `Model rounds: unavailable; program-to-tool links: ${run.orchestration.programChildLinks}. Native exec/wait items: ${run.orchestration.programs.length}. ${run.orchestration.reason}`
   ]
   const longest = [...run.toolCalls]
