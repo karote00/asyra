@@ -1,8 +1,9 @@
 # Large document load performance
 
-Status: implemented and locally verified - awaiting user review.
+Status: implemented and locally verified - user accepted; PR delivery authorized.
 Base: `4d62f02dc2597eeb558e98c05c401cf711d889fa`.
-Closeout owner: this task. No remote push is authorized.
+Closeout owner: this task. The user authorized PR creation on 2026-10-07;
+the required feature-branch push is authorized. Merge is not authorized.
 
 The sections below retain the bounded design and its test-driven revisions.
 The authorized unified material architecture supersedes the initial native-route
@@ -357,6 +358,11 @@ Review the resulting work counts, input delivery and submissions together; do
 not turn a timing result into a CI threshold or discard the earlier observation.
 
 ## Current result and local validation
+
+User acceptance on 2026-10-07: independent refresh testing on the same computer
+observed approximately 18 seconds before and 8 seconds after. The user confirmed
+the change and requested a PR. This observation is separate from the instrumented
+18.44-to-10.34-second run below; neither is a machine-independent timing gate.
 
 All production owner changes are complete. Vector fill coverage and hit testing
 share the same topology; paint uses numeric GPU material parameters and shared
