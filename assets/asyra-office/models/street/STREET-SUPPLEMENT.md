@@ -131,6 +131,39 @@ production mask or a source of baked glow, lighting or receiving-surface colour.
 
 Paver bevel 0.004 m, straight curb 0.008 m, curved curb 0.004 m, all with two segments. The curved curb is a closed annular-sector prism from 0 to 18 degrees, with 8 arc segments. Choose among the three JSON stone materials without changing shape. The approved L-shaped image illustrates material and laying style only, not a fixed L-shaped unit. The app owns foundations, joints, staggering, and arrangements. Arbitrary trimming is outside these fixed unit definitions.
 
+### Paving stone - single model component
+
+The new [single-unit sheet](review/04-paving-stone-single-v1.png) was approved on 2026-10-07. It depicts one paving stone from six views.
+The [annotated layout](review/04-pavement-layout-v3.png) is an assembly reference
+only; its mixed sizes, apparent front/side perspectives and arrangement must
+not override the single-unit dimensions. Original v2 remains historical
+approved laying-style evidence. No fixed L-shaped mesh is authored.
+
+The existing dimensions remain X=0.60, Y=0.30, Z=0.05 m. With the origin at the
+bottom face centre, bounds are (-0.30,-0.15,0) to (0.30,0.15,0.05). Use one
+closed rectangular block with outward normals and a 0.004 m inward bevel on
+all outer edges, two segments, preserving the overall bounds. Keep the top and
+bottom planar apart from the edge treatment. No chips, cracks, recessed grout,
+backing slab, mortar, neighbouring stones or curb geometry belong to this unit.
+
+Default material is stone-cream, sRGB #D9CDBA, roughness 0.88, metallic 0.
+Stone-pale and stone-grey remain selectable alternatives; their distinct JSON
+properties must be preserved. Appearance is replaceable independently of the
+block. Reference face tones and contour lines are not material instructions.
+
+The clean surface in the review drawing is intentional for geometry review.
+Fine stone grain, pores and roughness belong to the later replaceable material;
+see the [surface-detail note](SURFACE-RECIPES.md#paving-stone-surface-detail-note).
+Keep this block's geometry unchanged. Chipped or irregular silhouette variants
+are separate future designs, not implied by its default texture.
+
+For aligned placement, centre spacing is 0.60 m plus the selected X gap and
+0.30 m plus the selected Y gap. Bevels create edge relief even at zero gap.
+Rotation, staggering, counts, base elevation and supporting foundation are
+app-owned. Do not distort a brick to fill a leftover boundary. Arbitrary edge
+cutting or additional edge-shaped pieces require separate specifications.
+The existing straight and curved curbs remain separate later review items.
+
 ### Round manhole
 
 Frame radii 0.29–0.33 m; cover radius 0.286 m leaves a 0.004 m gap. Cover top is 0.001 m below frame top. Close the underside. Circular grooves have radii 0.065, 0.10, 0.14, 0.265 m, width 0.003 m, depth 0.0015 m. Six capsule-shaped blind slots lie at centre radius 0.21 m, starting at 30 degrees and spaced 60 degrees apart; each is 0.055 long, 0.013 wide, 0.002 m deep, aligned radially. Add no text, handles, or screws. The future receiving ground needs a diameter 0.66, depth 0.026 m opening; do not stack the cover on an uncut solid road. Ground cutting and opening interaction are not implemented here.

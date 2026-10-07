@@ -18,6 +18,37 @@ instances. Scene lighting and independently placed markings remain separate.
 The current reference image is unchanged and illustrates the default surface;
 it is not a production texture to be stretched over the mesh.
 
+## Paving stone defaults and overrides
+
+The single paving stone defaults to `stone-cream`: sRGB #D9CDBA, roughness 0.88,
+metallic 0. `stone-pale` (#E3D9C9, roughness 0.88) and `stone-grey` (#C9C4B9,
+roughness 0.90) remain alternatives, both metallic 0. Values match the numeric
+material definitions. Existing seed 404 grain is an optional default colour
+recipe, never geometric bumps or baked lighting.
+
+Colour and complete material are independently replaceable without changing
+bounds, origin, bevel or other instances. A replacement material replaces the
+stone grain recipe as well. The simplified review sheet's face shading and
+outlines must not be sampled as material features. The assembled layout does
+not require assigning random colours or generating grout in each stone.
+
+### Paving stone surface-detail note
+
+The smooth single-unit drawing establishes dimensions, silhouette and bevels;
+it is not a requirement for a polished or visually featureless final stone.
+Keep the current model geometry. Later replaceable stone materials may add
+intrinsic grain, roughness variation and small-pore shading using normal or
+bump maps, without adding vertices or changing the silhouette. Such maps must
+not contain baked shadows, ambient occlusion or directional highlights.
+
+This is a future material option, not a completed texture or a newly enabled
+default. The current colour-grain recipe and zero default normal strength
+remain unchanged. Map scale, strength and close-up appearance require a later
+material specification and review; do not infer them from drawing shading.
+Do not convert this note into geometric displacement. Chipped corners,
+irregular outer edges or visible surface depressions that change geometry
+require separately specified model variants rather than a material override.
+
 ## Random sequence
 
 Use unsigned 32-bit integer state initialized to the listed seed. Each sample:
