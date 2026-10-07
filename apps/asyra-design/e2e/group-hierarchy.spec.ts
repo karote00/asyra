@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
+import { createDefaultFill } from '@asyra/utils'
 import {
   createTestDocumentURL,
   getContentsPanel,
@@ -402,3 +403,182 @@ test('nested Frames expose disclosure controls and retain their children when fo
   )
   expect(parent).toBe(ids.nested)
 })
+
+for (const containerType of ['group', 'frame'] as const) {
+  test(`${containerType} double-click enters one child level and preserves vector editing`, async ({
+    page
+  }, testInfo) => {
+    await page.goto(createTestDocumentURL())
+    await waitForAppReady(page)
+    const ids = await page.evaluate(
+      async ({ containerType, fill }) => {
+        const { core, elementApis, hierarchyApis } =
+          await import('../src/testing/runtime-access')
+        const makeVector = () => {
+          const prefix = crypto.randomUUID()
+          const points = Object.fromEntries(
+            [
+              [200, 200],
+              [400, 200],
+              [400, 400],
+              [200, 400]
+            ].map(([x, y], i) => {
+              const id = `${prefix}-p${i}`
+              return [id, { id, kind: 'anchor', anchorType: 'sharp', x, y }]
+            })
+          )
+          const segments = Object.fromEntries(
+            Array.from({ length: 4 }, (_, i) => {
+              const id = `${prefix}-s${i}`
+              return [
+                id,
+                {
+                  id,
+                  startId: `${prefix}-p${i}`,
+                  endId: `${prefix}-p${(i + 1) % 4}`,
+                  outControlId: null,
+                  inControlId: null
+                }
+              ]
+            })
+          )
+          const id = elementApis.createElement(
+            {
+              type: 'vector',
+              fills: [{ ...fill, id: crypto.randomUUID() }],
+              points,
+              segments,
+              networks: {
+                [prefix]: {
+                  id: prefix,
+                  pointIds: Object.keys(points),
+                  segmentIds: Object.keys(segments),
+                  closed: true
+                }
+              },
+              closed: true
+            },
+            { undoable: false }
+          )
+          if (!id) throw new Error('Missing vector')
+          return id
+        }
+        const back = makeVector()
+        const front = makeVector()
+        const inner = hierarchyApis.groupElements([back, front], {
+          undoable: false
+        }).groupId
+        if (!inner) throw new Error('Missing inner Group')
+        let outer: string | null
+        if (containerType === 'group') {
+          outer = hierarchyApis.groupElements([inner], {
+            undoable: false
+          }).groupId
+        } else {
+          outer = elementApis.createElement(
+            {
+              type: 'frame',
+              workspacePosition: { x: 100, y: 100 },
+              width: 400,
+              height: 400
+            },
+            { undoable: false }
+          )
+          if (outer)
+            core.moveElements(
+              { elementIds: [inner], targetParentId: outer, targetIndex: 0 },
+              { undoable: false }
+            )
+        }
+        if (!outer) throw new Error('Missing outer container')
+        // Exercise persisted hierarchy too, through the ordinary canonical load.
+        await core.load(await core.save())
+        core.selectElements([], { undoable: false })
+        return { outer, inner, front, back }
+      },
+      { containerType, fill: createDefaultFill({ color: '#3478c6' }) }
+    )
+    const canvas = page.locator('canvas').first()
+    await page.mouse.click(500, 600)
+    await page.keyboard.press('Meta+1')
+    await expect
+      .poll(async () =>
+        page.evaluate(async (id) => {
+          const { elementApis } = await import('../src/testing/runtime-access')
+          const bounds = elementApis.getElementClientBounds(id)
+          if (!bounds) return null
+          return elementApis.getRenderElementIdAtClientPos({
+            x: bounds.x + bounds.width / 2,
+            y: bounds.y + bounds.height / 2
+          })
+        }, ids.front)
+      )
+      .toBe(ids.front)
+    const point = await page.evaluate(async (id) => {
+      const { elementApis } = await import('../src/testing/runtime-access')
+      const bounds = elementApis.getElementClientBounds(id)
+      if (!bounds) throw new Error('Missing vector client bounds')
+      return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+    }, ids.front)
+    const bounds = await canvas.boundingBox()
+    if (!bounds) throw new Error('Missing canvas')
+    const x = point.x
+    const y = point.y
+    const selection = () =>
+      page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getSelectedElementIds()
+      )
+    const editing = () =>
+      page.evaluate(async () =>
+        (
+          await import('../src/common-apis/system-context')
+        ).systemContextApis.getPathEditingMode()
+      )
+    await canvas.screenshot({
+      path: testInfo.outputPath('before-container-click.png')
+    })
+    const documentState = () =>
+      page.evaluate(async (ids) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return Object.values(ids).map((id) => core.getElementComputedData(id))
+      }, ids)
+    const before = await documentState()
+    await page.mouse.click(x, y)
+    await expect.poll(selection).toEqual([ids.outer])
+    if (containerType === 'frame') {
+      const blank = await page.evaluate(async (id) => {
+        const { elementApis } = await import('../src/testing/runtime-access')
+        const bounds = elementApis.getElementClientBounds(id)
+        if (!bounds) throw new Error('Missing Frame bounds')
+        return { x: bounds.x + 10, y: bounds.y + 10 }
+      }, ids.outer)
+      await page.mouse.dblclick(blank.x, blank.y)
+      await expect.poll(selection).toEqual([ids.outer])
+      await expect.poll(editing).toBe(false)
+    }
+    await page.mouse.dblclick(x, y)
+    await expect.poll(selection).toEqual([ids.inner])
+    await expect.poll(editing).toBe(false)
+    await page.mouse.dblclick(x, y)
+    await expect.poll(selection).toEqual([ids.front])
+    await expect.poll(editing).toBe(false)
+    await page.mouse.move(260, 50)
+    await canvas.screenshot({
+      path: testInfo.outputPath('container-child-selected.png')
+    })
+    await page.mouse.dblclick(x, y)
+    await expect.poll(editing).toBe(true)
+    const parents = await page.evaluate(async (ids) => {
+      const { core } = await import('../src/testing/runtime-access')
+      return [
+        core.getElementData(ids.front)?.parentId,
+        core.getElementData(ids.back)?.parentId,
+        core.getElementData(ids.inner)?.parentId
+      ]
+    }, ids)
+    expect(parents).toEqual([ids.inner, ids.inner, ids.outer])
+    expect(await documentState()).toEqual(before)
+  })
+}

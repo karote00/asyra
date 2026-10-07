@@ -47,3 +47,25 @@ Users need predictable single-selection behavior from both canvas and layer/cont
 - `apps/asyra-design/src/features/hover-element/index.ts`
 - `apps/asyra-design/src/common-apis/selection.ts`
 - `apps/asyra-design/src/common-apis/element/apis.ts`
+
+## Container double-click selection
+
+In Select mode, an unmodified double-click with exactly one selected container
+selects the immediate child on the frontmost renderer-hit descendant's canonical
+parent chain. Container eligibility uses the registered Core container capability,
+including Group, Frame and custom Group-derived types. Repeated double-clicks
+enter one level per gesture. The normal preceding click selects an unselected
+outer container; no separate gesture timer or selection cache is needed.
+
+Missing, stale or invalid hierarchy, a self/outside hit, a locked or hidden path,
+an empty position, multiple selection, modifiers, other tools or active path
+editing do not initiate drill-down. No descendant geometry or render ancestry
+may substitute for canonical hierarchy. Successful drill-down consumes the event;
+a selected vector can enter its existing path editing on a later double-click.
+Selection is local UI state; the gesture does not mutate document geometry,
+parentage, material, stored IDs or shared publication. Existing selection history
+policy is retained.
+
+Acceptance: executable hierarchy/feature tests plus real browser double-clicks
+cover Group, Frame, custom inheritance, nested progression, overlapping children,
+empty/no-op cases, vector editing, normal clicks, modifier selection and dragging.

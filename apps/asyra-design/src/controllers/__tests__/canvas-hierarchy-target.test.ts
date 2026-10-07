@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { elementApis, hierarchyApis, selectionApis } from '../../common-apis'
 import {
   resolveCreateElementParent,
+  resolveContainerChildTarget,
+  resolveContainerChildAtClientPos,
   resolveCanvasHierarchyTarget,
   resolveCanvasHierarchyTargetAtClientPos,
   resolveCurrentCanvasHierarchyTarget
@@ -242,5 +244,98 @@ describe('canvas hierarchy target resolution', () => {
         }
       })
     ).toBeNull()
+  })
+})
+
+describe('container double-click hierarchy target', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('reads one hit and one canonical projection per gesture without a second selection lookup', () => {
+    vi.spyOn(elementApis, 'getRenderElementIdAtClientPos').mockReturnValue(
+      'nested-leaf'
+    )
+    vi.spyOn(hierarchyApis, 'getFlattenedElementIds').mockReturnValue(
+      flattenedIds
+    )
+    vi.spyOn(hierarchyApis, 'getElementDataMap').mockReturnValue(elementDataMap)
+    vi.spyOn(selectionApis, 'getSelectedIds')
+    expect(resolveContainerChildAtClientPos('group-1', { x: 10, y: 20 })).toBe(
+      'group-2'
+    )
+    expect(
+      elementApis.getRenderElementIdAtClientPos
+    ).toHaveBeenCalledExactlyOnceWith({ x: 10, y: 20 })
+    expect(hierarchyApis.getFlattenedElementIds).toHaveBeenCalledOnce()
+    expect(hierarchyApis.getElementDataMap).toHaveBeenCalledOnce()
+    expect(selectionApis.getSelectedIds).not.toHaveBeenCalled()
+  })
+  const childTarget = (
+    hitElementId: string | null,
+    containerId = 'group-1',
+    map = elementDataMap
+  ) =>
+    resolveContainerChildTarget({
+      hitElementId,
+      containerId,
+      flattenedIds,
+      elementDataMap: map
+    })
+
+  it('enters only one level along the actual hit chain', () => {
+    expect(childTarget('nested-leaf')).toBe('group-2')
+    expect(childTarget('nested-leaf', 'group-2')).toBe('nested')
+    expect(childTarget('nested-leaf', 'nested')).toBe('nested-leaf')
+    expect(childTarget('rect-3b')).toBe('group-3')
+  })
+
+  it.each([null, 'missing', 'outside', 'group-1'])(
+    'rejects a non-descendant hit %s',
+    (hit) => {
+      expect(childTarget(hit)).toBeNull()
+    }
+  )
+
+  it.each(['group-1', 'group-2', 'nested', 'nested-leaf'])(
+    'rejects locked or hidden ancestry at %s',
+    (id) => {
+      expect(
+        childTarget('nested-leaf', 'group-1', {
+          ...elementDataMap,
+          [id]: { ...elementDataMap[id], lock: true }
+        })
+      ).toBeNull()
+      expect(
+        childTarget('nested-leaf', 'group-1', {
+          ...elementDataMap,
+          [id]: { ...elementDataMap[id], visible: false }
+        })
+      ).toBeNull()
+    }
+  )
+
+  it('rejects invalid projections rather than falling back to the raw leaf', () => {
+    expect(childTarget('nested-leaf', 'missing')).toBeNull()
+    expect(
+      childTarget('nested-leaf', 'group-1', {
+        ...elementDataMap,
+        nested: { ...elementDataMap.nested, parentId: 'nested-leaf' }
+      })
+    ).toBeNull()
+    expect(
+      resolveContainerChildTarget({
+        hitElementId: 'nested-leaf',
+        containerId: 'group-1',
+        flattenedIds: [],
+        elementDataMap
+      })
+    ).toBeNull()
+  })
+
+  it('does not depend on container type names', () => {
+    const map = {
+      ...elementDataMap,
+      'group-1': { ...elementDataMap['group-1'], type: 'custom-group' }
+    }
+    expect(childTarget('nested-leaf', 'group-1', map)).toBe('group-2')
   })
 })

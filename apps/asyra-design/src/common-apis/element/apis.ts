@@ -490,13 +490,14 @@ export const elementApis = {
       return false
     }
 
-    const minX = bounds.x - padding
-    const minY = bounds.y - padding
-    const maxX = bounds.x + bounds.width + padding
-    const maxY = bounds.y + bounds.height + padding
+    const localPoint = core.workspaceToElementLocal(elementId, point)
+    if (!localPoint) return false
 
     return (
-      point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+      localPoint.x >= -padding &&
+      localPoint.x <= bounds.width + padding &&
+      localPoint.y >= -padding &&
+      localPoint.y <= bounds.height + padding
     )
   },
 

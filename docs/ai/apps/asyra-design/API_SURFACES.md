@@ -773,6 +773,8 @@ Feature registry (`src/features/index.ts`):
 - `selection`
 
   - `resolveCanvasHierarchyTargetAtClientPos`
+  - `resolveContainerChildAtClientPos` for one-level double-click selection
+  - `elementApis.isContainerType` for registered container eligibility
   - `selectionApis.toggleSelection` / `selectElements` / `clearSelection`
 
 - `move-elements`
@@ -978,3 +980,12 @@ supplied targets in one ordinary transaction. Returns ordered
 `changed | unchanged | unavailable` statuses; missing/workspace targets are
 unavailable. AI exposes this plural method; the scalar public UI helper remains.
 A receipt with unavailable targets is partial/failed, never silent success.
+
+### Element bounds point queries
+
+`elementApis.isPointInsideElement(elementId, point, padding?)` consumes a
+workspace-space point and converts it through Core into the projected element's
+local coordinates before comparing with its computed width/height. Padding is
+in element-local units. Missing projection returns false. This is a bounds query,
+not detailed path geometry; renderer hit identity and vector near-path queries
+retain their separate responsibilities.
