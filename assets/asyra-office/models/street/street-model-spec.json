@@ -498,7 +498,8 @@
     {
       "moduleId": "road-drain-cover-round",
       "name": "Round manhole cover",
-      "approvedDrawing": "review/05-manhole-cover-v2.png",
+      "approvedDrawing": "review/05-manhole-dimensioned-v2.png",
+      "drawingInterpretation": "Topology and numeric modeling dimensions accepted by user on 2026-10-07: raised centre disk and rings 2/4, base-plane rings 1/3, six radial blind recesses, separable cover/frame and 4 mm radial gap. Dimensioned v2 synchronizes the accepted contract; its final annotation layout was approved by the user on 2026-10-07. Original appearance source is unchanged; annotated v1 is historical. Section is schematic, not to scale. Ring radii are rounded image-derived estimates; common 1 mm rise and edge treatment are accepted authored decisions, not measured heights. Numeric specification controls geometry.",
       "origin": "centre of rim TOP on road surface, Z=0",
       "overallSizeMetres": [
         0.66,
@@ -521,17 +522,30 @@
           -0.021,
           -0.001
         ],
-        "bevelMetres": 0.001
-      },
-      "grooves": {
-        "circleRadiiMetres": [
-          0.065,
-          0.1,
-          0.14,
-          0.265
-        ],
-        "widthMetres": 0.003,
-        "depthMetres": 0.0015
+        "bevelMetres": 0.001,
+        "radialProfile": {
+          "orderFromCentre": [
+            "raised centre disk",
+            "ring 1 - base plane",
+            "ring 2 - raised",
+            "ring 3 - base plane",
+            "ring 4 - raised",
+            "outer field - base plane with six capsule recesses"
+          ],
+          "raisedHeightMetres": 0.001,
+          "radialBoundariesMetres": [
+            0,
+            0.045,
+            0.07,
+            0.09,
+            0.125,
+            0.16,
+            0.286
+          ],
+          "status": "Numeric modeling definition accepted by user on 2026-10-07. Consecutive boundary pairs map to orderFromCentre. Ring radii are rounded image-derived estimates; common 1 mm rise and relief bevel are accepted authored choices. Former narrow-groove dimensions are withdrawn.",
+          "bodyZRangeInterpretation": "Base body Z=-0.021 to -0.001 m; raised centre and rings 2/4 reach Z=0. Cover maximum thickness is 0.021 m; assembly remains Z=-0.026 to 0 m.",
+          "edgeTreatment": "Nominal transitions at the listed radii are vertical 1 mm steps. Bevel only the convex upper circular edge of each transition: 0.0002 m inward surface offset, two segments, profile 0.5. Leave concave feet sharp; never cut below the base plane. Do not bevel tessellation seams. Boundaries are nominal pre-bevel radii."
+        }
       },
       "slots": {
         "count": 6,
@@ -562,8 +576,8 @@
       "mounting": {
         "roadCutoutRadiusMetres": 0.33,
         "cutoutDepthMetres": 0.026,
-        "rule": "rim top flush to road; remove intersecting road top faces, not stack a disk above road",
-        "interaction": "none"
+        "rule": "rim top flush to road; remove intersecting road top faces, not stack a disk above road; keep cover and rim separate solids and preserve the nominal 0.004 m radial clearance",
+        "interaction": "not implemented; cover and rim must support independent transforms without shared vertices or bridging geometry"
       },
       "unitCount": 1
     },
