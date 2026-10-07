@@ -5,6 +5,13 @@ base at Z=0 and +Z up. Numeric authority is the `streetlight-vintage-lantern`
 module in [street-model-spec.json](street-model-spec.json). This guide fixes the
 interpretation of those values. No model, runtime API or lighting system is
 implemented here. The [existing drawing](review/07-street-lantern-v2.png) is unchanged.
+The [dimensioned reference](review/07-street-lantern-dimensioned-v2.png) embeds
+the original at native resolution and adds notes outside that unchanged rectangle.
+The [independent SVG layer](review/07-street-lantern-annotation-layer-v2.svg) and
+[authoring script](review/draw-lantern-annotations.py) reproduce the annotations.
+The two section diagrams follow the numeric geometry before exterior edge rounding;
+front/side artwork remains illustrative. The previous generated dimensioned-v1
+was rejected because it redrew the source and misrepresented an angle. Use v2.
 
 ## Proportion source and revised dimensions
 
