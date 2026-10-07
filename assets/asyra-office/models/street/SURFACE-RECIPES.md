@@ -162,6 +162,15 @@ the same eight uniforms per leaf and the separate subgroup palette draws, so
 appearance changes cannot alter geometry. No baked cast/contact shadows, AO,
 highlights or drawn reference outlines. The scene owns illumination.
 
+## Street lantern appearance
+
+Use [LANTERN-SPEC.md](LANTERN-SPEC.md#default-appearance-and-independent-replacement)
+and the lantern module's appearance overrides. Seed 707 metal grain applies to
+the default structural and lower-collar materials only; amber panes use uniform
+intrinsic pigment. Full material replacement removes prior shader/textures;
+colour-only changes preserve the selected material's other properties. Do not
+bake reference shadows or outlines, or alter geometry through displacement.
+
 ## Reconstruction limit
 
 These formulas settle construction choices and permit repeatable authoring.

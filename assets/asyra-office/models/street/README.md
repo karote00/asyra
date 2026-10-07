@@ -44,3 +44,11 @@ Straight and curved curbs now share a section swept along a planar path.
 See [the shared section and path presets](PLANAR-CURBS.md). Existing preset
 dimensions remain, while both use the shared 0.008 m bevel. The [shared section drawing](review/04-curb-shared-section-v1.png) was approved on 2026-10-07 and is schematic, not calibrated. Separate straight/curved model sheets
 are not required; paths generate their geometry. This is documentation only.
+
+## Street lantern reconstruction
+
+The [lantern geometry and appearance contract](LANTERN-SPEC.md) recalculates
+proportions from the existing FRONT drawing while retaining total height 2.74 m.
+Read it with the lantern entry in `street-model-spec.json`. It defines part
+profiles, glass seating, roof thickness, joins and independent appearance
+replacement. The reference remains unchanged; no model has been built.
