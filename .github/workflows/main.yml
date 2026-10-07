@@ -55,7 +55,7 @@ jobs:
         run: echo "required=$(node scripts/ci-scope.mjs --needs-parser)" >> "$GITHUB_OUTPUT"
       - name: Install declared parser dependencies
         if: steps.parser.outputs.required == 'true'
-        run: corepack enable && yarn install --immutable --mode=skip-builds
+        run: corepack enable && yarn install --immutable --mode=skip-build
       - name: Classify changed workspaces and consumers
         id: scope
         env:

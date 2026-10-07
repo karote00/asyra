@@ -44,6 +44,73 @@ test('the local naming command runs the same formal gate retained in CI', () => 
   )
 })
 
+test('scope parser install executes with pinned Yarn and skips lifecycle builds', (t) => {
+  const workflow = yaml.load(readText('.github/workflows/main.yml'))
+  const step = workflow.jobs.scope.steps.find(
+    (entry) => entry.name === 'Install declared parser dependencies'
+  )
+  assert.ok(step)
+  const command = step.run.match(/(?:^|&&\s*)yarn (install\b[^\n]*)$/)
+  assert.ok(command, 'Expected the actual scope Yarn install command')
+  const args = command[1].trim().split(/\s+/)
+  assert.ok(args.includes('--immutable'))
+  const fixtureRoot = path.join(repositoryRoot, 'tmp/workflow-install')
+  fs.mkdirSync(fixtureRoot, { recursive: true })
+  const fixture = fs.mkdtempSync(path.join(fixtureRoot, 'parser-'))
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
+  fs.writeFileSync(path.join(fixture, 'yarn.lock'), '')
+  const packageManager = readJSON('package.json').packageManager
+  fs.writeFileSync(
+    path.join(fixture, 'package.json'),
+    JSON.stringify({
+      name: 'scope-admission-fixture',
+      private: true,
+      packageManager,
+      scripts: {
+        postinstall: `node -e "require('fs').writeFileSync('build-ran', 'yes')"`
+      }
+    })
+  )
+  fs.writeFileSync(
+    path.join(fixture, '.yarnrc.yml'),
+    'nodeLinker: node-modules\n'
+  )
+  const execute = (argv) =>
+    spawnSync('yarn', argv, {
+      cwd: fixture,
+      encoding: 'utf8',
+      timeout: 30000,
+      env: {
+        ...process.env,
+        COREPACK_ENABLE_NETWORK: '0',
+        YARN_ENABLE_NETWORK: '0',
+        YARN_ENABLE_GLOBAL_CACHE: '0',
+        YARN_ENABLE_IMMUTABLE_INSTALLS: '0',
+        YARN_ENABLE_TELEMETRY: '0',
+        YARN_ENABLE_SCRIPTS: '1',
+        YARN_GLOBAL_FOLDER: path.join(fixture, 'global'),
+        YARN_CACHE_FOLDER: path.join(fixture, 'cache')
+      }
+    })
+  const version = execute(['--version'])
+  assert.equal(version.status, 0, version.stderr)
+  assert.equal(`yarn@${version.stdout.trim()}`, packageManager)
+  // Prepare a lockfile without linking or running the fixture's lifecycle script.
+  const prepare = execute(['install', '--mode=update-lockfile'])
+  assert.equal(prepare.status, 0, prepare.stdout + prepare.stderr)
+  const lockfile = fs.readFileSync(path.join(fixture, 'yarn.lock'), 'utf8')
+  const install = execute(args)
+  assert.equal(install.status, 0, install.stdout + install.stderr)
+  assert.equal(
+    fs.readFileSync(path.join(fixture, 'yarn.lock'), 'utf8'),
+    lockfile
+  )
+  assert.equal(fs.existsSync(path.join(fixture, 'build-ran')), false)
+  const ordinary = execute(['install', '--immutable'])
+  assert.equal(ordinary.status, 0, ordinary.stdout + ordinary.stderr)
+  assert.equal(fs.readFileSync(path.join(fixture, 'build-ran'), 'utf8'), 'yes')
+})
+
 test('workspace test:ci contracts cannot turn test failures into successful skips', () => {
   for (const root of ['apps', 'packages', 'tools']) {
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {

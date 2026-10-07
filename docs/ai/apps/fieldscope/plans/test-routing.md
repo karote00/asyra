@@ -144,3 +144,29 @@ walking-terrain-placement-contract -> spatial-contract -> preset/spatial ->
 three-engine -> render-engine. This PR changes that shared entry, so retaining
 those consumers is intentional. Local/CI share selections and evidence rules.
 Generated Inspector workspace output is synchronized from its canonical source.
+
+## CI parser admission correction - 2026-10-07
+
+Run 37600081325 fails before classification: the parser-install command uses
+`skip-builds`, while the pinned Yarn 4.3.1 accepts `skip-build`. Downstream red
+aggregates lack scope output; they are not product-test failures. Prior source
+classification tests did not execute the workflow's conditional dependency install.
+
+Revised bounded slice: correct that install command and add a permanent executable
+workflow regression to `scripts/__tests__/workspace-automation.test.mjs`. Extract
+its actual Yarn arguments, execute them with the pinned Yarn in a dependency-free
+project-local fixture, retain immutable lockfile behavior and prove lifecycle
+scripts do not run. First demonstrate the current command's rejection, then fix
+.github/workflows/main.yml and execute the real repository install/classification
+path. No runtime, dependency/version, selection-policy, aggregate or timeout
+changes. This preserves local-affected-validation/select semantics; no new
+Inspector contract or product case is needed for a corrected CLI argument.
+Self-review: a string-only spelling assertion would miss tool compatibility;
+the regression must actually invoke Yarn. Scoped workflow/script/shared checks,
+naming, clean lockfile and actual-head changeset validation close this slice.
+
+The executable regression rejects the old spelling and passes the correction;
+a control install confirms the lifecycle sentinel runs without skip-build mode.
+The exact repository install and real classifier command pass locally without
+lockfile changes; 181 related workflow/routing/aggregate tests pass. The fix preserves the existing relationship-map selections; no downstream
+product input, profile selection or required check is altered by the CLI repair.
