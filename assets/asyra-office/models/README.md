@@ -8,6 +8,20 @@ All listed batches have user approval for their drawings and documentation. **No
 
 ## Start here
 
+### Asset types - 2026-10-07
+
+Use the [asset type classification](ASSET-TYPES.md) alongside the existing
+scene-category catalog. Model components own geometry; material assets own
+replaceable surface recipes and texture inputs; decal components own independent
+surface markings, dimensions and alpha masks. Road lines and crosswalk stripes
+are decal components. Floor planks and asphalt tiles remain model components;
+their wood/asphalt appearances are independent material assets.
+
+The classification includes the already reviewed architectural and railing
+components and the lounge armchair. It preserves their dimensions, identifiers,
+unit boundaries and approval states. Existing drawing counts are not model or
+material implementation counts. No folders or files are relocated.
+
 ### Current review scope and configurable appearance - 2026-10-06
 
 This rule applies to every asset batch below and takes precedence over earlier

@@ -4,6 +4,15 @@ Status: independent PNG material workflow authorized by the user on 2026-10-06.
 The natural oak v1 appearance and floor v7 sheet were approved for commit on
 2026-10-06. Reference shadows are not required for this component.
 
+## Classification
+
+This is an independent **material asset** specification. The PNG below is its
+base-colour input; the mapping and material parameters complete its contract.
+The floor plank remains a separate model component that references this default.
+It is not a decal or an additional coplanar mesh. Reuse on another compatible
+model requires explicit mapping rather than assuming this plank mapping applies.
+See the [shared classification](../../ASSET-TYPES.md).
+
 ## Natural oak v1
 
 - Asset: [floor-natural-oak-v1.png](floor-natural-oak-v1.png).

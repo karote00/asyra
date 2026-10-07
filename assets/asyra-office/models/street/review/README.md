@@ -12,14 +12,14 @@
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.
 
-## Approved transparent units
+## Decal components - approved transparent units
 
 - [One straight edge line](02-road-line-single-v4.png)
 - [One curved edge line](02-road-curve-single-v4.png)
 - [One short dash](02-road-dash-single-v4.png)
 - [One crosswalk stripe](03-crossing-single-v4.png)
 
-Each contains one planar marking without receiving ground. These PNGs are appearance references, not dimensionally calibrated production masks. Image proportions or antialiasing cannot replace JSON dimensions and transparency rules. Paint does not require a 3D asphalt slab for illustration; a planar top view is sufficient.
+Each is one independently placeable decal component: a planar marking with dimensions, a contour/alpha mask and a default pigment material, without receiving ground. See the [asset types](../../ASSET-TYPES.md). These PNGs are appearance references, not dimensionally calibrated production masks. Image proportions or antialiasing cannot replace JSON dimensions and transparency rules. Paint does not require a 3D asphalt slab for illustration; a planar top view is sufficient.
 
 ## Production rules
 
