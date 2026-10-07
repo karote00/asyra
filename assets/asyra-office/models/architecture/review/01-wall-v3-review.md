@@ -1,5 +1,7 @@
 # Wall - Flush End Revision
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: rejected by the user on 2026-10-06; magnification still shows an end
 overhang. The inspection claim below was incorrect. See `01-wall-v5-review.md`
 for the subsequent candidate. This sheet does not approve a model or change

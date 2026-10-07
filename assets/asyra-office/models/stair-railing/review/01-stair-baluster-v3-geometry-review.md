@@ -1,5 +1,7 @@
 # Stair Baluster - Top Cut Correction Review
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Review date: 2026-10-06. Scope: dimensions and geometry only.
 Status: rejected after user review. The independently redrawn top detail does
 not match the main THREE-QUARTER projection. The earlier checks below did not

@@ -403,7 +403,7 @@
     {
       "moduleId": "pavement-pieces",
       "name": "Pavement and curb - individual units",
-      "approvedDrawing": "review/04-pavement-curb-v2.png",
+      "approvedDrawing": "review/04-pavement-layout-v3.png",
       "drawingInterpretation": "assembled appearance reference only; paving stones and curb blocks are independent units, not one fixed L-shaped mesh",
       "origin": "specified per piece",
       "inventoryUnitsPerPiece": 1,
@@ -443,7 +443,7 @@
             "stone-cream",
             "stone-pale"
           ],
-          "shape": "one closed rectangular block"
+          "shape": "straight preset of the shared planar curb section; see PLANAR-CURBS.md"
         },
         {
           "partId": "curb-curved",
@@ -461,13 +461,15 @@
           ],
           "heightMetres": 0.12,
           "arcSegments": 8,
-          "bevelMetres": 0.004,
+          "bevelMetres": 0.008,
+          "bevelScope": "top and bottom boundary loops plus four vertical radial-end corners; exclude intermediate arc tessellation seams; inward surface offset with two segments, without expanding the nominal envelope",
+          "material": "stone-grey",
           "materialOptions": [
             "stone-grey",
             "stone-cream",
             "stone-pale"
           ],
-          "shape": "one closed annular-sector curb stone, not a complete corner"
+          "shape": "circular-arc preset of the shared planar curb section; see PLANAR-CURBS.md"
         }
       ],
       "surface": {
@@ -487,8 +489,8 @@
       "assemblyNotes": {
         "foundation": "scene-owned, not baked into stones",
         "joints": "scene chooses gap and staggering",
-        "curvedRuns": "app places multiple curved pieces; each piece remains independent",
-        "cutting": "arbitrary trimming is outside the present fixed-piece asset specification"
+        "curvedRuns": "app generates the shared section along planar paths; continuous or separately capped pieces follow PLANAR-CURBS.md",
+        "cutting": "curbs may be split by centreline arc length; arbitrary solid trimming and paver cutting remain outside scope"
       }
     },
     {

@@ -5,12 +5,13 @@
 ## Solid appearances and historical colours
 
 - [Asphalt](01-asphalt-v2.png): one unmarked surface tile.
-- [Road-marking appearance](02-road-markings-v2.png): historical colour reference; approved v4 units take precedence.
-- [Crosswalk appearance](03-zebra-crossing-v2.png): historical white-paint reference; approved v4 stripe takes precedence.
+- Road-marking appearance - reference image: none (obsolete image removed): historical colour reference; approved v4 units take precedence.
+- Crosswalk appearance - reference image: none (obsolete image removed): historical white-paint reference; approved v4 stripe takes precedence.
 - [Pavement layout - annotated assembly reference](04-pavement-layout-v3.png): not a single component; annotation revision approved on 2026-10-07.
 - [Paving stone - one independent unit](04-paving-stone-single-v1.png): six-view sheet, 0.60 x 0.30 x 0.05 m; approved on 2026-10-07.
-- [Original pavement and curb appearance](04-pavement-curb-v2.png): retained approved laying-style evidence; not unit geometry.
+- Original pavement and curb appearance - reference image: none (obsolete image removed): retained approved laying-style evidence; not unit geometry.
 - [Straight curb - one independent unit](04-curb-straight-single-v1.png): 0.30 x 0.16 x 0.12 m; specification reviewed on 2026-10-07. Illustrative, not calibrated; see [review limitations](CURB-STRAIGHT-PROMPTS.md#initial-review).
+- Curved curb and shared cross-section - reference image: none. Use the [construction specification](../PLANAR-CURBS.md).
 - [Round manhole](05-manhole-cover-v2.png): one cover/frame assembly.
 - [Street tree](06-street-tree-v2.png): one complete tree.
 - [Street lantern](07-street-lantern-v2.png): one complete light.

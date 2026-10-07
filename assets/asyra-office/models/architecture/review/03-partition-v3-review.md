@@ -1,5 +1,7 @@
 # Partition - Flush End Correction
 
+Reference image: none (obsolete revision removed). This record describes a past review; use the current gallery for the accepted design.
+
 Status: historical intermediate drawing, superseded by approved v5. The SIDE
 profile required correction; this record is not current geometry approval.
 

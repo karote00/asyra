@@ -18,19 +18,19 @@ Transparent road markings remain independent from any road surface. RGB colours 
 
 Revised - authorized for commit.
 
-![01-wall-v2](architecture/review/01-wall-v2.png)
+01-wall-v2 - reference image: none (obsolete image removed)
 
 ### 02-floor-v2
 
 Revised - authorized for commit.
 
-![02-floor-v2](architecture/review/02-floor-v2.png)
+02-floor-v2 - reference image: none (obsolete image removed)
 
 ### 03-partition-v2
 
 Revised - authorized for commit.
 
-![03-partition-v2](architecture/review/03-partition-v2.png)
+03-partition-v2 - reference image: none (obsolete image removed)
 
 ### 04-stair-v2
 
@@ -48,7 +48,7 @@ Revised - authorized for commit.
 
 Revised - authorized for commit.
 
-![06-window-v2](architecture/review/06-window-v2.png)
+06-window-v2 - reference image: none (obsolete image removed)
 
 ## Decor Accessories
 
@@ -102,7 +102,7 @@ Revised - authorized for commit.
 
 Revised - authorized for commit.
 
-![04-armchair-v1](furniture/review/04-armchair-v1.png)
+04-armchair-v1 - reference image: none (obsolete image removed)
 
 ### 05-coffee-table-v1
 
@@ -276,7 +276,7 @@ Revised - authorized for commit.
 
 Revised - authorized for commit.
 
-![04-pavement-curb-v2](street/review/04-pavement-curb-v2.png)
+04-pavement-curb-v2 - reference image: none (obsolete image removed)
 
 ### 05-manhole-cover-v2
 

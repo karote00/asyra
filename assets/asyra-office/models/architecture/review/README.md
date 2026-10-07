@@ -21,7 +21,7 @@ The six revision-2 sheets were approved on 2026-10-04. The user approved the cor
 [Partition v5](03-partition-v5.png) and its [SIDE detail](03-partition-v5-side-detail.png)
 show the approved flush X ends and symmetric 15 mm Y lips. SIDE is generated
 from numeric bounds; unchanged views remain appearance references. See the
-[review record](03-partition-v5-review.md). Earlier v3/v4 sheets are historical;
+[review record](03-partition-v5-review.md). Earlier v3/v4 reference images were removed;
 v4 failed the required symmetric thickness profile. No shadow pass was needed.
 
 ### Approved floor revision - 2026-10-06
@@ -30,7 +30,7 @@ The [v7 sheet](02-floor-v7.png) retains the dimension-driven v6 projection and
 restores natural wood grain through a [replaceable PNG](../materials/floor-natural-oak-v1.png).
 See its [self-review record](02-floor-v7-review.md). The user approved this
 drawing and material for commit on 2026-10-06. It supersedes floor v2. V5 failed
-self-review; v6's regular grain was rejected. Both remain historical evidence.
+self-review; v6's regular grain was rejected. Both obsolete reference images were removed.
 
 Sheets support appearance review. See the [main document](../README.md) for dimensions, backs, materials, and component relationships. Backgrounds, text, and outlines are not assets. Do not bake face shading into textures; use shadow-free surface recipes. The window takes cues from secondary shops, not a required matching central-office window.
 
