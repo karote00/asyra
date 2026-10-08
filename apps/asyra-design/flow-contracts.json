@@ -42,6 +42,11 @@
       ],
       "cases": [
         {
+          "id": "compose.ordered-parts",
+          "stepId": "compose",
+          "testName": "execution proof resolves batched semantic identities and applies ordered ready parts"
+        },
+        {
           "id": "prepare.indexed-targets",
           "stepId": "prepare",
           "testName": "execution proof reuses artifact prefix lookup without rereading every key"

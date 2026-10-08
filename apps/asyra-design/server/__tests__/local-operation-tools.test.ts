@@ -31,6 +31,86 @@ const basicActionName = (method: string) => {
   return contract.name
 }
 
+it('resolves multiple semantic operations and semantic names from the admitted registry without dispatch', async () => {
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const selected = basicApiContracts.filter((api) =>
+    ['fill.updateFillsAtIndex', 'hierarchy.moveElementsRelative'].includes(
+      api.operation
+    )
+  )
+  expect(selected).toHaveLength(2)
+  const call = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const result = await call({
+    operations: [...selected.map((api) => api.operation), 'missing.operation'],
+    view: 'usage'
+  })
+  expect(result.apis.map((api: { name: string }) => api.name)).toEqual(
+    selected.map((api) => api.name)
+  )
+  expect(result.missingOperations).toEqual(['missing.operation'])
+  expect(
+    result.apis.every((api: { inputSchema?: unknown }) => !api.inputSchema)
+  ).toBe(true)
+  const byName = await call({ names: selected.map((api) => api.operation) })
+  expect(byName.missingNames).toEqual([])
+  expect(byName.apis.map((api: { name: string }) => api.name)).toEqual(
+    selected.map((api) => api.name)
+  )
+  for (let i = 0; i < selected.length; i++)
+    expect(byName.apis[i].inputSchema).toEqual(selected[i].inputSchema)
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('returns qualified choices for an ambiguous native name instead of selecting a route', async () => {
+  const native = ['first', 'second'].map((namespace) => ({
+    name: 'build',
+    namespace,
+    description: 'Build',
+    inputSchema: { type: 'object' }
+  }))
+  const tools = createLocalOperationTools(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    vi.fn(),
+    { getNativeTools: () => native }
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'describe_design_apis',
+      { names: ['build'] },
+      new AbortController().signal
+    )
+  )
+  expect(result.tools).toEqual([])
+  expect(result.ambiguousNames).toEqual([
+    { name: 'build', candidates: ['first.build', 'second.build'] }
+  ])
+  const exact = JSON.parse(
+    await tools.call(
+      'describe_design_apis',
+      { names: ['first.build'] },
+      new AbortController().signal
+    )
+  )
+  expect(exact.tools[0].execution).toEqual({
+    kind: 'native-tool',
+    namespace: 'first',
+    tool: 'build'
+  })
+})
+
 it('uses the advertised overview default for any inspection target and preserves explicit native detail', async () => {
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     actionResults: batch.actions.map((action) => ({

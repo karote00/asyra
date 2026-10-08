@@ -37,6 +37,85 @@ import { createLocalToolScheduler } from '../local-tool-scheduler'
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
 
+it('execution proof resolves batched semantic identities and applies ordered ready parts', async () => {
+  const order: string[] = []
+  const session = createDesignPreparationSession((...args) => {
+    order.push('prepare')
+    return prepareDesign(...args)
+  })
+  const actions: AiActionDescription[] = JSON.parse(
+    JSON.stringify([
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      },
+      ...basicApiContracts
+    ])
+  )
+  const designs = createLocalDesignTools(actions, session)
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+      order.push('apply')
+      return {
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            status: 'complete',
+            compositionId: `actual-${order.length}`
+          }
+        }))
+      }
+    }
+  )
+  const operations = createLocalOperationTools(actions, designs, execute)
+  const signal = new AbortController().signal
+  const discovery = JSON.parse(
+    await operations.call(
+      'describe_design_apis',
+      {
+        operations: [
+          'fill.updateFillsAtIndex',
+          'hierarchy.moveElementsRelative'
+        ],
+        view: 'usage'
+      },
+      signal
+    )
+  )
+  expect(discovery.apis).toHaveLength(2)
+  expect(discovery.missingOperations).toEqual([])
+  expect(execute).not.toHaveBeenCalled()
+  const workflow = createLocalDesignWorkflow(designs, operations)
+  const draft = {
+    type: 'group',
+    name: 'Part',
+    children: [
+      { type: 'rect', key: 'face', name: 'Face', width: 10, height: 10 }
+    ]
+  }
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', parentPart: 'a', draft }
+        ],
+        inspection: 'defer'
+      },
+      signal
+    )
+  )
+  expect(result.status).toBe('complete')
+  expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply'])
+  expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
+    parentId: 'actual-2'
+  })
+})
+
 it('execution proof reuses artifact prefix lookup without rereading every key', () => {
   const session = createDesignPreparationSession()
   const prepared = session.prepare({
@@ -894,6 +973,7 @@ it('execution proof accounts observed spans without private payloads or invented
     clock.mockReturnValue(100)
     usage.trace('tool_started', {
       callId: 'a',
+      part: { key: 'first', index: 0, secret: 'secret-test-payload' },
       tool: AiDesignToolIds.PREPARE_DESIGN
     })
     clock.mockReturnValue(120)
@@ -923,6 +1003,9 @@ it('execution proof accounts observed spans without private payloads or invented
       outsideToolAndResearchMs: 400
     })
     const serialized = JSON.stringify(log.mock.calls)
+    expect(
+      retained.find((record) => record.callId === 'a')?.evidence
+    ).toMatchObject({ part: { key: 'first', index: 0 } })
     expect(serialized).not.toContain('private user brief')
     expect(serialized).not.toContain('secret-test-payload')
     expect(serialized).toContain('operationCount')

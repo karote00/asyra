@@ -26,6 +26,7 @@ const evidenceKeys = new Set([
   'channel',
   'terminal',
   'parentCallId',
+  'part',
   'nativeThreadId',
   'nativeTurnId',
   'nativeItemId',
@@ -243,23 +244,38 @@ const summarizeEvidence = (
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => evidenceKeys.has(key))
-      .map(([key, item]) => [
-        key,
-        ['fillColor', 'strokeColor'].includes(key) &&
-        typeof item === 'string' &&
-        !/^#[0-9a-f]{6,8}$/i.test(item)
-          ? '[invalid color value]'
-          : summarizeEvidence(
-              key === 'criteria' && isRecord(item)
-                ? Object.entries(item).map(([id, criterion]) => ({
-                    criterionId: id,
-                    ...(isRecord(criterion) ? criterion : {})
-                  }))
-                : item,
-              depth + 1,
-              budget
-            )
-      ])
+      .map(([key, item]) => {
+        if (key === 'part' && isRecord(item))
+          return [
+            key,
+            {
+              key: summarizeEvidence(item.key, depth + 1, budget),
+              index:
+                typeof item.index === 'number' &&
+                Number.isSafeInteger(item.index) &&
+                item.index >= 0
+                  ? item.index
+                  : null
+            }
+          ]
+        return [
+          key,
+          ['fillColor', 'strokeColor'].includes(key) &&
+          typeof item === 'string' &&
+          !/^#[0-9a-f]{6,8}$/i.test(item)
+            ? '[invalid color value]'
+            : summarizeEvidence(
+                key === 'criteria' && isRecord(item)
+                  ? Object.entries(item).map(([id, criterion]) => ({
+                      criterionId: id,
+                      ...(isRecord(criterion) ? criterion : {})
+                    }))
+                  : item,
+                depth + 1,
+                budget
+              )
+        ]
+      })
   )
 }
 

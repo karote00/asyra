@@ -105,9 +105,11 @@ Read-only advice leaves the canvas unchanged.
 `.trim()
 
 export const AI_OPERATION_INSTRUCTIONS = `
-Discover only missing schemas. describe_design_apis accepts known names together or a category with
-includeSchemas=true; reuse returned definitions. For known APIs request view=usage or the needed schemaPaths;
-request full schemas when missing. Do not scan the whole catalog on each step.
+Discover only missing schemas. For known semantic operations use describe_design_apis with operations=["owner.method", ...].
+Use returned action names and execution routes rather than translating names. Use names for known native tools;
+qualify ambiguous names by namespace. If the operation is unknown, use a category menu (includeSchemas=true for schemas).
+Reuse returned definitions. For known APIs request view=usage or the needed schemaPaths; restore full schemas when missing,
+including abbreviated native fields. Do not scan the whole catalog on each step.
 Existing targets use registered batch edits with new values. No old snapshot is required unless your
 calculation needs it. read_design_context supports selection, children, known IDs and workspace regions.
 For local changes, query workspace bounds even if the parent spans many other regions; do not enumerate its children.
@@ -118,6 +120,10 @@ Use hierarchy.moveElementsRelative for before/after placement without reading al
 prepare_and_apply_design owns preparation, optional criteria, writing and inspection. Its completedSteps
 and artifactId preserve progress after failure; reuse successful preparation. A rejected draftId and conflict paths
 allow compact repair replacements through the same preparation route without resending unchanged source. Do not replay uncertain writes.
+When several parts are already decided, submit ordered parts in one call: the tool prepares and applies each before the next.
+Use pattern/vector-pattern for repetition and backend projection for supplied world geometry. parentPart links an earlier
+part's returned identity. Send a single ready part immediately when later work still needs a decision; do not wait to fill a sequence.
+On a partial sequence, retain successful part receipts and correct only failed or remaining work using actual parent IDs.
 Use inspection=defer when no immediate visual decision is needed, then inspect at the next such boundary.
 Only use prepare_design separately when its unapplied artifact is itself needed. Tool schemas and examples
 own geometry, pattern, projection, component, targeting and review formats; use exact admitted inputs.

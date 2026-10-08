@@ -84,6 +84,7 @@
           'Deliver original PNG, JPEG and WebP reference bytes at admitted dimensions; advertise and verify the actual Code Mode string-result forwarding contract without MCP content-array assumptions or base64 text output; verify actual model image visibility independently of acquisition; keep canvas snapshot limits scoped to inspection',
           'Distinguish usable output, unavailable preparation and partial receipts from transport completion',
           'Resolve exact semantic operation identities and categories against current admitted schemas; never infer an adapter from lexical similarity',
+          'Batch known semantic operations through request-local registry indexes; exact names may resolve unique semantic identities, while ambiguous identities return candidates without choosing an execution route',
           'Advertise registry-derived category choices and return current recovery choices on unknown lookup without a canvas exchange',
           'Classify redundant model routes with explicit replacements while preserving public UI methods and primitive capability coverage',
           'Distinguish computed projections from canonical value and record mutations in registered descriptors',
@@ -94,6 +95,7 @@
           'Startup guidance defers stage procedures to tool contracts; a ready first part requires no model-authored plan, and chosen spatial projection uses the existing preparation owner without prescribing a viewpoint',
           'The existing combined workflow owns deterministic handoffs, preserves prepared identities and completed step outcomes on later failure, observes each internal call and never replays uncertain writes',
           'The combined preparation route accepts either complete source or an explicit retained-draft repair and forwards the same input to preparation; invalid repair never reaches apply',
+          'Admit ordered ready-part envelopes and backward parent links before writes; prepare and apply each part before compiling its successor, using actual acknowledged composition IDs, preserving completed receipts and stopping on failure without replay',
           'Compose optional first-write criteria through the existing review owner after preparation and before mutation; reject invalid criteria without canvas writes',
           'Explain construction choices from supplied coordinate and repetition semantics; preserve direct edits and arbitrary 2D paths, with executable examples and no forced camera or subject-based routing',
           'Preserve original request terms and constraints when organizing the existing plan; separate assumptions without an extra translation call',
@@ -515,6 +517,7 @@
         conditions: [
           'Record continuous App invocation and provider delegation spans; partition child AI waits, App exchanges, tools and provider events without claiming hidden reasoning; missing historical coverage remains a recording defect',
           'Attribute observed native calls and inner App actions with actor, parent, contract identity, purpose, expectation and distinct execution/correctness evidence',
+          'Preserve bounded local part key and index on ordered preparation/application spans without retaining arbitrary part metadata or adding a second record owner',
           'Retain per-call input shape and summary, explicit omissions, feedback and receipt-based output usability',
           'Use interval unions for overlapping spans',
           'Expose public native orchestration names, notification metadata and longest App-call gaps; join child assessment request, parent tool and span identities; report inclusive calls separately from exclusive ownership',

@@ -1,6 +1,10 @@
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
 import { invokeLocalTool } from '../local-tool-invocation'
+import {
+  nativeToolInputSchema,
+  operationInputIssue
+} from '../operation-input-schema'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
@@ -75,6 +79,31 @@ const setup = () => {
   }
 }
 
+it('executes the advertised ordered input example without hidden envelope fields', async () => {
+  const { workflow, compile, execute } = setup()
+  const definition = workflow.definitions[0]
+  const marker = 'Ordered input example: '
+  expect(definition.description).toContain(marker)
+  const example = JSON.parse(definition.description.split(marker)[1])
+  expect(operationInputIssue(example, definition.inputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(example, nativeToolInputSchema(definition.inputSchema))
+  ).toBeUndefined()
+  const result = JSON.parse(
+    await workflow.call(definition.name, example, new AbortController().signal)
+  )
+  expect(result.status).toBe('complete')
+  expect(result.parts.map((part: { key: string }) => part.key)).toEqual([
+    'body',
+    'detail'
+  ])
+  expect(compile).toHaveBeenCalledTimes(2)
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
+    parentId: 'root'
+  })
+})
+
 it('composes compact rejected-draft repair through preparation before one canonical dispatch', async () => {
   const { workflow, execute } = setup()
   const source = {
@@ -131,6 +160,272 @@ it('keeps combined preparation and canvas application behind independent work', 
   expect(execute).toHaveBeenCalledOnce()
 })
 const signal = () => new AbortController().signal
+
+describe('ordered ready parts', () => {
+  it('does not label a first-part rejection as acknowledged partial work', async () => {
+    const { workflow, execute } = setup()
+    const reply = await invokeLocalTool(
+      workflow,
+      workflow.definitions[0],
+      {
+        parts: [
+          {
+            key: 'bad',
+            draft: {
+              ...draft,
+              children: [draft.children[0], draft.children[0]]
+            }
+          }
+        ]
+      },
+      signal()
+    )
+    expect(JSON.parse(reply.text).toolOutcome.status).toBe('unavailable')
+    expect(execute).not.toHaveBeenCalled()
+  })
+  it('reports partial progress inside the first part without replaying it', async () => {
+    const { workflow, execute } = setup()
+    execute.mockResolvedValue({
+      context: {},
+      actionResults: [
+        {
+          actionId: 'first',
+          actionName: AiActionNames.APPLY_PREPARED_DESIGN,
+          result: {
+            status: 'partial',
+            compositionId: 'retained',
+            appliedElementIds: ['retained']
+          }
+        }
+      ]
+    })
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            { key: 'next', draft }
+          ]
+        },
+        signal()
+      )
+    )
+    expect(result.status).toBe('partial')
+    expect(result.parts[0].actionResults[0].result.compositionId).toBe(
+      'retained'
+    )
+    expect(execute).toHaveBeenCalledOnce()
+  })
+
+  it('advertises one shared draft contract and admits the same native sequence inputs', () => {
+    const { workflow } = setup()
+    const schema = workflow.definitions[0].inputSchema
+    const native = nativeToolInputSchema(schema)
+    for (const input of [
+      { draft },
+      { parts: [{ key: 'first', draft }] },
+      { parts: [{ key: 'first', draft }], draft },
+      { parts: [] },
+      { parts: [{ key: 'first', draft: { ...draft, unknown: true } }] },
+      { parts: [{ key: 'first', callback: '() => draw()' }] }
+    ])
+      expect(Boolean(operationInputIssue(input, native))).toBe(
+        Boolean(operationInputIssue(input, schema))
+      )
+    expect(
+      operationInputIssue({ parts: [{ key: 'first', draft }] }, schema)
+    ).toBeUndefined()
+  })
+
+  it('preserves partial canonical failure and current parent admission without replay', async () => {
+    const { workflow, compile, execute } = setup()
+    execute.mockResolvedValueOnce({
+      context: {},
+      actionResults: [
+        {
+          actionId: 'first',
+          actionName: AiActionNames.APPLY_PREPARED_DESIGN,
+          result: { status: 'complete', compositionId: 'actual-parent' }
+        }
+      ]
+    })
+    execute.mockImplementationOnce(async (batch) => {
+      expect(batch.actions[0].arguments).toMatchObject({
+        parentId: 'actual-parent'
+      })
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: 'second',
+            actionName: AiActionNames.APPLY_PREPARED_DESIGN,
+            result: {
+              status: 'failed',
+              reason: 'Parent was locked by a concurrent edit'
+            }
+          }
+        ]
+      }
+    })
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            { key: 'second', parentPart: 'first', draft },
+            { key: 'third', draft }
+          ]
+        },
+        signal()
+      )
+    )
+    expect(result).toMatchObject({
+      status: 'partial',
+      failedPart: 'second',
+      remainingParts: ['third']
+    })
+    expect(result.parts[0].actionResults[0].result.compositionId).toBe(
+      'actual-parent'
+    )
+    expect(result.parts[1].actionResults[0].result.reason).toContain('locked')
+    expect(execute).toHaveBeenCalledTimes(2)
+    expect(compile).toHaveBeenCalledTimes(2)
+  })
+
+  it('applies each part before compiling its successor and links actual returned parent IDs', async () => {
+    const { workflow, compile, execute } = setup()
+    const order: string[] = []
+    compile.mockImplementation((...args) => {
+      order.push('prepare')
+      return prepareDesign(...args)
+    })
+    execute.mockImplementation(async (batch) => {
+      order.push('apply')
+      const part = order.length / 2
+      if (part === 2)
+        expect(batch.actions[0].arguments).toMatchObject({
+          parentId: 'actual-first'
+        })
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: 'a',
+            actionName: AiActionNames.APPLY_PREPARED_DESIGN,
+            result: {
+              status: 'complete',
+              compositionId: part === 1 ? 'actual-first' : 'actual-second'
+            }
+          }
+        ]
+      }
+    })
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'base', draft },
+            { key: 'detail', parentPart: 'base', draft }
+          ],
+          inspection: 'defer'
+        },
+        signal()
+      )
+    )
+    expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply'])
+    expect(result.status).toBe('complete')
+    expect(result.parts.map((part: { key: string }) => part.key)).toEqual([
+      'base',
+      'detail'
+    ])
+    expect(result.parts[0].actionResults[0].result.compositionId).toBe(
+      'actual-first'
+    )
+  })
+
+  it('retains successful receipts when later valid-shape geometry is rejected, without applying successors', async () => {
+    const { workflow, execute, compile } = setup()
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            {
+              key: 'bad',
+              draft: {
+                ...draft,
+                children: [draft.children[0], draft.children[0]]
+              }
+            },
+            { key: 'later', draft }
+          ]
+        },
+        signal()
+      )
+    )
+    expect(execute).toHaveBeenCalledOnce()
+    expect(compile).toHaveBeenCalledTimes(2)
+    expect(result).toMatchObject({
+      status: 'partial',
+      failedPart: 'bad',
+      remainingParts: ['later']
+    })
+    expect(result.parts[0].actionResults[0].result.compositionId).toBe('root')
+    expect(result.parts[1].failedStep).toBe('prepare_design')
+  })
+
+  it.each([
+    [
+      { key: 'first', parentPart: 'later', draft },
+      { key: 'later', draft }
+    ],
+    [
+      { key: 'same', draft },
+      { key: 'same', draft }
+    ],
+    [
+      { key: 'first', draft },
+      { key: 'next', parentPart: 'first', parentId: 'existing', draft }
+    ]
+  ])(
+    'rejects invalid sequence references before preparation or writes',
+    async (...parts) => {
+      const { workflow, compile, execute } = setup()
+      await expect(
+        workflow.call('prepare_and_apply_design', { parts }, signal())
+      ).rejects.toThrow()
+      expect(compile).not.toHaveBeenCalled()
+      expect(execute).not.toHaveBeenCalled()
+    }
+  )
+
+  it('stops before another preparation when cancellation follows an acknowledged apply', async () => {
+    const { workflow, compile, execute } = setup()
+    const controller = new AbortController()
+    execute.mockImplementation(async () => {
+      controller.abort()
+      return { context: {}, actionResults: [] }
+    })
+    await expect(
+      workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            { key: 'second', draft }
+          ]
+        },
+        controller.signal
+      )
+    ).rejects.toThrow()
+    expect(compile).toHaveBeenCalledOnce()
+    expect(execute).toHaveBeenCalledOnce()
+  })
+})
 
 describe('combined design preparation and application', () => {
   it('prepares once and applies once while returning compact actionable evidence', async () => {
