@@ -22,3 +22,19 @@ Each view contains one unit. No wall assembly, mortar, soil, plants, pavement, r
 The source establishes pale masonry, softened edges and the wall/cap relationship. Exact dimensions, hidden backs and bottoms, chamfer sizes and repeatable stone flecks are authored completions. Images are illustrative rather than calibrated projections. Numerical documents determine construction; appearance remains approved for this reference handoff.
 
 No models, Blender operations, app placement logic, animation or exports are included. No exact reconstruction or model verification is claimed. The user authorized committing this reference handoff.
+
+## Shared geometry preset decision - 2026-10-09
+
+Retain `masonry-block` as a selectable preset and preserve its reference sheet.
+It shares the convex chamfered-box geometry family with `red-clay-paver`; it does
+not require a separate future modeling algorithm. Its default 300 x 180 x 140 mm
+size, 6 mm chamfer and warm grey stone recipe remain useful defaults. The clay
+preset's 1 mm chamfer cannot become this default merely through axis scaling.
+See the [family comparison](../ASSET-TYPES.md#shared-geometry-families-and-selectable-presets).
+
+Apply the [shared sizing and appearance contract](../README.md#overall-size-and-appearance---2026-10-09)
+to explicit instance sizes. All dimensions and fit examples in this batch are
+defaults. Material replacement is common behavior, not another model. This
+updates documentation only; retain drawings and identifiers, and do not count
+this as an additional generator or completed model. The coping slab remains a
+separate selectable unit; its detailed review is not advanced by this decision.
