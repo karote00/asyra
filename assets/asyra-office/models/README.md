@@ -125,6 +125,34 @@ geometry details, default appearance and reference evidence when they provide
 useful choices. A reference sheet is not proof that a separate mesh generator
 must exist. See [shared geometry presets](ASSET-TYPES.md#shared-geometry-families-and-selectable-presets).
 
+### Geometry production routes - agreed 2026-10-09
+
+Reference drawing and production geometry are separate stages. A script that
+projects specification dimensions into a PNG supplies a reference sheet; it
+does not deliver a runtime mesh or complete the Blender/modeling stage.
+
+Use direct programmatic geometry for simple, fully specified shapes: boxes,
+chamfered boxes, cylinders, spheres and straightforward assemblies such as the
+park railing post. These assets do not require a Blender intermediary. Reuse
+the shared geometry family with preset parameters rather than writing a new
+generator for each material or size variant.
+
+Use Blender where complex surfaces, sculpted details, topology or rigging need
+dedicated authoring, for example detailed characters, animals or upholstered
+furniture. Select the route from the actual geometry requirements; the object
+category alone does not make Blender mandatory.
+
+Both routes must use the same approved dimensions, origins, part boundaries,
+joins, reference views and shared XYZ sizing/appearance contract. Programmatic
+generation must preserve specified chamfers, overlaps and surface boundaries;
+choosing primitives does not permit extra intersecting/internal faces in a
+unit whose specification requires a joined surface. Both routes remain subject
+to geometry, visual and LOD validation during implementation.
+
+This records the production approach only. Current work remains component
+reference/specification review; no runtime generator, model export, renderer
+integration or repository-wide asset migration is implemented by this decision.
+
 ### Paving stone and layout reference - approved 2026-10-07
 
 The [single paving stone](street/review/04-paving-stone-single-v1.png) is the
@@ -196,7 +224,7 @@ Every row has approved drawings/documents; model construction and verification r
 | Asyra Office - Group 4N - Street Sign and Bollard | [Street sign - approved v6](street-details/review/01-street-sign-v6.png)<br>[Roadside bollard](street-details/review/02-roadside-bollard-v3.png) | [Overview](street-details/README.md), [gallery](street-details/review/README.md), [geometry](street-details/GEOMETRY-SUPPLEMENT.md), [numbers](street-details/street-details-model-spec.json), [surfaces](street-details/SURFACE-RECIPES.md) |
 | Group 2C - Red Clay Paver | [Red clay paver - multiple views](clay-paving/review/01-red-clay-paver-v1.png) | [Overview](clay-paving/README.md), [gallery](clay-paving/review/README.md), [geometry](clay-paving/GEOMETRY-SUPPLEMENT.md), [numbers](clay-paving/clay-paving-model-spec.json), [surfaces](clay-paving/SURFACE-RECIPES.md) |
 | Asyra Office - Group 2B - Garden Masonry | [Masonry block](garden-masonry/review/01-masonry-block-v1.png)<br>[Wall coping slab](garden-masonry/review/02-wall-coping-v1.png) | [Overview](garden-masonry/README.md), [gallery](garden-masonry/review/README.md), [geometry](garden-masonry/GEOMETRY-SUPPLEMENT.md), [numbers](garden-masonry/garden-masonry-model-spec.json), [surfaces](garden-masonry/SURFACE-RECIPES.md) |
-| Asyra Office - Group 4M - Park Railing | [Railing post](park-railing/review/01-railing-post-v1.png)<br>[Railing panel](park-railing/review/02-railing-panel-v1.png) | [Overview](park-railing/README.md), [gallery](park-railing/review/README.md), [geometry](park-railing/GEOMETRY-SUPPLEMENT.md), [numbers](park-railing/park-railing-model-spec.json), [surfaces](park-railing/SURFACE-RECIPES.md) |
+| Asyra Office - Group 4M - Park Railing | [Railing post - review colours](park-railing/review/01-railing-post-v3.png)<br>[Railing panel](park-railing/review/02-railing-panel-v1.png) | [Overview](park-railing/README.md), [gallery](park-railing/review/README.md), [geometry](park-railing/GEOMETRY-SUPPLEMENT.md), [numbers](park-railing/park-railing-model-spec.json), [surfaces](park-railing/SURFACE-RECIPES.md) |
 | Asyra Office - Group 4J - Outdoor Bench and Entry Sign | [Park bench](outdoor-accents/review/01-park-bench-v1.png)<br>[Entry chalkboard](outdoor-accents/review/02-entry-chalkboard-v1.png) | [Overview](outdoor-accents/README.md), [gallery](outdoor-accents/review/README.md), [geometry](outdoor-accents/GEOMETRY-SUPPLEMENT.md), [numbers](outdoor-accents/outdoor-accents-model-spec.json), [surfaces](outdoor-accents/SURFACE-RECIPES.md) |
 | Group 4AC - Garden Parasol and Base | [Open garden parasol - multiview sheet](outdoor-shade/review/01-open-garden-parasol-v1.png)<br>[Parasol base - five views](outdoor-shade/review/02-parasol-base-v1.png) | [Overview](outdoor-shade/README.md), [gallery](outdoor-shade/review/README.md), [geometry](outdoor-shade/GEOMETRY-SUPPLEMENT.md), [numbers](outdoor-shade/outdoor-shade-model-spec.json), [surfaces](outdoor-shade/SURFACE-RECIPES.md) |
 | Group 4AF - Striped Shop Awning | [Striped shop awning - multiple views](shop-awning/review/01-striped-shop-awning-v2.png) | [Overview](shop-awning/README.md), [gallery](shop-awning/review/README.md), [geometry](shop-awning/GEOMETRY-SUPPLEMENT.md), [numbers](shop-awning/shop-awning-model-spec.json), [surfaces](shop-awning/SURFACE-RECIPES.md) |
