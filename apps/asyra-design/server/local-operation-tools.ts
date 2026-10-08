@@ -619,7 +619,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover task operations. With no arguments returns categories. Choose category for a scoped operation menu (includeSchemas=true also returns its exact schemas in this call), operation for exact owner.method lookup, names for exact action definitions and native execution routes (optionally namespace.name), or query for optional lexical search. Use only one selector. Action definitions are included once per request/revision; repeated reads return references. Use refresh=true to restore full definitions after context loss or failed delivery. Native Code Mode declarations may abbreviate nested fields as unknown. names returns the exact registered native inputSchema, including definitions and constraints, once per request/revision; refresh restores it when needed. Execute known operations directly in execute_design_batch; discovery is not a prerequisite on every edit. All mutations accept new values; retain known target IDs. Uniform row patches, per-target patches and shared ownership are different operations. apis execute as batch items; tools execute through their returned native namespace. Missing names do not discard valid matches.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a scoped menu (includeSchemas=true includes schemas), query does lexical search. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. apis execute as batch items; tools use their native namespace. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -642,6 +642,13 @@ export const createLocalOperationTools = (
                     minLength: 1,
                     description:
                       'Exact semantic identity, for example fill.updateFillsAtIndex.'
+                  },
+                  operations: {
+                    type: 'array',
+                    minItems: 1,
+                    items: { type: 'string', minLength: 1 },
+                    description:
+                      'Exact semantic identities to resolve together, for example ["fill.updateFillsAtIndex", "hierarchy.moveElementsRelative"].'
                   },
                   category: {
                     type: 'string',
@@ -778,7 +785,13 @@ export const createLocalOperationTools = (
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
       if (name === AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
-        const selectors = ['names', 'query', 'operation', 'category']
+        const selectors = [
+          'names',
+          'query',
+          'operation',
+          'operations',
+          'category'
+        ]
         if (
           !isRecord(args) ||
           Object.keys(args).some(
@@ -801,7 +814,8 @@ export const createLocalOperationTools = (
           (args.view !== undefined && args.schemaPaths !== undefined) ||
           ((args.view !== undefined || args.schemaPaths !== undefined) &&
             args.names === undefined &&
-            args.operation === undefined) ||
+            args.operation === undefined &&
+            args.operations === undefined) ||
           ((args.view === 'usage' || args.schemaPaths !== undefined) &&
             args.refresh === true) ||
           (args.includeSchemas !== undefined &&
@@ -815,10 +829,14 @@ export const createLocalOperationTools = (
           ) ||
           (args.names !== undefined &&
             (!Array.isArray(args.names) ||
-              args.names.some((v) => typeof v !== 'string')))
+              args.names.some((v) => typeof v !== 'string'))) ||
+          (args.operations !== undefined &&
+            (!Array.isArray(args.operations) ||
+              !args.operations.length ||
+              args.operations.some((v) => typeof v !== 'string' || !v.trim())))
         )
           throw new LocalOperationPreparationError(
-            'Provide one selector: operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operation. Partial queries cannot combine with refresh or with each other.'
+            'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial queries cannot combine with refresh or with each other.'
           )
         const apis = registered
         const details = (api: (typeof apis)[number], includeSchema = true) => {
@@ -851,15 +869,38 @@ export const createLocalOperationTools = (
         }
         if (Array.isArray(args.names)) {
           const names = [...new Set(args.names as string[])]
-          const selected = names.flatMap((name) => {
-            const api = admittedApisByName.get(name)
-            return api ? [api] : []
-          })
-          const tools = [...new Set(names.flatMap(nativeMatches))]
-          const missingNames = names.filter(
-            (name) =>
-              !admittedApisByName.has(name) && !nativeMatches(name).length
+          const matches = names.map((name) => ({
+            name,
+            apis: [
+              ...new Set(
+                [
+                  admittedApisByName.get(name),
+                  admittedApisByOperation.get(name)
+                ].filter((api) => api !== undefined)
+              )
+            ],
+            tools: [...new Set(nativeMatches(name))]
+          }))
+          // A registered action and its native wrapper have explicit execution
+          // routes and may both be returned. Multiple native namespaces require
+          // qualification; never silently pick one.
+          const unique = matches.filter(
+            (match) => match.apis.length <= 1 && match.tools.length <= 1
           )
+          const ambiguousNames = matches
+            .filter((match) => match.apis.length > 1 || match.tools.length > 1)
+            .map((match) => ({
+              name: match.name,
+              candidates: [
+                ...match.apis.map((api) => api.name),
+                ...match.tools.map((tool) => `${tool.namespace}.${tool.name}`)
+              ]
+            }))
+          const selected = [...new Set(unique.flatMap((match) => match.apis))]
+          const tools = [...new Set(unique.flatMap((match) => match.tools))]
+          const missingNames = matches
+            .filter((match) => !match.apis.length && !match.tools.length)
+            .map((match) => match.name)
           return JSON.stringify({
             apis: selected.map((api) => details(api)),
             tools: tools.map((tool) => {
@@ -880,7 +921,23 @@ export const createLocalOperationTools = (
               }
             }),
             missingNames,
+            ...(ambiguousNames.length ? { ambiguousNames } : {}),
             ...(missingNames.length ? { message: lookupRecovery } : {})
+          })
+        }
+        if (Array.isArray(args.operations)) {
+          const identities = [...new Set(args.operations as string[])]
+          const selected = identities.flatMap((identity) => {
+            const api = admittedApisByOperation.get(identity)
+            return api ? [api] : []
+          })
+          const missingOperations = identities.filter(
+            (identity) => !admittedApisByOperation.has(identity)
+          )
+          return JSON.stringify({
+            apis: selected.map((api) => details(api)),
+            missingOperations,
+            ...(missingOperations.length ? { message: lookupRecovery } : {})
           })
         }
         if (typeof args.operation === 'string') {

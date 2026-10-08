@@ -517,6 +517,7 @@
         conditions: [
           'Record continuous App invocation and provider delegation spans; partition child AI waits, App exchanges, tools and provider events without claiming hidden reasoning; missing historical coverage remains a recording defect',
           'Attribute observed native calls and inner App actions with actor, parent, contract identity, purpose, expectation and distinct execution/correctness evidence',
+          'Preserve bounded local part key and index on ordered preparation/application spans without retaining arbitrary part metadata or adding a second record owner',
           'Retain per-call input shape and summary, explicit omissions, feedback and receipt-based output usability',
           'Use interval unions for overlapping spans',
           'Expose public native orchestration names, notification metadata and longest App-call gaps; join child assessment request, parent tool and span identities; report inclusive calls separately from exclusive ownership',

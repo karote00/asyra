@@ -18,6 +18,53 @@ const workspace = async () => {
 }
 
 describe('local execution records', () => {
+  it('retains ordered workflow part correlation on the existing owner spans', () => {
+    const records: Record<string, unknown>[] = []
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    try {
+      const usage = createLocalAiUsage(
+        { intent: 'private', context: {}, actions: [], attempt: 1 },
+        'gpt-6-astra',
+        {
+          sink: {
+            write: (record) => records.push(record),
+            flush: async () => ({ status: 'saved', path: null })
+          }
+        }
+      )
+      for (const index of [0, 1]) {
+        const part = { key: `part-${index}`, index, secret: 'PRIVATE_VALUE' }
+        usage.trace('action_started', {
+          tool: 'prepare_design',
+          callId: `part-${index}`,
+          parentCallId: 'sequence',
+          part,
+          arguments: { draft: {} }
+        })
+        usage.trace('action_completed', {
+          tool: 'prepare_design',
+          callId: `part-${index}`,
+          part,
+          result: { available: true }
+        })
+      }
+      const actions = records.filter((entry) =>
+        String(entry.stage).startsWith('action_')
+      )
+      expect(actions).toHaveLength(4)
+      expect(
+        actions.map((entry) => (entry.evidence as Record<string, unknown>).part)
+      ).toEqual([
+        { key: 'part-0', index: 0 },
+        { key: 'part-0', index: 0 },
+        { key: 'part-1', index: 1 },
+        { key: 'part-1', index: 1 }
+      ])
+      expect(JSON.stringify(records)).not.toContain('PRIVATE_VALUE')
+    } finally {
+      log.mockRestore()
+    }
+  })
   it('retains bounded batched query selectors and discovery counts without geometry', () => {
     const retained: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)

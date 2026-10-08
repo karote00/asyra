@@ -109,3 +109,25 @@ All inputs are available at invocation, so this improves known ordered work, not
 token streaming or unknown future model decisions. A one-part request remains
 the fastest route when only one part is ready. No timer or object-count target
 is used to make quality or latency decisions.
+
+## Step card - observe
+
+Authority: execution spec, diagnostics contract; Inspector `observe`. Input:
+existing internal preparation/application spans with local part key and index.
+Output: bounded part correlation retained in the existing execution record.
+Conditions: logs remain non-authoritative; raw geometry stays in the existing
+sanitized payload files. Missing metadata is unavailable, not inferred. Allowed:
+usage instrumentation and current receipt timings. Forbidden: private reasoning,
+new store, diagnostics controlling drawing. Boundary: local-ai-usage and its
+local-ai-records regression tests. Failure owner: observe. Gate: a real usage
+sink must preserve ordered part correlation without leaking unrelated fields;
+existing redaction and timing tests remain passing. Stop for schema/lifecycle
+changes outside this record owner.
+
+## Implementation evidence
+
+Compose: discovery regressions failed before implementation; ordered-parts
+regressions also failed before implementation. Focused discovery, workflow,
+schema and source-proof tests now pass (135 cases). Existing pattern compilation
+and request history owners are unchanged. Native action/wrapper pairs keep both
+explicit routes; only conflicting native namespaces require qualification.

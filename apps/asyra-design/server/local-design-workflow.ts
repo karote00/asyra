@@ -31,7 +31,7 @@ export const createLocalDesignWorkflow = (
   const review = operations.definitions.find(
     (tool) => tool.name === AiDesignToolIds.RECORD_DESIGN_REVIEW
   )
-  return {
+  const single = {
     explainInputIssue: (name: string, args: unknown) =>
       name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
         ? designs.explainInputIssue(AiDesignToolIds.PREPARE_DESIGN, args)
@@ -68,7 +68,8 @@ export const createLocalDesignWorkflow = (
     call: async (
       name: string,
       args: unknown,
-      signal: AbortSignal
+      signal: AbortSignal,
+      part?: { key: string; index: number }
     ): Promise<string> => {
       signal.throwIfAborted()
       if (
@@ -135,7 +136,13 @@ export const createLocalDesignWorkflow = (
             )
             return reply.text
           },
-          observation,
+          part
+            ? {
+                ...observation,
+                trace: (stage, evidence) =>
+                  observation.trace?.(stage, { ...evidence, part })
+              }
+            : observation,
           step.description
         )
         const result = JSON.parse(text)
@@ -187,6 +194,167 @@ export const createLocalDesignWorkflow = (
         receipt.receiptScope = 'compact'
       }
       return JSON.stringify({ ...prepared, ...receipt, completedSteps })
+    }
+  }
+  const definition = single.definitions[0]
+  if (!definition) return single
+  const partSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['key'],
+    oneOf: [{ required: ['draft'] }, { required: ['repair'] }],
+    properties: {
+      key: { type: 'string', minLength: 1, maxLength: 160 },
+      draft: { $ref: '#/$defs/readyDraft' },
+      repair: { $ref: '#/$defs/draftRepair' },
+      parentId: definition.inputSchema.properties.parentId,
+      parentPart: {
+        type: 'string',
+        minLength: 1,
+        description:
+          'Local key of an earlier successful part whose actual composition ID becomes this parent. Not a canonical ID. Mutually exclusive with parentId.'
+      }
+    }
+  }
+  const inputSchema = {
+    ...definition.inputSchema,
+    $defs: {
+      ...definition.inputSchema.$defs,
+      readyDraft: definition.inputSchema.properties.draft,
+      draftRepair: definition.inputSchema.properties.repair
+    },
+    oneOf: [
+      { required: ['draft'], properties: { repair: false, parts: false } },
+      { required: ['repair'], properties: { draft: false, parts: false } },
+      {
+        required: ['parts'],
+        properties: { draft: false, repair: false, parentId: false }
+      }
+    ],
+    properties: {
+      ...definition.inputSchema.properties,
+      draft: { $ref: '#/$defs/readyDraft' },
+      repair: { $ref: '#/$defs/draftRepair' },
+      parts: {
+        type: 'array',
+        minItems: 1,
+        items: partSchema,
+        description:
+          'Ordered ready parts. Each has a unique local key and an ordinary draft or repair. Each part is prepared and applied before the next is prepared. Use existing pattern/vector-pattern rules for repeated geometry. Send ready work now rather than gathering the whole design. Earlier successful parts remain applied on later failure; inspect receipts before explicitly submitting remaining work.'
+      }
+    }
+  }
+  return {
+    ...single,
+    definitions: [
+      {
+        ...definition,
+        inputSchema,
+        description:
+          definition.description +
+          ' Alternatively supply parts for an ordered responsibility block of ready geometry; optional parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block.'
+      }
+    ],
+    explainInputIssue: (name: string, args: unknown) =>
+      args && typeof args === 'object' && 'parts' in args
+        ? undefined
+        : single.explainInputIssue(name, args),
+    call: async (
+      name: string,
+      args: unknown,
+      signal: AbortSignal
+    ): Promise<string> => {
+      signal.throwIfAborted()
+      if (!args || typeof args !== 'object' || !('parts' in args))
+        return single.call(name, args, signal)
+      if (name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN)
+        throw new LocalOperationPreparationError(
+          'Combined preparation/application is unavailable.'
+        )
+      const issue = operationInputIssue(args, inputSchema)
+      if (issue) throw new LocalOperationPreparationError(issue)
+      const input = args as Record<string, unknown>
+      const parts = input.parts as (Record<string, unknown> & { key: string })[]
+      const keys = new Set<string>()
+      for (const part of parts) {
+        if (
+          !part.key.trim() ||
+          keys.has(part.key) ||
+          (typeof part.parentId === 'string' && !part.parentId.trim()) ||
+          (part.parentPart !== undefined &&
+            (part.parentId !== undefined || !keys.has(String(part.parentPart))))
+        )
+          throw new LocalOperationPreparationError(
+            'Parts require unique nonempty keys and either parentId or an earlier parentPart.'
+          )
+        keys.add(part.key)
+      }
+      const completed: Record<string, unknown>[] = []
+      const parentIds = new Map<string, string>()
+      for (const [index, part] of parts.entries()) {
+        signal.throwIfAborted()
+        const parentId =
+          part.parentPart === undefined
+            ? part.parentId
+            : parentIds.get(String(part.parentPart))
+        if (part.parentPart !== undefined && parentId === undefined)
+          return JSON.stringify({
+            status: 'partial',
+            complete: false,
+            parts: completed,
+            failedPart: part.key,
+            remainingParts: parts.slice(index).map((entry) => entry.key),
+            message:
+              'Earlier receipt did not supply a composition ID. Inspect acknowledged state before continuing; do not replay completed parts.'
+          })
+        const receipt = JSON.parse(
+          await single.call(
+            name,
+            {
+              ...('repair' in part
+                ? { repair: part.repair }
+                : { draft: part.draft }),
+              ...(parentId === undefined ? {} : { parentId }),
+              ...(index === 0 && input.plan !== undefined
+                ? { plan: input.plan }
+                : {}),
+              ...(input.message === undefined
+                ? {}
+                : { message: input.message }),
+              ...(input.response === undefined
+                ? {}
+                : { response: input.response }),
+              inspection:
+                index === parts.length - 1
+                  ? (input.inspection ?? 'immediate')
+                  : 'defer'
+            },
+            signal,
+            { key: part.key, index }
+          )
+        )
+        completed.push({ key: part.key, ...receipt })
+        const outcome = localToolOutcome(receipt)
+        if (outcome.status !== 'usable')
+          return JSON.stringify({
+            status:
+              index || outcome.status === 'partial' ? 'partial' : 'failed',
+            parts: completed,
+            failedPart: part.key,
+            remainingParts: parts.slice(index + 1).map((entry) => entry.key)
+          })
+        const identity = receipt.actionResults?.find(
+          (entry: { actionName: string }) =>
+            entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
+        )?.result?.compositionId
+        if (typeof identity === 'string' && identity)
+          parentIds.set(part.key, identity)
+      }
+      return JSON.stringify({
+        status: 'complete',
+        complete: true,
+        parts: completed
+      })
     }
   }
 }

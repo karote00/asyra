@@ -407,6 +407,9 @@ addition to existing console diagnostics. The record includes request/call and
 sequence identities, observed timestamps, model/effort, bounded tool selectors,
 artifact references and terminal outcome. Source identity is optional and marked
 unavailable when not supplied. No request prompt, image bytes, credential or private reasoning is persisted.
+Ordered ready-part preparation/application spans retain a bounded local part key
+and zero-based index on their existing start/end/failure records. This identifies
+part boundaries without a second trace store or inferred model decisions.
 Original-reference decoder failures retain a bounded decoder message, with URLs
 and credentials omitted, rather than replacing the cause with a generic failure.
 App tool input/output snapshots are retained in separate local files, including
