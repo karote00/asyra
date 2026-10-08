@@ -64,8 +64,11 @@ chamfer defaults differ. Scaling the clay preset to the stone dimensions uses
 factors (1.5, 1.8, 7/3), so the original 1 mm setbacks become (1.5, 1.8, 7/3) mm,
 not the stone preset's 6 mm setbacks. Choose the base preset before overall sizing.
 
-One future parameterized generator can create all three default geometries, then
-apply the shared overall-size and appearance contract. No shared generator,
+Use one future parameterized generator for all three default geometries, then
+apply the shared overall-size and appearance contract. The agreed
+[production route](README.md#geometry-production-routes---agreed-2026-10-09)
+is direct programmatic geometry for this simple family; Blender is not required.
+No shared generator,
 registry, runtime factory, model deletion or asset migration is implemented
 by this classification. This comparison does not approve unreviewed images or
 change the classification of other catalogue entries.

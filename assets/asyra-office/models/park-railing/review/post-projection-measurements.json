@@ -1,0 +1,276 @@
+{
+  "drawing": "01-railing-post-v3.png",
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "pixelsPerMetre": 2000,
+  "sourceSpecification": "../park-railing-model-spec.json",
+  "sourceSHA256": "c20d4098425642e2601ed34d053301cfb31eb76b0c1ae1079816ee226564352c",
+  "drawingSHA256": "eddc16f9a88c57933e5b1917de6a8ceb2a2867a94913281b240d8deded802eaa",
+  "views": [
+    {
+      "view": "FRONT",
+      "cameraDirection": [
+        0,
+        -1,
+        0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        -0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        320,
+        1740
+      ],
+      "clipPixels": [
+        220,
+        280,
+        420,
+        1760
+      ],
+      "expectedBoundsPixels": [
+        240.0,
+        300.0,
+        400.0,
+        1740.0
+      ],
+      "measuredBoundsPixels": [
+        240.0,
+        300.0,
+        400.0,
+        1740.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visiblePartWidthsPixels": {
+        "shaft": 130.0,
+        "collar": 160.0,
+        "finial": 140.0
+      }
+    },
+    {
+      "view": "RIGHT",
+      "cameraDirection": [
+        1,
+        0,
+        0
+      ],
+      "screenRight": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        920,
+        1740
+      ],
+      "clipPixels": [
+        820,
+        280,
+        1020,
+        1760
+      ],
+      "expectedBoundsPixels": [
+        840.0,
+        300.0,
+        1000.0,
+        1740.0
+      ],
+      "measuredBoundsPixels": [
+        840.0,
+        300.0,
+        1000.0,
+        1740.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visiblePartWidthsPixels": {
+        "shaft": 130.0,
+        "collar": 160.0,
+        "finial": 140.0
+      }
+    },
+    {
+      "view": "BACK",
+      "cameraDirection": [
+        0,
+        1,
+        0
+      ],
+      "screenRight": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        -0.0,
+        1.0
+      ],
+      "originPixels": [
+        1520,
+        1740
+      ],
+      "clipPixels": [
+        1420,
+        280,
+        1620,
+        1760
+      ],
+      "expectedBoundsPixels": [
+        1440.0,
+        300.0,
+        1600.0,
+        1740.0
+      ],
+      "measuredBoundsPixels": [
+        1440.0,
+        300.0,
+        1600.0,
+        1740.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visiblePartWidthsPixels": {
+        "shaft": 130.0,
+        "collar": 160.0,
+        "finial": 140.0
+      }
+    },
+    {
+      "view": "TOP",
+      "cameraDirection": [
+        0,
+        0,
+        1
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "originPixels": [
+        2020,
+        1000
+      ],
+      "clipPixels": [
+        1920,
+        900,
+        2120,
+        1100
+      ],
+      "expectedBoundsPixels": [
+        1940.0,
+        920.0,
+        2100.0,
+        1080.0
+      ],
+      "measuredBoundsPixels": [
+        1940.0,
+        920.0,
+        2100.0,
+        1080.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visiblePartWidthsPixels": {
+        "shaft": null,
+        "collar": 160.0,
+        "finial": 140.0
+      }
+    },
+    {
+      "view": "THREE-QUARTER",
+      "cameraDirection": [
+        1,
+        -1,
+        0.8
+      ],
+      "screenRight": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0.0
+      ],
+      "screenUp": [
+        -0.34815531191139565,
+        0.34815531191139565,
+        0.8703882797784892
+      ],
+      "originPixels": [
+        2490,
+        1740
+      ],
+      "clipPixels": [
+        2350,
+        420,
+        2630,
+        1810
+      ],
+      "expectedBoundsPixels": [
+        2376.8629150101524,
+        477.56805670346967,
+        2603.1370849898476,
+        1785.2601905484814
+      ],
+      "measuredBoundsPixels": [
+        2377.0,
+        477.5,
+        2603.0,
+        1785.0
+      ],
+      "maximumBoundaryErrorPixels": 0.2601905484814324,
+      "visiblePartWidthsPixels": {
+        "shaft": 184.0,
+        "collar": 226.0,
+        "finial": 140.0
+      }
+    }
+  ],
+  "savedPNGChecks": [
+    {
+      "view": "FRONT",
+      "sphereDiameterPixels": 140,
+      "collarWidthPixels": 160,
+      "sphereToCollarRatio": 0.875,
+      "heightPixels": 1440
+    },
+    {
+      "view": "RIGHT",
+      "sphereDiameterPixels": 140,
+      "collarWidthPixels": 160,
+      "sphereToCollarRatio": 0.875,
+      "heightPixels": 1440
+    },
+    {
+      "view": "BACK",
+      "sphereDiameterPixels": 140,
+      "collarWidthPixels": 160,
+      "sphereToCollarRatio": 0.875,
+      "heightPixels": 1440
+    },
+    {
+      "view": "TOP",
+      "sphereDiameterPixels": 140.0,
+      "collarWidthPixels": 160,
+      "sphereToCollarRatio": 0.875,
+      "heightPixels": null
+    }
+  ],
+  "savedPNGPixelTolerance": 2,
+  "savedPNGMeasurementMethod": "Outer silhouette pixel spans; internal TOP sphere uses contour stroke centrelines.",
+  "scope": "Reference diagram only. No mesh, model export, lighting or app validation."
+}
