@@ -35,8 +35,7 @@ board material must not erase or recolour its independent lettering region.
 No letter extrusion or coplanar overlay mesh is introduced. Colours and surface
 materials cannot move vertices, change dimensions, add displacement or create
 lights. Do not modify another instance through shared material mutation.
-This describes future creation parameters, not an implemented API. The bollard
-is outside this correction's per-part replacement review.
+This describes future creation parameters, not an implemented API. The bollard's corresponding contract is below.
 
 ## Reference drawing colours - documentation only
 
@@ -59,3 +58,30 @@ same world-axis mapping. Future construction must read metal #383A38 and
 lettering #EEE9DD from the default material specification unless callers supply
 an override; never sample defaults from this review sheet. The diagram header
 also states both defaults explicitly.
+
+## Roadside bollard - default and replaceable appearance
+
+| Region | Default colour (sRGB) | Metallic | Roughness | Opacity | Emission | Review target only |
+| --- | --- | --- | --- | --- | --- | --- |
+| shaft | #383A38 | 0.15 | 0.80 | 1 | 0 | #D7E0E6 |
+| collar | #383A38 | 0.15 | 0.80 | 1 | 0 | #9DADB9 |
+| finial | #383A38 | 0.15 | 0.80 | 1 | 0 | #BCCBD5 |
+
+The existing shared metal default remains authoritative. Explicit per-region
+rows clarify that hidden bottom surfaces and annular shoulders also use that
+default; no textures, roughness variation, grain, rust or glow are required.
+
+Each region supports independent colour and full-material replacement. Select
+per-region material, otherwise metal-group material, otherwise the default;
+then apply per-region colour, otherwise metal-group colour. Without a colour
+override, retain the selected material's colour. A tint-only change preserves
+other material properties. Preserve source-region ownership through union,
+including the collar's exposed shoulders. Keep geometry and other instances
+unchanged; never bake shadows, AO, highlights or review outlines into materials.
+
+V3 uses the same light review targets for readability. Its header identifies default
+metal #383A38 and the cylindrical shaft. The primitive projections use constant per-part fills and contour lines only;
+there are no baked lighting gradients or shadows. The original image-generation
+colour variations and illustrated form cues are historical documentation only. Do not sample the PNG to
+set runtime colours or surface maps. These requirements describe future creation
+parameters; no API, model or shader is implemented by this reference update.

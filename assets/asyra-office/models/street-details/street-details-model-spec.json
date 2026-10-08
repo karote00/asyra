@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "street-sign-reference-approved-documents-reviewed",
+  "status": "street-sign-and-bollard-references-approved",
   "units": "metres",
   "axes": {
     "up": "+Z",
@@ -190,41 +190,101 @@
     {
       "name": "roadside-bollard",
       "boundsMin": [
-        -0.0325,
-        -0.0325,
+        -0.056,
+        -0.056,
         0
       ],
       "boundsMax": [
-        0.0325,
-        0.0325,
+        0.056,
+        0.056,
         0.48
       ],
       "parts": [
         {
           "name": "shaft",
           "shape": "cylinder",
-          "radius": 0.0225,
+          "radius": 0.046,
           "zMin": 0,
-          "zMax": 0.404
+          "zMax": 0.344
         },
         {
           "name": "collar",
           "shape": "cylinder",
-          "radius": 0.029,
-          "zMin": 0.4,
-          "zMax": 0.421
+          "radius": 0.055,
+          "zMin": 0.34,
+          "zMax": 0.374
         },
         {
           "name": "finial",
           "shape": "sphere",
-          "radius": 0.0325,
+          "radius": 0.056,
           "center": [
             0,
             0,
-            0.4475
+            0.424
           ]
         }
-      ]
+      ],
+      "referenceReview": {
+        "status": "user-approved-reference-documents-reviewed",
+        "drawing": "review/02-roadside-bollard-v3.png",
+        "originalDrawing": "review/02-roadside-bollard-v1.png",
+        "scope": "Recalibrated dimensions to the compact original v1 silhouette while preserving total height 480 mm. All five views now use the same numeric primitives and orthographic scale. Default material unchanged.",
+        "reviewTargetColoursSRGB": {
+          "shaft": "#D7E0E6",
+          "collar": "#9DADB9",
+          "finial": "#BCCBD5"
+        },
+        "colourAuthority": "Review colours are illustrative targets, not runtime defaults. Use appearance defaults or caller overrides.",
+        "reviewFindings": "review/BOLLARD-REVIEW.md",
+        "drawingSource": "review/draw-bollard-projections.py",
+        "projectionMeasurements": "review/bollard-projection-measurements.json",
+        "sourceRatioEvidence": {
+          "sourceDrawing": "review/02-roadside-bollard-v1.png",
+          "frontHeightPixels": 353,
+          "shaftWidthPixels": 68,
+          "finialWidthPixels": 83,
+          "collarWidthPixels": 81,
+          "method": "Dark contour spans including outline thickness. New rounded dimensions follow ratios; the original is illustrative, so exact camera recovery is not claimed."
+        }
+      },
+      "appearance": {
+        "independentRegions": [
+          "shaft",
+          "collar",
+          "finial"
+        ],
+        "groups": {
+          "metal": [
+            "shaft",
+            "collar",
+            "finial"
+          ]
+        },
+        "defaultMetalFrom": "top-level material",
+        "precedence": [
+          "Select per-region material, otherwise metal-group material, otherwise default material.",
+          "Apply per-region colour if supplied, otherwise metal-group colour. Without a colour override, preserve the selected material colour."
+        ],
+        "booleanOwnership": "Preserve the source region on each exposed surface after union; remove buried faces. The finial owns its exposed spherical surface, the collar its exposed cylindrical band and annular shoulders, and the shaft its remaining exposed cylinder and bottom.",
+        "geometryInvariant": "Colour and material replacement must not change positions, radii, heights, joins or region boundaries; no displacement, baked lighting or automatic lights.",
+        "instanceIsolation": "Do not mutate shared materials on other instances.",
+        "apiStatus": "Requirements for future construction parameters, not an implemented runtime API."
+      },
+      "derivedDimensions": {
+        "shaftDiameter": 0.092,
+        "shaftConstructionHeight": 0.344,
+        "shaftExposedBelowCollarHeight": 0.34,
+        "collarDiameter": 0.11,
+        "collarHeight": 0.034,
+        "finialDiameter": 0.112,
+        "totalHeight": 0.48,
+        "shaftCollarOverlap": 0.004,
+        "finialCollarOverlap": 0.006,
+        "collarRadialOverhangOverShaft": 0.009,
+        "finialEquatorRadialOverhangOverCollar": 0.001,
+        "sphereRadiusAtCollarTop": 0.025219040425837013
+      }
     }
   ],
   "lettering": {

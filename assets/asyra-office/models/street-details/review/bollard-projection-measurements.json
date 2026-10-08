@@ -1,0 +1,196 @@
+{
+  "drawing": "02-roadside-bollard-v3.png",
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "source": "../street-details-model-spec.json",
+  "geometry": [
+    {
+      "name": "shaft",
+      "shape": "cylinder",
+      "radius": 0.046,
+      "zMin": 0,
+      "zMax": 0.344
+    },
+    {
+      "name": "collar",
+      "shape": "cylinder",
+      "radius": 0.055,
+      "zMin": 0.34,
+      "zMax": 0.374
+    },
+    {
+      "name": "finial",
+      "shape": "sphere",
+      "radius": 0.056,
+      "center": [
+        0,
+        0,
+        0.424
+      ]
+    }
+  ],
+  "views": [
+    {
+      "view": "FRONT",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        -0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        650,
+        1030
+      ],
+      "pixelsPerMetre": 1500,
+      "occupiedPixelBounds": [
+        566.25,
+        310.25,
+        733.75,
+        1029.75
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "cameraDirectionFromOrigin": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenRight": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        1540,
+        1030
+      ],
+      "pixelsPerMetre": 1500,
+      "occupiedPixelBounds": [
+        1456.25,
+        310.25,
+        1623.75,
+        1029.75
+      ]
+    },
+    {
+      "view": "BACK",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenRight": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        -0.0,
+        1.0
+      ],
+      "originPixels": [
+        2410,
+        1030
+      ],
+      "pixelsPerMetre": 1500,
+      "occupiedPixelBounds": [
+        2326.25,
+        310.25,
+        2493.75,
+        1029.75
+      ]
+    },
+    {
+      "view": "TOP",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "originPixels": [
+        650,
+        1530
+      ],
+      "pixelsPerMetre": 1500,
+      "occupiedPixelBounds": [
+        566.25,
+        1446.25,
+        733.75,
+        1613.75
+      ]
+    },
+    {
+      "view": "THREE-QUARTER",
+      "cameraDirectionFromOrigin": [
+        0.46499055497527714,
+        -0.813733471206735,
+        0.34874291623145787
+      ],
+      "screenRight": [
+        0.8682431421244593,
+        0.49613893835683387,
+        0.0
+      ],
+      "screenUp": [
+        -0.17302494021854176,
+        0.3027936453824481,
+        0.9372184261837678
+      ],
+      "originPixels": [
+        1540,
+        1850
+      ],
+      "pixelsPerMetre": 1500,
+      "occupiedPixelBounds": [
+        1456.25,
+        1170.25,
+        1623.75,
+        1873.75
+      ]
+    }
+  ],
+  "dimensions": {
+    "shaftDiameter": 0.092,
+    "shaftConstructionHeight": 0.344,
+    "shaftExposedBelowCollarHeight": 0.34,
+    "collarDiameter": 0.11,
+    "collarHeight": 0.034,
+    "finialDiameter": 0.112,
+    "totalHeight": 0.48,
+    "shaftCollarOverlap": 0.004,
+    "finialCollarOverlap": 0.006,
+    "collarRadialOverhangOverShaft": 0.009,
+    "finialEquatorRadialOverhangOverCollar": 0.001,
+    "sphereRadiusAtCollarTop": 0.025219040425837013
+  },
+  "boundary": "Reference projections only; no model export or app validation."
+}
