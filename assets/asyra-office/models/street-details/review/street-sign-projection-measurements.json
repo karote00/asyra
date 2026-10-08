@@ -1,0 +1,219 @@
+{
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "supersampling": 2,
+  "source": "../street-details-model-spec.json",
+  "geometry": [
+    {
+      "name": "shaft",
+      "shape": "box",
+      "size": [
+        0.045,
+        0.045,
+        1.582
+      ],
+      "center": [
+        0,
+        0,
+        0.791
+      ]
+    },
+    {
+      "name": "collar",
+      "shape": "box",
+      "size": [
+        0.052,
+        0.052,
+        0.016
+      ],
+      "center": [
+        0,
+        0,
+        1.588
+      ]
+    },
+    {
+      "name": "finial",
+      "shape": "sphere",
+      "radius": 0.03,
+      "center": [
+        0,
+        0,
+        1.62
+      ]
+    },
+    {
+      "name": "board-1",
+      "shape": "box",
+      "size": [
+        0.482,
+        0.018,
+        0.18
+      ],
+      "center": [
+        0.2615,
+        0,
+        1.39
+      ],
+      "note": "2 mm inserted into post; visible length 0.48 m"
+    },
+    {
+      "name": "board-2",
+      "shape": "box",
+      "size": [
+        0.482,
+        0.018,
+        0.18
+      ],
+      "center": [
+        0.2615,
+        0,
+        1.16
+      ],
+      "note": "2 mm inserted into post; visible length 0.48 m"
+    }
+  ],
+  "ratios": {
+    "exposedBoardToPost": 10.666666666666666,
+    "boardThicknessToPost": 0.39999999999999997,
+    "finialToPost": 1.3333333333333333,
+    "topTotalWidthToFinial": 8.875
+  },
+  "expectedProjectedLengthsPixels": {
+    "postWidth": 36.0,
+    "exposedBoardLength": 383.99999999999994,
+    "boardThickness": 14.399999999999999,
+    "finialDiameter": 48.0,
+    "topTotalWidth": 426.0
+  },
+  "views": [
+    {
+      "view": "FRONT",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        -0.0,
+        0.0,
+        1.0
+      ],
+      "pixelsPerMetre": 800,
+      "occupiedPixelBoundsAtSupersampling": [
+        292,
+        760,
+        1143,
+        3399
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "cameraDirectionFromOrigin": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenRight": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "pixelsPerMetre": 800,
+      "occupiedPixelBoundsAtSupersampling": [
+        1652,
+        760,
+        1747,
+        3399
+      ]
+    },
+    {
+      "view": "BACK",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenRight": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        -0.0,
+        1.0
+      ],
+      "pixelsPerMetre": 800,
+      "occupiedPixelBoundsAtSupersampling": [
+        2256,
+        760,
+        3107,
+        3399
+      ]
+    },
+    {
+      "view": "TOP",
+      "cameraDirectionFromOrigin": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "pixelsPerMetre": 800,
+      "occupiedPixelBoundsAtSupersampling": [
+        3572,
+        2052,
+        4423,
+        2147
+      ]
+    },
+    {
+      "view": "THREE-QUARTER",
+      "cameraDirectionFromOrigin": [
+        0.4611429759107164,
+        -0.8070002078437537,
+        0.36891438072857313
+      ],
+      "screenRight": [
+        0.8682431421244593,
+        0.49613893835683387,
+        0.0
+      ],
+      "screenUp": [
+        -0.1830327891992431,
+        0.3203073810986754,
+        0.9294633826524062
+      ],
+      "pixelsPerMetre": 800,
+      "occupiedPixelBoundsAtSupersampling": [
+        5003,
+        943,
+        5764,
+        3417
+      ]
+    }
+  ],
+  "boundary": "Measurements describe numeric drawing projections, not an exported or app-validated model."
+}
