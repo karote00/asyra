@@ -262,6 +262,7 @@ export const createAPIs = (
   }
 
   const renderRequests: RenderRequests = {
+    getElementIdsInBounds: (bounds) => render.getElementIdsInBounds(bounds),
     measureElementContentBounds: (elementIds) =>
       render.measureElementContentBounds(elementIds),
     captureElementSnapshot: (elementId, maxDimension, options) =>

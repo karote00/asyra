@@ -446,3 +446,16 @@ explicit ordinary app composition.
   introduced.
 - Preset/default registrations are explicit via `@asyra/preset`, not implicit core side effects.
 - Load/save flow executes in documented order.
+
+## Bounded document observations
+
+- `getElementMetadata(id)` returns detached scalar identity/type/name/parent,
+  visibility/lock and `childCount`; it does not serialize properties or children.
+- `getElementChildren(id, offset = 0, limit = 50)` returns a detached current
+  child page, total, nextOffset and availability. Container capability includes
+  derived types. Restart pagination after membership changes.
+- `getElementIdsInBounds(bounds)` forwards workspace-region lookup to Render.
+  It neither changes canonical data nor exposes the concrete rendering engine.
+
+These read APIs do not open transactions. Existing full `getElementData` remains
+available when a complete canonical snapshot is actually required.

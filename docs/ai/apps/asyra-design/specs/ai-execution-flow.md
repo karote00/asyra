@@ -122,6 +122,33 @@ information needed by the requested operation still requires an appropriate read
 
 ## Preparation and execution
 
+Prepared target selectors use exact immutable artifact identities. Repeated prefix
+queries reuse an artifact-owned key index and preserve source order; releasing
+an artifact releases its lookup state. A prefix miss remains a recoverable error,
+not permission to select the entire artifact. Exact keys require no full-key walk.
+
+Local corrections may query a workspace region, then filter candidate identities
+by current type, hierarchy and flags before using registered batch mutations.
+A localized defect is queried by its workspace bounds even when its parent spans
+many other regions. The query must not enumerate that parent's children first.
+An explicit identity-only result returns ordered IDs without element summaries
+or property values; the default metadata result remains available. Filters apply
+before pagination, and page limits and continuation are explicit. Those IDs feed
+the ordinary registered batch operation; its current admission still owns locks
+and existence. Spatial bounds are a conservative candidate test, not a pixel hit
+or an occlusion decision. Query state follows object changes, parent transforms, deletion, replay
+and load; viewport navigation does not change workspace region membership.
+Missing projection or stale identity must be explicit, never an empty success.
+Relative hierarchy placement resolves a live before/after anchor inside the
+existing hierarchy owner without sending all sibling IDs to the model.
+
+Preparation rejection reports the invalid source location. Duplicate semantic
+keys identify both conflicting locations. An explicit request-local draft repair
+may submit only replacement fields; the same preparation validation and budgets
+apply before an immutable artifact is created. Rejected drafts are not executable
+artifacts. Missing or stale repair references reject recoverably. Repair never
+replays an uncertain write or changes a successfully prepared artifact.
+
 Plural creation supports the same valid target parents as scalar creation and
 returns results in input order. Consecutive compatible items may share an owner
 call; grouping must not reorder intervening objects or split the intended Undo.
@@ -282,6 +309,12 @@ planned criteria and known canonical element IDs with factBindings. The review o
 criterion checks without requiring callers to repeat the relationship; existing canonical inspection coverage
 validates the bound targets before a visual assessment. A binding is review
 metadata, never proof of geometry or a second model of the document.
+The independent visual comparison receives only valid facts bound to its visual
+criteria, including source references, verification and scope/limitations. Reference
+adoption records what the image can support (for example, massing rather than
+finished facade detail). Download success does not establish suitability. Data-only,
+unrelated and invalid facts are excluded. These facts never substitute for current
+canvas evidence or the independent visual verdict.
 Repeated retrieval neither researches nor asks the model to judge them again.
 Ordinary drawing mutations do not alter source facts. A source change, user request
 or concrete contradicting evidence must identify the changed dependency and reason;
@@ -418,6 +451,11 @@ not compulsory tool names. Contract replays cannot claim measured model selectio
 improvement. These projections never change runtime routing or call another model.
 
 The observe owner projects saved records into read-only run and period reports.
+Each tool call separately reports transport status and receipt-based execution
+status: usable, partial, rejected, failed or unknown. A completed transport with
+an admission rejection is not a successful operation. These mutually exclusive
+call totals remain separate from nested action failures; they must not be added
+together. A later success alone does not prove recovery from an earlier failure.
 Reports separate deterministic observations, retained model review opinions and
 optional user feedback. Each finding links to request, call and sequence when
 available. No missing or truncated input is reconstructed. Only identical

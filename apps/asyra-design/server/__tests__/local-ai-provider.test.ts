@@ -3598,6 +3598,17 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
         'Draw a solid tower from an elevated view looking down, with visible top surfaces.',
       phase: 'structure',
       criteria: { shape: { requirement: 'solid tower' } },
+      referenceImageIndexes: [1],
+      sourceFacts: [
+        {
+          id: 'massing',
+          criterionIds: ['shape'],
+          statement: 'Tower massing',
+          scope: 'Construction image; facade detail unknown',
+          sources: ['reference:1'],
+          verification: 'Checked visible outline'
+        }
+      ],
       images: [{ role: 'overview', dataUrl: 'data:image/png;base64,YQ==' }]
     },
     {
@@ -3633,6 +3644,14 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
   expect(JSON.parse(submitted?.text ?? '{}').input.intent).toBe(
     'Draw a solid tower from an elevated view looking down, with visible top surfaces.'
   )
+  expect(JSON.parse(submitted?.text ?? '{}').input.context).toMatchObject({
+    referenceImageIndexes: [1],
+    sourceFacts: [
+      expect.objectContaining({
+        scope: 'Construction image; facade detail unknown'
+      })
+    ]
+  })
   expect(retainedRecords[0]).toMatchObject({
     purpose: 'execution-assessment',
     sourceRequestId: 'parent-visual',

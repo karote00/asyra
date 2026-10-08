@@ -29,7 +29,8 @@ it('admits only nonnegative hierarchy insertion indices and explains append sema
       move.inputSchema
     )
   ).toBeUndefined()
-  expect(move.description).toContain('getElementData')
+  expect(move.description).toContain('getElementChildren')
+  expect(move.description).toContain('moveElementsRelative')
   expect(move.description).toContain('excluding the moved elements')
   expect(move.description).toContain('append')
 })

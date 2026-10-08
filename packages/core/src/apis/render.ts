@@ -16,6 +16,7 @@ import type {
 } from '../types/render.js'
 
 export interface RenderRequests {
+  getElementIdsInBounds: (bounds: import('@asyra/utils').Rect) => string[]
   measureElementContentBounds: (
     elementIds: readonly string[]
   ) => import('@asyra/render').RenderContentMeasurement[]
@@ -66,6 +67,9 @@ export interface RenderRequests {
 
 export const createRenderAPIs = (requests: RenderRequests) => {
   return {
+    getElementIdsInBounds(bounds: import('@asyra/utils').Rect) {
+      return requests.getElementIdsInBounds(bounds)
+    },
     measureElementContentBounds(elementIds: readonly string[]) {
       return requests.measureElementContentBounds(elementIds)
     },

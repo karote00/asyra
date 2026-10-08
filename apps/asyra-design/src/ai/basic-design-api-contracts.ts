@@ -150,7 +150,7 @@ const getMousePosInWorkspaceApi = defineBasicApi({
 
 const getElementIdsInBoundsApi = defineBasicApi({
   description:
-    'Find visible workspace elements intersecting bounds; returns ordered identities.',
+    'Find visible projected elements whose workspace bounds intersect the region using a retained spatial index; returns child-before-parent ordered IDs. Bounds are candidates, not exact path hits or occlusion. Use read_design_context scope=region for type, hierarchy and lock filtering before a batch edit.',
   owner: 'element',
   method: 'getElementIdsInBounds',
   effect: 'read',
@@ -415,7 +415,26 @@ const moveElementsApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'request', schema: elementMoveRequestSchema }],
   description:
-    'Preserves App group-geometry behavior. Read the target parent children with core.getElementData first. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
+    'Preserves App group-geometry behavior. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
+})
+
+const moveElementsRelativeApi = defineBasicApi({
+  owner: 'hierarchy',
+  method: 'moveElementsRelative',
+  resultKind: 'moves',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'request',
+      schema: apiObject({
+        elementIds: apiIds,
+        anchorId: apiString,
+        placement: { type: 'string', enum: ['before', 'after'] }
+      })
+    }
+  ],
+  description:
+    'Move one or more same-parent elements immediately before or after a current anchor. Resolves the destination parent and insertion index internally, preserves Group geometry and Undo, and rejects missing anchors or an anchor included in the moved set. No old values or sibling-list read is needed.'
 })
 
 const removeSubtreeApi = defineBasicApi({
@@ -956,6 +975,7 @@ export const basicDesignApiContracts = [
   groupElementsApi,
   ungroupElementApi,
   moveElementsApi,
+  moveElementsRelativeApi,
   removeSubtreeApi,
   getSelectedIdsApi,
   getVectorPointSelectionIdsApi,

@@ -36,6 +36,12 @@ export class ViewportLayer {
     return this.renderLayer.getElementById(elementId)
   }
 
+  getElementIdsInBounds(
+    bounds: import('../../types/render-object.js').RenderBounds
+  ): string[] {
+    return this.renderLayer.getElementIdsInBounds(bounds)
+  }
+
   getProjectedElementCount(): number {
     return this.renderLayer.getAllElements().size
   }

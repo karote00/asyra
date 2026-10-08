@@ -284,7 +284,7 @@ export const designReviewDefinition = {
   description:
     reviewPlanGuidance +
     '\n' +
-    'Before semantic review, save phase=plan with method, references, criteria and detailRequired derived from the original request. The first ready part may be drawn before this record; recording criteria is not visual approval. To add or retrieve source facts or update bindings, use phase=facts; unchanged facts need no re-research. Bind facts to stable criterion IDs and known elementIds. Checks contain criterionId, status and evidence; the review owner attaches already-bound factIds automatically. For an optional whole-structure checkpoint, use phase=structure with a current overview to check structureCriteria. This does not gate preparation or drawing of ready parts. For an intermediate visual check, use phase=visual and final=false with a nonempty criterion subset. For completion, use phase=visual with final=true (the default), all criterion IDs, a current overview and required native detail. To defer a detail, supply deferredDetails entries with id, description and reason (why it is deferred). Resolve retained deferredDetails through deferredChecks: each item needs id, status (omit/restored/pending) and evidence. Mutations expire image evidence and approval, not source facts. Repair failed criteria with targeted edits. Select suitable referenceImageIndexes in the plan for independent comparison, or update them with phase=facts when research finds a better reference; imported but unselected references are not used. Declare each criterion verification as visual or data. Independent assessment receives only visual criteria; provide numeric/canonical evidence for data criteria in ordinary checks. Omitting referenceImageIndexes on plan resubmission preserves selection; [] clears it. Structure and final reviews compare the request, selected references and current drawing in a fresh read-only assessment. Its failed or unverified required findings block approval; correct the described discrepancy and inspect again. Optional suggestions are retained separately and do not require another revision or assessment. The original request governs quality, not extra demands introduced by plan criteria or references. This records evidence-backed model judgment, not automatic visual certification. Fact input examples below use placeholder source/criterion/element identities; substitute real evidence and known IDs. A dependency uses key/version; each binding uses singular factId, never factIds.\n' +
+    'Before semantic review, save phase=plan with method, references, criteria and detailRequired derived from the original request. The first ready part may be drawn before this record; recording criteria is not visual approval. To add or retrieve source facts or update bindings, use phase=facts; unchanged facts need no re-research. Bind facts to stable criterion IDs and known elementIds. When adopting a reference, retain what it supports and what it cannot establish in facts.scope, with its real sources and verification; downloaded bytes alone do not establish suitability. Independent comparison receives valid bound source facts and their limitations. Checks contain criterionId, status and evidence; the review owner attaches already-bound factIds automatically. For an optional whole-structure checkpoint, use phase=structure with a current overview to check structureCriteria. This does not gate preparation or drawing of ready parts. For an intermediate visual check, use phase=visual and final=false with a nonempty criterion subset. For completion, use phase=visual with final=true (the default), all criterion IDs, a current overview and required native detail. To defer a detail, supply deferredDetails entries with id, description and reason (why it is deferred). Resolve retained deferredDetails through deferredChecks: each item needs id, status (omit/restored/pending) and evidence. Mutations expire image evidence and approval, not source facts. Repair failed criteria with targeted edits. Select suitable referenceImageIndexes in the plan for independent comparison, or update them with phase=facts when research finds a better reference; imported but unselected references are not used. Declare each criterion verification as visual or data. Independent assessment receives only visual criteria; provide numeric/canonical evidence for data criteria in ordinary checks. Omitting referenceImageIndexes on plan resubmission preserves selection; [] clears it. Structure and final reviews compare the request, selected references and current drawing in a fresh read-only assessment. Its failed or unverified required findings block approval; correct the described discrepancy and inspect again. Optional suggestions are retained separately and do not require another revision or assessment. The original request governs quality, not extra demands introduced by plan criteria or references. This records evidence-backed model judgment, not automatic visual certification. Fact input examples below use placeholder source/criterion/element identities; substitute real evidence and known IDs. A dependency uses key/version; each binding uses singular factId, never factIds.\n' +
     factUsage,
   inputSchema: {
     type: 'object',
@@ -419,6 +419,32 @@ export const createLocalDesignReview = (
             .map((id) => [id, { requirement: criteria[id].requirement }])
         ),
         referenceImageIndexes: plan.referenceImageIndexes,
+        sourceFacts: facts.snapshot().flatMap((fact) => {
+          if (fact.status !== 'valid') return []
+          const criterionIds = [
+            ...new Set(
+              [...factBindings.values()]
+                .filter(
+                  (binding) =>
+                    binding.factId === fact.id &&
+                    ids.includes(binding.criterionId) &&
+                    criteria[binding.criterionId].verification === 'visual'
+                )
+                .map((binding) => binding.criterionId)
+            )
+          ]
+          if (!criterionIds.length) return []
+          return [
+            {
+              id: fact.id,
+              criterionIds,
+              statement: fact.statement,
+              scope: fact.scope,
+              sources: fact.sources,
+              verification: fact.verification
+            }
+          ]
+        }),
         ...(unresolvedOverall || unresolvedCriteria.size
           ? {
               previousFindings: {

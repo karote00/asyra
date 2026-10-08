@@ -25,6 +25,13 @@ const coreRenderLifecycleDisposition = {
 export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
+    owner: 'core',
+    methods: ['getElementIdsInBounds'],
+    replacement: 'api_element_getElementIdsInBounds',
+    reason:
+      'The common element query forwards to this renderer-backed Core facade; one AI entry point preserves the same workspace bounds contract.'
+  },
+  {
     owner: 'element',
     methods: ['setElementVisible'],
     replacement: 'api_element_setElementsVisible',

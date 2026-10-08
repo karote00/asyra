@@ -143,6 +143,28 @@ const getRuntimeStateApi = defineBasicApi({
   parameters: []
 })
 
+const getElementMetadataApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementMetadata',
+  effect: 'read',
+  parameters: [{ name: 'elementId', schema: apiString }],
+  description:
+    'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
+})
+
+const getElementChildrenApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementChildren',
+  effect: 'read',
+  parameters: [
+    { name: 'elementId', schema: apiString },
+    { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
+    { name: 'limit', schema: { type: 'integer', minimum: 1 }, optional: true }
+  ],
+  description:
+    'Read a page of current direct child IDs with total and nextOffset; defaults to offset 0 and limit 50. Restart paging after hierarchy changes. For before/after placement use hierarchy.moveElementsRelative without reading siblings.'
+})
+
 const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
@@ -537,6 +559,8 @@ export const basicCoreApiContracts = [
   isCompositionOpenApi,
   getRuntimeStateApi,
   getElementDataApi,
+  getElementMetadataApi,
+  getElementChildrenApi,
   getElementComputedDataApi,
   getAllElementDataApi,
   getCanonicalOwnerSnapshotApi,

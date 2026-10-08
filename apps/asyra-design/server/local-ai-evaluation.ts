@@ -62,6 +62,16 @@ const selectorKeys = new Set([
   'names',
   'query',
   'scope',
+  'bounds',
+  'x',
+  'y',
+  'width',
+  'height',
+  'filter',
+  'type',
+  'ancestorId',
+  'locked',
+  'result',
   'parentId',
   'elementIds',
   'elementId',
@@ -252,8 +262,31 @@ export const evaluateExecution = (
           })
         else exactReads.set(key, step.callId)
       }
+      // A completed transport is not evidence that its operation was usable.
+      // Retain unknown for older/omitted replies instead of inventing success.
+      let executionStatus:
+        'usable' | 'partial' | 'rejected' | 'failed' | 'unknown' = 'unknown'
+      if (outcome.status === 'partial' || result.status === 'partial')
+        executionStatus = 'partial'
+      else if (outcome.status === 'unavailable' || result.available === false) {
+        executionStatus = 'failed'
+        if (
+          result.stage === 'admission' ||
+          result.code === 'PREPARATION_REJECTED'
+        )
+          executionStatus = 'rejected'
+      } else if (outcome.status === 'usable') executionStatus = 'usable'
+      if (step.status === 'failed') executionStatus = 'failed'
       return {
         ...identity,
+        execution: {
+          status: executionStatus,
+          stage: text(result.stage),
+          code: text(result.code) ?? text(evidence.code),
+          settlement: text(result.settlement),
+          recoverable:
+            typeof result.recoverable === 'boolean' ? result.recoverable : null
+        },
         tool: step.tool,
         phase: text(args.phase),
         selectors: querySelectors(args),
@@ -329,6 +362,13 @@ export const evaluateExecution = (
     transport: settlement?.transport ?? null,
     findings,
     toolCalls,
+    toolOutcomes: toolCalls.reduce(
+      (counts, call) => {
+        counts[call.execution.status]++
+        return counts
+      },
+      { usable: 0, partial: 0, rejected: 0, failed: 0, unknown: 0 }
+    ),
     actions,
     orchestration: {
       // A native turn can contain many model inferences. The current app-server

@@ -18,7 +18,9 @@ import {
 export interface PreparedDesignApis {
   getWorkspaceId(): string | null
   getElementType(id: string): string | undefined
-  getElementData(id: string): { type: string; parentId?: string } | undefined
+  getElementMetadata(
+    id: string
+  ): { type: string; parentId?: string } | undefined
   isContainerType(type: string): boolean
   isLocked(id: string): boolean
   create(
@@ -33,10 +35,10 @@ const mutationOptions = Object.freeze({
 } as const)
 const defaultApis: PreparedDesignApis = {
   getWorkspaceId: hierarchyApis.getWorkspaceId,
-  getElementType: elementApis.getElementType,
-  getElementData: (id) => core.getElementData(id),
+  getElementType: (id) => core.getElementMetadata(id)?.type,
+  getElementMetadata: (id) => core.getElementMetadata(id),
   isContainerType: elementApis.isContainerType,
-  isLocked: elementApis.isElementLocked,
+  isLocked: (id) => core.getElementMetadata(id)?.lock === true,
   create: (ds, id) =>
     elementApis.createElementsInParent(ds, id, mutationOptions),
   select: (ids) => selectionApis.selectElements(ids, mutationOptions)
@@ -95,7 +97,7 @@ export const createPreparedDesignAction = (
             'The continuation parent is not editable in the current workspace.'
           )
         visited.add(id)
-        const element = apis.getElementData(id)
+        const element = apis.getElementMetadata(id)
         if (!element || !apis.isContainerType(element.type))
           throw new Error('The continuation parent is not a current container.')
         id = element.parentId

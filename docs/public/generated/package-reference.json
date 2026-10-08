@@ -70,7 +70,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "bd5a71c1f604092f720cc88acbe423d2db555051cfa307243faae34f00bccb1c",
+        "contract": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -279,7 +279,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "733f9ed033a16935fa09856c64671be00e6a67c2aaf912a9cc03bb88cc30ff83",
+        "contract": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5",
         "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
         "manifest": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
       },

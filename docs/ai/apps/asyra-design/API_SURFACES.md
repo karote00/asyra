@@ -989,3 +989,33 @@ local coordinates before comparing with its computed width/height. Padding is
 in element-local units. Missing projection returns false. This is a bounds query,
 not detailed path geometry; renderer hit identity and vector near-path queries
 retain their separate responsibilities.
+
+### Indexed local edits
+
+`read_design_context` additionally accepts `scope: "region"` with finite workspace
+`bounds: {x,y,width,height}` and optional `filter: {type,parentId,ancestorId,locked}`.
+The renderer supplies spatial candidates; current canonical metadata applies
+exact filters before pagination. `result: "ids"` returns only `elementIds` plus
+pagination metadata (`elements` stays empty); it accepts no computed fields.
+Default `result: "elements"` preserves metadata and explicitly requested fields.
+Use bounds to locate local corrections even when their parent spans a much larger
+area, then pass the returned IDs to ordinary batch actions. Children queries are
+for hierarchy questions. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
+known IDs without a limit remain together);
+continue with the same bounds/filter, not an invented larger limit. Region
+results cover visible projected bounding boxes, not exact contours or occlusion.
+Metadata and child pages avoid full element/property snapshots.
+
+`hierarchy.moveElementsRelative({elementIds,anchorId,placement})` accepts
+`placement: "before" | "after"`. It resolves current parent and index internally,
+then uses ordinary Group geometry normalization and canonical hierarchy checks.
+The moved elements must share a source parent; the anchor must exist and cannot
+be one of the moved elements. `moveElements` remains available for indexed moves.
+
+Rejected construction drafts can return `draftId` and duplicate-key `conflicts`
+with exact JSON Pointer paths. `prepare_design` and `prepare_and_apply_design`
+accept either `draft` or `repair: {draftId,replacements:[{path,value}]}`. Repairs
+replace existing fields of the retained immutable source, run the same admission
+and compilation, and never replay prior writes. References are request-local,
+FIFO bounded to four drafts / 8 MiB; an unavailable reference requires resending
+source. Prepared artifact IDs and canonical element IDs are unchanged.

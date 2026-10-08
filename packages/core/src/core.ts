@@ -205,6 +205,7 @@ class Core implements CoreAPIs {
 
   setupInputSystem!: InputSystemAPIs['setupInputSystem']
 
+  getElementIdsInBounds!: RenderAPIs['getElementIdsInBounds']
   measureElementContentBounds!: RenderAPIs['measureElementContentBounds']
   captureElementSnapshot!: RenderAPIs['captureElementSnapshot']
   initRender!: RenderAPIs['initRender']
@@ -573,6 +574,47 @@ class Core implements CoreAPIs {
   getElementData(elementId: string) {
     const data = this.deps.sceneTree.getElementById(elementId)?.save()
     return data === undefined ? undefined : cloneLoadObservation(data)
+  }
+
+  getElementMetadata(elementId: string) {
+    const element = this.deps.sceneTree.getElementById(elementId)
+    if (!element) return undefined
+    const type = element.get('type')
+    const children = this.isContainerType(type)
+      ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
+      : []
+    return {
+      id: element.get('id'),
+      type,
+      name: element.get('name'),
+      parentId: element.get('parentId'),
+      visible: element.get('visible'),
+      lock: element.get('lock'),
+      childCount: children.length
+    }
+  }
+
+  getElementChildren(elementId: string, offset = 0, limit = 50) {
+    if (
+      !Number.isSafeInteger(offset) ||
+      offset < 0 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1
+    )
+      throw new Error(
+        'Child page requires a nonnegative offset and positive limit'
+      )
+    const element = this.deps.sceneTree.getElementById(elementId)
+    const children =
+      element && this.isContainerType(element.get('type'))
+        ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
+        : []
+    return {
+      available: Boolean(element),
+      elementIds: children.slice(offset, offset + limit),
+      total: children.length,
+      nextOffset: offset + limit < children.length ? offset + limit : null
+    }
   }
 
   getCurrentWorkspaceId(): string {

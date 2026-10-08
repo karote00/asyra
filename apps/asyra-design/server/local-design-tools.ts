@@ -1,4 +1,5 @@
 import { inspectDesignBudget } from './design-budget'
+import { DesignKeyConflictError } from './design-construction'
 import { LocalToolInputError } from './local-tool-invocation'
 import {
   designPreparationExamples,
@@ -201,8 +202,30 @@ const vectorPatternSchema = {
 const preparationSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['draft'],
-  properties: { draft: draftSchema },
+  oneOf: [{ required: ['draft'] }, { required: ['repair'] }],
+  properties: {
+    draft: draftSchema,
+    repair: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['draftId', 'replacements'],
+      description:
+        'Repair a rejected draft retained in this request. Replace only existing fields using JSON Pointer paths relative to the draft; send no old values. Revalidation is mandatory. If the draft reference has expired, resend the complete source.',
+      properties: {
+        draftId: { type: 'string', minLength: 1, maxLength: 160 },
+        replacements: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['path', 'value'],
+            properties: { path: { type: 'string', minLength: 1 }, value: {} }
+          }
+        }
+      }
+    }
+  },
   $defs: {
     node: {
       anyOf: [
@@ -330,11 +353,16 @@ export const createLocalDesignTools = (
         )
           throw new DesignReferenceError()
         keys = value.keys as string[]
-      } else keys = Object.keys(design.keyToId)
-      if (value.keyPrefix !== undefined) {
-        if (typeof value.keyPrefix !== 'string' || !value.keyPrefix)
+      } else {
+        if (
+          value.keyPrefix !== undefined &&
+          (typeof value.keyPrefix !== 'string' || !value.keyPrefix)
+        )
           throw new DesignReferenceError()
-        keys = keys.filter((key) => key.startsWith(value.keyPrefix as string))
+        keys = session.selectKeys(
+          value.artifactId,
+          value.keyPrefix as string | undefined
+        )
       }
       if (!keys.length) throw new DesignReferenceError()
       return [...new Set(keys.map((key) => design.keyToId[key]))]
@@ -407,20 +435,27 @@ export const createLocalDesignTools = (
       }
       if (!enabled || name !== AiDesignToolIds.PREPARE_DESIGN)
         throw new Error('Design preparation is unavailable')
-      if (!record(args) || Object.keys(args).length !== 1 || !('draft' in args))
+      if (
+        !record(args) ||
+        Object.keys(args).length !== 1 ||
+        (!('draft' in args) && !('repair' in args))
+      )
         return JSON.stringify({
           available: false,
-          message: 'Provide one semantic draft. No canvas changes were made.'
+          message:
+            'Provide one semantic draft or a rejected-draft repair. No canvas changes were made.'
         })
+      let draft: unknown
       try {
-        const draft = args.draft
+        draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
         const budgetIssue = inspectDesignBudget(draft)
         if (budgetIssue) return JSON.stringify(budgetIssue)
-        const inputIssue = operationInputIssue(args, preparationSchema)
+        const inputIssue = operationInputIssue({ draft }, preparationSchema)
         if (inputIssue)
           return JSON.stringify({
             available: false,
             recovery: 'correct_input',
+            draftId: session.retainRejectedDraft(draft),
             message: `${inputIssue}. Correct the listed input fields and resubmit this draft; do not research a new reference. Geometry has not been compiled.`
           })
         if (
@@ -442,12 +477,18 @@ export const createLocalDesignTools = (
           })
         return JSON.stringify({
           available: true,
-          ...session.prepare(args.draft)
+          ...session.prepare(draft)
         })
       } catch (error) {
         return JSON.stringify({
           available: false,
           recovery: 'correct_input',
+          ...(draft === undefined
+            ? {}
+            : { draftId: session.retainRejectedDraft(draft) }),
+          ...(error instanceof DesignKeyConflictError
+            ? { conflicts: error.conflicts }
+            : {}),
           message:
             error instanceof Error
               ? error.message

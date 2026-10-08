@@ -63,6 +63,70 @@ const request = (artifactId: string) => ({
 })
 
 describe('local semantic design tools', () => {
+  it('reports duplicate source paths and repairs retained source without resending it', async () => {
+    const tools = createLocalDesignTools(actions)
+    const source = {
+      ...draft(),
+      layout: 'absolute',
+      children: ['same', 'same', 'other', 'other'].map((key) => ({
+        key,
+        type: 'rect',
+        name: key,
+        width: 10,
+        height: 10
+      }))
+    }
+    const rejected = JSON.parse(
+      await tools.call('prepare_design', { draft: source }, signal())
+    )
+    expect(rejected.available).toBe(false)
+    expect(rejected.conflicts).toEqual([
+      { key: 'same', paths: ['/children/0/key', '/children/1/key'] },
+      { key: 'other', paths: ['/children/2/key', '/children/3/key'] }
+    ])
+    expect(rejected.draftId).toEqual(expect.any(String))
+    const repaired = JSON.parse(
+      await tools.call(
+        'prepare_design',
+        {
+          repair: {
+            draftId: rejected.draftId,
+            replacements: [
+              { path: '/children/1/key', value: 'same-2' },
+              { path: '/children/3/key', value: 'other-2' }
+            ]
+          }
+        },
+        signal()
+      )
+    )
+    expect(repaired.available).toBe(true)
+    expect(repaired.elementCount).toBe(5)
+    expect(
+      tools.resolveTargets({
+        artifactId: repaired.artifactId,
+        keys: ['same', 'same-2']
+      })
+    ).toHaveLength(2)
+    const invalid = JSON.parse(
+      await tools.call(
+        'prepare_design',
+        {
+          repair: {
+            draftId: rejected.draftId,
+            replacements: [{ path: '/children/100/key', value: 'missing' }]
+          }
+        },
+        signal()
+      )
+    )
+    expect(invalid).toMatchObject({
+      available: false,
+      recovery: 'correct_input'
+    })
+    expect(source.children[1].key).toBe('same')
+  })
+
   it('accepts a semantic root key without taking over canonical identity ownership', async () => {
     const tools = createLocalDesignTools(actions)
     const source = { ...draft(), key: 'page' }
