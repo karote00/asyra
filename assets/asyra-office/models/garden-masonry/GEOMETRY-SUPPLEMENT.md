@@ -24,7 +24,12 @@ Size 0.30 x 0.18 x 0.14, centre (0,0,0.07), chamfer 0.006. Bottom Z=0, top Z=0.1
 
 ## Coping slab
 
-Size 0.32 x 0.22 x 0.055, centre (0,0,0.0275), chamfer 0.003. Bottom Z=0, top Z=0.055. Top is broad and flat, without a ridge or drainage slope. Underside is flat with the same edge treatment; no drip groove, attachment sockets or hidden supports. All faces use cream limestone.
+Default size 0.32 x 0.22 x 0.055, centre (0,0,0.0275), chamfer 0.003. Default bottom Z=0, top Z=0.055. Top is broad and flat, without a ridge or drainage slope. Underside is flat with the same edge treatment; no drip groove, attachment sockets or hidden supports. All faces use cream limestone by default, with colour and material replaceable under the shared contract.
+
+This preset uses the same chamfered-box construction as the masonry block.
+At default size the principal top and bottom faces measure 0.314 x 0.214;
+the principal vertical faces have height 0.049. The chamfer offsets are
+construction defaults, not fixed-width details after independent axis scaling.
 
 ## Fit reference and placement boundary
 

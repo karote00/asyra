@@ -55,15 +55,16 @@ changing its size or material does not require another geometry family.
 | --- | --- | --- | --- | --- |
 | `red-clay-paver` | Convex box with planar edge chamfers and triangular corner patches | 200 / 100 / 60 | 1 mm | Matte terracotta #B86F53 |
 | `masonry-block` | Same family | 300 / 180 / 140 | 6 mm | Warm grey stone #C6BFB3 with intrinsic flecks |
+| `wall-coping-slab` | Same family | 320 / 220 / 55 | 3 mm | Cream limestone #EBE2CE with intrinsic flecks |
 
-Decision: retain both presets, identifiers, numeric files and reference sheets.
+Decision: retain all three presets, identifiers, numeric files and reference sheets.
 Their vertex and half-space recipes describe the same topology and generator
 family, but they are not identical meshes separated only by material. Their
 chamfer defaults differ. Scaling the clay preset to the stone dimensions uses
 factors (1.5, 1.8, 7/3), so the original 1 mm setbacks become (1.5, 1.8, 7/3) mm,
 not the stone preset's 6 mm setbacks. Choose the base preset before overall sizing.
 
-One future parameterized generator can create both default geometries, then
+One future parameterized generator can create all three default geometries, then
 apply the shared overall-size and appearance contract. No shared generator,
 registry, runtime factory, model deletion or asset migration is implemented
 by this classification. This comparison does not approve unreviewed images or
