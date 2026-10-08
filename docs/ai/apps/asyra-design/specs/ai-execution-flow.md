@@ -89,6 +89,12 @@ search returns matching schemas and no match returns the category menu; it never
 infers capability absence or picks a similar adapter. Selectors are mutually
 exclusive. Each declaration carries purpose, category, input and result meaning.
 Lookup indexes live only for that admitted request registry. Known operations
+may be retrieved together with `operations`; use this selector for known semantic
+identities. Exact `names` also accepts uniquely resolving semantic identities
+from that registry. Unknown entries preserve other matches; ambiguous native or
+action identities return explicit candidates rather than choosing a route.
+Plural lookup does not rescan the catalog or perform a canvas exchange.
+Known operations
 execute directly; discovery is not a mandatory extra step. Full App action definitions
 carry an exact revision and are returned once per request/revision. Later lookups
 return references with a refresh route. `refresh: true` explicitly restores full
@@ -121,6 +127,20 @@ IDs and new values do not require a preliminary whole-document read. Unknown
 information needed by the requested operation still requires an appropriate read.
 
 ## Preparation and execution
+
+The combined preparation/application workflow also accepts ordered ready `parts`.
+Each part has a unique local key and an ordinary draft or repair. `parentPart`
+links to an earlier successful part's actual composition ID; it is never a
+canonical ID and never implies an outer root. Explicit existing `parentId` remains
+available. Sequence shape and backward references are admitted before writes.
+The workflow prepares and applies one part before preparing the next, using the
+same preparation and current canonical admission owners. A failure stops later
+parts and returns ordered receipts for successful parts plus the failed part;
+completed and uncertain writes are never automatically replayed. Cancellation
+retains existing terminal semantics and recorded acknowledged work. Nested owner
+observations identify part order and preparation/application boundaries. Patterns,
+shared fills and projection stay at their existing preparation owner. Submit
+ready parts only; an entire design is not a prerequisite for this route.
 
 Prepared target selectors use exact immutable artifact identities. Repeated prefix
 queries reuse an artifact-owned key index and preserve source order; releasing
