@@ -1,9 +1,9 @@
 # Asset Types and Reviewed Component Classification
 
-Updated 2026-10-07. This is a documentation classification of existing assets,
+Updated 2026-10-09. This is a documentation classification of existing assets,
 not a directory migration, new model batch, implemented asset registry or API.
-Existing component identifiers, dimensions, unit boundaries and approval states
-remain unchanged. Scene categories such as architecture and street remain useful
+Existing identifiers, default dimensions, unit boundaries and drawing approval
+states remain unchanged. Instance sizing follows the [shared overall-size rule](README.md#overall-size-and-appearance---2026-10-09). Scene categories such as architecture and street remain useful
 navigation; the types below describe what an asset supplies.
 
 ## Three asset types
@@ -23,8 +23,8 @@ classification does not claim that missing textures have been generated.
 
 A decal includes placement information that an ordinary material lacks. Its
 mask defines its independent contour and transparent wear. Changing colour or
-material must preserve that mask and physical bounds unless the user separately
-changes the decal design. A material replacement must not fill transparent
+material must preserve that mask and physical bounds. Explicit size edits may
+resize the decal under the shared sizing rule; design edits remain separate. A material replacement must not fill transparent
 pixels or introduce receiving-surface colour into the marking.
 
 ## Path-generated decals
@@ -43,6 +43,31 @@ planar paths. They remain solid model components, not paint decals or materials.
 See [planar curbs](street/PLANAR-CURBS.md). One continuous run or independently
 capped blocks are app-selected generation modes; no runtime generator exists
 as a result of this classification update.
+
+## Shared geometry families and selectable presets
+
+Geometry family, selectable preset and material are different responsibilities.
+A preset may reference a shared geometry family with its own default dimensions,
+chamfer parameters and material recipe. It remains a placeable model preset;
+changing its size or material does not require another geometry family.
+
+| Existing preset | Shared geometry family | Default X/Y/Z (mm) | Default chamfer offset | Default appearance |
+| --- | --- | --- | --- | --- |
+| `red-clay-paver` | Convex box with planar edge chamfers and triangular corner patches | 200 / 100 / 60 | 1 mm | Matte terracotta #B86F53 |
+| `masonry-block` | Same family | 300 / 180 / 140 | 6 mm | Warm grey stone #C6BFB3 with intrinsic flecks |
+
+Decision: retain both presets, identifiers, numeric files and reference sheets.
+Their vertex and half-space recipes describe the same topology and generator
+family, but they are not identical meshes separated only by material. Their
+chamfer defaults differ. Scaling the clay preset to the stone dimensions uses
+factors (1.5, 1.8, 7/3), so the original 1 mm setbacks become (1.5, 1.8, 7/3) mm,
+not the stone preset's 6 mm setbacks. Choose the base preset before overall sizing.
+
+One future parameterized generator can create both default geometries, then
+apply the shared overall-size and appearance contract. No shared generator,
+registry, runtime factory, model deletion or asset migration is implemented
+by this classification. This comparison does not approve unreviewed images or
+change the classification of other catalogue entries.
 
 ## Reclassification of reviewed components
 

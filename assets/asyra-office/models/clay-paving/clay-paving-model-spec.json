@@ -60,7 +60,7 @@
     "normalMap": false,
     "displacement": 0
   },
-  "surface": "Uniform intrinsic color on all faces; no baked lighting or texture.",
+  "surface": "Default: uniform intrinsic color on all faces; no baked lighting or texture. Colour and material are replaceable under the shared rule.",
   "placementReference": {
     "zeroGapTranslations": [
       [
@@ -76,7 +76,7 @@
     ],
     "gapOwnership": "App or user chooses gaps and bond pattern; no mortar included."
   },
-  "authority": "Numeric geometry defines exact dimensions; image is an uncalibrated appearance reference.",
+  "authority": "Numeric geometry defines exact default dimensions; explicit instance sizing and appearance follow ../README.md#overall-size-and-appearance---2026-10-09. The image is an uncalibrated default appearance reference.",
   "exclusions": [
     "models",
     "app implementation",

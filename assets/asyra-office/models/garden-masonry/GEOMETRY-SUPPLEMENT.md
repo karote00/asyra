@@ -2,7 +2,11 @@
 
 ## Coordinates and units
 
-Metres, +Z up, -Y front and +X right. Each origin is centred on its bottom bounding rectangle. Full extents and centres are in JSON. Front/right/back/top look from -Y/+X/+Y/+Z; use an oblique view from (1,-1,0.8). No rotation or scale is baked into these units.
+Metres, +Z up, -Y front and +X right. Each origin is centred on its bottom bounding rectangle. Full extents and centres are in JSON. Front/right/back/top look from -Y/+X/+Y/+Z; use an oblique view from (1,-1,0.8). These describe the default units, with identity rotation and unit scale. Explicit
+instance sizes follow the [shared sizing rule](../README.md#overall-size-and-appearance---2026-10-09):
+scale the complete default solid about its authored origin before surface mapping
+and world placement. The default equal-offset chamfers scale with it; independent
+axis scaling need not retain equal offsets or 45-degree edge angles.
 
 ## Exact chamfer definition
 
@@ -26,10 +30,17 @@ Size 0.32 x 0.22 x 0.055, centre (0,0,0.0275), chamfer 0.003. Bottom Z=0, top Z=
 
 For a single-block fit illustration only, put the block at (0,0,0) and coping at (0,0,0.14). Their bounding footprints give 0.01 overhang on each X side and 0.02 on each Y side. Chamfers leave small geometric recesses along edges. This is not a combined asset, fixed wall layout or structural installation specification.
 
-The two lengths differ intentionally. Do not silently stretch individual units or add mortar to force a repeating layout. Future app controls decide spacing, counts, bond pattern and any separately authorized length variants.
+The two default lengths differ intentionally. Explicit length/width/height overrides
+are supported by the shared rule; do not resize a unit without such a request
+merely to force a repeating layout. Recalculate fit, overhang and placement from
+the final bounds instead of retaining the default 10/20 mm overhangs. The app
+controls spacing, counts and bond pattern; no automatic joint fitting or mortar
+is introduced.
 
 ## Views and future acceptance
 
 Front/back match; right/left match; top/bottom have the same plan silhouette. The generated drawings may show slightly elevated elevations and exaggerated thin chamfers; numerical geometry is authoritative. A drawn light edge is not a separate material stripe.
 
-After separate modeling authorization, inspect five views plus underside. Check bounds within 0.0005 m, exact chamfer planes, one closed convex stone per asset, no duplicate/internal faces or assembly geometry, and no baked lighting. No models have been produced or verified in this batch.
+After separate modeling authorization, inspect five views plus underside. At default size, check bounds within 0.0005 m and exact chamfer planes.
+For explicit instance sizes, check the transformed bounds and correspondingly
+transformed chamfer planes. In both cases check one closed convex stone per asset, no duplicate/internal faces or assembly geometry, and no baked lighting. No models have been produced or verified in this batch.

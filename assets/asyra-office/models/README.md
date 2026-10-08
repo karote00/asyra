@@ -4,7 +4,7 @@ Inventory date: 2026-10-05. Source baseline: `fee6019cab9d88fed76d2047fe7c105618
 
 This catalog covers **56 approved reference batches, 121 current drawing sheets and 56 numeric specification files**. A sheet is not necessarily a single unit: the street pavement/curb sheet covers multiple independent components, and transparent markings use planar views. Counts exclude source images, historical revisions and prompt records.
 
-All listed batches have user approval for their drawings and documentation. **No completed or verified 3D models are claimed.** The original named asset categories have basic representatives; the scene-specific omissions below remain open. This inventory is a navigation and coverage summary, not a new modeling or application contract.
+All listed batches have user approval for their drawings and documentation. **No completed or verified 3D models are claimed.** The original named asset categories have basic representatives; the scene-specific omissions below remain open. The dated inventory is a navigation and coverage summary; the common reference contracts below govern future asset construction without implementing app behavior.
 
 ## Start here
 
@@ -25,8 +25,9 @@ material implementation counts. No folders or files are relocated.
 
 ### Current review scope and configurable appearance - 2026-10-06
 
-This rule applies to every asset batch below and takes precedence over earlier
-batch text that fixes colours or materials as the only allowed appearance.
+This rule and the overall-size rule below apply to every asset batch and take
+precedence over earlier batch text that fixes dimensions, colours or materials
+as the only allowed instance configuration.
 
 - Current review and correction cover dimensions and geometry only: silhouette,
   topology, part boundaries, recesses, bevels, joins, placement and view consistency.
@@ -51,11 +52,78 @@ batch text that fixes colours or materials as the only allowed appearance.
   Drawing face tones, shadows, outlines and review annotations are not defaults.
 - Existing appearance references remain available as optional defaults. This
   stage does not generate texture assets, implement factories, validate shader
-  support or certify material fidelity. Detailed API precedence is deferred to
-  the implementation contract.
+  support or certify material fidelity. Concrete API signatures and renderer support are deferred to
+  the implementation contract; shared override precedence is specified below.
 
 The previously reviewed lounge chair has an explicit
 [default appearance contract](furniture/ARMCHAIR-DEFAULT-APPEARANCE.md).
+
+### Overall size and appearance - 2026-10-09
+
+All asset creation flows share this contract. Existing numeric dimensions,
+origins and part geometry define the default reference configuration, not a
+fixed size for every placed instance. Exact default geometry remains necessary
+for reconstruction, proportions and review. A batch need not repeat this common
+contract; it only supplies its defaults, material regions and any explicit
+asset-specific construction requirements.
+
+1. Select the base geometry or preset, including its default dimensions, origin,
+   component relationships and geometry details such as chamfers.
+2. Resolve requested overall X/Y/Z extents in the asset's local axes. Omitted
+   dimensions retain defaults. For a positive default extent D and target T,
+   the corresponding scale is T/D. Values must be finite and positive; no
+   zero-scale collapse, negative-scale mirroring or implicit axis swap.
+3. Scale the complete unit about its authored origin: for each local point p,
+   `pFinal = origin + diag(scaleX, scaleY, scaleZ) * (pDefault - origin)`.
+   These dimensions describe the final local bounding box, before placement
+   rotation; they are not the rotated world-space bounding box.
+4. Resolve replaceable colour/material regions and the selected surface mapping
+   using those final dimensions, then place or assemble the instance. This is
+   a semantic dependency order, not a requirement to rebuild meshes or bake a
+   new texture every time a setting changes.
+
+Independent axis scaling is supported. An optional proportional lock uses one
+common scale; incompatible requested extents must not silently distort or
+change the lock. Whole-unit scaling includes component positions and dimensions,
+chamfers, joint gaps and the attachment hierarchy. A character's attached clothes
+and accessories follow that same effective transform once, while skin, clothes
+and accessory appearance remains independently replaceable where regions exist.
+This rule does not define rigging, clothing fit or animation implementation.
+
+Nonuniform scaling can turn circles into ellipses and alter chamfer angles.
+Do not silently keep a detail at a fixed physical size or regenerate a 45-degree
+chamfer to compensate. A different base chamfer is a preset/construction
+parameter, not a consequence of the overall-size override. Preserve surface
+normals appropriate to the transformed geometry.
+
+An authored zero-thickness decal remains planar: resize its nonzero axes only.
+Thickness requires explicit geometry authoring, not division by a zero default
+extent or automatic extrusion. Three-axis sizing adds no terrain fitting,
+surface conformance, arbitrary bending, adaptive joints or curved extrusion.
+Existing separately specified planar path generators remain their own contracts;
+this rule does not add new path behavior.
+
+Material mapping must distinguish stretching from physical-scale repetition.
+Identity artwork or alpha masks can stretch with the final surface. Repeating
+wallpaper, road and stone patterns use their specified physical tile size or
+procedural coordinates in resized local metres, before world placement. Compute
+mapping from final dimensions so an elongated road does not stretch each grain.
+Wallpapers and roads can be assembled as independently sized patches or tiles;
+continuous length is an app-selected sequence, not an infinite mesh. Seam/phase
+alignment between patches belongs to their assembly contract and is not guaranteed
+by scaling alone. Defaults remain explicit; review colours never replace them.
+
+Select per-region material, otherwise an applicable group material, otherwise
+the preset default. Then apply per-region colour, otherwise group colour; when
+no tint is supplied, retain the selected material's colour. Overrides preserve
+geometry and other instances. These are shared future creation requirements,
+not implemented factory signatures or verified renderer capabilities.
+
+Equivalent geometry families may share one future generator with multiple
+selectable presets. Preserve each preset's identifier, default dimensions,
+geometry details, default appearance and reference evidence when they provide
+useful choices. A reference sheet is not proof that a separate mesh generator
+must exist. See [shared geometry presets](ASSET-TYPES.md#shared-geometry-families-and-selectable-presets).
 
 ### Paving stone and layout reference - approved 2026-10-07
 
@@ -69,7 +137,7 @@ another component or retroactively change the dated baseline sheet counts.
 1. Select a batch below and open its review gallery for the current appearance sheets.
 2. Read that batch's README, geometry supplement, numeric specification and surface recipes together.
 3. Follow the [approved office reference](architecture/review/approved-office-reference.jpg), with the central office taking priority over neighboring shops. The [entrance close-up](architecture/review/entry-door-reference.png) establishes the complete door set, including its narrow same-color side panel.
-4. Use numeric specifications for dimensions, axes, component boundaries and authored hidden surfaces. Treat a drawing/specification conflict as a review issue; do not silently invent a resolution or claim that every view is calibrated.
+4. Use numeric specifications for default dimensions, axes, component boundaries and authored hidden surfaces; apply the shared overall-size rule to explicit instance overrides. Treat a drawing/specification conflict as a review issue; do not silently invent a resolution or claim that every view is calibrated.
 5. Future model creation and comparison form a separate stage. Assembly, placement, lighting, interactions and animation behavior belong to the app.
 
 ## Current versus historical material
