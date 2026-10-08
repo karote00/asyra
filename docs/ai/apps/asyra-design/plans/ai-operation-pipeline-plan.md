@@ -1,6 +1,6 @@
 # Operation discovery and ordered drawing composition
 
-Status: design reviewed; implementation pending.
+Status: implementation and local validation complete; PR review pending.
 Base: `28daa65db7ba4951df2c6a71a40db6addb1f5243` (merged PR #300).
 Closeout owner: this conversation.
 
@@ -131,3 +131,38 @@ regressions also failed before implementation. Focused discovery, workflow,
 schema and source-proof tests now pass (135 cases). Existing pattern compilation
 and request history owners are unchanged. Native action/wrapper pairs keep both
 explicit routes; only conflicting native namespaces require qualification.
+
+
+## Live evidence and bounded review
+
+Full local routing passed on the implementation: dependencies/shared, complete
+Design and Inspector lint/build/tests, collaboration 14, functional 391 and render
+contracts 3. Conditional skips: 3 collaboration, 19 functional. Evidence:
+`tmp/local-validation/7ffc5de5-d3f0-443a-a268-a76c4be5dc56/result.json`, source verified.
+The final focused suite contains 177 tests, including an executable native usage
+example, canonical/native admission equivalence, actual parent receipt routing,
+partial failure and current permissions. Typecheck, lint and naming pass.
+
+One full Taipei 101 run (`045cace8-0445-4ce1-84a4-179f447f3431`, implementation
+`322d396b649a98e5b6b0ba1c7206771fcd9e266f`) completed in 853.722 s with first
+content at 70.614 s, 24,218 elements and no browser page errors. Exact plural
+operation lookup was used. One ordered call applied nine parts / 17,809 objects
+in 15.195 s. API definition response bytes decreased from 122,550 to 79,217,
+while description calls increased from seven to nine. Compared with the prior
+862.997 s active result, this is observational evidence, not a causal speed claim.
+Source-linked full input/output and timing evidence remains local under
+`tmp/full-101-operation-pipeline-20261008/`; recordings are not submitted.
+
+The run had two source acquisition failures, one review input missing dependencies,
+and one ordered input with bare drafts, missing part keys and an outer parent ID.
+All were recoverable and the request completed. The last finding is directly in
+compose scope: the tool now includes an executable minimal envelope example and
+explicit key/parent placement. Its permanent test failed before the description
+change and passes afterward. The executor and validation were not weakened. The
+single live run predates this final usage clarification; no second drawing run.
+
+Review covered changed contracts, schema selectors, single/sequence consumers,
+current permission rechecks, cancellation, receipt settlement, source validation
+and bounded diagnostics. Generated Inspector workspace data is synchronized.
+No new callbacks, execution owner, model configuration, renderer or reference
+policy was added. UI geometry/artistic choices remain the model's responsibility.

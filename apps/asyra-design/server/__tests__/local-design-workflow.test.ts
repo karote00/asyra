@@ -79,6 +79,31 @@ const setup = () => {
   }
 }
 
+it('executes the advertised ordered input example without hidden envelope fields', async () => {
+  const { workflow, compile, execute } = setup()
+  const definition = workflow.definitions[0]
+  const marker = 'Ordered input example: '
+  expect(definition.description).toContain(marker)
+  const example = JSON.parse(definition.description.split(marker)[1])
+  expect(operationInputIssue(example, definition.inputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(example, nativeToolInputSchema(definition.inputSchema))
+  ).toBeUndefined()
+  const result = JSON.parse(
+    await workflow.call(definition.name, example, new AbortController().signal)
+  )
+  expect(result.status).toBe('complete')
+  expect(result.parts.map((part: { key: string }) => part.key)).toEqual([
+    'body',
+    'detail'
+  ])
+  expect(compile).toHaveBeenCalledTimes(2)
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
+    parentId: 'root'
+  })
+})
+
 it('composes compact rejected-draft repair through preparation before one canonical dispatch', async () => {
   const { workflow, execute } = setup()
   const source = {

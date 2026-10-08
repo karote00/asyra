@@ -216,6 +216,50 @@ export const createLocalDesignWorkflow = (
       }
     }
   }
+  const orderedInputExample = {
+    parts: [
+      {
+        key: 'body',
+        draft: {
+          type: 'group',
+          name: 'Body',
+          children: [
+            {
+              type: 'rect',
+              name: 'Surface',
+              key: 'surface',
+              x: 0,
+              y: 0,
+              width: 40,
+              height: 30,
+              fill: '#123456'
+            }
+          ]
+        }
+      },
+      {
+        key: 'detail',
+        parentPart: 'body',
+        draft: {
+          type: 'group',
+          name: 'Detail',
+          children: [
+            {
+              type: 'rect',
+              name: 'Inset',
+              key: 'inset',
+              x: 4,
+              y: 4,
+              width: 6,
+              height: 6,
+              fill: '#abcdef'
+            }
+          ]
+        }
+      }
+    ],
+    inspection: 'defer'
+  }
   const inputSchema = {
     ...definition.inputSchema,
     $defs: {
@@ -252,7 +296,8 @@ export const createLocalDesignWorkflow = (
         inputSchema,
         description:
           definition.description +
-          ' Alternatively supply parts for an ordered responsibility block of ready geometry; optional parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block.'
+          ' Alternatively supply parts as envelopes, each requiring its own key and draft or repair; do not put bare drafts in parts. key is a local label, not an element ID. Put parentId on each part, never at the top level with parts; alternatively parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block. Ordered input example: ' +
+          JSON.stringify(orderedInputExample)
       }
     ],
     explainInputIssue: (name: string, args: unknown) =>
