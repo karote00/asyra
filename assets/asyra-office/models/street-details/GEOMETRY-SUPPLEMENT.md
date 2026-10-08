@@ -80,11 +80,71 @@ own their exposed boundary faces. Keep two additional flat lettering-mask
 regions, one on each board front; they do not create extra geometry.
 See [surface replacement rules](SURFACE-RECIPES.md).
 
-## Bollard
+## Bollard - revised compact proportions
 
-Shaft radius 0.0225, Z=0..0.404. Collar radius 0.029, Z=0.400..0.421. Finial radius 0.0325 at Z=0.4475, spanning 0.415..0.480. Overlaps create actual joined solids. The bottom is plain and flat; do not invent anchors, holes, a baseplate, reflective stripes or hollow interiors.
+The original v1 drawing owns the compact form. Its former numeric diameters did
+not match that form. The following construction replaces the old 45/58/65 mm
+diameters while preserving total height 480 mm. It is the current specification
+for the [v3 five-view sheet](review/02-roadside-bollard-v3.png).
 
-Front/right/back silhouettes are identical. In top view the largest spherical finial hides the collar and shaft completely, forming one disk, with no visible concentric collar circle.
+The shaft and collar are solid concentric cylinders, not square prisms or hollow
+tubes. The finial is a solid sphere. All three share the Z axis. The bottom is
+flat and closed. There is no taper, additional rim, carved groove, baseplate,
+fastener, reflective stripe or hollow interior. No additional bevel is specified.
+
+### Dimensions and placement - millimetres
+
+| Part | Diameter | Construction height or Z span | Centre |
+| --- | --- | --- | --- |
+| Shaft | 92 | 344 high, Z=0..344 | Axis X=Y=0 |
+| Collar | 110 | 34 high, Z=340..374 | Axis X=Y=0 |
+| Finial | 112 | Z=368..480 | (0, 0, 424) |
+
+The exposed shaft below the collar is 340 mm; its remaining 4 mm enters the
+collar. The sphere enters the collar by 6 mm. Neither join has an air gap.
+The collar extends 9 mm radially beyond the shaft. The finial's equator extends
+1 mm radially beyond the collar; this is not the radius at their join.
+At the collar top, the sphere cross-section radius is
+`sqrt(56^2 - (424 - 374)^2) = 25.2190404 mm`, leaving an exposed annular
+shoulder out to radius 55 mm. At the collar bottom, its exposed shoulder runs
+from shaft radius 46 mm to collar radius 55 mm. Boolean union removes buried
+caps and interior faces while preserving exposed source-region assignments.
+
+Bounds are X/Y=-56..56 mm and Z=0..480 mm. Curved sides use smooth normals;
+planar shoulders and the bottom use planar normals with sharp boundaries.
+Numerical construction segmentation remains specified in JSON; runtime LoD
+still needs separate model-stage validation.
+
+### Reference proportions and views
+
+Original FRONT contour evidence: approximately 353 px total height, 68 px shaft
+width, 83 px finial width and 81 px collar width. These include outline thickness.
+With height fixed at 480 mm, the rounded dimensions above agree with all three
+width/height ratios within 0.51%. This is proportional design agreement, not
+exact camera recovery or pixel-for-pixel reproduction of the original artwork.
+
+V3 projects the same primitives at 1500 px/m in all five views on one
+3072 x 2048 sheet. FRONT looks from -Y, RIGHT from +X, BACK from +Y, with +Z
+screen up. These level orthographic views have identical silhouettes and a
+straight bottom edge. The bottom ellipses in illustrative v1/v2 were not correct
+for level orthographic front views and are not retained in these projections.
+TOP looks from +Z, +X screen right and +Y screen up. The sphere obscures both
+smaller parts, forming one 112 mm disk; do not add collar or shaft circles.
+THREE-QUARTER looks from normalized (4, -7, 3), with screen-right normalized
+(7, 4, 0) and screen-up their cross product. It shows the collar's annular
+shoulder and cylindrical contours. The curved lower silhouette in that tilted
+view is the projection of a flat circular bottom, not a rounded physical base.
+
+The [drawing source](review/draw-bollard-projections.py) reads JSON dimensions
+and emits only a reference PNG and [projection record](review/bollard-projection-measurements.json).
+All height arrows terminate at the actual projected sphere top and ground datum.
+The sphere and shaft diameter annotations span their projected extremities.
+
+Default metal remains #383A38 for all three regions. Review colours distinguish
+parts and do not become textures or lighting. Independent colour/material
+replacement is defined in the surface recipes. The original v1 and recoloured
+v2 remain historical comparison sheets with superseded numeric labels. Current
+v3 is user-approved; no model export or app verification is claimed.
 
 ## Letter construction - original reference authority
 

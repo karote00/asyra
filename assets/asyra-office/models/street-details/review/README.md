@@ -1,6 +1,6 @@
 # Group 4N - Street Details Review
 
-Status: the user approved street-sign v6. Its documents have completed final consistency review. The bollard is unchanged. Reference approval is not model verification or commit/push authorization.
+Status: the user approved street-sign v6. Its documents have completed final consistency review. The user approved bollard v3 and authorized committing its revised dimensions and reference sheet. See BOLLARD-REVIEW.md for measurements. Reference approval does not establish model verification. No push is authorized.
 
 ## Complete street sign
 
@@ -15,9 +15,12 @@ The [v2 correction record](STREET-SIGN-REVISION.md) is superseded.
 
 ## One roadside bollard
 
-![Roadside bollard](02-roadside-bollard-v1.png)
+![Roadside bollard](02-roadside-bollard-v3.png)
+
+[Original bollard](02-roadside-bollard-v1.png) remains the comparison source.
+See the [bollard proportion correction and document review](BOLLARD-REVIEW.md).
 
 Both drawings show front, right, back, top and oblique views. Review appearance and independent unit boundaries. Sign lettering, hidden faces and exact dimensions are defined in the [geometry supplement](../GEOMETRY-SUPPLEMENT.md) and [JSON](../street-details-model-spec.json). The final sign is unbordered; its finial defaults to charcoal. The current light face colours and dark lettering are review-only colours, not material defaults. V6 derives its lettering directly from the original FRONT reference. The invented stroke alphabet is rejected.
 
-The sign v6 uses computed projections; the original sign and bollard remain
-illustrative. None of these sheets is a production texture map. No lighting marks should become material features.
+The sign v6 and bollard v3 use computed projections. Original v1 sheets remain
+illustrative comparison sources; their superseded dimensions do not govern construction. None of these sheets is a production texture map. No lighting marks should become material features.
