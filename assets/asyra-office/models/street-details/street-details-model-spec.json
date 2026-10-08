@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-authorized-reference-commit",
+  "status": "street-sign-reference-approved-documents-reviewed",
   "units": "metres",
   "axes": {
     "up": "+Z",
@@ -103,7 +103,89 @@
           ],
           "note": "2 mm inserted into post; visible length 0.48 m"
         }
-      ]
+      ],
+      "referenceReview": {
+        "status": "user-approved-reference-documents-reviewed",
+        "drawing": "review/01-street-sign-v6.png",
+        "originalDrawing": "review/01-street-sign-v1.png",
+        "scope": "V6 uses light orientation-coded review colours and explicitly labels the square post. V5 dimensions, geometry, original-reference lettering shapes and material defaults remain unchanged. Review colours are not model material defaults.",
+        "drawingSource": "review/draw-street-sign-projections.py",
+        "projectionMeasurements": "review/street-sign-projection-measurements.json",
+        "display": {
+          "purpose": "Documentation-only face distinction; not runtime material or lighting.",
+          "boxFaceColoursSRGB": {
+            "X": "#9DADB9",
+            "Y": "#D7E0E6",
+            "Z": "#EDF2F5"
+          },
+          "finialColourSRGB": "#BCCBD5",
+          "letteringColourSRGB": "#33434F",
+          "outlineColourSRGB": "#273743",
+          "defaultMetalColourSRGBFrom": "material.baseColorSRGB",
+          "defaultLetteringColourSRGBFrom": "assets[0].appearance.defaultLettering.baseColorSRGB"
+        }
+      },
+      "projectionRules": {
+        "front": "Camera at -Y looking +Y with +Z up; boards extend toward screen right.",
+        "right": "Camera at +X looking -X with +Z up; board end faces at X=0.5025 occlude the post centrally, not beside it.",
+        "rightPostYRange": [
+          -0.0225,
+          0.0225
+        ],
+        "rightBoardYRange": [
+          -0.009,
+          0.009
+        ],
+        "rightPostMarginEachSide": 0.0135,
+        "back": "Camera at +Y looking -Y with +Z up; boards extend toward screen left; backs blank.",
+        "top": "Camera at +Z looking -Z, +X screen right, +Y screen up. Both boards coincide into one extension. The circular finial hides the centre of the square collar, but all four collar corners remain visible.",
+        "collarHalfSide": 0.026,
+        "collarCornerRadius": 0.03676955262170047,
+        "finialProjectedRadius": 0.03,
+        "collarEdgeCircleIntersectionOffset": 0.014966629547095767,
+        "collarCornerVisibility": "On each collar edge, the sections where the other coordinate has magnitude greater than sqrt(0.030^2-0.026^2) remain visible beyond the finial disk. The collar hides the post top."
+      },
+      "appearance": {
+        "independentRegions": [
+          "shaft",
+          "collar",
+          "finial",
+          "board-1",
+          "board-2",
+          "lettering-board-1",
+          "lettering-board-2"
+        ],
+        "groups": {
+          "metal": [
+            "shaft",
+            "collar",
+            "finial",
+            "board-1",
+            "board-2"
+          ],
+          "lettering": [
+            "lettering-board-1",
+            "lettering-board-2"
+          ]
+        },
+        "defaultMetalFrom": "top-level material",
+        "defaultLettering": {
+          "baseColorSRGB": "#EEE9DD",
+          "metallic": 0,
+          "roughness": 0.8,
+          "emission": 0,
+          "opacity": 1
+        },
+        "precedence": [
+          "Select per-region material, otherwise group material, otherwise default material.",
+          "Apply per-region colour if supplied, otherwise group colour. Without a colour override, preserve the selected material colour."
+        ],
+        "letteringSurface": "Each lettering region uses the original-reference-derived flat alpha mask on its own board. No separate coplanar mesh, extrusion or back text. Board material replacement preserves the independent lettering region.",
+        "booleanOwnership": "Retain source-region ownership on all exposed faces during union; remove buried faces. Do not flatten region assignments into one material. At finial/collar, collar/shaft and board/shaft joins, the finial, collar and respective board own their exposed boundary faces.",
+        "instanceIsolation": "Do not mutate other instances through shared material state.",
+        "geometryInvariant": "Colour changes only tint; full material overrides replace surface properties within their region. Neither override may alter mesh positions, dimensions, region boundaries or transforms. No geometric displacement, baked lighting or automatic light creation.",
+        "apiStatus": "Parameter requirements for future asset construction; no runtime API implemented."
+      }
     },
     {
       "name": "roadside-bollard",
@@ -158,463 +240,40 @@
       "Maple St",
       "Riverside"
     ],
-    "glyphs": {
-      "M": [
-        [
-          [
-            0,
-            0
-          ],
-          [
-            0,
-            1
-          ],
-          [
-            0.3,
-            0.5
-          ],
-          [
-            0.6,
-            1
-          ],
-          [
-            0.6,
-            0
-          ]
-        ]
+    "authority": "The FRONT lettering of the original v1 reference owns glyph shapes, weight, relative spacing and case. The former hand-authored stroke glyphs are rejected and removed.",
+    "method": "Sample a flat alpha mask derived from the original FRONT lettering; use the same mask on the corresponding front and oblique board face. Do not approximate using a substituted font.",
+    "sourceDrawing": "review/01-street-sign-v1.png",
+    "sourceSha256": "47480e2b0fcbbd213e3f98c60a1f7ed5ad728f9535fc3296cb6db806c0fa4fcd",
+    "sourceCropsPixels": [
+      [
+        181,
+        255,
+        320,
+        298
       ],
-      "a": [
-        [
-          [
-            0.55,
-            0.1
-          ],
-          [
-            0.4,
-            0
-          ],
-          [
-            0.1,
-            0
-          ],
-          [
-            0,
-            0.15
-          ],
-          [
-            0,
-            0.5
-          ],
-          [
-            0.15,
-            0.65
-          ],
-          [
-            0.4,
-            0.65
-          ],
-          [
-            0.55,
-            0.5
-          ],
-          [
-            0.55,
-            0
-          ]
-        ]
-      ],
-      "p": [
-        [
-          [
-            0,
-            -0.25
-          ],
-          [
-            0,
-            0.65
-          ]
-        ],
-        [
-          [
-            0,
-            0.55
-          ],
-          [
-            0.15,
-            0.65
-          ],
-          [
-            0.4,
-            0.65
-          ],
-          [
-            0.55,
-            0.5
-          ],
-          [
-            0.55,
-            0.2
-          ],
-          [
-            0.4,
-            0.1
-          ],
-          [
-            0.15,
-            0.1
-          ],
-          [
-            0,
-            0.2
-          ]
-        ]
-      ],
-      "l": [
-        [
-          [
-            0.2,
-            1
-          ],
-          [
-            0.2,
-            0.1
-          ],
-          [
-            0.3,
-            0
-          ]
-        ]
-      ],
-      "e": [
-        [
-          [
-            0,
-            0.35
-          ],
-          [
-            0.55,
-            0.35
-          ],
-          [
-            0.55,
-            0.5
-          ],
-          [
-            0.4,
-            0.65
-          ],
-          [
-            0.15,
-            0.65
-          ],
-          [
-            0,
-            0.5
-          ],
-          [
-            0,
-            0.15
-          ],
-          [
-            0.15,
-            0
-          ],
-          [
-            0.45,
-            0
-          ],
-          [
-            0.55,
-            0.1
-          ]
-        ]
-      ],
-      "S": [
-        [
-          [
-            0.6,
-            0.85
-          ],
-          [
-            0.45,
-            1
-          ],
-          [
-            0.15,
-            1
-          ],
-          [
-            0,
-            0.85
-          ],
-          [
-            0,
-            0.6
-          ],
-          [
-            0.15,
-            0.5
-          ],
-          [
-            0.45,
-            0.5
-          ],
-          [
-            0.6,
-            0.35
-          ],
-          [
-            0.6,
-            0.15
-          ],
-          [
-            0.45,
-            0
-          ],
-          [
-            0.15,
-            0
-          ],
-          [
-            0,
-            0.15
-          ]
-        ]
-      ],
-      "t": [
-        [
-          [
-            0.25,
-            0.95
-          ],
-          [
-            0.25,
-            0.1
-          ],
-          [
-            0.35,
-            0
-          ],
-          [
-            0.5,
-            0
-          ]
-        ],
-        [
-          [
-            0.05,
-            0.65
-          ],
-          [
-            0.5,
-            0.65
-          ]
-        ]
-      ],
-      "R": [
-        [
-          [
-            0,
-            0
-          ],
-          [
-            0,
-            1
-          ],
-          [
-            0.4,
-            1
-          ],
-          [
-            0.6,
-            0.85
-          ],
-          [
-            0.6,
-            0.65
-          ],
-          [
-            0.4,
-            0.5
-          ],
-          [
-            0,
-            0.5
-          ]
-        ],
-        [
-          [
-            0.3,
-            0.5
-          ],
-          [
-            0.65,
-            0
-          ]
-        ]
-      ],
-      "i": [
-        [
-          [
-            0.25,
-            0
-          ],
-          [
-            0.25,
-            0.65
-          ]
-        ],
-        [
-          [
-            0.25,
-            0.88
-          ],
-          [
-            0.25,
-            0.91
-          ]
-        ]
-      ],
-      "v": [
-        [
-          [
-            0,
-            0.65
-          ],
-          [
-            0.3,
-            0
-          ],
-          [
-            0.6,
-            0.65
-          ]
-        ]
-      ],
-      "r": [
-        [
-          [
-            0,
-            0
-          ],
-          [
-            0,
-            0.65
-          ]
-        ],
-        [
-          [
-            0,
-            0.45
-          ],
-          [
-            0.2,
-            0.65
-          ],
-          [
-            0.45,
-            0.65
-          ]
-        ]
-      ],
-      "s": [
-        [
-          [
-            0.55,
-            0.55
-          ],
-          [
-            0.4,
-            0.65
-          ],
-          [
-            0.15,
-            0.65
-          ],
-          [
-            0,
-            0.5
-          ],
-          [
-            0.1,
-            0.35
-          ],
-          [
-            0.45,
-            0.3
-          ],
-          [
-            0.55,
-            0.15
-          ],
-          [
-            0.4,
-            0
-          ],
-          [
-            0.1,
-            0
-          ],
-          [
-            0,
-            0.1
-          ]
-        ]
-      ],
-      "d": [
-        [
-          [
-            0.55,
-            1
-          ],
-          [
-            0.55,
-            0
-          ]
-        ],
-        [
-          [
-            0.55,
-            0.5
-          ],
-          [
-            0.4,
-            0.65
-          ],
-          [
-            0.15,
-            0.65
-          ],
-          [
-            0,
-            0.5
-          ],
-          [
-            0,
-            0.15
-          ],
-          [
-            0.15,
-            0
-          ],
-          [
-            0.4,
-            0
-          ],
-          [
-            0.55,
-            0.15
-          ]
-        ]
+      [
+        182,
+        341,
+        323,
+        380
       ]
+    ],
+    "cropConvention": "Half-open left, top, right, bottom coordinates in the 1536 x 1024 original.",
+    "sourceVisibleBoardWidthPixels": 177,
+    "targetVisibleBoardWidth": 0.48,
+    "alphaExtraction": {
+      "luminance": "arithmetic mean of RGB channels",
+      "backgroundCutoff": 80,
+      "fullOpacityAt": 250,
+      "formula": "clamp((meanRGB - 80) / 170, 0, 1)",
+      "tightBoundsThreshold": 0.5
     },
-    "advance": 0.8,
-    "spaceAdvance": 0.45,
-    "strokeWidth": 0.065,
-    "cap": "round",
-    "join": "round",
-    "fitWidth": 0.38,
-    "fitHeight": 0.085,
-    "notes": "Use glyph strokes as a flat material mask; centre the complete stroked bounds, fit uniformly inside specified rectangle. No extrusion. No border or rear text."
+    "mapping": "Crop each mask to the bounding rectangle of alpha >= 0.5 plus 2 source pixels of padding. Scale uniformly by 0.48/177 metres per source pixel; centre the unpadded bounds on the existing exposed-board centre. Bilinear sampling preserves edge antialiasing. No independent X/Y stretching.",
+    "notes": "The source board colour, lighting, outline and background are not copied; only alpha defines the lettering shape. Apply replaceable ivory by default. Flat front paint, no extrusion or back text. Source raster limits fine-detail resolution; this is not a recovered font file.",
+    "edgeCoverage": {
+      "lower": 0.4,
+      "upper": 0.6,
+      "purpose": "Tighten resampled antialias coverage around the unchanged alpha=0.5 contour; avoid magnifying source-pixel blur."
+    }
   }
 }
