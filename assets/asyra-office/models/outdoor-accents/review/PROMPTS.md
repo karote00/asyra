@@ -34,3 +34,64 @@ Files:
 Submitted prompt:
 
 Edit the supplied asset design sheet ONLY to remove illumination. Preserve EXACT existing object shapes, geometry, silhouettes, part counts, arrangements, cameras, labels, dimensions, text and intrinsic colour palette. Do not redesign anything. Remove all cast shadows, ground/contact shadows, ambient occlusion, dark crevice lighting, specular highlights, reflected light and directional shading gradients. Show flat intrinsic base colours plus original material grain/weave and fine contour/part-boundary lines to explain depth. Same material must have same base brightness across front/side/top, not a shaded side. Dark actual materials and actual gaps remain identifiable, but no soft dark halo or painted depth. Blank background stays blank. Do not add floor, props or decorations. Keep all views and sheet lettering. This is an UNLIT MODEL REFERENCE, scene lighting will be added later in 3D.
+
+## Bench v2 - rejected numeric redraw - 2026-10-09
+
+The numeric redraw changed source silhouette, rear caps, width relationships
+and wood grain. Its internal projection checks did not establish visual fidelity.
+It is rejected and is not the current reference. Historical output is retained
+under `historical/rejected-bench-v2/` solely for the later historical-file audit.
+
+## Bench v3 - source composition and TOP correction - 2026-10-09
+
+User direction: copy original views into a new sheet, resize uniformly and add
+notes. Four source object crops remain unchanged. The first TOP patch failed
+because its added strips and retained frame did not share construction coordinates.
+
+The revised `compose-bench-reference.py` preserves FRONT, RIGHT, BACK and
+THREE-QUARTER. `bench-top-projection.py` replaces TOP with a projection of the
+current specification using one XY transform and a depth buffer. Reuse original
+wood samples, preserve the dark metal style, and add no lighting. No other view
+is regenerated. Notes explain rear inset, flat caps, slat counts, default size
+and inclination. This is a reference drawing, not a Blender model or runtime.
+
+### Coupled BACK placement correction
+
+The next review found that connected rear posts still sat too far outward.
+Use BACK landmarks from one common front-leg-span normalization to correct
+rear spacing and both board widths together. Update arms, side supports and
+crossrails from the same axes. Preserve the four source object views. TOP
+must show wood outside the rear posts, the correct rear inset and positive
+contacts; numeric connectivity alone is insufficient. No new imagegen prompt.
+
+### Continuous arm route and exclusion correction
+
+The inward cubic still penetrated the lowest back board. Replace it with a
+rounded rise, outside run and continuous rear return behind the boards. Attach
+to the back side of the unchanged rear post. Preserve all accepted board/post
+sizes and the four original image crops. Prove whole-tube clearance from every
+wooden board, separately from positive metal connections. This is a documented
+hidden construction completion; no new imagegen prompt or Blender output.
+
+## Bench v4 - shared five-view construction - 2026-10-09
+
+User direction: solve the repeated incomplete correction/review cycle together.
+Replace the mixed copied-view/TOP-only candidate with five projections of one
+shared numeric construction. Keep v1 unchanged; preserve outgoing v3 evidence.
+Keep original wood samples and dark metal; add explicit annotations without
+lighting. Verify full joins, forbidden collisions, dimensions and every camera.
+Document source-camera uncertainty separately from geometry correctness. No
+imagegen prompt, Blender model, app integration, commit or push in this stage.
+
+### Reconciled proportions after complete-view comparison
+
+The common projection exposed the old 730 mm default's oversized height and
+77.549553 mm opening below the backrest. Source FRONT width/height gives an
+approximately 651.8 mm height at width 1200 mm; select 650 mm as an authored
+construction default, with seat top 340 mm and resulting gap 17.549553 mm.
+Recalculate all vertical frame/arm/cap datums and the full envelope together.
+Use true FRONT/RIGHT/BACK elevations and the explicit oblique pose. Shorten
+rear arm turn Y from 260 to 240 mm while retaining positive joins and complete
+wood clearance. Preserve source v1 and all earlier immutable run evidence.
+These are proposed coherent construction defaults pending user review, not a
+claim of calibrated source recovery. No imagegen or Blender output.

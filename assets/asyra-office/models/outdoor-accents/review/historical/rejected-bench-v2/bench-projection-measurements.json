@@ -1,0 +1,486 @@
+{
+  "sourceSHA256": "ce0ee8b96d82b1d87d169615654cf7d9dc9b0b962b31b0456247a45621b306e6",
+  "drawingSHA256": "fa98acadc81c457b0487d9be94f29e190eb9489005a65ee760e5499870e41280",
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "pixelsPerMetre": 700,
+  "analyticBoundsMetres": [
+    [
+      -0.6000000000000001,
+      -0.23315343147945233,
+      0.0
+    ],
+    [
+      0.6000000000000001,
+      0.23315343147945225,
+      0.73
+    ]
+  ],
+  "views": [
+    {
+      "view": "FRONT",
+      "cameraDirection": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "originPixels": [
+        680,
+        970
+      ],
+      "rasterBoundsPixels": [
+        260.0,
+        459.0,
+        1100.0,
+        970.0
+      ],
+      "visibleGroups": [
+        0,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "cameraDirection": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenRight": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "originPixels": [
+        1560,
+        970
+      ],
+      "rasterBoundsPixels": [
+        1397.0,
+        459.0,
+        1723.0,
+        970.0
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8
+      ]
+    },
+    {
+      "view": "BACK",
+      "cameraDirection": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenRight": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "originPixels": [
+        2390,
+        970
+      ],
+      "rasterBoundsPixels": [
+        1970.0,
+        459.0,
+        2810.0,
+        970.0
+      ],
+      "visibleGroups": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "view": "TOP",
+      "cameraDirection": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "originPixels": [
+        680,
+        1480
+      ],
+      "rasterBoundsPixels": [
+        260.0,
+        1317.0,
+        1100.0,
+        1643.0
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "view": "THREE-QUARTER",
+      "cameraDirection": [
+        0.6154574548966637,
+        -0.6154574548966637,
+        0.49236596391733095
+      ],
+      "screenRight": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0.0
+      ],
+      "originPixels": [
+        2390.945725996735,
+        1686.0506953039117
+      ],
+      "rasterBoundsPixels": [
+        1979.5,
+        1048.0,
+        2795.5,
+        1882.0
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  ],
+  "savedPNGChecks": [
+    {
+      "view": "FRONT",
+      "envelopePixels": [
+        840,
+        511
+      ],
+      "targetRasterPixels": [
+        840.0,
+        511.0
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "envelopePixels": [
+        326,
+        511
+      ],
+      "targetRasterPixels": [
+        326.0,
+        511.0
+      ]
+    },
+    {
+      "view": "BACK",
+      "envelopePixels": [
+        840,
+        511
+      ],
+      "targetRasterPixels": [
+        840.0,
+        511.0
+      ]
+    },
+    {
+      "view": "TOP",
+      "envelopePixels": [
+        840,
+        326
+      ],
+      "targetRasterPixels": [
+        840.0,
+        326.0
+      ]
+    }
+  ],
+  "contactWitnesses": [
+    {
+      "kind": "seat-support",
+      "side": 0,
+      "board": 0,
+      "constructionPoint": [
+        -0.535,
+        -0.165,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 0,
+      "board": 1,
+      "constructionPoint": [
+        -0.535,
+        -0.055,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 0,
+      "board": 2,
+      "constructionPoint": [
+        -0.535,
+        0.055,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 0,
+      "board": 3,
+      "constructionPoint": [
+        -0.535,
+        0.165,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 0,
+      "board": 0,
+      "constructionPoint": [
+        -0.565,
+        0.18118983852640666,
+        0.45
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771908,
+        -0.003733064902245599
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 0,
+      "board": 1,
+      "constructionPoint": [
+        -0.565,
+        0.19346829461669712,
+        0.55
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771914,
+        -0.0037330649022455746
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 0,
+      "board": 2,
+      "constructionPoint": [
+        -0.565,
+        0.20574675070698759,
+        0.65
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771914,
+        -0.0037330649022456024
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 1,
+      "board": 0,
+      "constructionPoint": [
+        0.535,
+        -0.165,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 1,
+      "board": 1,
+      "constructionPoint": [
+        0.535,
+        -0.055,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 1,
+      "board": 2,
+      "constructionPoint": [
+        0.535,
+        0.055,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "seat-support",
+      "side": 1,
+      "board": 3,
+      "constructionPoint": [
+        0.535,
+        0.165,
+        0.326
+      ],
+      "interiorDistancesMetres": [
+        -0.000999999999999987,
+        -0.0009999999999999905
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 1,
+      "board": 0,
+      "constructionPoint": [
+        0.565,
+        0.18118983852640666,
+        0.45
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771908,
+        -0.003733064902245599
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 1,
+      "board": 1,
+      "constructionPoint": [
+        0.565,
+        0.19346829461669712,
+        0.55
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771914,
+        -0.0037330649022455746
+      ]
+    },
+    {
+      "kind": "back-post",
+      "side": 1,
+      "board": 2,
+      "constructionPoint": [
+        0.565,
+        0.20574675070698759,
+        0.65
+      ],
+      "interiorDistancesMetres": [
+        -0.003932915364771914,
+        -0.0037330649022456024
+      ]
+    },
+    {
+      "kind": "crossrail-side-support",
+      "side": 0,
+      "constructionPoint": [
+        -0.545,
+        -0.18,
+        0.3145
+      ],
+      "interiorDistancesMetres": [
+        -0.009500000000000001,
+        -0.0125
+      ]
+    },
+    {
+      "kind": "crossrail-side-support",
+      "side": 0,
+      "constructionPoint": [
+        -0.545,
+        0.18,
+        0.3145
+      ],
+      "interiorDistancesMetres": [
+        -0.009500000000000001,
+        -0.0125
+      ]
+    },
+    {
+      "kind": "crossrail-side-support",
+      "side": 1,
+      "constructionPoint": [
+        0.545,
+        -0.18,
+        0.3145
+      ],
+      "interiorDistancesMetres": [
+        -0.009500000000000001,
+        -0.0125
+      ]
+    },
+    {
+      "kind": "crossrail-side-support",
+      "side": 1,
+      "constructionPoint": [
+        0.545,
+        0.18,
+        0.3145
+      ],
+      "interiorDistancesMetres": [
+        -0.009500000000000001,
+        -0.0125
+      ]
+    }
+  ],
+  "scope": "Reference projection only. Rounded edges are analytic, not evidence of production tessellation. No model is exported."
+}

@@ -1,0 +1,93 @@
+"""Preserve four original bench illustrations and replace TOP with a shared-coordinate drawing."""
+from pathlib import Path
+import hashlib
+import json
+import runpy
+from PIL import Image, ImageDraw, ImageFont, ImageChops
+
+ROOT = Path(__file__).resolve().parent
+SOURCE = ROOT / '01-park-bench-v1.png'
+SPEC_PATH = ROOT.parent / 'outdoor-accents-model-spec.json'
+SPEC = json.loads(SPEC_PATH.read_text())['modules'][0]
+source = Image.open(SOURCE).convert('RGB')
+paper = Image.new('RGB', (3072, 2048), 'white')
+scale = 1.7
+# Bounds preserve complete objects. Remove only the old oblique label below the object.
+views = [
+    ('FRONT', (20,126,598,446), (80,285)),
+    ('RIGHT', (635,125,887,446), (1200,285)),
+    ('BACK', (944,126,1512,446), (1770,285)),
+    ('THREE-QUARTER', (825,508,1505,968), (1780,1000)),
+]
+def original_crop(name, box):
+    crop = source.crop(box)
+    if name == 'THREE-QUARTER':
+        # Source label only; the nearest leg starts to its right at x=1277.
+        ImageDraw.Draw(crop).rectangle((950-box[0], 943-box[1], 1210-box[0], 967-box[1]), fill='white')
+    return crop
+
+records=[]
+for name,box,position in views:
+    crop=original_crop(name,box)
+    size=tuple(round(v*scale) for v in crop.size)
+    copy=crop.resize(size,Image.Resampling.LANCZOS)
+    paper.paste(copy,position)
+    records.append(dict(view=name,sourceBox=box,destinationXY=position,sizePixels=size,
+                        method='Original object crop, uniform 1.7x resampling; original oblique label removed in white margin' if name == 'THREE-QUARTER' else 'Original crop, uniform 1.7x resampling, translation only'))
+
+# TOP is rebuilt from one shared construction transform; preserve the other crops.
+compose_top = runpy.run_path(str(ROOT/'bench-top-projection.py'))['compose_top']
+top, top_report = compose_top(SPEC, source)
+top_position = tuple(SPEC['referenceReview']['topProjection']['sheetPosition'])
+paper.paste(top, top_position)
+records.append(dict(view='TOP', destinationXY=top_position, **top_report))
+
+draw=ImageDraw.Draw(paper)
+font_root=Path('/System/Library/Fonts/Supplemental')
+INK='#28343C'
+
+def text(x,y,value,size=30,bold=False,anchor='lt'):
+    font=ImageFont.truetype(str(font_root/('Arial Bold.ttf' if bold else 'Arial.ttf')),size)
+    draw.text((x,y),value,font=font,fill=INK,anchor=anchor)
+
+text(70,45,'PARK BENCH - SINGLE UNIT',56,True)
+text(70,137,'Original illustrations preserved - dimensions and construction notes added',30)
+for x,label in [(570,'FRONT'),(1415,'RIGHT'),(2250,'BACK')]:text(x,872,label,36,True,'mt')
+text(585,1730,'TOP - ALIGNED CONSTRUCTION',34,True,'mt')
+text(2358,1850,'THREE-QUARTER',36,True,'mt')
+text(80,1045,'TOP - shared construction coordinates',32,True)
+text(80,1100,'Arms pass outside the back boards and return behind them to the rear posts.',27)
+text(1170,1260,'CONSTRUCTION NOTES',29,True)
+for i,line in enumerate([
+    '4 seat boards / 3 back boards',
+    'Seat wider than backrest',
+    'Rear posts: flat end caps',
+    'Wood beyond posts: 27.5 mm',
+    'Seat height: 360 mm',
+    'Seat gaps: 10 mm',
+    'Rear post inset: 92.5 mm / side',
+    'Back inclination: 15 degrees',
+    'Overall XYZ sizing supported',
+    'Arm / wood clearance: min 2 mm',
+]):text(1170,1315+i*44,line,25)
+size=SPEC['nominalSize']
+text(80,1840,f'AUTHORED DEFAULT SIZE: {size[0]*1000:.0f} x {size[1]*1000:.3f} x {size[2]*1000:.0f} mm',30,True)
+text(80,1900,'Illustrations are not calibrated orthographic measurements. Exact construction is specified separately.',27)
+text(80,1950,'Four original views retained. TOP uses source wood samples and one geometric projection; no new lighting.',27)
+output=ROOT/'01-park-bench-v3.png'
+paper.save(output)
+# Check the saved deliverable, not just the source crops in memory.
+saved=Image.open(output).convert('RGB')
+for record in records[:4]:
+    x,y=record['destinationXY'];w,h=record['sizePixels']
+    expected=original_crop(record['view'],record['sourceBox']).resize((w,h),Image.Resampling.LANCZOS)
+    delta=ImageChops.difference(expected,saved.crop((x,y,x+w,y+h)))
+    assert delta.getbbox() is None,record['view']
+    record['savedPixelDifferenceCount']=0
+report={'source':SOURCE.name,'sourceSHA256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+        'specificationSHA256':hashlib.sha256(SPEC_PATH.read_bytes()).hexdigest(),
+        'output':output.name,'outputSHA256':hashlib.sha256(output.read_bytes()).hexdigest(),
+        'sheetPixels':list(paper.size),'views':records,
+        'scope':'Four-view pixel preservation and a shared-coordinate TOP projection with analytic back/post contact checks. No model validation.'}
+(ROOT/'bench-reference-layout.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps({'output':str(output),'unchangedViews':4,'topVisibleGroups':top_report['visibleGroups']}))
