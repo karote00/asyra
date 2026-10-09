@@ -1,0 +1,208 @@
+{
+  "source": "01-striped-shop-awning-v2.png",
+  "sourceSHA256": "cb0d93b9af167aaae63ad197ec1cb772cef4903947144dfb915cd315f5a20b30",
+  "output": "01-striped-shop-awning-annotated-v1.png",
+  "outputSHA256": "b731f0147ad9664f0fcad6a00260c42e5ecd0ed0759496d097db7a46da3dbe9d",
+  "specificationSHA256": "33b6f800985cac13e46867be9d72b4e8a9dec8784c949539081a9d577a99795c",
+  "annotationLayer": "01-striped-shop-awning-annotation-layer.png",
+  "annotationLayerSHA256": "a907bfd2ea9e6de171e5c8fdb524a98f075707914543ea51837c6c3abf8744de",
+  "sheetPixels": [
+    1536,
+    1024
+  ],
+  "sourceOffset": [
+    0,
+    0
+  ],
+  "sourceScale": 1,
+  "resampling": "none",
+  "redrawnObjectViews": 0,
+  "correctedViews": [
+    "front",
+    "back",
+    "bottom"
+  ],
+  "addedSurfaceEdges": [
+    {
+      "view": "front",
+      "edge": "outer fold",
+      "heightMetres": 0.12,
+      "pixelY": 363.0,
+      "strokePixelY": 363,
+      "strokeWidth": 2,
+      "sourceViewBounds": [
+        82,
+        263,
+        526,
+        403
+      ]
+    },
+    {
+      "view": "back",
+      "edge": "rear lower edge",
+      "heightMetres": 0.3999999999999999,
+      "pixelY": 269.7142857142857,
+      "strokePixelY": 270,
+      "strokeWidth": 2,
+      "sourceViewBounds": [
+        1044,
+        263,
+        1499,
+        404
+      ]
+    },
+    {
+      "view": "back",
+      "edge": "inner fold",
+      "heightMetres": 0.10749999999999998,
+      "pixelY": 367.9107142857143,
+      "strokePixelY": 368,
+      "strokeWidth": 2,
+      "sourceViewBounds": [
+        1044,
+        263,
+        1499,
+        404
+      ]
+    },
+    {
+      "view": "bottom",
+      "edge": "valance bottom face / canopy underside",
+      "localYMetres": -0.78,
+      "valanceDepthMetres": 0.02,
+      "pixelY": 793.625,
+      "strokePixelY": 794,
+      "strokeWidth": 1,
+      "sourceViewBounds": [
+        603,
+        623,
+        1004,
+        798
+      ]
+    }
+  ],
+  "removedDimensions": [
+    {
+      "view": "front",
+      "label": "0.42 m",
+      "bounds": [
+        0,
+        250,
+        78,
+        416
+      ],
+      "includesDimensionLineAndArrows": true
+    }
+  ],
+  "sideLabelCorrection": {
+    "from": "RIGHT",
+    "to": "LEFT",
+    "profilePixelsUnchanged": true
+  },
+  "protectedOriginalViewBands": [
+    [
+      580,
+      195,
+      1015,
+      424
+    ],
+    [
+      0,
+      555,
+      580,
+      940
+    ],
+    [
+      1020,
+      555,
+      1536,
+      940
+    ]
+  ],
+  "originalViewBandsUnchanged": true,
+  "unchangedOutsideAnnotations": true,
+  "textBoxes": [
+    {
+      "text": "SHOP AWNING - 8-MODULE ASSEMBLY EXAMPLE",
+      "bounds": [
+        295,
+        24,
+        1242,
+        52
+      ]
+    },
+    {
+      "text": "DEFAULT ASSEMBLY: 2.00 x 0.80 x 0.42 m",
+      "bounds": [
+        480,
+        78,
+        1056,
+        98
+      ]
+    },
+    {
+      "text": "ONE MODULE = ONE STRIP  |  DEFAULT WIDTH: 250 mm",
+      "bounds": [
+        428,
+        128,
+        1109,
+        151
+      ]
+    },
+    {
+      "text": "DEFAULTS: L = 854.400 mm  |  ANGLE = 20.556 deg  |  V = 120 mm",
+      "bounds": [
+        390,
+        166,
+        1146,
+        189
+      ]
+    },
+    {
+      "text": "FRONT: outer fold. BACK: rear thickness + inner fold. LEFT: unchanged side profile.",
+      "bounds": [
+        338,
+        486,
+        1198,
+        509
+      ]
+    },
+    {
+      "text": "L follows slope; angle from horizontal; V always vertical. All three are adjustable.",
+      "bounds": [
+        328,
+        523,
+        1209,
+        545
+      ]
+    },
+    {
+      "text": "5.3 MODULES = 5 x 250 mm + 75 mm = 1325 mm TOTAL WIDTH",
+      "bounds": [
+        392,
+        953,
+        1145,
+        971
+      ]
+    },
+    {
+      "text": "COLOUR MODE: SOLID or TWO-COLOUR ALTERNATING  |  Dimensions shown are defaults.",
+      "bounds": [
+        306,
+        990,
+        1231,
+        1011
+      ]
+    },
+    {
+      "text": "LEFT",
+      "bounds": [
+        757,
+        438,
+        831,
+        460
+      ]
+    }
+  ],
+  "scope": "Original side/TOP/THREE-QUARTER geometry preserved; profile-derived FRONT/BACK/BOTTOM surface lines added; side label and parameter notes corrected. No generated model validation."
+}

@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "status": "user-approved-reference-sheets",
+  "status": "User-approved parametric specification and annotated reference on 2026-10-10. No generator, model or app implementation.",
   "units": "metres",
   "axes": {
     "up": "+Z",
     "front": "-Y",
     "right": "+X"
   },
-  "origin": "rear plane centre at front-valance bottom height",
+  "origin": "Single module: rear-plane width centre at front-valance bottom height. Assembly: rear-plane centre of total layout width.",
   "tolerance": 0.001,
   "object": {
     "id": "striped-shop-awning",
     "size": [
-      2,
+      0.25,
       0.8,
       0.42
     ],
     "extrusionX": [
-      -1,
-      1
+      -0.125,
+      0.125
     ],
     "yzPolygon": [
       [
@@ -49,7 +49,8 @@
     "rearPlaneY": 0,
     "frontPlaneY": -0.8,
     "canopyVerticalThickness": 0.02,
-    "valanceDepth": 0.02
+    "valanceDepth": 0.02,
+    "unitMeaning": "One placeable module containing the sloped canopy and front valance; the existing identifier is retained for this asset family."
   },
   "construction": {
     "closedShell": true,
@@ -58,15 +59,6 @@
     "subdivision": 0,
     "flatFaceNormals": true,
     "outwardNormals": true
-  },
-  "stripes": {
-    "count": 8,
-    "width": 0.25,
-    "startX": -1,
-    "axis": "X",
-    "evenIndexMaterial": "blue",
-    "oddIndexMaterial": "ivory",
-    "surfaceRule": "same local-X mask on all faces; no mirrored underside mapping"
   },
   "materials": {
     "blue": {
@@ -90,7 +82,7 @@
     "normalMap": false,
     "displacement": 0
   },
-  "authority": "Source image guides awning silhouette and color family; dimensions, stripe count and hidden construction are authored completions.",
+  "authority": "Source image guides silhouette and default colour family. Numeric profile and modular layout rules define construction; the historical eight-stripe drawing is an assembly example.",
   "exclusions": [
     "models",
     "wall",
@@ -98,5 +90,200 @@
     "mounting hardware",
     "cloth simulation",
     "app implementation"
-  ]
+  ],
+  "productionMethod": "Direct parametric YZ-profile extrusion and X repetition, including a narrowed last strip; no Blender intermediary required.",
+  "appearance": {
+    "defaultMode": "alternating",
+    "supportedModes": [
+      "solid",
+      "alternating"
+    ],
+    "singleModuleDefaultMaterial": "blue",
+    "solidDefaultMaterial": "blue",
+    "defaultAssemblyPalette": [
+      "blue",
+      "ivory"
+    ],
+    "assignment": "solid: all modules use the selected single material/colour. alternating: exactly two palette entries, module i uses palette[i modulo 2]. A partial final module keeps its index. Explicit module overrides apply after the mode assignment.",
+    "validation": "Reject unsupported modes. An explicitly supplied palette requires exactly one entry in solid mode or exactly two in alternating mode; reject an explicit empty list in either mode. Omitted palette uses blue in solid mode or blue/ivory in alternating mode. Omitted mode defaults to alternating.",
+    "replaceable": true
+  },
+  "assembly": {
+    "axis": "X",
+    "defaultModuleWidth": 0.25,
+    "defaultExampleCount": 8,
+    "defaultExampleSize": [
+      2,
+      0.8,
+      0.42
+    ],
+    "inputModes": {
+      "count": "Positive finite module-equivalent count q, including fractions: W=q*w. q=5.3 creates five full strips and a final 0.3*w strip.",
+      "width": "Positive finite target width W and nominal width w: q=W/w. Both modes use N=ceil(q); first N-1 widths are w and final width W-(N-1)*w. Exact multiples keep a full last strip, not an extra zero-width strip."
+    },
+    "modeExclusivity": "Select fractional-count or target-width mode, not both. Reject nonpositive/nonfinite inputs and invalid profile or appearance parameters. With neither mode specified, use q=8.",
+    "centres": "x_i=-W/2+sum(widths[0:i])+widths[i]/2; rear-plane Y and valance-bottom Z are shared.",
+    "edgeFinish": "Contiguous modules with identical YZ profiles share exact boundary positions. Remove both internal coincident side caps, weld the common profile boundary and preserve logical module/material regions; leave only the two exposed outer ends capped. Standalone modules remain closed.",
+    "partialModule": "Generate the same YZ profile with the smaller X extrusion. Do not clip the valance, alter slope/depth/height, leave a gap or stretch the whole run to accommodate the remainder.",
+    "sizeOrder": "Resolve L/theta/V and fractional count or width; build profile and layout; calculate bounds; apply an explicit overall XYZ scale once; then appearance mapping. Final nonuniform Y/Z scaling changes effective slope to atan2(scaleZ*sin(theta),scaleY*cos(theta)); vertical valance stays parallel to Z. Omit overall scaling when parameter lengths/angle must be retained exactly.",
+    "scope": "Straight planar runs with matching module profiles; no corners, terrain fitting, automatic mounting or animation.",
+    "numericBoundary": "Use unrounded dimensions to resolve q. For floating point arithmetic only, snap q to a positive integer k when abs(q-k)<=8*Number.EPSILON*max(1,abs(q)); use W=k*w in that case. Never snap to zero or use the 1 mm model acceptance tolerance for module counting. Preserve real partial strips.",
+    "profileSharing": "Resolve one L, theta and V for the run before extrusion; all strips, including the partial strip, share that profile.",
+    "exampleFractional": {
+      "equivalentCount": 5.3,
+      "nominalWidth": 0.25,
+      "totalWidth": 1.325,
+      "generatedPieceCount": 6,
+      "pieceWidths": [
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.075
+      ],
+      "alternatingMaterials": [
+        "blue",
+        "ivory",
+        "blue",
+        "ivory",
+        "blue",
+        "ivory"
+      ]
+    }
+  },
+  "reference": {
+    "drawing": "review/01-striped-shop-awning-annotated-v1.png",
+    "kind": "eight-module assembled layout example",
+    "defaultModuleSize": [
+      0.25,
+      0.8,
+      0.42
+    ],
+    "note": "Default eight-module assembly. FRONT shows the outer fold; BACK shows rear thickness and the inner fold. Former RIGHT is relabelled LEFT without changing the blue side profile. BOTTOM shows the 20 mm valance bottom-face boundary. TOP and THREE-QUARTER are preserved. Parameter, fractional-width and colour notes describe configuration; SINGLE UNIT was replaced by an assembly heading.",
+    "originalDrawing": "review/01-striped-shop-awning-v2.png",
+    "views": {
+      "front": {
+        "lookDirection": "+Y",
+        "visibleHorizontalBoundaryZ": [
+          "V"
+        ],
+        "defaultBoundaryZ": [
+          0.12
+        ],
+        "surfacesTopToBottom": [
+          "upper canopy",
+          "outer vertical valance"
+        ],
+        "screenPalette": "blue first, ivory last in default eight-module assembly"
+      },
+      "back": {
+        "lookDirection": "-Y",
+        "visibleHorizontalBoundaryZ": [
+          "H-t",
+          "V-t+d*tan(theta)"
+        ],
+        "defaultBoundaryZ": [
+          0.4,
+          0.1075
+        ],
+        "surfacesTopToBottom": [
+          "rear thickness cut",
+          "lower canopy",
+          "inner vertical valance"
+        ],
+        "screenPalette": "ivory first, blue last in default eight-module assembly",
+        "occlusion": "Outer front fold is hidden, not an extra visible back line."
+      },
+      "left": {
+        "lookDirection": "+X",
+        "endPosition": "negative X",
+        "defaultMaterial": "blue",
+        "revision": "Relabel original RIGHT only; preserve side geometry and colour."
+      },
+      "top": {
+        "lookDirection": "-Z",
+        "revision": "unchanged"
+      },
+      "bottom": {
+        "lookDirection": "+Z",
+        "screenUp": "+Y",
+        "frontOnSheet": "lower edge",
+        "visibleSurfaces": [
+          "canopy underside",
+          "valance bottom face AB"
+        ],
+        "boundaryY": "-P+d",
+        "defaultBoundaryY": -0.78,
+        "bottomBandDepth": "d",
+        "defaultBottomBandDepth": 0.02,
+        "defaultDepthFraction": 0.025,
+        "revision": "Add one cross-width line inside the front outline; preserve existing colours, size and placement.",
+        "occlusion": "Inner vertical valance face BC projects edge-on to the same boundary. This is a surface junction, not a gap, groove or extra layer."
+      },
+      "threeQuarter": {
+        "revision": "unchanged folded-shape appearance reference"
+      }
+    },
+    "elevationDimensionPolicy": "FRONT and BACK show folded structure without total-height callouts. Remove the original FRONT 0.42 m text, arrows and dimension line. LEFT and numeric geometry define dimensions. Overall height remains H=V+L*sin(theta), not L+V; the assembly heading may retain default bounds."
+  },
+  "parameters": {
+    "moduleWidth": {
+      "default": 0.25,
+      "meaning": "Nominal X width of one complete strip."
+    },
+    "canopyLength": {
+      "default": 0.8544003745317531,
+      "exactDefault": "sqrt(0.8^2 + 0.3^2)",
+      "meaning": "L: true length along the upper sloping surface, from rear upper edge to front fold."
+    },
+    "canopyAngleDegrees": {
+      "default": 20.556045219583464,
+      "exactDefault": "atan2(0.30, 0.80) * 180 / pi",
+      "meaning": "theta: downward slope from horizontal toward the front; convert to radians for trigonometry."
+    },
+    "valanceLength": {
+      "default": 0.12,
+      "meaning": "V: vertical distance from front outer fold to bottom edge. Always parallel to local Z; never rotates with canopy angle."
+    },
+    "profileThickness": {
+      "canopyVertical": 0.02,
+      "valanceDepth": 0.02,
+      "meaning": "Fixed construction thicknesses t and d before explicit whole-unit scaling; canopy thickness is vertical, not normal."
+    }
+  },
+  "profileGeneration": {
+    "derived": "P=L*cos(theta); R=L*sin(theta); H=V+R; m=tan(theta).",
+    "yzPolygonExpressions": [
+      [
+        "-P",
+        "0"
+      ],
+      [
+        "-P+d",
+        "0"
+      ],
+      [
+        "-P+d",
+        "V-t+d*m"
+      ],
+      [
+        "0",
+        "H-t"
+      ],
+      [
+        "0",
+        "H"
+      ],
+      [
+        "-P",
+        "V"
+      ]
+    ],
+    "canopyPlanes": "Upper Z=H+m*Y; lower Z=H-t+m*Y. Lower plane meets valance rear at Y=-P+d.",
+    "validation": "All scalar inputs finite. w,L,V>0; 0<=theta<90 degrees; P>d and V-t+d*tan(theta)>0. Reject invalid or degenerate geometry; do not clamp silently.",
+    "thicknessNormal": "t*cos(theta)",
+    "valanceRule": "Outer face Y=-P, Z=0..V. Inner face Y=-P+d meets the lower canopy plane; use the shared polygon to join without a gap, overlap or extra wedge.",
+    "defaultsAuthority": "object.size and yzPolygon are the evaluated defaults only. Recalculate from parameters for every configuration, never reuse fixed default vertices after an input changes."
+  }
 }
