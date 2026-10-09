@@ -1,6 +1,6 @@
 # Asyra Office - Group 4J - Outdoor Bench and Entry Sign
 
-Status: park bench is designated for procedural generation. V4 failed visual review; its dimensions and curves remain unapproved proposals. The entry chalkboard retains its earlier approval. No models or app implementation.
+Status: park bench is designated for procedural generation. V4 failed visual review; its dimensions and curves remain unapproved proposals. The user approved the annotated entry chalkboard reference and revised construction documents on 2026-10-10. No models or app implementation.
 
 ## Bench production method - procedural generation
 
@@ -24,7 +24,7 @@ Default colours and materials remain defined in the surface recipes.
 | One placeable unit | Source | Nominal X x Y x Z (m) | Sheet |
 | --- | --- | --- | --- |
 | Park bench - procedural generation | Lower-right park beside the central office | Unapproved V4 proposal: 1.20 x 0.508955165475 x 0.65; seat top 0.34 | [Original](review/01-park-bench-v1.png); [rejected V4](review/01-park-bench-v4.png) |
-| Open A-frame chalkboard | Beside the central office entrance | 0.416 x 0.37 x 0.69 | [Sign](review/02-entry-chalkboard-v1.png) |
+| Open A-frame chalkboard | Beside the central office entrance | 0.420 x 0.362319409848225 x 0.681626227349194 | [Annotated sign](review/02-entry-chalkboard-annotated-v1.png) |
 
 Each sheet has front, right, back, top and oblique views. Bench frame, slats and arms form one unit. Sign includes both leaning frames, front and rear boards, hinges and spreaders as one open unit. No people, pets, cups, plants, ground or wall is included.
 
@@ -63,3 +63,24 @@ All five overview cameras are explicit; they are not calibrated original-image
 cameras. Technical consistency does not automatically establish visual fidelity
 or user approval. Colour/material regions and overall XYZ sizing remain
 replaceable. No model export, app change or production mesh acceptance.
+
+## Entry chalkboard document revision - 2026-10-09
+
+The original five-view drawing is unchanged. The geometry supplement and JSON
+now distinguish 400 mm frame width from 420 mm overall width, and derive depth
+and height from the 14-degree frames and specified bevel. Added outer tapered
+hinge covers, visible axle heads and four side-spreader fasteners replace the
+incomplete buried-cylinder description. Spreader end rounding is explicit.
+Numeric checks cover bounds and attachment locations; model and visual review
+remain pending. Exact hardware dimensions are authored completions, not
+calibrated measurements from the image. Shared XYZ sizing and replaceable
+wood/board/metal/chalk appearances apply.
+
+### Chalkboard annotation sheet - 2026-10-10
+
+Use the [annotated five-view sheet](review/02-entry-chalkboard-annotated-v1.png)
+with the [unchanged original](review/02-entry-chalkboard-v1.png). Blue annotations
+clarify wooden-frame width versus overall width and the original approximate
+depth label. Callouts 1 through 4 identify hinge covers, hinge heads, side
+spreaders and spreader fastener heads. The object drawings are not regenerated
+or rescaled; annotations do not certify the revised geometry visually.
