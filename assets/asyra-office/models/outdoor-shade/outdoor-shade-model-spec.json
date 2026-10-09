@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-approved-reference",
+  "status": "User approved parasol procedural-generation contract and numeric defaults for commit on 2026-10-10. Separate base unchanged; no generated model.",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -13,26 +13,29 @@
     {
       "id": "open-garden-parasol",
       "bounds": [
-        1.8,
-        1.8,
+        1.662983158520316,
+        1.662983158520316,
         2.05
       ],
       "canopy": {
         "method": "closed vertically thickened octagonal pyramid shell",
         "vertexCount": 8,
         "radius": 0.9,
-        "startDegrees": 0,
+        "startDegrees": 22.5,
         "edgeZ": 1.75,
         "apexZ": 2.05,
         "verticalThickness": 0.004,
-        "material": "terracotta"
+        "material": "terracotta",
+        "axisOffsetAboveBranches": 0.007,
+        "acrossOppositeVertices": 1.8,
+        "acrossOppositeEdges": 1.662983158520316
       },
       "pole": {
         "method": "Z cylinder",
         "radius": 0.0175,
         "zRange": [
           0,
-          2.05
+          2.043
         ],
         "segments": 48,
         "material": "charcoal"
@@ -45,14 +48,48 @@
         "start": [
           0,
           0,
-          2.044
+          2.043
         ],
-        "endRadius": 0.895,
-        "endZ": 1.7456666666666667,
-        "startDegrees": 0,
-        "material": "charcoal"
+        "endRadius": 0.9,
+        "endZ": 1.743,
+        "startDegrees": 22.5,
+        "material": "charcoal",
+        "edgeFinish": "Intersect each closed finite cylinder with the vertical prism of the canopy octagon and cap the cut. The centreline endpoint stays on the octagon boundary. This prevents a finite-radius tip from protruding beyond the fabric footprint. All eight use the same construction rotated by 45 degrees."
       },
-      "state": "open static only"
+      "state": "open static only",
+      "productionMethod": "direct programmatic geometry; no Blender intermediary required",
+      "parameters": {
+        "mainPoleLength": 2.043,
+        "branchLength": 0.9486832980505139,
+        "branchDownAngleDegrees": 18.43494882292201,
+        "azimuthStartDegrees": 22.5,
+        "branchCount": 8,
+        "azimuthStepDegrees": 45,
+        "lengthMeaning": "Branch length is the centreline distance from the shared pole-top root to a perimeter endpoint, not horizontal radius. All eight branches share this length.",
+        "appearanceOptions": [
+          "canopy colour/material",
+          "pole colour/material",
+          "ribs colour/material"
+        ]
+      },
+      "derivation": {
+        "root": "C=(0,0,H), where H=mainPoleLength",
+        "azimuth": "a_i=azimuthStartDegrees+i*45deg; i=0..7",
+        "endpoint": "P_i=C+L*(cos(theta)*cos(a_i),cos(theta)*sin(a_i),-sin(theta))",
+        "canopySkeleton": "Eight triangles (C,P_i,P_(i+1 mod 8)); connect adjacent endpoints, not just an untriangulated perimeter.",
+        "surfaceOffset": "delta=max(0.007,poleRadius*m+0.0005,ribRadius*sqrt(1+m*m)+0.0005), where m=tan(theta)/cos(pi/8)",
+        "canopyTop": "Translate the skeleton upward by delta; this allows the finite-radius ribs to sit below the fabric, rather than penetrating its upper surface.",
+        "canopyUnderside": "Translate canopyTop down by verticalThickness and close perimeter faces; do not add a horizontal bottom disk.",
+        "extents": "Derive full local bounds from generated geometry before applying shared whole-unit XYZ scaling. Do not treat the across-vertices span as the X/Y bounding-box width."
+      },
+      "parameterValidation": [
+        "All lengths and radii are finite and positive; 0 <= theta < 90 degrees. Count is fixed at eight and angular pitch at 45 degrees.",
+        "Require L*cos(theta)>poleRadius+ribRadius and H-L*sin(theta)-ribRadius>0.",
+        "Compute delta from the surface-clearance formula; require 0 < (delta-verticalThickness)/sqrt(1+m*m) < ribRadius so every rib intersects the underside without penetrating the top. Reject an invalid combination; do not silently clamp requested lengths or add a support part.",
+        "The pole cap is at H. Validate the upper-surface clearance separately from overall dimension tolerance; no metal is allowed outside the canopy top or perimeter."
+      ],
+      "sourceInterpretation": "TOP is flat-sided along X/Y, so start angle is 22.5 degrees. The historical 1.80 m label means opposite-vertex diameter; exact default X/Y extents are 1.662983158520316 m. Source views are not calibrated projections.",
+      "constructionStatus": "Specification only. Pole length, centreline branch rule, finite-thickness finish and numeric defaults require generated multi-view review before model acceptance."
     },
     {
       "id": "parasol-base",
@@ -101,7 +138,7 @@
     "bevel": 0,
     "subdivision": false,
     "shading": "flat canopy faces and cylinder caps; smooth cylinder sides",
-    "parts": "separate named closed solids; disk/socket shared boundary may be welded"
+    "parts": "Parasol: three addressable groups (pole, eight ribs, canopy); finite-thickness joins must stay inside the visible canopy boundary. Base: separate named closed solids; disk/socket shared boundary may be welded."
   },
   "materials": {
     "terracotta": {
@@ -116,13 +153,14 @@
     }
   },
   "surfacePolicy": {
-    "uniformColors": true,
-    "textures": false,
     "unlitReview": true,
     "bakedShadows": false,
     "ao": false,
     "highlights": false,
-    "reflections": false
+    "reflections": false,
+    "uniformColorsDefault": true,
+    "texturesInDefault": false,
+    "replaceableRegions": true
   },
   "futureAcceptance": {
     "dimensionTolerance": 0.001,
