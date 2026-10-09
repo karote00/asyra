@@ -28,4 +28,16 @@ and adjacent endpoints into eight canopy panels. Follow the geometry document
 for finite thickness and concealed contacts. Independent colour/material
 options apply. Do not rebuild this reference illustration or treat its unknown
 camera poses as numeric measurements. Future generated multi-view and close-up
-review must verify the selected construction. The base specification is unchanged.
+review must verify the selected construction. Base dimensions are unchanged; the construction and resizing notes below supplement its specification.
+
+## Base specification supplement - 2026-10-10
+
+The original base image is unchanged. Its TOP and THREE-QUARTER opening
+proportions are illustrative: use the numeric 37/70 bore/socket diameter ratio,
+not image measurements. The geometry document now requires a continuous
+joined disk/socket boundary, an unobstructed blind bore and a closed floor.
+Independent resizing invalidates the default fit assumption; inspect actual
+transformed geometry before accepting an assembled pair. Programmatic generation
+is suitable, but no mesh, fit implementation or model acceptance is supplied.
+
+Base document acceptance - 2026-10-10: user approved the construction, numeric-source interpretation and resized-fit supplement for commit. No generated model or runtime fit behavior is accepted by this document approval.
