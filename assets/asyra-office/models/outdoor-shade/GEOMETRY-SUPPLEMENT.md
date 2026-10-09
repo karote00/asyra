@@ -94,13 +94,74 @@ simulation, new model, or app implementation is part of this specification work.
 Disk: radius 0.210, Z=0 to 0.055, 96 radial segments.
 Socket: radius 0.035, Z=0.055 to 0.240, 64 radial segments.
 
-Subtract one centered radius-0.0185 cylinder from both parts, Z=0.015 to 0.241, with 64 radial segments. The hole opens through the socket top and continues into the disk. The closed hole floor is at Z=0.015. Nominal socket wall thickness is 0.0165. Cap all material boundaries, not the open bore.
+Join the disk and socket into one continuous solid, then subtract one centered radius-0.0185 cylinder from the joined solid, Z=0.015 to 0.241, with 64 radial segments. The hole opens through the socket top and continues into the disk. The closed hole floor is at Z=0.015. Nominal socket wall thickness is 0.0165. Cap all material boundaries, not the open bore.
 
-Use flat tops/bottoms and smooth cylindrical sides. No bevel, decorative ring, bolt, retaining knob, feet, wheels, handle or second sleeve. The socket and disk meet at Z=0.055; welding their shared material boundary is allowed without changing geometry.
+Use flat tops/bottoms and smooth cylindrical sides. No bevel, decorative ring, bolt, retaining knob, feet, wheels, handle or second sleeve. The socket and disk meet at Z=0.055. Their shared material boundary must be removed and the remaining surface stitched into one connected watertight boundary. Do not retain two coincident internal caps, create a gap or insert a divider across the bore. The visible disk shoulder outside the socket remains intact.
+
+### Production route and source interpretation
+
+Use direct programmatic generation: a stepped circular body with a blind central
+bore. A Boolean union/subtraction or an equivalent revolved cross-section is
+acceptable when it produces the same boundary. Blender is not required. This
+is a specification only; no generator or mesh is produced by this revision.
+
+| Default quantity | Millimetres |
+| --- | --- |
+| Complete diameter / height | 420 / 240 |
+| Disk thickness | 55 |
+| Socket outside diameter / height above disk | 70 / 185 |
+| Bore diameter / usable depth from socket top | 37 / 225 |
+| Closed bottom thickness | 15 |
+| Nominal socket wall thickness | 16.5 |
+
+The subtraction tool extends to Z=241 mm only to clear the top surface;
+it does not make the asset taller than 240 mm. The bore floor is a closed
+37 mm diameter disk at Z=15 mm. There must be no cap at the socket mouth or
+at the disk/socket transition Z=55 mm. The complete underside remains flat.
+
+The original TOP and THREE-QUARTER depict a visibly larger relative opening
+than these numeric defaults. Preserve the image as a shape reference, but do
+not infer the bore or socket sizes from its pixel proportions. Default bore
+versus socket diameter is 37/70 = 0.528571; socket versus disk diameter is
+70/420 = 1/6. Numeric dimensions govern reconstruction. This note resolves
+source authority; it does not claim that the existing drawing was corrected.
 
 ## Assembly reference only
 
 The parasol's radius-0.0175 pole fits the radius-0.0185 bore with 0.001 radial clearance. With the pole bottom seated at base Z=0.015, the combined canopy apex is Z=2.065. This describes a possible transform only; do not bundle the two units, change their origins, or implement placement behavior.
+
+### Fit after independent resizing
+
+The 1 mm radial gap and 2.065 m assembled apex apply only to the default
+configuration. The base and parasol remain separate placeable units. Shared
+whole-unit XYZ scaling also scales the bore, wall, floor and pole; do not
+silently keep the opening fixed or resize it to accommodate another asset.
+The default charcoal colour/material remains independently replaceable.
+
+For positive base scales (bx,by,bz) and parasol scales (px,py,pz), the ideal
+centred, upright, axis-aligned cross-sections have directional clearances
+`gapX=0.0185*bx-0.0175*px` and `gapY=0.0185*by-0.0175*py` metres.
+Both must be positive for clearance rather than tangency or interference.
+These are axis clearances, not a universal minimum surface-distance formula.
+Nonuniform scaling creates ellipses; a relative rotation requires checking
+transformed cross-section containment, not just those two axis expressions.
+
+When placed upright and seated at the bottom of the resized bore, the pole
+bottom in base-local coordinates is Z=0.015*bz, socket mouth is Z=0.240*bz,
+and usable bore depth is 0.225*bz. The default parasol's assembled canopy apex
+is `0.015*bz+2.050*pz`; if its generation parameters changed, replace 2.050
+with its actual unscaled apex height. These formulas are assembly references,
+not an implemented auto-placement feature.
+
+Future assembly validation must inspect the generated meshes over the whole
+insertion depth, including polygonal bore sides, radial phase, transformed
+shape, insertion length and collisions with the canopy/frame. Nominal radii
+alone are insufficient: the default 64-sided bore has an inscribed radius of
+0.0185*cos(pi/64), leaving a conservative gap of approximately 0.978 mm against
+the pole's 17.5 mm circumradius. This still fits but is not exactly 1 mm at
+every surface point. The general 1 mm dimension tolerance must not authorize
+interpenetration or consume the entire clearance. Report an incompatible
+pair; do not silently change either asset or enlarge the tolerance.
 
 No real-world structural or wind-load claim is made; these are miniature scene assets.
 
