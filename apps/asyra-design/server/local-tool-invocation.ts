@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto'
-import { serializeToolPayload } from './local-tool-payload'
+import { createAiInvoker } from '@asyra/ai-agent-runtime'
+import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import { operationInputIssue } from './operation-input-schema'
 
@@ -217,46 +217,69 @@ export const observeLocalToolExecution = async (
   observation: LocalToolObservation = {},
   expectedResult = 'A structured owner receipt with usable output or an explicit failure'
 ): Promise<string> => {
-  const callId = randomUUID()
-  const started = performance.now()
-  const emit = (
-    stage: 'action_started' | 'action_completed' | 'action_failed',
-    evidence: Record<string, unknown>
-  ) => {
-    try {
-      observation.trace?.(stage, { callId, tool, ...evidence })
-    } catch {
-      /* Observer isolation. */
-    }
-  }
-  emit('action_started', {
-    parentCallId: observation.parentCallId?.() ?? null,
-    actor: 'app-server',
-    executor: 'app-server',
-    timingScope: 'owner-handoff',
-    purpose: `Execute ${tool} within its responsibility block`,
-    purposeSource: 'domain-workflow',
-    expectedResult,
-    expectationSource: 'registered-contract',
-    arguments: args
-  })
-  try {
-    const text = await execute()
-    const result = JSON.parse(text)
-    const outcome = localToolOutcome(result)
-    emit(
-      outcome.status === 'unavailable' ? 'action_failed' : 'action_completed',
-      {
-        result,
-        executionMs: performance.now() - started
+  const invoker = createAiInvoker({
+    execute: async () => execute(),
+    observe: (event) => {
+      const evidence = {
+        callId: event.call.callId,
+        tool,
+        parentCallId: event.call.parentCallId ?? null,
+        actor: 'app-server',
+        executor: 'app-server',
+        timingScope: 'owner-handoff'
       }
-    )
-    return text
-  } catch (error) {
-    emit('action_failed', {
-      reason: localToolErrorMessage(error),
-      executionMs: performance.now() - started
-    })
-    throw error
+      if (event.phase === 'started') {
+        observation.trace?.('action_started', {
+          ...evidence,
+          purpose: null,
+          purposeSource: 'unavailable',
+          expectedResult,
+          expectationSource: 'registered-contract',
+          arguments: args
+        })
+      } else if (event.phase === 'completed') {
+        let result: unknown
+        let outcome: ReturnType<typeof localToolOutcome>
+        try {
+          result = JSON.parse(event.output as string)
+          outcome = localToolOutcome(result)
+        } catch {
+          observation.trace?.('action_completed', {
+            ...evidence,
+            result: event.output,
+            code: 'RESULT_DECODING_FAILED',
+            executionMs: event.durationMs
+          })
+          return
+        }
+        observation.trace?.(
+          outcome.status === 'unavailable'
+            ? 'action_failed'
+            : 'action_completed',
+          {
+            ...evidence,
+            result,
+            executionMs: event.durationMs
+          }
+        )
+      } else {
+        observation.trace?.('action_failed', {
+          ...evidence,
+          reason: localToolErrorMessage(event.error),
+          executionMs: event.durationMs
+        })
+      }
+    }
+  })
+  let parentCallId: string | undefined
+  try {
+    parentCallId = observation.parentCallId?.()
+  } catch {
+    /* Context observation cannot reject execution. */
   }
+  return invoker.invoke({
+    name: tool,
+    input: args,
+    parentCallId
+  })
 }

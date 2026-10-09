@@ -20,6 +20,19 @@ export default {
   plugins: [
     {
       name: 'registered-execution-proof-mutation',
+      // The generic captured-workspace alias maps the root entry only. This
+      // public Node subpath must resolve to the same captured package source.
+      config(config: {
+        resolve?: { alias?: { find: string; replacement: string }[] }
+      }) {
+        config.resolve?.alias?.unshift({
+          find: '@asyra/ai-agent-runtime/node',
+          replacement: resolve(
+            sourceRoot,
+            'packages/ai-agent-runtime/src/node/index.ts'
+          )
+        })
+      },
       enforce: 'pre' as const,
       transform(code: string, id: string) {
         const mutation = scenario.mutation

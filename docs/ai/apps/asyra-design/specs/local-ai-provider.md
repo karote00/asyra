@@ -649,7 +649,7 @@ The existing allowlist also excludes raw code, image/geometry data and credentia
 Queued file writes drain at request settlement. A sink failure emits a separate
 `ai_recording_failed` diagnostic and cannot alter the drawing outcome. A process
 interruption can leave a partial file; readers must expose missing terminal,
-sequence or call evidence. `local-ai-records.ts` supplies the pure reader and
+sequence or call evidence. `@asyra/ai-agent-runtime` supplies the pure reader and
 overlap accounting, including historical version-1 logs with unavailable fields.
 Diagnostic outcome records provider settlement; visual acceptance still belongs
 to the existing review owner. Logs are ignored local evidence, not document data.
@@ -745,3 +745,12 @@ truncated. Search is a discovery convenience, not semantic authority. Empty
 matches include recovery to `describe_design_apis({})`, which retains the entire
 compact catalog. Query and exact names cannot be combined. Registration and
 mutation permission checks remain unchanged.
+
+### Shared profiler integration
+
+Design uses Runtime invocation middleware for native tool dispatch and internal
+owner handoffs. Runtime owns record storage, projections and the report command;
+Design supplies domain selectors and the optional local provider assessment
+factory. A content-delivery failure is an intermediate event, followed by exactly
+one call settlement. Recording transport timing does not retain transport bytes.
+The local report command supports `--request ID --trace` for Trace Event JSON.

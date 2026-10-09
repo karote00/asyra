@@ -1,6 +1,8 @@
+import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
+import { createAiInvoker } from '@asyra/ai-agent-runtime'
 import { nativeToolInputSchema } from './operation-input-schema'
 import { requireBatchSuccess } from './batch-exchange'
-import { serializeToolPayload } from './local-tool-payload'
+import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { createHash, randomUUID } from 'node:crypto'
 import {
   visualAssessmentInstructions,
@@ -8,10 +10,7 @@ import {
   type VisualAssessmentInput
 } from './local-visual-assessment'
 import { AsyncLocalStorage } from 'node:async_hooks'
-import {
-  observeActionBatch,
-  toolContractDigest
-} from './local-action-observation'
+import { observeActionBatch } from './local-action-observation'
 import {
   invokeLocalTool,
   localToolFailureReply,
@@ -24,8 +23,8 @@ import { AiDesignToolIds } from '../src/constants/ai-design'
 import type { LocalActionPreparation } from './local-operation-tools'
 import { AiResearchActivityIds } from '../src/constants/ai-research'
 import { createLocalReferenceTools } from './local-reference-tools'
-import { createLocalAiUsage } from './local-ai-usage'
-import { createExecutionRecordSink } from './local-ai-records'
+import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
+import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
 import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -233,7 +232,7 @@ const runLocalAiProvider = async (
     readonly recordDirectory?: string
     readonly sourceRevision?: string
   },
-  usage?: ReturnType<typeof createLocalAiUsage>
+  usage?: ReturnType<typeof createAiExecutionProfiler>
 ): Promise<unknown> => {
   const reportProgress = (event: AiToolProgress) => {
     try {
@@ -627,126 +626,153 @@ const runLocalAiProvider = async (
       toolCalls.add(params.callId)
       const toolStartedAt = performance.now()
       let executionStartedAt: number | undefined
-      usage?.trace('tool_started', {
-        tool: toolName,
-        callId: params.callId,
-        arguments: params.arguments,
-        actor: 'provider',
-        executor: 'app-server',
-        nativeThreadId: params.threadId,
-        nativeTurnId: params.turnId,
-        contractDigest:
-          advertisedContractDigests.get(
-            `${params.namespace}.${binding.definition.name}`
-          ) ?? null,
-        purpose: isRecord(params.arguments)
-          ? (params.arguments.message ?? null)
-          : null,
-        purposeSource:
-          isRecord(params.arguments) &&
-          typeof params.arguments.message === 'string'
-            ? 'model-message'
-            : 'unavailable',
-        expectedResult: binding.definition.description,
-        expectationSource: 'registered-contract'
-      })
+
       const selectedOwner = binding.owner
-      const task = schedule(binding.access, async () => {
-        executionStartedAt = performance.now()
-        usage?.trace('tool_execution_started', {
-          tool: toolName,
-          callId: params.callId,
-          queueMs: executionStartedAt - toolStartedAt
-        })
-        try {
-          const reply = await callContext.run(
-            { id: params.callId as string, receipts: [] },
-            () =>
-              invokeLocalTool(
-                selectedOwner,
-                binding.definition,
-                params.arguments,
-                toolController.signal,
-                () => ({ batches: callContext.getStore()?.receipts ?? [] })
+      const task = createAiInvoker({
+        execute: () =>
+          schedule(binding.access, async () => {
+            executionStartedAt = performance.now()
+            usage?.trace('tool_execution_started', {
+              tool: toolName,
+              callId: params.callId,
+              queueMs: executionStartedAt - toolStartedAt
+            })
+            try {
+              const reply = await callContext.run(
+                { id: params.callId as string, receipts: [] },
+                () =>
+                  invokeLocalTool(
+                    selectedOwner,
+                    binding.definition,
+                    params.arguments,
+                    toolController.signal,
+                    () => ({ batches: callContext.getStore()?.receipts ?? [] })
+                  )
               )
-          )
-          try {
-            return {
-              ...reply,
-              contentItems: await localToolContent(reply.text)
+              try {
+                return {
+                  ...reply,
+                  contentItems: await localToolContent(reply.text)
+                }
+              } catch (error) {
+                toolController.signal.throwIfAborted()
+                const reason = localToolErrorMessage(error)
+                usage?.trace('tool_delivery_failed', {
+                  tool: toolName,
+                  callId: params.callId,
+                  code: 'TOOL_RESULT_DELIVERY_FAILED',
+                  reason,
+                  durationMs: performance.now() - toolStartedAt
+                })
+                const rejected = localToolFailureReply(
+                  `${reason}. The tool returned an execution result but its content could not be delivered. This does not undo completed work. Do not replay mutations; inspect current state or use another acquisition method.`,
+                  'TOOL_RESULT_DELIVERY_FAILED',
+                  {
+                    stage: 'delivery',
+                    settlement: 'unknown',
+                    executionResult: JSON.parse(
+                      serializeToolPayload(JSON.parse(reply.text)).serialized
+                    )
+                  }
+                )
+                return {
+                  ...rejected,
+                  contentItems: [
+                    {
+                      type: 'inputText' as const,
+                      text: rejected.text
+                    }
+                  ]
+                }
+              }
+            } catch (error) {
+              toolController.signal.throwIfAborted()
+              const reply = localToolFailureReply(
+                localToolErrorMessage(error),
+                'TOOL_EXECUTION_FAILED',
+                { stage: 'delivery', settlement: 'unknown' }
+              )
+              return {
+                ...reply,
+                contentItems: [{ type: 'inputText' as const, text: reply.text }]
+              }
             }
-          } catch (error) {
-            toolController.signal.throwIfAborted()
-            const reason = localToolErrorMessage(error)
+          }),
+        observe: (event) => {
+          if (event.phase === 'started') {
+            usage?.trace('tool_started', {
+              tool: toolName,
+              callId: params.callId,
+              arguments: params.arguments,
+              actor: 'provider',
+              executor: 'app-server',
+              nativeThreadId: params.threadId,
+              nativeTurnId: params.turnId,
+              contractDigest:
+                advertisedContractDigests.get(
+                  `${params.namespace}.${binding.definition.name}`
+                ) ?? null,
+              purpose: isRecord(params.arguments)
+                ? (params.arguments.message ?? null)
+                : null,
+              purposeSource:
+                isRecord(params.arguments) &&
+                typeof params.arguments.message === 'string'
+                  ? 'model-message'
+                  : 'unavailable',
+              expectedResult: binding.definition.description,
+              expectationSource: 'registered-contract'
+            })
+          } else if (event.phase === 'completed') {
+            const { contentItems } = event.output
+            const textContent = contentItems.find(
+              (item) => item.type === 'inputText'
+            )
+            usage?.trace('tool_completed', {
+              tool: toolName,
+              callId: params.callId,
+              durationMs: performance.now() - toolStartedAt,
+              queueMs:
+                (executionStartedAt ?? performance.now()) - toolStartedAt,
+              executionMs:
+                executionStartedAt === undefined
+                  ? 0
+                  : performance.now() - executionStartedAt,
+              responseTextBytes: contentItems.reduce(
+                (total, item) =>
+                  total +
+                  (item.type === 'inputText'
+                    ? Buffer.byteLength(item.text)
+                    : 0),
+                0
+              ),
+              imageCount: contentItems.filter(
+                (item) => item.type === 'inputImage'
+              ).length,
+              result:
+                textContent?.type === 'inputText'
+                  ? JSON.parse(textContent.text)
+                  : undefined
+            })
+          } else {
             usage?.trace('tool_failed', {
               tool: toolName,
               callId: params.callId,
-              code: 'TOOL_RESULT_DELIVERY_FAILED',
-              reason,
-              durationMs: performance.now() - toolStartedAt
+              reason: localToolErrorMessage(event.error),
+              durationMs: event.durationMs,
+              status: event.phase
             })
-            const rejected = localToolFailureReply(
-              `${reason}. The tool returned an execution result but its content could not be delivered. This does not undo completed work. Do not replay mutations; inspect current state or use another acquisition method.`,
-              'TOOL_RESULT_DELIVERY_FAILED',
-              {
-                stage: 'delivery',
-                settlement: 'unknown',
-                executionResult: JSON.parse(
-                  serializeToolPayload(JSON.parse(reply.text)).serialized
-                )
-              }
-            )
-            return {
-              ...rejected,
-              contentItems: [
-                {
-                  type: 'inputText' as const,
-                  text: rejected.text
-                }
-              ]
-            }
-          }
-        } catch (error) {
-          toolController.signal.throwIfAborted()
-          const reply = localToolFailureReply(
-            localToolErrorMessage(error),
-            'TOOL_EXECUTION_FAILED',
-            { stage: 'delivery', settlement: 'unknown' }
-          )
-          return {
-            ...reply,
-            contentItems: [{ type: 'inputText' as const, text: reply.text }]
           }
         }
       })
+        .invoke({
+          name: toolName,
+          input: params.arguments,
+          callId: params.callId,
+          signal: toolController.signal,
+          actor: 'provider'
+        })
         .then(({ success, contentItems }) => {
-          if (terminalError || stopped) return
-          const textContent = contentItems.find(
-            (item) => item.type === 'inputText'
-          )
-          usage?.trace('tool_completed', {
-            tool: toolName,
-            callId: params.callId,
-            durationMs: performance.now() - toolStartedAt,
-            queueMs: (executionStartedAt ?? performance.now()) - toolStartedAt,
-            executionMs:
-              executionStartedAt === undefined
-                ? 0
-                : performance.now() - executionStartedAt,
-            responseTextBytes: contentItems.reduce(
-              (total, item) =>
-                total +
-                (item.type === 'inputText' ? Buffer.byteLength(item.text) : 0),
-              0
-            ),
-            imageCount: contentItems.filter(
-              (item) => item.type === 'inputImage'
-            ).length,
-            result:
-              textContent?.type === 'inputText'
-                ? JSON.parse(textContent.text)
-                : undefined
-          })
           if (terminalError || stopped) return
           toolTasks.delete(task)
           reportProgress({
@@ -765,7 +791,8 @@ const runLocalAiProvider = async (
         })
         .catch((error: unknown) => {
           const code = 'TOOL_DELIVERY_TRANSPORT_FAILED'
-          usage?.trace('tool_failed', {
+
+          usage?.trace('tool_delivery_failed', {
             tool: toolName,
             callId: params.callId,
             durationMs: performance.now() - toolStartedAt,
@@ -1054,6 +1081,9 @@ const runLocalAiProvider = async (
   child.stdout.on('error', () => settleRequiredStream('stdout', 'error'))
   child.stdout.once('end', () => settleRequiredStream('stdout', 'end'))
   child.stdout.once('close', () => settleRequiredStream('stdout', 'close'))
+  child.stderr.on('data', (chunk: Buffer) => {
+    usage?.recordTransport('received', chunk.byteLength, 'diagnostic')
+  })
   child.stderr.on('error', () => {
     // Optional diagnostics must never crash or cancel a valid drawing request.
     if (!stopped) observeStream('stderr', 'error', false)
@@ -1320,8 +1350,13 @@ const requestRecordedLocalAi = async (
   const sink = createExecutionRecordSink(
     options.recordDirectory ?? 'tmp/ai-executions'
   )
-  const usage = createLocalAiUsage(input, options.model, {
+  const usage = createAiExecutionProfiler(input, options.model, {
     sink,
+    provider: 'local-codex',
+    effort: 'medium',
+    log: options.assessmentOnly
+      ? (line) => console.error(line)
+      : (line) => console.info(line),
     sourceRevision: options.sourceRevision,
     lifecycle: true,
     parentCallId: options.parentCallId,

@@ -1,4 +1,4 @@
-import type { evaluateExecution } from './local-ai-evaluation'
+import type { evaluateExecution } from './evaluation.js'
 
 type ExecutionReport = ReturnType<typeof evaluateExecution>
 export interface AssessmentInput {
@@ -22,7 +22,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const boundedText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= 2000
 
-/** One explicit assessment, after drawing. No retry, mutation or per-call model loop. */
+/** One explicit assessment, after execution. No retry, mutation or per-call model loop. */
 export const assessExecution = async (
   report: ExecutionReport,
   options: {
@@ -95,7 +95,7 @@ export const assessExecution = async (
       'Unattributed time is not measured reasoning time.',
       'No images or original prompt are supplied. Visual correctness is unknown.',
       'Reported failure can have later successful recovery; do not infer causal failure from one call.',
-      'This diagnostic subset is not the entire drawing execution.'
+      'This diagnostic subset is not the entire execution.'
     ]
   }
   const now = options.now ?? (() => performance.now())

@@ -55,7 +55,7 @@ function assessTargetSource(input) {
     proofRequests,
     current
   } = input
-  if (![1, 2].includes(format))
+  if (![1, 2, 3].includes(format))
     throw new Error('Target assessment: invalid result format')
   const identityOnly = Object.hasOwn(input, 'sourceIdentity')
   const selected = identityOnly
@@ -96,7 +96,10 @@ function assessTargetSource(input) {
       target.obligations,
       targetContract.cases.filter((item) => item.flowId === target.flowId)
     ) ||
-    ![acceptedVerificationSourceDigest, targetVerificationSourceDigest].every(
+    ![
+      targetVerificationSourceDigest,
+      ...(format < 3 ? [acceptedVerificationSourceDigest] : [])
+    ].every(
       (digest) => typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest)
     ) ||
     !Array.isArray(proofRequests)
@@ -121,13 +124,14 @@ function assessTargetSource(input) {
   for (const request of proofRequests)
     requestIds.set(request.id, (requestIds.get(request.id) ?? 0) + 1)
   const contracts = new Map(
-    [acceptedContract, targetContract].map((contract) => [
-      contract.digest,
-      contract
-    ])
+    (format === 3 ? [targetContract] : [acceptedContract, targetContract]).map(
+      (contract) => [contract.digest, contract]
+    )
   )
   const verificationIdentities = new Set([
-    acceptedContract.digest + ':' + acceptedVerificationSourceDigest,
+    ...(format < 3
+      ? [acceptedContract.digest + ':' + acceptedVerificationSourceDigest]
+      : []),
     targetContract.digest + ':' + targetVerificationSourceDigest
   ])
   const globalBlockers = []
@@ -297,13 +301,16 @@ function assessTargetSource(input) {
       )
     }
   }
-  const accepted = assessCases(
-    acceptedContract,
-    acceptedContract.cases,
-    acceptedVerificationSourceDigest
-  )
+  const accepted =
+    format < 3
+      ? assessCases(
+          acceptedContract,
+          acceptedContract.cases,
+          acceptedVerificationSourceDigest
+        )
+      : null
   const completeTargetContract =
-    format === 2
+    format >= 2
       ? assessCases(
           targetContract,
           targetContract.cases,
@@ -433,7 +440,11 @@ function assessTargetSource(input) {
       ...identity,
       own,
       prerequisites,
-      status: statusFor([own.status, prerequisites.status, accepted.status])
+      status: statusFor([
+        own.status,
+        prerequisites.status,
+        ...(accepted ? [accepted.status] : [])
+      ])
     }
     visiting.delete(work.id)
     completed.set(work.id, result)
@@ -461,7 +472,7 @@ function assessTargetSource(input) {
   integration.status = statusFor(
     [
       integration.status,
-      accepted.status,
+      ...(accepted ? [accepted.status] : [completeTargetContract.status]),
       ...works.map((work) => work.status),
       ...(state.pending.length ? ['pending'] : [])
     ],
@@ -472,7 +483,7 @@ function assessTargetSource(input) {
       structuredClone({
         format,
         ...identity,
-        accepted,
+        ...(accepted ? { accepted } : {}),
         ...(completeTargetContract
           ? { targetContract: completeTargetContract }
           : {}),

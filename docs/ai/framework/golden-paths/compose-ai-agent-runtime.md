@@ -177,3 +177,61 @@ results and refreshed context. It is sequential, invocation-bound and retired at
 provider settlement. Do not repeat acknowledged batches in the final return.
 No provider retry is allowed after a batch is admitted. Domain tools, preparation
 and capability-limit messages remain App/backend policy.
+
+## Observe a Server Tool Boundary
+
+Compose once around the existing dispatcher, rather than adding logging to each
+registered tool. Import storage only in the server entry:
+
+```ts
+import {
+  createAiExecutionProfiler,
+  createAiInvoker
+} from '@asyra/ai-agent-runtime'
+import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
+
+const sink = createExecutionRecordSink('tmp/ai-executions')
+const profiler = createAiExecutionProfiler(providerInput, model, {
+  provider: configuredProvider,
+  effort: configuredEffort,
+  sink,
+  lifecycle: true
+})
+const agentRuntime = createAiInvoker({
+  execute: ({ name, input, signal }) =>
+    registeredDispatcher(name, input, signal),
+  observe: (event) =>
+    profiler.trace(
+      event.phase === 'started'
+        ? 'tool_started'
+        : event.phase === 'completed'
+          ? 'tool_completed'
+          : 'tool_failed',
+      {
+        tool: event.call.name,
+        callId: event.call.callId,
+        parentCallId: event.call.parentCallId,
+        retryOf: event.call.retryOf,
+        actor: event.call.actor,
+        purpose: event.call.purpose,
+        purposeSource: event.call.purposeSource,
+        arguments: event.phase === 'started' ? event.call.input : undefined,
+        result: event.output,
+        status: event.phase,
+        durationMs: event.durationMs
+      }
+    )
+})
+
+await agentRuntime.invoke({ name, input, signal, parentCallId })
+// At the whole request's actual terminal boundary (also on failure/cancellation):
+profiler.finish(outcome)
+const saved = await sink.flush()
+```
+
+The registered dispatcher remains responsible for tool existence, input admission,
+permissions and canonical execution. An observer maps domain-specific returned
+failures to evidence; it must not replay work. Internal phases can use explicit
+child spans. Unknown provider internals stay unavailable rather than being
+reported as measured reasoning. Inform the host user which local records are
+retained and where; storage/import does not opt in to telemetry.

@@ -1,3 +1,5 @@
+import { createAiInvoker, exportExecutionTrace } from '@asyra/ai-agent-runtime'
+import { designReportPolicy } from '../design-profiler-policy'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -26,10 +28,13 @@ import {
   createDesignPreparationSession,
   prepareDesign
 } from '../design-preparation'
-import { createLocalAiUsage } from '../local-ai-usage'
-import { parseExecutionRecord, type ExecutionRecord } from '../local-ai-records'
-import { evaluateExecution } from '../local-ai-evaluation'
-import { assessExecution } from '../local-ai-assessment'
+import { createAiExecutionProfiler as createProfiler } from '@asyra/ai-agent-runtime'
+import {
+  parseExecutionRecord,
+  type ExecutionRecord
+} from '@asyra/ai-agent-runtime/node'
+import { evaluateExecution as evaluate } from '@asyra/ai-agent-runtime'
+import { assessExecution } from '@asyra/ai-agent-runtime'
 import { createLocalDesignReview } from '../local-design-review'
 import { requestLocalAiActionBatch } from '../local-ai-provider'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
@@ -254,8 +259,8 @@ it('execution proof preserves partial lookup full recovery and declaration const
   )
   expect(execute).not.toHaveBeenCalled()
 })
-vi.mock('../local-ai-records', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../local-ai-records')>()),
+vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
   createExecutionRecordSink: () => ({
     write: () => undefined,
     flush: async () => ({ status: 'saved', path: null })
@@ -958,7 +963,7 @@ it('execution proof accounts observed spans without private payloads or invented
   const retained: ExecutionRecord[] = []
   try {
     clock.mockReturnValue(0)
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { actions: [], attempt: 1, context: {}, intent: 'private user brief' },
       'gpt-6-astra',
       {
@@ -1040,4 +1045,105 @@ it('execution proof accounts observed spans without private payloads or invented
     clock.mockRestore()
     log.mockRestore()
   }
+})
+
+it('execution proof records timestamped transport without storing transport content', () => {
+  const records: ExecutionRecord[] = []
+  let now = 10
+  const usage = createAiExecutionProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'test-model',
+    {
+      now: () => now,
+      sink: {
+        write: (record) => records.push(record),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  now = 15
+  usage.recordTransport('sent', 12)
+  now = 30
+  usage.recordTransport('received', 24)
+  expect(
+    records
+      .filter((record) => record.stage === 'transport_chunk')
+      .map((record) => ({
+        elapsedMs: record.elapsedMs,
+        evidence: record.evidence
+      }))
+  ).toEqual([
+    {
+      elapsedMs: 5,
+      evidence: { direction: 'sent', bytes: 12, stream: 'protocol' }
+    },
+    {
+      elapsedMs: 20,
+      evidence: { direction: 'received', bytes: 24, stream: 'protocol' }
+    }
+  ])
+})
+
+function evaluateExecution(...[run, options]: Parameters<typeof evaluate>) {
+  return evaluate(run, { ...options, policy: designReportPolicy })
+}
+
+function createAiExecutionProfiler(
+  ...[input, model, options]: Parameters<typeof createProfiler>
+) {
+  return createProfiler(input, model, {
+    provider: 'local-codex',
+    effort: 'medium',
+    purpose: 'drawing',
+    log: (line) => console.info(line),
+    ...options
+  })
+}
+
+it('execution proof composes a non-drawing host through shared invocation and local projection', async () => {
+  const records: ExecutionRecord[] = []
+  const profile = createProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'inventory-model',
+    {
+      sink: {
+        write: (record) => records.push(record),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  const output = { available: true, quantity: 5 }
+  const host = createAiInvoker({
+    execute: async () => output,
+    observe: (event) =>
+      profile.trace(
+        event.phase === 'started' ? 'tool_started' : 'tool_completed',
+        {
+          callId: event.call.callId,
+          tool: event.call.name,
+          parentCallId: event.call.parentCallId,
+          arguments: event.call.input,
+          result: event.output
+        }
+      )
+  })
+  expect(
+    await host.invoke({
+      name: 'inventory',
+      input: { product: 'item' },
+      parentCallId: 'request'
+    })
+  ).toBe(output)
+  profile.finish('completed')
+  const parsed = parseExecutionRecord(
+    records.map((record) => JSON.stringify(record)).join('\n')
+  )
+  expect(parsed.complete).toBe(true)
+  expect(parsed.steps).toHaveLength(1)
+  expect(evaluate(parsed).toolCalls[0].tool).toBe('inventory')
+  expect(
+    exportExecutionTrace(parsed).traceEvents.some(
+      (event) => event.name === 'inventory'
+    )
+  ).toBe(true)
 })

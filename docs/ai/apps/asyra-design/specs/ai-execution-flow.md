@@ -400,9 +400,35 @@ bytes, eager tool schema bytes and reported token usage are distinct quantities.
 Retain bounded summaries, not prompts, credentials, raw geometry or private
 reasoning. Diagnostics cannot control output or certify rendered correctness.
 
+### Shared Runtime profiler
+
+`@asyra/ai-agent-runtime` owns invocation middleware, recording, interval
+projection, evaluation and trace export. The Node entry owns optional local
+persistence and the report CLI. Design supplies canonical tool dispatch, result
+interpretation, domain report policy and provider/event adapters. No generic
+profiler implementation remains in Design. Browser imports require no Node APIs.
+
+Every registered invocation crosses the shared dispatcher, including rejection,
+unknown operation and cancellation. Middleware cannot call the canonical executor
+more than once. Instrumentation cannot replace permissions, confirmations,
+transaction settlement, retry decisions or original returned/thrown values.
+Parent call, actor, purpose and expectation have explicit caller/contract
+provenance; absent explanations remain unavailable. Parallel calls retain their
+own identities. Internal phases use explicit child spans rather than simulated
+function tracing. No instrumentation claims invisible provider compute time.
+
+The profiler retains timestamped transport direction, byte count and stream kind,
+plus permitted public notification metadata. It does not retain transport bytes,
+credentials, prompts or private reasoning. Reports distinguish ownership coverage
+from observable activity and identify missing, duplicate and unfinished records.
+Inclusive and exclusive timings remain separate. A standard trace export supports
+external timeline viewers without a new product UI. Export is explicit and local;
+no automatic upload or telemetry. Saved historical records remain readable with
+missing capabilities explicitly reported rather than invented.
+
 ## Execution recording
 
-The App provider emits a versioned, append-only local record per invocation in
+The Runtime profiler emits a versioned, append-only local record per invocation in
 addition to existing console diagnostics. The record includes request/call and
 sequence identities, observed timestamps, model/effort, bounded tool selectors,
 artifact references and terminal outcome. Source identity is optional and marked

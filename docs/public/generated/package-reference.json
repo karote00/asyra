@@ -10,12 +10,13 @@
       "manifestPath": "packages/ai-agent-runtime/package.json",
       "name": "@asyra/ai-agent-runtime",
       "publicEntries": [
-        "."
+        ".",
+        "./node"
       ],
       "sourceDigests": {
-        "contract": "06444d231affe12ec95bdfc0d02ec9b67205bb5f4708b405526494d4ed7e4645",
+        "contract": "e416d309bad4e73fcf37adaf347310e946413eb45ec7592989f34093993d3556",
         "guide": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
-        "manifest": "f37c81e2ff86cc8ba78990080f397d8f903a11c512ba9fa6b0dc3a2f06978b9d"
+        "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
       },
       "version": "0.5.1"
     },

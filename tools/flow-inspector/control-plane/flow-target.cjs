@@ -279,7 +279,10 @@ function createTargetOwner({
             record.targetVerification
           )) &&
         (!current || assessment.projection?.current === true) &&
-        assessment.result.accepted?.status === 'passed' &&
+        (current
+          ? assessment.result.format === 3
+          : assessment.result.format === 3 ||
+            assessment.result.accepted?.status === 'passed') &&
         workResult?.length === 1 &&
         workResult[0].targetId === record.id &&
         workResult[0].allocationRevision ===

@@ -1,11 +1,12 @@
+import { designReportPolicy } from '../design-profiler-policy'
 import { describe, expect, it, vi } from 'vitest'
-import { parseExecutionRecord } from '../local-ai-records'
-import { createLocalAiUsage } from '../local-ai-usage'
+import { parseExecutionRecord } from '@asyra/ai-agent-runtime/node'
+import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
 import { localToolFailureReply } from '../local-tool-invocation'
 import {
-  evaluateExecution,
-  createExecutionPeriodReport
-} from '../local-ai-evaluation'
+  evaluateExecution as evaluate,
+  createExecutionPeriodReport as periodReport
+} from '@asyra/ai-agent-runtime'
 
 const run = (
   id = 'run-1',
@@ -205,7 +206,7 @@ describe('execution evaluation', () => {
     const lines: string[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -325,7 +326,7 @@ describe('execution evaluation', () => {
     const lines: string[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -619,7 +620,7 @@ describe('execution evaluation', () => {
       const lines: string[] = []
       const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
       try {
-        const usage = createLocalAiUsage(
+        const usage = createAiExecutionProfiler(
           { actions: [], context: {}, intent: 'Draw', attempt: 1 },
           'selected-model',
           {
@@ -861,3 +862,12 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
   expect(report.toolOutcomes.partial).toBe(1)
   expect(report.toolOutcomes.failed).toBe(0)
 })
+
+function evaluateExecution(...[run, options]: Parameters<typeof evaluate>) {
+  return evaluate(run, { ...options, policy: designReportPolicy })
+}
+function createExecutionPeriodReport(
+  ...[runs, options]: Parameters<typeof periodReport>
+) {
+  return periodReport(runs, { ...options, policy: designReportPolicy })
+}

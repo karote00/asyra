@@ -684,7 +684,7 @@ async function runAssessmentCliLifecycle() {
     const remote = await invoke(['target-assess', 'assessment.json'], true)
     assert.equal(remote.code, 0)
     assert.equal(remote.value.phase, 'completed')
-    assert.equal(remote.value.result.accepted.status, 'passed')
+    assert.equal(remote.value.result.targetContract.status, 'passed')
     assert.equal(
       (await invoke(['target-assessment-show', remote.value.id], true)).code,
       0
@@ -720,7 +720,7 @@ async function runAssessmentCliLifecycle() {
     fs.writeFileSync(input, JSON.stringify(pendingRequest))
     const pending = await invoke(['target-assess', 'assessment.json'], true)
     assert.equal(pending.code, 1)
-    assert.equal(pending.value.result.accepted.status, 'passed')
+    assert.equal(pending.value.result.targetContract.status, 'passed')
     assert.equal(pending.value.result.integration.status, 'pending')
     const assertions = path.join(repository, contract.testFile)
     const bytes = fs.readFileSync(assertions, 'utf8')
@@ -752,7 +752,7 @@ async function runAssessmentCliLifecycle() {
     )
     const failed = await invoke(['target-assess', 'assessment.json'], true)
     assert.equal(failed.code, 1)
-    assert.equal(failed.value.result.accepted.status, 'passed')
+    assert.equal(failed.value.result.targetContract.status, 'failed')
     assert.equal(failed.value.result.integration.status, 'failed')
     holdCancellation = true
     const cancelId = service.startTargetAssessment(
@@ -814,7 +814,7 @@ async function runAssessmentCliLifecycle() {
         taskLocal.value.runtime.contractScopeDigest,
         task.snapshot.runtimeAuthority.contractScopeDigest
       )
-      assert.equal(taskLocal.value.result.accepted.status, 'passed')
+      assert.equal(taskLocal.value.result.targetContract.status, 'failed')
       assert.equal(taskLocal.value.result.integration.status, 'failed')
       server = await startServer(repository, { url: 'http://127.0.0.1:0' })
       service = server.service
@@ -830,7 +830,7 @@ async function runAssessmentCliLifecycle() {
       )
       assert.equal(taskRemote.code, 1)
       assert.equal(taskRemote.value.phase, 'completed')
-      assert.equal(taskRemote.value.result.accepted.status, 'passed')
+      assert.equal(taskRemote.value.result.targetContract.status, 'failed')
       assert.equal(taskRemote.value.result.integration.status, 'failed')
       assert.equal(taskRemote.value.runtime.taskId, task.id)
       for (const slot of taskRemote.value.slots)

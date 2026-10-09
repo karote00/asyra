@@ -1420,7 +1420,7 @@
           assessmentBusy ||
           !selected ||
           selected.phase !== 'completed' ||
-          selected.projection.format !== 2 ||
+          selected.projection.format !== 3 ||
           !selected.projection.current ||
           !selected.projection.eligible ||
           selected.projection.targetContract?.status !== 'passed' ||
@@ -1500,6 +1500,8 @@
                   : [])
               ].join('\n')
             : 'No assessment evidence'
+        byId('assessment-history-proof').hidden =
+          selected?.projection.format === 3
         byId('assessment-accepted').textContent = describeProof(
           selected?.projection.accepted
         )
@@ -2334,7 +2336,7 @@
               <p id="assessment-notice" role="status"></p>
               <label>Assessment history<select id="assessment-history"><option value="">Choose retained assessment</option></select></label>
               <pre id="assessment-summary" role="status"></pre>
-              <h4>Accepted behavior preservation</h4><pre id="assessment-accepted"></pre>
+              <div id="assessment-history-proof"><h4>Historical baseline verification</h4><pre id="assessment-accepted"></pre></div>
               <h4>Complete candidate contract</h4><pre id="assessment-target-contract"></pre>
               <h4>Bounded work and prerequisites</h4><pre id="assessment-works"></pre>
               <h4>Whole-target integration</h4><pre id="assessment-integration"></pre>

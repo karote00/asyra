@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assessExecution } from '../local-ai-assessment'
-import { evaluateExecution } from '../local-ai-evaluation'
-import { parseExecutionRecord } from '../local-ai-records'
+import { assessExecution } from '../../index.js'
+import { evaluateExecution } from '../../index.js'
+import { parseExecutionRecord } from '../../node/index.js'
 
 const report = () =>
   evaluateExecution(

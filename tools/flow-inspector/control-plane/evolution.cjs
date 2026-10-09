@@ -461,7 +461,7 @@ function acceptTargetBaseline(
     assessment?.id === request.assessmentId &&
       assessment.actor === actor.id &&
       assessment.phase === 'completed' &&
-      projection?.format === 2 &&
+      projection?.format === 3 &&
       projection.current === true &&
       projection.eligible === true &&
       projection.targetId === request.targetId &&
@@ -477,8 +477,6 @@ function acceptTargetBaseline(
       review.candidateDigest === hash(candidate) &&
       projection.targetContract?.contractDigest === candidate.contract.digest &&
       completeResult(projection.targetContract) &&
-      sameIdentity(projection.accepted) &&
-      projection.accepted.status === 'passed' &&
       Array.isArray(projection.works) &&
       projection.works.length > 0 &&
       projection.works.every(
@@ -610,7 +608,7 @@ function validateTargetAcceptanceDecision(
       assessment?.id === reference.assessmentId &&
       assessment.actor === decision.actor &&
       assessment.phase === 'completed' &&
-      result?.format === 2 &&
+      [2, 3].includes(result?.format) &&
       result.targetId === reference.targetId &&
       result.allocationRevision === reference.allocationRevision &&
       JSON.stringify(result.acceptedBaseline) ===
@@ -635,8 +633,9 @@ function validateTargetAcceptanceDecision(
       ) &&
       Array.isArray(result.targetContract.blockers) &&
       result.targetContract.blockers.length === 0 &&
-      sameIdentity(result.accepted) &&
-      result.accepted.status === 'passed' &&
+      (result.format === 3 ||
+        (sameIdentity(result.accepted) &&
+          result.accepted.status === 'passed')) &&
       Array.isArray(result.works) &&
       result.works.length > 0 &&
       result.works.every(

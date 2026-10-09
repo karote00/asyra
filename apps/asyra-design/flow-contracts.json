@@ -95,6 +95,16 @@
           "id": "observe.accounting",
           "stepId": "observe",
           "testName": "execution proof accounts observed spans without private payloads or invented model timing"
+        },
+        {
+          "id": "observe.transport",
+          "stepId": "observe",
+          "testName": "execution proof records timestamped transport without storing transport content"
+        },
+        {
+          "id": "observe.shared-invocation",
+          "stepId": "observe",
+          "testName": "execution proof composes a non-drawing host through shared invocation and local projection"
         }
       ],
       "handoffs": [

@@ -406,7 +406,7 @@ test('HTTP target assessment actions retain service authority and cached results
     assert.equal(started.status, 202)
     const { id } = await started.json()
     const completed = await service.waitTargetAssessment(id)
-    assert.equal(completed.result.accepted.status, 'passed')
+    assert.equal(completed.result.targetContract.status, 'passed')
     assert.equal(completed.result.integration.status, 'pending')
     const acceptance = {
       requestId: randomUUID(),
@@ -578,7 +578,7 @@ test('HTTP target assessment actions retain service authority and cached results
         settled.runtime.contractScopeDigest,
         task.snapshot.runtimeAuthority.contractScopeDigest
       )
-      assert.equal(settled.result.accepted.status, 'passed')
+      assert.equal(settled.result.targetContract.status, 'passed')
       assert.equal(settled.projection.eligible, false)
       for (const slot of settled.slots) {
         assert.equal(service.get(slot.id).targetAssessmentId, taskAssessmentId)

@@ -108,3 +108,11 @@ export type {
   AiJsonPrimitive,
   AiJsonValue
 } from './types.js'
+
+export * from './profiler/recorder.js'
+export * from './profiler/records.js'
+export * from './profiler/timing.js'
+export * from './profiler/evaluation.js'
+export * from './profiler/assessment.js'
+export * from './invocation.js'
+export * from './profiler/trace.js'

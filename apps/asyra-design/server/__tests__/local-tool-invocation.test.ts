@@ -341,3 +341,30 @@ it('observes internal input/output once, links the parent and isolates recorder 
     })
   ).toBe(result)
 })
+
+it('keeps parent-context observation failure outside canonical execution', async () => {
+  const execute = vi.fn(async () => '{"available":true}')
+  await expect(
+    observeLocalToolExecution('read', {}, execute, {
+      parentCallId: () => {
+        throw new Error('Context observer unavailable')
+      }
+    })
+  ).resolves.toBe('{"available":true}')
+  expect(execute).toHaveBeenCalledOnce()
+})
+
+it('records unusable internal output without changing the returned value or leaving the call open', async () => {
+  const trace = vi.fn()
+  await expect(
+    observeLocalToolExecution('read', {}, async () => 'invalid-json', { trace })
+  ).resolves.toBe('invalid-json')
+  expect(trace).toHaveBeenCalledTimes(2)
+  expect(trace.mock.calls[1]).toEqual([
+    'action_completed',
+    expect.objectContaining({
+      result: 'invalid-json',
+      code: 'RESULT_DECODING_FAILED'
+    })
+  ])
+})

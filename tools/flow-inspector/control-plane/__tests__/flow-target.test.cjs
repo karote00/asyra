@@ -497,6 +497,7 @@ function dependentAdmissionFixture(t) {
       contractScopeDigest: 'e'.repeat(64)
     },
     result: {
+      format: 3,
       targetId: target.id,
       allocationRevision: target.revision,
       acceptedBaseline: target.acceptedBaseline,
@@ -505,7 +506,6 @@ function dependentAdmissionFixture(t) {
         head: source.snapshot.head,
         runtimeSourceDigest: 'c'.repeat(64)
       },
-      accepted: { status: 'passed' },
       works: changed.works.map((item) => ({
         id: item.id,
         targetId: target.id,
@@ -691,9 +691,9 @@ test('assessment-bound admission rejects non-current or unsatisfied owner eviden
       }
     ],
     [
-      'accepted preservation',
+      'obsolete contract evidence',
       (value) => {
-        value.result.accepted.status = 'failed'
+        value.result.format = 2
       }
     ],
     [

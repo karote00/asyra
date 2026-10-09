@@ -4,12 +4,9 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createExecutionRecordSink,
   parseExecutionRecord
-} from '../local-ai-records'
-import {
-  partitionExecutionTime,
-  summarizeAppCallGaps
-} from '../local-execution-timing'
-import { createLocalAiUsage } from '../local-ai-usage'
+} from '../../node/index.js'
+import { partitionExecutionTime, summarizeAppCallGaps } from '../../index.js'
+import { createAiExecutionProfiler as createProfiler } from '../../index.js'
 
 const workspace = async () => {
   const root = join(process.cwd(), 'tmp')
@@ -22,7 +19,7 @@ describe('local execution records', () => {
     const records: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -69,7 +66,7 @@ describe('local execution records', () => {
     const retained: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -133,7 +130,7 @@ describe('local execution records', () => {
   })
   it('takes diagnostic purpose from the recorder owner rather than user request metadata', () => {
     const retained: unknown[] = []
-    createLocalAiUsage(
+    createAiExecutionProfiler(
       {
         intent: 'private',
         context: {},
@@ -167,7 +164,7 @@ describe('local execution records', () => {
       ]
       for (const [index, sink] of sinks.entries()) {
         let time = 0
-        const usage = createLocalAiUsage(
+        const usage = createAiExecutionProfiler(
           { actions: [], context: {}, intent: 'private prompt', attempt: 1 },
           'gpt-6-astra',
           { sink, now: () => time, sourceRevision: 'abc123' }
@@ -373,7 +370,7 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'gpt-6-astra',
       {
@@ -430,7 +427,7 @@ it('joins call inputs, rejection feedback, output utility and exclusive observed
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -529,7 +526,7 @@ it.each([
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
         'test',
         {
@@ -564,7 +561,7 @@ it('retains detached complete tool payloads locally with explicit redactions and
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
     const sink = createExecutionRecordSink(directory)
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'PRIVATE_REQUEST', context: {}, actions: [], attempt: 1 },
       'test',
       { sink }
@@ -806,7 +803,7 @@ it('retains action attribution and separates negative judgment from usable revie
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -890,7 +887,7 @@ it.each([
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
         'test',
         {
@@ -922,7 +919,7 @@ it('retains independent visual evidence identifiers without recording provider p
   }))
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'model',
       {
@@ -956,7 +953,7 @@ it('records continuous ownership and attributes a nested AI wait outside tool ow
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'gpt-6-astra',
       {
@@ -1061,7 +1058,7 @@ it('attributes internal server handoffs to tool work instead of browser exchange
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -1096,4 +1093,59 @@ it('attributes internal server handoffs to tool work instead of browser exchange
   } finally {
     log.mockRestore()
   }
+})
+
+function createAiExecutionProfiler(
+  ...[input, model, options]: Parameters<typeof createProfiler>
+) {
+  return createProfiler(input, model, {
+    provider: 'local-codex',
+    effort: 'medium',
+    purpose: 'drawing',
+    log: (line) => console.info(line),
+    ...options
+  })
+}
+
+it('keeps failure classification observers from replacing the original batch error', async () => {
+  const { observeActionBatch } = await import('../../node/index.js')
+  const failure = new Error('execution failed')
+  await expect(
+    observeActionBatch(
+      { batchId: 'batch', actions: [] },
+      async () => {
+        throw failure
+      },
+      [],
+      undefined,
+      () => undefined,
+      () => {
+        throw new Error('observer failed')
+      }
+    )
+  ).rejects.toBe(failure)
+})
+
+it('keeps diagnostic byte counts separate from protocol bytes', () => {
+  const records: Record<string, unknown>[] = []
+  const profiler = createAiExecutionProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'test',
+    {
+      sink: {
+        write: (event) => records.push(event),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  profiler.recordTransport('received', 10)
+  profiler.recordTransport('received', 50, 'diagnostic')
+  profiler.finish('completed')
+  expect(records[records.length - 1].transport).toEqual({
+    sentBytes: 0,
+    receivedBytes: 10
+  })
+  expect(
+    records.filter((record) => record.stage === 'transport_chunk')
+  ).toHaveLength(2)
 })
