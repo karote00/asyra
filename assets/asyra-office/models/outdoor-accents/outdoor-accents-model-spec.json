@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "Bench v4 reconciled construction and full review pending; chalkboard unchanged",
+  "status": "Bench procedural route selected; V4 rejected. Entry chalkboard annotated reference and revised documents approved for commit on 2026-10-10; no model acceptance.",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -491,9 +491,9 @@
       "unitCount": 1,
       "reviewDrawing": "review/02-entry-chalkboard-v1.png",
       "nominalSize": [
-        0.416,
-        0.37,
-        0.69
+        0.42,
+        0.36231940984822525,
+        0.6816262273491942
       ],
       "fixedOpenPose": true,
       "frameCoordinates": {
@@ -586,28 +586,90 @@
         },
         {
           "partId": "hinges",
-          "primitive": "two cylinders",
+          "primitive": "two static axle cylinders joining the frame and outer cover",
           "axis": "X",
           "centres": [
             [
-              -0.1825,
+              -0.198,
               0,
-              0.679207
+              0.656
             ],
             [
-              0.1825,
+              0.198,
               0,
-              0.679207
+              0.656
             ]
           ],
-          "radius": 0.008,
-          "length": 0.03,
+          "radius": 0.0035,
+          "length": 0.012,
           "radialSegments": 32,
-          "material": "metal"
+          "material": "metal",
+          "note": "Fixed open pose only; visible cover and head are separate components. Do not restore the former buried top cylinders."
+        },
+        {
+          "partId": "hinge-covers",
+          "primitive": "two rounded trapezoid plates extruded along X",
+          "rightXInterval": [
+            0.199,
+            0.202
+          ],
+          "leftXInterval": [
+            -0.202,
+            -0.199
+          ],
+          "profileYZBeforeCornerRounding": [
+            [
+              -0.018,
+              0.673
+            ],
+            [
+              0.018,
+              0.673
+            ],
+            [
+              0.025,
+              0.63
+            ],
+            [
+              -0.025,
+              0.63
+            ]
+          ],
+          "profileCornerRadius": 0.002,
+          "profileCornerSegments": 3,
+          "cornerRule": "Inward circular fillet tangent to both adjacent straight edges; split the arc between tangencies into three equal angular intervals. Preserve straight edges outside the tangencies.",
+          "axialEdgeBevel": 0.0005,
+          "axialEdgeBevelSegments": 2,
+          "material": "metal",
+          "note": "External cover silhouette visible in RIGHT and THREE-QUARTER; exact thickness and hidden attachment are authored completions. Plate overlaps the wooden outer side by 1 mm before its edge bevel."
+        },
+        {
+          "partId": "hinge-heads",
+          "primitive": "two circular flat cylinder heads",
+          "axis": "X",
+          "centres": [
+            [
+              -0.2025,
+              0,
+              0.656
+            ],
+            [
+              0.2025,
+              0,
+              0.656
+            ]
+          ],
+          "radius": 0.007,
+          "length": 0.003,
+          "radialSegments": 32,
+          "edgeBevel": 0.0005,
+          "edgeBevelSegments": 2,
+          "material": "metal",
+          "note": "No slot, thread or embossed marking. Join each head to its axle; keep the head visibly proud of its cover."
         },
         {
           "partId": "side-spreaders",
-          "primitive": "two boxes",
+          "primitive": "two rounded-rectangle YZ profiles extruded along X",
           "centres": [
             [
               -0.203,
@@ -626,9 +688,77 @@
             0.026
           ],
           "material": "wood",
-          "note": "outside side posts; contact ends, no articulation in this asset",
-          "bevel": 0.002,
-          "bevelSegments": 3
+          "note": "YZ outline: width 198 mm, height 26 mm, centred at Y=0/Z=300 mm, 4 mm tangent circular corners with three equal angular segments per quarter. Extrude 10 mm along X. Apply the 1 mm bevel only to the profile/front-back edges, not a second rounding of the YZ outline. Keep the flat middle portions at X=+/-198 and +/-208 mm. Fixed open pose.",
+          "bevel": 0.001,
+          "bevelSegments": 2,
+          "profileCornerRadius": 0.004,
+          "profileCornerSegments": 3
+        },
+        {
+          "partId": "spreader-fastener-shafts",
+          "primitive": "four static cylinders",
+          "axis": "X",
+          "centres": [
+            [
+              -0.2005,
+              -0.087,
+              0.3
+            ],
+            [
+              -0.2005,
+              0.087,
+              0.3
+            ],
+            [
+              0.2005,
+              -0.087,
+              0.3
+            ],
+            [
+              0.2005,
+              0.087,
+              0.3
+            ]
+          ],
+          "radius": 0.003,
+          "length": 0.015,
+          "radialSegments": 24,
+          "material": "metal",
+          "note": "Right X=193..208 mm, left mirrored. Each crosses a side post and spreader; hidden part is authored. No drilled-through visible opening, thread or animation."
+        },
+        {
+          "partId": "spreader-fastener-heads",
+          "primitive": "four circular flat cylinder heads",
+          "axis": "X",
+          "centres": [
+            [
+              -0.2085,
+              -0.087,
+              0.3
+            ],
+            [
+              -0.2085,
+              0.087,
+              0.3
+            ],
+            [
+              0.2085,
+              -0.087,
+              0.3
+            ],
+            [
+              0.2085,
+              0.087,
+              0.3
+            ]
+          ],
+          "radius": 0.007,
+          "length": 0.003,
+          "radialSegments": 32,
+          "edgeBevel": 0.0005,
+          "edgeBevelSegments": 2,
+          "material": "metal",
+          "note": "Right X=207..210 mm, left mirrored; 1 mm embed into spreader, 2 mm visible projection. Join to corresponding shaft. These heads set the overall 420 mm width."
         },
         {
           "partId": "front-lettering",
@@ -700,7 +830,62 @@
         }
       ],
       "sourceLocation": "central office entrance A-frame with Good / Ideas / Live / Here and right arrow",
-      "rearPanel": "blank charcoal, no lettering"
+      "rearPanel": "blank charcoal, no lettering",
+      "specificationStatus": "User-approved annotated reference and construction document handoff on 2026-10-10; no generated model or rendered-model acceptance.",
+      "dimensionAuthority": "Numbers define authored construction defaults. The source is an uncalibrated appearance guide; exact hardware dimensions are authored completions, not measurements recovered from image pixels.",
+      "frameWoodWidth": 0.4,
+      "defaultDimensionTolerance": 0.0005,
+      "envelope": {
+        "minimumXYZ": [
+          -0.21,
+          -0.18115970492411262,
+          0
+        ],
+        "maximumXYZ": [
+          0.21,
+          0.18115970492411262,
+          0.6816262273491942
+        ],
+        "depthFormula": "2*(0.17+0.012*cos(14deg)-0.002*sin(14deg))",
+        "heightFormula": "0.70*cos(14deg)+0.010*sin(14deg)",
+        "widthOwner": "Outer faces of the four spreader fastener heads at X=+/-0.210",
+        "depthHeightOwner": "Side posts with the specified three-segment circular bevel; clip below ground after beveling",
+        "imageWidthLabel": "0.40 m denotes the wooden frame width; the 0.37 m source depth label is approximate historical artwork, not the exact overall depth."
+      },
+      "edgeConstruction": {
+        "woodBevelRadius": 0.002,
+        "quarterArcSegments": 3,
+        "quarterArcAnglesDegrees": [
+          0,
+          30,
+          60,
+          90
+        ],
+        "profile": "Circular edge profile, not a one-segment chamfer. Keep original planar faces and tangent points; include the listed arc samples in the local up/normal cross-section. Do not shrink or rescale the entire assembly after beveling.",
+        "frameJoints": "Join posts and rails at their unrounded mating faces before rounding exposed edges. Do not bevel mating seams into open gaps. Preserve the panel rebate and separate wood/board regions.",
+        "groundOrder": "Construct and bevel, then clip at global Z=0 and cap the cut. Four planar foot contacts remain.",
+        "groundCutBevel": 0
+      },
+      "appearanceRegions": {
+        "wood": "Both frames and both spreaders; wood/grain defaults",
+        "board": "Both black panels; board default",
+        "metal": "Covers, axles, hinge heads and spreader fasteners; metal default",
+        "chalk": "Front lettering and arrow; chalk default"
+      },
+      "constructionOrder": [
+        "Build both leaning wooden frames using existing 14-degree bases; join wooden mating faces and bevel only exposed edges.",
+        "Place the separate recessed panels without changing their sizes or lettering layout.",
+        "Clip and cap all wooden geometry below Z=0 after beveling.",
+        "Add rounded spreaders, outer hinge covers, static axles and all six visible heads; mirror left and right as specified.",
+        "Union each fastener shaft with its head; remove buried faces in final assembly without merging configurable material regions.",
+        "Verify the default bounding box before applying the shared whole-unit XYZ scaling and appearance rules."
+      ],
+      "reviewRequirements": [
+        "The original PNG remains unchanged; exact revised dimensions belong to this specification, not the approximate image labels.",
+        "Compare all five views and enlarged cover/head/spreader joints after generation. TOP must project this same open assembly, including visible hardware.",
+        "Four feet meet Z=0; all fasteners connect, panels remain recessed 4 mm, and no unplanned external part protrudes beyond the envelope.",
+        "Numeric consistency is not visual acceptance. The original unknown cameras do not provide calibrated measurements."
+      ]
     }
   ],
   "omissions": [

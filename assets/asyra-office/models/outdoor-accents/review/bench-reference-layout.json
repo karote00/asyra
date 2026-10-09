@@ -1,7 +1,7 @@
 {
   "source": "01-park-bench-v1.png",
   "sourceSHA256": "71a4b5fb586be0d85abb4a97e919a404157e580fdac8cc14b7c227d91c0b58e8",
-  "specificationSHA256": "a5243f0fe80270c31aa73ddea7f686c4d30485738d8def72e67f03077ce97a28",
+  "specificationSHA256": "53f6308ba37fdbc43936a3f8ea2512f4a232f014c81052c0bccf0060958a6f61",
   "output": "01-park-bench-v4.png",
   "outputSHA256": "a7f764dd4256ea89e918221768b8da365d0f5ac1218ecdfdd6ee9795a6a7e7bb",
   "sheetPixels": [
@@ -675,5 +675,14 @@
     "bench_geometry.py": "34a4e3b87f11857d119331d355d868b9118c76db3f9e028c4e8a2deb4696ef48",
     "bench_projection.py": "fd360fdbcfcc25c347e41145cbccd1392d3d4890c9c02528d022d20cd3910500"
   },
-  "retainedRun": "bench-review-runs/1a78a5b98d3a93b6"
+  "retainedRun": "bench-review-runs/1a78a5b98d3a93b6",
+  "specificationRebind": {
+    "renderInputSHA256": "a5243f0fe80270c31aa73ddea7f686c4d30485738d8def72e67f03077ce97a28",
+    "renderInputSnapshot": "bench-review-runs/1a78a5b98d3a93b6/outdoor-accents-model-spec.json",
+    "reason": "The shared specification now revises the entry chalkboard only. Bench module and material inputs are unchanged from the immutable render snapshot. Current file hash is rebound for input tracking; no image was regenerated and no visual acceptance is implied.",
+    "unchangedSections": [
+      "modules[0]",
+      "materials"
+    ]
+  }
 }

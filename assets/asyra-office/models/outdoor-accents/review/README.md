@@ -2,12 +2,13 @@
 
 Status: **V4 failed visual review; procedural generation selected for the bench**.
 Shared construction checks passed for the retained proposal, not source fidelity.
-The entry chalkboard retains its prior
-approval. No model or app implementation is included in this documentation stage.
+The user approved the annotated entry chalkboard reference and revised
+construction documents on 2026-10-10. No model or app implementation is included in this documentation stage.
 
 - [Rejected V4 bench candidate - retained evidence](01-park-bench-v4.png)
 - [Original appearance reference](01-park-bench-v1.png)
-- [Entry chalkboard](02-entry-chalkboard-v1.png) - unchanged
+- [Entry chalkboard - annotated sheet](02-entry-chalkboard-annotated-v1.png)
+- [Entry chalkboard - unchanged original](02-entry-chalkboard-v1.png)
 
 ## Bounded revision contract
 
@@ -136,3 +137,48 @@ procedural generation does not approve it or authorize model implementation.
 projection before correcting the flat arm profile. Neither is an active
 reference. Retained run directories are evidence, not extra review candidates.
 Audit historical references at the user-requested end-of-all-assets checkpoint.
+
+## Entry chalkboard specification review - 2026-10-09
+
+Association: ongoing Office asset reference/specification review, entry
+chalkboard only. This is a document revision, not model generation or runtime
+implementation. The original PNG is unchanged. The geometry supplement and
+JSON replace approximate overall dimensions with derived bounds and specify
+the external hinge covers, two hinge heads, rounded spreaders and four visible
+spreader fasteners. Hidden attachment dimensions are authored completions.
+
+Default envelope: 420 x 362.319409848225 x 681.626227349194 mm. The source's
+400 mm label describes the wooden frame; its 370 mm depth label is historical
+approximation. Future generated geometry must be reviewed in all five views
+and enlarged fitting details against the original. Document arithmetic is not
+visual acceptance. Colour/material regions remain independently replaceable.
+
+The preceding bench measurements describe the retained V4 run. Its input JSON
+also contained the old chalkboard; the unchanged bench portion remains bound
+to that run, while the current shared specification now includes this sign
+revision. Immutable run snapshots retain the original file and hash.
+
+The active bench report explicitly records this input rebind: its current-file
+hash tracks the revised shared JSON, while `specificationRebind` retains the
+render-time hash and immutable snapshot path. Bench module and material values
+were compared with that snapshot and are unchanged. No bench pixels, generator
+or immutable run evidence were altered; this is provenance maintenance only.
+
+## Entry chalkboard annotations - 2026-10-10
+
+Reproduce with `python3 annotate-entry-chalkboard.py` in this directory using
+the existing Pillow environment. The script copies the source at native
+1536 x 1024 pixels, without resizing, cropping, repositioning or generating
+any object view. It adds only blue dimension notes, four RIGHT-view callouts
+and the component legend. The transparent annotation layer is retained
+separately; it is not another candidate drawing or a runtime texture.
+
+[Annotation record](chalkboard-annotation-record.json) records source/output
+hashes, label bounds and callout targets. Saved-image comparison confirms all
+pixels outside the annotation layer are identical to the source. Inspection
+of the saved full-resolution sheet confirms that callouts identify the outer
+plate, its round head, the wooden spreader and a spreader fastener head, and
+that dimension notes and legends are legible without covering the original
+labels. This closes annotation review only; no model was built or accepted.
+
+User acceptance - 2026-10-10: annotated sheet and corresponding document handoff approved for commit. Model generation, runtime behavior and rendered-model acceptance remain separate.

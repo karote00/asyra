@@ -48,3 +48,20 @@ Changing reference colours is warranted only when an actual visibility problem
 requires it. Replaceable appearance and documented defaults do not themselves
 require recolouring a reference. The original bench already distinguishes wood
 from metal clearly, so the earlier pale palette is withdrawn.
+
+## Entry chalkboard defaults and replaceable regions
+
+| Region | Included parts | Default |
+| --- | --- | --- |
+| Wood | Both frames and both rounded spreaders | Wood #B68050 with grain #95683E |
+| Board | Both recessed black panels | #34332F, roughness 0.98 |
+| Metal | Two hinge covers, axles/heads and four spreader fasteners | #343633, metallic 0.5, roughness 0.85 |
+| Chalk | Front lettering and right arrow | #EBE6D6, roughness 0.98 |
+
+Apply the shared overall-size and appearance contract before placement.
+Each region accepts independent colour/material overrides; defaults above remain
+when omitted. The whole asset scales once about its ground-centred origin,
+including all metal hardware. Repeating wood grain uses final local metre
+coordinates. Lettering is a surface mask attached to the resized front panel;
+its colour/material may change without becoming raised geometry. No baked
+illumination or implicit geometric displacement is introduced.

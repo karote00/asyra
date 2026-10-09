@@ -201,17 +201,134 @@ have no verified camera calibration; do not advertise pixel-perfect recovery.
 Default wood #B68050, grain #95683E and metal #343633 remain independently
 replaceable; see [surface rules](SURFACE-RECIPES.md#bench-defaults-and-replaceable-regions).
 
-## A-frame coordinates
+## A-frame coordinates and hardware - revised 2026-10-09
 
-Front origin P=(0,-0.17,0), rear P=(0,+0.17,0). Width W=(1,0,0). Front up U=(0,sin14,cos14), front outward N=(0,-cos14,sin14). Rear up U=(0,-sin14,cos14), rear outward N=(0,cos14,sin14). Angles are degrees. Transform local point (w,u,n) to P+w*W+u*U+n*N. This defines both leaning frames with four feet, not two independent signs.
+This revision retains the original chalkboard PNG. The complete fixed-open unit
+is one asset. Exact hardware dimensions and hidden attachments below are authored
+construction defaults guided by the visible reference, not calibrated pixel
+measurements. No generated geometry or visual acceptance is claimed.
 
-Each frame has two side posts, local centres w=+/-0.1825,u=0.35,n=0, size 0.035 in width, 0.70 along up and 0.024 in normal. Rails have local centres (0,0.155,0) and (0,0.665,0), size 0.33 x 0.035 x 0.024 in width/up/normal. Bevel exposed wood edges inward 0.002 with three segments. Clip all geometry below global Z=0 so four feet lie flat.
+### Reference callouts
 
-Each dark panel has width 0.33, local height 0.475, thickness 0.008, centre (0,0.41,0.004). The outward face is n=0.008, slightly behind the wooden frame's outward n=0.012. Panel edges meet rails and side posts without holes. Rear panel is charcoal on all visible faces and has no lettering. No backing texture, easel handle or wheels.
+The [annotated sheet](review/02-entry-chalkboard-annotated-v1.png) preserves
+all five original views at their existing positions and scale. Blue notes and
+leaders are annotations, not geometry, shadows or material texture.
 
-Two short X-axis cylindrical hinges sit at (+/-0.1825,0,0.679207), radius 0.008, length 0.03, 32 segments. The leaning frame tops meet here; concealed intersections may be unioned. Two wooden side spreaders are the boxes specified in JSON at X=+/-0.203, Z=0.30, extending along Y. They are static bars for this fixed open pose. No moving joints, screws or folding animation are inferred.
+| Callout | JSON component | Meaning |
+| --- | --- | --- |
+| 1 | `hinge-covers` | Two outer tapered metal plates |
+| 2 | `hinge-heads` | Two visible circular axle heads |
+| 3 | `side-spreaders` | Two rounded wooden support bars |
+| 4 | `spreader-fastener-heads` | Four visible heads, two per side |
 
-Nominal sign dimensions are approximate display dimensions; the spreaders extend to X=+/-0.208, making exact maximum width 0.416. Geometry values take priority over the 0.40 m prompt estimate. Depth is about 0.37 and height about 0.69 including hinge caps. Ground origin does not change when the sign is moved by the app.
+Overall dimensions on the sheet are rounded to 0.001 mm for readability;
+use the formulas and numeric specification for construction. The source PNG
+and its historical dimension labels are unchanged. The added notes explicitly
+identify 0.40 m as wooden-frame width and 0.37 m as an approximate old label.
+
+### Frame, panel and ground
+
+Use metres, +Z up and -Y front. Front origin P=(0,-0.17,0), rear
+P=(0,+0.17,0). Width W=(1,0,0). Front up U=(0,sin14,cos14), front
+outward N=(0,-cos14,sin14). Rear up U=(0,-sin14,cos14), rear outward
+N=(0,cos14,sin14). Transform local (w,u,n) as P+w*W+u*U+n*N.
+Each frame leans 14 degrees from vertical; the open angle is 28 degrees.
+
+Each frame has two posts centred at w=+/-0.1825,u=0.35,n=0, sized
+0.035 x 0.70 x 0.024 in width/up/normal. Two rails are centred at
+(0,0.155,0) and (0,0.665,0), sized 0.33 x 0.035 x 0.024.
+Join unrounded wooden mating faces before beveling exposed edges. Do not
+bevel mating seams into holes. Post outer X faces remain at +/-0.200.
+
+Wood edge radius is 2 mm. The circular quarter profile has three straight
+segments with samples at 0, 30, 60 and 90 degrees, including both tangent
+points. These samples must be present in the local up/normal silhouette;
+a one-segment chamfer or an unspecified smoothing operation is not equivalent.
+Clip below global Z=0 after beveling and cap each cut without another bevel,
+leaving four flat feet. No final envelope rescaling is used to hide differences.
+
+Each panel is 330 x 475 x 8 mm, centred at local (0,410,4) mm.
+Its up interval is 172.5..647.5 mm, matching the lower rail's upper edge and
+upper rail's lower edge. Its outward face n=8 mm is recessed 4 mm from the
+wood face n=12 mm. Keep board and wood independently configurable.
+The rear panel remains blank charcoal. Lettering and arrow geometry below
+are unchanged.
+
+### External hinge covers and axle heads
+
+The former two buried cylinders do not reproduce the visible metal fitting.
+Replace them with the following fixed, non-animated assemblies on both sides.
+Numbers in this subsection are millimetres; left assemblies mirror X.
+
+- Right cover: extrude the YZ trapezoid (-18,673), (18,673), (25,630),
+  (-25,630) over X=199..202. Left X=-202..-199. Round profile corners
+  inward with 2 mm circular fillets tangent to adjacent edges, using three
+  equal angular intervals between each pair of tangent points. Bevel the
+  axial edges 0.5 mm with two segments. The unrounded trapezoid bounds are
+  construction guides; rounded corners are inset, not added outside them.
+- Each cover overlaps the wood side by 1 mm before the edge bevel. Its top
+  stays below the wooden frame top. At Y=0,Z=656 both frames provide wood
+  behind the cover, so it must not float beside the frame.
+- Axles: X-axis cylinders, centres (+/-198,0,656), radius 3.5, length 12,
+  32 radial segments. Right X=192..204, left mirrored.
+- Visible heads: centres (+/-202.5,0,656), radius 7, axial length 3,
+  32 radial segments; 0.5 mm edge bevel with two segments. Right
+  X=201..204. Join each head and axle. Do not add a screw slot or threads.
+
+The cover's tapered silhouette and central round head are visible requirements.
+The concealed axle length is an authored completion. These coordinates define
+a static open pose, not a working hinge mechanism or a folding animation.
+
+### Rounded spreaders and four fasteners
+
+Each wooden spreader keeps centre (+/-203,0,300) mm and 10 x 198 x 26 mm
+X/Y/Z bounds. Its YZ outline is a rounded rectangle, Y=-99..99 and
+Z=287..313, with 4 mm circular corner radii and three equal segments per
+quarter. Extrude along X and bevel only its front/back profile edges 1 mm
+with two segments; do not round the YZ outline a second time.
+Right X=198..208, left mirrored. The flat X faces at the fastener centres
+remain intact. This specifies rounded ends instead of an ambiguous box.
+
+At Z=300, the front/rear post centre lines are Y=+/-95.201599 mm.
+Place each pair of visible fasteners at Y=+/-87,Z=300, within both the
+post and spreader silhouettes. There are four heads in total, two per side.
+
+- Shafts: centres X=+/-200.5, radius 3, axial length 15, 24 radial segments.
+  Right X=193..208, left mirrored. Each shaft passes through wood from the
+  frame into the spreader; no detached decorative discs.
+- Heads: centres X=+/-208.5, radius 7, axial length 3, 32 radial segments.
+  Right X=207..210, left mirrored. Bevel edges 0.5 mm with two segments.
+  Each head embeds 1 mm into the spreader and projects 2 mm outside it.
+- Union each shaft/head pair and remove buried faces in the final assembly
+  while preserving material regions. No extra holes, slots or moving joints.
+
+### Exact default envelope and scaling
+
+| Quantity | Default (mm) |
+| --- | --- |
+| Wooden frame width | 400 |
+| Width including spreaders | 416 |
+| Complete width including fastener heads | 420 |
+| Complete depth after the specified bevel | 362.319409848225 |
+| Complete height after the specified bevel and ground cut | 681.626227349194 |
+| Asset minimum XYZ | (-210, -181.159704924113, 0) |
+| Asset maximum XYZ | (210, 181.159704924113, 681.626227349194) |
+
+For a=14 degrees, the exact default depth in metres is
+`2*(0.17 + 0.012*cos(a) - 0.002*sin(a))` and height is
+`0.70*cos(a) + 0.010*sin(a)`. With the specified three-segment bevel,
+the supporting arc sample for both extrema is the tangent endpoint;
+the 30/60-degree samples do not extend farther in those directions.
+The feet still intersect Z=0 before clipping. All new hardware lies within
+the depth/height bounds; the four spreader heads determine the full width.
+
+The PNG's 0.40 m annotation refers to the wooden frame only. Its historical
+0.37 m depth annotation is approximate and is not a competing exact size.
+The old 416 x 370 x 690 mm overall default is superseded. Use the full
+420 x 362.319409848225 x 681.626227349194 mm box when resolving the shared
+XYZ size override. The origin remains the ground-level footprint centre.
+Allow at most 0.5 mm deviation per overall extent in a future generated mesh;
+this is a validation tolerance, not permission to alter the design.
 
 ## Flat chalk lettering
 
@@ -221,4 +338,4 @@ Arrow is a flat stroke from (w,u)=(-0.07,0.19) to (0.07,0.19), with head through
 
 ## Future checks
 
-No models were built. Future checks: four seat/three back slats, four bench legs, two rounded arms, sign's four feet and two boards, correct outward normals, flat ground contacts, complete wording and right arrow, fixed open pose and no baked lighting. Bench defaults use the exact bounds above with at most 0.0005 m dimensional deviation; positive-volume joins must remain connected. The sign retains its earlier 0.002 m part tolerance and approximate envelope pending its own review. Inspect five views plus undersides after modeling is separately authorized.
+No models were built. Future checks: four seat/three back slats, four bench legs, two rounded arms, sign's four feet and two boards, correct outward normals, flat ground contacts, complete wording and right arrow, fixed open pose and no baked lighting. Bench defaults use the exact bounds above with at most 0.0005 m dimensional deviation; positive-volume joins must remain connected. The sign uses the exact revised envelope above with 0.0005 m dimensional tolerance; verify both covers, two hinge heads and four spreader heads, their visible contours and all attachments. Inspect five views plus undersides after modeling is separately authorized.
