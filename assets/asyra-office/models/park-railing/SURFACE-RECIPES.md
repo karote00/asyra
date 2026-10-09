@@ -25,6 +25,13 @@ replacement materials declare their own stretch/repeat mapping after sizing.
 
 ## Post review colours only
 
+The following light palette applies only to the post reference sheet. The panel
+default remains charcoal-painted metal `#383A38` with the shared properties
+above. Its two rails and five pickets use the same material on every surface.
+The original dark panel image is not a texture asset: gradients or shadows in
+that illustration must not be sampled into the material. The later panel v2
+correction uses the separate review palette below.
+
 The current light-colour sheet uses this diagram palette to distinguish parts
 and planar faces. It does not request separate runtime material regions.
 
@@ -40,3 +47,20 @@ and planar faces. It does not request separate runtime material regions.
 Image-generation colour variation is not a new surface recipe. Build from the
 default values above, not sampled review pixels. Face colours, outlines, labels
 and leaders must not become baked shading, texture stripes or modeled seams.
+
+## Panel review colours only
+
+Panel v2 uses flat part/face colours for readability. They do not create
+additional runtime material regions or alter the shared charcoal default.
+
+| Diagram region | Target sRGB |
+| --- | --- |
+| Rail elevation face | #9DADB9 |
+| Rail perpendicular face | #899DAD |
+| Rail top face | #DCE5EC |
+| Picket elevation face | #D7E0E6 |
+| Picket perpendicular face | #B7C7D3 |
+| Picket top cap | #C1D0DD |
+
+There is no directional light, AO, cast shadow, texture or reflection in the
+numeric sheet. Dark contour lines and text are diagram annotations only.

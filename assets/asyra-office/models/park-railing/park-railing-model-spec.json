@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "post-v3-user-approved-for-commit; panel-reference-unchanged",
+  "status": "post-v3-user-approved-for-commit; panel-v2-user-approved-for-commit",
   "units": "metres",
   "axes": {
     "up": "+Z",

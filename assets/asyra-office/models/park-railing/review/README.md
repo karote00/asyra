@@ -1,6 +1,6 @@
 # Group 4M - Park Railing Review
 
-Status: the post v3 revision is approved by the user for commit; the original panel approval is unchanged. Drawings and specifications only; no model verification.
+Status: the post v3 revision is approved by the user for commit; panel v2 is approved by the user for commit. Drawings and specifications only; no model verification.
 
 ## One post
 
@@ -14,9 +14,62 @@ shaft, square collar and spherical finial. Default full dimensions remain
 
 ## One panel
 
-![Railing panel](02-railing-panel-v1.png)
+![Railing panel](02-railing-panel-v2.png)
 
-Review silhouette, independent unit boundaries and suitability for repeated placement. Both sheets show five views. Front/back symmetry, hidden closed ends and numerical proportions are defined in the [geometry supplement](../GEOMETRY-SUPPLEMENT.md) and [JSON](../park-railing-model-spec.json). The current post v3 uses numeric orthographic projections. Original image-generated sheets, including the panel, remain illustrative.
+[Original panel - retained visual source](02-railing-panel-v1.png).
+Panel default colour remains #383A38. V1 failed front proportions and TOP
+containment: its approximately 631 x 279 px front outline gave ratio 2.262,
+rather than 900/550 = 1.636, and its caps protruded beyond the rail depth.
+Current v2 corrects both issues by projecting the unchanged numeric geometry.
+Its light colours identify parts/faces only; they do not change the default.
+
+Review silhouette, independent unit boundaries and suitability for repeated placement. Both sheets show five views. Front/back symmetry, hidden closed ends and numerical proportions are defined in the [geometry supplement](../GEOMETRY-SUPPLEMENT.md) and [JSON](../park-railing-model-spec.json). Current post v3 and panel v2 use numeric orthographic projections. Original image-generated sheets remain illustrative.
+
+## Current panel v2 review
+
+Rebuild from this directory with the existing NumPy/Pillow environment:
+
+```sh
+python3 draw-railing-panel-projections.py
+```
+
+The single 3072 x 2048 sheet uses 1100 px/m for all five views. View cameras,
+source/image hashes, analytic extents, raster extents and saved-PNG measurements
+are retained in [panel measurements](panel-projection-measurements.json).
+No model or mesh is exported. Fixed acceptance limits are 1 px for primitive
+projection boundaries and 2 px for saved-image contours. Dark contour spans
+exclude the pale antialias fringe. Overall-size leaders are outside the measured
+object bounds; internal blue spacing annotations are excluded by the dark-contour
+threshold. No acceptance tolerance was increased to pass the drawing.
+
+The FRONT view labels one representative 180 mm picket centre pitch, one
+162 mm clear gap between adjacent pickets, and the 405 mm clear vertical opening
+between the rails. Their endpoints are derived from the same part coordinates
+as the drawing and recorded under `spacingAnnotations` in the measurement file.
+Five pickets are equally spaced. These are default dimensions: overall X sizing
+scales the pitch and horizontal gap, and overall Z sizing scales the vertical
+opening. The sheet explicitly states that spacing follows overall XYZ sizing.
+
+| Saved PNG view | Measured envelope (px) | Numeric target (px) |
+| --- | --- | --- |
+| Front | 990 x 605 | 990 x 605 |
+| Right | 28 x 605 | 27.5 x 605 |
+| Back | 990 x 605 | 990 x 605 |
+| Top | 990 x 28 | 990 x 27.5 |
+
+Front/back width-to-height ratios are exactly 900/550. All five views' raster
+envelopes are within 0.348 px of their analytic extents. All five TOP caps are
+inside the rail depth; their nominal 3.5 mm setbacks project to 3.85 px each.
+The raster report checks both margins for every cap, and the saved PNG is read
+back to verify each cap fill remains inside the rail. The lower rail is hidden
+in TOP, and RIGHT correctly superimposes the five pickets.
+
+Visual review covered the full sheet and 4x nearest-neighbour inspection of
+native TOP, front and oblique joint crops. Caps are contained, rail faces
+occlude hidden picket edges, and there are no added posts, disconnected joints
+or cast shadows. Enlarged pixels aid inspection and are not new source detail.
+This passes the scoped drawing/specification review and is approved by the user for commit;
+Blender meshes, LOD, runtime materials and app behavior are not validated here.
 
 ## Superseded post v2 review
 

@@ -1,5 +1,17 @@
 # Park Railing - Actual Generation Prompts
 
+## Current panel v2 - dimension-driven drawing
+
+The user requested correction of the panel reference after document review
+found a front aspect-ratio mismatch and protruding TOP caps. Using the approved
+programmatic drawing approach, `draw-railing-panel-projections.py` projects
+the existing seven boxes from `../park-railing-model-spec.json` at 1100 px/m.
+This is a numeric reference drawing, not an image-generation prompt or Blender
+model. Geometry and default material values remain unchanged. The light review
+palette, view cameras, layout and annotations are recorded in the source;
+saved-image measurements are in `panel-projection-measurements.json`.
+Retain original v1 as historical visual evidence; current v2 is approved by the user for commit.
+
 ## Current post v3 - dimension-driven drawing
 
 After the v2 proportion failure and two unsuccessful image-generation edits,
