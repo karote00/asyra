@@ -42,11 +42,50 @@ hidden edges at joins; never draw collar rear edges through the sphere.
 
 ## Panel
 
+All panel dimensions below are defaults, before the shared overall XYZ size
+transform. The unit is one joined infill panel; neither end post is included.
+
 Create two horizontal closed boxes, length 0.90 along X, depth and height 0.025. Their centres are (0,0,0.060) and (0,0,0.490). Add exactly five closed square pickets, section 0.018, extending from Z=0 to 0.550 at X=-0.36,-0.18,0,0.18,0.36; all centres lie at Y=0. Boolean-union these seven solids into one unit.
 
 Rail spans are X=-0.45..0.45 and Y=-0.0125..0.0125. Pickets remain behind the rail front/back planes by 0.0035 on each side. Clear horizontal spacing between pickets is 0.162. All ends and picket tops are plain flat caps with no finials. No weld beads or extra brackets. The back is geometrically identical to the front.
 
-The initial prompt placed rails at 0.13 and 0.45. The selected drawing has shorter end overhangs. Final rail centres are 0.060 and 0.490 to retain that appearance; these final values supersede prompt values. Pixel proportions must not override the dimensions.
+| Default construction item | Dimension or interval (mm) |
+| --- | --- |
+| Panel bounds X / Y / Z | -450 to 450 / -12.5 to 12.5 / 0 to 550 |
+| Each horizontal rail, X x Y x Z | 900 x 25 x 25 |
+| Lower rail Z | 47.5 to 72.5 |
+| Upper rail Z | 477.5 to 502.5 |
+| Each vertical picket, X x Y x Z | 18 x 18 x 550 |
+| Picket centre X positions | -360, -180, 0, 180, 360 |
+| Picket centre pitch / clear horizontal gap | 180 / 162 |
+| Rail-to-rail clear vertical opening | 405 |
+| Picket extension below lower rail / above upper rail | 47.5 / 47.5 |
+| Rail extension beyond outer picket edges | 81 at each end |
+| Picket setback from rail front / back planes | 3.5 / 3.5 |
+
+Each of the ten rail/picket joints is a positive-volume intersection measuring
+18 x 18 x 25 mm. Remove internal faces when forming the final surface. Do not
+introduce a front-mounted/back-mounted picket offset, weld bead or extra bracket
+to imitate ambiguous drawing contours. The default material covers the whole
+panel; colour boundaries do not introduce separate geometry.
+
+FRONT and BACK must have identical 900/550 proportions. RIGHT is the projection
+of the five aligned pickets into one 18 mm-wide strip, with 25 mm-wide rail
+sections at their defined heights. TOP has a 900 x 25 mm envelope: five 18 x
+18 mm picket caps are visible within the rail footprint, inset by 3.5 mm on
+each depth side. No picket may project beyond that footprint. The upper rail
+occludes the lower rail in TOP. Use actual depth ordering in oblique views;
+hidden joint edges are not grooves.
+
+The initial prompt placed rails at 0.13 and 0.45. The numeric specification
+supersedes those values with 0.060 and 0.490. The original generated sheet does
+not accurately establish these positions or the overall aspect ratio; its TOP
+also contradicts the depth relationship above. Corrected panel v2 projects the
+unchanged numeric specification at 1100 px/m on one 3072 x 2048 sheet. Camera
+directions follow the coordinates section; all five views share that scale.
+The lower rail is occluded in TOP, and the five caps remain within the upper
+rail footprint. Original v1 remains historical visual evidence, not the current
+numeric handoff. V2 is approved by the user for commit; no model is verified by the drawing.
 
 ## Connection reference
 

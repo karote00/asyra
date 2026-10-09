@@ -1,11 +1,11 @@
 # Asyra Office - Group 4M - Park Railing
 
-Status: the original reference batch was approved for commit. The 2026-10-09 post v3 revision is approved by the user for commit. Drawings and specifications only; no model verification.
+Status: the post v3 revision is approved by the user for commit. The panel v2 revision is approved by the user for commit. Drawings and specifications only; no model verification.
 
 | Independently placeable unit | Default X x Y x Z (m) | Sheet |
 | --- | --- | --- |
 | One railing post with collar and spherical finial | 0.08 x 0.08 x 0.72 | [Post - review colours](review/01-railing-post-v3.png) |
-| One infill panel with two rails and five pickets | 0.90 x 0.025 x 0.55 | [Panel](review/02-railing-panel-v1.png) |
+| One infill panel with two rails and five pickets | 0.90 x 0.025 x 0.55 | [Panel](review/02-railing-panel-v2.png) |
 
 The dark railing in the lower-right park of the approved office reference supplies the colour family, restrained silhouette, horizontal rails and rounded post tops. Each sheet shows front, right, back, top and oblique views. Panels exclude end posts; posts exclude panels. No pavement, masonry, plants or preset fence arrangement is included.
 
@@ -18,7 +18,7 @@ The dark railing in the lower-right park of the approved office reference suppli
 - [Actual prompts](review/PROMPTS.md)
 - [Original reference](../architecture/review/approved-office-reference.jpg)
 
-Exact dimensions, square sections, five-picket count, underside and joints are authored completions of the small, partly obscured reference. They are not measured facts recovered from it. Original image-generated sheets are illustrative, not calibrated projections. The current post v3 sheet is drawn from the JSON with one common orthographic scale; the panel remains illustrative. JSON and the geometry supplement resolve dimensions and hidden construction. Post v3 is approved by the user for commit.
+Exact dimensions, square sections, five-picket count, underside and joints are authored completions of the small, partly obscured reference. They are not measured facts recovered from it. Original image-generated sheets are illustrative, not calibrated projections. Current post v3 and panel v2 sheets are drawn from the JSON with a common orthographic scale within each sheet. JSON and the geometry supplement resolve dimensions and hidden construction. Post v3 is approved by the user; panel v2 is approved by the user for commit.
 
 No models, animation, placement logic, export or app implementation is included. The app owns arrangement and lighting. No baked shadows, AO, specular highlights or lighting gradients belong in the materials. The user authorized committing this reference handoff.
 
@@ -43,7 +43,8 @@ Explicit overall dimensions and appearance replacements follow the
 The post is one unit composed of a square shaft, square collar and sphere;
 nonuniform sizing transforms all three together, including overlaps. Reference
 assembly coordinates are default examples and must be recalculated after sizing.
-The panel drawing and its part dimensions are not revised in this post review.
+The post review did not revise panel part dimensions. The subsequent panel
+drawing correction below also preserves those dimensions.
 
 ## Dimension-driven post reference
 
@@ -70,3 +71,42 @@ Keep the specified joins and final surface requirements; overlapping display
 primitives alone do not satisfy the specified union. This route is distinct
 from the existing PNG projection script. The production generator and its
 geometry, appearance and LOD validation belong to the later implementation stage.
+
+## Panel default and document review - 2026-10-09
+
+The panel defaults to `charcoal-painted-metal`, base sRGB `#383A38`, metallic
+0.15, roughness 0.80, opacity 1 and emission 0. The existing top-level JSON
+material applies to both units; the panel does not introduce a second material
+definition. All two rails and five pickets share one replaceable appearance
+region, including ends and hidden faces. Use the shared XYZ sizing and
+appearance contract; default dimensions are not fixed instance dimensions.
+
+The default 900 x 25 x 550 mm envelope and all seven part coordinates were
+checked. See the [panel geometry](GEOMETRY-SUPPLEMENT.md#panel) for dimensions,
+spacing, intersections and projected visibility. As a simple assembly of
+boxes, its future production route is direct programmatic geometry with the
+specified joined surface. No runtime generator is implemented by this review.
+
+The [original panel sheet](review/02-railing-panel-v1.png) remains available,
+but failed dimensional and top-view consistency checks. Its front outline is
+approximately 631 x 279 px (ratio 2.262), rather than the specified 900/550
+(ratio 1.636). Its top view showed pickets wider than the rails, contrary to
+the 18/25 mm depth relationship. V2 corrects these projections without changing
+the numeric dimensions. The original batch approval does not override those
+discrepancies.
+
+## Dimension-driven panel correction
+
+The current panel v2 is a single five-view sheet drawn at 1100 px/m from the
+same seven specified boxes. Light review colours identify parts and faces;
+all runtime surfaces still default to charcoal #383A38. The sheet labels the
+default 900 x 25 x 550 mm envelope and 3.5 mm depth setbacks.
+
+- [Drawing source](review/draw-railing-panel-projections.py)
+- [Projection and saved-image measurements](review/panel-projection-measurements.json)
+
+Saved-image front/back envelopes are 990 x 605 px, exactly the specified aspect
+ratio. TOP is 990 x 28 px including pixel rounding of the 27.5 px rail depth;
+all five 18 mm caps remain inside it. The original image is preserved. This
+passes scoped reference review and is approved by the user for commit; no Blender operation,
+runtime generator, model export or model acceptance is included.
