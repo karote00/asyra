@@ -1,0 +1,679 @@
+{
+  "source": "01-park-bench-v1.png",
+  "sourceSHA256": "71a4b5fb586be0d85abb4a97e919a404157e580fdac8cc14b7c227d91c0b58e8",
+  "specificationSHA256": "e47f91b1884e13e0bc132cd13fba949f714de24ca36497813ab2f8dbb4cc740e",
+  "output": "01-park-bench-v4.png",
+  "outputSHA256": "5fcb2da1d557e5424ab853818cf9e8388c517016173f0eded4a926cefd613c74",
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+  "views": [
+    {
+      "view": "FRONT",
+      "method": "shared-geometry-projection",
+      "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+      "image": "bench-v4-evidence/front.png",
+      "imageSHA256": "ee8b9a25e31bdc4647f272f329ad47c14853f588ddda4516aecbbde53dd64720",
+      "destinationXY": [
+        30,
+        190
+      ],
+      "camera": {
+        "azimuthDegrees": 0,
+        "elevationDegrees": 10,
+        "targetMetres": [
+          0,
+          0,
+          0.365
+        ]
+      },
+      "pixelsPerMetre": 800,
+      "supersampling": 2,
+      "sizePixels": [
+        1080,
+        720
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "projectionBasis": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0,
+          0.17364817766693033,
+          0.984807753012208
+        ],
+        [
+          -0.0,
+          0.984807753012208,
+          -0.17364817766693033
+        ]
+      ],
+      "rasterBounds": [
+        60.0,
+        37.0,
+        1020.0,
+        675.5
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "method": "shared-geometry-projection",
+      "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+      "image": "bench-v4-evidence/right.png",
+      "imageSHA256": "13c67397d3414eeba7864912a1579dba4f19c4515577449342fa0c838b8ef233",
+      "destinationXY": [
+        1140,
+        190
+      ],
+      "camera": {
+        "azimuthDegrees": 90,
+        "elevationDegrees": 0,
+        "targetMetres": [
+          0,
+          0.047516058510270756,
+          0.365
+        ]
+      },
+      "pixelsPerMetre": 800,
+      "supersampling": 2,
+      "sizePixels": [
+        760,
+        720
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "projectionBasis": [
+        [
+          6.123233995736766e-17,
+          1.0,
+          0.0
+        ],
+        [
+          -0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -1.0,
+          6.123233995736766e-17,
+          -0.0
+        ]
+      ],
+      "rasterBounds": [
+        170.0,
+        68.0,
+        590.0,
+        652.0
+      ]
+    },
+    {
+      "view": "BACK",
+      "method": "shared-geometry-projection",
+      "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+      "image": "bench-v4-evidence/back.png",
+      "imageSHA256": "44cb00530def4cdc166c82eb160a6e29f3e717f98b1b7b0a96772b20d89a3a1b",
+      "destinationXY": [
+        1940,
+        190
+      ],
+      "camera": {
+        "azimuthDegrees": 180,
+        "elevationDegrees": 10,
+        "targetMetres": [
+          0,
+          0,
+          0.365
+        ]
+      },
+      "pixelsPerMetre": 800,
+      "supersampling": 2,
+      "sizePixels": [
+        1080,
+        720
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "projectionBasis": [
+        [
+          -1.0,
+          1.2246467991473532e-16,
+          0.0
+        ],
+        [
+          -2.1265768495757713e-17,
+          -0.17364817766693033,
+          0.984807753012208
+        ],
+        [
+          -1.2060416625018976e-16,
+          -0.984807753012208,
+          -0.17364817766693033
+        ]
+      ],
+      "rasterBounds": [
+        60.0,
+        108.0,
+        1020.0,
+        675.5
+      ]
+    },
+    {
+      "view": "TOP",
+      "method": "shared-geometry-projection",
+      "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+      "image": "bench-v4-evidence/top.png",
+      "imageSHA256": "835f802aa085e70cf6f617a9598fbfdea33ff85d682769b4f990f6b14d9e4392",
+      "destinationXY": [
+        50,
+        1020
+      ],
+      "camera": {
+        "azimuthDegrees": 0,
+        "elevationDegrees": 90,
+        "targetMetres": [
+          0,
+          0.047516058510270756,
+          0.365
+        ]
+      },
+      "pixelsPerMetre": 800,
+      "supersampling": 2,
+      "sizePixels": [
+        1200,
+        750
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "projectionBasis": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0,
+          1.0,
+          6.123233995736766e-17
+        ],
+        [
+          -0.0,
+          6.123233995736766e-17,
+          -1.0
+        ]
+      ],
+      "rasterBounds": [
+        120.0,
+        165.0,
+        1080.0,
+        585.0
+      ]
+    },
+    {
+      "view": "THREE-QUARTER",
+      "method": "shared-geometry-projection",
+      "geometrySHA256": "b28d6224b9c4a92120c0ebe56ece8ec55f00b8596dcebc19d45edabef938c316",
+      "image": "bench-v4-evidence/three-quarter.png",
+      "imageSHA256": "0606950a2db29505b9e055718a5d75bc248308bb936d4a23da730429cdd4a6d0",
+      "destinationXY": [
+        1550,
+        970
+      ],
+      "camera": {
+        "azimuthDegrees": 25,
+        "elevationDegrees": 23,
+        "targetMetres": [
+          0,
+          0.047516058510270756,
+          0.365
+        ]
+      },
+      "pixelsPerMetre": 800,
+      "supersampling": 2,
+      "sizePixels": [
+        1450,
+        850
+      ],
+      "visibleGroups": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "projectionBasis": [
+        [
+          0.9063077870366499,
+          0.42261826174069944,
+          0.0
+        ],
+        [
+          -0.16513011033011876,
+          0.35412266438744666,
+          0.9205048534524403
+        ],
+        [
+          -0.38902216108994764,
+          0.8342607166889769,
+          -0.39073112848927377
+        ]
+      ],
+      "rasterBounds": [
+        211.5,
+        25.0,
+        1225.5,
+        841.5
+      ]
+    }
+  ],
+  "constructionChecks": {
+    "rearInsetMm": 92.50000000000003,
+    "armWoodClearances": [
+      {
+        "side": 0,
+        "boardGroup": 0,
+        "wholeTubeClearanceLowerBoundMm": 78.1062433165275
+      },
+      {
+        "side": 0,
+        "boardGroup": 1,
+        "wholeTubeClearanceLowerBoundMm": 105.33675718431782
+      },
+      {
+        "side": 0,
+        "boardGroup": 2,
+        "wholeTubeClearanceLowerBoundMm": 127.83307657684409
+      },
+      {
+        "side": 0,
+        "boardGroup": 3,
+        "wholeTubeClearanceLowerBoundMm": 127.82675578448091
+      },
+      {
+        "side": 0,
+        "boardGroup": 4,
+        "wholeTubeClearanceLowerBoundMm": 7.648545353266902
+      },
+      {
+        "side": 0,
+        "boardGroup": 5,
+        "wholeTubeClearanceLowerBoundMm": 15.13724630440146
+      },
+      {
+        "side": 0,
+        "boardGroup": 6,
+        "wholeTubeClearanceLowerBoundMm": 104.80440701954224
+      },
+      {
+        "side": 1,
+        "boardGroup": 0,
+        "wholeTubeClearanceLowerBoundMm": 78.1062433165275
+      },
+      {
+        "side": 1,
+        "boardGroup": 1,
+        "wholeTubeClearanceLowerBoundMm": 105.33675718431782
+      },
+      {
+        "side": 1,
+        "boardGroup": 2,
+        "wholeTubeClearanceLowerBoundMm": 127.83307657684409
+      },
+      {
+        "side": 1,
+        "boardGroup": 3,
+        "wholeTubeClearanceLowerBoundMm": 127.82675578448091
+      },
+      {
+        "side": 1,
+        "boardGroup": 4,
+        "wholeTubeClearanceLowerBoundMm": 7.648545353266902
+      },
+      {
+        "side": 1,
+        "boardGroup": 5,
+        "wholeTubeClearanceLowerBoundMm": 15.13724630440146
+      },
+      {
+        "side": 1,
+        "boardGroup": 6,
+        "wholeTubeClearanceLowerBoundMm": 104.80440701954224
+      }
+    ],
+    "armMetalJoins": [
+      {
+        "side": 0,
+        "frontEndpointMatchesLeg": true,
+        "rearWitnessMetres": [
+          -0.485,
+          0.2453266987654101,
+          0.51275
+        ],
+        "rearInteriorMarginsMm": [
+          11.87481591082024,
+          11.87481591082024
+        ]
+      },
+      {
+        "side": 1,
+        "frontEndpointMatchesLeg": true,
+        "rearWitnessMetres": [
+          0.485,
+          0.2453266987654101,
+          0.51275
+        ],
+        "rearInteriorMarginsMm": [
+          11.87481591082024,
+          11.87481591082024
+        ]
+      }
+    ],
+    "backPostContacts": [
+      {
+        "pointMetres": [
+          -0.485,
+          0.2115628110273804,
+          0.483774776497412
+        ],
+        "boardInteriorMm": 5.340741737109306,
+        "postRadialInteriorMm": 8.011112605663975
+      },
+      {
+        "pointMetres": [
+          -0.485,
+          0.23835773027049267,
+          0.583774776497412
+        ],
+        "boardInteriorMm": 5.340741737109334,
+        "postRadialInteriorMm": 8.011112605663975
+      },
+      {
+        "pointMetres": [
+          -0.485,
+          0.2651526495136049,
+          0.683774776497412
+        ],
+        "boardInteriorMm": 5.340741737109306,
+        "postRadialInteriorMm": 8.011112605663975
+      },
+      {
+        "pointMetres": [
+          0.485,
+          0.2115628110273804,
+          0.483774776497412
+        ],
+        "boardInteriorMm": 5.340741737109306,
+        "postRadialInteriorMm": 8.011112605663975
+      },
+      {
+        "pointMetres": [
+          0.485,
+          0.23835773027049267,
+          0.583774776497412
+        ],
+        "boardInteriorMm": 5.340741737109334,
+        "postRadialInteriorMm": 8.011112605663975
+      },
+      {
+        "pointMetres": [
+          0.485,
+          0.2651526495136049,
+          0.683774776497412
+        ],
+        "boardInteriorMm": 5.340741737109306,
+        "postRadialInteriorMm": 8.011112605663975
+      }
+    ],
+    "frameContacts": [
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          -0.5636586992512522,
+          -0.165,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          -0.5354891604271019,
+          -0.055,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          -0.5073196216029516,
+          0.055,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          -0.47915008277880133,
+          0.165,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "support/leg",
+        "pointMetres": [
+          -0.5760115125094236,
+          -0.17418756462484117,
+          0.3145
+        ],
+        "interiorMm": [
+          5.999999999999948,
+          16.499999999999986
+        ]
+      },
+      {
+        "join": "crossrail/support",
+        "pointMetres": [
+          -0.5725,
+          -0.175,
+          0.3145
+        ],
+        "interiorMm": [
+          6.084102388112631,
+          5.000000000000002
+        ]
+      },
+      {
+        "join": "support/leg",
+        "pointMetres": [
+          -0.4864884874905764,
+          0.17539333599078122,
+          0.3145
+        ],
+        "interiorMm": [
+          5.999999999999948,
+          16.69165479749056
+        ]
+      },
+      {
+        "join": "crossrail/support",
+        "pointMetres": [
+          -0.48,
+          0.17620577136594004,
+          0.3145
+        ],
+        "interiorMm": [
+          3.603289903818666,
+          5.000000000000002
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          0.5636586992512522,
+          -0.165,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          0.5354891604271019,
+          -0.055,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          0.5073196216029516,
+          0.055,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "seat/support",
+        "pointMetres": [
+          0.47915008277880133,
+          0.165,
+          0.326
+        ],
+        "interiorMm": [
+          0.9999999999999913,
+          0.999999999999987
+        ]
+      },
+      {
+        "join": "support/leg",
+        "pointMetres": [
+          0.5760115125094236,
+          -0.17418756462484117,
+          0.3145
+        ],
+        "interiorMm": [
+          5.999999999999948,
+          16.499999999999986
+        ]
+      },
+      {
+        "join": "crossrail/support",
+        "pointMetres": [
+          0.5725,
+          -0.175,
+          0.3145
+        ],
+        "interiorMm": [
+          6.084102388112631,
+          5.000000000000002
+        ]
+      },
+      {
+        "join": "support/leg",
+        "pointMetres": [
+          0.4864884874905764,
+          0.17539333599078122,
+          0.3145
+        ],
+        "interiorMm": [
+          5.999999999999948,
+          16.69165479749056
+        ]
+      },
+      {
+        "join": "crossrail/support",
+        "pointMetres": [
+          0.48,
+          0.17620577136594004,
+          0.3145
+        ],
+        "interiorMm": [
+          3.603289903818666,
+          5.000000000000002
+        ]
+      }
+    ],
+    "backSourceRatios": {
+      "rearSpacing": 0.8398268398268398,
+      "backWidth": 0.9264069264069265,
+      "seatWidth": 0.9870129870129869
+    },
+    "woodOutsidePostMm": 27.500000000000046,
+    "boundsMin": [
+      -0.6,
+      -0.26251605851027077,
+      0.0
+    ],
+    "boundsMax": [
+      0.6,
+      0.26251605851027077,
+      0.73
+    ]
+  },
+  "scope": "One numeric construction projected five ways; source illustrations are uncalibrated appearance references. User approval and production mesh verification remain separate."
+}

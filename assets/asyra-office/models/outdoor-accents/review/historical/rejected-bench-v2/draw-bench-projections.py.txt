@@ -1,0 +1,331 @@
+"""Project the bench construction into one reference PNG; export no model."""
+import hashlib
+import json
+import math
+from pathlib import Path
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+ROOT = Path(__file__).resolve().parent
+SOURCE = ROOT.parent / 'outdoor-accents-model-spec.json'
+SPEC = json.loads(SOURCE.read_text())
+BENCH = SPEC['modules'][0]
+PARTS = {p['partId']: p for p in BENCH['components']}
+SHIFT = np.array(BENCH['constructionToAssetTranslation'])
+STYLE = BENCH['referenceReview']
+SCALE, SS = STYLE['scalePixelsPerMetre'], 2
+WIDTH, HEIGHT = STYLE['sheetPixels']
+PRIMITIVES = []
+PALETTE = {key: SPEC['materials'][key]['baseColorSRGB'] for key in ('wood','wood-grain','metal')}
+BOARD_FRAMES = {}
+INK, BLUE = '#26343A', '#315D79'
+
+
+def add(kind, centre, group, **kw):
+    PRIMITIVES.append(dict(kind=kind, centre=np.array(centre)+SHIFT, group=group, **kw))
+
+
+def sphere(centre, radius, group):
+    add('sphere', centre, group, radius=radius)
+
+
+def cylinder(a, b, radius, group):
+    a, b = np.array(a), np.array(b)
+    add('cylinder', (a+b)/2, group, radius=radius,
+        axis=(b-a)/np.linalg.norm(b-a), half=np.linalg.norm(b-a)/2)
+
+
+def rounded_box(centre, size, bevel, group, rotation=np.eye(3)):
+    centre, core = np.array(centre), np.array(size)/2-bevel
+    if group < 7:
+        BOARD_FRAMES[group] = (centre+SHIFT, np.array(size)/2, rotation, bevel)
+    for axis in range(3):
+        half = core.copy(); half[axis] += bevel
+        add('box', centre, group, half=half, rotation=rotation)
+    for axis in range(3):
+        other = [i for i in range(3) if i != axis]
+        for a in (-1, 1):
+            for b in (-1, 1):
+                p = np.zeros(3); p[other] = core[other]*[a,b]
+                start, end = p.copy(), p.copy()
+                start[axis], end[axis] = -core[axis], core[axis]
+                cylinder(centre+rotation@start, centre+rotation@end, bevel, group)
+    for x in (-1,1):
+        for y in (-1,1):
+            for z in (-1,1):
+                sphere(centre+rotation@(core*[x,y,z]), bevel, group)
+
+
+p = PARTS['seat-slats']
+for i,y in enumerate(p['centresY']):
+    rounded_box([p['centreX'],y,p['centreZ']],p['size'],p['bevel'],i)
+p = PARTS['back-slats']; angle = math.radians(p['inclinationDegrees'])
+rear_bend_y, rear_bend_z = PARTS['rear-posts']['pathYZ'][1]
+rotation = np.array([[1,0,0],[0,math.cos(angle),math.sin(angle)],
+                     [0,-math.sin(angle),math.cos(angle)]])
+for i,z in enumerate(p['centresZ']):
+    y = rear_bend_y+(z-rear_bend_z)*math.tan(angle)-p['rearPostSetbackY']
+    rounded_box([0,y,z],[p['width'],p['normalThickness'],p['localHeight']],p['bevel'],4+i,rotation)
+for side in range(2):
+    group = 7+side
+    p = PARTS['seat-supports']
+    rounded_box(p['centres'][side],p['size'],p['bevel'],group)
+    p = PARTS['front-legs']; x,y = p['centresXY'][side]
+    cylinder([x,y,p['zMin']],[x,y,p['zMax']],p['radius'],group)
+    p = PARTS['rear-posts']; x = p['xValues'][side]
+    path = [np.array([x,y,z]) for y,z in p['pathYZ']]
+    for a,b in zip(path,path[1:]): cylinder(a,b,p['radius'],group)
+    for point in path[1:]: sphere(point,p['radius'],group)
+    p = PARTS['arms']; control = np.array(p['controlPointsYZ']); x = p['xValues'][side]
+    path = []
+    for t in np.linspace(0,1,p['pathIntervals']+1):
+        y,z = (1-t)**3*control[0]+3*(1-t)**2*t*control[1]+3*(1-t)*t*t*control[2]+t**3*control[3]
+        path.append(np.array([x,y,z])); sphere(path[-1],p['radius'],group)
+    for a,b in zip(path,path[1:]): cylinder(a,b,p['radius'],group)
+
+p = PARTS['seat-crossrails']
+for centre in p['centres']:
+    rounded_box(centre,p['size'],p['bevel'],9)
+
+
+def extent(p, direction):
+    if p['kind'] == 'sphere': return p['radius']
+    if p['kind'] == 'box': return np.abs(direction@p['rotation'])@p['half']
+    cosine = np.dot(direction,p['axis'])
+    return abs(cosine)*p['half']+p['radius']*math.sqrt(max(0,1-cosine*cosine))
+
+
+bounds = np.array([[min(p['centre'][i]-extent(p,np.eye(3)[i]) for p in PRIMITIVES)
+                    for i in range(3)],
+                   [max(p['centre'][i]+extent(p,np.eye(3)[i]) for p in PRIMITIVES)
+                    for i in range(3)]])
+# Analytic primitive envelopes are conservative at rounded-box corners, but
+# principal extrema are attained on flat face centres for this construction.
+assert np.allclose(bounds[0], BENCH['defaultBounds']['min'], atol=1e-9)
+assert np.allclose(bounds[1], BENCH['defaultBounds']['max'], atol=1e-9)
+
+
+def rgb(s): return [int(s[i:i+2],16) for i in (1,3,5)]
+
+
+def draw_view(name, camera, right, origin, rect):
+    eye = np.array(camera,dtype=float); eye /= np.linalg.norm(eye)
+    right = np.array(right,dtype=float); right /= np.linalg.norm(right)
+    up = np.cross(eye,right); direction = -eye
+    x0,y0,x1,y1 = rect
+    horizontal = [np.dot(p['centre'],right)+sign*extent(p,right) for p in PRIMITIVES for sign in (-1,1)]
+    vertical = [np.dot(p['centre'],up)+sign*extent(p,up) for p in PRIMITIVES for sign in (-1,1)]
+    if name == 'THREE-QUARTER':
+        origin = ((x0+x1)/2-SCALE*(min(horizontal)+max(horizontal))/2,
+                  (y0+y1)/2+SCALE*(min(vertical)+max(vertical))/2)
+    projected = [origin[0]+SCALE*min(horizontal),origin[1]-SCALE*max(vertical),
+                 origin[0]+SCALE*max(horizontal),origin[1]-SCALE*min(vertical)]
+    assert projected[0]>x0+2 and projected[1]>y0+2 and projected[2]<x1-2 and projected[3]<y1-2, (name,projected,rect)
+    shape = ((y1-y0)*SS,(x1-x0)*SS)
+    depth = np.full(shape,np.inf)
+    owners = np.full(shape,-1,dtype=np.int16)
+    faces = np.zeros(shape,dtype=np.int8)
+    for p in PRIMITIVES:
+        cx = origin[0]+SCALE*np.dot(p['centre'],right)
+        cy = origin[1]-SCALE*np.dot(p['centre'],up)
+        ex,ey = SCALE*extent(p,right),SCALE*extent(p,up)
+        left=max(x0*SS,int(math.floor((cx-ex)*SS))-1)
+        top=max(y0*SS,int(math.floor((cy-ey)*SS))-1)
+        rr=min(x1*SS,int(math.ceil((cx+ex)*SS))+1)
+        bb=min(y1*SS,int(math.ceil((cy+ey)*SS))+1)
+        if rr<=left or bb<=top: continue
+        ys,xs = np.mgrid[top:bb,left:rr]
+        rays = (((xs+.5)/SS-origin[0])/SCALE)[...,None]*right
+        rays = rays+((origin[1]-(ys+.5)/SS)/SCALE)[...,None]*up+eye*10
+        o = rays-p['centre']; hit=np.full(xs.shape,np.inf)
+        face=np.zeros(xs.shape,dtype=np.int8)
+        if p['kind']=='sphere':
+            b=o@direction; c=np.sum(o*o,axis=2)-p['radius']**2
+            disc=b*b-c
+            hit=np.where(disc>=0,-b-np.sqrt(np.maximum(disc,0)),np.inf)
+        elif p['kind']=='box':
+            local=o@p['rotation']; d=direction@p['rotation']
+            near=np.full(xs.shape,-np.inf); far=np.full(xs.shape,np.inf)
+            valid=np.ones(xs.shape,dtype=bool)
+            for a in range(3):
+                if abs(d[a])<1e-12:
+                    valid &= np.abs(local[...,a])<=p['half'][a]
+                    continue
+                t1=(-p['half'][a]-local[...,a])/d[a]
+                t2=(p['half'][a]-local[...,a])/d[a]
+                entry=np.minimum(t1,t2)
+                face[entry>near]=a
+                near=np.maximum(near,entry); far=np.minimum(far,np.maximum(t1,t2))
+            hit=np.where(valid&(near<=far)&(near>=0),near,np.inf)
+        else:
+            axis=p['axis']; axial=o@axis; da=np.dot(direction,axis)
+            perpendicular=o-axial[...,None]*axis
+            dp=direction-da*axis
+            a=np.dot(dp,dp); b=perpendicular@dp
+            c=np.sum(perpendicular*perpendicular,axis=2)-p['radius']**2
+            if a>1e-12:
+                disc=b*b-a*c
+                t=(-b-np.sqrt(np.maximum(disc,0)))/a
+                hit=np.where((disc>=0)&(np.abs(axial+t*da)<=p['half']),t,np.inf)
+            if abs(da)>1e-12:
+                for sign in (-1,1):
+                    t=(sign*p['half']-axial)/da
+                    radial=perpendicular+t[...,None]*dp
+                    valid=(np.sum(radial*radial,axis=2)<=p['radius']**2)&(t<hit)
+                    hit[valid]=t[valid]
+        sl=np.s_[top-y0*SS:bb-y0*SS,left-x0*SS:rr-x0*SS]
+        visible=(hit>=0)&(hit<depth[sl]-1e-10)
+        depth[sl][visible]=hit[visible]; owners[sl][visible]=p['group']
+        faces[sl][visible]=face[visible] if p['kind']=='box' else 1
+    pixels=np.full((*shape,3),255,dtype=np.uint8)
+    for group in range(10):
+        mask=owners==group
+        if group>=7:
+            pixels[mask]=rgb(PALETTE['metal'])
+            continue
+        yy,xx=np.where(mask)
+        if not len(xx): continue
+        h=((xx+x0*SS+.5)/SS-origin[0])/SCALE
+        v=(origin[1]-(yy+y0*SS+.5)/SS)/SCALE
+        points=h[:,None]*right+v[:,None]*up+(10-depth[mask])[:,None]*eye
+        centre,half,board_rotation,bevel=BOARD_FRAMES[group]
+        local=(points-centre)@board_rotation
+        # Choose the nearest face for the documented local material mapping.
+        # The same colour recipe is used on every orientation; no lighting.
+        normals=local-np.clip(local,-half+bevel,half-bevel)
+        axes=np.argmax(np.abs(normals),axis=1)
+        positive=local+half
+        longitudinal=positive[:,0].copy()
+        cross=np.where(axes==2,positive[:,1],positive[:,2])
+        longitudinal[axes==0]=positive[axes==0,1]
+        f=.5+.5*np.sin(2*np.pi*(cross/.004+.1*np.sin(2*np.pi*longitudinal/.18)))
+        base=np.array(rgb(PALETTE['wood']))/255
+        grain=np.array(rgb(PALETTE['wood-grain']))/255
+        def linear(c): return np.where(c<=.04045,c/12.92,((c+.055)/1.055)**2.4)
+        blend=linear(base)+(linear(grain)-linear(base))*(.15*f[:,None])
+        srgb=np.where(blend<=.0031308,12.92*blend,1.055*blend**(1/2.4)-.055)
+        pixels[mask]=np.rint(np.clip(srgb,0,1)*255).astype(np.uint8)
+    # Outline visible part boundaries only; never show hidden intersections.
+    boundary_owner=np.where(owners>=7,7,owners)
+    edge=np.zeros(shape,dtype=bool)
+    for n in (1,2):
+        edge[n:] |= boundary_owner[n:] != boundary_owner[:-n]; edge[:-n] |= boundary_owner[:-n] != boundary_owner[n:]
+        edge[:,n:] |= boundary_owner[:,n:] != boundary_owner[:,:-n]; edge[:,:-n] |= boundary_owner[:,:-n] != boundary_owner[:,n:]
+    pixels[edge&(owners>=0)]=rgb(INK)
+    paper.paste(Image.fromarray(pixels),(x0*SS,y0*SS))
+    yy,xx=np.where(owners>=0)
+    actual=[x0+xx.min()/SS,y0+yy.min()/SS,x0+(xx.max()+1)/SS,y0+(yy.max()+1)/SS]
+    visible=[int(i) for i in np.unique(owners) if i>=0]
+    if name=='TOP': assert all(i in visible for i in range(7)), visible
+    expected=([BENCH['nominalSize'][0],BENCH['nominalSize'][2]] if name in ('FRONT','BACK') else
+              [BENCH['nominalSize'][1],BENCH['nominalSize'][2]] if name=='RIGHT' else
+              [BENCH['nominalSize'][0],BENCH['nominalSize'][1]] if name=='TOP' else None)
+    if expected:
+        measured=[actual[2]-actual[0],actual[3]-actual[1]]
+        assert np.allclose(measured,np.array(expected)*SCALE,atol=1), (name,measured,expected)
+    return dict(view=name,cameraDirection=eye.tolist(),screenRight=right.tolist(),
+                originPixels=origin,rasterBoundsPixels=actual,visibleGroups=visible)
+
+
+paper=Image.new('RGB',(WIDTH*SS,HEIGHT*SS),'white')
+views=[('FRONT',(0,-1,0),(1,0,0),(680,970),(115,285,1245,980)),
+       ('RIGHT',(1,0,0),(0,1,0),(1560,970),(1320,285,1800,980)),
+       ('BACK',(0,1,0),(-1,0,0),(2390,970),(1825,285,2955,980)),
+       ('TOP',(0,0,1),(1,0,0),(680,1480),(115,1240,1245,1720)),
+       ('THREE-QUARTER',(1,-1,.8),(1,1,0),(2375,1800),(1830,1030,2945,1900))]
+records=[draw_view(*v) for v in views]
+draw=ImageDraw.Draw(paper)
+fontdir=Path('/System/Library/Fonts/Supplemental')
+
+
+def text(x,y,s,size=30,bold=False,anchor='lt',colour=INK):
+    font=ImageFont.truetype(str(fontdir/('Arial Bold.ttf' if bold else 'Arial.ttf')),size*SS)
+    draw.text((x*SS,y*SS),s,font=font,fill=colour,anchor=anchor)
+
+
+def line(points): draw.line([(x*SS,y*SS) for x,y in points],fill=BLUE,width=2*SS)
+
+
+def dim(a,b,label,vertical=False):
+    line([a,b])
+    for x,y in (a,b):
+        line([(x-7,y+7),(x+7,y-7)])
+    x,y=(np.array(a)+b)/2
+    text(x-18 if vertical else x,y if vertical else y-35,label,27,anchor='rm' if vertical else 'mt',colour=BLUE)
+
+
+text(65,38,'PARK BENCH - SINGLE UNIT',54,True)
+text(65,124,'NUMERIC REVIEW - original wood and dark metal palette; replaceable appearance',30)
+text(65,176,'Defaults: wood #B68050 / grain #95683E / metal #343633',28)
+for x,label in [(680,'FRONT'),(1560,'RIGHT'),(2390,'BACK')]:text(x,1005,label,36,True,'mt')
+text(680,1770,'TOP',36,True,'mt');text(2375,1920,'THREE-QUARTER',36,True,'mt')
+dim((680-.6*SCALE,390),(680+.6*SCALE,390),'1200 mm')
+dim((225,970-.73*SCALE),(225,970),'730',True)
+dim((1310,970-.36*SCALE),(1310,970),'360',True)
+text(65,1100,'TOP includes all 3 tilted back slats above the 4 seat slats.',29,True)
+text(65,1150,'Seat gaps: 10 mm - Back tilt: 7 degrees - Tube diameter: 45 mm',28)
+text(1320,1290,'JOIN DETAILS',29,True)
+text(1320,1340,'Seat/support overlap: 2 mm',25)
+text(1320,1385,'Rear top: hemispherical cap',25)
+text(1320,1430,'Origin: exact XY bounds centre',25)
+text(1320,1475,'Dimensions scale with XYZ.',25)
+text(65,1860,'4 seat slats - 3 back slats - 2 arms - 4 ground contacts',28)
+text(65,1910,'Intrinsic wood grain only - No shadows or AO - Reference drawing only.',27)
+size=BENCH['nominalSize']
+text(WIDTH/2,2000,f'DEFAULT SIZE: {size[0]*1000:.0f} x {size[1]*1000:.3f} x {size[2]*1000:.0f} mm - All views: {SCALE} px/m',29,True,'mt')
+output=ROOT/'01-park-bench-v2.png';paper.resize((WIDTH,HEIGHT),Image.Resampling.LANCZOS).save(output)
+# Verify documented contact witnesses in analytic default geometry.
+def primitive_distance(point, primitive):
+    q = np.array(point)+SHIFT-primitive['centre']
+    if primitive['kind']=='sphere': return np.linalg.norm(q)-primitive['radius']
+    if primitive['kind']=='box':
+        d=np.abs(q@primitive['rotation'])-primitive['half']
+    else:
+        along=np.dot(q,primitive['axis'])
+        d=np.array([np.linalg.norm(q-along*primitive['axis'])-primitive['radius'],abs(along)-primitive['half']])
+    return np.linalg.norm(np.maximum(d,0))+min(float(np.max(d)),0)
+
+
+def group_distance(point,group):
+    return min(primitive_distance(point,p) for p in PRIMITIVES if p['group']==group)
+
+
+contacts=[]
+for side,sign in enumerate((-1,1)):
+    for i,y in enumerate(PARTS['seat-slats']['centresY']):
+        point=[sign*.535,y,.326]
+        distances=[group_distance(point,i),group_distance(point,7+side)]
+        assert max(distances)<-.0005, (point,distances)
+        contacts.append(dict(kind='seat-support',side=side,board=i,constructionPoint=point,interiorDistancesMetres=distances))
+    for i,z in enumerate(PARTS['back-slats']['centresZ']):
+        y=rear_bend_y+(z-rear_bend_z)*math.tan(angle)-PARTS['back-slats']['rearPostSetbackY']
+        point=[sign*.565,y+.009,z]
+        distances=[group_distance(point,4+i),group_distance(point,7+side)]
+        assert max(distances)<-.0005, (point,distances)
+        contacts.append(dict(kind='back-post',side=side,board=i,constructionPoint=point,interiorDistancesMetres=distances))
+
+for side,sign in enumerate((-1,1)):
+    for y in (-.18,.18):
+        point=[sign*.545,y,.3145]
+        distances=[group_distance(point,9),group_distance(point,7+side)]
+        assert max(distances)<-.0005,(point,distances)
+        contacts.append(dict(kind='crossrail-side-support',side=side,constructionPoint=point,interiorDistancesMetres=distances))
+
+saved=np.array(Image.open(output).convert('RGB'))
+saved_checks=[]
+for record in records[:4]:
+    l,t,r,b=record['rasterBoundsPixels']
+    left,top=int(math.floor(l))-3,int(math.floor(t))-3
+    region=saved[top:int(math.ceil(b))+3,left:int(math.ceil(r))+3]
+    yy,xx=np.where(np.max(region,axis=2)<100)
+    measured=[int(xx.max()-xx.min()+1),int(yy.max()-yy.min()+1)]
+    expected=[r-l,b-t]
+    assert np.allclose(measured,expected,atol=2),(record['view'],measured,expected)
+    saved_checks.append(dict(view=record['view'],envelopePixels=measured,targetRasterPixels=expected))
+
+report={'sourceSHA256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'drawingSHA256':hashlib.sha256(output.read_bytes()).hexdigest(),
+        'sheetPixels':[WIDTH,HEIGHT],'pixelsPerMetre':SCALE,'analyticBoundsMetres':bounds.tolist(),'views':records,
+        'savedPNGChecks':saved_checks,'contactWitnesses':contacts,
+        'scope':'Reference projection only. Rounded edges are analytic, not evidence of production tessellation. No model is exported.'}
+(ROOT/'bench-projection-measurements.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps({'output':str(output),'bounds':bounds.tolist(),'views':len(records)}))

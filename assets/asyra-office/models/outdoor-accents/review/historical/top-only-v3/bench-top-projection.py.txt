@@ -1,0 +1,267 @@
+"""Draw the bench TOP from the current component contract; export no 3D model."""
+import math
+import numpy as np
+from PIL import Image
+
+
+def compose_top(spec, source):
+    parts = {p['partId']: p for p in spec['components']}
+    style = spec['referenceReview']['topProjection']
+    supersample = 2
+    scale = style['pixelsPerMetre'] * supersample
+    output_width, output_height = style['sizePixels']
+    width, height = output_width * supersample, output_height * supersample
+    ymax = spec['defaultBounds']['max'][1] - spec['constructionToAssetTranslation'][1]
+    origin = np.array([width / 2, 35 * supersample + scale * ymax])
+    depth = np.full((height, width), np.inf)
+    owner = np.full((height, width), -1, dtype=np.int16)
+    wood_frames = {}
+    primitives = []
+    direction = np.array([0., 0., -1.])
+
+    def sphere(c, r, group):
+        primitives.append(dict(kind='sphere', c=np.array(c), r=r, group=group))
+
+    def cylinder(a, b, r, group):
+        a, b = np.array(a), np.array(b)
+        length = np.linalg.norm(b-a)
+        primitives.append(dict(kind='cylinder', c=(a+b)/2, axis=(b-a)/length,
+                               half=length/2, r=r, group=group))
+
+    def box(c, size, bevel, group, rotation=None):
+        c = np.array(c); rotation = np.eye(3) if rotation is None else rotation
+        half = np.array(size)/2; core = half-bevel
+        if group < 7:
+            wood_frames[group] = (c, half, rotation)
+        for axis in range(3):
+            extent = core.copy(); extent[axis] += bevel
+            primitives.append(dict(kind='box', c=c, half=extent, rotation=rotation, group=group))
+        for axis in range(3):
+            other = [i for i in range(3) if i != axis]
+            for sa in (-1,1):
+                for sb in (-1,1):
+                    p = np.zeros(3); p[other] = core[other]*[sa,sb]
+                    a,b = p.copy(),p.copy(); a[axis],b[axis] = -core[axis],core[axis]
+                    cylinder(c+rotation@a,c+rotation@b,bevel,group)
+        for x in (-1,1):
+            for y in (-1,1):
+                for z in (-1,1): sphere(c+rotation@(core*[x,y,z]),bevel,group)
+
+    p=parts['seat-slats']
+    for i,y in enumerate(p['centresY']):box([p['centreX'],y,p['centreZ']],p['size'],p['bevel'],i)
+    p=parts['back-slats']; angle=math.radians(p['inclinationDegrees'])
+    rotation=np.array([[1,0,0],[0,math.cos(angle),math.sin(angle)],[0,-math.sin(angle),math.cos(angle)]])
+    for i,z in enumerate(p['centresZ']):
+        y=.18+(z-.31)*math.tan(angle)-p['rearPostSetbackY']
+        box([0,y,z],[p['width'],p['normalThickness'],p['localHeight']],p['bevel'],4+i,rotation)
+    p=parts['seat-supports']
+    for endpoints in p['centrelineEndpoints']:
+        a,b=np.array(endpoints); axis=(b-a)/np.linalg.norm(b-a)
+        rotation=np.column_stack(([axis[1],-axis[0],0],axis,[0,0,1]))
+        box((a+b)/2,p['sizeWidthLengthHeight'],p['bevel'],7,rotation)
+    p=parts['seat-crossrails']
+    for rail in p['instances']:box(rail['centre'],rail['size'],p['bevel'],7)
+    p=parts['front-legs']
+    for x,y in p['centresXY']:cylinder([x,y,p['zMin']],[x,y,p['zMax']],p['radius'],7)
+    p=parts['rear-posts']
+    for x in p['xValues']:
+        path=[np.array([x,y,z]) for y,z in p['pathYZ']]
+        for a,b in zip(path,path[1:]):cylinder(a,b,p['radius'],7)
+        sphere(path[1],p['radius'],7)  # Internal bend only; terminal disk stays flat.
+    p=parts['arms'];arm_paths=[]
+    for sign in (-1,1):
+        path=[];previous=None
+        for segment in p['controlSegmentsRightXYZ']:
+            controls=np.array(segment);controls[:,0]*=sign
+            if previous is not None:
+                assert np.allclose(previous[-1],controls[0])
+                outgoing=previous[-1]-previous[-2];incoming=controls[1]-controls[0]
+                assert np.allclose(outgoing/np.linalg.norm(outgoing),incoming/np.linalg.norm(incoming))
+            for i,t in enumerate(np.linspace(0,1,p['pathIntervalsPerSegment']+1)):
+                if path and i==0:continue
+                v=(1-t)**3*controls[0]+3*(1-t)**2*t*controls[1]+3*(1-t)*t*t*controls[2]+t**3*controls[3]
+                path.append(v);sphere(v,p['radius'],7)
+            previous=controls
+        for a,b in zip(path,path[1:]):cylinder(a,b,p['radius'],7)
+        arm_paths.append(path)
+
+    # A Lipschitz bound covers the entire capsule envelope, not isolated points.
+    arm_clearances=[];arm_joins=[]
+    for side,path in enumerate(arm_paths):
+        witnesses=[];largest_step=0.
+        for start,end in zip(path,path[1:]):
+            length=np.linalg.norm(end-start)
+            count=max(1,math.ceil(length/p['woodClearance']['maximumWitnessSpacingMetres']))
+            largest_step=max(largest_step,length/count)
+            witnesses.extend(start+(end-start)*t for t in np.linspace(0,1,count+1))
+        witnesses=np.array(witnesses)
+        for group,(centre,half,rotation) in wood_frames.items():
+            bevel=parts['seat-slats' if group<4 else 'back-slats']['bevel']
+            q=np.abs((witnesses-centre)@rotation)-(half-bevel)
+            distances=np.linalg.norm(np.maximum(q,0),axis=1)+np.minimum(q.max(axis=1),0)-bevel
+            bound=float(distances.min()-p['radius']-largest_step/2)
+            assert bound>=p['woodClearance']['minimumMetres'],('arm/wood',side,group,bound)
+            arm_clearances.append({'side':side,'boardGroup':group,'wholeTubeClearanceLowerBoundMm':bound*1000})
+        # Positive-volume attachment at both ends, with no wood in the arm envelope.
+        fp=parts['front-legs'];rp=parts['rear-posts']
+        front=np.array([*fp['centresXY'][side],fp['zMax']])
+        assert np.allclose(path[0],front)
+        base=np.array([rp['xValues'][side],rp['pathYZ'][1][0],rp['pathYZ'][1][1]])
+        post_direction=np.array([0,math.sin(angle),math.cos(angle)])
+        delta=path[-1]-base;axial=delta@post_direction;nearest=base+axial*post_direction
+        distance=np.linalg.norm(path[-1]-nearest)
+        point=(path[-1]+nearest)/2
+        sphere_margin=p['radius']-np.linalg.norm(point-path[-1]);post_margin=rp['radius']-np.linalg.norm(point-nearest)
+        assert axial>rp['radius'] and axial<np.linalg.norm(np.array([0,*rp['pathYZ'][-1]])-np.array([0,*rp['pathYZ'][1]]))-rp['radius']
+        assert min(sphere_margin,post_margin)>.001
+        arm_joins.append({'side':side,'frontEndpointMatchesLeg':True,'rearWitnessMetres':point.tolist(),
+                          'rearInteriorMarginsMm':[sphere_margin*1000,post_margin*1000]})
+
+    # Preserve the frozen default envelope after rerouting the arms.
+    full_min=np.full(3,np.inf);full_max=np.full(3,-np.inf)
+    for item in primitives:
+        if item['kind']=='box':extent=np.abs(item['rotation'])@item['half']
+        elif item['kind']=='sphere':extent=np.full(3,item['r'])
+        else:extent=np.abs(item['axis'])*item['half']+item['r']*np.sqrt(np.maximum(0,1-item['axis']**2))
+        full_min=np.minimum(full_min,item['c']-extent);full_max=np.maximum(full_max,item['c']+extent)
+    shift=np.array(spec['constructionToAssetTranslation'])
+    assert np.allclose(full_min+shift,spec['defaultBounds']['min'],atol=1e-9)
+    assert np.allclose(full_max+shift,spec['defaultBounds']['max'],atol=1e-9)
+
+    for p in primitives:
+        if p['kind']=='box':extent=np.abs(p['rotation'])@p['half']
+        elif p['kind']=='sphere':extent=np.full(3,p['r'])
+        else:extent=np.abs(p['axis'])*p['half']+p['r']*np.sqrt(np.maximum(0,1-p['axis']**2))
+        lo=p['c']-extent;hi=p['c']+extent
+        x0=max(0,int(math.floor(origin[0]+scale*lo[0]))-1)
+        x1=min(width,int(math.ceil(origin[0]+scale*hi[0]))+1)
+        y0=max(0,int(math.floor(origin[1]-scale*hi[1]))-1)
+        y1=min(height,int(math.ceil(origin[1]-scale*lo[1]))+1)
+        yy,xx=np.mgrid[y0:y1,x0:x1]
+        rays=np.stack(((xx+.5-origin[0])/scale,(origin[1]-yy-.5)/scale,np.full(xx.shape,2.)),axis=-1)
+        o=rays-p['c']; hit=np.full(xx.shape,np.inf)
+        if p['kind']=='sphere':
+            b=o@direction;disc=b*b-(np.sum(o*o,axis=-1)-p['r']**2)
+            hit=np.where(disc>=0,-b-np.sqrt(np.maximum(disc,0)),np.inf)
+        elif p['kind']=='box':
+            local=o@p['rotation'];d=direction@p['rotation']
+            near=np.full(xx.shape,-np.inf);far=np.full(xx.shape,np.inf);valid=np.ones(xx.shape,dtype=bool)
+            for axis in range(3):
+                if abs(d[axis])<1e-12:valid &= np.abs(local[...,axis])<=p['half'][axis]
+                else:
+                    a=(-p['half'][axis]-local[...,axis])/d[axis];b=(p['half'][axis]-local[...,axis])/d[axis]
+                    near=np.maximum(near,np.minimum(a,b));far=np.minimum(far,np.maximum(a,b))
+            hit=np.where(valid&(near<=far),near,np.inf)
+        else:
+            axis=p['axis'];axial=o@axis;da=direction@axis
+            perpendicular=o-axial[...,None]*axis;dp=direction-da*axis
+            a=dp@dp;b=perpendicular@dp;c=np.sum(perpendicular**2,axis=-1)-p['r']**2
+            if a>1e-12:
+                disc=b*b-a*c;t=(-b-np.sqrt(np.maximum(disc,0)))/a
+                hit=np.where((disc>=0)&(np.abs(axial+t*da)<=p['half']),t,np.inf)
+            if abs(da)>1e-12:
+                for sign in (-1,1):
+                    t=(sign*p['half']-axial)/da;radial=perpendicular+t[...,None]*dp
+                    hit=np.where((np.sum(radial**2,axis=-1)<=p['r']**2)&(t<hit),t,hit)
+        area=np.s_[y0:y1,x0:x1];visible=(hit>=0)&(hit<depth[area]-1e-10)
+        depth[area][visible]=hit[visible];owner[area][visible]=p['group']
+
+    pixels=np.full((height,width,3),255,dtype=np.uint8)
+    pixels[owner==7]=[69,71,68]
+    # Reuse interior wood from the original TOP seat, not the rejected procedural grain.
+    wood_boxes=[(130,792,630,820),(130,740,630,766),(130,683,630,710),(130,627,630,655)]
+    for group,(centre,half,rotation) in wood_frames.items():
+        yy,xx=np.where(owner==group)
+        points=np.column_stack(((xx+.5-origin[0])/scale,(origin[1]-yy-.5)/scale,2-depth[yy,xx]))
+        local=(points-centre)@rotation
+        texture=np.asarray(source.crop(wood_boxes[group%4]).convert('RGB'))
+        u=np.clip((local[:,0]+half[0])/(2*half[0]),0,1)
+        across=local[:,1] if group<4 else local[:,2]
+        extent=half[1] if group<4 else half[2]
+        v=np.clip((across+extent)/(2*extent),0,1)
+        pixels[yy,xx]=texture[np.rint(v*(texture.shape[0]-1)).astype(int),np.rint(u*(texture.shape[1]-1)).astype(int)]
+    edge=np.zeros(owner.shape,dtype=bool)
+    edge[1:] |= owner[1:]!=owner[:-1];edge[:-1] |= owner[:-1]!=owner[1:]
+    edge[:,1:] |= owner[:,1:]!=owner[:,:-1];edge[:,:-1] |= owner[:,:-1]!=owner[:,1:]
+    pixels[edge&(owner>=0)&(owner<7)]=[111,79,48]
+    pixels[edge&(owner==7)]=[45,47,44]
+    visible_groups=[int(v) for v in np.unique(owner) if v>=0]
+    assert all(i in visible_groups for i in range(8)),visible_groups
+    ys,xs=np.where(owner>=0)
+    assert xs.min()>2 and ys.min()>2 and xs.max()<width-3 and ys.max()<height-3
+    # Exact point inside both each back board and its post, below the flat terminal cap.
+    contacts=[]
+    bp=parts['back-slats'];rp=parts['rear-posts']
+    for x in rp['xValues']:
+        for z in bp['centresZ']:
+            post_y=.18+(z-.31)*math.tan(angle)
+            point=np.array([x,post_y-.015,z])
+            board_c=np.array([0,post_y-bp['rearPostSetbackY'],z])
+            rot=wood_frames[4][2];half=np.array([bp['width'],bp['normalThickness'],bp['localHeight']])/2
+            local=(point-board_c)@rot;core=half-bp['bevel']
+            q=np.abs(local)-core
+            sdf=np.linalg.norm(np.maximum(q,0))+min(float(np.max(q)),0)-bp['bevel']
+            tube_margin=rp['radius']-.015*math.cos(angle)
+            assert sdf<-.001 and tube_margin>.001,(point,sdf,tube_margin)
+            contacts.append({'pointMetres':point.tolist(),'boardInteriorMm':-sdf*1000,'postRadialInteriorMm':tube_margin*1000})
+    # Review the coupled widths against one fixed original BACK normalization.
+    fp=parts['front-legs']; front_span=fp['centresXY'][1][0]-fp['centresXY'][0][0]
+    reference=spec['referenceReview']['backRatios']
+    ratios={'rearSpacing':(rp['xValues'][1]-rp['xValues'][0])/front_span,
+            'backWidth':bp['width']/front_span,
+            'seatWidth':parts['seat-slats']['size'][0]/front_span}
+    for key,value in ratios.items():
+        assert abs(value-reference[key])<=reference['absoluteTolerance'],(key,value,reference[key])
+    wood_margin=bp['width']/2-abs(rp['xValues'][1])-rp['radius']
+    assert wood_margin>bp['bevel'],wood_margin
+    arm=parts['arms']['controlSegmentsRightXYZ']
+    assert np.isclose(arm[0][0][0],fp['centresXY'][1][0])
+    assert np.isclose(arm[-1][-1][0],rp['xValues'][1])
+
+    def box_interior(point, centre, size, bevel, rotation=np.eye(3)):
+        q=np.abs((np.array(point)-np.array(centre))@rotation)-(np.array(size)/2-bevel)
+        return -(np.linalg.norm(np.maximum(q,0))+min(float(np.max(q)),0)-bevel)
+
+    frame_contacts=[]
+    seat=parts['seat-slats']; support=parts['seat-supports']
+    for side,ends in enumerate(support['centrelineEndpoints']):
+        start,end=np.array(ends);centre=(start+end)/2;axis=(end-start)/np.linalg.norm(end-start)
+        rotation=np.column_stack(([axis[1],-axis[0],0],axis,[0,0,1]))
+        sign=-1 if side==0 else 1
+        assert np.allclose(start[:2],fp['centresXY'][side])
+        end_post_y=rp['pathYZ'][1][0]+(end[2]-rp['pathYZ'][1][1])*math.tan(angle)
+        assert np.allclose(end[:2],[rp['xValues'][side],end_post_y])
+        assert np.isclose(np.linalg.norm(end-start),support['sizeWidthLengthHeight'][1])
+        for y in seat['centresY']:
+            t=(y-start[1])/(end[1]-start[1]);x=(start+t*(end-start))[0]-sign*.010
+            point=[x,y,.326]
+            sm=box_interior(point,centre,support['sizeWidthLengthHeight'],support['bevel'],rotation)
+            wm=box_interior(point,[0,y,seat['centreZ']],seat['size'],seat['bevel'])
+            assert min(sm,wm)>.0005,(point,sm,wm)
+            frame_contacts.append({'join':'seat/support','pointMetres':point,'interiorMm':[sm*1000,wm*1000]})
+        for i,endpoint in enumerate((start,end)):
+            point=endpoint+(.006*axis if i==0 else -.006*axis)
+            sm=box_interior(point,centre,support['sizeWidthLengthHeight'],support['bevel'],rotation)
+            tube_radius=fp['radius'] if i==0 else rp['radius']
+            # At this height the rear tube is already inclined; use its actual line.
+            if i==0:tm=tube_radius-np.linalg.norm(point[:2]-endpoint[:2])
+            else:
+                base=np.array([endpoint[0],rp['pathYZ'][1][0],rp['pathYZ'][1][1]])
+                direction_post=np.array([0,math.sin(angle),math.cos(angle)])
+                delta=point-base;tm=tube_radius-np.linalg.norm(delta-(delta@direction_post)*direction_post)
+            assert min(sm,tm)>.0005,(point,sm,tm)
+            frame_contacts.append({'join':'support/leg','pointMetres':point.tolist(),'interiorMm':[sm*1000,tm*1000]})
+            rail=parts['seat-crossrails']['instances'][i]
+            assert np.isclose(rail['size'][0]/2,abs(endpoint[0]))
+            q=[endpoint[0]-sign*.005,endpoint[1]+(.005 if i==0 else -.005),endpoint[2]]
+            sm=box_interior(q,centre,support['sizeWidthLengthHeight'],support['bevel'],rotation)
+            rm=box_interior(q,rail['centre'],rail['size'],parts['seat-crossrails']['bevel'])
+            assert min(sm,rm)>.0005,(q,sm,rm)
+            frame_contacts.append({'join':'crossrail/support','pointMetres':q,'interiorMm':[sm*1000,rm*1000]})
+
+    return Image.fromarray(pixels).resize((output_width,output_height),Image.Resampling.LANCZOS),dict(
+        pixelsPerMetre=style['pixelsPerMetre'], supersampling=supersample, originPixels=(origin/supersample).tolist(),sizePixels=[output_width,output_height],
+        visibleGroups=visible_groups,groupLabels=['seat-1','seat-2','seat-3','seat-4','back-1','back-2','back-3','metal'],
+        rearInsetMm=(parts['front-legs']['centresXY'][1][0]-rp['xValues'][1])*1000,
+        armWoodClearances=arm_clearances,armMetalJoins=arm_joins,backPostContacts=contacts,frameContacts=frame_contacts,backSourceRatios=ratios,woodOutsidePostMm=wood_margin*1000,method='One orthographic XY transform and nearest-surface depth for all current components; source wood samples, no lighting',
+        rasterBounds=[float(xs.min()/supersample),float(ys.min()/supersample),float((xs.max()+1)/supersample),float((ys.max()+1)/supersample)])
