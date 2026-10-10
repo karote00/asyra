@@ -14,6 +14,16 @@ const source = readFileSync(
 )
 const workflow = load(source)
 
+test('a clean runner builds workspace dependencies before runtime tests', () => {
+  const steps = workflow.jobs.build.steps
+  const buildIndex = steps.findIndex((step) =>
+    step.run?.includes('build:static')
+  )
+  const testIndex = steps.findIndex((step) => step.run?.includes('test:local'))
+  assert.ok(buildIndex >= 0)
+  assert.ok(testIndex > buildIndex)
+})
+
 test('production admission rejects forks, failed CI, PR runs and non-main branches', () => {
   const condition = workflow.jobs.build.if
   // GitHub uses this same boolean subset; evaluating fixtures proves its gates.
