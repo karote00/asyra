@@ -5,6 +5,7 @@ import test from 'node:test'
 import {
   DEPLOYMENT_APPS,
   prepareApps,
+  waitForDeploymentVersion,
   ensureProject
 } from '../app-cloudflare.mjs'
 
@@ -131,4 +132,70 @@ test('project admission creates only missing fixed projects and validates their 
       })
     )
   }
+})
+
+test('public readiness tolerates initial propagation but never accepts a stale revision', async () => {
+  const sha = 'b'.repeat(40)
+  const seen = []
+  let waits = 0
+  const responses = [
+    { status: 522 },
+    { status: 404 },
+    {
+      status: 200,
+      json: async () => ({ app: 'asyra-design', sourceSha: 'a'.repeat(40) })
+    },
+    { status: 200, json: async () => ({ app: 'asyra-design', sourceSha: sha }) }
+  ]
+  await waitForDeploymentVersion(
+    'https://asyra-design.pages.dev',
+    'asyra-design',
+    sha,
+    {
+      request: async (url) => {
+        seen.push(url)
+        return responses.shift()
+      },
+      pause: async () => {
+        waits++
+      },
+      attempts: 4
+    }
+  )
+  assert.equal(seen.length, 4)
+  assert.equal(waits, 3)
+  let calls = 0
+  await assert.rejects(
+    waitForDeploymentVersion(
+      'https://asyra-design.pages.dev',
+      'asyra-design',
+      sha,
+      {
+        request: async () => {
+          calls++
+          return { status: 522 }
+        },
+        pause: () => Promise.resolve(),
+        attempts: 3
+      }
+    ),
+    /did not become ready/
+  )
+  assert.equal(calls, 3)
+  await assert.rejects(
+    waitForDeploymentVersion(
+      'https://asyra-design.pages.dev',
+      'asyra-design',
+      sha,
+      {
+        request: async () => ({
+          status: 200,
+          json: async () => ({ app: 'other', sourceSha: sha })
+        }),
+        pause: () => Promise.resolve(),
+        attempts: 3
+      }
+    ),
+    /Unexpected deployed App/
+  )
 })

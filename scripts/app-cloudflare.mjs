@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, AbortSignal */
 import assert from 'node:assert/strict'
 import {
   cp,
@@ -12,6 +12,7 @@ import {
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL, URL } from 'node:url'
+import { setTimeout as pause } from 'node:timers/promises'
 
 // Public deployment identities; runtime and persisted App identities are unchanged.
 export const DEPLOYMENT_APPS = Object.freeze([
@@ -139,16 +140,45 @@ export async function ensureProject(
   assert.ok(!data.result.source, 'Expected a Direct Upload project')
 }
 
+export async function waitForDeploymentVersion(
+  origin,
+  id,
+  sha,
+  { request = fetch, pause: wait = pause, attempts = 30 } = {}
+) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    let response
+    try {
+      response = await request(`${origin}/deployment-version.json`, {
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(10_000)
+      })
+    } catch {
+      // DNS and transport can lag the first successful Pages upload.
+    }
+    if (response?.status === 200) {
+      const version = await response.json()
+      assert.equal(version.app, id, 'Unexpected deployed App')
+      if (version.sourceSha === sha) return
+    } else if (response) {
+      assert.ok(
+        response.status === 404 || response.status >= 500,
+        `Unexpected readiness response: ${response.status}`
+      )
+      await response.body?.cancel()
+    }
+    if (attempt + 1 < attempts) await wait(2000)
+  }
+  throw new Error(`Production ${id} did not become ready at revision ${sha}`)
+}
+
 export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
   assert.ok(app, 'Unknown deployment App')
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'Expected a full Git commit SHA')
   const origin = `https://${app.project}.pages.dev`
-  const version = await fetch(`${origin}/deployment-version.json`, {
-    cache: 'no-store'
-  })
-  assert.equal(version.status, 200)
-  assert.deepEqual(await version.json(), { sourceSha: sha, app: id })
+  await waitForDeploymentVersion(origin, id, sha)
   const response = await fetch(origin)
   assert.equal(response.status, 200)
   const html = await response.text()

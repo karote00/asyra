@@ -63,7 +63,7 @@ export function HomeResources() {
               <div className="mt-8 flex flex-wrap gap-6 text-base">
                 <a
                   data-site-cta=""
-                  href="https://asyra-design.vercel.app/?fileId=demo"
+                  href="https://asyra-design.pages.dev/?fileId=demo"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex min-h-11 items-center border-b border-current pb-2"
@@ -126,6 +126,14 @@ export function HomeResources() {
               </p>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <a
+                  href="https://asyra-fieldscope.pages.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-1"
+                >
+                  Open FieldScope ↗
+                </a>
+                <a
                   href="https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/crop-layout.ts"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -174,7 +182,7 @@ export function HomeResources() {
               </p>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <a
-                  href="https://asyra-sim.vercel.app"
+                  href="https://asyra-sim.pages.dev"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex min-h-11 items-center border-b border-current pb-1"

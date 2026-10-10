@@ -12,12 +12,12 @@ test('Asyra Design is presented as the official product and an App-owned referen
   assert.match(page, /official design tool app/i)
   assert.match(page, /reference implementation/i)
   assert.match(page, /not the\s+Framework owner/i)
-  assert.match(page, /https:\/\/asyra-design\.vercel\.app\/\?fileId=demo/)
+  assert.match(page, /https:\/\/asyra-design\.pages\.dev\/\?fileId=demo/)
   assert.equal((page.match(/fileId=demo/g) ?? []).length, 1)
   assert.equal(
     (
       page.match(
-        /<a\b(?=[^>]*href="https:\/\/asyra-design\.vercel\.app\/\?fileId=demo")(?=[^>]*target="_blank")(?=[^>]*rel="noopener noreferrer")[^>]*>/g
+        /<a\b(?=[^>]*href="https:\/\/asyra-design\.pages\.dev\/\?fileId=demo")(?=[^>]*target="_blank")(?=[^>]*rel="noopener noreferrer")[^>]*>/g
       ) ?? []
     ).length,
     1
