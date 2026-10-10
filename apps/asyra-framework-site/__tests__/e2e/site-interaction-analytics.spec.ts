@@ -48,7 +48,7 @@ test('enabled analytics records CTA and SPA navigation once without query string
   await page.goto('/?email=private@example.com')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
   await page
-    .locator('header a[data-site-cta][href="/docs/start/custom-composition"]')
+    .locator('main a[data-site-cta][href="/docs/start/custom-composition"]')
     .click()
   await expect(page).toHaveURL(/\/docs\/start\/custom-composition$/)
   await expect
@@ -57,7 +57,7 @@ test('enabled analytics records CTA and SPA navigation once without query string
   expect(events.find(([, name]) => name === SITE_EVENTS.cta)?.[2]).toEqual({
     page_path: '/',
     cta_id: 'compose',
-    link_area: 'header'
+    link_area: 'content'
   })
   await page
     .getByRole('navigation', { name: 'Primary navigation' })
@@ -115,7 +115,7 @@ test('mobile menu and Atlas emit their own intent events without interfering wit
   test.skip(!configured, 'Production-configured build required')
   const events = await capture(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/docs')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
   await page
     .getByRole('button', { name: 'Open navigation', exact: true })

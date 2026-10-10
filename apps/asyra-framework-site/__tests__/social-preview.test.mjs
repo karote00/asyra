@@ -4,21 +4,20 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import test from 'node:test'
 import process from 'node:process'
+import sharp from 'sharp'
 
 /* global fetch, URL */
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
-const imagePath = '/brand/asyra-foundation-green-v1.png'
+const imagePath = '/brand/asyra-foundation-green-v1.jpg'
 
 test('social previews publish the approved green infrastructure artwork', async () => {
   const published = await readFile(path.join(siteRoot, 'public', imagePath))
-  assert.deepEqual(
-    [...published.subarray(0, 8)],
-    [137, 80, 78, 71, 13, 10, 26, 10]
-  )
-  assert.equal(published.readUInt32BE(16), 1733)
-  assert.equal(published.readUInt32BE(20), 907)
-  assert.ok(published.byteLength < 5_000_000)
+  const metadata = await sharp(published).metadata()
+  assert.equal(metadata.format, 'jpeg')
+  assert.equal(metadata.width, 1733)
+  assert.equal(metadata.height, 907)
+  assert.ok(published.byteLength < 400_000)
 })
 
 test('root metadata includes large Open Graph and Twitter preview images', async () => {
@@ -29,11 +28,11 @@ test('root metadata includes large Open Graph and Twitter preview images', async
   assert.match(layout, /card: 'summary_large_image'/u)
   assert.match(layout, /width: 1733/u)
   assert.match(layout, /height: 907/u)
-  assert.match(layout, /type: 'image\/png'/u)
+  assert.match(layout, /type: 'image\/jpeg'/u)
 })
 
 test(
-  'built HTML exposes a fetchable PNG preview to LinkedInBot',
+  'built HTML exposes a fetchable JPEG preview to LinkedInBot',
   {
     skip: !process.env.SITE_URL
   },
@@ -57,7 +56,7 @@ test(
     assert.equal(imageUrl.pathname, imagePath)
     assert.equal(meta('og:image:width'), '1733')
     assert.equal(meta('og:image:height'), '907')
-    assert.equal(meta('og:image:type'), 'image/png')
+    assert.equal(meta('og:image:type'), 'image/jpeg')
     assert.ok(meta('og:image:alt'))
     assert.equal(meta('twitter:image'), imageUrl.href)
     assert.equal(meta('twitter:card'), 'summary_large_image')
@@ -65,7 +64,7 @@ test(
       new URL(imageUrl.pathname, process.env.SITE_URL)
     )
     assert.equal(imageResponse.status, 200)
-    assert.match(imageResponse.headers.get('content-type'), /image\/png/u)
+    assert.match(imageResponse.headers.get('content-type'), /image\/jpeg/u)
     assert.deepEqual(
       Buffer.from(await imageResponse.arrayBuffer()),
       await readFile(path.join(siteRoot, 'public', imagePath))

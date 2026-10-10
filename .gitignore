@@ -71,3 +71,7 @@ Cargo.lock
 
 # Personal acceptance automation and duplicate local fixture bytes
 /apps/asyra-design/e2e/fixtures/large-document/document.json.gz
+
+# Framework website static export outputs
+/apps/asyra-framework-site/.next/
+/apps/asyra-framework-site/out/

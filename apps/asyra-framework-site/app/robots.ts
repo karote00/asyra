@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { isIndexingAuthorized, resolveSiteOrigin } from '@/lib/site-origin'
 
+export const dynamic = 'force-static'
+
 export default function robots(): MetadataRoute.Robots {
   const origin = resolveSiteOrigin()
 

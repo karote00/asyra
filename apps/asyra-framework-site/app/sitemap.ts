@@ -6,6 +6,8 @@ import { resolveSiteOrigin } from '@/lib/site-origin'
 const loadContent = async (): Promise<VerifiedPublicContent> =>
   loadVerifiedPublicContent()
 
+export const dynamic = 'force-static'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = resolveSiteOrigin()
   const { pages } = await loadContent()

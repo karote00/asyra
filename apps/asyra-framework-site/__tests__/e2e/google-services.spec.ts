@@ -8,7 +8,6 @@ test('Google services respect the deployment configuration and survive navigatio
   const verification = process.env.GOOGLE_SITE_VERIFICATION
   if (configured) {
     expect(measurementId).toMatch(/^G-[A-Z0-9]+$/)
-    expect(verification).toBeTruthy()
   }
   let libraryRequests = 0
   // Test the site's bootstrap and CSP without sending test data to Google.
@@ -17,7 +16,10 @@ test('Google services respect the deployment configuration and survive navigatio
     expect(route.request().url()).toBe(
       `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
     )
-    await route.fulfill({ contentType: 'application/javascript', body: '' })
+    await route.fulfill({
+      contentType: 'application/javascript',
+      body: 'window.__gaLibraryExecutions=(window.__gaLibraryExecutions||0)+1;'
+    })
   })
   await page.route('https://*.google-analytics.com/**', (route) =>
     route.abort()
@@ -26,12 +28,13 @@ test('Google services respect the deployment configuration and survive navigatio
     route.abort()
   )
 
-  const response = await page.goto('/')
+  const response = await page.goto('/docs')
   expect(response?.status()).toBe(200)
   const meta = page.locator('head meta[name="google-site-verification"]')
   if (configured) {
-    if (!verification) throw new Error('Missing test verification token')
-    await expect(meta).toHaveAttribute('content', verification)
+    if (verification)
+      await expect(meta).toHaveAttribute('content', verification)
+    else await expect(meta).toHaveCount(0)
     await expect.poll(() => libraryRequests).toBe(1)
     const readConfig = () =>
       page.evaluate(() => {
@@ -53,11 +56,19 @@ test('Google services respect the deployment configuration and survive navigatio
       ]
     ])
     await page
-      .locator('.primary-nav')
-      .getByRole('link', { name: 'Docs', exact: true })
+      .getByRole('navigation', { name: 'Primary navigation', exact: true })
+      .getByRole('link', { name: 'Runtime Atlas', exact: true })
       .click()
-    await expect(page).toHaveURL(/\/docs$/)
-    expect(libraryRequests).toBe(1)
+    await expect(page).toHaveURL(/\/atlas$/)
+    // Edge early hints can preload the library again; execution must stay unique.
+    expect(libraryRequests).toBeGreaterThanOrEqual(1)
+    expect(
+      await page.evaluate(
+        () =>
+          (window as typeof window & { __gaLibraryExecutions?: number })
+            .__gaLibraryExecutions
+      )
+    ).toBe(1)
     expect(await readConfig()).toHaveLength(1)
   } else {
     await expect(meta).toHaveCount(0)

@@ -9,8 +9,11 @@
         "NEXT_PUBLIC_SITE_URL",
         "NEXT_PUBLIC_SITE_INDEXING",
         "NEXT_PUBLIC_GA_MEASUREMENT_ID",
-        "GOOGLE_SITE_VERIFICATION"
-      ]
+        "GOOGLE_SITE_VERIFICATION",
+        "SITE_ENV",
+        "SITE_OUTPUT"
+      ],
+      "outputs": ["dist/**", "out/**"]
     }
   }
 }
