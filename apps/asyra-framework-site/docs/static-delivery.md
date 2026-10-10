@@ -4,7 +4,8 @@ The website supports two independent deployment targets: the existing Vercel
 Next.js application and a Cloudflare Pages static export. Neither target
 redirects to or requires the other. Each build uses its own explicit
 `NEXT_PUBLIC_SITE_URL` for canonical metadata, social images, robots and sitemap.
-The second production origin is `https://asyra-framework.pages.dev`.
+The primary production origin is `https://asyra-framework.pages.dev`.
+Vercel remains an independently managed secondary deployment.
 
 The static target preserves all 46 public pages, native document navigation,
 Runtime Atlas, the six-chapter homepage, product sliders, reduced-motion and
@@ -96,6 +97,74 @@ References:
 - <a href="https://developers.cloudflare.com/pages/configuration/headers/" target="_blank" rel="noopener noreferrer">Cloudflare response headers</a>
 - <a href="https://developers.cloudflare.com/pages/configuration/serving-pages/" target="_blank" rel="noopener noreferrer">Cloudflare static routing and caching</a>
 
+## Automatic production delivery
+
+`.github/workflows/site-cloudflare.yml` owns automatic delivery to the existing
+Pages Direct Upload project. After the upstream repository's `CI` workflow
+succeeds for a push to `main`, it checks out that exact source SHA, installs the
+locked dependencies, runs website lint/unit checks, builds the static export,
+and checks generated types, metadata, discovery files, headers and browser
+behavior. The same-run artifact is passed to a separate publication job.
+Failed CI, pull-request runs, forks and non-main branches cannot publish.
+A successful CI run for any main push triggers the website workflow; deployment
+is not limited by a manually maintained list of website dependency paths.
+
+The publication job uses the `website-production` GitHub Environment. Only
+this job receives the Cloudflare token. It checks the current main SHA before
+uploading; obsolete candidates are skipped. Publication is serialized and does
+not cancel an in-progress deployment. Wrangler runs in a separate temporary
+folder so its installation files cannot enter the public artifact. After
+upload, the production smoke checks all 46 pages and the workflow checks the
+public `deployment-version.json` against the candidate SHA. A failed public
+check marks the run failed; it does not automatically retry publication or
+roll back production. Inspect the actual Cloudflare deployment before recovery.
+
+To activate the workflow after review:
+
+1. Create the `website-production` GitHub Environment, allowing only the branch
+   `main`, with no required reviewer or wait timer for routine automatic runs.
+2. Create a Cloudflare API token restricted to this account, with
+   `Account - Cloudflare Pages - Edit`. This permission applies to Pages projects
+   in the selected account; it is not a project-only token. Store it only as the
+   environment secret `CLOUDFLARE_API_TOKEN`, not in source, logs or workflow inputs.
+3. Set environment variable `CLOUDFLARE_ACCOUNT_ID` to the existing account ID.
+   Optional `GOOGLE_SITE_VERIFICATION` is a repository variable because the build
+   job deliberately has no production environment credentials. The public GA ID
+   and primary site origin are explicit workflow build inputs.
+4. Approve the pinned Cloudflare Wrangler Action and Wrangler `4.149.0` as the
+   deployment tooling, then merge the reviewed source changes through the
+   repository's normal PR flow. No additional project dependency is required.
+5. Inspect the first automatic run in GitHub Actions under
+   **Website - Cloudflare Pages**, confirm the public source revision, and inspect
+   its matching Cloudflare deployment. A local workflow file alone is not an
+   active automation. Initial setup is pending until this end-to-end run passes.
+
+The same workflow supports **Run workflow** on `main` to redeploy after an
+out-of-Git configuration change. Normal website changes need only the usual
+review and merge; they no longer require a ZIP upload. Existing manual App
+release entries remain Vercel-specific and do not update the primary website.
+Cloudflare's deployment list and the GitHub job summary retain deployment IDs.
+
+Reference:
+<a href="https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/" target="_blank" rel="noopener noreferrer">Cloudflare Direct Upload with continuous integration</a>.
+
+## Search discovery setup - 2026-10-10
+
+The existing Search Console property reports nine Vercel documentation URLs as
+discovered but not indexed in its October 4 report. All nine corresponding
+Cloudflare URLs return HTTP 200, allow indexing, use the Cloudflare canonical
+origin, and appear in the new sitemap. This is not evidence of nine ownership
+verification failures, nor does the report establish that the later Vercel
+suspension caused the exclusions.
+
+The GA stream retains measurement ID `G-LGCR34S33S` and now names the Cloudflare
+origin. A separate URL-prefix Search Console property is awaiting ownership
+verification. Its public HTML verification value is configured in the local
+environment and the GitHub repository variable `GOOGLE_SITE_VERIFICATION`.
+After publication, verify that property and submit `/sitemap.xml`. Google
+controls crawl scheduling and indexing; passing website checks does not
+guarantee inclusion or a particular completion date.
+
 ## Local acceptance - 2026-10-10
 
 The retained baseline at `0dd9e2c0e` measured 1,666,065 first-party transfer
@@ -116,7 +185,6 @@ browser-aborted speculative document requests from network failure assertions;
 it still requires successful navigation and decoded images and retains all
 resource timing entries. Desktop, mobile, intermediate story, product evidence,
 resource handoff and footer screenshots were inspected.
-
 
 ## Public acceptance - 2026-10-10
 

@@ -1,0 +1,141 @@
+name: Website - Cloudflare Pages
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-cloudflare-production
+  cancel-in-progress: false
+
+env:
+  SITE_ENV: production
+  NEXT_PUBLIC_SITE_URL: 'https://asyra-framework.pages.dev'
+  NEXT_PUBLIC_SITE_INDEXING: 'true'
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: G-LGCR34S33S
+  GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+  SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  build:
+    if: >-
+      github.repository_id == '893098287' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.id == 893098287))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: corepack enable && yarn install --immutable
+      - name: Check website source and deployment contract
+        run: |
+          yarn workspace @asyra/asyra-framework-site lint
+          yarn workspace @asyra/asyra-framework-site test:local
+          node --test .github/__tests__/site-cloudflare.test.mjs
+      - name: Build production static artifact
+        run: yarn workspace @asyra/asyra-framework-site build:static
+      - name: Verify generated types and artifact
+        working-directory: apps/asyra-framework-site
+        env:
+          STATIC_EXPORT_TEST_ENABLED: '1'
+        run: |
+          yarn typecheck
+          node --test __tests__/static-delivery.test.mjs
+      - name: Stamp the verified source revision
+        run: |
+          node -e "require('node:fs').writeFileSync('apps/asyra-framework-site/out/deployment-version.json', JSON.stringify({ sourceSha: process.env.SOURCE_SHA }))"
+      - name: Verify production browser behavior before publication
+        working-directory: apps/asyra-framework-site
+        env:
+          SITE_URL: http://127.0.0.1:3039
+          GOOGLE_SERVICES_TEST_ENABLED: '1'
+        run: |
+          yarn exec playwright install --with-deps chrome
+          yarn exec playwright test --config playwright.static.config.ts google-services.spec.ts site-interaction-analytics.spec.ts homepage-transfer.spec.ts editorial-landing-visual.spec.ts
+      - name: Retain verified artifact from this exact run
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: website-static-${{ env.SOURCE_SHA }}
+          path: apps/asyra-framework-site/out/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: website-production
+      url: 'https://asyra-framework.pages.dev'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Do not publish an obsolete main revision
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          current_sha=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          if [ "$current_sha" = "$SOURCE_SHA" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+            mkdir -p tmp/cloudflare-cli
+          else
+            echo 'Skipped: main advanced; its successful CI run owns the next deployment.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        if: steps.current.outputs.publish == 'true'
+        with:
+          name: website-static-${{ env.SOURCE_SHA }}
+          path: apps/asyra-framework-site/out/
+      - name: Upload verified static files
+        if: steps.current.outputs.publish == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.149.0'
+          packageManager: npm
+          workingDirectory: tmp/cloudflare-cli
+          command: pages deploy ../../apps/asyra-framework-site/out --project-name='asyra-framework' --branch=main --commit-hash=${{ env.SOURCE_SHA }}
+      - name: Verify public production website
+        if: steps.current.outputs.publish == 'true'
+        env:
+          SITE_URL: 'https://asyra-framework.pages.dev'
+        run: |
+          node scripts/wait-for-http.mjs "$SITE_URL" HEAD 60000
+          node apps/asyra-framework-site/scripts/production-smoke.mjs
+          node --input-type=module -e "import assert from 'node:assert/strict'; const response = await fetch(process.env.SITE_URL + '/deployment-version.json', { cache: 'no-store' }); assert.equal(response.status, 200); assert.equal((await response.json()).sourceSha, process.env.SOURCE_SHA);"
+      - name: Record publication
+        if: steps.current.outputs.publish == 'true'
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+        run: |
+          printf 'Source: `%s`\n\nCloudflare deployment: `%s`\n\nProduction: https://asyra-framework.pages.dev\n' "$SOURCE_SHA" "$DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"

@@ -1,5 +1,11 @@
 # Manual App Release
 
+Cloudflare primary website delivery is owned by the separate
+`.github/workflows/site-cloudflare.yml` workflow and
+`apps/asyra-framework-site/docs/static-delivery.md`. The manual entries below
+continue to manage Vercel deployments only. Main updates can automatically
+publish the primary Cloudflare website after CI succeeds.
+
 ## Operator flow
 
 1. Merge reviewed changes through the protected PR flow. Merging does not deploy.
