@@ -115,5 +115,34 @@ passed its five applicable cases. The transfer correction excludes normal
 browser-aborted speculative document requests from network failure assertions;
 it still requires successful navigation and decoded images and retains all
 resource timing entries. Desktop, mobile, intermediate story, product evidence,
-resource handoff and footer screenshots were inspected. Public deployment and
-anonymous HTTPS acceptance remain a separate final gate.
+resource handoff and footer screenshots were inspected.
+
+
+## Public acceptance - 2026-10-10
+
+The independent production website is available at
+<a href="https://asyra-framework.pages.dev" target="_blank" rel="noopener noreferrer">asyra-framework.pages.dev</a>.
+Cloudflare deployment `3ab4fe7e-6780-40fa-8d70-6010292d5b09` contains the
+static production build from local commit `e17bcbaff`. The uploaded archive
+contains 318 files and has SHA-256
+`a7b257ba7dc7565024c8df67166655694fec5f9e46812e446cb8623801d2191f`.
+The Vercel project was not changed; no repository push was performed.
+
+Anonymous HTTPS verification passed all 46 public pages, real 404 behavior,
+robots and sitemap origin checks, six security headers, three social-preview
+cases, three desktop/mobile visual cases, and both homepage transfer cases.
+The deployed story images match the local artifact byte-for-byte, and hashed
+JavaScript responses use a one-year immutable cache policy. Screenshots at
+390px and 1440px were inspected.
+
+All five configured analytics cases passed, including a focused rerun that
+counts actual library execution across client navigation. Cloudflare Early
+Hints may preload the Google library again; the regression assertion checks
+that the library executes once and bootstrap configuration remains unique.
+Google requests are intercepted by these tests, so this verifies integration
+behavior rather than receipt of events in the GA reporting service.
+
+Public homepage encoded resource bodies measured 1,394,774 bytes at 390px and
+1,394,790 bytes at 1440px. Resource Timing transfer totals can omit Early Hints
+preload bodies; use the controlled local comparison above for the reduction
+percentage instead of comparing those public transfer totals with the baseline.

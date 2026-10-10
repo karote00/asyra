@@ -16,7 +16,10 @@ test('Google services respect the deployment configuration and survive navigatio
     expect(route.request().url()).toBe(
       `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
     )
-    await route.fulfill({ contentType: 'application/javascript', body: '' })
+    await route.fulfill({
+      contentType: 'application/javascript',
+      body: 'window.__gaLibraryExecutions=(window.__gaLibraryExecutions||0)+1;'
+    })
   })
   await page.route('https://*.google-analytics.com/**', (route) =>
     route.abort()
@@ -57,7 +60,15 @@ test('Google services respect the deployment configuration and survive navigatio
       .getByRole('link', { name: 'Runtime Atlas', exact: true })
       .click()
     await expect(page).toHaveURL(/\/atlas$/)
-    expect(libraryRequests).toBe(1)
+    // Edge early hints can preload the library again; execution must stay unique.
+    expect(libraryRequests).toBeGreaterThanOrEqual(1)
+    expect(
+      await page.evaluate(
+        () =>
+          (window as typeof window & { __gaLibraryExecutions?: number })
+            .__gaLibraryExecutions
+      )
+    ).toBe(1)
     expect(await readConfig()).toHaveLength(1)
   } else {
     await expect(meta).toHaveCount(0)
