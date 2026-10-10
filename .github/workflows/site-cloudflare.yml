@@ -67,7 +67,6 @@ jobs:
           SITE_URL: http://127.0.0.1:3039
           GOOGLE_SERVICES_TEST_ENABLED: '1'
         run: |
-          yarn exec playwright install --with-deps chrome
           yarn exec playwright test --config playwright.static.config.ts google-services.spec.ts site-interaction-analytics.spec.ts homepage-transfer.spec.ts editorial-landing-visual.spec.ts
       - name: Retain verified artifact from this exact run
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
