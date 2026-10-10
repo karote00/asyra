@@ -1,4 +1,5 @@
 import { ProductEvidenceSlider } from '@/components/product-evidence-slider'
+import { DeveloperEntry } from '@/components/developer-entry'
 
 const fieldScopeSlides = [
   {
@@ -202,6 +203,7 @@ export function HomeResources() {
           </div>
         </div>
       </section>
+      <DeveloperEntry />
       <section
         id="start-building"
         aria-labelledby="start-building-title"
