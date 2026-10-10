@@ -97,20 +97,18 @@ References:
 - <a href="https://developers.cloudflare.com/pages/configuration/headers/" target="_blank" rel="noopener noreferrer">Cloudflare response headers</a>
 - <a href="https://developers.cloudflare.com/pages/configuration/serving-pages/" target="_blank" rel="noopener noreferrer">Cloudflare static routing and caching</a>
 
-## Automatic production delivery
+## Manual production delivery
 
-`.github/workflows/site-cloudflare.yml` owns automatic delivery to the existing
-Pages Direct Upload project. Every push to `main` checks out that exact source
-SHA, installs locked dependencies, audits high-severity dependency findings,
-runs website lint/unit checks, builds the static export, and checks generated
-types, metadata, discovery files, headers and browser behavior. Only a successful
-build job passes its same-run artifact to the separate publication job.
+`.github/workflows/site-cloudflare.yml` runs only when an operator chooses
+**Actions > Website - Cloudflare Pages > Run workflow**, selects `main`, and
+starts the run. Pushes, merges, schedules and completed CI runs never deploy.
 
-Repository `CI` runs independently; unrelated Skill packaging or other product
-checks cannot block website delivery. This is a website production gate, not a
-claim that full repository CI passed. PR runs, forks and non-main branches cannot
-publish. No manually maintained dependency path filter can omit a main update.
-Manual dispatch on `main` runs exactly the same gates.
+The manual run checks out its exact source SHA, installs locked dependencies,
+audits high-severity dependency findings, runs website lint/unit checks, builds
+the static export, and checks generated types, metadata, discovery files, headers
+and browser behavior. Only a successful build job passes its same-run artifact
+to the separate publication job. Forks and non-main branches cannot publish.
+Repository `CI` runs independently and does not start a deployment.
 
 The publication job uses the `website-production` GitHub Environment. Only
 this job receives the Cloudflare token. It checks the current main SHA before
@@ -125,7 +123,7 @@ roll back production. Inspect the actual Cloudflare deployment before recovery.
 To activate the workflow after review:
 
 1. Create the `website-production` GitHub Environment, allowing only the branch
-   `main`, with no required reviewer or wait timer for routine automatic runs.
+   `main`, with the existing environment approval policy.
 2. Create a Cloudflare API token restricted to this account, with
    `Account - Cloudflare Pages - Edit`. This permission applies to Pages projects
    in the selected account; it is not a project-only token. Store it only as the
@@ -137,16 +135,20 @@ To activate the workflow after review:
 4. Approve the pinned Cloudflare Wrangler Action and Wrangler `4.149.0` as the
    deployment tooling, then merge the reviewed source changes through the
    repository's normal PR flow. No additional project dependency is required.
-5. Inspect the first automatic run in GitHub Actions under
+5. Start a manual run in GitHub Actions under
    **Website - Cloudflare Pages**, confirm the public source revision, and inspect
-   its matching Cloudflare deployment. A local workflow file alone is not an
-   active automation. Initial setup is pending until this end-to-end run passes.
+   its matching Cloudflare deployment. A local workflow file alone is not a
+   verified deployment. Confirm the manual run completes successfully.
 
-The same workflow supports **Run workflow** on `main` to redeploy after an
-out-of-Git configuration change. Normal website changes need only the usual
-review and merge; they no longer require a ZIP upload. Existing manual App
+Every publication requires a separate **Run workflow** action, including after
+a reviewed merge or an out-of-Git configuration change. Existing manual App
 release entries remain Vercel-specific and do not update the primary website.
 Cloudflare's deployment list and the GitHub job summary retain deployment IDs.
+
+If the workflow was disabled to stop automatic delivery, merge the manual-only
+workflow first, then choose **Enable workflow** in Actions. Enabling does not
+publish anything; a separate manual run is required. Never re-enable a revision
+that still declares `push`, `workflow_run` or scheduled deployment triggers.
 
 Reference:
 <a href="https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/" target="_blank" rel="noopener noreferrer">Cloudflare Direct Upload with continuous integration</a>.

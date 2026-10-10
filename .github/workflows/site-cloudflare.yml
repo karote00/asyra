@@ -1,8 +1,6 @@
 name: Website - Cloudflare Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -25,7 +23,7 @@ jobs:
     if: >-
       github.repository_id == '893098287' &&
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -104,7 +102,7 @@ jobs:
             mkdir -p tmp/cloudflare-cli
             printf '{"private":true}\n' > tmp/cloudflare-cli/package.json
           else
-            echo 'Skipped: main advanced; its verified artifact owns the next deployment.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Skipped: main advanced; manually start a new run from current main.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         if: steps.current.outputs.publish == 'true'
