@@ -317,7 +317,12 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
 const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
   vtracer: 'Converting artwork to vectors',
   [AiDesignToolIds.PREPARE_DESIGN]: 'Preparing the design',
-  [AiDesignToolIds.RECORD_DESIGN_REVIEW]: 'Checking the requested details',
+  [AiDesignToolIds.REVIEW_DRAWING]: 'Checking the requested details',
+  [AiDesignToolIds.DEFINE_DESIGN_CRITERIA]: 'Defining the requested checks',
+  [AiDesignToolIds.RECORD_DESIGN_FACTS]: 'Recording verified sources',
+  [AiDesignToolIds.RECORD_DESIGN_CALCULATIONS]:
+    'Recording derived measurements',
+  [AiDesignToolIds.SELECT_DESIGN_REFERENCES]: 'Selecting comparison references',
   [AiActionNames.APPLY_PREPARED_DESIGN]: 'Adding the design',
   [AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT]: 'Researching design context',
   [AiReferenceToolIds.SEARCH_REFERENCE_IMAGES]: 'Finding a reference',
@@ -328,6 +333,7 @@ const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
   [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'Refining the design',
   [AiActionNames.READ_DESIGN_CONTEXT]: 'Reading the design',
   [AiActionNames.INSPECT_DRAWING]: 'Reviewing the drawing',
+  [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: 'Checking inspection freshness',
   [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
   [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replacing the drawing',
   [AiActionNames.REMOVE_AI_COMPOSITION]: 'Removing the drawing',
@@ -335,6 +341,30 @@ const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
   [AiActionNames.SELECT_ELEMENTS]: 'Selecting elements',
   [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'Refining the drawing'
 })
+
+const boundedActivityMessage = (
+  value: string | undefined
+): string | undefined => {
+  const message = value?.trim()
+  if (message && message.length <= 1000) return message
+}
+
+const executionActivityMessage = (
+  update: AiRuntimeProgressUpdate
+): string | undefined => {
+  if (update.phase !== 'execution') return
+  const summary = boundedActivityMessage(update.summary)
+  if (
+    summary &&
+    !Object.values(activityToolLabels).includes(summary) &&
+    ![
+      'Applying changes',
+      'Updating the drawing',
+      'Preparing the drawing'
+    ].includes(summary)
+  )
+    return summary
+}
 
 const activityLabel = (update: AiRuntimeProgressUpdate): string => {
   if (update.tool && update.toolStatus) {
@@ -355,17 +385,8 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
     case 'confirmation':
       return 'Awaiting approval'
     case 'execution': {
-      const summary = update.summary.trim()
-      if (
-        summary.length <= 100 &&
-        /^[\x20-\x7e]+$/.test(summary) &&
-        ![
-          'Applying changes',
-          'Updating the drawing',
-          'Preparing the drawing'
-        ].includes(summary)
-      )
-        return summary
+      const summary = executionActivityMessage(update)
+      if (summary) return summary
       return update.tool && Object.hasOwn(activityToolLabels, update.tool)
         ? activityToolLabels[update.tool]
         : 'Preparing the drawing'
@@ -389,7 +410,11 @@ const activityLoopLabel = (tool: string | undefined): string | undefined => {
   if (
     [
       AiDesignToolIds.PREPARE_DESIGN,
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.REVIEW_DRAWING,
+      AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
+      AiDesignToolIds.RECORD_DESIGN_FACTS,
+      AiDesignToolIds.RECORD_DESIGN_CALCULATIONS,
+      AiDesignToolIds.SELECT_DESIGN_REFERENCES,
       AiActionNames.APPLY_PREPARED_DESIGN,
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.REVIEW_DESIGN,
@@ -414,24 +439,35 @@ export const projectAiActivity = (
 ) => {
   const entries: { label: string; message?: string }[] = []
   let loop: string | undefined
+  let hasConcreteWork = false
   for (const update of updates) {
     if (state.awaitingAnswer && update.phase === 'settled') continue
-    // Preserve model-authored language while keeping status descriptions bounded.
-    const message = update.message?.trim()
+    // A late acknowledgement must not replace newer current work.
+    if (update.toolStatus === 'completed') continue
     const activityMessage =
-      message && message.length <= 100 ? message : undefined
-    // Completion is an acknowledgement, not a new user-facing work phase.
-    if (update.toolStatus === 'completed' && !activityMessage) continue
+      update.phase === 'provider' || update.phase === 'execution'
+        ? (boundedActivityMessage(update.message) ??
+          executionActivityMessage(update))
+        : undefined
+    const control =
+      update.phase === 'confirmation' || update.phase === 'settled'
+    if (hasConcreteWork && !activityMessage && !control) continue
+    if (activityMessage) hasConcreteWork = true
+    if (control) hasConcreteWork = false
     if (
       loop &&
-      ['resolution', 'permission', 'execution'].includes(update.phase)
+      (['resolution', 'permission'].includes(update.phase) ||
+        (update.phase === 'execution' && !activityMessage))
     )
       continue
-    loop =
-      update.phase === 'provider' ? activityLoopLabel(update.tool) : undefined
+    if (update.phase === 'provider') loop = activityLoopLabel(update.tool)
+    else if (update.phase !== 'execution') loop = undefined
+    const label = loop ?? activityLabel(update)
     const entry = {
-      label: loop ?? activityLabel(update),
-      ...(!loop && activityMessage ? { message: activityMessage } : {})
+      label,
+      ...(activityMessage && activityMessage !== label
+        ? { message: activityMessage }
+        : {})
     }
     const previous = entries.at(-1)
     if (previous?.label !== entry.label || previous.message !== entry.message) {

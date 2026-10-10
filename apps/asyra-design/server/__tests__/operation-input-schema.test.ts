@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import {
-  designReviewDefinition,
+  designEvidenceSchema,
+  designEvidenceDefinitions,
   reviewPlanExample
 } from '../local-design-review'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -236,7 +237,7 @@ it('compacts redundant native choices while preserving overlap and contradictory
 })
 
 it('preserves real review and action schema admission after native conversion', () => {
-  const schema = designReviewDefinition.inputSchema
+  const schema = designEvidenceSchema
   const converted = nativeToolInputSchema(schema)
   const candidates = [
     reviewPlanExample,
@@ -361,6 +362,96 @@ it('does not admit extra union fields by merging two independently closed object
         !operationInputIssue(value, nativeToolInputSchema(schema)),
         JSON.stringify({ schema, value })
       ).toBe(!operationInputIssue(value, schema))
+    }
+  }
+})
+
+it('preserves admission of every advertised evidence tool through native conversion', () => {
+  const examples: Record<string, object> = {
+    define_design_criteria: reviewPlanExample,
+    record_design_facts: {},
+    record_design_calculations: {
+      calculations: [
+        {
+          id: 'length',
+          value: 0.8,
+          unit: 'px',
+          sourceFactIds: ['survey'],
+          verification: 'Recomputed exact projection.'
+        }
+      ]
+    },
+    select_design_references: { referenceImageIndexes: [0] },
+    review_drawing: {
+      phase: 'visual',
+      inspectionIds: ['inspection'],
+      checks: [
+        { criterionId: 'shape', status: 'pass', evidence: 'Matches reference.' }
+      ]
+    }
+  }
+  expect(Object.keys(examples).sort()).toEqual(
+    designEvidenceDefinitions.map((item) => item.name).sort()
+  )
+  for (const definition of designEvidenceDefinitions) {
+    const native = nativeToolInputSchema(definition.inputSchema)
+    for (const input of [
+      examples[definition.name],
+      { ...examples[definition.name], unrelated: true },
+      null,
+      []
+    ]) {
+      expect(
+        operationInputIssue(input, native) === undefined,
+        definition.name
+      ).toBe(operationInputIssue(input, definition.inputSchema) === undefined)
+    }
+    expect(
+      operationInputIssue(examples[definition.name], native),
+      definition.name
+    ).toBeUndefined()
+  }
+})
+
+it('preserves composed capture inputs and strict target validation through native conversion', () => {
+  const tool = designEvidenceDefinitions.find(
+    (item) => item.name === 'review_drawing'
+  )
+  if (!tool) throw new Error('Missing review tool')
+  const native = nativeToolInputSchema(tool.inputSchema)
+  const checks = [
+    { criterionId: 'shape', status: 'pass', evidence: 'Current shape' }
+  ]
+  const targets = [
+    { elementId: 'drawing' },
+    { elementId: 'detail', region: { x: -10, y: 5, width: 100, height: 100 } }
+  ]
+  for (const phase of ['structure', 'visual']) {
+    for (const [input, valid] of [
+      [{ inspections: targets }, true],
+      [{ inspectionIds: ['overview'], inspections: [targets[1]] }, true],
+      [{ inspectionIds: ['overview'] }, true],
+      [{}, false],
+      [{ inspections: [] }, false],
+      [{ inspections: [{ elementId: '' }] }, false],
+      [
+        {
+          inspections: [
+            {
+              elementId: 'detail',
+              region: { x: 0, y: 0, width: 1025, height: 100 }
+            }
+          ]
+        },
+        false
+      ],
+      [{ inspectionIds: [undefined], inspections: targets }, false],
+      [{ inspections: targets, unexpected: true }, false]
+    ] as const) {
+      for (const schema of [tool.inputSchema, native])
+        expect(
+          operationInputIssue({ phase, checks, ...input }, schema) === undefined
+        ).toBe(valid)
     }
   }
 })

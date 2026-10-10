@@ -30,7 +30,7 @@ export const designConstructionSchema = {
           properties: {
             key,
             property,
-            expected: nonnegative,
+            expected: scalar,
             tolerance: nonnegative
           }
         }
@@ -78,8 +78,8 @@ export const designConstructionSchema = {
       azimuth: { type: 'number', minimum: -360, maximum: 360 },
       elevation: { type: 'number', minimum: -90, maximum: 90 },
       scale: { type: 'number', exclusiveMinimum: 0, maximum: limits.dimension },
-      originX: nonnegative,
-      originY: nonnegative
+      originX: scalar,
+      originY: scalar
     },
     description:
       'One orthographic camera for explicit 3D faces. World Z up; azimuth/elevation in degrees; scale in pixels/world unit. Screen x=originX+scale*(cos(a)*x-sin(a)*y); screen y=originY+scale*(sin(e)*(sin(a)*x+cos(a)*y)-cos(e)*z). Viewer direction from the object is (sin(a)*cos(e), cos(a)*cos(e), sin(e)); for positive 0..90 degree azimuth/elevation the positive-X and positive-Y sides face the viewer. Draw far surfaces before near ones. No auto-fit, invented depth, perspective or hidden-face removal. Choose visible faces and painter order.'
@@ -107,7 +107,7 @@ export const projectedFaceSchema = {
     }
   },
   description:
-    'An explicitly supplied planar 3D face; root child only with absolute root layout and shared projection. Emits a normal editable vector, preserves caller order. No width/height/x/y/rings: backend calculates those. World coordinates share one origin. Degenerate, nonplanar, out-of-canvas faces fail or block application.'
+    'An explicitly supplied planar 3D face; root child only with absolute root layout and shared projection. Emits a normal editable vector, preserves caller order. No width/height/x/y/rings: backend calculates those. World coordinates share one origin. Signed projected offsets are valid before Group normalization. Group children become nonnegative without moving workspace geometry; explicit Frame overflow is reported. Degenerate, nonplanar or out-of-budget faces fail.'
 }
 
 const worldPoint = projectedFaceSchema.properties.vertices.items

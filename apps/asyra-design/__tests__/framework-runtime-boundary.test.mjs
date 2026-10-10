@@ -145,13 +145,19 @@ test('Asyra Design declares the browser-like test environment used by Vitest', (
   )
 })
 
-test('Asyra Design backend uses App protocols and the pure Group bounds entrypoint', () => {
+const independentBackendEntries = new Set([
+  '@asyra/preset/group-bounds',
+  '@asyra/ai-agent-runtime',
+  '@asyra/ai-agent-runtime/node'
+])
+
+test('Asyra Design backend uses App protocols and independent public capabilities', () => {
   const failures = []
   for (const absolutePath of backendSourceFiles) {
     for (const specifier of collectExternalImports(absolutePath)) {
       if (
         specifier.startsWith('@asyra/') &&
-        specifier !== '@asyra/preset/group-bounds'
+        !independentBackendEntries.has(specifier)
       ) {
         failures.push(
           `${path.relative(appDirectory, absolutePath)} imports ${specifier}`
@@ -161,6 +167,49 @@ test('Asyra Design backend uses App protocols and the pure Group bounds entrypoi
   }
   assert.deepEqual(failures, [])
 })
+
+for (const specifier of [
+  '@asyra/ai-agent-runtime',
+  '@asyra/ai-agent-runtime/node'
+]) {
+  test(`${specifier} does not pull other framework execution owners into the backend`, async () => {
+    const entry = fileURLToPath(import.meta.resolve(specifier))
+    const runtimeDirectory = path.resolve(
+      path.dirname(
+        fileURLToPath(import.meta.resolve('@asyra/ai-agent-runtime'))
+      ),
+      '..'
+    )
+    const result = await build({
+      configFile: false,
+      logLevel: 'silent',
+      ssr: { noExternal: true },
+      build: { ssr: entry, write: false, minify: false }
+    })
+    const chunks = (Array.isArray(result) ? result : [result])
+      .flatMap((item) => item.output)
+      .filter((item) => item.type === 'chunk')
+    const modules = chunks.flatMap((chunk) => Object.keys(chunk.modules))
+    assert.ok(modules.includes(entry))
+    assert.deepEqual(
+      modules.filter((file) => !file.startsWith(runtimeDirectory + path.sep)),
+      [],
+      'Runtime must not bundle Core, renderer, Design or another execution owner'
+    )
+    assert.deepEqual(
+      chunks
+        .flatMap((chunk) => [...chunk.imports, ...chunk.dynamicImports])
+        .filter((name) => !nodeBuiltins.has(name)),
+      [],
+      'Only the Node entry may retain built-in I/O dependencies'
+    )
+    if (specifier === '@asyra/ai-agent-runtime')
+      assert.deepEqual(
+        chunks.flatMap((chunk) => chunk.imports),
+        []
+      )
+  })
+}
 
 test('the public Group bounds entrypoint has no runtime dependencies', async () => {
   const entry = fileURLToPath(import.meta.resolve('@asyra/preset/group-bounds'))

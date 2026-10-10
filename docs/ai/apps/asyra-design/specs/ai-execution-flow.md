@@ -1,5 +1,11 @@
 # AI design execution flow
 
+Registered App editing actions execute directly, including deletion and replacement,
+with ordinary grouped Undo. The App prompt owns contextual permission questions
+for external-tool use or security concerns through request_clarification; it does
+not turn internal edit effects into confirmation requirements. Schema admission,
+canonical locks and host/external security boundaries remain enforced.
+
 ## Product contract
 
 A single brief may request creation, refinement, reference tracing, organization
@@ -30,7 +36,13 @@ once. Image-specific decomposition/conversion/refinement guidance is exposed wit
 the relevant discoverable tools, not unconditionally in every request. Required
 input examples and product constraints remain available; concision does not
 weaken quality, source resolution, canonical checks or actual final review.
-The original user request remains authoritative. Organize complex requirements
+The original user request remains authoritative. Do not add unrequested
+content merely to present or decorate the result. For an isolated object, leave
+the surrounding canvas transparent and omit Frame background paint unless the
+request or necessary composition calls for it. Requested scenes/backgrounds and
+existing unrelated content remain valid. Final visual review checks both missing
+requested content and unsupported additions; optional polish cannot expand scope.
+Organize complex requirements
 in the existing initial plan using short, explicit statements; preserve quantities,
 units, scope, relationships and original style terms. Separate implementation
 choices and uncertain assumptions from requested requirements. A short request
@@ -107,8 +119,13 @@ Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
 execution route and root property paths. Fragment replies include exact selected
 values and transitive local reference dependencies; they are partial documentation,
 not complete executable schemas. Unknown paths reject recoverably. These modes
-require an exact selector, cannot be combined with each other or refresh, and
-never consume full-definition delivery. Full lookup and explicit refresh remain
+require an exact selector, cannot be combined with each other, and
+never consume full-definition delivery. Explicit refresh preserves the selected
+usage or schema-path scope. A partial response offers a scoped recovery route;
+full recovery remains a separate choice. Optional `refreshReason` records
+context loss, delivery failure or missing fields, and requires refresh; an omitted
+reason stays unknown. Definition receipts distinguish initial delivery, reuse,
+version change and explicit recovery without asserting model retention. Full lookup and explicit refresh remain
 available for every contract. Replies distinguish current response coverage from
 previous delivery; a delivery record cannot prove that the model retained context.
 
@@ -159,6 +176,15 @@ and existence. Spatial bounds are a conservative candidate test, not a pixel hit
 or an occlusion decision. Query state follows object changes, parent transforms, deletion, replay
 and load; viewport navigation does not change workspace region membership.
 Missing projection or stale identity must be explicit, never an empty success.
+A batch operation may supply an explicit region query as its target. The backend
+requests all matching IDs once from the registered context reader and feeds them
+directly to the registered plural argument. It does not expose intermediate
+metadata or require model-written callbacks. Queries resolve an identity snapshot
+before batch writes; ordinary admission still checks the current targets. An
+unavailable, incomplete or malformed query rejects before writes. Empty matches
+are explicit and never expand to the workspace. Full-match reads are permitted
+only for identity-only region queries without pagination or property fields.
+
 Relative hierarchy placement resolves a live before/after anchor inside the
 existing hierarchy owner without sending all sibling IDs to the model.
 
@@ -168,6 +194,14 @@ may submit only replacement fields; the same preparation validation and budgets
 apply before an immutable artifact is created. Rejected drafts are not executable
 artifacts. Missing or stale repair references reject recoverably. Repair never
 replays an uncertain write or changes a successfully prepared artifact.
+
+Plural deletion accepts current element IDs, including container descendants,
+through one canonical preparation/application. Duplicate, missing or Workspace
+targets reject before writes; selecting an ancestor and descendant removes the
+subtree once. Hierarchy validation, retained-property inventory and orphan graph
+preparation are shared for that call. Scene/Props retain their ordinary deleted
+instances and reversible evidence; shared properties with surviving owners stay
+active. One-item calls have the same lifecycle.
 
 Plural creation supports the same valid target parents as scalar creation and
 returns results in input order. Consecutive compatible items may share an owner
@@ -189,7 +223,11 @@ these IDs establish scope only and do not prove visual acceptance.
 
 Registered return contracts preserve actual owner values. Ordered creation
 receipts distinguish successful IDs, failed entries, partial outcomes and empty
-input. Structural receipts identify changes; reads are observations only. Void
+input. Structural receipts identify changes; reads are observations only. Compact
+transport of successful declared moves/removed receipts keeps ordered identities
+and counts without canonical snapshots or old hierarchy locations. Explicit
+full response retains the original owner receipt. Unknown and unsuccessful
+results retain their diagnostic data; compacting never alters history evidence. Void
 acknowledgements and ambiguous false/null results must not certify a document
 change or a valid unchanged target. Failed receipts propagate to conversation
 settlement; mixed successful writes and failure are partial. Compact replies may
@@ -313,24 +351,63 @@ usage/time. Raw request text, image bytes and private reasoning are not logged.
 The assessment remains model judgment, not proof of visual correctness; permanent
 negative and positive cases and live screenshot review remain required evidence.
 
-### Retained verified facts
+### Evidence tool responsibilities
+
+Expose criteria definition, source fact recording, derived calculations,
+reference selection and drawing review as separate discoverable responsibilities.
+Names state the action and object. Their schemas contain only applicable inputs;
+all route through the same registered invocation/admission boundary and existing
+request-owned evidence state. Remove superseded public multipurpose routes
+instead of advertising aliases. Preserve internal reuse and all actual review
+checks. Discovery and recovery link to the exact current registered tool.
+Reference selection returns candidate indexes, applicability decisions, the current
+requirement revision, whether they changed and the current review handoff. It does not record or retransmit source facts or bindings.
+Criteria initialization may include references; subsequent selection uses its
+own owner method. Fact and selection receipts share dependency-repair, reference-applicability, then
+current-review routing. Decisions resolve against all retained images, including
+unselected images being rejected in the same batch. An unchanged accepted selection does not ask for another review.
+
+Source facts retain source-attributed assertions with explicit dependencies. Derived
+calculation records cite retained valid fact IDs and concrete verification, keep
+full numerical precision, and may be corrected without changing those facts.
+They are diagnostic calculations, not source authority or canvas validation; they
+cannot be fact-bound to approve visual criteria. User-requested precision remains
+a requirement. Otherwise judge the significance of a proposed drawing correction
+using subject scale, viewing scale and visible impact; avoid reworking large
+illustrations for negligible numerical narration. Do not round stored data or
+silently change verified dimensions.
+
+Identical fact, binding and reference submissions preserve accepted evidence.
+An unrelated new unbound fact does not invalidate the reviewed result. Changes
+to a bound fact or its binding identify affected criterion IDs; reference changes
+invalidate comparison; canonical drawing changes retain their separate generation
+checks. Unknown impacts and invalid source dependencies remain conservative.
+Fact receipts report acceptance/fresh-review state and current registered recovery
+instructions instead of leaving callers to infer what to do from a success flag.
+An invalid source directs callers to record_design_facts first. Only a valid
+source receipt directs them to review_drawing with the affected checks and current
+inspection evidence. Machine-readable next-tool fields and instructions agree.
+
+### Retained source facts and evidence assessment
 
 When the source has been verified and the user has requested no contrary change,
 preserve its result. Personal aesthetic preference is not a reason to change it.
 The review owner retains compact source facts for one invocation: stable id,
-statement, verified scope, source references, verification evidence and explicit
+statement, applicable scope, source references, verification notes and explicit
 source/requirement dependency versions. Estimates and unverified model-generated
 geometry are not verified source facts. Recording is a model's evidence-backed
 assertion, not automatic truth certification or approval of rendered output.
 
-Use the existing review tool's facts phase to record or retrieve these facts,
+Use `record_design_facts` to record or retrieve these facts,
 or include them in the initial plan at first adoption. Bind reused facts to
 planned criteria and known canonical element IDs with factBindings. The review owner attaches bound fact IDs to
 criterion checks without requiring callers to repeat the relationship; existing canonical inspection coverage
 validates the bound targets before a visual assessment. A binding is review
 metadata, never proof of geometry or a second model of the document.
-The independent visual comparison receives only valid facts bound to its visual
-criteria, including source references, verification and scope/limitations. Reference
+The independent visual comparison receives dependency-current facts with applicable
+image evidence bound to its visual criteria, including source references, model
+verification notes and scope/limitations. Unsupported facts remain explicitly
+unverified. URL citations remain attributed assertions. Reference
 adoption records what the image can support (for example, massing rather than
 finished facade detail). Download success does not establish suitability. Data-only,
 unrelated and invalid facts are excluded. These facts never substitute for current
@@ -400,9 +477,35 @@ bytes, eager tool schema bytes and reported token usage are distinct quantities.
 Retain bounded summaries, not prompts, credentials, raw geometry or private
 reasoning. Diagnostics cannot control output or certify rendered correctness.
 
+### Shared Runtime profiler
+
+`@asyra/ai-agent-runtime` owns invocation middleware, recording, interval
+projection, evaluation and trace export. The Node entry owns optional local
+persistence and the report CLI. Design supplies canonical tool dispatch, result
+interpretation, domain report policy and provider/event adapters. No generic
+profiler implementation remains in Design. Browser imports require no Node APIs.
+
+Every registered invocation crosses the shared dispatcher, including rejection,
+unknown operation and cancellation. Middleware cannot call the canonical executor
+more than once. Instrumentation cannot replace permissions, confirmations,
+transaction settlement, retry decisions or original returned/thrown values.
+Parent call, actor, purpose and expectation have explicit caller/contract
+provenance; absent explanations remain unavailable. Parallel calls retain their
+own identities. Internal phases use explicit child spans rather than simulated
+function tracing. No instrumentation claims invisible provider compute time.
+
+The profiler retains timestamped transport direction, byte count and stream kind,
+plus permitted public notification metadata. It does not retain transport bytes,
+credentials, prompts or private reasoning. Reports distinguish ownership coverage
+from observable activity and identify missing, duplicate and unfinished records.
+Inclusive and exclusive timings remain separate. A standard trace export supports
+external timeline viewers without a new product UI. Export is explicit and local;
+no automatic upload or telemetry. Saved historical records remain readable with
+missing capabilities explicitly reported rather than invented.
+
 ## Execution recording
 
-The App provider emits a versioned, append-only local record per invocation in
+The Runtime profiler emits a versioned, append-only local record per invocation in
 addition to existing console diagnostics. The record includes request/call and
 sequence identities, observed timestamps, model/effort, bounded tool selectors,
 artifact references and terminal outcome. Source identity is optional and marked
@@ -640,6 +743,13 @@ no preferred angle or universal detail threshold is added. Structural reviews
 do not reject unfinished finish detail. One assessment reports all currently
 visible contradictions within its phase so revisions can address them together.
 
+Review responses provide structured correction context: unresolved criterion
+IDs with complete evidence, known fact-bound target IDs, and the supplied
+inspection targets/regions. Inspection regions retain target-local coordinates;
+no workspace bounds or guessed object IDs are inferred. Missing scope remains
+unknown. Failed checks are not truncated into an actionable subset. This context
+is diagnostic only and cannot authorize completion or replace a fresh review.
+
 The request owns unresolved independent findings. A subsequent assessment gets
 those findings as questions to check, not as accepted facts or construction
 instructions. Fresh passing findings resolve them; stale passes cannot. Source
@@ -873,3 +983,107 @@ Forward images with the native image helper and only the parsed receipt with the
 text helper. Retained Code Mode values can be redisplayed without reacquisition.
 Formal tests cover zero/multiple images and exclude base64 from text output;
 an opt-in real-model probe verifies actual image visibility from one acquisition.
+
+### Diagnostic reference recovery
+
+Reference acquisition preserves structured failure stage, reason, HTTP status
+when observed, transient classification and attempt count. Public transport
+retries a classified transient read at most once within the original deadline;
+permanent HTTP rejection, unsupported media, bounds/security rejection and user
+cancellation do not retry. Each redirect is independently admitted. Failed page
+candidates retain their diagnostics while the existing resolver tries other
+publisher-declared resources. No thumbnail downgrade, subject decision or new
+network permission is implied. A successful candidate and explicit redisplay
+continue through the same request-local acquisition owner.
+
+### Source and upstream evidence provenance
+
+Design captures host source revision and a source-scoped fingerprint at request
+entry, once per invocation, and supplies both to the Runtime profiler and child
+review. The fingerprint includes relevant dirty and untracked source; it is a
+source observation at capture time, not proof of immutable loaded code. A
+configured build revision remains authoritative. Node source capture is explicit,
+read-only and inert on import; missing source access cannot fail the user request.
+Runtime retains unavailable source identity explicitly. Public provider calls
+whose input/output payloads are not exposed keep explicit upstream-unavailable
+provenance, independent from successful timing coverage. Existing invocation and
+payload identities link actual lookup/recovery inputs and outcomes; no purpose
+or private service activity is inferred.
+
+### Durable completion receipt
+
+A completed drawing and a durable document are separate results. Final outcome
+reporting asks the active document session to confirm persistence of publications
+queued before that call. The session captures the applied sequence at that queue
+boundary and waits outside its publication queue. Later user or remote edits do
+not extend the target. The socket confirms only the same document generation and
+a contiguous backend durable sequence at least as high as the target. Ordinary
+persistence cadence remains unchanged. Disconnect, cancellation, Reset, conflict
+or persistence failure cannot become a successful save receipt. Local-only mode
+reports local-only; it never claims durable storage. Confirmation does not alter
+canonical data, History, rendering or accepted drawing evidence.
+
+### Retained reference identity and diagnostics
+
+The request image owner resolves attachment indexes to content-digest reference
+identities. Selection and source-fact admission use this owner before storing
+state, so a missing attachment cannot become accepted evidence. Public source
+URLs remain attributed assertions; a successful download or decode never proves
+subject identity or fine-detail suitability. `validate_reference_images` reports exact
+retained bytes, encoding, dimensions and reuse without a second download.
+
+`sourceCorrections` explicitly repairs citation and verification with a reason,
+preserving statement, scope and dependency versions. The existing fact-change
+callback invalidates affected review evidence; changing factual content still
+requires evidenced dependency changes.
+
+Runtime retains explicitly supplied reference image bytes as local assets keyed
+by content digest. Asset receipts join the request and attachment index. Final
+comparison selection identifies the actual reference set; acquisition alone is
+not final use. Payload diagnostics preserve opaque resource digests when URL
+queries are redacted and separately record serialization, queue and write costs.
+Application timings distinguish creation, transaction boundary delivery,
+selection, validation, cooperative yields and orchestration bookkeeping.
+
+### Reference applicability and source assessment
+
+Mechanical image admission retains original bytes and content identity. It does
+not establish suitability. `select_design_references` retains batched model
+assessments keyed by immutable reference identity and requirement revision.
+Pending and rejected references remain available for investigation but cannot
+enter accepted comparison. Restricted references carry criterion scope,
+limitations and optional original-image pixel regions; canvas inspection regions
+remain a separate coordinate space. The tool checks structure and identity, not
+visual truth, and never decides applicability from filenames or site rules.
+
+Facts are source-attributed assertions. Dependency freshness is separate from
+evidence assessment. Every cited image needs current applicable evidence for the
+bound criterion; one eligible citation cannot bless another ineligible source.
+URL citations remain assertions. Selection and decision changes invalidate only
+affected evidence/review, while unchanged submissions preserve current review.
+Current source limitations travel into local corrections and independent final
+review. Changed requirements expire prior decisions. Original evidence is retained.
+
+## Completion presentation
+
+Settled answers and retained-progress explanations appear in the AI conversation.
+Do not repeat them in a canvas-spanning completion/Undo toast. Ordinary toolbar
+and keyboard Undo/Redo retain the existing history contract. Removing the overlay
+does not alter partial outcomes, cancellation, unrelated notifications or history.
+
+### Composed capture-to-review handoff
+
+review_drawing accepts current inspectionIds and/or explicit inspections using the
+registered inspect_drawing target schema. Prefer inspections when fresh captures
+are needed; retained IDs support exact evidence reuse. Both feed the same review
+owner. The total evidence selection is bounded to 24, and existing IDs must be
+unique nonempty strings. Target regions retain native-resolution limits.
+
+The inspection owner captures each requested target once, admits only successful
+stamped image receipts, and forms the review IDs internally. Any unavailable
+capture returns accepted=false, successful inspectionIds and failedInspections
+with the exact target and recovery guidance. It does not run the assessor, filter
+away required failures or substitute an overview for requested native detail.
+Retry may combine successful current IDs with corrected pending targets. Missing,
+stale, mixed-generation or insufficient-coverage evidence still blocks review;
+all original criteria and post-assessment freshness checks remain in effect.

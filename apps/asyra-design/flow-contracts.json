@@ -17,7 +17,12 @@
   "workspaceSources": [
     {
       "name": "@asyra/asyra-design",
-      "inputs": ["src/**", "server/**", "vtracer-tool-server.mjs"],
+      "inputs": [
+        "src/**",
+        "server/**",
+        "vtracer-tool-server.mjs",
+        "collaboration-server.ts"
+      ],
       "entry": null
     },
     {
@@ -95,6 +100,51 @@
           "id": "observe.accounting",
           "stepId": "observe",
           "testName": "execution proof accounts observed spans without private payloads or invented model timing"
+        },
+        {
+          "id": "observe.transport",
+          "stepId": "observe",
+          "testName": "execution proof records timestamped transport without storing transport content"
+        },
+        {
+          "id": "observe.shared-invocation",
+          "stepId": "observe",
+          "testName": "execution proof composes a non-drawing host through shared invocation and local projection"
+        },
+        {
+          "id": "apply.region-removal",
+          "stepId": "apply",
+          "testName": "execution proof hands a region identity set into one compact plural removal"
+        },
+        {
+          "id": "observe.source-provenance",
+          "stepId": "observe",
+          "testName": "execution proof retains source identity and unavailable upstream payload provenance"
+        },
+        {
+          "id": "prepare.reference-recovery",
+          "stepId": "prepare",
+          "testName": "execution proof recovers a rejected reference through a different original source and reuses it"
+        },
+        {
+          "id": "inspect.evidence-responsibilities",
+          "stepId": "inspect",
+          "testName": "execution proof routes separate evidence tools without canvas mutations"
+        },
+        {
+          "id": "settle.durability",
+          "stepId": "settle",
+          "testName": "execution proof confirms a durable sequence without extending it to later edits"
+        },
+        {
+          "id": "inspect.capture-handoff",
+          "stepId": "inspect",
+          "testName": "execution proof composes capture and assessment without dropping unavailable targets"
+        },
+        {
+          "id": "settle.activity",
+          "stepId": "settle",
+          "testName": "execution proof preserves concrete work through progress and settlement"
         }
       ],
       "handoffs": [
@@ -121,7 +171,7 @@
         {
           "routeId": "apply-to-compose",
           "decision": "required",
-          "caseIds": ["request.continuity"]
+          "caseIds": ["request.continuity", "apply.region-removal"]
         },
         {
           "routeId": "apply-to-inspect",

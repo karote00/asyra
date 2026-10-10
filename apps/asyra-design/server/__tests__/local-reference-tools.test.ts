@@ -303,7 +303,14 @@ it('preserves compressed JPEG bytes and display orientation instead of inflating
   expect(add.mock.calls[0]?.[0]).toEqual({
     dataUrl: `data:image/jpeg;base64,${bytes.toString('base64')}`,
     mediaType: 'image/jpeg',
-    size: bytes.length
+    size: bytes.length,
+    validation: {
+      width: 2000,
+      height: 2001,
+      encoding: 'jpeg',
+      validity: 'decoded',
+      suitability: 'requires-visual-assessment'
+    }
   })
 })
 
@@ -798,4 +805,81 @@ it('shares concurrent alias decoding and attachment admission, but keeps differe
   } finally {
     decode.mockRestore()
   }
+})
+
+it('preserves page HTTP rejection and format diagnostics instead of a generic download failure', async () => {
+  const add = vi.fn()
+  const page = vi.fn(async () => ({
+    url: 'https://example.org/page',
+    response: new Response('denied', {
+      status: 403,
+      headers: { 'content-type': 'text/html' }
+    })
+  }))
+  const tools = createLocalReferenceTools(add, vi.fn(), {}, page)
+  const rejected = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      { sourceUrl: 'https://example.org/page' },
+      new AbortController().signal
+    )
+  )
+  expect(rejected).toMatchObject({
+    available: false,
+    recoverable: true,
+    failure: {
+      stage: 'response',
+      reason: 'http',
+      status: 403,
+      retryable: false,
+      attempts: 1
+    }
+  })
+  page.mockResolvedValue({
+    url: 'https://example.org/page',
+    response: new Response('pdf', {
+      headers: { 'content-type': 'application/pdf' }
+    })
+  })
+  const unsupported = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      { sourceUrl: 'https://example.org/page' },
+      new AbortController().signal
+    )
+  )
+  expect(unsupported.failure).toMatchObject({
+    stage: 'response',
+    reason: 'unsupported-media',
+    retryable: false
+  })
+  expect(add).not.toHaveBeenCalled()
+})
+
+it('retains successful transport retry count when decoding rejects the downloaded bytes', async () => {
+  const tools = createLocalReferenceTools(
+    vi.fn(),
+    async () =>
+      new Response('invalid', {
+        headers: {
+          'content-type': 'image/png',
+          'x-reference-attempt-count': '2'
+        }
+      })
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://example.org/original.png',
+        sourceUrl: 'https://example.org/page'
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result.failure).toMatchObject({
+    stage: 'decode',
+    reason: 'invalid-image-bytes',
+    attempts: 2
+  })
 })

@@ -23,7 +23,6 @@ import {
 import { useAppContextMenuSession } from './context-menu-session'
 import { GroupContextMenu } from './group-context-menu'
 import { AiConversationPanel } from './ai-conversation-panel'
-import { AiHistoryMessageBar } from './ai-history-message-bar'
 import type { AiConfirmationBroker } from '../ai/confirmation'
 import type { AiConversationController } from '../ai/conversation'
 import type { AiHistoryProjection } from '../common-apis/history'
@@ -209,10 +208,6 @@ const App: React.FC<AppProps> = ({
           onClose={() => closeAiPanel({})}
         />
       ) : null}
-      <AiHistoryMessageBar
-        conversation={ai.conversation}
-        history={ai.history}
-      />
       <Contents />
       <Properties />
       <div

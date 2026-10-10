@@ -107,6 +107,9 @@ function scopedPayload(scope) {
     'runtimeAuthorityDigest',
     'contractScopeDigest'
   ]
+  const roleNames = Object.hasOwn(scope?.roles ?? {}, 'accepted')
+    ? ['accepted', 'target']
+    : ['target']
   const runtimeScoped = authorityFields.some((key) =>
     Object.hasOwn(scope?.runtime ?? {}, key)
   )
@@ -222,8 +225,8 @@ function scopedPayload(scope) {
           digest(scope.runtime.runtimeAuthorityDigest) &&
           digest(scope.runtime.contractScopeDigest))) &&
       scope.runtime.contractDigest === scope.acceptedBaseline.contractDigest &&
-      shape(scope.roles, ['accepted', 'target']) &&
-      ['accepted', 'target'].every((role) => {
+      shape(scope.roles, roleNames) &&
+      roleNames.every((role) => {
         const item = scope.roles[role]
         return (
           shape(item, [
@@ -289,14 +292,12 @@ function scopedPayload(scope) {
           item.roles.length > 0 &&
           isDeepStrictEqual(
             item.roles,
-            ['accepted', 'target'].filter(
-              (role) => scope.roles[role].slotId === item.id
-            )
+            roleNames.filter((role) => scope.roles[role].slotId === item.id)
           ) &&
           new Set(item.roles).size === item.roles.length &&
           item.roles.every(
             (role) =>
-              ['accepted', 'target'].includes(role) &&
+              roleNames.includes(role) &&
               scope.roles[role].slotId === item.id &&
               scope.roles[role].contractDigest === item.contractDigest &&
               scope.roles[role].verificationSourceDigest ===
@@ -324,7 +325,7 @@ function scopedPayload(scope) {
                 scope.runtime.contractScopeDigest)) &&
           item.configurationDigest === item.executionSourceDigest
       ) &&
-      ['accepted', 'target'].every(
+      roleNames.every(
         (role) =>
           scope.producers.filter((item) => item.roles.includes(role)).length ===
           1

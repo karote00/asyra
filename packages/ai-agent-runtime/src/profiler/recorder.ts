@@ -1,6 +1,5 @@
-import { randomUUID } from 'node:crypto'
-import type { AiProviderInput } from '../src/ai/action-batch-protocol'
-import type { ExecutionRecord, ExecutionRecordSink } from './local-ai-records'
+import type { AiProviderInput } from '../provider.js'
+import type { ExecutionRecord, ExecutionRecordSink } from './records.js'
 
 type UsageOutcome = 'completed' | 'failed' | 'cancelled' | 'timed_out'
 const tokenFields = [
@@ -22,6 +21,15 @@ const correlationId = (value: unknown): string | undefined =>
 // credentials, bitmap bytes, SVG/path coordinates or complete document payloads.
 const evidenceKeys = new Set([
   'actor',
+  'retryOf',
+  'direction',
+  'bytes',
+  'asset',
+  'sha256',
+  'path',
+  'reused',
+  'attachmentIndex',
+  'stream',
   'executor',
   'channel',
   'terminal',
@@ -435,14 +443,19 @@ const outputDiagnostic = (
 }
 
 /** One bounded accumulator per provider invocation; provider totals are snapshots, not deltas. */
-export const createLocalAiUsage = (
+export const createAiExecutionProfiler = (
   input: AiProviderInput,
   model: string,
   options: {
     sink?: ExecutionRecordSink
     now?: () => number
     sourceRevision?: string
-    purpose?: 'drawing' | 'execution-assessment'
+    sourceFingerprint?: string
+    sourceIdentityStatus?: 'captured' | 'configured' | 'unavailable'
+    purpose?: string
+    provider?: string
+    effort?: string
+    log?: (line: string) => void
     sourceRequestId?: string
     parentCallId?: string
     sourceSpanId?: string
@@ -451,11 +464,8 @@ export const createLocalAiUsage = (
 ) => {
   const now = options.now ?? (() => performance.now())
   // Assessment CLI stdout is the report payload; keep diagnostics separate.
-  const log = (line: string) =>
-    options.purpose === 'execution-assessment'
-      ? console.error(line)
-      : console.info(line)
-  const requestId = randomUUID()
+  const log = options.log ?? (() => undefined)
+  const requestId = globalThis.crypto.randomUUID()
   const startedAt = now()
   const metadata = isRecord(input.metadata) ? input.metadata : {}
   const conversationId = correlationId(metadata.conversationId)
@@ -471,6 +481,7 @@ export const createLocalAiUsage = (
   const activeIntervals = new Set<string>()
   let intervalStartedAt = 0
   let observedToolAndResearchMs = 0
+  let recordingFailures = 0
   const persist = (record: ExecutionRecord) => {
     try {
       options.sink?.write({
@@ -478,23 +489,31 @@ export const createLocalAiUsage = (
         evidence: persistedEvidence(record.evidence)
       })
     } catch {
-      // A diagnostic sink cannot change the drawing outcome.
+      recordingFailures++
+      // A diagnostic sink cannot change execution.
     }
   }
   persist({
     event: 'ai_request_started',
     schemaVersion: 2,
+    profilerVersion: 1,
     requestId,
     sequence: 0,
     startedAt: new Date().toISOString(),
     model,
-    effort: 'medium',
-    provider: 'local-codex',
+    effort: options.effort ?? null,
+    provider: options.provider ?? null,
     sourceRevision: correlationId(options.sourceRevision) ?? null,
+    sourceFingerprint: /^[a-f0-9]{64}$/.test(options.sourceFingerprint ?? '')
+      ? options.sourceFingerprint
+      : null,
+    sourceIdentityStatus:
+      options.sourceIdentityStatus ??
+      (options.sourceRevision ? 'configured' : 'unavailable'),
     conversationId,
     turnId,
     replyToTurnId,
-    purpose: options.purpose ?? 'drawing',
+    purpose: options.purpose ?? 'execution',
     sourceRequestId: correlationId(options.sourceRequestId) ?? null,
     parentCallId: correlationId(options.parentCallId) ?? null,
     sourceSpanId: correlationId(options.sourceSpanId) ?? null,
@@ -551,10 +570,24 @@ export const createLocalAiUsage = (
         lifecycle('lifecycle_completed', evidence)
       }
     },
-    recordTransport(direction: 'sent' | 'received', bytes: number): void {
+    recordTransport(
+      direction: 'sent' | 'received',
+      bytes: number,
+      stream: 'protocol' | 'diagnostic' = 'protocol'
+    ): void {
       if (finished || !Number.isSafeInteger(bytes) || bytes < 0) return
       const key = direction === 'sent' ? 'sentBytes' : 'receivedBytes'
-      transport[key] += bytes
+      if (stream === 'protocol') transport[key] += bytes
+      persist({
+        event: 'ai_request_trace',
+        schemaVersion: 2,
+        requestId,
+        sequence: ++sequence,
+        stage: 'transport_chunk',
+        elapsedMs: Math.max(0, now() - startedAt),
+        recordedAt: new Date().toISOString(),
+        evidence: { direction, bytes, stream }
+      })
     },
     trace(
       stage:
@@ -564,6 +597,7 @@ export const createLocalAiUsage = (
         | 'provider_transport_event'
         | 'provider_notification'
         | 'provider_notifications'
+        | 'tool_delivery_failed'
         | 'tool_started'
         | 'tool_execution_started'
         | 'tool_completed'
@@ -574,6 +608,7 @@ export const createLocalAiUsage = (
         | 'protocol_rejected'
         | 'settlement'
         | 'visual_assessment_context'
+        | 'asset_retained'
         | 'capabilities_advertised'
         | 'provider_request_started'
         | 'provider_request_completed'
@@ -619,6 +654,19 @@ export const createLocalAiUsage = (
               phase,
               value
             ) ?? { status: 'unavailable', path: null }
+          if (stage === 'research_started' || stage === 'research_completed') {
+            const phase = stage === 'research_started' ? 'input' : 'output'
+            // Native item metadata is not the upstream request/response payload.
+            diagnostic = {
+              [phase]: {
+                payload: {
+                  status: 'unavailable',
+                  reason: 'upstream-not-exposed',
+                  path: null
+                }
+              }
+            }
+          }
           if (stage === 'visual_assessment_context')
             diagnostic = {
               input: { payload: payload('input', evidence.arguments) }
@@ -634,9 +682,10 @@ export const createLocalAiUsage = (
           if (stage === 'tool_started' || stage === 'action_started')
             diagnostic = {
               attribution: {
-                actor: evidence.actor ?? 'model',
-                executor: evidence.executor ?? 'app-server',
+                actor: evidence.actor ?? null,
+                executor: evidence.executor ?? null,
                 parentCallId: correlationId(evidence.parentCallId) ?? null,
+                retryOf: correlationId(evidence.retryOf) ?? null,
                 nativeThreadId: correlationId(evidence.nativeThreadId) ?? null,
                 nativeTurnId: correlationId(evidence.nativeTurnId) ?? null,
                 contractDigest: evidence.contractDigest ?? null,
@@ -645,7 +694,7 @@ export const createLocalAiUsage = (
                 expectedResult:
                   summarizeEvidence(evidence.expectedResult) ?? null,
                 expectationSource: evidence.expectationSource ?? 'unavailable',
-                timingScope: evidence.timingScope ?? 'native-call'
+                timingScope: evidence.timingScope ?? 'unavailable'
               },
               input: {
                 ...payloadDiagnostic(evidence.arguments),
@@ -762,7 +811,7 @@ export const createLocalAiUsage = (
         schemaVersion: 2,
         requestId,
         sequence: ++sequence,
-        provider: 'local-codex',
+        provider: options.provider ?? null,
         model,
         conversationId,
         turnId,
@@ -778,6 +827,7 @@ export const createLocalAiUsage = (
           outsideToolAndResearchMs: durationMs - observedMs
         },
         transport: { ...transport },
+        recordingFailures,
         outcome,
         usageStatus,
         tokens

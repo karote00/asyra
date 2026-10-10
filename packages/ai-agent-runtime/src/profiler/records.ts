@@ -2,10 +2,7 @@ import {
   partitionExecutionTime,
   summarizeCallDurations,
   summarizeAppCallGaps
-} from './local-execution-timing'
-import { mkdir, open, writeFile, type FileHandle } from 'node:fs/promises'
-import { join } from 'node:path'
-import { serializeToolPayload } from './local-tool-payload'
+} from './timing.js'
 
 export interface ExecutionRecord {
   event: string
@@ -28,108 +25,24 @@ export interface ExecutionRecordSink {
     bytes?: number
     sha256?: string
     redactions?: string[]
+    resourceIdentities?: { path: string; sha256: string }[]
+    serializationMs?: number
+  }
+  writeAsset?(
+    requestId: string,
+    bytes: Uint8Array,
+    mediaType: string
+  ): {
+    status: 'queued' | 'failed'
+    path: string | null
+    sha256?: string
+    bytes?: number
+    reused?: boolean
   }
   flush(): Promise<{
     status: 'saved' | 'failed' | 'empty'
     path: string | null
   }>
-}
-
-/** One writer per invocation. Queued I/O never enters the canonical mutation path. */
-export const createExecutionRecordSink = (
-  directory: string,
-  onError: (code: string) => void = (code) =>
-    console.warn(JSON.stringify({ event: 'ai_recording_failed', code }))
-): ExecutionRecordSink => {
-  let pending = Promise.resolve()
-  let file: FileHandle | undefined
-  let filename: string | null = null
-  let identity: string | undefined
-  let failed = false
-  let closed = false
-  let settled: ReturnType<ExecutionRecordSink['flush']> | undefined
-  const fail = (error: unknown) => {
-    if (failed) return
-    failed = true
-    const code = (error as { code?: unknown })?.code
-    try {
-      onError(
-        typeof code === 'string' && /^[A-Z_]+$/.test(code)
-          ? code
-          : 'RECORD_WRITE_FAILED'
-      )
-    } catch {
-      // Diagnostic error observers are also non-authoritative.
-    }
-  }
-  let payloadSequence = 0
-  return {
-    writePayload(requestId, _callId, phase, value) {
-      if (closed || failed || identity !== requestId)
-        return { status: 'failed', path: null }
-      try {
-        const { serialized, ...metadata } = serializeToolPayload(value)
-        const relative = `${requestId}.payloads/${++payloadSequence}-${phase}.json`
-        const target = join(directory, relative)
-        pending = pending
-          .then(async () => {
-            if (failed) return
-            await mkdir(join(directory, `${requestId}.payloads`), {
-              recursive: true,
-              mode: 0o700
-            })
-            await writeFile(target, serialized, { flag: 'wx', mode: 0o600 })
-          })
-          .catch(fail)
-        return { status: 'queued', path: relative, ...metadata }
-      } catch (error) {
-        fail(error)
-        return { status: 'failed', path: null }
-      }
-    },
-    write(record) {
-      if (closed || failed) return
-      try {
-        if (!/^[a-zA-Z0-9_-]{1,160}$/.test(record.requestId))
-          throw new Error('Invalid record identity')
-        if (identity && identity !== record.requestId)
-          throw new Error('Mixed record identity')
-        identity = record.requestId
-        filename = join(directory, `${identity}.jsonl`)
-        const line = JSON.stringify(record) + '\n'
-        const target = filename
-        pending = pending
-          .then(async () => {
-            if (failed) return
-            if (!file) {
-              await mkdir(directory, { recursive: true, mode: 0o700 })
-              // A collision is an error; existing evidence is never overwritten.
-              file = await open(target, 'ax', 0o600)
-            }
-            await file.writeFile(line)
-          })
-          .catch(fail)
-      } catch (error) {
-        fail(error)
-      }
-    },
-    flush() {
-      if (settled) return settled
-      closed = true
-      settled = pending.then(async () => {
-        try {
-          await file?.close()
-        } catch (error) {
-          fail(error)
-        }
-        let status: 'saved' | 'failed' | 'empty' = 'empty'
-        if (filename) status = 'saved'
-        if (failed) status = 'failed'
-        return { status, path: filename }
-      })
-      return settled
-    }
-  }
 }
 
 export interface ExecutionStep {
@@ -159,7 +72,11 @@ export const parseExecutionRecord = (text: string) => {
   let outcome = 'incomplete'
   let durationMs = 0
   let terminal = false
-  let metadata: Record<string, unknown> = { sourceRevision: null }
+  let metadata: Record<string, unknown> = {
+    sourceRevision: null,
+    sourceFingerprint: null,
+    sourceIdentityStatus: 'unavailable'
+  }
   text.split('\n').forEach((line, index) => {
     if (!line.trim()) return
     let entry: unknown
@@ -203,6 +120,11 @@ export const parseExecutionRecord = (text: string) => {
     }
     if (entry.event === 'ai_request_usage') {
       terminal = true
+      if (
+        typeof entry.recordingFailures === 'number' &&
+        entry.recordingFailures > 0
+      )
+        issues.push(`Recording failed for ${entry.recordingFailures} events`)
       if (
         typeof entry.outcome === 'string' &&
         ['completed', 'failed', 'cancelled', 'timed_out'].includes(
@@ -294,6 +216,9 @@ export const parseExecutionRecord = (text: string) => {
     if (breakdown.unattributedMs > 0)
       issues.push('Uncovered lifecycle interval')
   }
+  for (const step of steps.values())
+    if (step.kind !== 'lifecycle' && step.status === 'incomplete')
+      issues.push(`Incomplete ${step.kind} span ${step.callId}`)
   return {
     requestId: requestId as string | null,
     outcome,

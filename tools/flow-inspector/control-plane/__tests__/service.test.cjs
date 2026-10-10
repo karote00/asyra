@@ -1368,6 +1368,20 @@ async function assessmentFixture(
     directory: f.runs,
     agentOptions
   })
+  const privateModule = path.join(
+    f.repository,
+    'packages/factory/src/retired-proof-helper.ts'
+  )
+  const proofFile = path.join(f.repository, f.contract.testFile)
+  const currentProof = fs.readFileSync(proofFile, 'utf8')
+  if (distinct === 'retired-private-module') {
+    fs.writeFileSync(privateModule, 'export const version = 1\n')
+    fs.chmodSync(proofFile, 0o600)
+    fs.writeFileSync(
+      proofFile,
+      "import '../retired-proof-helper'\n" + currentProof
+    )
+  }
   const accepted = await service.wait(
     service.start({ mode: 'candidate' }, LOCAL_ACTOR)
   )
@@ -1386,6 +1400,10 @@ async function assessmentFixture(
   let source = accepted,
     review = acceptedReview
   if (distinct) {
+    if (distinct === 'retired-private-module') {
+      fs.rmSync(privateModule)
+      fs.writeFileSync(proofFile, currentProof)
+    }
     const config = path.join(f.repository, f.contract.configFile)
     fs.chmodSync(config, 0o600)
     fs.appendFileSync(config, '\n// Distinct assessment verifier\n')
@@ -1432,6 +1450,8 @@ async function assessmentFixture(
     ...f,
     service,
     targetRequest: request,
+    acceptedProofId: accepted.id,
+    privateModule,
     request: {
       requestId: randomUUID(),
       targetId: target.id,
@@ -1636,7 +1656,7 @@ async function fullRuntimeServiceEvidence() {
         )
       )
     }
-    assert.equal(integrated.assessment.result.accepted.status, 'passed')
+    assert.equal(integrated.assessment.result.targetContract.status, 'passed')
     assert.equal(integrated.assessment.result.targetContract.status, 'passed')
     assert.ok(
       integrated.assessment.result.works.every(
@@ -1806,7 +1826,7 @@ test(
       const assessment = await service.waitTargetAssessment(
         service.startTargetAssessment(f.request, LOCAL_ACTOR)
       )
-      assert.equal(assessment.result.format, 2)
+      assert.equal(assessment.result.format, 3)
       assert.equal(assessment.result.targetContract.status, 'passed')
       assert.equal(assessment.projection.eligible, true)
       const requestId = randomUUID()
@@ -1919,6 +1939,22 @@ test(
       legacy.format = 1
       legacy.records[0].format = 1
       legacy.records[0].result.format = 1
+      legacy.records[0].roles.accepted = structuredClone(
+        legacy.records[0].roles.target
+      )
+      legacy.records[0].slots[0].role = 'accepted'
+      legacy.records[0].result.accepted = structuredClone(
+        legacy.records[0].result.targetContract
+      )
+      const producerPath = path.join(
+        f.runs,
+        legacy.records[0].slots[0].id,
+        'record.json'
+      )
+      const producerBytes = fs.readFileSync(producerPath)
+      const historicalProducer = JSON.parse(producerBytes)
+      historicalProducer.targetProof.request.role = 'accepted'
+      fs.writeFileSync(producerPath, JSON.stringify(historicalProducer))
       delete legacy.records[0].result.targetContract
       fs.writeFileSync(file, JSON.stringify(legacy))
       service = createService(f.repository, { directory: f.runs })
@@ -1934,6 +1970,7 @@ test(
         /format 2|assessment/i
       )
       await service.close()
+      fs.writeFileSync(producerPath, producerBytes)
       for (const mutate of [
         (saved) => delete saved.records[0].format,
         (saved) => {
@@ -1973,7 +2010,7 @@ test(
       const assessment = await service.waitTargetAssessment(
         service.startTargetAssessment(f.request, LOCAL_ACTOR)
       )
-      assert.equal(assessment.result.accepted.status, 'passed')
+      assert.equal(assessment.result.targetContract.status, 'passed')
       assert.equal(assessment.result.works[1].status, 'passed')
       assert.equal(assessment.result.works[1].prerequisites.status, 'passed')
       const work = f.targetRequest.works[1]
@@ -2181,22 +2218,25 @@ test('assessment registers complete private inventory before dispatch and retain
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
     const initial = service.getTargetAssessment(id)
     assert.equal(initial.phase, 'running')
-    assert.equal(initial.slots.length, 2)
-    assert.equal(initial.result.accepted.status, 'unknown')
+    assert.equal(initial.format, 3)
+    assert.deepEqual(Object.keys(initial.roles), ['target'])
+    assert.equal(Object.hasOwn(initial.result, 'accepted'), false)
+    assert.equal(initial.slots.length, 1)
+    assert.equal(initial.result.targetContract.status, 'unknown')
     assert.equal(initial.result.integration.status, 'unknown')
     assert.equal(assess.mock.callCount(), 1)
     const saved = JSON.parse(
       fs.readFileSync(path.join(f.runs, 'target-assessments.json'))
     )
-    assert.equal(saved.records[0].slots.length, 2)
+    assert.equal(saved.records[0].slots.length, 1)
     assert.throws(() => service.start({}, LOCAL_ACTOR), /running|active/)
     assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
     const completed = await service.waitTargetAssessment(id)
     assert.equal(completed.phase, 'completed')
-    assert.equal(completed.result.accepted.status, 'passed')
+    assert.equal(completed.result.targetContract.status, 'passed')
     assert.equal(completed.result.integration.status, 'passed')
     assert.equal(completed.projection.eligible, true)
-    assert.equal(assess.mock.callCount(), 3)
+    assert.equal(assess.mock.callCount(), 2)
     for (const slot of completed.slots)
       assert.equal(service.get(slot.id).targetAssessmentId, id)
     const counts = [assess.mock.callCount(), project.mock.callCount()]
@@ -2225,7 +2265,7 @@ test('assessment registers complete private inventory before dispatch and retain
     const restored = service.getTargetAssessment(id)
     assert.deepEqual(restored.result, completed.result)
     assert.equal(restored.projection.eligible, true)
-    assert.equal(assess.mock.callCount(), 4)
+    assert.equal(assess.mock.callCount(), 3)
   } finally {
     await service.close()
     fs.rmSync(f.dir, { recursive: true, force: true })
@@ -2257,7 +2297,7 @@ test('assessment registration write failure leaves no ghost request and equivale
       service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
     assert.equal(result.slots.length, 1)
-    assert.equal(result.roles.accepted.slotId, result.roles.target.slotId)
+    assert.deepEqual(Object.keys(result.roles), ['target'])
     assert.equal(result.projection.eligible, true)
     const assess = t.mock.method(assessor, 'assessTargetSource')
     const project = t.mock.method(
@@ -2299,14 +2339,13 @@ test('assessment cancellation preserves completed observations and restart never
   await service.close()
   let calls = 0,
     entered
-  const secondStarted = new Promise((resolve) => {
+  const producerStarted = new Promise((resolve) => {
     entered = resolve
   })
   service = createService(f.repository, {
     directory: f.runs,
     runner: async (options) => {
       calls++
-      if (calls === 1) return require('../runner.cjs').runVerification(options)
       entered()
       if (!options.signal.aborted)
         await new Promise((resolve) =>
@@ -2317,21 +2356,21 @@ test('assessment cancellation preserves completed observations and restart never
   })
   try {
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
-    await secondStarted
+    await producerStarted
     const running = service.getTargetAssessment(id)
-    assert.equal(running.result.accepted.status, 'passed')
-    assert.equal(running.slots[1].phase, 'running')
+    assert.equal(running.result.targetContract.status, 'unknown')
+    assert.equal(running.slots[0].phase, 'running')
     const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
     assert.equal(cancelled.phase, 'cancelled')
-    assert.equal(cancelled.result.accepted.status, 'passed')
+    assert.equal(cancelled.result.targetContract.status, 'unknown')
     assert.equal(cancelled.result.integration.status, 'unknown')
-    assert.equal(calls, 2)
+    assert.equal(calls, 1)
     await service.close()
     const file = path.join(f.runs, 'target-assessments.json')
     const interrupted = JSON.parse(fs.readFileSync(file))
     interrupted.records[0].phase = 'running'
     delete interrupted.records[0].finishedAt
-    interrupted.records[0].slots[1].phase = 'running'
+    interrupted.records[0].slots[0].phase = 'running'
     fs.writeFileSync(file, JSON.stringify(interrupted))
     service = createService(f.repository, {
       directory: f.runs,
@@ -2342,9 +2381,9 @@ test('assessment cancellation preserves completed observations and restart never
     })
     const restored = service.getTargetAssessment(id)
     assert.equal(restored.phase, 'interrupted')
-    assert.equal(restored.result.accepted.status, 'passed')
+    assert.equal(restored.result.targetContract.status, 'unknown')
     assert.equal(restored.result.integration.status, 'unknown')
-    assert.equal(calls, 2)
+    assert.equal(calls, 1)
     assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
   } finally {
     await service.close()
@@ -2360,9 +2399,9 @@ test('assessment retains a real failed target proof and rejects cross-assessment
       service.startTargetAssessment(f.request, LOCAL_ACTOR)
     )
     assert.equal(result.phase, 'completed')
-    assert.equal(result.result.accepted.status, 'passed')
+    assert.equal(result.result.targetContract.status, 'failed')
     assert.equal(result.result.integration.status, 'failed')
-    assert.equal(result.slots.length, 2)
+    assert.equal(result.slots.length, 1)
     assert.equal(
       service.get(result.roles.target.slotId).evidence.status,
       'failed'
@@ -2372,7 +2411,7 @@ test('assessment retains a real failed target proof and rejects cross-assessment
     const original = fs.readFileSync(file)
     for (const mutate of [
       (saved) =>
-        (saved.records[0].roles.accepted.verificationSourceDigest = '0'.repeat(
+        (saved.records[0].roles.target.verificationSourceDigest = '0'.repeat(
           64
         )),
       (saved) => {
@@ -2383,7 +2422,7 @@ test('assessment retains a real failed target proof and rejects cross-assessment
       (saved) => {
         const record = saved.records[0]
         record.roles.target.slotId = f.request.sourceAttemptId
-        record.slots[1].id = f.request.sourceAttemptId
+        record.slots[0].id = f.request.sourceAttemptId
       },
       (saved) => (saved.records[0].slots[0].phase = 'requested'),
       (saved) => (saved.records[0].slots[0].phase = 'cancelled'),
@@ -2416,7 +2455,7 @@ test('assessment cancelled before dispatch retains requested slots with explicit
     const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
     const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
     assert.equal(cancelled.phase, 'cancelled')
-    assert.equal(cancelled.result.accepted.status, 'unknown')
+    assert.equal(cancelled.result.targetContract.status, 'unknown')
     for (const slot of cancelled.slots) {
       assert.equal(slot.phase, 'cancelled')
       assert.ok(slot.reason)
@@ -2501,7 +2540,7 @@ test('assessment settlement persistence failure preserves completed producer pha
     assert.match(result.orchestrationError, /settlement persistence failure/)
     assert.equal(result.slots[0].phase, 'completed')
     assert.equal(service.get(result.slots[0].id).phase, 'completed')
-    assert.equal(result.result.accepted.status, 'passed')
+    assert.equal(result.result.targetContract.status, 'passed')
     await service.close()
     service = createService(f.repository, { directory: f.runs })
     assert.equal(
@@ -3289,8 +3328,8 @@ test(
       selectionLookups.mock.restore()
       const registered = service.getTargetAssessment(id)
       assert.equal(registered.runtime.taskId, f.task.id)
-      assert.equal(registered.slots.length, 2)
-      assert.equal(registered.result.accepted.status, 'unknown')
+      assert.equal(registered.slots.length, 1)
+      assert.equal(registered.result.targetContract.status, 'unknown')
       assert.equal(assess.mock.callCount(), 1)
       assert.equal(
         Object.hasOwn(assess.mock.calls[0].arguments[0], 'sourceAdmission'),
@@ -3309,9 +3348,9 @@ test(
       assert.deepEqual(service.getTask(f.task.id), before)
       const result = await service.waitTargetAssessment(id)
       assert.equal(result.phase, 'completed')
-      assert.equal(result.result.accepted.status, 'passed')
+      assert.equal(result.result.targetContract.status, 'failed')
       assert.equal(result.result.integration.status, 'failed')
-      assert.equal(assess.mock.callCount(), 3)
+      assert.equal(assess.mock.callCount(), 2)
       for (const slot of result.slots) {
         const producer = service.get(slot.id)
         assert.equal(producer.format, 3)
@@ -3325,7 +3364,7 @@ test(
       await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
       assert.equal(notifications, beforeNotifications + 1)
       assert.equal(project.mock.callCount(), beforeRetirementProjects + 1)
-      assert.equal(assess.mock.callCount(), 3)
+      assert.equal(assess.mock.callCount(), 2)
       assert.equal(service.getTargetAssessment(id).projection.current, false)
       assert.strictEqual(service.getTargetAssessment(id).result, verdict)
       assert.deepEqual(
@@ -3335,7 +3374,7 @@ test(
       await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
       assert.equal(notifications, beforeNotifications + 2)
       assert.equal(project.mock.callCount(), beforeRetirementProjects + 1)
-      assert.equal(assess.mock.callCount(), 3)
+      assert.equal(assess.mock.callCount(), 2)
       const counts = [assess.mock.callCount(), project.mock.callCount()]
       const lookups = t.mock.method(Map.prototype, 'get')
       const reads = t.mock.method(fs, 'readFileSync')
@@ -3403,11 +3442,8 @@ test(
         service.startTargetAssessment(request, LOCAL_ACTOR)
       )
       assert.equal(completed.slots.length, 1)
-      assert.equal(
-        completed.roles.accepted.slotId,
-        completed.roles.target.slotId
-      )
-      assert.equal(completed.result.accepted.status, 'passed')
+      assert.deepEqual(Object.keys(completed.roles), ['target'])
+      assert.equal(completed.result.targetContract.status, 'passed')
       assert.equal(completed.result.integration.status, 'passed')
       assert.equal(completed.projection.eligible, true)
       const producer = service.get(completed.slots[0].id)
@@ -3629,12 +3665,12 @@ async function scopedWorkFixture(
     service.startTargetAssessment(assessmentRequest, LOCAL_ACTOR)
   )
   assert.equal(
-    assessment.result.accepted.status,
-    failure === 'preservation' ? 'failed' : 'passed'
+    assessment.result.targetContract.status,
+    ['preservation', 'own'].includes(failure) ? 'failed' : 'passed'
   )
   assert.equal(
     assessment.result.works[0].status,
-    ['preservation', 'own'].includes(failure) ? 'failed' : 'passed'
+    failure === 'own' ? 'failed' : 'passed'
   )
   assert.equal(
     assessment.result.integration.status,
@@ -3973,22 +4009,23 @@ test(
 )
 
 test(
-  'scoped work handoff rejects real accepted regression and failed own commitment',
+  'scoped work handoff follows current work while complete contract records other regressions',
   { skip: process.platform !== 'darwin', timeout: 40000 },
   async () => {
     for (const failure of ['preservation', 'own']) {
       const f = await scopedWorkFixture(failure)
       try {
-        assert.throws(
-          () =>
-            f.service.scopedWorkFor(
-              f.task.id,
-              f.task.attempts.at(-1).id,
-              f.assessment.id,
-              LOCAL_ACTOR
-            ),
-          /preservation|commitment/
-        )
+        const read = () =>
+          f.service.scopedWorkFor(
+            f.task.id,
+            f.task.attempts.at(-1).id,
+            f.assessment.id,
+            LOCAL_ACTOR
+          )
+        assert.equal(f.assessment.result.targetContract.status, 'failed')
+        assert.equal(f.assessment.projection.eligible, false)
+        if (failure === 'own') assert.throws(read, /commitment/)
+        else assert.equal(read().work.status, 'passed')
       } finally {
         await f.service.close()
         fs.rmSync(f.dir, { recursive: true, force: true })
@@ -4010,16 +4047,13 @@ test(
         LOCAL_ACTOR
       )
       assert.equal(handoff.producers.length, 1)
-      assert.notEqual(
-        f.assessment.roles.accepted.reference.attemptId,
-        f.assessment.roles.target.reference.attemptId
-      )
+      assert.deepEqual(Object.keys(f.assessment.roles), ['target'])
       assert.strictEqual(handoff.roles, f.assessment.roles)
       assert.deepEqual(
         handoff.targetVerification,
         f.assessment.pins.targetVerification
       )
-      assert.deepEqual(handoff.producers[0].roles, ['accepted', 'target'])
+      assert.deepEqual(handoff.producers[0].roles, ['target'])
       const producer = f.service.get(handoff.producers[0].id)
       assert.equal(handoff.producers[0].sourceDigest, producer.snapshot.digest)
       assert.equal(
@@ -4262,10 +4296,10 @@ test(
       const file = path.join(f.runs, 'reviews', f.task.id + '.json')
       const mutations = [
         (p) => {
-          p.preview.scopedWork.roles.accepted.reference.descriptor.format = 99
+          p.preview.scopedWork.roles.target.reference.descriptor.format = 99
         },
         (p) => {
-          p.preview.scopedWork.roles.accepted.reference.descriptor.files.pop()
+          p.preview.scopedWork.roles.target.reference.descriptor.files.pop()
         },
         (p) => {
           const producer = p.preview.scopedWork.producers[0]
@@ -4360,7 +4394,7 @@ test(
           'targetVerification',
           key
         ]),
-        ...['accepted', 'target'].flatMap((role) => [
+        ...['target'].flatMap((role) => [
           ...[
             'slotId',
             'contractDigest',
@@ -4420,14 +4454,14 @@ test(
         name: 'aliased role paths',
         mutate(value) {
           const roles =
-            value.preview.scopedWork.roles.accepted.reference.descriptor.roles
+            value.preview.scopedWork.roles.target.reference.descriptor.roles
           roles.test = roles.configuration
         }
       })
       changes.push({
         name: 'uncanonical producer roles',
         mutate(value) {
-          value.preview.scopedWork.producers[0].roles.reverse()
+          value.preview.scopedWork.producers[0].roles.push('accepted')
         }
       })
       const { createReviewOwner } = require('../pr-review.cjs')
@@ -4758,3 +4792,32 @@ test(
   { timeout: 120000 },
   fullRuntimeServiceEvidence
 )
+
+test('updated current contract verifies after its historical private test dependency is removed', async () => {
+  const f = await assessmentFixture('retired-private-module')
+  try {
+    const historical = f.service.get(f.acceptedProofId)
+    const original = JSON.stringify(historical)
+    assert.equal(fs.existsSync(f.privateModule), false)
+    const oldTest = path.join(
+      f.runs,
+      historical.id,
+      'source',
+      f.contract.testFile
+    )
+    assert.match(fs.readFileSync(oldTest, 'utf8'), /retired-proof-helper/)
+    const result = await f.service.waitTargetAssessment(
+      f.service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    )
+    assert.equal(result.projection.eligible, true)
+    assert.equal(result.result.targetContract.status, 'passed')
+    assert.deepEqual(
+      result.slots.map((slot) => slot.role),
+      ['target']
+    )
+    assert.equal(JSON.stringify(f.service.get(f.acceptedProofId)), original)
+  } finally {
+    await f.service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})

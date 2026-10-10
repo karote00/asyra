@@ -196,6 +196,26 @@ test('retains drawing after a failed refinement with one undo and redo', async (
   })
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const data = await (
+          await import('../src/testing/runtime-access')
+        ).core.save()
+        return Boolean(data.sceneTree.elements[data.sceneTree.workspace])
+      })
+    )
+    .toBe(true)
+  const attachDocument = async (name: string) => {
+    const document = await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.save()
+    )
+    await testInfo.attach(name, {
+      body: JSON.stringify(document),
+      contentType: 'application/json'
+    })
+  }
+  await attachDocument('before-drawing.json')
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
   await page.getByRole('button', { name: 'Open Agent' }).click()
@@ -214,9 +234,11 @@ test('retains drawing after a failed refinement with one undo and redo', async (
   const after = await getCoreDocumentDigest(page)
   expect(after).not.toEqual(before)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('retained-drawing.png') })
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
+  await attachDocument('after-undo.json')
   expect(await getCoreDocumentDigest(page)).toEqual(before)
   await redo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(after)
@@ -531,7 +553,11 @@ for (const width of [360, 1280]) {
       .getByTestId('ai-agent-panel')
       .screenshot({ path: testInfo.outputPath('timeout.png') })
     await page.getByRole('button', { name: 'Try again' }).click()
-    await expect(page.getByLabel('AI action confirmation')).toBeVisible()
+    await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+      'data-outcome',
+      'success'
+    )
+    await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
     expect(requests).toHaveLength(3)
     expect(requests[2].intent).toBe(intent)
     expect(requests[2].metadata.imageAttachments).toEqual(
@@ -540,10 +566,6 @@ for (const width of [360, 1280]) {
     expect(requests[2].metadata.aiTargets.compositionId).toBe(
       initial.groupDescriptor.id
     )
-    await page
-      .getByTestId('ai-agent-panel')
-      .screenshot({ path: testInfo.outputPath('approval.png') })
-    await page.getByRole('button', { name: 'Approve', exact: true }).click()
     await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
       'data-outcome',
       'success'
@@ -568,65 +590,82 @@ for (const width of [360, 1280]) {
   })
 }
 
-test('a free-text clarification continues the original drawing and cancellation leaves the canvas unchanged', async ({
-  page
-}, testInfo) => {
-  let requests = 0
-  let release!: () => void
-  const gate = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  await page.route('**/api/ai/status', (route) =>
-    route.fulfill({ json: { state: 'ready' } })
-  )
-  await page.route('**/api/ai/action-batch', async (route) => {
-    requests++
-    if (requests === 1)
-      return route.fulfill({
-        json: {
-          batchId: 'question',
-          actions: [
-            {
-              id: 'ask',
-              name: 'request_clarification',
-              arguments: { question: 'Which drawing should I replace?' },
-              summary: 'Choose a drawing'
-            }
-          ]
-        }
-      })
-    expect(route.request().postDataJSON().metadata.replyTo.intent).toBe(
-      'Replace a drawing'
+for (const scenario of [
+  {
+    title: 'a free-text clarification',
+    intent: 'Replace a drawing',
+    question: 'Which drawing should I replace?',
+    answer: 'The blue drawing'
+  },
+  {
+    title: 'an external-tool security question',
+    intent: 'Check this private design with an external review service',
+    question: 'This service would receive the private design. May I send it?',
+    answer: 'No, keep the design local'
+  }
+]) {
+  test(`${scenario.title} continues the original request and cancellation leaves the canvas unchanged`, async ({
+    page
+  }, testInfo) => {
+    let requests = 0
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
     )
-    await gate
-    await route
-      .fulfill({ status: 502, json: { code: 'ACTION_BATCH_MODEL_FAILED' } })
-      .catch(() => undefined)
+    await page.route('**/api/ai/action-batch', async (route) => {
+      requests++
+      if (requests === 1)
+        return route.fulfill({
+          json: {
+            batchId: 'question',
+            actions: [
+              {
+                id: 'ask',
+                name: 'request_clarification',
+                arguments: { question: scenario.question },
+                summary: 'Ask the user'
+              }
+            ]
+          }
+        })
+      expect(route.request().postDataJSON().metadata.replyTo.intent).toBe(
+        scenario.intent
+      )
+      await gate
+      await route
+        .fulfill({ status: 502, json: { code: 'ACTION_BATCH_MODEL_FAILED' } })
+        .catch(() => undefined)
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page.getByLabel('Message Agent').fill(scenario.intent)
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByText('Waiting for your answer')).toBeVisible()
+    await page
+      .getByTestId('ai-agent-panel')
+      .screenshot({ path: testInfo.outputPath('question.png') })
+    expect(requests).toBe(1)
+    await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
+    const before = await getCoreDocumentDigest(page)
+    await page.getByLabel('Message Agent').fill(scenario.answer)
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect.poll(() => requests).toBe(2)
+    await page.getByRole('button', { name: 'Cancel request' }).click()
+    await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+      'data-outcome',
+      'cancelled'
+    )
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    await page
+      .getByTestId('ai-agent-panel')
+      .screenshot({ path: testInfo.outputPath('stopped.png') })
+    release()
   })
-  await page.goto(createTestDocumentIdentity().url)
-  await waitForAppReady(page)
-  await page.getByRole('button', { name: 'Open Agent' }).click()
-  await page.getByLabel('Message Agent').fill('Replace a drawing')
-  await page.getByRole('button', { name: 'Send', exact: true }).click()
-  await expect(page.getByText('Waiting for your answer')).toBeVisible()
-  await page
-    .getByTestId('ai-agent-panel')
-    .screenshot({ path: testInfo.outputPath('question.png') })
-  const before = await getCoreDocumentDigest(page)
-  await page.getByLabel('Message Agent').fill('The blue drawing')
-  await page.getByRole('button', { name: 'Send', exact: true }).click()
-  await expect.poll(() => requests).toBe(2)
-  await page.getByRole('button', { name: 'Cancel request' }).click()
-  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
-    'data-outcome',
-    'cancelled'
-  )
-  expect(await getCoreDocumentDigest(page)).toEqual(before)
-  await page
-    .getByTestId('ai-agent-panel')
-    .screenshot({ path: testInfo.outputPath('stopped.png') })
-  release()
-})
+}
 
 test('incomplete replacement preserves the original and partial output never offers blind retry', async ({
   page
@@ -683,11 +722,11 @@ test('incomplete replacement preserves the original and partial output never off
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
   await send('Replace the original')
-  await page.getByRole('button', { name: 'Approve', exact: true }).click()
   await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
     'data-outcome',
     'partial'
   )
+  await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
   const retained = await getCoreDocumentDigest(page)
   expect(retained).not.toEqual(before)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
@@ -954,6 +993,31 @@ for (const width of [360, 1280]) {
           label: 'Drawing and refining'
         },
         {
+          tool: 'update_design_element',
+          status: 'running',
+          label: 'Drawing and refining',
+          message: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'update_design_element',
+          status: 'running',
+          label: 'Drawing and refining',
+          message: '正在調整屋頂顏色'
+        },
+        {
+          tool: 'execute_design_batch',
+          status: 'running',
+          label: 'Planning the drawing',
+          message: '正在刪除被覆蓋物件'
+        },
+        {
+          tool: 'update_design_element',
+          status: 'completed',
+          label: 'Drawing and refining',
+          message: '正在加入窗戶光影反射效果',
+          expected: '正在刪除被覆蓋物件'
+        },
+        {
           tool: 'set_element_visibility',
           status: 'running',
           label: 'Adjusting element visibility',
@@ -968,10 +1032,12 @@ for (const width of [360, 1280]) {
       const originalText = await firstRow.textContent()
       if (!originalRow || originalText === null)
         throw new Error('Missing original Activity row')
+      // Compare content-space position while longer concrete history follows scrolling.
       const originalOffset = await firstRow.evaluate(
         (row) =>
           row.getBoundingClientRect().top -
-          (row.closest('section')?.getBoundingClientRect().top ?? 0)
+          (row.closest('section')?.getBoundingClientRect().top ?? 0) +
+          (row.closest('[aria-label="Conversation messages"]')?.scrollTop ?? 0)
       )
       for (const event of events) {
         response.write(
@@ -982,16 +1048,22 @@ for (const width of [360, 1280]) {
             message: event.message
           }) + '\n'
         )
-        await expect(status).toHaveText(event.message ?? event.label)
+        await expect(status).toHaveText(
+          event.expected ?? event.message ?? event.label
+        )
         await expect(current).toHaveCount(1)
-        await expect(current).toHaveText(event.message ?? event.label)
+        await expect(current).toHaveText(
+          event.expected ?? event.message ?? event.label
+        )
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
         expect(
           await firstRow.evaluate(
             (row) =>
               row.getBoundingClientRect().top -
-              (row.closest('section')?.getBoundingClientRect().top ?? 0)
+              (row.closest('section')?.getBoundingClientRect().top ?? 0) +
+              (row.closest('[aria-label="Conversation messages"]')?.scrollTop ??
+                0)
           )
         ).toBe(originalOffset)
         await expect(
@@ -1007,7 +1079,7 @@ for (const width of [360, 1280]) {
         page
           .getByLabel('Operational progress')
           .getByText('Drawing and refining', { exact: true })
-      ).toHaveCount(1)
+      ).toHaveCount(3)
       const rowGaps = await page
         .getByLabel('Operational progress')
         .locator('li')
@@ -1037,12 +1109,34 @@ for (const width of [360, 1280]) {
           JSON.stringify({
             type: 'activity',
             tool: 'vtracer',
-            status: 'completed',
+            status: 'running',
             message
           }) + '\n'
         )
         await expect(current).toContainText(message)
       }
+      for (const tool of [
+        'read_design_context',
+        'inspect_drawing',
+        'describe_design_apis'
+      ]) {
+        response.write(
+          JSON.stringify({ type: 'activity', tool, status: 'running' }) + '\n'
+        )
+        await expect(status).toHaveText('正在隱藏右下角的標記。')
+        await expect(current).toHaveText('正在隱藏右下角的標記。')
+      }
+      const longDescription = `Adjusting reflections on ${'window-'.repeat(28)}panes`
+      await sendActivity(longDescription)
+      await expect(status).toHaveText(longDescription)
+      expect(
+        await status.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth
+        )
+      ).toBe(true)
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('wrapped-current-activity.png')
+      })
       // A short feed starts following without an initial scroll gesture.
       await expect.poll(remainingScroll).toBeLessThanOrEqual(1)
       for (let index = 0; index < 20; index++) {
@@ -1095,7 +1189,7 @@ for (const width of [360, 1280]) {
       }
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(rowsBeforeLoop + 1)
+      ).toHaveCount(rowsBeforeLoop)
       response.end(
         JSON.stringify({
           type: 'result',
@@ -1532,20 +1626,11 @@ for (const width of [360, 1280]) {
     for (let i = 1; i <= 3; i++) {
       await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
       await page.getByRole('button', { name: 'Send', exact: true }).click()
-      if (i > 1) {
-        await expect(
-          page
-            .getByText('Previous steps remain available through Undo.', {
-              exact: false
-            })
-            .last()
-        ).toBeVisible()
-        await page.getByRole('button', { name: 'Approve', exact: true }).click()
-      }
       await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
         'data-outcome',
         'success'
       )
+      await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
       expect(await getUndoHistoryDepth(page)).toBe(depth + i)
       snapshots.push(await getCoreDocumentDigest(page))
     }
@@ -1553,9 +1638,9 @@ for (const width of [360, 1280]) {
       .getByLabel('Message Agent')
       .fill('Revise a target that has gone away')
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    await page.getByRole('button', { name: 'Approve', exact: true }).click()
     const failed = page.getByTestId('ai-agent-message').last()
     await expect(failed).toHaveAttribute('data-outcome', 'failed')
+    await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
     await expect(failed).toContainText(
       'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
     )

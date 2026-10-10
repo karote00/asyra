@@ -3,13 +3,11 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createExecutionRecordSink,
+  serializeToolPayload,
   parseExecutionRecord
-} from '../local-ai-records'
-import {
-  partitionExecutionTime,
-  summarizeAppCallGaps
-} from '../local-execution-timing'
-import { createLocalAiUsage } from '../local-ai-usage'
+} from '../../node/index.js'
+import { partitionExecutionTime, summarizeAppCallGaps } from '../../index.js'
+import { createAiExecutionProfiler as createProfiler } from '../../index.js'
 
 const workspace = async () => {
   const root = join(process.cwd(), 'tmp')
@@ -22,7 +20,7 @@ describe('local execution records', () => {
     const records: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -69,7 +67,7 @@ describe('local execution records', () => {
     const retained: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
         'gpt-6-astra',
         {
@@ -133,7 +131,7 @@ describe('local execution records', () => {
   })
   it('takes diagnostic purpose from the recorder owner rather than user request metadata', () => {
     const retained: unknown[] = []
-    createLocalAiUsage(
+    createAiExecutionProfiler(
       {
         intent: 'private',
         context: {},
@@ -167,7 +165,7 @@ describe('local execution records', () => {
       ]
       for (const [index, sink] of sinks.entries()) {
         let time = 0
-        const usage = createLocalAiUsage(
+        const usage = createAiExecutionProfiler(
           { actions: [], context: {}, intent: 'private prompt', attempt: 1 },
           'gpt-6-astra',
           { sink, now: () => time, sourceRevision: 'abc123' }
@@ -373,7 +371,7 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'gpt-6-astra',
       {
@@ -430,7 +428,7 @@ it('joins call inputs, rejection feedback, output utility and exclusive observed
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -529,7 +527,7 @@ it.each([
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
         'test',
         {
@@ -564,7 +562,7 @@ it('retains detached complete tool payloads locally with explicit redactions and
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
     const sink = createExecutionRecordSink(directory)
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'PRIVATE_REQUEST', context: {}, actions: [], attempt: 1 },
       'test',
       { sink }
@@ -806,7 +804,7 @@ it('retains action attribution and separates negative judgment from usable revie
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -890,7 +888,7 @@ it.each([
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     try {
-      const usage = createLocalAiUsage(
+      const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
         'test',
         {
@@ -922,7 +920,7 @@ it('retains independent visual evidence identifiers without recording provider p
   }))
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'model',
       {
@@ -956,7 +954,7 @@ it('records continuous ownership and attributes a nested AI wait outside tool ow
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'gpt-6-astra',
       {
@@ -1061,7 +1059,7 @@ it('attributes internal server handoffs to tool work instead of browser exchange
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
       'test',
       {
@@ -1095,5 +1093,157 @@ it('attributes internal server handoffs to tool work instead of browser exchange
     })
   } finally {
     log.mockRestore()
+  }
+})
+
+function createAiExecutionProfiler(
+  ...[input, model, options]: Parameters<typeof createProfiler>
+) {
+  return createProfiler(input, model, {
+    provider: 'local-codex',
+    effort: 'medium',
+    purpose: 'drawing',
+    log: (line) => console.info(line),
+    ...options
+  })
+}
+
+it('keeps failure classification observers from replacing the original batch error', async () => {
+  const { observeActionBatch } = await import('../../node/index.js')
+  const failure = new Error('execution failed')
+  await expect(
+    observeActionBatch(
+      { batchId: 'batch', actions: [] },
+      async () => {
+        throw failure
+      },
+      [],
+      undefined,
+      () => undefined,
+      () => {
+        throw new Error('observer failed')
+      }
+    )
+  ).rejects.toBe(failure)
+})
+
+it('keeps diagnostic byte counts separate from protocol bytes', () => {
+  const records: Record<string, unknown>[] = []
+  const profiler = createAiExecutionProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'test',
+    {
+      sink: {
+        write: (event) => records.push(event),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  profiler.recordTransport('received', 10)
+  profiler.recordTransport('received', 50, 'diagnostic')
+  profiler.finish('completed')
+  expect(records[records.length - 1].transport).toEqual({
+    sentBytes: 0,
+    receivedBytes: 10
+  })
+  expect(
+    records.filter((record) => record.stage === 'transport_chunk')
+  ).toHaveLength(2)
+})
+
+it('retains source fingerprint and explicit unavailable upstream payload provenance', () => {
+  const records: Record<string, unknown>[] = []
+  const usage = createProfiler(
+    { intent: 'test', context: {}, actions: [], attempt: 1 },
+    'test-model',
+    {
+      sourceRevision: 'abc123',
+      sourceFingerprint: 'f'.repeat(64),
+      sourceIdentityStatus: 'captured',
+      sink: {
+        write: (record) => records.push(record),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  usage.trace('research_started', { callId: 'search-1' })
+  usage.trace('research_completed', { callId: 'search-1' })
+  expect(records[0]).toMatchObject({
+    sourceRevision: 'abc123',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured'
+  })
+  expect(records[1]).toMatchObject({
+    diagnostic: {
+      input: {
+        payload: {
+          status: 'unavailable',
+          reason: 'upstream-not-exposed',
+          path: null
+        }
+      }
+    }
+  })
+  expect(records[2]).toMatchObject({
+    diagnostic: {
+      output: {
+        payload: {
+          status: 'unavailable',
+          reason: 'upstream-not-exposed',
+          path: null
+        }
+      }
+    }
+  })
+})
+
+it('distinguishes redacted resource variants and measures local recording work', async () => {
+  const a = serializeToolPayload({
+    url: 'https://example.com/photo?w=1200&token=secret'
+  })
+  const b = serializeToolPayload({
+    url: 'https://example.com/photo?w=600&token=secret'
+  })
+  expect(a.serialized).not.toContain('secret')
+  expect(a.resourceIdentities[0].sha256).not.toBe(
+    b.resourceIdentities[0].sha256
+  )
+  const directory = await workspace()
+  try {
+    const sink = createExecutionRecordSink(directory)
+    sink.write({
+      event: 'started',
+      schemaVersion: 1,
+      requestId: 'record-cost',
+      sequence: 1
+    })
+    const receipt = sink.writePayload?.('record-cost', 'call-a', 'input', {
+      positions: [1, 2, 3]
+    })
+    expect(receipt?.serializationMs).toBeGreaterThanOrEqual(0)
+    const bytes = new Uint8Array([1, 2, 3, 4])
+    const first = sink.writeAsset?.('record-cost', bytes, 'image/png')
+    const repeat = sink.writeAsset?.('record-cost', bytes, 'image/png')
+    expect(first?.path).toBeTruthy()
+    expect(repeat).toMatchObject({ path: first?.path, reused: true })
+    bytes[0] = 99
+    const result = await sink.flush()
+    expect(result.status).toBe('saved')
+    if (!first?.path) throw new Error('Missing saved asset path')
+    expect([...(await readFile(join(directory, first.path)))]).toEqual([
+      1, 2, 3, 4
+    ])
+    const costs = JSON.parse(
+      await readFile(join(directory, 'record-cost.recording.json'), 'utf8')
+    )
+    expect(costs.payloads[0]).toMatchObject({
+      callId: 'call-a',
+      phase: 'input',
+      bytes: receipt?.bytes
+    })
+    expect(costs.payloads[0].writeMs).toBeGreaterThanOrEqual(0)
+    expect(costs.payloads[0].queueMs).toBeGreaterThanOrEqual(0)
+  } finally {
+    await rm(directory, { recursive: true, force: true })
   }
 })

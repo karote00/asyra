@@ -2887,3 +2887,68 @@ test('a peer socket write callback failure removes that peer instead of fabricat
     await stopServer(child)
   }
 })
+
+test('persistence confirmation acknowledges a captured generation and does not block later publication', async () => {
+  const port = await getAvailablePort()
+  const origin = 'http://localhost:4317'
+  const child = startServer({ port, origin })
+  let socket
+  try {
+    await waitForServer(child)
+    socket = await connectPublicClient({
+      port,
+      origin,
+      fileId: 'durable-confirmation',
+      actorId: 'writer'
+    })
+    const first = responseFor(socket, 'first')
+    socket.send(
+      createCanonicalPublicationFrame({
+        requestId: 'first',
+        publicationId: 'first',
+        after: 1
+      }),
+      { binary: true }
+    )
+    assert.equal((await first).ok, true)
+    const confirmation = responseFor(socket, 'confirm')
+    socket.send(
+      JSON.stringify({
+        type: 'confirm-persistence',
+        requestId: 'confirm',
+        sequence: 1,
+        documentGeneration: 0
+      })
+    )
+    const second = responseFor(socket, 'second')
+    socket.send(
+      createCanonicalPublicationFrame({
+        requestId: 'second',
+        publicationId: 'second',
+        after: 2
+      }),
+      { binary: true }
+    )
+    assert.equal((await second).ok, true)
+    const receipt = await confirmation
+    assert.equal(receipt.ok, true)
+    assert.equal(receipt.persistence.sequence, 1)
+    assert.equal(receipt.persistence.documentGeneration, 0)
+    assert.equal(receipt.persistence.documentId, 'durable-confirmation')
+    assert.ok(receipt.persistence.durableSequence >= 1)
+    const wrong = responseFor(socket, 'wrong-generation')
+    socket.send(
+      JSON.stringify({
+        type: 'confirm-persistence',
+        requestId: 'wrong-generation',
+        sequence: 1,
+        documentGeneration: 1
+      })
+    )
+    assert.equal((await wrong).ok, false)
+    assert.equal(socket.readyState, WebSocket.OPEN)
+  } finally {
+    await closeSocket(socket)
+    await stopServer(child)
+  }
+})

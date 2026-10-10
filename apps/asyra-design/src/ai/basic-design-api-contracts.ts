@@ -354,13 +354,14 @@ const createVectorElementsInParentApi = defineBasicApi({
   ]
 })
 
-const deleteElementApi = defineBasicApi({
+const deleteElementsApi = defineBasicApi({
   description:
-    'Delete a non-Workspace element and its subtree; returns whether anything was removed.',
+    'Delete one or more non-Workspace elements and their descendants in one canonical batch. Pass all ready target IDs together; preparation and orphan-property work are shared. Overlapping ancestor/descendant targets are removed once. Invalid, duplicate or missing targets reject before writes. Returns removed identities.',
   owner: 'element',
-  method: 'deleteElement',
+  method: 'deleteElements',
   effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  resultKind: 'removed',
+  parameters: [{ name: 'elementIds', schema: { ...apiIds, uniqueItems: true } }]
 })
 
 const getWorkspaceIdApi = defineBasicApi({
@@ -435,16 +436,6 @@ const moveElementsRelativeApi = defineBasicApi({
   ],
   description:
     'Move one or more same-parent elements immediately before or after a current anchor. Resolves the destination parent and insertion index internally, preserves Group geometry and Undo, and rejects missing anchors or an anchor included in the moved set. No old values or sibling-list read is needed.'
-})
-
-const removeSubtreeApi = defineBasicApi({
-  description:
-    'Remove a canonical subtree in a transaction; returns removed identities for invalidating references.',
-  owner: 'hierarchy',
-  method: 'removeSubtree',
-  resultKind: 'removed',
-  effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }]
 })
 
 const getSelectedIdsApi = defineBasicApi({
@@ -968,7 +959,7 @@ export const basicDesignApiContracts = [
   createElementsApi,
   createElementsInParentApi,
   createVectorElementsInParentApi,
-  deleteElementApi,
+  deleteElementsApi,
   getWorkspaceIdApi,
   getFlattenedElementIdsApi,
   getElementDataMapApi,
@@ -976,7 +967,6 @@ export const basicDesignApiContracts = [
   ungroupElementApi,
   moveElementsApi,
   moveElementsRelativeApi,
-  removeSubtreeApi,
   getSelectedIdsApi,
   getVectorPointSelectionIdsApi,
   getVectorSegmentSelectionIdsApi,

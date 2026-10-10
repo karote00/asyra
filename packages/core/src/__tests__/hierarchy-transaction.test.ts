@@ -156,6 +156,172 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     sceneTree.cleanChanges()
   })
 
+  it('bulk deletion retains a property shared with a survivor and rejects invalid targets atomically', () => {
+    const factory = new Factory()
+    const core = createCoreFacade(factory)
+    const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
+    const value = {
+      id: 'shared-removal-value',
+      type: CANONICAL_PROPERTY_TYPE,
+      value: 44
+    } as PropertyComponentRawData
+    const elements = ['survivor', 'remove-a', 'remove-b'].map((id) => ({
+      id,
+      type: CANONICAL_LEAF_TYPE,
+      name: id,
+      parentId: workspace.get('id'),
+      visible: true,
+      lock: false,
+      props: { value: value.id }
+    })) as unknown as ElementRawData[]
+    runWithTransactionOwner(factory.getTransactionOwner(), () =>
+      runTransaction(() =>
+        core.createElementsInParentFromCanonicalData(
+          elements,
+          [value],
+          workspace.get('id')
+        )
+      )
+    )
+    factory.transact.reset()
+    const before = sceneTree.save()
+    const original = propsManager.getPropertyById(value.id)
+    expect(() =>
+      runWithTransactionOwner(factory.getTransactionOwner(), () =>
+        runTransaction(() => core.removeSubtrees(['remove-a', 'missing']))
+      )
+    ).toThrow()
+    expect(sceneTree.save()).toEqual(before)
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    runWithTransactionOwner(factory.getTransactionOwner(), () =>
+      runTransaction(() => core.removeSubtrees(['remove-a', 'remove-b']))
+    )
+    expect(propsManager.getPropertyById(value.id)).toBe(original)
+    expect(childrenOf(sceneTree.workspace)).toEqual(['survivor'])
+    factory.undo()
+    expect(sceneTree.save()).toEqual(before)
+    expect(propsManager.getPropertyById(value.id)).toBe(original)
+    factory.redo()
+    expect(childrenOf(sceneTree.workspace)).toEqual(['survivor'])
+    expect(propsManager.getPropertyById(value.id)).toBe(original)
+    factory.transact.reset()
+  })
+
+  it('removes 288 property-owning roots with one preparation and replays nonsequential selection exactly', () => {
+    const factory = new Factory()
+    const core = createCoreFacade(factory)
+    const parentId = sceneTree.workspace
+    const properties = Array.from({ length: 289 }, (_, i) => ({
+      id: `bulk-value-${i}`,
+      type: CANONICAL_PROPERTY_TYPE,
+      value: i
+    })) as PropertyComponentRawData[]
+    const elements = properties.map((property, i) => ({
+      id: `bulk-item-${i}`,
+      type: CANONICAL_LEAF_TYPE,
+      name: `Item ${i}`,
+      parentId,
+      visible: true,
+      lock: false,
+      props: { value: property.id }
+    })) as unknown as ElementRawData[]
+    runWithTransactionOwner(factory.getTransactionOwner(), () =>
+      runTransaction(() =>
+        core.createElementsInParentFromCanonicalData(
+          elements,
+          properties,
+          parentId
+        )
+      )
+    )
+    factory.transact.reset()
+    const beforeScene = sceneTree.save()
+    const beforeProps = propsManager.save()
+    const prepare = vi.spyOn(propsManager, 'preparePropertyMutationBatch')
+    const roots = elements
+      .slice(1)
+      .map(({ id }) => id)
+      .reverse()
+    try {
+      runWithTransactionOwner(factory.getTransactionOwner(), () =>
+        runTransaction(() => expect(core.removeSubtrees(roots)).toEqual(roots))
+      )
+      expect(prepare).toHaveBeenCalledOnce()
+      expect(childrenOf(parentId)).toEqual([elements[0].id])
+      expect(factory.getUndoHistoryDepth()).toBe(1)
+      const afterScene = sceneTree.save()
+      const afterProps = propsManager.save()
+      factory.undo()
+      expect(sceneTree.save()).toEqual(beforeScene)
+      expect(propsManager.save()).toEqual(beforeProps)
+      factory.redo()
+      expect(sceneTree.save()).toEqual(afterScene)
+      expect(propsManager.save()).toEqual(afterProps)
+    } finally {
+      prepare.mockRestore()
+      factory.transact.reset()
+    }
+  })
+
+  it('deletes a forest with one property preparation and preserves exact Undo and Redo', () => {
+    const factory = new Factory()
+    factory.registerSharedDataChannel(
+      SharedDataChannelNames.SCENE_TREE,
+      new LocalSharedDataChannel()
+    )
+    factory.registerSharedDataChannel(
+      SharedDataChannelNames.PROPS,
+      new LocalSharedDataChannel()
+    )
+    const core = createCoreFacade(factory)
+    const workspace = sceneTree.currentWorkspace as GroupInstanceTypes
+    add('keep', CANONICAL_LEAF_TYPE, workspace)
+    add('first-remove', CANONICAL_LEAF_TYPE, workspace)
+    const group = add(
+      'group-remove',
+      CONTAINER_TYPE,
+      workspace
+    ) as GroupInstanceTypes
+    add('nested-remove', CANONICAL_LEAF_TYPE, group)
+    add('last-remove', CANONICAL_LEAF_TYPE, workspace)
+    const beforeScene = sceneTree.save()
+    const beforeProps = propsManager.save()
+    const prepare = vi.spyOn(propsManager, 'preparePropertyMutationBatch')
+    try {
+      runWithTransactionOwner(factory.getTransactionOwner(), () =>
+        runTransaction(() => {
+          expect(
+            core.removeSubtrees([
+              'first-remove',
+              'nested-remove',
+              'group-remove',
+              'last-remove'
+            ])
+          ).toEqual([
+            'first-remove',
+            'nested-remove',
+            'group-remove',
+            'last-remove'
+          ])
+        })
+      )
+      expect(prepare).toHaveBeenCalledOnce()
+      expect(childrenOf(sceneTree.workspace)).toEqual(['keep'])
+      expect(factory.getUndoHistoryDepth()).toBe(1)
+      const afterScene = sceneTree.save()
+      const afterProps = propsManager.save()
+      factory.undo()
+      expect(sceneTree.save()).toEqual(beforeScene)
+      expect(propsManager.save()).toEqual(beforeProps)
+      factory.redo()
+      expect(sceneTree.save()).toEqual(afterScene)
+      expect(propsManager.save()).toEqual(afterProps)
+    } finally {
+      prepare.mockRestore()
+      factory.transact.reset()
+    }
+  })
+
   it('undoes and redoes exact move plus subtree evidence as one grouped transaction', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()

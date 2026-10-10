@@ -1864,3 +1864,22 @@ describe('collaboration wire protocol', () => {
     expect('SEND_SYNC_UPDATE' in CollaborationMessageTypes).toBe(false)
   })
 })
+
+it('admits persistence confirmation only with exact nonnegative sequence and generation', () => {
+  const message = {
+    type: 'confirm-persistence',
+    requestId: 'confirm-1',
+    sequence: 7,
+    documentGeneration: 2
+  }
+  expect(parseCollaborationClientMessage(message)).toEqual(message)
+  for (const patch of [
+    { sequence: -1 },
+    { sequence: 1.5 },
+    { documentGeneration: -1 },
+    { documentGeneration: undefined }
+  ])
+    expect(
+      parseCollaborationClientMessage({ ...message, ...patch })
+    ).toBeUndefined()
+})

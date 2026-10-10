@@ -278,3 +278,200 @@ test('a tool workspace can derive execution without writing into its runtime roo
     )
   )
 })
+
+function retain(input, contract) {
+  const runDirectory = path.join(input.root, 'tmp', randomUUID())
+  const snapshot = captureSource(input.root, runDirectory, contract)
+  return {
+    snapshot,
+    sourceRoot: snapshot.sourceRoot,
+    admission: {
+      attemptId: path.basename(runDirectory),
+      repository: fs.realpathSync(input.root),
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      configurationDigest: snapshot.configurationDigest,
+      ...validateSourceSnapshot(snapshot, contract)
+    }
+  }
+}
+
+function transferredOwner(t) {
+  const input = fixture(t)
+  const previousContract = input.contract()
+  const previous = retain(input, previousContract)
+  const selected = new Set(input.manifest.flows.flatMap((flow) => flow.stepIds))
+  const moved = input.architecture.steps.find(
+    (step) => selected.has(step.id) && step.ownerPackage === '@example/editor'
+  )
+  moved.ownerPackage = '@example/shared'
+  moved.implementationBoundary = ['packages/support/src/index.ts']
+  input.write('packages/support/src/index.ts', 'export const value = 2\n')
+  const currentContract = input.contract()
+  const current = retain(input, currentContract)
+  return { input, previousContract, previous, currentContract, current }
+}
+
+for (const method of ['composeSource', 'composeDerivedSource']) {
+  test(`${method} verifies transferred owners against original contracts on identical current runtime bytes`, (t) => {
+    const { input, previousContract, previous, current } = transferredOwner(t)
+    const reads = new Map()
+    const originalRead = fs.readFileSync
+    fs.readFileSync = (file, ...args) => {
+      if (typeof file === 'string' && file.startsWith(input.root + path.sep))
+        reads.set(file, (reads.get(file) ?? 0) + 1)
+      return originalRead(file, ...args)
+    }
+    let composed
+    try {
+      composed = require('../snapshot.cjs')[method](
+        input.root,
+        path.join(input.root, 'tmp', randomUUID()),
+        current,
+        previous,
+        previousContract
+      )
+    } finally {
+      fs.readFileSync = originalRead
+    }
+    assert.deepEqual(composed.runtimeSource, current.snapshot.runtimeSource)
+    assert.deepEqual(
+      composed.verificationSource,
+      previous.snapshot.verificationSource
+    )
+    assert.notEqual(
+      composed.runtimeSource.digest,
+      previous.snapshot.runtimeSource.digest
+    )
+    assert.equal(
+      composed.runtimeAuthority.contractScopeDigest,
+      previousContract.runtimeScope.digest
+    )
+    assert.deepEqual(
+      composed.runtimeAuthority.packages,
+      current.snapshot.runtimeAuthority.packages
+    )
+    assert.notEqual(
+      composed.runtimeAuthority.digest,
+      current.snapshot.runtimeAuthority.digest
+    )
+    for (const [file, count] of reads) assert.equal(count, 1, file)
+    assert.equal(composed.readCount, reads.size)
+    assert.equal(
+      fs.readFileSync(
+        path.join(composed.sourceRoot, 'packages/support/src/index.ts'),
+        'utf8'
+      ),
+      'export const value = 2\n'
+    )
+    assert.doesNotThrow(() =>
+      validateSourceSnapshot(composed, previousContract, composed.files, {
+        sourceRoot: composed.sourceRoot
+      })
+    )
+    assert.doesNotThrow(() =>
+      admitRuntimeAuthoritySource(
+        composed.sourceRoot,
+        composed,
+        previousContract
+      )
+    )
+  })
+}
+
+test('owner transfer rejects unavailable owners, different runtime inputs and changed captured bytes before writing', (t) => {
+  for (const change of ['owner', 'inputs', 'bytes', 'legacy']) {
+    const { input, previousContract, previous, current } = transferredOwner(t)
+    let verifier = previous,
+      contract = previousContract
+    if (change === 'owner') {
+      input.architecture.steps.find(
+        (step) => step.ownerPackage === '@example/shared'
+      ).ownerPackage = '@example/unrelated'
+      contract = input.contract()
+      verifier = retain(input, contract)
+    } else if (change === 'inputs') {
+      input.manifest.workspaceSources[0].inputs = ['server/**']
+      contract = input.contract()
+      verifier = retain(input, contract)
+    } else if (change === 'bytes') {
+      const file = path.join(
+        current.sourceRoot,
+        'packages/support/src/index.ts'
+      )
+      fs.chmodSync(file, 0o644)
+      fs.writeFileSync(file, 'export const value = 999\n')
+    } else delete verifier.admission.runtimeAuthority
+    const destination = path.join(input.root, 'tmp', randomUUID())
+    assert.throws(() =>
+      composeSource(input.root, destination, current, verifier, contract)
+    )
+    assert.equal(fs.existsSync(destination), false)
+  }
+})
+
+test('owner transfer validates a derived runtime against its original authority before rebinding', (t) => {
+  const { input, previousContract, previous, currentContract, current } =
+    transferredOwner(t)
+  const { composeDerivedSource } = require('../snapshot.cjs')
+  const generated = composeDerivedSource(
+    input.root,
+    path.join(input.root, 'tmp', randomUUID()),
+    current,
+    current,
+    currentContract
+  )
+  const retained = {
+    sourceRoot: generated.sourceRoot,
+    admission: {
+      ...current.admission,
+      attemptId: path.basename(path.dirname(generated.sourceRoot)),
+      sourceDigest: generated.digest,
+      configurationDigest: generated.configurationDigest,
+      ...validateSourceSnapshot(generated, currentContract, generated.files, {
+        sourceRoot: generated.sourceRoot
+      })
+    }
+  }
+  const composed = composeDerivedSource(
+    input.root,
+    path.join(input.root, 'tmp', randomUUID()),
+    retained,
+    previous,
+    previousContract
+  )
+  assert.deepEqual(composed.runtimeSource, current.snapshot.runtimeSource)
+  assert.notEqual(
+    composed.executionSource.runtimeAuthorityDigest,
+    generated.executionSource.runtimeAuthorityDigest
+  )
+  assert.equal(
+    composed.executionSource.runtimeAuthorityDigest,
+    composed.runtimeAuthority.digest
+  )
+  assert.doesNotThrow(() =>
+    validateSourceSnapshot(composed, previousContract, composed.files, {
+      sourceRoot: composed.sourceRoot
+    })
+  )
+  retained.admission.executionSource = {
+    ...retained.admission.executionSource,
+    runtimeAuthorityDigest: composed.runtimeAuthority.digest
+  }
+  const destination = path.join(input.root, 'tmp', randomUUID())
+  assert.throws(
+    () =>
+      composeDerivedSource(
+        input.root,
+        destination,
+        retained,
+        previous,
+        previousContract
+      ),
+    /ordinary runtime or admitted derived execution/
+  )
+  assert.equal(fs.existsSync(destination), false)
+})

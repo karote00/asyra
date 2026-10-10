@@ -661,7 +661,7 @@ it('validates construction boundaries and isolates brief evidence from caller ch
   for (const invalid of [
     { ...base, relations: Array.from({ length: 257 }, () => relation) },
     { ...base, relations: [{ ...relation, factor: Infinity }] },
-    { ...base, relations: [{ ...relation, offset: -1000 }] },
+    { ...base, relations: [{ ...relation, offset: -Infinity }] },
     { ...base, relations: [{ ...relation, targetAnchor: 2 }] },
     {
       ...base,
@@ -1213,4 +1213,187 @@ it('derives repeated vector bounds once and preserves independent Fill identitie
   } finally {
     measure.mockRestore()
   }
+})
+
+describe('signed draft coordinates and Group normalization', () => {
+  it('normalizes nested Group children without moving their workspace positions', () => {
+    const input = {
+      type: 'group',
+      name: 'Outer',
+      x: 100,
+      y: 200,
+      children: [
+        {
+          type: 'group',
+          key: 'inner',
+          name: 'Inner',
+          x: -30,
+          y: -40,
+          children: [
+            {
+              type: 'rect',
+              key: 'a',
+              name: 'A',
+              x: -10,
+              y: -20,
+              width: 10,
+              height: 10
+            },
+            {
+              type: 'rect',
+              key: 'b',
+              name: 'B',
+              x: 20,
+              y: 30,
+              width: 10,
+              height: 10
+            }
+          ]
+        }
+      ]
+    }
+    const before = structuredClone(input)
+    const result = prepareDesign(input, 'signed-groups')
+    const [outer, inner, a, b] = result.entries.map((e) => e.descriptor)
+    expect(outer).toMatchObject({ x: 60, y: 140 })
+    expect(inner).toMatchObject({ x: 0, y: 0 })
+    expect(a).toMatchObject({ x: 0, y: 0 })
+    expect(b).toMatchObject({ x: 30, y: 50 })
+    expect(Number(outer.x) + Number(inner.x) + Number(b.x)).toBe(90)
+    expect(Number(outer.y) + Number(inner.y) + Number(b.y)).toBe(190)
+    expect(input).toEqual(before)
+  })
+
+  it('retains signed Frame offsets as overflow evidence without moving content', () => {
+    const result = prepareDesign({
+      type: 'frame',
+      name: 'Bounds',
+      width: 50,
+      height: 50,
+      children: [
+        {
+          type: 'rect',
+          key: 'a',
+          name: 'A',
+          x: -10,
+          y: -20,
+          width: 10,
+          height: 10
+        }
+      ]
+    })
+    expect(result.entries[1].descriptor).toMatchObject({ x: -10, y: -20 })
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({ kind: 'overflow', key: 'a', left: 10, top: 20 })
+    )
+  })
+
+  it.each(['projected-face', 'pattern'])(
+    'preserves signed %s workspace geometry with nonnegative Group-relative positions',
+    (type) => {
+      const vertices = [
+        { x: -10, y: 0, z: 0 },
+        { x: 10, y: 0, z: 0 },
+        { x: 10, y: 0, z: 20 },
+        { x: -10, y: 0, z: 20 }
+      ]
+      const face = { key: 'wall', name: 'Wall', fill: '#123456', vertices }
+      const child =
+        type === 'projected-face'
+          ? { ...face, type }
+          : {
+              key: 'walls',
+              name: 'Walls',
+              type,
+              origin: { x: 0, y: 0, z: 0 },
+              axes: [{ count: 2, step: { x: 30, y: 0, z: 0 } }],
+              faces: [face]
+            }
+      const input = {
+        type: 'group',
+        name: 'Projected',
+        projection: {
+          azimuth: 0,
+          elevation: 0,
+          scale: 1,
+          originX: -5,
+          originY: -7
+        },
+        children: [child]
+      }
+      const before = structuredClone(input)
+      const result = prepareDesign(input)
+      expect(result.entries[0].descriptor).toMatchObject({ x: -15, y: -27 })
+      expect(result.entries[1].descriptor).toMatchObject({ x: 0, y: 0 })
+      const points = Object.values(
+        result.entries[1].descriptor.points as Record<
+          string,
+          { x: number; y: number }
+        >
+      )
+      expect(points.map((p) => [p.x, p.y])).toEqual([
+        [-15, -7],
+        [5, -7],
+        [5, -27],
+        [-15, -27]
+      ])
+      for (const e of result.entries.slice(1)) {
+        expect(Number(e.descriptor.x)).toBeGreaterThanOrEqual(0)
+        expect(Number(e.descriptor.y)).toBeGreaterThanOrEqual(0)
+      }
+      expect(input).toEqual(before)
+    }
+  )
+})
+
+it('reuses immutable fill template compilation while keeping independent property identities', () => {
+  const gradient = {
+    gradientType: 'linear',
+    gradientHandles: [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 }
+    ],
+    gradientStops: [
+      { position: 0, color: '#123456', opacity: 1 },
+      { position: 1, color: '#abcdef', opacity: 1 }
+    ]
+  }
+  const input = {
+    type: 'group',
+    name: 'Independent paints',
+    fillTemplates: { glass: gradient },
+    children: Array.from({ length: 24 }, (_, i) => ({
+      type: 'rect',
+      key: `p${i}`,
+      name: 'Pane',
+      x: i * 10,
+      width: 8,
+      height: 8,
+      fill: { template: 'glass' }
+    }))
+  }
+  const session = createDesignPreparationSession()
+  const receipt = session.prepare(input)
+  const artifact = session.resolve(receipt.artifactId)
+  const fills = artifact.entries
+    .slice(1)
+    .map((e) => (e.descriptor.fills as { id: string; gradient: unknown }[])[0])
+  expect(new Set(fills.map((f) => f.id)).size).toBe(24)
+  expect(
+    fills.every((f) => JSON.stringify(f.gradient) === JSON.stringify(gradient))
+  ).toBe(true)
+  expect(receipt.reuse).toMatchObject({
+    fillOccurrences: 24,
+    compiledFillDefinitions: 1,
+    fillTemplateUses: 24
+  })
+  const again = session.prepare(input)
+  expect(again.reuse).toMatchObject({ compiledFillDefinitions: 1 })
+  expect(
+    session.resolve(again.artifactId).entries[1].descriptor.fills
+  ).not.toEqual(artifact.entries[1].descriptor.fills)
+  gradient.gradientStops[0].color = '#ffffff'
+  expect((fills[0].gradient as typeof gradient).gradientStops[0].color).toBe(
+    '#123456'
+  )
 })

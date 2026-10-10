@@ -587,6 +587,13 @@ export const elementApis = {
     )
   },
 
+  deleteElements: (elementIds: readonly string[], options?: EVENT_OPTIONS) =>
+    runTransaction(() => ({
+      removed: core
+        .removeSubtrees(elementIds, options)
+        .map((elementId) => ({ elementId }))
+    })),
+
   deleteElement: (elementId: string, options?: EVENT_OPTIONS): boolean => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {

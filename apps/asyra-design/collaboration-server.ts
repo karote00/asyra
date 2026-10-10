@@ -14,6 +14,7 @@ import {
   inspectPublicationFrameHeader,
   parseCollaborationClientMessage,
   type BootstrapConsumedRequest,
+  type ConfirmPersistenceRequest,
   type CollaborationFailurePayload,
   type CollaborationHelloMessage,
   type CollaborationServerMessage,
@@ -240,6 +241,7 @@ interface PeerSession {
 
 interface RoomState {
   readonly fileId: string
+  readonly documentGeneration: number
   readonly peers: Map<string, PeerSession>
   readonly acceptedPublications: Map<string, SequencedDocumentPublication>
   readonly persistenceQueue: DocumentPersistenceQueue
@@ -564,6 +566,7 @@ const getOrCreateRoom = async (fileId: string): Promise<RoomState> => {
       pendingPublications: [],
       persistenceQueue,
       bootstrapCheckpointSeed: bootstrapCheckpoint,
+      documentGeneration: bootstrapCheckpoint.documentGeneration,
       headSequence: bootstrapCheckpoint.durableSequence,
       admissionTail: Promise.resolve(),
       resetting: false
@@ -1117,6 +1120,55 @@ webSocketServer.on('connection', (socket) => {
     })
   }
 
+  const handleConfirmPersistence = async (
+    message: ConfirmPersistenceRequest
+  ): Promise<void> => {
+    const room = peer.room
+    const cancellation = new AbortController()
+    const closed = () =>
+      cancellation.abort(new Error('Document session disconnected'))
+    socket.once('close', closed)
+    try {
+      if (
+        !room ||
+        room.resetting ||
+        room.documentGeneration !== message.documentGeneration
+      )
+        throw new Error(
+          'Document generation changed; persistence cannot be confirmed'
+        )
+      const durableSequence = await room.persistenceQueue.whenDurable(
+        message.sequence,
+        cancellation.signal
+      )
+      if (room.resetting || peer.room !== room || peer.closed)
+        throw new Error(
+          'Document session changed during persistence confirmation'
+        )
+      sendControl(socket, {
+        type: CollaborationMessageTypes.RESPONSE,
+        requestId: message.requestId,
+        ok: true,
+        persistence: {
+          documentId: room.fileId,
+          documentGeneration: room.documentGeneration,
+          sequence: message.sequence,
+          durableSequence
+        }
+      })
+    } catch (error) {
+      if (!peer.closed)
+        sendControl(socket, {
+          type: CollaborationMessageTypes.RESPONSE,
+          requestId: message.requestId,
+          ok: false,
+          error: failureMessage(error)
+        })
+    } finally {
+      socket.removeListener('close', closed)
+    }
+  }
+
   const handleResetDocument = async (
     message: ResetDocumentRequest
   ): Promise<void> => {
@@ -1228,6 +1280,10 @@ webSocketServer.on('connection', (socket) => {
         return
       case CollaborationMessageTypes.PEER_APPLIED:
         handlePeerApplied(message)
+        return
+      case CollaborationMessageTypes.CONFIRM_PERSISTENCE:
+        // The watermark observer must not block publication control messages.
+        void handleConfirmPersistence(message)
         return
       case CollaborationMessageTypes.RESET_DOCUMENT:
         await handleResetDocument(message)

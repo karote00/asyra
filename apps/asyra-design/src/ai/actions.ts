@@ -33,6 +33,7 @@ export const AI_SCALE_MAX = 2
 export const AI_TRANSIENT_CREATE_CHUNK_SIZE = 256
 
 export interface CreateAiActionsOptions {
+  readonly confirmPersistence?: (signal: AbortSignal) => Promise<unknown>
   readonly waitForPaint?: () => Promise<void>
   readonly yieldToHost?: () => Promise<void>
 }
@@ -958,7 +959,7 @@ export const createAiActions = (
     Object.freeze({
       name: AiActionNames.REQUEST_CLARIFICATION,
       description:
-        'Ask one concise question when the drawing target or required capability is ambiguous. Return this action alone without mutations.',
+        'Ask one concise question for material ambiguity, user-only resources, or external-tool/security permission when needed. App editing itself requires no approval. Return this action alone without mutations and wait for the answer.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -1011,7 +1012,24 @@ export const createAiActions = (
         args.message.length > 1000
       )
         throw new AiActionError()
+      let persistence: unknown
+      if (args.outcome === 'completed' && options.confirmPersistence) {
+        try {
+          persistence = await options.confirmPersistence(context.signal)
+        } catch (error) {
+          assertNotAborted(context)
+          persistence = {
+            status: 'unavailable',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Document persistence could not be confirmed.'
+          }
+        }
+      }
+      assertNotAborted(context)
       return Object.freeze({
+        ...(persistence ? { persistence } : {}),
         action: AiActionNames.REPORT_OUTCOME,
         status: 'no-change',
         outcome: args.outcome,

@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { toolContractDigest } from '../local-action-observation'
+import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -18,8 +18,8 @@ import { join } from 'node:path'
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createLocalAiUsage } from '../local-ai-usage'
-import { parseExecutionRecord } from '../local-ai-records'
+import { createAiExecutionProfiler as createProfiler } from '@asyra/ai-agent-runtime'
+import { parseExecutionRecord } from '@asyra/ai-agent-runtime/node'
 import {
   checkLocalAiProvider,
   requestLocalAiAssessment,
@@ -37,8 +37,13 @@ const { spawn, retainedRecords } = vi.hoisted(() => ({
   spawn: vi.fn(),
   retainedRecords: [] as unknown[]
 }))
-vi.mock('../local-ai-records', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../local-ai-records')>()),
+vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
+  captureAiSourceIdentity: vi.fn(async () => ({
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured'
+  })),
   createExecutionRecordSink: () => ({
     write: (record: unknown) => retainedRecords.push(record),
     flush: async () => ({ status: 'saved', path: null })
@@ -730,7 +735,7 @@ describe('local subscription AI backend', () => {
       try {
         const result = await requestLocalAiActionBatch(
           {
-            intent: `Protocol test: discover record_design_review and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            intent: `Protocol test: discover review_drawing and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
             context: {},
             actions: [
               {
@@ -755,7 +760,7 @@ describe('local subscription AI backend', () => {
           ])
         })
         expect(calls).toContainEqual({
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           namespace: 'design_operations',
           arguments: plan
         })
@@ -2314,10 +2319,11 @@ it('waits for a canonical operation receipt before continuing the native model',
           arguments: { elementId: 'actual-id', visible: false }
         }
       ],
-      message: 'I am hiding the separate mark.'
+      message: 'Hiding the separate mark'
     }
   })
   spawn.mockReturnValue(child.child)
+  const onProgress = vi.fn()
   const executeBatch = vi.fn(async (prepared) => {
     expect(prepared.actions[0].arguments).toEqual({
       elementId: 'actual-id',
@@ -2345,8 +2351,21 @@ it('waits for a canonical operation receipt before continuing the native model',
         }
       ]
     },
-    { environment, executeBatch }
+    { environment, executeBatch, onProgress }
   )
+  expect(onProgress).toHaveBeenCalledWith({
+    tool: 'execute_design_batch',
+    status: 'running',
+    message: 'Hiding the separate mark'
+  })
+  expect(
+    onProgress.mock.calls.some(
+      ([event]) => event.message === 'This must not reach the product.'
+    )
+  ).toBe(false)
+  expect(
+    child.packets.filter(({ method }) => method === 'turn/start')
+  ).toHaveLength(1)
   expect(executeBatch).toHaveBeenCalledOnce()
   const response = child.packets.find(
     (packet) => 'result' in packet
@@ -2359,7 +2378,7 @@ it('waits for a canonical operation receipt before continuing the native model',
 
 it('correlates bounded diagnostic evidence with usage without logging credentials or image payloads', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const usage = createLocalAiUsage(input, 'selected-model')
+  const usage = createAiExecutionProfiler(input, 'selected-model')
   usage.trace('tool_started', {
     tool: 'import_reference_image',
     callId: 'call-1',
@@ -2425,7 +2444,7 @@ describe('local AI usage accounting', () => {
   }
   it('keeps the latest cumulative snapshot, ignores older snapshots, and finishes once', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-    const usage = createLocalAiUsage(input, 'selected-model')
+    const usage = createAiExecutionProfiler(input, 'selected-model')
     usage.update({ total, last: total })
     const next = { ...total, inputTokens: 200, totalTokens: 220 }
     usage.update({ total: next, last: total })
@@ -2440,7 +2459,7 @@ describe('local AI usage accounting', () => {
     'marks observed usage as partial after %s',
     (outcome) => {
       const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-      const usage = createLocalAiUsage(input, 'selected-model')
+      const usage = createAiExecutionProfiler(input, 'selected-model')
       usage.update({ total })
       usage.finish(outcome)
       expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
@@ -2452,8 +2471,8 @@ describe('local AI usage accounting', () => {
   )
   it('reports missing usage as unavailable rather than zero and isolates requests', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-    const first = createLocalAiUsage(input, 'selected-model')
-    const second = createLocalAiUsage(input, 'selected-model')
+    const first = createAiExecutionProfiler(input, 'selected-model')
+    const second = createAiExecutionProfiler(input, 'selected-model')
     first.update({ total })
     second.finish('completed')
     first.finish('completed')
@@ -2475,7 +2494,7 @@ describe('local AI usage accounting', () => {
     { totalTokens: 120 }
   ])('rejects invalid usage without corrupting earlier evidence', (invalid) => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-    const usage = createLocalAiUsage(input, 'selected-model')
+    const usage = createAiExecutionProfiler(input, 'selected-model')
     usage.update({ total })
     usage.update({ total: invalid })
     usage.finish('completed')
@@ -2489,12 +2508,12 @@ describe('local AI usage accounting', () => {
       throw new Error('sink closed')
     })
     expect(() =>
-      createLocalAiUsage(input, 'selected-model').finish('failed')
+      createAiExecutionProfiler(input, 'selected-model').finish('failed')
     ).not.toThrow()
   })
   it('does not log credentials or arbitrary metadata from the provider', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-    const usage = createLocalAiUsage(
+    const usage = createAiExecutionProfiler(
       {
         ...input,
         metadata: {
@@ -2925,12 +2944,12 @@ it('keeps a registered review tool available after rejected input and accepts a 
   const failures: Record<string, unknown>[] = []
   const server = fakeServer({
     toolCall: true,
-    toolName: 'record_design_review',
+    toolName: 'define_design_criteria',
     toolArguments: { phase: 'plan' },
     followupTool: (reply) => {
       failures.push(reply)
       return {
-        name: 'record_design_review',
+        name: 'define_design_criteria',
         args: {
           phase: 'plan',
           method: 'Editable illustration',
@@ -2985,7 +3004,7 @@ it('exposes review planning to the model and traces the operation without certif
   }
   const server = fakeServer({
     toolCall: true,
-    toolName: 'record_design_review',
+    toolName: 'define_design_criteria',
     toolArguments: {
       phase: 'plan',
       method: 'Three deliberately crude shapes',
@@ -3097,7 +3116,7 @@ it('exposes review planning to the model and traces the operation without certif
 
 it('bounds trace records and never lets a broken diagnostic sink stop the request', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const usage = createLocalAiUsage(input, 'selected-model')
+  const usage = createAiExecutionProfiler(input, 'selected-model')
   usage.trace('tool_completed', {
     tool: 'prepare_design',
     callId: 'bounded-call',
@@ -3329,7 +3348,7 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
   const clock = vi.spyOn(performance, 'now')
   try {
     clock.mockReturnValue(0)
-    const usage = createLocalAiUsage(input, 'selected-model')
+    const usage = createAiExecutionProfiler(input, 'selected-model')
     clock.mockReturnValue(100)
     usage.trace('tool_started', { callId: 'a', tool: 'prepare_design' })
     clock.mockReturnValue(120)
@@ -3429,7 +3448,7 @@ it('records native orchestration lifecycle metadata without code or output', asy
 it('retains exact bounded discovery and field selectors for execution diagnosis', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    createLocalAiUsage(input, 'selected-model').trace('tool_started', {
+    createAiExecutionProfiler(input, 'selected-model').trace('tool_started', {
       callId: 'query',
       tool: 'describe_design_apis',
       arguments: {
@@ -3451,7 +3470,7 @@ it('retains exact bounded discovery and field selectors for execution diagnosis'
 
 it('keeps batch work counts in diagnostics without retaining arbitrary input data', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  createLocalAiUsage(input, 'selected-model').trace('tool_completed', {
+  createAiExecutionProfiler(input, 'selected-model').trace('tool_completed', {
     tool: 'execute_design_batch',
     result: {
       batchSummary: { operationCount: 2, actionCount: 47 },
@@ -3469,8 +3488,8 @@ it('keeps batch work counts in diagnostics without retaining arbitrary input dat
 it('retains compact deferred review evidence without retaining geometry', () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
-    createLocalAiUsage(input, 'selected-model').trace('tool_completed', {
-      tool: 'record_design_review',
+    createAiExecutionProfiler(input, 'selected-model').trace('tool_completed', {
+      tool: 'review_drawing',
       result: {
         deferredDetails: [
           { id: 'rear', description: 'Rear detail', reason: 'Likely hidden' }
@@ -3614,6 +3633,9 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
     {
       model: 'selected-model',
       executable: 'codex',
+      sourceRevision: 'fixture-revision',
+      sourceFingerprint: 'f'.repeat(64),
+      sourceIdentityStatus: 'captured',
       sourceRequestId: 'parent-visual',
       parentCallId: 'review-call',
       sourceSpanId: 'visual-wait'
@@ -3654,6 +3676,9 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
   })
   expect(retainedRecords[0]).toMatchObject({
     purpose: 'execution-assessment',
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured',
     sourceRequestId: 'parent-visual',
     parentCallId: 'review-call',
     sourceSpanId: 'visual-wait'
@@ -3700,6 +3725,9 @@ it.each(['completed', 'cancelled'] as const)(
 it.each(['execution', 'delivery'] as const)(
   'continues the same turn after reference %s failure and delivers corrected output',
   async (stage) => {
+    const traceLog = vi
+      .spyOn(console, 'info')
+      .mockImplementation(() => undefined)
     const original = referenceTools.createLocalReferenceTools(vi.fn())
     const attachment = await rasterAttachment()
     const call = vi
@@ -3773,6 +3801,14 @@ it.each(['execution', 'delivery'] as const)(
     ).resolves.toEqual(batch)
     expect(followup).toHaveBeenCalledOnce()
     expect(call).toHaveBeenCalledTimes(2)
+    const terminalEvents = traceLog.mock.calls
+      .map(([line]) => JSON.parse(String(line)))
+      .filter((event) =>
+        ['tool_completed', 'tool_failed'].includes(event.stage)
+      )
+    expect(new Set(terminalEvents.map((event) => event.callId)).size).toBe(
+      terminalEvents.length
+    )
     const responses = server.packets.filter(
       (packet) => 'result' in packet
     ) as unknown as { result: { success: boolean; contentItems: unknown[] } }[]
@@ -3785,3 +3821,15 @@ it.each(['execution', 'delivery'] as const)(
     })
   }
 )
+
+function createAiExecutionProfiler(
+  ...[input, model, options]: Parameters<typeof createProfiler>
+) {
+  return createProfiler(input, model, {
+    provider: 'local-codex',
+    effort: 'medium',
+    purpose: 'drawing',
+    log: (line) => console.info(line),
+    ...options
+  })
+}

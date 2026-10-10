@@ -8,7 +8,7 @@ import {
 } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { runExecutionReportCli } from '../execution-report-cli'
+import { runExecutionReportCli } from '../../node/report-cli.js'
 
 describe('execution report CLI', () => {
   it('reports a real saved record, explicit feedback and incomplete files without drawing', async () => {

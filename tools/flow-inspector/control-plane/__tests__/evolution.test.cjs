@@ -59,12 +59,11 @@ function targetAssessment(base, candidate, comparison) {
       }
     },
     projection: {
-      format: 2,
+      format: 3,
       ...identity,
       current: true,
       eligible: true,
       staleReasons: [],
-      accepted: { ...identity, status: 'passed' },
       targetContract: {
         ...identity,
         contractDigest: candidate.contract.digest,
@@ -488,7 +487,8 @@ test('target acceptance rejects incomplete evidence and generic target-pinned ac
     (value) => (value.format = 1),
     (value) => (value.current = false),
     (value) => (value.targetContract.status = 'failed'),
-    (value) => (value.accepted.status = 'failed'),
+    (value) => (value.format = 2),
+    (value) => (value.targetContract.status = 'unknown'),
     (value) => value.integration.pending.push('pending.case'),
     (value) => (value.works[0].prerequisites.status = 'unknown')
   ]) {

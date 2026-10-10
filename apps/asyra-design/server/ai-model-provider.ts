@@ -1,3 +1,4 @@
+import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
 import type {
   AiToolProgress,
   ExecuteAiBatch
@@ -140,12 +141,27 @@ export const requestConfiguredAiActionBatch = async (
     const model = requireSetting(environment, 'AI_PROVIDER_MODEL')
     const executable = environment.AI_PROVIDER_EXECUTABLE?.trim() || 'codex'
     const { requestLocalAiActionBatch } = await import('./local-ai-provider')
+    const configuredRevision = environment.AI_EXECUTION_SOURCE_REVISION?.trim()
+    const sourceIdentity = configuredRevision
+      ? {
+          sourceRevision: configuredRevision,
+          sourceIdentityStatus: 'configured' as const
+        }
+      : await captureAiSourceIdentity({
+          directory: process.cwd(),
+          paths: [
+            'apps/asyra-design/server',
+            'apps/asyra-design/src',
+            'packages',
+            'yarn.lock',
+            'package.json'
+          ]
+        })
     const value = await requestLocalAiActionBatch(input, {
       model,
       executable,
       recordDirectory: environment.AI_EXECUTION_RECORD_DIR?.trim() || undefined,
-      sourceRevision:
-        environment.AI_EXECUTION_SOURCE_REVISION?.trim() || undefined,
+      ...sourceIdentity,
       signal: options.signal,
       onProgress: options.onProgress,
       executeBatch: options.executeBatch

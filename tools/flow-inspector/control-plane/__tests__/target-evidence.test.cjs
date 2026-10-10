@@ -650,7 +650,7 @@ test('format 1 remains readable without complete candidate-contract acceptance a
   const result = assessTargetSource(value)
   assert.equal(result.format, 1)
   assert.equal(Object.hasOwn(result, 'targetContract'), false)
-  for (const format of [undefined, 0, 3]) {
+  for (const format of [undefined, 0, 99]) {
     const invalid = input()
     invalid.format = format
     assert.throws(() => assessTargetSource(invalid), /format/)
@@ -1109,4 +1109,44 @@ test('selected source inputs require exact own presence and complete identity in
     sourceIdentity: { ...sourceIdentity, head: null }
   })
   assert.equal(withoutHead.eligible, false)
+})
+
+test('current contract verification needs only its own verifier after a contract change', () => {
+  const request = input()
+  request.format = 3
+  delete request.acceptedVerificationSourceDigest
+  request.proofRequests = [targetProof]
+  const result = assessTargetSource(request)
+  assert.equal(result.eligible, true)
+  assert.equal(result.targetContract.status, 'passed')
+  assert.equal(Object.hasOwn(result, 'accepted'), false)
+  assert.ok(result.works.every((work) => work.status === 'passed'))
+})
+
+test('current contract missing or failing tests cannot pass with historical green evidence', () => {
+  for (const proof of [null, targetFailure, targetOtherFlowFailure]) {
+    const request = input()
+    request.format = 3
+    delete request.acceptedVerificationSourceDigest
+    request.proofRequests = proof ? [proof] : []
+    if (proof)
+      request.targetVerificationSourceDigest = proof.verificationSourceDigest
+    const result = assessTargetSource(request)
+    assert.equal(result.eligible, false)
+    assert.equal(result.targetContract.status, proof ? 'failed' : 'unknown')
+    assert.notEqual(result.integration.status, 'passed')
+  }
+})
+
+test('current contract rejects a historical producer in its selected inventory', () => {
+  const request = input()
+  request.format = 3
+  delete request.acceptedVerificationSourceDigest
+  const result = assessTargetSource(request)
+  assert.equal(result.eligible, false)
+  assert.ok(
+    result.targetContract.blockers.includes(
+      'Unresolved producer contract or flow inventory'
+    )
+  )
 })

@@ -1,7 +1,20 @@
-import { AiActionNames } from '../src/constants/ai-actions'
-import { AiDesignToolIds } from '../src/constants/ai-design'
-import type { ExecutionRecord } from './local-ai-records'
-import { parseExecutionRecord } from './local-ai-records'
+const lastMatching = <T>(
+  items: readonly T[],
+  predicate: (value: T) => boolean
+): T | undefined => {
+  for (let index = items.length - 1; index >= 0; index--)
+    if (predicate(items[index])) return items[index]
+  return undefined
+}
+
+export interface ExecutionReportPolicy {
+  readTools?: readonly string[]
+  reviewTool?: string
+  validateEvidenceTool?: string
+}
+
+import type { ExecutionRecord } from './records.js'
+import { parseExecutionRecord } from './records.js'
 
 type ParsedExecution = ReturnType<typeof parseExecutionRecord>
 const object = (value: unknown): Record<string, unknown> =>
@@ -120,7 +133,7 @@ export interface ExecutionFinding {
 /** A read-only projection; timings rank investigation targets, not product quality. */
 export const evaluateExecution = (
   run: ParsedExecution,
-  options: { feedback?: string } = {}
+  options: { feedback?: string; policy?: ExecutionReportPolicy } = {}
 ) => {
   const findings: ExecutionFinding[] = []
   const byCall = new Map<string, ExecutionRecord[]>()
@@ -143,10 +156,7 @@ export const evaluateExecution = (
       })
   }
   const exactReads = new Map<string, string>()
-  const readTools = new Set<string>([
-    AiActionNames.READ_DESIGN_CONTEXT,
-    AiDesignToolIds.DESCRIBE_DESIGN_APIS
-  ])
+  const readTools = new Set<string>(options.policy?.readTools ?? [])
   const toolCalls = run.steps
     .filter((step) => step.kind === 'tool' || step.kind === 'research')
     .map((step) => {
@@ -170,7 +180,7 @@ export const evaluateExecution = (
       const outcome = object(result.toolOutcome)
       if (
         step.status === 'completed' &&
-        step.tool === AiDesignToolIds.RECORD_DESIGN_REVIEW &&
+        step.tool === options.policy?.reviewTool &&
         args.phase === 'plan'
       ) {
         const repeatedFields = [
@@ -325,8 +335,7 @@ export const evaluateExecution = (
   const reviewCalls = run.steps
     .filter(
       (step) =>
-        step.tool === AiDesignToolIds.RECORD_DESIGN_REVIEW &&
-        step.status === 'completed'
+        step.tool === options.policy?.reviewTool && step.status === 'completed'
     )
     .map((step) => {
       const events = byCall.get(step.callId) ?? []
@@ -340,14 +349,16 @@ export const evaluateExecution = (
         result: object(object(end?.evidence).result)
       }
     })
-  const plan = reviewCalls.findLast((call) => call.args.phase === 'plan')
-  const visual = reviewCalls.findLast(
+  const plan = lastMatching(reviewCalls, (call) => call.args.phase === 'plan')
+  const visual = lastMatching(
+    reviewCalls,
     (call) =>
       call.args.phase === 'visual' &&
       Array.isArray(call.args.checks) &&
       !omitted(call.args)
   )
-  const settlement = run.records.findLast(
+  const settlement = lastMatching(
+    run.records,
     (entry) => entry.event === 'ai_request_usage'
   )
   return {
@@ -410,7 +421,7 @@ export const evaluateExecution = (
             step.kind === 'provider' ||
             step.kind === 'lifecycle' ||
             (step.kind === 'action' &&
-              step.tool === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
+              step.tool === options.policy?.validateEvidenceTool &&
               step.status === 'completed' &&
               (byCall.get(step.callId) ?? []).some(
                 (entry) =>
@@ -441,6 +452,7 @@ export const createExecutionPeriodReport = (
     to?: string
     now?: Date
     feedback?: Record<string, string>
+    policy?: ExecutionReportPolicy
   } = {}
 ) => {
   const to =
@@ -482,7 +494,10 @@ export const createExecutionPeriodReport = (
       continue
     }
     runs.push(
-      evaluateExecution(run, { feedback: options.feedback?.[run.requestId] })
+      evaluateExecution(run, {
+        feedback: options.feedback?.[run.requestId],
+        policy: options.policy
+      })
     )
   }
   const groups = new Map<
@@ -491,9 +506,14 @@ export const createExecutionPeriodReport = (
   >()
   const configurationFor = (run: (typeof runs)[number]) =>
     Object.fromEntries(
-      ['provider', 'model', 'effort', 'sourceRevision', 'purpose'].map(
-        (key) => [key, text(run.metadata[key])]
-      )
+      [
+        'provider',
+        'model',
+        'effort',
+        'sourceRevision',
+        'sourceFingerprint',
+        'purpose'
+      ].map((key) => [key, text(run.metadata[key])])
     )
   for (const run of runs) {
     const configuration = configurationFor(run)

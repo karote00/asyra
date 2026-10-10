@@ -820,7 +820,7 @@ action accepts a client-supplied artifact. The detached, immutable handoff conta
 `allocationRevision`, `workId`, the original `workBinding`, accepted baseline and
 accepted-version pins, the registered complete task runtime tuple, the assessed
 work result, original integration result and the complete registered producer references supporting that work,
-its prerequisites and required accepted preservation. These are existing owner
+its prerequisites and current-contract verification. These are existing owner
 identities and completed results, not new client claims or a persisted verified
 flag. Resolve the exact private `sourceFor(taskId, attemptId)` artifact and compare
 its full identity with the assessment registration. Require the latest completed,
@@ -829,7 +829,7 @@ allocation and work. Consume the target owner existing `checkTask` admission
 check rather than duplicating scope matching in the service. A linked legacy task
 without that admission is ineligible.
 
-Require current assessment identity, passing required accepted preservation and
+Require current assessment identity, passing current-contract work and
 `work.status === 'passed'`, including its own obligations and prerequisites.
 Consume the assessor result; do not recompute cases or use global `eligible` as
 a substitute. Unassigned or explicitly pending target obligations may keep target
@@ -858,9 +858,9 @@ Board presentation requires an explicit retained assessment selection for the
 selected task and attempt, then shows bounded scope, the original candidate outcome
 and the separate integration result before the existing exact confirmation.
 
-Permanent owner evidence proves real admitted work with accepted preservation and
+Permanent owner evidence proves real admitted work with current-contract
 own/prerequisite success while integration remains pending and the original
-candidate is non-passing. Permanent negatives cover accepted
+candidate is non-passing. Permanent negatives cover current-contract
 regression, missing prerequisites, wrong work binding/HEAD/source, retirement and
 changed approval scope. Work-count oracles prove reuse of assessed results and
 source artifacts, no repeated assessment/hash work and zero lookup on historical
@@ -886,8 +886,8 @@ Work with prerequisites instead requires `assessmentId` and forbids
 its currently available registered source; the client cannot supply its result or
 source. The assessment must be completed by the same actor, current for this exact
 target and allocation revision, and retain the target's accepted-version and
-target-verification pins. Accepted preservation, the selected work and its
-prerequisite result must all be `passed`. The work's own assessment identity and
+target-verification pins. New admissions require format 3; the selected work and
+its prerequisite result must both be `passed`. The work's own assessment identity and
 the registered runtime source must match the target owner artifact exactly.
 Whole-target integration may remain pending or failed and grants no admission or
 acceptance authority. Missing, stale, unknown, failed, mismatched or unavailable
@@ -960,16 +960,38 @@ prepared form binding. Unexecuted reservations show their task UUID without a br
 task-artifact link. Bounded assessment updates preserve the existing work controls,
 assessment selection and keyboard focus.
 
+## Current contract authority
+
+A Flow is the current architecture contract. Intentional product or ownership
+changes update the Flow, specification and corresponding executable cases together.
+Removed private modules and obsolete cases must not remain required merely because
+a historical verifier referenced them. Contract changes still require review;
+removing obligations still requires the explicit retirement decision.
+
+New target assessments use format 3. They execute only the selected current target
+contract's exact verifier against the selected runtime, and verify the complete
+current contract inventory, including unchanged cases. Each node/work status follows
+its current cases and required handoffs: assertion failure is failed, unavailable
+or incomplete execution is unknown, and unallocated work remains pending. Complete
+integration additionally requires the complete current contract to pass.
+
+The accepted baseline is change-review and staleness context, not a second live
+Flow. No old verifier is dispatched or required to remain available by a new
+assessment. Historical format-1/2 assessments keep their saved meaning for read-only
+inspection and cannot authorize new baseline acceptance. Format-3 results have a
+`targetContract` result and no `accepted` preservation result; their persisted roles
+and producer inventory contain only `target`. Exact source admission, complete
+producer binding, cancellation/restart integrity, actor permissions, explicit
+retirement and atomic acceptance remain mandatory. Historical dual-verifier
+behavior described below applies only to reading already saved formats 1/2.
+
 ## Target source assessment
 
-The assessment owner and first dependent-admission consumer implement the initial
-multi-PR contract: one explicitly selected current retained assessment may reserve
-dependent work while the target remains pending and its baseline stays unchanged.
-The format-2 complete candidate result and explicit acceptance consumer below add
-whole-target integration without changing that admission behavior. Broader runtime
-coverage remains open. The assessment owner is `assess-target-source`; target allocation,
-candidate verification, source capture, raw evidence assessment and accepted
-history keep their existing owners.
+The assessment owner is `assess-target-source`. It verifies the current Flow
+contract and supplies bounded work, handoff and complete integration results.
+Target allocation, source capture, raw evidence assessment and explicit contract
+acceptance retain their existing owners. No historical verifier is a prerequisite
+for a new assessment.
 
 An explicit local assessment identifies a frozen target allocation revision, its
 target contract, the current accepted revision, and one captured integration
@@ -980,19 +1002,21 @@ commitments, a source snapshot and completed proof evidence. It neither executes
 tests nor reads mutable source, fetches PRs, interprets handoff prose, starts tasks,
 changes commitments or writes accepted history.
 
-The result separates accepted-behavior preservation, each work promise and its
+The result separates the complete current contract, each work promise and its
 prerequisites, and whole-target integration. Each result retains the source,
-accepted and target contract identities, allocation revision, required obligation
-inventory, evidence references and concrete blockers. A passing work result is
-labeled with that work's bounded obligations; it cannot stand for a passing flow.
-All accepted obligations in the registered verification scope remain required.
-Unknown impact uses that complete conservative scope, never an empty exemption.
+current contract and verifier identities, allocation revision, required obligation
+inventory, evidence references and concrete blockers. The accepted baseline only
+identifies the reviewed change and staleness boundary. All current obligations,
+including unchanged behavior, remain required; a passing bounded work cannot
+stand for a passing complete contract.
 
 ### Assessment input and currentness
 
-The internal `assessTargetSource` input is `{target, allocationRevision,
-acceptedContract, targetContract, acceptedVerificationSourceDigest,
-targetVerificationSourceDigest, sourceAdmission, proofRequests, current}`, with
+The internal `assessTargetSource` input is `{format, target, allocationRevision,
+acceptedContract, targetContract, targetVerificationSourceDigest, sourceAdmission,
+proofRequests, current}`. `acceptedContract` supplies the change baseline identity
+only for format 3. `acceptedVerificationSourceDigest` is used only when validating
+already saved historical format-1/2 results, with
 `sourceIdentity` as an alternative to the top-level `sourceAdmission`.
 `target` is the target owner's immutable artifact. Select its exact history entry
 whose `revision` equals `allocationRevision`; use that entry's frozen `state`,
@@ -1049,24 +1073,12 @@ without admitted completed evidence contributes unknown results and concrete
 blockers. Duplicate requests or more than one producer observation for the same
 contract, verification identity and obligation cannot pass; retain any confirmed
 failed observation.
-Only when both contract and admitted verification-source digests are identical
-may one request serve both roles; all runtime, full-source, configuration and
-request bindings still apply. Same-contract versions with different verifier or
-configuration bytes require distinct observations. Duplicate detection applies
-within that exact contract and verification identity, not across different
-verification bundles. Results and evidence references retain the selected
-verification digest so the two roles remain distinguishable. Missing or mismatched
-verification authority cannot be inferred from a green result. The service must
-resolve both immutable version references independently before applying this
-sharing rule; an available target reference never replaces a missing accepted
-reference. This equivalence supports ordinary verification only, whose admitted
-actual execution configuration equals its configuration-role entry. Derived
-execution configurations require an explicit execution-identity contract before
-using this sharing rule. A work
-with no requested target-flow proof remains pending. This absence differs from
-an explicitly unassigned obligation in the frozen `state.pending`; that inventory
-keeps integration pending even if observations already exist. Accepted preservation
-with no required proof is unknown, never an empty successful result.
+New format-3 assessments register exactly one current target producer covering
+all flows in the selected contract. Obsolete contracts and verifier bytes are not
+part of this inventory; an unexpected historical producer is an inventory error,
+not additional authority. A work with no requested target-flow proof remains
+pending. Unassigned obligations remain pending even when observations exist.
+A missing required complete-contract proof is unknown, never empty success.
 
 `current` contains `targetId`, `allocationRevision`, `acceptedBaseline` and
 `source: {repository, head, runtimeSourceDigest}` supplied by the trusted service.
@@ -1214,31 +1226,25 @@ remain forbidden.
 sourceAttemptId}, actor)` is an explicit local `verify` action. Its request UUID
 and actor bind that exact selection; exact replay returns the original assessment
 id before availability and idle checks, with no new source lookup, producer or
-assessment computation. Conflicting reuse rejects. New requests resolve both
-immutable version references independently through the same target-proof authority
+assessment computation. Conflicting reuse rejects. New requests resolve the current target verifier through the target-proof authority
 and require an idle service. Missing pins or unavailable references reject before
 any inventory or attempt is written. Clients cannot supply producer ids, roles,
 contracts, source descriptors, evidence or a successful result.
 
 The service atomically saves the complete inventory in its fixed
-`target-assessments.json` before dispatching any producer. A new format-2 record
-binds its id, actor, original request, exact target and accepted-version pins,
-selected runtime tuple, both role references and contract/verification identities,
-and all server-generated producer UUIDs. Existing format-1 records retain the
-same historical fields and remain readable without complete-candidate acceptance
-authority. Each role names its slot. Only exact identical
-ordinary contract/verification identities share a slot, after both role references
-have independently been resolved. Otherwise accepted and target have distinct
-slots. Every slot is requested from registration, including those not yet started;
-its missing observation remains unknown rather than disappearing as unrequested
-pending work. The saved inventory cannot acquire extra caller-selected attempts.
+`target-assessments.json` before dispatching any producer. A new format-3 record
+binds its id, actor, original request, exact target/review/base pins, selected
+runtime tuple, current target verifier and one server-generated producer UUID.
+The `roles` object contains only `target`. Its slot is requested at registration;
+missing observations remain unknown. Historical format-1/2 records retain their
+original role inventories and verdicts on read/restart, but are never upgraded
+into current-contract acceptance authority. No caller can add producer attempts.
 
 An orchestration lock covers registration through settlement. Ordinary proof,
 target-proof, task or review work and actions that change target allocation or
 accepted pins cannot interleave. Internal dispatch uses the existing private
 producer lifecycle with its frozen selection, never a client-accessible lock
-bypass. Producers run serially. A confirmed proof failure remains an observation
-and does not discard the other role's scheduled proof. Cancellation, timeout or
+bypass. A confirmed proof failure remains an observation of the current contract. Cancellation, timeout or
 execution error stops remaining dispatches, records a terminal reason for each
 unstarted slot and preserves all completed observations. `cancelTargetAssessment`
 requires `cancel` capability; close cancels and awaits the same orchestration.
@@ -1429,7 +1435,7 @@ attempt or granting authority. Formal browser counts cover same-key sharing,
 changed-key reads, failure retry, stale responses and retired consumers.
 
 Retained assessment history and details come from the cached service projections.
-Display accepted preservation, each bounded work and its prerequisites, and full
+Display current contract verification, each bounded work and its prerequisites, and full
 target integration separately, including named blockers, slot progress/reasons,
 source/verification identities, currentness and eligibility. Historical verdicts
 remain visible when stale; eligibility does not accept a target or alter accepted
@@ -1782,8 +1788,16 @@ candidate verdict is not that admission artifact. The task-to-service tuple
 handoff remains a separate consumer prerequisite; callers cannot confer it by
 providing paths or claiming their object was admitted.
 
-Scoped runtime input requires scoped verification input with the same contract
-scope digest, step closures and package union. Mixed scoped/legacy inputs reject.
+Scoped runtime input requires scoped verification input of the same format.
+Owner transfers may change contract scope and step closures: first validate the
+runtime's original authority and execution binding, then derive the selected
+verifier's authority from the already fingerprint-checked current runtime bytes.
+The derived authority must preserve every captured package record, source-input
+declaration, entry and package union. Missing owners/dependencies or changed
+source declarations reject; composition never fetches additional checkout files
+or copies historical runtime files. The verifier retains its original five-role
+identity and the runtime retains its bytes-only identity. Rebinding adds no file
+reads or hashes. Mixed scoped/legacy inputs reject.
 Two legacy inputs preserve the fixed Factory format-1 composition and cannot
 gain package authority. Runtime package bytes and manifest identity always come
 from the runtime input.
@@ -2089,10 +2103,10 @@ readiness is reported separately from the work's own evidence, and an unsatisfie
 prerequisite blocks completion even when its own cases pass. Neither this result
 nor PR delivery alone authorizes task execution. The initial admission consumer
 enables only selected work whose current source-bound assessment passes its own
-obligations, prerequisites and accepted preservation.
+current obligations and prerequisites.
 
 Whole-target integration requires no pending obligations, all current commitments
-and their handoffs proven on the same source, and passing accepted preservation.
+and their handoffs proven on the same source, and the complete current contract passing.
 It exposes acceptance eligibility only. The version owner must separately enforce
 an explicit authorized exact-base decision, current integration evidence and
 retirement authority before any baseline mutation. This first owner slice cannot
@@ -2144,7 +2158,7 @@ One target contract revision is assessed across two allocation revisions. The
 first keeps the UI Context and integration obligations explicitly pending while
 Factory and Collaboration can satisfy their immutable work promises. The
 second assigns the UI Context work and requires all three contributions,
-accepted preservation, prerequisite routes and whole-target integration on one
+current contract verification, prerequisite routes and whole-target integration on one
 exact source. An accepted regression, missing prerequisite, integration-only
 regression, mixed HEAD, reverted contribution or advanced source cannot be
 combined with older green results. The retained successful result survives
@@ -2161,20 +2175,19 @@ acceptance remains unrun and unavailable in this deterministic evidence slice.
 
 ### Integrated target baseline acceptance
 
-A new target assessment uses format 2 and adds `targetContract`, the complete
-candidate-contract obligation result produced once from the same admitted
-observation inventory as accepted preservation, bounded work and target
-integration. Existing format-1 assessments remain readable historical evidence
-and cannot authorize acceptance. Missing format, a format-1 `targetContract`, or
-a format-2 record without its complete valid result rejects admission; restart
-never upgrades or reconstructs authority.
+A new target assessment uses format 3 and provides `targetContract`, the complete
+current-contract obligation result, alongside bounded work and integration.
+Existing format-1/2 assessments remain read-only historical evidence and cannot
+authorize a new baseline acceptance. Missing format, missing complete current
+result, contradictory producer inventory or an injected `accepted` result reject
+admission; restart never upgrades historical authority.
 
 Whole-target integration and feature eligibility remain read-only. The user must
 separately submit an exact target, assessment, request identity, reason and any
 explicit retirement set. The version owner alone accepts the target's pinned
 review. Before its one atomic mapping write, the service requires an authorized
 actor, completed current assessment, matching target/allocation/base/version/
-review/source pins, passing accepted preservation, every work and prerequisite,
+review/source pins, every current work and prerequisite,
 no pending obligations, passing integration and passing `targetContract`. It also
 requires the assessment's exact private source authority and complete retained
 producer inventory. Client verdicts, task or PR status, provider green state and

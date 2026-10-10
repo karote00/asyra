@@ -1287,19 +1287,23 @@ function createService(
       'sourceAttemptId',
       'sourceTaskId'
     ])
-    validateTargetProofSelection({ ...selection, role: 'accepted' })
+    validateTargetProofSelection({ ...selection, role: 'target' })
   }
-  const resolveAssessment = (selection, available) => {
+  const resolveAssessment = (selection, available, format = 3) => {
     assessmentSelection(selection)
-    const accepted = resolveTargetProof(
-      { ...selection, role: 'accepted' },
-      available
-    )
+    const owner = targets.get(selection.targetId)
+    const baseline =
+      store.mapping().evolution.history.versions[
+        owner.acceptedVersion.revision - 1
+      ]
+    const accepted =
+      format < 3
+        ? resolveTargetProof({ ...selection, role: 'accepted' }, available)
+        : { contract: baseline.contract }
     const target = resolveTargetProof(
       { ...selection, role: 'target' },
       available
     )
-    const owner = targets.get(selection.targetId)
     return {
       accepted,
       target,
@@ -1307,7 +1311,7 @@ function createService(
         acceptedVersion: owner.acceptedVersion,
         targetVerification: owner.targetVerification
       },
-      runtime: accepted.targetProof.runtime
+      runtime: target.targetProof.runtime
     }
   }
   const currentAssessmentIdentity = (record) => {
@@ -1383,7 +1387,7 @@ function createService(
     refreshAssessmentProjections()
   }
   const assessRecord = (record, current) => {
-    const resolved = resolveAssessment(record.request, false)
+    const resolved = resolveAssessment(record.request, false, record.format)
     return targetEvidenceOwner.assessTargetSource({
       format: record.format,
       target: targets.get(record.request.targetId),
@@ -1391,7 +1395,7 @@ function createService(
       acceptedContract: resolved.accepted.contract,
       targetContract: resolved.target.contract,
       acceptedVerificationSourceDigest:
-        record.roles.accepted.verificationSourceDigest,
+        record.roles.accepted?.verificationSourceDigest,
       targetVerificationSourceDigest:
         record.roles.target.verificationSourceDigest,
       ...(record.request.sourceTaskId
@@ -1451,7 +1455,7 @@ function createService(
       'orchestrationError'
     ])
     if (
-      ![1, 2].includes(record.format) ||
+      ![1, 2, 3].includes(record.format) ||
       !validId(record.id) ||
       typeof record.actor !== 'string' ||
       !record.actor.trim() ||
@@ -1472,7 +1476,7 @@ function createService(
       record.result?.format !== record.format ||
       (record.format === 1 &&
         Object.hasOwn(record.result ?? {}, 'targetContract')) ||
-      (record.format === 2 &&
+      (record.format >= 2 &&
         (!record.result?.targetContract ||
           record.result.targetContract.status === undefined))
     )
@@ -1484,7 +1488,7 @@ function createService(
         !record.orchestrationError.trim())
     )
       throw new Error('Invalid target assessment orchestration error')
-    const resolved = resolveAssessment(record.request, false)
+    const resolved = resolveAssessment(record.request, false, record.format)
     if (
       !isDeepStrictEqual(record.pins, resolved.pins) ||
       !isDeepStrictEqual(record.runtime, resolved.runtime) ||
@@ -1494,8 +1498,11 @@ function createService(
       record.slots.length > 2
     )
       throw new Error('Invalid target assessment selection')
-    objectRequest(record.roles, ['accepted', 'target'])
-    for (const role of ['accepted', 'target']) {
+    const roleNames = record.format === 3 ? ['target'] : ['accepted', 'target']
+    objectRequest(record.roles, roleNames)
+    if (Object.keys(record.roles).length !== roleNames.length)
+      throw new Error('Invalid target assessment roles')
+    for (const role of roleNames) {
       const saved = record.roles[role]
       if (
         !saved ||
@@ -1507,26 +1514,29 @@ function createService(
       )
         throw new Error('Invalid target assessment role')
     }
-    const equivalent =
-      record.roles.accepted.contractDigest ===
-        record.roles.target.contractDigest &&
-      record.roles.accepted.verificationSourceDigest ===
-        record.roles.target.verificationSourceDigest
-    if (
-      (record.roles.accepted.slotId === record.roles.target.slotId) !==
-        equivalent ||
-      record.slots.length !== (equivalent ? 1 : 2)
-    )
-      throw new Error('Invalid target assessment sharing')
     const expectedSlots = [
-      ...new Set([record.roles.accepted.slotId, record.roles.target.slotId])
+      ...new Set(roleNames.map((role) => record.roles[role].slotId))
     ]
+    if (record.format < 3) {
+      const equivalent =
+        record.roles.accepted.contractDigest ===
+          record.roles.target.contractDigest &&
+        record.roles.accepted.verificationSourceDigest ===
+          record.roles.target.verificationSourceDigest
+      if (
+        (record.roles.accepted.slotId === record.roles.target.slotId) !==
+        equivalent
+      )
+        throw new Error('Invalid target assessment sharing')
+    }
+    if (record.slots.length !== expectedSlots.length)
+      throw new Error('Invalid target assessment sharing')
     for (let index = 0; index < record.slots.length; index++) {
       const slot = record.slots[index]
       objectRequest(slot, ['id', 'role', 'phase', 'reason'])
       if (
         slot.id !== expectedSlots[index] ||
-        slot.role !== (index === 0 ? 'accepted' : 'target') ||
+        slot.role !== roleNames[index] ||
         seen.has(slot.id) ||
         ![
           'requested',
@@ -1753,7 +1763,7 @@ function createService(
           target.targetVerification,
           record.pins.targetVerification
         ) ||
-        record.result.accepted.status !== 'passed' ||
+        record.format !== 3 ||
         work?.status !== 'passed'
       )
         throw new Error(
@@ -1767,7 +1777,7 @@ function createService(
         )
       )
         throw new Error('Scoped work source identity mismatch')
-      const roles = ['accepted', 'target']
+      const roles = ['target']
       const ids = [...new Set(roles.map((role) => record.roles[role].slotId))]
       if (
         !ids.length ||
@@ -1870,34 +1880,25 @@ function createService(
       }
       requireIdle()
       const resolved = taskResult(() => resolveAssessment(selection, true))
-      const roles = {},
-        slots = []
-      for (const role of ['accepted', 'target']) {
-        const identity = slotIdentity(resolved, role)
-        const same =
-          role === 'target' &&
-          roles.accepted.contractDigest === identity.contractDigest &&
-          roles.accepted.verificationSourceDigest ===
-            identity.verificationSourceDigest
-        let id = same ? roles.accepted.slotId : randomUUID()
-        while (
-          !same &&
-          (store.get(id) ||
-            [...assessmentRecords.values()].some((record) =>
-              record.slots.some((slot) => slot.id === id)
-            ))
+      let producerId = randomUUID()
+      while (
+        store.get(producerId) ||
+        [...assessmentRecords.values()].some((record) =>
+          record.slots.some((slot) => slot.id === producerId)
         )
-          id = randomUUID()
-        roles[role] = { ...identity, slotId: id }
-        if (!same) slots.push({ id, role, phase: 'requested' })
+      )
+        producerId = randomUUID()
+      const roles = {
+        target: { ...slotIdentity(resolved, 'target'), slotId: producerId }
       }
+      const slots = [{ id: producerId, role: 'target', phase: 'requested' }]
       const previousSource = selectedSources.get(selection.targetId)
       selectedSources.set(selection.targetId, {
         request: selection,
         runtime: resolved.runtime
       })
       const record = evaluateAssessment({
-        format: 2,
+        format: 3,
         id: requestId,
         actor: actor.id,
         request: selection,

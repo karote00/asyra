@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
 import { createLocalImageTools } from '../local-image-tools'
 import { AiImageToolIds } from '../ai-domain-prompt'
@@ -18,7 +19,7 @@ describe('local provider image tools', () => {
       { metadata: { imageAttachments: [attachment] } },
       convert
     )
-    expect(tools.definitions).toHaveLength(5)
+    expect(tools.definitions).toHaveLength(6)
     const signal = new AbortController().signal
     expect(
       await tools.call(
@@ -89,7 +90,7 @@ describe('local provider image tools', () => {
           imageAttachments: [{ ...attachment, mediaType: 'image/gif' }]
         }
       }).definitions
-    ).toHaveLength(5)
+    ).toHaveLength(6)
   })
 
   it('requires same-request analysis for mappings and reuses evidence during preparation', async () => {
@@ -976,4 +977,59 @@ it('extracts original pixels from a reference above four megapixels', async () =
   )
   expect(result).toMatchObject({ width: 2, height: 3 })
   expect(convert).toHaveBeenCalledOnce()
+})
+
+it('validates retained bytes with stable identity and reuses admission evidence', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 5, channels: 3, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({ metadata: {} })
+  const index = tools.addReference({
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  })
+  const signal = new AbortController().signal
+  const first = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index] },
+      signal
+    )
+  )
+  const second = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index] },
+      signal
+    )
+  )
+  expect(first.references[0]).toMatchObject({
+    attachmentIndex: index,
+    bytes: bytes.length,
+    reused: false,
+    validation: {
+      width: 8,
+      height: 5,
+      encoding: 'png',
+      validity: 'decoded',
+      suitability: 'requires-visual-assessment'
+    }
+  })
+  expect(second.references[0]).toMatchObject({
+    referenceId: first.references[0].referenceId,
+    reused: true
+  })
+  expect(tools.resolveSources([`attachment:${index}`])).toEqual([
+    first.references[0].referenceId
+  ])
+  await expect(
+    tools.call(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: [index + 1] },
+      signal
+    )
+  ).rejects.toThrow(/reference/i)
 })

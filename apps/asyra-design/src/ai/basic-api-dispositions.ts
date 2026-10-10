@@ -25,6 +25,27 @@ const coreRenderLifecycleDisposition = {
 export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
+    owner: 'element',
+    methods: ['deleteElement'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'Pass one or more target IDs to the shared canonical deletion batch.'
+  },
+  {
+    owner: 'hierarchy',
+    methods: ['removeSubtree'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'Plural deletion preserves descendants and returns removed identities without canonical snapshots.'
+  },
+  {
+    owner: 'core',
+    methods: ['removeSubtree', 'removeSubtrees'],
+    replacement: 'api_element_deleteElements',
+    reason:
+      'The common API forwards all targets through the canonical Core subtree batch.'
+  },
+  {
     owner: 'core',
     methods: ['getElementIdsInBounds'],
     replacement: 'api_element_getElementIdsInBounds',

@@ -7,7 +7,7 @@ import {
   reviewVectorContours,
   applyContourRefinements
 } from './local-vector-contour-review'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHash } from 'node:crypto'
 import {
   IMAGE_LAYER_SCHEMA,
   separateImageBackground
@@ -69,7 +69,7 @@ const oversizedVectorResult = (svg: string, attachmentIndex: number) => {
     : undefined
 }
 
-const imageRegionSchema = {
+export const imageRegionSchema = {
   type: 'object',
   additionalProperties: false,
   description:
@@ -111,9 +111,89 @@ export const createLocalImageTools = (
   const metadata = input.metadata
   const attachments =
     isRecord(metadata) && Array.isArray(metadata.imageAttachments)
-      ? [...metadata.imageAttachments]
+      ? metadata.imageAttachments.map((image) =>
+          isRecord(image) ? { ...image } : image
+        )
       : []
   const originalAttachmentCount = attachments.length
+  const identities = new Map<
+    number,
+    { referenceId: string; sha256: string; bytes: number }
+  >()
+  const admittedDimensions = new Map<
+    string,
+    { width: number; height: number }
+  >()
+  const referenceIndexes = new Map<string, number>()
+  const referenceIdentity = (index: number) => {
+    const attachment = attachments[index]
+    if (
+      !Number.isSafeInteger(index) ||
+      index < 0 ||
+      !isRecord(attachment) ||
+      typeof attachment.dataUrl !== 'string' ||
+      !/^data:image\/(png|jpeg|webp);base64,/.test(attachment.dataUrl)
+    )
+      throw new Error('Select an existing reference attachment index.')
+    let identity = identities.get(index)
+    if (!identity) {
+      const bytes = Buffer.from(attachment.dataUrl.split(',')[1], 'base64')
+      const sha256 = createHash('sha256').update(bytes).digest('hex')
+      identity = {
+        referenceId: `reference:${sha256}`,
+        sha256,
+        bytes: bytes.length
+      }
+      identities.set(index, identity)
+      referenceIndexes.set(identity.referenceId, index)
+    }
+    return {
+      attachmentIndex: index,
+      ...identity,
+      ...(admittedDimensions.has(identity.referenceId)
+        ? { validation: admittedDimensions.get(identity.referenceId) }
+        : {})
+    }
+  }
+  const validateReferences = (
+    indexes: number[],
+    referenceIds: string[] = []
+  ) => {
+    const retainedIndexes = referenceIds.map((referenceId) => {
+      const index = referenceIndexes.get(referenceId)
+      if (index === undefined)
+        throw new Error(
+          'Unknown retained reference identity; import or validate the image first.'
+        )
+      return index
+    })
+    return [...new Set([...indexes, ...retainedIndexes])].map(referenceIdentity)
+  }
+  const resolveSources = (sources: string[]) =>
+    sources.map((source) => {
+      if (source.startsWith('attachment:')) {
+        const index = source.slice('attachment:'.length)
+        if (!/^(0|[1-9][0-9]*)$/.test(index))
+          throw new Error('Invalid reference attachment identity.')
+        return referenceIdentity(Number(index)).referenceId
+      }
+      if (source.startsWith('reference:')) {
+        if (!referenceIndexes.has(source))
+          throw new Error(
+            'Unknown reference identity; import or validate the reference first.'
+          )
+        return source
+      }
+      // Non-image citations keep their existing assertion semantics. Only registered
+      // image identities are mechanically resolved; this never verifies a claim.
+      if (/^https?:\/\//i.test(source)) {
+        const url = new URL(source)
+        if (url.username || url.password)
+          throw new Error('Source URLs cannot contain credentials.')
+      }
+      return source
+    })
+  const validations = new Map<string, Promise<unknown>>()
   const artifacts = new Map<string, LocalVectorArtifact>()
   const converted = new Map<string, string>()
   const analyses = new Map<string, ReturnType<typeof analyzeVectorComponents>>()
@@ -133,6 +213,27 @@ export const createLocalImageTools = (
   >()
   let analysisQueue = Promise.resolve()
   const definitions = [
+    {
+      type: 'function',
+      name: AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      executionAccess: LocalToolAccess.INDEPENDENT,
+      description:
+        'Validate retained reference images in one batch without searching or downloading again. Returns stable content identity, exact dimensions, encoding and byte count. Mechanical validity does not verify the subject, viewpoint, factual accuracy or suitability for fine detail: inspect the image and retain those limitations. Use referenceId in source facts; attachmentIndex remains the image selection handle.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['attachmentIndexes'],
+        properties: {
+          attachmentIndexes: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 24,
+            uniqueItems: true,
+            items: { type: 'integer', minimum: 0 }
+          }
+        }
+      }
+    },
     {
       type: 'function',
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
@@ -259,6 +360,8 @@ export const createLocalImageTools = (
     }
   ]
   return {
+    validateReferences,
+    resolveSources,
     referenceImages: (indexes?: number[]) => {
       const selected =
         indexes ??
@@ -279,8 +382,20 @@ export const createLocalImageTools = (
       dataUrl: string
       mediaType: string
       size: number
+      validation?: {
+        width: number
+        height: number
+        encoding: string
+        validity: 'decoded'
+        suitability: 'requires-visual-assessment'
+      }
     }) => {
-      attachments.push(image)
+      attachments.push({ ...image })
+      const identity = referenceIdentity(attachments.length - 1)
+      if (image.validation) {
+        validations.set(identity.referenceId, Promise.resolve(image.validation))
+        admittedDimensions.set(identity.referenceId, image.validation)
+      }
       return attachments.length - 1
     },
     definitions: definitions.map((definition) => ({
@@ -438,6 +553,71 @@ export const createLocalImageTools = (
       signal: AbortSignal
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Image tool cancelled')
+      if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
+        if (
+          !isRecord(args) ||
+          Object.keys(args).length !== 1 ||
+          !Array.isArray(args.attachmentIndexes) ||
+          !args.attachmentIndexes.length ||
+          args.attachmentIndexes.length > 24 ||
+          new Set(args.attachmentIndexes).size !== args.attachmentIndexes.length
+        )
+          throw new Error(
+            'Provide unique existing reference attachmentIndexes.'
+          )
+        const results = await Promise.all(
+          args.attachmentIndexes.map(async (index) => {
+            const identity = referenceIdentity(index as number)
+            let pending = validations.get(identity.referenceId)
+            const reused = !!pending
+            if (!pending) {
+              pending = (async () => {
+                const attachment = attachments[index as number] as {
+                  dataUrl: string
+                }
+                const bytes = Buffer.from(
+                  attachment.dataUrl.split(',')[1],
+                  'base64'
+                )
+                const decoder = sharp(bytes, { failOn: 'warning' }).timeout({
+                  seconds: 10
+                })
+                const metadata = await decoder.metadata()
+                await decoder.stats()
+                return {
+                  width: metadata.autoOrient.width,
+                  height: metadata.autoOrient.height,
+                  encoding: metadata.format,
+                  validity: 'decoded',
+                  suitability: 'requires-visual-assessment'
+                }
+              })()
+              validations.set(identity.referenceId, pending)
+            }
+            try {
+              const validation = (await pending) as {
+                width: number
+                height: number
+              }
+              admittedDimensions.set(identity.referenceId, validation)
+              return { ...identity, reused, validation }
+            } catch (error) {
+              validations.delete(identity.referenceId)
+              return {
+                ...identity,
+                reused,
+                validation: {
+                  validity: 'invalid',
+                  reason:
+                    error instanceof Error ? error.message : 'Decode failed'
+                }
+              }
+            }
+          })
+        )
+        signal.throwIfAborted()
+        return JSON.stringify({ references: results })
+      }
       if (name === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {
         if (
           !isRecord(args) ||

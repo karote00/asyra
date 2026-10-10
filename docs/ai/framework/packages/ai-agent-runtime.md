@@ -257,3 +257,87 @@ public explanation and recovery guidance. Runtime preserves that message with
 generic execution-failure message. Never wrap raw provider/transport/canonical
 exception text in this class. Failure policy, failed-action identity and transaction
 settlement remain authoritative and unchanged.
+
+## Shared Invocation and Execution Profiler
+
+The package owns portable invocation middleware, records, timing, evaluation and
+Trace Event JSON export. `createAiInvoker({ execute, middleware, observe })`
+returns an object with `invoke({ name, input, callId?, parentCallId?, retryOf?,
+signal?, actor?, purpose?, purposeSource?, expectedResult? })`. The host injects
+its existing canonical executor, including admission and any required permissions
+and transaction boundaries. This dispatcher grants no mutation authority and does
+not replace `runtime.run()` for complete user requests.
+
+Middleware receives `(call, next)`. Each `next()` can execute at most once while
+its middleware is active. Settlement waits for any downstream work already
+started, even if middleware forgot to await it. Observer failures do not change
+results/errors or trigger retries. Concurrent calls keep separate identities;
+explicit `parentCallId` and `retryOf` provide causality without ambient global
+state. The host owns queueing, lifecycle and cleanup.
+
+`createAiExecutionProfiler(input, model, options)` creates one request recorder.
+Options supply provider, effort, purpose, clock, optional log callback and sink;
+none are inferred from a vendor or application. Use `trace` for actual public
+boundaries, `span` for explicit internal phases, `recordTransport` for chunk
+receipt/send time and byte count, `update` for cumulative usage snapshots, and
+`finish` once for settlement. Finish precedes flushing the host-owned sink.
+Callbacks never authorize execution or upload evidence. Importing the package
+starts no I/O; recording requires an explicitly composed sink/log callback.
+
+`parseExecutionRecord`, `evaluateExecution`, `createExecutionPeriodReport` and
+`exportExecutionTrace` are offline projections. Domain report selectors are
+provided through `ExecutionReportPolicy`; a non-drawing host requires no Design
+imports. `assessExecution` only calls an explicitly supplied provider when a host
+requests an assessment. Its opinion is distinct from recorded execution facts.
+
+The `/node` entry exports `createExecutionRecordSink`, sanitized payload
+serialization, batch observation and `runExecutionReportCli`. File creation is
+exclusive, writes are ordered, payloads are stored separately with hashes and
+redaction metadata, and `flush()` reports storage failure. The root/browser entry
+imports no Node APIs. Full permitted tool inputs/outputs stay local; credentials,
+provider prompts, private reasoning and binary images are omitted. Recorded data
+is not automatically sent to the model, Asyra or any telemetry service. An explicit
+assessment transmits its documented bounded diagnostic summary to the host's
+chosen provider; this is not an automatic background upload.
+
+Trace export uses `runExecutionReportCli(['--request', id, '--trace'], ...)` or
+`exportExecutionTrace(parsed)`. Transport chunks expose timing, direction, stream
+and byte count, never raw content. Timeline durations reflect observed boundaries,
+not hidden inference work. Report visibility is separate from ownership coverage:
+a provider-owned wait is accounted for but its internal activity remains
+unavailable. Old records retain that limitation. Missing sequence, duplicated
+boundaries, open calls and recording failures cannot produce a complete report.
+
+### Source identity for execution records
+
+The inert Node entry exports `captureAiSourceIdentity({ directory, paths })`.
+The host explicitly selects repository-relative source paths and calls it once
+at invocation entry. It returns a Git revision and a SHA-256 source fingerprint
+that includes dirty and untracked source bytes; staging identical bytes does not
+change it. Symlink text is hashed without following its destination. Missing Git
+or inaccessible source returns `sourceIdentityStatus: unavailable` without
+blocking execution. This is an observed source snapshot, not an assertion that
+every loaded module is an immutable build of those files.
+
+Pass the returned identity into `createAiExecutionProfiler` and inherit it for
+child invocations. A host-provided build revision is marked `configured` instead.
+Period reports separate different source fingerprints even at the same revision.
+Native research item metadata does not expose the upstream request/response:
+those payload slots explicitly report `upstream-not-exposed`, while public item
+metadata, boundaries and durations remain recorded. No hidden provider activity
+or reasoning is inferred.
+
+### Local diagnostic costs and original assets
+
+The Node record sink returns payload serialization durations and opaque SHA-256
+resource identities for redacted URLs. A request's `.recording.json` sidecar
+records payload byte counts and serialization/queue/write durations, keyed by
+call and phase. Queue and inclusive work durations overlap execution spans and
+must not be summed as additional request elapsed time.
+
+Hosts can explicitly call `writeAsset(requestId, bytes, mediaType)` for original
+PNG/JPEG/WebP evidence. The sink copies bytes, writes one digest-addressed local
+asset per request and reports reuse without modifying resolution. Hosts record
+an `asset_retained` trace with their domain identity and returned receipt. The
+sink never uploads assets; final `flush` establishes whether queued evidence was
+saved. Diagnostic errors remain non-authoritative for the host operation.

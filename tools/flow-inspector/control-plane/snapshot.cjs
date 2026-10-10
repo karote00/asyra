@@ -805,21 +805,17 @@ function selectSourceEntries(
   if (runtimeScoped) {
     runtimeAuthority = validateRuntimeAuthority(
       runtimeInput.admission.runtimeAuthority,
-      contract
+      runtimeInput.admission.runtimeAuthority?.contractScopeDigest ===
+        contract.runtimeScope?.digest
+        ? contract
+        : undefined
     )
     const verificationAuthority = validateRuntimeAuthority(
       verificationInput.admission.runtimeAuthority,
       contract
     )
-    if (
-      runtimeAuthority.contractScopeDigest !==
-        verificationAuthority.contractScopeDigest ||
-      JSON.stringify(runtimeAuthority.stepClosures) !==
-        JSON.stringify(verificationAuthority.stepClosures) ||
-      JSON.stringify(runtimeAuthority.packageNames) !==
-        JSON.stringify(verificationAuthority.packageNames)
-    )
-      throw new Error('Source composition runtime scopes differ')
+    if (runtimeAuthority.format !== verificationAuthority.format)
+      throw new Error('Source composition runtime scope formats differ')
   }
   const execution = runtimeInput.admission.executionSource
   if (
@@ -1060,6 +1056,43 @@ function verifyRetainedSource(repositoryRoot, input, contract) {
   )
 }
 
+// The retained runtime identity is bytes-only. A verifier may describe an older
+// owner layout, but must execute exactly these bytes and this package inventory.
+function resolveCompositionAuthority(authority, contract, bytesByPath, files) {
+  if (!authority) return undefined
+  if (authority.contractScopeDigest === contract.runtimeScope?.digest)
+    return authority
+  const entries = new Map(files.map((entry) => [entry.path, entry]))
+  const resolved = resolveRuntimeAuthority(
+    contract,
+    (relative) => {
+      const bytes = bytesByPath.get(relative)
+      const entry = entries.get(relative)
+      if (!bytes || !entry)
+        throw new Error(
+          'Source composition required runtime input is absent: ' + relative
+        )
+      return { ...entry, bytes }
+    },
+    () => authority.packages.map((entry) => entry.manifestPath)
+  )
+  if (
+    !resolved ||
+    resolved.format !== authority.format ||
+    JSON.stringify(resolved.packages) !== JSON.stringify(authority.packages) ||
+    JSON.stringify(resolved.packageNames) !==
+      JSON.stringify(authority.packageNames)
+  )
+    throw new Error(
+      'Source composition cannot change runtime package inventory or inputs'
+    )
+  validateRuntimeAuthority(resolved, contract, files)
+  // Actual bytes and the manifest graph were verified before rebinding. Reuse
+  // that admission only for an unchanged complete package inventory.
+  admittedRuntimeAuthorities.add(resolved)
+  return resolved
+}
+
 function composeSnapshot(
   repositoryRoot,
   runDirectory,
@@ -1068,14 +1101,19 @@ function composeSnapshot(
   contract,
   deriveExecution
 ) {
-  const { repository, runtime, runtimeAuthority, verification, selected } =
-    selectSourceEntries(
-      repositoryRoot,
-      runtimeInput,
-      verificationInput,
-      contract,
-      deriveExecution
-    )
+  const {
+    repository,
+    runtime,
+    runtimeAuthority: originalAuthority,
+    verification,
+    selected
+  } = selectSourceEntries(
+    repositoryRoot,
+    runtimeInput,
+    verificationInput,
+    contract,
+    deriveExecution
+  )
   const sourceRoot = safePath(
     repository,
     path.relative(repository, path.join(runDirectory, 'source'))
@@ -1096,7 +1134,13 @@ function composeSnapshot(
   }
   const bytesByPath = new Map()
   const files = readSourceEntries(selected, bytesByPath)
-  verifyCapturedRuntimeAuthority(runtimeAuthority, bytesByPath, files, true)
+  verifyCapturedRuntimeAuthority(originalAuthority, bytesByPath, files, true)
+  const runtimeAuthority = resolveCompositionAuthority(
+    originalAuthority,
+    contract,
+    bytesByPath,
+    files
+  )
   const { runtimeSource, verificationSource } = verifySourceDescriptors(
     files,
     runtime,

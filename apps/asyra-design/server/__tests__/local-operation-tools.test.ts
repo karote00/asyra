@@ -1,3 +1,5 @@
+import type { VisualAssessmentInput } from '../local-visual-assessment'
+import { reviewPlanExample } from '../local-design-review'
 import { runInNewContext } from 'node:vm'
 import { prepareOperationBatch } from '../local-operation-batch'
 import { describeBasicApiResult } from '../../src/ai/basic-api-results'
@@ -823,7 +825,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
     ]),
     detailRequired: true
   }
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, plan)
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, plan)
   const change = () =>
     call(AiActionNames.SET_ELEMENT_VISIBILITY, {
       arguments: { elementIds: ['shape'], visible: true }
@@ -852,9 +854,9 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
         'Compared the rendered outline and repeated window structure with the reference.'
     }))
   }
-  await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, report)
-  ).rejects.toThrow('separate detail')
+  await expect(call(AiDesignToolIds.REVIEW_DRAWING, report)).rejects.toThrow(
+    'separate detail'
+  )
   const detailId = getId(
     await call(AiActionNames.INSPECT_DRAWING, {
       arguments: { elementId: 'windows', view: 'detail' }
@@ -862,7 +864,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   )
   report.inspectionIds.push(detailId)
   await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    call(AiDesignToolIds.REVIEW_DRAWING, {
       ...report,
       checks: report.checks.slice(0, 1)
     })
@@ -886,24 +888,22 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       evidence: 'Windows are missing.'
     }))
   }
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, failed)
+  await call(AiDesignToolIds.REVIEW_DRAWING, failed)
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported',
     message: expect.stringContaining('Windows are missing')
   })
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, report)
+  await call(AiDesignToolIds.REVIEW_DRAWING, report)
   expect(tools.settleOutcome(completed)).toBe(completed)
   await change()
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported'
   })
-  await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, report)
-  ).resolves.toEqual(
+  await expect(call(AiDesignToolIds.REVIEW_DRAWING, report)).resolves.toEqual(
     expect.objectContaining({ status: 'partial', accepted: false })
   )
   await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, plan)
+    call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, plan)
   ).rejects.toThrow('cannot be rewritten')
   // Inspection must not turn a detail target into the automatic composition target.
   expect(execute.mock.calls.at(-1)?.[0].actions[0].arguments).toEqual({
@@ -1176,7 +1176,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   )
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Draw and refine',
     references: [],
@@ -1209,7 +1209,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
     arguments: { elementId: 'other', view: 'overview' }
   })
   await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
       inspectionIds: [unrelated.actionResults[0].result.inspectionId],
       checks: [
@@ -1225,7 +1225,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
     arguments: { elementId: 'tower', view: 'overview' }
   })
   await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
       inspectionIds: [inspected.actionResults[0].result.inspectionId],
       checks: [
@@ -1274,17 +1274,20 @@ it.each([
     result: { status: 'complete', appliedElementIds: ['original'] }
   },
   {
-    name: basicActionName('removeSubtree'),
-    arguments: { elementId: 'original' },
+    name: basicActionName('deleteElements'),
+    arguments: { elementIds: ['original'] },
     result: {
       status: 'complete',
       value: { elementId: 'original', removed: [{ elementId: 'original' }] }
     }
   },
   {
-    name: basicActionName('deleteElement'),
-    arguments: { elementId: 'original' },
-    result: { status: 'complete', value: true }
+    name: basicActionName('deleteElements'),
+    arguments: { elementIds: ['original', 'another'] },
+    result: {
+      status: 'complete',
+      value: { removed: [{ elementId: 'original' }, { elementId: 'another' }] }
+    }
   }
 ])('retires explicitly removed drawing roots via $name', async (removal) => {
   let capturedScope: unknown
@@ -1321,7 +1324,7 @@ it.each([
   )
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Refine',
     references: [],
@@ -1339,7 +1342,7 @@ it.each([
   const image = await call(AiActionNames.INSPECT_DRAWING, {
     arguments: { elementId: 'successor' }
   })
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+  await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
     inspectionIds: [image.actionResults[0].result.inspectionId],
     checks: [
@@ -1400,7 +1403,7 @@ it('measures a deferred stage once at inspection while preserving receipts and f
   )
   const signal = new AbortController().signal
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
       phase: 'plan',
       method: 'Build one stage',
@@ -1469,7 +1472,7 @@ it('measures a deferred stage once at inspection while preserving receipts and f
     names().filter((name) => name === AiActionNames.INSPECT_DRAWING)
   ).toHaveLength(1)
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
       inspectionIds: [inspectionId],
@@ -1520,7 +1523,7 @@ it('measures a deferred stage once at inspection while preserving receipts and f
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
   ).toHaveLength(2)
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
       inspectionIds: [failedCapture.actionResults[0].result.inspectionId],
@@ -1728,7 +1731,7 @@ it('retains the whole drawing review target after a child refinement', async () 
   )
   const signal = new AbortController().signal
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
       phase: 'plan',
       method: 'Refine the glass',
@@ -1758,7 +1761,7 @@ it('retains the whole drawing review target after a child refinement', async () 
   const detail = await capture('child', 'detail')
   const review = JSON.parse(
     await operations.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
         inspectionIds: [overview, detail],
@@ -1784,7 +1787,7 @@ it('retains the whole drawing review target after a child refinement', async () 
   )
   await expect(
     operations.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
         inspectionIds: [overview, detail],
@@ -2208,7 +2211,7 @@ it('reports exact review input fields before stateful evidence validation', asyn
   )
   await expect(
     tools.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
         inspectionIds: ['current'],
@@ -2251,7 +2254,7 @@ it.each(['assessment', 'completion'])(
     )
     const signal = new AbortController().signal
     await operations.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       {
         phase: 'plan',
         method: 'Match the brief',
@@ -2280,7 +2283,7 @@ it.each(['assessment', 'completion'])(
     expect(
       JSON.parse(
         await operations.call(
-          AiDesignToolIds.RECORD_DESIGN_REVIEW,
+          AiDesignToolIds.REVIEW_DRAWING,
           assessment,
           signal
         )
@@ -2291,7 +2294,7 @@ it.each(['assessment', 'completion'])(
       expect(
         JSON.parse(
           await operations.call(
-            AiDesignToolIds.RECORD_DESIGN_REVIEW,
+            AiDesignToolIds.REVIEW_DRAWING,
             assessment,
             signal
           )
@@ -2435,7 +2438,7 @@ it.each(['missing stamp', 'missing validation action'])(
     )
     const signal = new AbortController().signal
     await tools.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       {
         phase: 'plan',
         method: 'Match',
@@ -2454,7 +2457,7 @@ it.each(['missing stamp', 'missing validation action'])(
     )
     await expect(
       tools.call(
-        AiDesignToolIds.RECORD_DESIGN_REVIEW,
+        AiDesignToolIds.REVIEW_DRAWING,
         {
           phase: 'visual',
           inspectionIds: [capture.actionResults[0].result.inspectionId],
@@ -2468,6 +2471,59 @@ it.each(['missing stamp', 'missing validation action'])(
     expect(execute).toHaveBeenCalledOnce()
   }
 )
+
+it('compacts structural evidence without losing identities or modifying full and failed receipts', async () => {
+  const name = basicActionName('deleteElements')
+  const removed = Array.from({ length: 288 }, (_, i) => ({
+    elementId: `removed-${i}`,
+    data: { points: Array.from({ length: 200 }, (_, n) => ({ x: n, y: n })) }
+  }))
+  const values = [
+    {
+      status: 'complete',
+      value: { removed, rootParentChildrenAfter: ['keep'] }
+    },
+    { status: 'failed', value: { removed }, message: 'retain failure evidence' }
+  ]
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action, i) => ({
+      actionId: action.id,
+      actionName: name,
+      result: values[i]
+    }))
+  }))
+  const tools = createLocalOperationTools(
+    [{ name, description: name, inputSchema: {} }],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const args = {
+    inspection: 'defer',
+    operations: values.map(() => ({
+      name,
+      arguments: { elementIds: ['known'] }
+    }))
+  }
+  const compact = JSON.parse(
+    await tools.call('execute_design_batch', args, new AbortController().signal)
+  )
+  expect(compact.actionResults[0].result.value).toEqual({
+    removed: removed.map(({ elementId }) => ({ elementId }))
+  })
+  expect(JSON.stringify(compact.actionResults[0]).length).toBeLessThan(12000)
+  expect(compact.actionResults[1].result).toEqual(values[1])
+  const full = JSON.parse(
+    await tools.call(
+      'execute_design_batch',
+      { ...args, response: 'full' },
+      new AbortController().signal
+    )
+  )
+  expect(
+    full.actionResults.map((entry: { result: unknown }) => entry.result)
+  ).toEqual(values)
+})
 
 it('compacts only successful valueless basic mutation acknowledgements and retains full opt-in', async () => {
   const write = basicActionName('moveElements')
@@ -2553,14 +2609,14 @@ it('retrieves retained source facts without canvas reads, captures or repeated v
     dependencies: [{ key: 'request:scale', version: '1' }]
   }
   const saved = await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.RECORD_DESIGN_FACTS,
     { phase: 'facts', facts: [fact] },
     signal
   )
   for (let i = 0; i < 5; i++) {
     expect(
       await operations.call(
-        AiDesignToolIds.RECORD_DESIGN_REVIEW,
+        AiDesignToolIds.RECORD_DESIGN_FACTS,
         { phase: 'facts' },
         signal
       )
@@ -2603,7 +2659,7 @@ it('includes bound fact targets in one canonical coverage check before visual ac
   )
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
-  await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Edit',
     references: [],
@@ -2639,7 +2695,7 @@ it('includes bound fact targets in one canonical coverage check before visual ac
     ]
   }
   await expect(
-    call(AiDesignToolIds.RECORD_DESIGN_REVIEW, visual)
+    call(AiDesignToolIds.REVIEW_DRAWING, visual)
   ).resolves.toMatchObject({
     status: 'partial',
     accepted: false,
@@ -2649,9 +2705,9 @@ it('includes bound fact targets in one canonical coverage check before visual ac
     scope: { requiredIds: ['root', 'crown', 'shaft'], overviewIds: ['root'] }
   })
   covered = true
-  expect(
-    await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, visual)
-  ).toMatchObject({ accepted: true })
+  expect(await call(AiDesignToolIds.REVIEW_DRAWING, visual)).toMatchObject({
+    accepted: true
+  })
   expect(execute).toHaveBeenCalledTimes(3)
 })
 
@@ -2763,6 +2819,7 @@ it.each([
   'data',
   'provider-failure',
   'malformed-assessment',
+  'reference-change',
   'uncovered'
 ] as const)(
   'routes %s review without unnecessary image assessment or stale approval',
@@ -2782,7 +2839,21 @@ it.each([
           throw new Error('Visual provider disconnected')
         if (verification === 'malformed-assessment')
           return { checks: [] } as never
-        if (verification === 'uncovered') completeCoverage = false
+        if (verification === 'reference-change')
+          await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+            referenceImageIndexes: [1],
+            requirementRevision: 1,
+            referenceDecisions: [
+              {
+                referenceId: 'reference:fixture-1',
+                status: 'rejected',
+                reason: 'New evidence contradicts applicability',
+                criterionIds: [],
+                limitations: []
+              }
+            ]
+          })
+        else if (verification === 'uncovered') completeCoverage = false
         else current = false
       }
       return {
@@ -2818,12 +2889,20 @@ it.each([
               : { current, coverage: { complete: completeCoverage } }
         }))
       }),
-      { reviewTargetId: 'root', assessVisual }
+      {
+        reviewTargetId: 'root',
+        assessVisual,
+        validateReferences: (indexes) =>
+          indexes.map((attachmentIndex) => ({
+            attachmentIndex,
+            referenceId: `reference:fixture-${attachmentIndex}`
+          }))
+      }
     )
     const signal = new AbortController().signal
     const call = (name: string, args: unknown) =>
       tools.call(name, args, signal).then(JSON.parse)
-    await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'I am correct',
       referenceImageIndexes: [1],
@@ -2838,6 +2917,19 @@ it.each([
       structureCriteria: ['view'],
       detailRequired: false
     })
+    await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+      referenceImageIndexes: [1],
+      requirementRevision: 1,
+      referenceDecisions: [
+        {
+          referenceId: 'reference:fixture-1',
+          status: 'accepted',
+          reason: 'Visible target matches the requested object',
+          criterionIds: ['view'],
+          limitations: []
+        }
+      ]
+    })
     const image = await call(AiActionNames.INSPECT_DRAWING, {
       arguments: { elementId: 'root' }
     })
@@ -2849,11 +2941,11 @@ it.each([
       ]
     }
     if (verification === 'data') {
+      expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
+        readyForDetail: true
+      })
       expect(
-        await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, review)
-      ).toMatchObject({ readyForDetail: true })
-      expect(
-        await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+        await call(AiDesignToolIds.REVIEW_DRAWING, {
           ...review,
           phase: 'visual',
           final: true
@@ -2862,11 +2954,11 @@ it.each([
       expect(assessVisual).not.toHaveBeenCalled()
       return
     }
-    expect(
-      await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, review)
-    ).toMatchObject({ readyForDetail: false })
+    expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
+      readyForDetail: false
+    })
     expect(assessVisual).toHaveBeenCalledTimes(1)
-    await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    await call(AiDesignToolIds.REVIEW_DRAWING, {
       ...review,
       phase: 'visual',
       final: false
@@ -2878,24 +2970,21 @@ it.each([
       verification === 'provider-failure' ||
       verification === 'malformed-assessment'
     ) {
-      const error = await call(
-        AiDesignToolIds.RECORD_DESIGN_REVIEW,
-        review
-      ).catch((error) => error)
+      const error = await call(AiDesignToolIds.REVIEW_DRAWING, review).catch(
+        (error) => error
+      )
       expect(error).toBeInstanceOf(Error)
       expect(error).not.toBeInstanceOf(LocalOperationPreparationError)
       return
     }
-    expect(
-      await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, review)
-    ).toMatchObject({
+    expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
       status: 'partial',
       accepted: false,
       readyForDetail: false,
-      evidenceValidation:
-        verification === 'uncovered'
-          ? { current: true, coverage: { complete: false } }
-          : { current: false },
+      evidenceValidation: {
+        current: verification !== 'visual',
+        coverage: { complete: verification !== 'uncovered' }
+      },
       independentAssessment: {
         checks: [{ criterionId: 'view', status: 'pass' }]
       }
@@ -3237,7 +3326,7 @@ it.each([
     )
     const call = (name: string, args: unknown) =>
       tools.call(name, args, new AbortController().signal).then(JSON.parse)
-    await call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+    await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'Change visibility',
       references: [],
@@ -3275,7 +3364,7 @@ it.each([
         entry.actionName === AiActionNames.INSPECT_DRAWING
     ).result.inspectionId
     const review = (inspectionIds: string[]) =>
-      call(AiDesignToolIds.RECORD_DESIGN_REVIEW, {
+      call(AiDesignToolIds.REVIEW_DRAWING, {
         phase: 'visual',
         inspectionIds,
         checks: [
@@ -3545,7 +3634,12 @@ it('retrieves usage and exact schema fragments without consuming full definition
     { names: [action.name], schemaPaths: [] },
     { names: [action.name], schemaPaths: ['properties/rows'] },
     { names: [action.name], schemaPaths: ['/properties/rows'], view: 'usage' },
-    { names: [action.name], view: 'usage', refresh: true }
+    {
+      names: [action.name],
+      view: 'usage',
+      refresh: true,
+      refreshReason: 'invalid'
+    }
   ])
     await expect(read(query)).rejects.toThrow()
   expect(execute).not.toHaveBeenCalled()
@@ -3706,4 +3800,643 @@ it('retains the exact preparation rejection so the next call can correct it with
     )
   ).rejects.toThrow('Prepared artifact expired')
   expect(execute).not.toHaveBeenCalled()
+})
+
+it('resolves a region target once internally and supplies all IDs to one plural mutation', async () => {
+  const name = basicActionName('deleteElements')
+  const ids = Array.from({ length: 600 }, (_, i) => `match-${i}`)
+  const read = {
+    name: AiActionNames.READ_DESIGN_CONTEXT,
+    description: 'Read',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scope: { type: 'string' },
+        bounds: { type: 'object' },
+        filter: { type: 'object' },
+        result: { type: 'string' },
+        allMatches: { type: 'boolean' }
+      }
+    }
+  }
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result:
+        action.name === read.name
+          ? {
+              available: true,
+              total: ids.length,
+              nextOffset: null,
+              elementIds: ids,
+              elements: [],
+              missingIds: []
+            }
+          : {
+              status: 'complete',
+              value: { removed: ids.map((elementId) => ({ elementId })) }
+            }
+    }))
+  }))
+  const tools = createLocalOperationTools(
+    [read, ...basicApiContracts.filter((api) => api.name === name)],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'execute_design_batch',
+      {
+        inspection: 'defer',
+        operations: [
+          {
+            name,
+            arguments: {},
+            target: {
+              field: 'elementIds',
+              query: {
+                scope: 'region',
+                bounds: { x: 1, y: 2, width: 3, height: 4 }
+              }
+            }
+          }
+        ]
+      },
+      new AbortController().signal
+    )
+  )
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
+    result: 'ids',
+    allMatches: true
+  })
+  expect(execute.mock.calls[1][0].actions).toHaveLength(1)
+  expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
+    elementIds: ids
+  })
+  expect(result.actionResults).toHaveLength(1)
+  expect(result.actionResults[0].actionName).toBe(name)
+})
+
+it.each(['incomplete', 'empty', 'cancelled'])(
+  'does not mutate after a %s region query',
+  async (failure) => {
+    const controller = new AbortController()
+    const name = basicActionName('deleteElements')
+    const ids = failure === 'empty' ? [] : ['match']
+    const read = {
+      name: AiActionNames.READ_DESIGN_CONTEXT,
+      description: 'Read',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          scope: { type: 'string' },
+          bounds: { type: 'object' },
+          filter: { type: 'object' },
+          result: { type: 'string' },
+          allMatches: { type: 'boolean' }
+        }
+      }
+    }
+    const execute = vi.fn(async (batch: AiActionBatch) => {
+      if (failure === 'cancelled') controller.abort()
+      return {
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result:
+            action.name === read.name
+              ? {
+                  available: true,
+                  total: ids.length,
+                  nextOffset: failure === 'incomplete' ? 1 : null,
+                  elementIds: ids,
+                  elements: [],
+                  missingIds: []
+                }
+              : {
+                  status: 'complete',
+                  value: { removed: ids.map((elementId) => ({ elementId })) }
+                }
+        }))
+      }
+    })
+    const tools = createLocalOperationTools(
+      [read, ...basicApiContracts.filter((api) => api.name === name)],
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      execute
+    )
+    await expect(
+      tools.call(
+        'execute_design_batch',
+        {
+          inspection: 'defer',
+          operations: [
+            {
+              name,
+              arguments: {},
+              target: {
+                field: 'elementIds',
+                query: {
+                  scope: 'region',
+                  bounds: { x: 1, y: 2, width: 3, height: 4 }
+                }
+              }
+            }
+          ]
+        },
+        controller.signal
+      )
+    ).rejects.toThrow()
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(execute.mock.calls[0][0].actions[0].name).toBe(read.name)
+  }
+)
+
+it('recovers only missing definition fields with explicit provenance and a reusable scoped route', async () => {
+  const action = {
+    name: AiActionNames.ORGANIZE_DESIGN,
+    description: 'Arrange supplied elements.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['elementIds'],
+      properties: {
+        elementIds: { type: 'array', items: { type: 'string' }, minItems: 1 },
+        unrelated: {
+          type: 'string',
+          description: 'Unrelated data. '.repeat(1000)
+        }
+      }
+    }
+  }
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const full = (await read({ names: [action.name] })).apis[0]
+  expect(full.definition.deliveryReason).toBe('initial')
+  const paths = ['/properties/elementIds']
+  const partial = (
+    await read({
+      names: [action.name],
+      schemaPaths: paths,
+      refresh: true,
+      refreshReason: 'missing-fields'
+    })
+  ).apis[0]
+  expect(partial.definition).toMatchObject({
+    revision: full.definition.revision,
+    coverage: 'partial',
+    deliveryReason: 'recovery',
+    recoveryReason: 'missing-fields'
+  })
+  expect(partial.schemaFragments).toEqual([
+    { path: paths[0], schema: action.inputSchema.properties.elementIds }
+  ])
+  expect(JSON.stringify(partial)).not.toContain('Unrelated data.')
+  expect(partial.definition.recover.arguments).toMatchObject({
+    names: [action.name],
+    schemaPaths: paths,
+    refresh: true,
+    refreshReason: 'delivery-failure'
+  })
+  const recovered = (await read(partial.definition.recover.arguments)).apis[0]
+  expect(recovered.schemaFragments).toEqual(partial.schemaFragments)
+  expect(recovered.inputSchema).toBeUndefined()
+  expect(
+    (await read({ names: [action.name] })).apis[0].definition.deliveryReason
+  ).toBe('unchanged')
+  const restored = (await read(partial.definition.refresh.arguments)).apis[0]
+  expect(restored.inputSchema).toEqual(action.inputSchema)
+  expect(restored.definition.recoveryReason).toBe('context-loss')
+  const unspecified = (await read({ names: [action.name], refresh: true }))
+    .apis[0]
+  expect(unspecified.definition.recoveryReason).toBe('unknown')
+  await expect(
+    read({ names: [action.name], refreshReason: 'context-loss' })
+  ).rejects.toThrow()
+  await expect(
+    read({ names: [action.name], refresh: true, refreshReason: 'guessed' })
+  ).rejects.toThrow()
+  await expect(
+    read({ names: [action.name], schemaPaths: ['/missing'], refresh: true })
+  ).rejects.toThrow('Unknown schema path')
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('advertises distinct evidence responsibilities and rejects facts sent to drawing review', async () => {
+  const tools = createLocalOperationTools(
+    [AiActionNames.INSPECT_DRAWING].map((name) => ({
+      name,
+      description: name,
+      inputSchema: {}
+    })),
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    vi.fn()
+  )
+  const definitions = new Map(
+    tools.definitions.map((tool) => [tool.name, tool])
+  )
+  for (const name of [
+    'define_design_criteria',
+    'record_design_facts',
+    'record_design_calculations',
+    'select_design_references',
+    'review_drawing'
+  ]) {
+    expect(definitions.has(name)).toBe(true)
+  }
+  expect(definitions.has('record_design_review')).toBe(false)
+  await expect(
+    tools.call(
+      'review_drawing',
+      { phase: 'facts', facts: [] },
+      new AbortController().signal
+    )
+  ).rejects.toThrow()
+  const criteria = { ...reviewPlanExample }
+  const { phase: _phase, ...input } = criteria
+  const result = JSON.parse(
+    await tools.call(
+      'define_design_criteria',
+      input,
+      new AbortController().signal
+    )
+  )
+  expect(result.recorded).toBe(true)
+})
+
+it('returns a reference-selection receipt without retransmitting retained source facts', async () => {
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute
+  )
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await tools.call(name, args, new AbortController().signal))
+  await expect(
+    call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+      referenceImageIndexes: [0]
+    })
+  ).rejects.toThrow('criteria')
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, reviewPlanExample)
+  const fact = {
+    id: 'height',
+    statement: 'Verified height',
+    scope: 'Building height',
+    sources: ['reference:survey'],
+    verification: 'Read source dimensions',
+    dependencies: [{ key: 'reference:survey', version: '1' }]
+  }
+  const facts = await call(AiDesignToolIds.RECORD_DESIGN_FACTS, {
+    facts: [fact]
+  })
+  const selected = await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+    referenceImageIndexes: [0]
+  })
+  expect(selected).toMatchObject({
+    referenceImageIndexes: [0],
+    changed: true,
+    review: {
+      accepted: false,
+      requiresFreshReview: true,
+      next: { tool: AiDesignToolIds.SELECT_DESIGN_REFERENCES }
+    }
+  })
+  expect(selected).not.toHaveProperty('facts')
+  expect(selected).not.toHaveProperty('factBindings')
+  expect(selected).not.toHaveProperty('phase')
+  expect(
+    await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+      referenceImageIndexes: [0]
+    })
+  ).toMatchObject({ changed: false })
+  await expect(
+    call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+      referenceImageIndexes: [0, 0]
+    })
+  ).rejects.toThrow()
+  await expect(
+    call(AiDesignToolIds.RECORD_DESIGN_FACTS, { referenceImageIndexes: [1] })
+  ).rejects.toThrow()
+  expect(await call(AiDesignToolIds.RECORD_DESIGN_FACTS, {})).toEqual(facts)
+  await call(AiDesignToolIds.RECORD_DESIGN_FACTS, {
+    dependencyChanges: [
+      {
+        key: 'reference:survey',
+        version: '2',
+        reason: 'source_changed',
+        evidence: 'New survey'
+      }
+    ]
+  })
+  expect(
+    await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
+      referenceImageIndexes: [1]
+    })
+  ).toMatchObject({
+    review: {
+      next: {
+        tool: AiDesignToolIds.RECORD_DESIGN_FACTS,
+        invalidatedFactIds: ['height']
+      }
+    }
+  })
+  expect(execute).not.toHaveBeenCalled()
+})
+
+describe('capture-to-review handoff', () => {
+  const setup = async () => {
+    const unavailable = new Set<string>()
+    const state = { current: true }
+    const assessVisual = vi.fn(async (input: VisualAssessmentInput) => ({
+      overall: {
+        status: 'pass' as const,
+        evidence: `Compared ${input.images.length} images`
+      },
+      checks: [
+        {
+          criterionId: 'view',
+          status: 'pass' as const,
+          evidence: 'Visible details match'
+        }
+      ]
+    }))
+    const execute = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: batch.actions.map((action) => {
+        const base = { actionId: action.id, actionName: action.name }
+        if (action.name !== AiActionNames.INSPECT_DRAWING)
+          return {
+            ...base,
+            result: { current: state.current, coverage: { complete: true } }
+          }
+        if (unavailable.has(String(action.arguments.elementId)))
+          return {
+            ...base,
+            result: {
+              available: false,
+              message:
+                'Native detail exceeds 1024 pixels; choose a smaller target-local region.'
+            }
+          }
+        return {
+          ...base,
+          result: {
+            available: true,
+            imageScope: action.arguments.region
+              ? 'region'
+              : (action.arguments.view ?? 'overview'),
+            evidence: { sessionId: 'live', revision: 1 },
+            image: { dataUrl: 'data:image/png;base64,AA==' }
+          }
+        }
+      })
+    }))
+    const tools = createLocalOperationTools(
+      [
+        AiActionNames.INSPECT_DRAWING,
+        AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+      execute,
+      { reviewTargetId: 'drawing', assessVisual }
+    )
+    const signal = new AbortController().signal
+    const call = (name: string, args: unknown) =>
+      tools.call(name, args, signal).then(JSON.parse)
+    await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+      phase: 'plan',
+      method: 'Compare the drawing',
+      references: [],
+      criteria: reviewCriteria(['view']),
+      detailRequired: true
+    })
+    const review = {
+      phase: 'visual',
+      checks: [
+        {
+          criterionId: 'view',
+          status: 'pass',
+          evidence: 'Compare all requested parts'
+        }
+      ]
+    }
+    const targets = [
+      { elementId: 'drawing' },
+      { elementId: 'window', region: { x: 0, y: 0, width: 100, height: 100 } }
+    ]
+    return {
+      tools,
+      call,
+      execute,
+      assessVisual,
+      unavailable,
+      state,
+      review,
+      targets
+    }
+  }
+
+  it('captures requested targets once and passes only admitted images to review', async () => {
+    const f = await setup()
+    const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...f.review,
+      inspections: f.targets
+    })
+    expect(result.accepted).toBe(true)
+    expect(f.assessVisual).toHaveBeenCalledTimes(1)
+    expect(
+      f.assessVisual.mock.calls[0][0].images.map((image) => image.role)
+    ).toEqual(['overview', 'detail'])
+    expect(
+      f.execute.mock.calls
+        .flatMap(([batch]) => batch.actions)
+        .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+        .map((action) => action.arguments)
+    ).toEqual([
+      { elementId: 'drawing', view: 'overview' },
+      { elementId: 'window', region: f.targets[1].region, view: 'detail' }
+    ])
+  })
+
+  it('returns missing captures without assessment and reuses successful IDs on corrected retry', async () => {
+    const f = await setup()
+    f.unavailable.add('window')
+    const failed = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...f.review,
+      inspections: f.targets
+    })
+    expect(failed).toMatchObject({
+      available: false,
+      accepted: false,
+      inspectionIds: [expect.any(String)],
+      failedInspections: [
+        { inspection: f.targets[1], message: expect.stringContaining('1024') }
+      ]
+    })
+    expect(f.assessVisual).not.toHaveBeenCalled()
+    f.unavailable.clear()
+    const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...f.review,
+      inspectionIds: failed.inspectionIds,
+      inspections: [f.targets[1]]
+    })
+    expect(result.accepted).toBe(true)
+    const captures = f.execute.mock.calls
+      .flatMap(([batch]) => batch.actions)
+      .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+    expect(
+      captures.filter((action) => action.arguments.elementId === 'drawing')
+    ).toHaveLength(1)
+    expect(
+      captures.filter((action) => action.arguments.elementId === 'window')
+    ).toHaveLength(2)
+  })
+
+  it('returns every unavailable target without manufacturing evidence or mutating input', async () => {
+    const f = await setup()
+    for (const target of f.targets) f.unavailable.add(target.elementId)
+    const input = { ...f.review, inspections: f.targets }
+    const original = structuredClone(input)
+    const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, input)
+    expect(result).toMatchObject({
+      available: false,
+      accepted: false,
+      inspectionIds: [],
+      failedInspections: f.targets.map((inspection) => ({
+        inspection,
+        message: expect.any(String)
+      }))
+    })
+    expect(input).toEqual(original)
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
+
+  it('retains successful captures when a later capture throws', async () => {
+    const f = await setup()
+    const execute = f.execute.getMockImplementation()
+    if (!execute) throw new Error('Missing capture fixture')
+    f.execute.mockImplementation(async (batch) => {
+      if (
+        batch.actions.some((action) => action.arguments.elementId === 'window')
+      )
+        throw new Error('Capture transport failed')
+      return execute(batch)
+    })
+    const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...f.review,
+      inspections: f.targets
+    })
+    expect(result).toMatchObject({
+      accepted: false,
+      inspectionIds: [expect.any(String)],
+      failedInspections: [
+        { inspection: f.targets[1], message: 'Capture transport failed' }
+      ]
+    })
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
+
+  it('stops the handoff on cancellation during capture', async () => {
+    const f = await setup()
+    const controller = new AbortController()
+    const execute = f.execute.getMockImplementation()
+    if (!execute) throw new Error('Missing capture fixture')
+    f.execute.mockImplementation(async (batch) => {
+      const result = await execute(batch)
+      controller.abort()
+      return result
+    })
+    await expect(
+      f.tools.call(
+        AiDesignToolIds.REVIEW_DRAWING,
+        { ...f.review, inspections: f.targets },
+        controller.signal
+      )
+    ).rejects.toThrow()
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
+
+  it('keeps stale evidence rejection after composed captures', async () => {
+    const f = await setup()
+    f.state.current = false
+    const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...f.review,
+      inspections: f.targets
+    })
+    expect(result.accepted).toBe(false)
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
+
+  it('validates capture targets and reusable IDs before any capture', async () => {
+    const f = await setup()
+    for (const input of [
+      {
+        inspections: [
+          {
+            elementId: 'drawing',
+            region: { x: 0, y: 0, width: 2048, height: 100 }
+          }
+        ]
+      },
+      { inspectionIds: [undefined], inspections: f.targets },
+      { inspectionIds: [''], inspections: f.targets },
+      { inspectionIds: ['same', 'same'], inspections: f.targets },
+      { inspections: [] },
+      {
+        inspections: Array.from({ length: 24 }, () => f.targets[0]),
+        inspectionIds: ['unknown']
+      }
+    ])
+      await expect(
+        f.call(AiDesignToolIds.REVIEW_DRAWING, { ...f.review, ...input })
+      ).rejects.toThrow()
+    expect(
+      await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+        ...f.review,
+        inspections: f.targets,
+        inspectionIds: ['unknown']
+      })
+    ).toMatchObject({ accepted: false, status: 'partial' })
+    expect(f.execute).not.toHaveBeenCalled()
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
+
+  it('does not start captures when the request is cancelled', async () => {
+    const f = await setup()
+    const controller = new AbortController()
+    controller.abort()
+    await expect(
+      f.tools.call(
+        AiDesignToolIds.REVIEW_DRAWING,
+        { ...f.review, inspections: f.targets },
+        controller.signal
+      )
+    ).rejects.toThrow()
+    expect(f.execute).not.toHaveBeenCalled()
+    expect(f.assessVisual).not.toHaveBeenCalled()
+  })
 })

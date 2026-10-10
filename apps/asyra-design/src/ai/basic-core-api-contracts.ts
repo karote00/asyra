@@ -439,15 +439,6 @@ const updateElementDataApi = defineBasicApi({
     'Update canonical element fields; property values belong to updateElementProperties.'
 })
 
-const removeSubtreeApi = defineBasicApi({
-  owner: 'core',
-  method: 'removeSubtree',
-  resultKind: 'removed',
-  effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }],
-  description: 'Deletes the selected subtree through the canonical owner.'
-})
-
 const selectByChannelApi = defineBasicApi({
   description:
     'Replace IDs in a registered selection channel; use typed selection operations for ordinary element or vector selection.',
@@ -584,7 +575,6 @@ export const basicCoreApiContracts = [
   patchElementPropertiesApi,
   updatePropertyComponentsApi,
   updateElementDataApi,
-  removeSubtreeApi,
   selectByChannelApi,
   saveApi,
   propsSaveDataApi,

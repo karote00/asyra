@@ -243,3 +243,50 @@ describe('reported capability boundaries', () => {
     for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
   })
 })
+
+it('reports drawing completion separately from durable document acknowledgement', async () => {
+  const confirmation = vi.fn(async () => ({
+    status: 'durable',
+    sequence: 7,
+    durableSequence: 8
+  }))
+  const action = requireTestValue(
+    createAiActions(actionApis(), {
+      confirmPersistence: confirmation
+    }).find((item) => item.name === AiActionNames.REPORT_OUTCOME)
+  )
+  await expect(
+    action.execute(
+      { outcome: 'completed', message: 'Drawing completed.' },
+      executionContext()
+    )
+  ).resolves.toMatchObject({
+    outcome: 'completed',
+    persistence: { status: 'durable', sequence: 7, durableSequence: 8 }
+  })
+  expect(confirmation).toHaveBeenCalledOnce()
+})
+
+it('retains completed drawing work when persistence confirmation is unavailable', async () => {
+  const action = requireTestValue(
+    createAiActions(actionApis(), {
+      confirmPersistence: async () => {
+        throw new Error('offline')
+      }
+    }).find((item) => item.name === AiActionNames.REPORT_OUTCOME)
+  )
+  await expect(
+    action.execute(
+      { outcome: 'completed', message: 'Drawing completed.' },
+      executionContext()
+    )
+  ).resolves.toMatchObject({
+    outcome: 'completed',
+    persistence: { status: 'unavailable', message: 'offline' }
+  })
+})
+
+const requireTestValue = <T>(value: T | undefined | null): T => {
+  if (value == null) throw new Error('Required test fixture is unavailable')
+  return value
+}

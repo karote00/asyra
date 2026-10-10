@@ -208,9 +208,10 @@ test(
         server.service.targetAssessments()[0].id
       )
       await page.unroute('**/api/target-assessments')
-      await expect(frame.locator('#assessment-accepted')).toContainText(
+      await expect(frame.locator('#assessment-target-contract')).toContainText(
         'passed'
       )
+      await expect(frame.locator('#assessment-history-proof')).toBeHidden()
       await expect(frame.locator('#assessment-works')).toContainText('passed')
       await expect(frame.locator('#assessment-integration')).toContainText(
         'passed'
@@ -219,7 +220,7 @@ test(
         'passed'
       )
       const assessment = server.service.targetAssessments()[0]
-      assert.equal(assessment.projection.accepted.status, 'passed')
+      assert.equal(assessment.projection.targetContract.status, 'passed')
       assert.equal(assessment.projection.integration.status, 'passed')
       await expect(frame.locator('#assessment-summary')).toContainText(
         'Eligible for explicit acceptance'
@@ -386,7 +387,7 @@ test(
       )
       hold = false
       await frame.locator('#assessment-history').selectOption(assessment.id)
-      await expect(frame.locator('#assessment-accepted')).toContainText(
+      await expect(frame.locator('#assessment-target-contract')).toContainText(
         'passed'
       )
       await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
@@ -401,7 +402,7 @@ test(
       await expect(frame.locator('#assessment-accept')).toBeEnabled()
       await frame.locator('#assessment-accept').click()
       await expect(frame.locator('#assessment-summary')).toContainText('stale')
-      await expect(frame.locator('#assessment-accepted')).toContainText(
+      await expect(frame.locator('#assessment-target-contract')).toContainText(
         'passed'
       )
       await expect(frame.locator('#assessment-acceptance')).toContainText(
@@ -471,8 +472,8 @@ test(
         'completed',
         { timeout: 30000 }
       )
-      await expect(frame.locator('#assessment-accepted')).toContainText(
-        'passed'
+      await expect(frame.locator('#assessment-target-contract')).toContainText(
+        'failed'
       )
       await expect(frame.locator('#assessment-integration')).toContainText(
         'deferred.outcome - failed'
@@ -644,9 +645,9 @@ test(
           'completed',
           { timeout: 30000 }
         )
-        await expect(frame.locator('#assessment-accepted')).toContainText(
-          'passed'
-        )
+        await expect(
+          frame.locator('#assessment-target-contract')
+        ).toContainText('failed')
         await expect(frame.locator('#assessment-integration')).toContainText(
           'deferred.outcome - failed'
         )
@@ -3576,7 +3577,9 @@ test(
       await expect(page.locator('#assessment-summary')).toContainText(
         'Eligible for explicit acceptance'
       )
-      await expect(page.locator('#assessment-accepted')).toContainText('passed')
+      await expect(page.locator('#assessment-target-contract')).toContainText(
+        'passed'
+      )
       await expect(page.locator('#assessment-target-contract')).toContainText(
         'passed'
       )

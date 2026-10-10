@@ -31,9 +31,6 @@ vi.mock('../group-context-menu', () => ({ GroupContextMenu: () => null }))
 vi.mock('../ai-conversation-panel', () => ({
   AiConversationPanel: () => <aside data-testid="agent-panel" />
 }))
-vi.mock('../ai-history-message-bar', () => ({
-  AiHistoryMessageBar: () => <div data-testid="agent-history" />
-}))
 vi.mock('../../providers', () => ({
   useElementSelection: () => new Set(),
   useFlattenedIdsData: () => [],
@@ -49,16 +46,34 @@ test('renders the always-on Agent shell and opens its panel', () => {
     confirmation: {},
     conversation: {
       cancel: vi.fn(),
-      getSnapshot: () => ({ activeTurn: null })
+      getSnapshot: () => ({
+        activeTurn: null,
+        settledTurns: [
+          {
+            turnId: 'turn-complete',
+            outcome: 'success',
+            result: { status: 'executed', actionResults: [] }
+          }
+        ]
+      }),
+      subscribe: () => () => undefined
     },
-    history: {}
+    history: {
+      getSnapshot: () => ({
+        control: { actionId: 1, direction: 'undo', turnId: 'turn-complete' },
+        disposed: false,
+        replaying: false
+      }),
+      subscribe: () => () => undefined
+    }
   } as never
 
   const { container } = render(<App ai={ai} />)
 
   expect(container.querySelector('[data-ai-root="true"]')).not.toBeNull()
   expect(screen.getByTestId('contents-panel')).not.toBeNull()
-  expect(screen.getByTestId('agent-history')).not.toBeNull()
+  expect(screen.queryByLabelText('Current AI history action')).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Undo AI change' })).toBeNull()
   expect(toolbarProps).toHaveBeenLastCalledWith(
     expect.objectContaining({
       aiOpen: false,

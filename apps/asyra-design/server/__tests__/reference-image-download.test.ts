@@ -81,6 +81,95 @@ describe('bounded image transport', () => {
       return req
     })
   }
+  it('retains HTTP failure diagnostics and retries only a bounded transient read', async () => {
+    network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    reply(503, { 'content-type': 'text/html' })
+    reply(200, { 'content-type': 'image/png' }, 'original')
+    const result = await downloadReferenceImage(
+      'https://example.org/image.png',
+      new AbortController().signal
+    )
+    expect(await result.text()).toBe('original')
+    expect(network.request).toHaveBeenCalledTimes(2)
+    reply(403, { 'content-type': 'text/html' })
+    await expect(
+      downloadReferencePage(
+        'https://example.org/page',
+        new AbortController().signal
+      )
+    ).rejects.toMatchObject({
+      failure: {
+        stage: 'response',
+        reason: 'http',
+        status: 403,
+        retryable: false,
+        attempts: 1
+      }
+    })
+    expect(network.request).toHaveBeenCalledTimes(3)
+    reply(503, { 'content-type': 'text/html' })
+    reply(503, { 'content-type': 'text/html' })
+    await expect(
+      downloadReferenceImage(
+        'https://example.org/image.png',
+        new AbortController().signal
+      )
+    ).rejects.toMatchObject({
+      failure: {
+        stage: 'response',
+        reason: 'http',
+        status: 503,
+        retryable: true,
+        attempts: 2
+      }
+    })
+    expect(network.request).toHaveBeenCalledTimes(5)
+  })
+  it('never retries unsupported media or a cancelled request', async () => {
+    network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    reply(200, { 'content-type': 'image/svg+xml' })
+    await expect(
+      downloadReferenceImage(
+        'https://example.org/image.svg',
+        new AbortController().signal
+      )
+    ).rejects.toMatchObject({
+      failure: {
+        stage: 'response',
+        reason: 'unsupported-media',
+        retryable: false,
+        attempts: 1
+      }
+    })
+    const controller = new AbortController()
+    controller.abort()
+    await expect(
+      downloadReferenceImage('https://example.org/image.png', controller.signal)
+    ).rejects.toThrow()
+    expect(network.request).toHaveBeenCalledOnce()
+  })
+  it('preserves Retry-After and stops cancellation during DNS without a second attempt', async () => {
+    network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    reply(503, { 'content-type': 'text/html', 'retry-after': '120' })
+    await expect(
+      downloadReferenceImage(
+        'https://example.org/image.png',
+        new AbortController().signal
+      )
+    ).rejects.toMatchObject({
+      failure: { status: 503, retryable: true, retryAfter: '120', attempts: 1 }
+    })
+    network.lookup.mockImplementationOnce(() => new Promise(() => undefined))
+    const controller = new AbortController()
+    const pending = downloadReferencePage(
+      'https://example.org/page',
+      controller.signal
+    )
+    const assertion = expect(pending).rejects.toThrow()
+    controller.abort()
+    await assertion
+    expect(network.request).toHaveBeenCalledOnce()
+  })
   it('reads bounded HTML and returns its final admitted URL without executing scripts', async () => {
     network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
     reply(302, { location: '/gallery/page' })

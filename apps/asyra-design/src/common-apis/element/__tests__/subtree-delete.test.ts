@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   normalizeGroupsForElements: vi.fn(),
   removeElement: vi.fn(),
   removeSubtree: vi.fn(),
+  removeSubtrees: vi.fn(),
   runTransaction: vi.fn((operation: () => unknown) => operation())
 }))
 
@@ -33,6 +34,7 @@ vi.mock('../../../contexts', () => ({
       }
     }),
     isContainerType: vi.fn((type: string) => type === 'group'),
+    removeSubtrees: mocks.removeSubtrees,
     removeSubtree: mocks.removeSubtree
   },
   render: null,
@@ -104,6 +106,17 @@ describe('element subtree deletion handoff', () => {
         }
       ]
     })
+  })
+
+  it('hands all deletion IDs to one canonical owner call without per-element reads', () => {
+    const ids = Array.from({ length: 288 }, (_, i) => `target-${i}`)
+    mocks.removeSubtrees.mockReturnValue(ids)
+    expect(elementApis.deleteElements(ids)).toEqual({
+      removed: ids.map((elementId) => ({ elementId }))
+    })
+    expect(mocks.removeSubtrees).toHaveBeenCalledExactlyOnceWith(ids, undefined)
+    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.removeSubtree).not.toHaveBeenCalled()
   })
 
   it('routes Group deletion through canonical subtree removal', () => {

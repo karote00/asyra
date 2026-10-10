@@ -459,3 +459,14 @@ explicit ordinary app composition.
 
 These read APIs do not open transactions. Existing full `getElementData` remains
 available when a complete canonical snapshot is actually required.
+
+### Plural subtree removal
+
+`removeSubtrees(elementIds, options)` coordinates one Scene forest preparation
+and one Props orphan-graph preparation before applying writes. It returns removed
+IDs, including descendants, in canonical removal order. Empty input is inert;
+invalid identities reject before mutation. Shared properties referenced by
+surviving elements remain active. Canonical before/after evidence and tombstones
+stay with their owners for Undo/Redo and collaboration; callers supply no old
+values. `removeSubtree` remains the compatible scalar UI/facade path. Design AI
+uses the registered `api_element_deleteElements` batch action.

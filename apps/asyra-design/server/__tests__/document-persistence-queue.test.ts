@@ -572,3 +572,54 @@ describe('document persistence queue', () => {
     )
   })
 })
+
+it('confirms only the captured durable target without waiting for later edits', async () => {
+  vi.useFakeTimers()
+  let acknowledge!: (value: { durableSequence: number }) => void
+  const queue = createDocumentPersistenceQueue({
+    documentId: 'capture',
+    sendBatch: () =>
+      new Promise((resolve) => {
+        acknowledge = resolve
+      })
+  })
+  queue.enqueue(entry(1))
+  const confirmed = vi.fn()
+  const waiting = queue.whenDurable(1).then(confirmed)
+  expect(confirmed).not.toHaveBeenCalled()
+  const flushing = queue.flushNow()
+  queue.enqueue(entry(2))
+  acknowledge({ durableSequence: 1 })
+  await flushing
+  await waiting
+  expect(confirmed).toHaveBeenCalledWith(1)
+  expect(queue.getState()).toMatchObject({
+    headSequence: 2,
+    durableSequence: 1,
+    pendingCount: 1
+  })
+  queue.dispose()
+})
+
+it('rejects durability confirmation on cancellation, backend failure and disposal', async () => {
+  vi.useFakeTimers()
+  const queue = createDocumentPersistenceQueue({
+    documentId: 'failure',
+    sendBatch: async () => {
+      throw new Error('offline')
+    }
+  })
+  queue.enqueue(entry(1))
+  await expect(queue.whenDurable(2)).rejects.toThrow(/sequence/)
+  const controller = new AbortController()
+  const cancelled = expect(
+    queue.whenDurable(1, controller.signal)
+  ).rejects.toThrow(/cancelled/)
+  controller.abort(new Error('cancelled'))
+  await cancelled
+  const failed = expect(queue.whenDurable(1)).rejects.toThrow(/offline/)
+  await queue.flushNow()
+  await failed
+  queue.dispose()
+  await expect(queue.whenDurable(1)).rejects.toThrow(/disposed/)
+})

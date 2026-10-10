@@ -76,7 +76,13 @@ it('tries the next declared image after a source-local failure without another m
     {
       imageUrl: 'https://images.example/broken.png',
       available: false,
-      code: 'REFERENCE_DOWNLOAD_FAILED'
+      code: 'REFERENCE_DOWNLOAD_FAILED',
+      failure: {
+        stage: 'request',
+        reason: 'network-error',
+        retryable: false,
+        attempts: 1
+      }
     },
     { imageUrl: 'https://images.example/good.png', available: true }
   ])

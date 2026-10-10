@@ -1,4 +1,4 @@
-import type { ExecutionStep } from './local-ai-records'
+import type { ExecutionStep } from './records.js'
 
 /** Exclusive observed intervals; item spans never claim hidden model compute time. */
 export const partitionExecutionTime = (

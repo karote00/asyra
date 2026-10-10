@@ -1,3 +1,4 @@
+import type { ReferenceIdentity } from './local-reference-decisions'
 import sharp from 'sharp'
 import type {
   VisualAssessment,
@@ -18,7 +19,8 @@ import {
 import { prepareOperationBatch } from './local-operation-batch'
 import {
   createLocalDesignReview,
-  designReviewDefinition
+  designEvidenceDefinitions,
+  designEvidenceInput
 } from './local-design-review'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
@@ -69,6 +71,52 @@ const requiresVisualReview = (name: string) => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+// Canonical snapshots remain with their execution/history owner. Compact delivery
+// projects only declared structural results; unknown or uncertain data is intact.
+const compactStructuralResult = (
+  actionName: string,
+  result: unknown
+): unknown => {
+  const kind = getBasicApiContract(actionName)?.result.kind
+  if (
+    (kind !== 'moves' && kind !== 'removed') ||
+    !isRecord(result) ||
+    result.status !== 'complete' ||
+    !isRecord(result.value)
+  )
+    return result
+  const value = result.value
+  const entries = value[kind]
+  const allowed =
+    kind === 'moves'
+      ? ['moves', 'elementIds']
+      : ['removed', 'elementId', 'rootParentChildrenAfter']
+  if (
+    Object.keys(value).some((key) => !allowed.includes(key)) ||
+    !Array.isArray(entries) ||
+    entries.some(
+      (entry) =>
+        !isRecord(entry) ||
+        typeof entry.elementId !== 'string' ||
+        !entry.elementId
+    )
+  )
+    return result
+  const identities = entries.map((entry) => ({ elementId: entry.elementId }))
+  return {
+    ...result,
+    value: {
+      [kind]: identities,
+      ...(typeof value.elementId === 'string'
+        ? { elementId: value.elementId }
+        : {}),
+      ...(Array.isArray(value.elementIds)
+        ? { elementIds: value.elementIds }
+        : {})
+    }
+  }
+}
+
 // Paths address the registered schema, not an inferred argument shape. A partial
 // answer never becomes an alternate admission schema.
 const schemaValueAt = (schema: unknown, path: string): unknown => {
@@ -82,7 +130,7 @@ const schemaValueAt = (schema: unknown, path: string): unknown => {
       !Object.hasOwn(value, key)
     )
       throw new LocalOperationPreparationError(
-        `Unknown schema path: ${path}. Request the full definition to inspect available paths.`
+        `Unknown schema path: ${path}. Request view=usage for root paths or the containing schema path; the full definition remains available.`
       )
     value = (value as Record<string, unknown>)[key]
   }
@@ -181,6 +229,11 @@ export const createLocalOperationTools = (
       },
       signal: AbortSignal
     ) => Promise<VisualAssessment>
+    resolveSources?: (sources: string[]) => string[]
+    validateReferences?: (
+      indexes: number[],
+      referenceIds?: string[]
+    ) => ReferenceIdentity[]
     onInspection?: (status: 'running' | 'completed') => void
   } = {}
 ) => {
@@ -201,6 +254,132 @@ export const createLocalOperationTools = (
     )
   // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
   const admittedApisByName = new Map(registered.map((api) => [api.name, api]))
+  const contextReader = registered.find(
+    (action) => action.name === AiActionNames.READ_DESIGN_CONTEXT
+  )
+  const contextSchema = contextReader?.inputSchema
+  const contextFields =
+    isRecord(contextSchema) && isRecord(contextSchema.properties)
+      ? contextSchema.properties
+      : undefined
+  const regionTargetSchema =
+    contextFields?.bounds && contextFields?.allMatches
+      ? {
+          type: 'object',
+          additionalProperties: false,
+          required: ['scope', 'bounds'],
+          properties: {
+            scope: { const: 'region' },
+            bounds: contextFields.bounds,
+            ...(contextFields.filter ? { filter: contextFields.filter } : {})
+          }
+        }
+      : undefined
+  const resolveQueryTargets = async (
+    operations: unknown,
+    signal: AbortSignal
+  ) => {
+    const resolved = new Map<string, string[]>()
+    const queryKeys = new Map<string, Record<string, unknown>>()
+    const artifactTargets = new Map<string, string[]>()
+    const resolve = (reference: unknown): string[] => {
+      if (isRecord(reference) && reference.query !== undefined) {
+        if (
+          Object.keys(reference).length !== 1 ||
+          !regionTargetSchema ||
+          !isRecord(reference.query)
+        )
+          throw new Error(
+            'Region query targets require the registered context reader and no artifact selector.'
+          )
+        const issue = operationInputIssue(reference.query, regionTargetSchema)
+        if (issue) throw new Error(issue)
+        const key = JSON.stringify(reference.query)
+        queryKeys.set(key, reference.query)
+        return resolved.get(key) ?? ['query-admission-target']
+      }
+      if (!preparation.resolveTargets)
+        throw new Error('Artifact references are unavailable.')
+      const key = JSON.stringify(reference)
+      const cached = artifactTargets.get(key)
+      if (cached) return cached
+      const ids = preparation.resolveTargets(reference)
+      artifactTargets.set(key, ids)
+      return ids
+    }
+    // Check every operation before any read. A query is a plural snapshot, not
+    // an instruction to fan out scalar writes or reevaluate after each mutation.
+    if (Array.isArray(operations))
+      for (const operation of operations) {
+        if (
+          isRecord(operation) &&
+          isRecord(operation.target) &&
+          operation.target.query !== undefined &&
+          operation.target.field !== 'elementIds'
+        )
+          throw new Error(
+            'Region query targets require the plural elementIds field.'
+          )
+      }
+    const executable = registered.filter(
+      (a) =>
+        ![AiActionNames.REVIEW_DESIGN, AiActionNames.INSPECT_DRAWING].includes(
+          a.name as never
+        )
+    )
+    const admitted = prepareOperationBatch(operations, executable, resolve)
+    if (!queryKeys.size) return admitted
+    if (!contextReader) throw new Error('Region context reader is unavailable.')
+    for (const [key, query] of queryKeys) {
+      signal.throwIfAborted()
+      const argumentsValue = { ...query, result: 'ids', allMatches: true }
+      const issue = operationInputIssue(
+        argumentsValue,
+        contextReader.inputSchema
+      )
+      if (issue) throw new Error(issue)
+      const id = randomUUID()
+      const batch = preparation.resolveBatch({
+        batchId: randomUUID(),
+        actions: [
+          {
+            id,
+            name: AiActionNames.READ_DESIGN_CONTEXT,
+            arguments: argumentsValue,
+            summary: 'Resolve exact region targets'
+          }
+        ]
+      }) as AiActionBatch
+      const receipt = await executeBatch(batch)
+      signal.throwIfAborted()
+      const matches = receipt.actionResults.filter(
+        (entry) =>
+          entry.actionId === id &&
+          entry.actionName === AiActionNames.READ_DESIGN_CONTEXT
+      )
+      const value = matches.length === 1 ? matches[0].result : undefined
+      if (
+        !isRecord(value) ||
+        value.available !== true ||
+        value.nextOffset !== null ||
+        !Array.isArray(value.elementIds) ||
+        value.elementIds.some((id) => typeof id !== 'string' || !id) ||
+        new Set(value.elementIds).size !== value.elementIds.length ||
+        value.total !== value.elementIds.length ||
+        !Array.isArray(value.missingIds) ||
+        value.missingIds.length
+      )
+        throw new Error(
+          'Region target query did not return a complete usable identity set; no mutation was submitted.'
+        )
+      if (!value.elementIds.length)
+        throw new Error(
+          'Region query matched no targets; no mutation was submitted.'
+        )
+      resolved.set(key, value.elementIds as string[])
+    }
+    return prepareOperationBatch(operations, executable, resolve)
+  }
   const admittedApisByOperation = new Map<string, (typeof registered)[number]>()
   const admittedApiCategories = new Map<string, typeof registered>()
   for (const api of admittedApisByName.values()) {
@@ -224,7 +403,23 @@ export const createLocalOperationTools = (
       .digest('hex')
     const refresh = {
       tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      arguments: { names: [identity], refresh: true }
+      arguments: {
+        names: [identity],
+        refresh: true,
+        refreshReason: 'context-loss'
+      }
+    }
+    const previousRevision = returnedDefinitions.get(identity)
+    let deliveryReason = 'initial'
+    if (args.refresh === true) deliveryReason = 'recovery'
+    else if (previousRevision !== undefined)
+      deliveryReason =
+        previousRevision === revision ? 'unchanged' : 'version-changed'
+    const provenance = {
+      deliveryReason,
+      ...(args.refresh === true
+        ? { recoveryReason: args.refreshReason ?? 'unknown' }
+        : {})
     }
     if (args.view === 'usage' || Array.isArray(args.schemaPaths)) {
       const projection =
@@ -241,7 +436,19 @@ export const createLocalOperationTools = (
           state: 'included',
           coverage: args.view === 'usage' ? 'usage' : 'partial',
           availableInResponse: true,
-          nextAction: 'use-response-or-request-full-contract',
+          nextAction: 'use-response-or-recover-requested-scope',
+          ...provenance,
+          recover: {
+            tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+            arguments: {
+              names: [identity],
+              ...(args.view === 'usage'
+                ? { view: 'usage' }
+                : { schemaPaths: args.schemaPaths }),
+              refresh: true,
+              refreshReason: 'delivery-failure'
+            }
+          },
           refresh
         }
       }
@@ -256,6 +463,7 @@ export const createLocalOperationTools = (
         state: repeated ? 'previously-returned' : 'included',
         coverage: repeated ? 'reference' : 'full',
         availableInResponse: !repeated,
+        ...provenance,
         nextAction: repeated
           ? 'reuse-or-refresh-if-missing'
           : 'use-current-response',
@@ -282,7 +490,9 @@ export const createLocalOperationTools = (
     return nativeToolsByName.get(name) ?? []
   }
   const designReview = createLocalDesignReview({
-    independentAssessment: !!options.assessVisual
+    independentAssessment: !!options.assessVisual,
+    resolveSources: options.resolveSources,
+    validateReferences: options.validateReferences
   })
   const inspectionImages = new Map<
     string,
@@ -619,7 +829,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a scoped menu (includeSchemas=true includes schemas), query does lexical search. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. apis execute as batch items; tools use their native namespace. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a scoped menu (includeSchemas=true includes schemas), query does lexical search. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. apis execute as batch items; tools use their native namespace. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -635,7 +845,7 @@ export const createLocalOperationTools = (
                     minItems: 1,
                     items: { type: 'string', pattern: '^/' },
                     description:
-                      'Exact names/operation only. JSON Pointers into inputSchema, e.g. /properties/items/items. Returns exact fragments and local reference dependencies, not a complete validation schema. Cannot combine with view or refresh.'
+                      'Exact names/operation only. JSON Pointers into inputSchema, e.g. /properties/items/items. Returns exact fragments and local reference dependencies, not a complete validation schema. Cannot combine with view; refresh preserves these exact paths.'
                   },
                   operation: {
                     type: 'string',
@@ -665,7 +875,17 @@ export const createLocalOperationTools = (
                   refresh: {
                     type: 'boolean',
                     description:
-                      'Restore full action definitions after context loss or failed delivery. Does not execute actions.'
+                      'Restore the selected full, usage or schemaPaths scope after context loss or failed delivery. Does not execute actions.'
+                  },
+                  refreshReason: {
+                    type: 'string',
+                    enum: [
+                      'context-loss',
+                      'delivery-failure',
+                      'missing-fields'
+                    ],
+                    description:
+                      'Declared recovery reason; requires refresh=true. Omission is recorded as unknown, not inferred.'
                   },
                   names: { type: 'array', items: { type: 'string' } },
                   query: {
@@ -685,7 +905,7 @@ export const createLocalOperationTools = (
               type: 'function',
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
-                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. target optionally supplies artifactId with exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
+                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -713,19 +933,36 @@ export const createLocalOperationTools = (
                         },
                         arguments: { type: 'object' },
                         target: {
-                          type: 'object',
-                          additionalProperties: false,
-                          required: ['artifactId', 'field'],
-                          properties: {
-                            artifactId: { type: 'string' },
-                            field: { enum: ['elementId', 'elementIds'] },
-                            keys: {
-                              type: 'array',
-                              minItems: 1,
-                              items: { type: 'string' }
+                          anyOf: [
+                            {
+                              type: 'object',
+                              additionalProperties: false,
+                              required: ['artifactId', 'field'],
+                              properties: {
+                                artifactId: { type: 'string' },
+                                field: { enum: ['elementId', 'elementIds'] },
+                                keys: {
+                                  type: 'array',
+                                  minItems: 1,
+                                  items: { type: 'string' }
+                                },
+                                keyPrefix: { type: 'string', minLength: 1 }
+                              }
                             },
-                            keyPrefix: { type: 'string', minLength: 1 }
-                          }
+                            ...(regionTargetSchema
+                              ? [
+                                  {
+                                    type: 'object',
+                                    additionalProperties: false,
+                                    required: ['field', 'query'],
+                                    properties: {
+                                      field: { const: 'elementIds' },
+                                      query: regionTargetSchema
+                                    }
+                                  }
+                                ]
+                              : [])
+                          ]
                         }
                       }
                     }
@@ -744,7 +981,7 @@ export const createLocalOperationTools = (
             }
           ]
         : []),
-      ...(canInspect ? [designReviewDefinition] : []),
+      ...(canInspect ? designEvidenceDefinitions : []),
       ...registered
         .filter(
           (action) =>
@@ -797,9 +1034,13 @@ export const createLocalOperationTools = (
           Object.keys(args).some(
             (key) =>
               !selectors.includes(key) &&
-              !['includeSchemas', 'refresh', 'view', 'schemaPaths'].includes(
-                key
-              )
+              ![
+                'includeSchemas',
+                'refresh',
+                'refreshReason',
+                'view',
+                'schemaPaths'
+              ].includes(key)
           ) ||
           (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
           (args.view !== undefined &&
@@ -816,8 +1057,12 @@ export const createLocalOperationTools = (
             args.names === undefined &&
             args.operation === undefined &&
             args.operations === undefined) ||
-          ((args.view === 'usage' || args.schemaPaths !== undefined) &&
-            args.refresh === true) ||
+          (args.refreshReason !== undefined &&
+            (args.refresh !== true ||
+              typeof args.refreshReason !== 'string' ||
+              !['context-loss', 'delivery-failure', 'missing-fields'].includes(
+                args.refreshReason
+              ))) ||
           (args.includeSchemas !== undefined &&
             (typeof args.includeSchemas !== 'boolean' ||
               args.category === undefined)) ||
@@ -836,7 +1081,7 @@ export const createLocalOperationTools = (
               args.operations.some((v) => typeof v !== 'string' || !v.trim())))
         )
           throw new LocalOperationPreparationError(
-            'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial queries cannot combine with refresh or with each other.'
+            'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
           )
         const apis = registered
         const details = (api: (typeof apis)[number], includeSchema = true) => {
@@ -999,18 +1244,44 @@ export const createLocalOperationTools = (
           apis: matches.map((api) => details(api))
         })
       }
-      if (canInspect && name === AiDesignToolIds.RECORD_DESIGN_REVIEW) {
-        const issue = operationInputIssue(
-          args,
-          designReviewDefinition.inputSchema
-        )
+      const evidenceDefinition =
+        canInspect &&
+        designEvidenceDefinitions.find((tool) => tool.name === name)
+      if (evidenceDefinition) {
+        const issue = operationInputIssue(args, evidenceDefinition.inputSchema)
         if (issue) throw new LocalOperationPreparationError(issue)
+        if (name === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS) {
+          try {
+            return JSON.stringify(designReview.recordCalculations(args))
+          } catch (error) {
+            throw new LocalOperationPreparationError(
+              error instanceof Error
+                ? error.message
+                : 'Invalid calculation evidence'
+            )
+          }
+        }
+        const reviewArgs = {
+          ...designEvidenceInput(name, args as Record<string, unknown>)
+        }
         const candidate =
-          isRecord(args) &&
-          (args.phase === 'structure' || args.phase === 'visual')
+          isRecord(reviewArgs) &&
+          (reviewArgs.phase === 'structure' || reviewArgs.phase === 'visual')
         const recordReview = (independent?: VisualAssessment) => {
           try {
-            return designReview.record(args, independent)
+            if (name === AiDesignToolIds.SELECT_DESIGN_REFERENCES)
+              return designReview.selectReferences(
+                reviewArgs.referenceImageIndexes,
+                {
+                  ...(reviewArgs.referenceDecisions !== undefined
+                    ? { referenceDecisions: reviewArgs.referenceDecisions }
+                    : {}),
+                  ...(reviewArgs.requirementRevision !== undefined
+                    ? { requirementRevision: reviewArgs.requirementRevision }
+                    : {})
+                }
+              )
+            return designReview.record(reviewArgs, independent)
           } catch (error) {
             throw new LocalOperationPreparationError(
               error instanceof Error ? error.message : 'Invalid review evidence'
@@ -1018,11 +1289,111 @@ export const createLocalOperationTools = (
           }
         }
         if (!candidate) return JSON.stringify(recordReview())
+        const targets = reviewArgs.inspections as
+          | {
+              elementId: string
+              view?: 'overview' | 'detail'
+              region?: unknown
+            }[]
+          | undefined
+        const inspectionIds = [
+          ...((reviewArgs.inspectionIds as string[] | undefined) ?? [])
+        ]
+        if (inspectionIds.length + (targets?.length ?? 0) > 24)
+          throw new LocalOperationPreparationError(
+            'Review accepts at most 24 reusable IDs and capture targets combined.'
+          )
+        if (
+          targets?.length &&
+          inspectionIds.length &&
+          !designReview.evidenceFor(inspectionIds)
+        ) {
+          const message =
+            'Reusable inspection IDs do not identify evidence from one document revision. Capture current evidence before review; no new captures or assessment ran.'
+          designReview.invalidateAssessment(message)
+          return JSON.stringify({
+            status: 'partial',
+            phase: reviewArgs.phase,
+            accepted: false,
+            readyForDetail: false,
+            inspectionIds,
+            message
+          })
+        }
+        delete reviewArgs.inspections
+        const failedInspections: {
+          inspection: NonNullable<typeof targets>[number]
+          message: string
+        }[] = []
+        for (const target of targets ?? []) {
+          signal.throwIfAborted()
+          const view = target.region ? 'detail' : (target.view ?? 'overview')
+          let receipt: AiBatchReceipt
+          try {
+            receipt = await inspect(
+              target.elementId,
+              view === 'overview',
+              target.region,
+              view,
+              signal
+            )
+          } catch (error) {
+            signal.throwIfAborted()
+            failedInspections.push({
+              inspection: target,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Capture failed without usable evidence.'
+            })
+            continue
+          }
+          const result = receipt.actionResults.find(
+            (entry) => entry.actionName === AiActionNames.INSPECT_DRAWING
+          )?.result
+          const id =
+            isRecord(result) &&
+            result.available === true &&
+            typeof result.inspectionId === 'string'
+              ? result.inspectionId
+              : undefined
+          if (
+            id &&
+            designReview.evidenceFor([id]) &&
+            inspectionImages.has(id)
+          ) {
+            if (!inspectionIds.includes(id)) inspectionIds.push(id)
+          } else {
+            failedInspections.push({
+              inspection: target,
+              message:
+                isRecord(result) && typeof result.message === 'string'
+                  ? result.message
+                  : 'Capture did not return a usable image with document evidence. Inspect this target again.'
+            })
+          }
+        }
+        reviewArgs.inspectionIds = inspectionIds
+        if (failedInspections.length) {
+          const message =
+            'Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run.'
+          designReview.invalidateAssessment(message)
+          return JSON.stringify({
+            available: false,
+            status: 'partial',
+            phase: reviewArgs.phase,
+            accepted: false,
+            readyForDetail: false,
+            inspectionIds,
+            failedInspections,
+            message
+          })
+        }
         const evidenceResult = async () => {
           let message =
             'Inspection evidence changed. Inspect the current drawing again; earlier findings cannot approve completion.'
           try {
-            if (await validateEvidence(args.inspectionIds, signal))
+            if (await validateEvidence(reviewArgs.inspectionIds, signal))
               return undefined
           } catch (error) {
             if (!(error instanceof LocalOperationPreparationError)) throw error
@@ -1031,10 +1402,10 @@ export const createLocalOperationTools = (
           designReview.invalidateAssessment(message)
           return {
             status: 'partial',
-            phase: args.phase,
+            phase: reviewArgs.phase,
             accepted: false,
             readyForDetail: false,
-            inspectionIds: args.inspectionIds,
+            inspectionIds: reviewArgs.inspectionIds,
             evidenceValidation: latestEvidenceValidation,
             message
           }
@@ -1042,7 +1413,7 @@ export const createLocalOperationTools = (
         const unavailable = await evidenceResult()
         if (unavailable) return JSON.stringify(unavailable)
         try {
-          designReview.validateReview(args)
+          designReview.validateReview(reviewArgs)
         } catch (error) {
           throw new LocalOperationPreparationError(
             error instanceof Error ? error.message : 'Invalid review evidence'
@@ -1050,13 +1421,16 @@ export const createLocalOperationTools = (
         }
         if (
           options.assessVisual &&
-          (args.phase === 'structure' || args.final !== false)
+          (reviewArgs.phase === 'structure' || reviewArgs.final !== false)
         ) {
-          const phase = args.phase as 'structure' | 'visual'
-          const comparison = designReview.comparisonContext(phase)
+          const phase = reviewArgs.phase as 'structure' | 'visual'
+          const fullReview =
+            Array.isArray(reviewArgs.deferredDetails) &&
+            reviewArgs.deferredDetails.length > 0
+          const comparison = designReview.comparisonContext(phase, fullReview)
           if (!Object.keys(comparison.criteria).length)
             return JSON.stringify(recordReview())
-          const images = (args.inspectionIds as string[]).map((id) =>
+          const images = (reviewArgs.inspectionIds as string[]).map((id) =>
             inspectionImages.get(id)
           )
           if (images.some((image) => !image))
@@ -1070,13 +1444,38 @@ export const createLocalOperationTools = (
             signal
           )
           signal.throwIfAborted()
+          const sourcesCurrent = designReview.comparisonIsCurrent(
+            comparison,
+            phase,
+            fullReview
+          )
           // Preserve findings before checking freshness, but never let old pixels approve a revision.
-          designReview.retainAssessment(phase, independent, false)
+          designReview.retainAssessment(phase, independent, false, fullReview)
           const invalidated = await evidenceResult()
+          if (!sourcesCurrent) {
+            const message =
+              'Reference decisions or source evidence changed during assessment. Review current evidence before completion.'
+            designReview.invalidateAssessment(message)
+            return JSON.stringify({
+              status: 'partial',
+              phase,
+              accepted: false,
+              readyForDetail: false,
+              evidenceValidation: latestEvidenceValidation,
+              message,
+              independentAssessment: independent,
+              correction: designReview.correctionContext(
+                reviewArgs.inspectionIds as string[]
+              )
+            })
+          }
           if (invalidated)
             return JSON.stringify({
               ...invalidated,
-              independentAssessment: independent
+              independentAssessment: independent,
+              correction: designReview.correctionContext(
+                reviewArgs.inspectionIds as string[]
+              )
             })
           return JSON.stringify(recordReview(independent))
         }
@@ -1112,18 +1511,13 @@ export const createLocalOperationTools = (
         throw new Error('Invalid backend operation')
       let batchActions: AiActionBatch['actions']
       try {
-        batchActions = prepareOperationBatch(
-          batchMode ? args.operations : [{ name, arguments: args.arguments }],
-          registered.filter(
-            (a) =>
-              !batchMode ||
-              ![
-                AiActionNames.REVIEW_DESIGN,
-                AiActionNames.INSPECT_DRAWING
-              ].includes(a.name as never)
-          ),
-          preparation.resolveTargets
-        )
+        batchActions = batchMode
+          ? await resolveQueryTargets(args.operations, signal)
+          : prepareOperationBatch(
+              [{ name, arguments: args.arguments }],
+              registered,
+              preparation.resolveTargets
+            )
       } catch (error) {
         throw new LocalOperationPreparationError(
           error instanceof Error ? error.message : 'Invalid operation batch'
@@ -1133,7 +1527,14 @@ export const createLocalOperationTools = (
         if (!batchMode) return JSON.stringify(value)
         const { context: _context, ...result } = value
         const acknowledged = new Map<string, number>()
-        const actionResults = result.actionResults.filter((entry) => {
+        const projectedResults =
+          args.response === 'full'
+            ? result.actionResults
+            : result.actionResults.map((entry) => ({
+                ...entry,
+                result: compactStructuralResult(entry.actionName, entry.result)
+              }))
+        const actionResults = projectedResults.filter((entry) => {
           if (args.response === 'full') return true
           const contract = getBasicApiContract(entry.actionName)
           const item = entry.result
@@ -1292,7 +1693,7 @@ export const createLocalOperationTools = (
           let removed: unknown
           if (entry.actionName === AiActionNames.REMOVE_AI_COMPOSITION)
             removed = result.appliedElementIds
-          else if (method === 'removeSubtree') removed = result.removed
+          else if (contract?.result.kind === 'removed') removed = result.removed
           if (Array.isArray(removed)) {
             for (const item of removed) {
               const id = isRecord(item) ? item.elementId : item

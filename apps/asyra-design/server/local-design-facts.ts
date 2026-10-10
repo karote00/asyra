@@ -44,7 +44,11 @@ const sourceFactSchema = {
       ...factText,
       description: 'Where this fact applies, and what it does not establish.'
     },
-    verification: factText,
+    verification: {
+      ...factText,
+      description:
+        'Your source-attributed verification notes. Stored as a model assertion, not independent mechanical proof. Fact status describes dependency freshness only.'
+    },
     sources: {
       type: 'array',
       minItems: 1,
@@ -67,9 +71,60 @@ export const designFactsSchema = {
   properties: {
     phase: { type: 'string', const: 'facts' },
     facts: { type: 'array', maxItems: 24, items: sourceFactSchema },
+    sourceCorrections: {
+      type: 'array',
+      maxItems: 24,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['factId', 'sources', 'verification', 'reason'],
+        properties: {
+          factId: factText,
+          sources: sourceFactSchema.properties.sources,
+          verification: factText,
+          reason: factText
+        }
+      }
+    },
     dependencyChanges: { type: 'array', maxItems: 24, items: factChangeSchema }
   }
 }
+export const designCalculationsSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    calculations: {
+      type: 'array',
+      maxItems: 24,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'value', 'unit', 'sourceFactIds', 'verification'],
+        properties: {
+          id: factText,
+          value: { type: 'number' },
+          unit: factText,
+          sourceFactIds: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 24,
+            uniqueItems: true,
+            items: factText
+          },
+          verification: factText
+        }
+      }
+    }
+  }
+}
+interface DesignCalculation {
+  id: string
+  value: number
+  unit: string
+  sourceFactIds: string[]
+  verification: string
+}
+
 interface FactDependency {
   key: string
   version: string
@@ -92,25 +147,93 @@ interface RetainedFact extends SourceFact {
 }
 
 /** Request-owned assertions with provenance, never canonical state or visual approval. */
-export const createDesignFacts = () => {
+export const createDesignFacts = (
+  resolveSources: (sources: string[]) => string[] = (sources) => sources
+) => {
   let facts = new Map<string, RetainedFact>()
   let versions = new Map<string, string>()
+  const calculations = new Map<
+    string,
+    {
+      value: DesignCalculation
+      sourceFacts: readonly RetainedFact[]
+    }
+  >()
   const snapshot = () => structuredClone([...facts.values()])
   return {
     snapshot,
+    recordCalculations(input: unknown) {
+      const issue = operationInputIssue(input, designCalculationsSchema)
+      if (issue) throw new Error(issue)
+      const additions =
+        (input as { calculations?: DesignCalculation[] }).calculations ?? []
+      if (new Set(additions.map((item) => item.id)).size !== additions.length)
+        throw new Error('Calculation IDs must be unique.')
+      const admitted = additions.map((value) => {
+        if (
+          ![
+            value.id,
+            value.unit,
+            value.verification,
+            ...value.sourceFactIds
+          ].every((text) => text.trim())
+        )
+          throw new Error(
+            'Calculation identities and evidence must be nonempty.'
+          )
+        const sourceFacts = value.sourceFactIds.map((id) => {
+          const fact = facts.get(id)
+          if (!fact || fact.status !== 'valid')
+            throw new Error(
+              'Calculations require a retained valid source fact.'
+            )
+          return fact
+        })
+        return { value: structuredClone(value), sourceFacts }
+      })
+      for (const item of admitted) calculations.set(item.value.id, item)
+      return {
+        diagnosticOnly: true,
+        calculations: [...calculations.values()].map(
+          ({ value, sourceFacts }) => ({
+            ...structuredClone(value),
+            status: sourceFacts.every(
+              (fact) => facts.get(fact.id) === fact && fact.status === 'valid'
+            )
+              ? 'valid'
+              : 'invalidated'
+          })
+        )
+      }
+    },
     hasInvalidated: () =>
       [...facts.values()].some((fact) => fact.status === 'invalidated'),
     record(
       input: unknown,
-      validate?: (facts: readonly RetainedFact[]) => void
+      validate?: (
+        facts: readonly RetainedFact[],
+        changes: {
+          changedIds: readonly string[]
+          changedExistingIds: readonly string[]
+        }
+      ) => void
     ) {
       const issue = operationInputIssue(input, designFactsSchema)
       if (issue) throw new Error(issue)
       const value = input as {
         facts?: SourceFact[]
+        sourceCorrections?: {
+          factId: string
+          sources: string[]
+          verification: string
+          reason: string
+        }[]
         dependencyChanges?: FactChange[]
       }
-      const additions = value.facts ?? []
+      const additions = (value.facts ?? []).map((fact) => ({
+        ...fact,
+        sources: resolveSources(fact.sources)
+      }))
       const changes = value.dependencyChanges ?? []
       const nonempty = (value: string) => value.trim().length > 0
       if (
@@ -120,6 +243,37 @@ export const createDesignFacts = () => {
         throw new Error('Fact IDs and changed dependency keys must be unique.')
       const nextFacts = new Map(facts)
       const nextVersions = new Map(versions)
+      const corrections = value.sourceCorrections ?? []
+      if (
+        new Set(corrections.map((c) => c.factId)).size !== corrections.length ||
+        corrections.some((c) => additions.some((f) => f.id === c.factId))
+      )
+        throw new Error(
+          'Source corrections require unique facts separate from fact additions.'
+        )
+      for (const correction of corrections) {
+        const previous = nextFacts.get(correction.factId)
+        if (
+          !previous ||
+          previous.status !== 'valid' ||
+          !correction.reason.trim() ||
+          !correction.verification.trim()
+        )
+          throw new Error(
+            'Source correction requires a valid existing fact and explicit evidence and reason.'
+          )
+        const sources = resolveSources(correction.sources)
+        if (
+          isDeepStrictEqual(previous.sources, sources) &&
+          previous.verification === correction.verification
+        )
+          continue
+        nextFacts.set(correction.factId, {
+          ...previous,
+          sources,
+          verification: correction.verification
+        })
+      }
       for (const change of changes) {
         if (
           !versions.has(change.key) ||
@@ -184,7 +338,13 @@ export const createDesignFacts = () => {
         }
         nextFacts.set(fact.id, { ...structuredClone(fact), status: 'valid' })
       }
-      validate?.([...nextFacts.values()])
+      const changedIds = [...nextFacts.keys()].filter(
+        (id) => nextFacts.get(id) !== facts.get(id)
+      )
+      validate?.([...nextFacts.values()], {
+        changedIds,
+        changedExistingIds: changedIds.filter((id) => facts.has(id))
+      })
       facts = nextFacts
       versions = nextVersions
       return { phase: 'facts', facts: snapshot() }

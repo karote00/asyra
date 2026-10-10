@@ -9,6 +9,7 @@ import { LocalToolAccess } from './local-tool-scheduler'
 import { operationInputIssue } from './operation-input-schema'
 import {
   designFillSchema,
+  designFillTemplatesSchema,
   designSharedFillsSchema
 } from '../src/ai/design-fill'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -33,6 +34,7 @@ const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 const size = { type: 'number', exclusiveMinimum: 0, maximum: limits.dimension }
 const coordinate = { type: 'number', minimum: 0, maximum: limits.dimension }
+const position = { ...coordinate, minimum: -limits.dimension }
 const color = { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' }
 const point = {
   type: 'object',
@@ -49,8 +51,8 @@ const common = {
   name: { type: 'string', minLength: 1, maxLength: 160 },
   width: size,
   height: size,
-  x: coordinate,
-  y: coordinate,
+  x: position,
+  y: position,
   fill: designFillSchema
 }
 const layout = {
@@ -91,6 +93,7 @@ const draftSchema = {
     ...layout,
     ...designConstructionSchema,
     sharedFills: designSharedFillsSchema,
+    fillTemplates: designFillTemplatesSchema,
     key: { type: 'string', minLength: 1, maxLength: 160 },
     type: { enum: DesignContainerTypes }
   },
@@ -158,7 +161,7 @@ const nodeSchema = {
     }
   },
   description:
-    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields with textColor, not fill. Rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization offsets its origin and makes child positions nonnegative without changing workspace geometry. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields with textColor, not fill. Rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
 }
 const vectorPatternSchema = {
   type: 'object',
@@ -192,7 +195,7 @@ const vectorPatternSchema = {
         type: 'object',
         additionalProperties: false,
         required: ['x', 'y'],
-        properties: { x: coordinate, y: coordinate, fill: designFillSchema }
+        properties: { x: position, y: position, fill: designFillSchema }
       }
     }
   },

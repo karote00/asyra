@@ -676,7 +676,7 @@ it('applies and reviews ready batches while later requirements and geometry rema
   const workflow = createLocalDesignWorkflow(designs, operations)
   const call = async (name: string, args: unknown) =>
     JSON.parse(await operations.call(name, args, signal()))
-  await call('record_design_review', {
+  await call('define_design_criteria', {
     phase: 'plan',
     method: 'Retain ready parts in shared coordinates',
     references: [],
@@ -710,7 +710,7 @@ it('applies and reviews ready batches while later requirements and geometry rema
       entry.actionName === AiActionNames.INSPECT_DRAWING
   ).result.inspectionId
   expect(
-    await call('record_design_review', {
+    await call('review_drawing', {
       phase: 'visual',
       final: false,
       inspectionIds: [inspection],
@@ -851,7 +851,7 @@ it('leaves review state untouched when draft preparation fails', async () => {
   expect(invalid.success).toBe(false)
   expect(execute).not.toHaveBeenCalled()
   const result = JSON.parse(
-    await operations.call('record_design_review', reviewPlanExample, signal())
+    await operations.call('define_design_criteria', reviewPlanExample, signal())
   )
   expect(result).toMatchObject({ recorded: true })
 })
@@ -948,7 +948,7 @@ it('draws a ready part without plan generation and records initial criteria afte
   expect(execute).toHaveBeenCalledOnce()
   const planned = JSON.parse(
     await operations.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       reviewPlanExample,
       signal()
     )
