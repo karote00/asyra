@@ -80,9 +80,10 @@ Maintainers can export the exact same Skill into a new project-relative folder:
 node scripts/developer-agent-bundle.mjs --export-skill dist/asyra-agent
 ```
 
-This requires only Node.js and a current checked bundle. It refuses an existing
-destination, traversal or symlinks; it does not install anything or alter host
-settings. The export can be distributed as a folder or zipped with
+This requires only Node.js and the canonical source files. The export generates
+its guides and identity directly, without changing the maintained plugin. It
+refuses an existing destination, traversal or symlinks; it does not install
+anything or alter host settings. The export can be distributed as a folder or zipped with
 `asyra-agent/` at its root. Future release artifacts must be generated from the
 same reviewed source as the plugin package, never edited separately.
 

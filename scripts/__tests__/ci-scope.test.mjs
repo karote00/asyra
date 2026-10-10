@@ -1669,3 +1669,33 @@ test('owners without a separate profile runner retain profile-named tests in the
   ])
   assert.equal(entry.profileSelection, undefined)
 })
+
+test('Skill source inputs select packaging checks before merge alongside their existing owners', () => {
+  const config = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'plugins/asyra-agent/bundle.config.json'),
+      'utf8'
+    )
+  )
+  for (const file of [
+    ...config.documents,
+    'docs/public/generated/package-reference.json'
+  ]) {
+    const result = classifyChanges([file], manifests)
+    assert.ok(
+      result.executionPlan.checks.repositoryScripts.tests.includes(
+        'scripts/__tests__/developer-agent-bundle.test.mjs'
+      ),
+      file
+    )
+  }
+  const ordinary = classifyChanges(
+    ['apps/asyra-framework-site/components/developer-entry.tsx'],
+    manifests
+  )
+  assert.ok(
+    !(ordinary.executionPlan.checks.repositoryScripts.tests ?? []).includes(
+      'scripts/__tests__/developer-agent-bundle.test.mjs'
+    )
+  )
+})

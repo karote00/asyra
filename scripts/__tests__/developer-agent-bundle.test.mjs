@@ -202,6 +202,52 @@ test('Skill changes are versioned and package reference changes invalidate the b
   assert.throws(() => checkBundle(root), /Stale bundle/)
 })
 
+test('package metadata, formatting and ordering do not change the Skill identity', () => {
+  const root = fixture()
+  const baseline = writeBundle(root)
+  const file = 'docs/public/generated/package-reference.json'
+  const inventory = JSON.parse(read(root, file))
+  inventory.packages.reverse()
+  inventory.packages[0].description = 'Updated public catalog description'
+  write(root, file, JSON.stringify(inventory))
+  assert.deepEqual(checkBundle(root, baseline), baseline)
+})
+
+test('export generates current guides and identity without rewriting the maintained plugin', () => {
+  const root = fixture()
+  writeBundle(root)
+  const before = read(root, RECORD)
+  const guide = 'docs/public/learn/canonical-state.md'
+  write(root, guide, read(root, guide) + '\nNew canonical guidance.\n')
+  const record = exportSkill(root, 'dist/skill')
+  assert.notEqual(record.contentDigest, JSON.parse(before).contentDigest)
+  assert.equal(read(root, RECORD), before)
+  assert.deepEqual(inspectSkill(path.join(root, 'dist/skill')), record)
+  assert.match(
+    read(root, `dist/skill/references/${guide}`),
+    /New canonical guidance/
+  )
+  assert.throws(() => checkBundle(root), /Stale bundle/)
+})
+
+test('export ignores retained reference copies and excludes unrelated plugin files', () => {
+  const root = fixture()
+  const guide = 'docs/public/learn/canonical-state.md'
+  write(
+    root,
+    `${PLUGIN}/${SKILL}/references/${guide}`,
+    'Outdated generated copy'
+  )
+  write(root, `${PLUGIN}/${SKILL}/private.txt`, 'not distributable')
+  const record = exportSkill(root, 'dist/skill')
+  assert.deepEqual(inspectSkill(path.join(root, 'dist/skill')), record)
+  assert.doesNotMatch(
+    read(root, `dist/skill/references/${guide}`),
+    /Outdated generated copy/
+  )
+  assert.ok(!fs.existsSync(path.join(root, 'dist/skill/private.txt')))
+})
+
 test('missing inputs fail before any generated file is replaced', () => {
   const root = fixture()
   const before = read(root, RECORD)
@@ -439,7 +485,7 @@ test('standalone inspection rejects changed, missing, extra and symlinked resour
   }
 })
 
-test('Skill export refuses overwrites, traversal, symlinks and stale sources', () => {
+test('Skill export refuses overwrites, traversal, symlinks and missing sources', () => {
   const root = fixture()
   write(root, 'existing/keep.txt', 'user data')
   for (const destination of [
@@ -460,7 +506,7 @@ test('Skill export refuses overwrites, traversal, symlinks and stale sources', (
     () => exportSkill(root, `${PLUGIN}/exported-skill`),
     /inside its source/
   )
-  write(root, `${PLUGIN}/${SKILL}/SKILL.md`, 'stale')
-  assert.throws(() => exportSkill(root, 'new-skill'), /stale/)
+  fs.unlinkSync(path.join(root, 'docs/public/learn/canonical-state.md'))
+  assert.throws(() => exportSkill(root, 'new-skill'), /ENOENT/)
   assert.ok(!fs.existsSync(path.join(root, 'new-skill')))
 })
