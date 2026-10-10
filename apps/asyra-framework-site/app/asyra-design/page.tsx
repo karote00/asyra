@@ -69,7 +69,7 @@ export default async function AsyraDesignPage() {
           <a
             data-site-cta=""
             className="button button--red"
-            href="https://asyra-design.vercel.app/?fileId=demo"
+            href="https://asyra-design.pages.dev/?fileId=demo"
             rel="noopener noreferrer"
             target="_blank"
           >

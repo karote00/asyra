@@ -53,7 +53,7 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
     assert.match(content, claim)
   for (const destination of [
     'https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts',
-    'https://asyra-sim.vercel.app',
+    'https://asyra-sim.pages.dev',
     'https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts'
   ]) {
     assert.ok(
