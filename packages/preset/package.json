@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@asyra/render": "workspace:*",
-    "@types/three": "0.185.4",
+    "@types/three": "0.186.0",
     "@vitest/coverage-v8": "^3.2.6",
     "typescript": "^5.7.2",
     "vitest": "^3.2.6"
@@ -71,6 +71,6 @@
     "@asyra/ui-context": "workspace:*",
     "@asyra/utils": "workspace:*",
     "rxjs": "^7.8.1",
-    "three": "0.185.1"
+    "three": "0.186.1"
   }
 }
