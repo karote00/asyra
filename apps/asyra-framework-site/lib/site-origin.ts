@@ -1,3 +1,5 @@
+import { isProductionSite } from './site-environment.mjs'
+
 type SiteEnvironment = Readonly<Record<string, string | undefined>>
 
 const normalizeOrigin = (value: string, allowLocalHttp = false) => {
@@ -47,5 +49,5 @@ export const resolveSiteOrigin = (
 export const isIndexingAuthorized = (
   environment: SiteEnvironment = process.env
 ) =>
-  environment.VERCEL_ENV === 'production' &&
+  isProductionSite(environment) &&
   environment.NEXT_PUBLIC_SITE_INDEXING === 'true'

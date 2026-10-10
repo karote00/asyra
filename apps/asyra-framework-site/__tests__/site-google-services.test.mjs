@@ -14,6 +14,24 @@ const configured = {
   GOOGLE_SITE_VERIFICATION: 'test-verification-token'
 }
 
+test('explicit static production enables collection without enabling Vercel previews', () => {
+  const staticEnvironment = {
+    SITE_ENV: 'production',
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  }
+  assert.deepEqual(resolveGoogleSiteServices(staticEnvironment), {
+    measurementId: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  })
+  assert.deepEqual(
+    resolveGoogleSiteServices({ ...staticEnvironment, VERCEL_ENV: 'preview' }),
+    {}
+  )
+  assert.deepEqual(
+    resolveGoogleSiteServices({ ...staticEnvironment, SITE_ENV: 'preview' }),
+    {}
+  )
+})
+
 test('only a configured production site enables Google services', () => {
   assert.deepEqual(resolveGoogleSiteServices({}), {})
   assert.deepEqual(

@@ -1,4 +1,5 @@
 import process from 'node:process'
+import { isProductionSite } from './site-environment.mjs'
 
 const requireMeasurementId = (value) => {
   if (!/^G-[A-Z0-9]{6,}$/.test(value)) {
@@ -8,7 +9,7 @@ const requireMeasurementId = (value) => {
 }
 
 export const resolveGoogleSiteServices = (environment = process.env) => {
-  if (environment.VERCEL_ENV !== 'production') return {}
+  if (!isProductionSite(environment)) return {}
   const settings = {}
   const measurementId = environment.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
   const verification = environment.GOOGLE_SITE_VERIFICATION?.trim()

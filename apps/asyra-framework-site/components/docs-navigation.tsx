@@ -1,5 +1,6 @@
 'use client'
 
+import type { Route } from 'next'
 import Link from 'next/link'
 import { useLayoutEffect, useRef } from 'react'
 
@@ -37,7 +38,7 @@ function NavigationLinks({
           <li key={page.id}>
             <Link
               aria-current={page.id === currentId ? 'page' : undefined}
-              href={page.href}
+              href={page.href as Route}
               onClick={onNavigate}
             >
               {page.title}

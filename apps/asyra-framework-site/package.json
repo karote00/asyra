@@ -22,7 +22,9 @@
     "test:local": "yarn test:contracts && node --test __tests__/*.test.mjs",
     "test:artwork:local": "LOCAL_ARTWORK_TESTS=1 yarn test:local",
     "test:ci": "yarn test:local",
-    "lint": "yarn --cwd ../.. eslint apps/asyra-framework-site"
+    "lint": "yarn --cwd ../.. eslint apps/asyra-framework-site",
+    "build:static": "SITE_OUTPUT=export yarn --cwd ../.. turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site && node --env-file-if-exists=.env scripts/prepare-static.mjs",
+    "media:encode": "node scripts/encode-media.mjs"
   },
   "dependencies": {
     "@asyra/ai-agent-runtime": "workspace:*",
