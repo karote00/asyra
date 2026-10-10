@@ -6,6 +6,8 @@ Cloudflare primary website delivery is owned by the separate
 continue to manage Vercel deployments only. Main updates can automatically
 publish the primary Cloudflare website after CI succeeds.
 
+The three frontend App demos use the separate [Cloudflare App delivery](app-cloudflare.md) workflow. The operator flow below applies only to Vercel.
+
 ## Operator flow
 
 1. Merge reviewed changes through the protected PR flow. Merging does not deploy.

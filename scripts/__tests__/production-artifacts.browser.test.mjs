@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import { DEPLOYMENT_APPS } from '../app-cloudflare.mjs'
 import { serveArtifact } from '../production-artifact-server.mjs'
 import {
   collectArtifactResourceSnapshot,
@@ -31,12 +32,34 @@ const analysisProfile = Object.freeze({
   expectedPairs: 46
 })
 
+async function appServer(id, headers = {}) {
+  const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
+  assert.ok(app)
+  if (process.env.APP_PUBLIC_TEST === '1')
+    return {
+      url: `https://${app.project}.pages.dev`,
+      close: () => Promise.resolve()
+    }
+  const directory = process.env.APP_ARTIFACT_ROOT
+    ? path.join(root, process.env.APP_ARTIFACT_ROOT, id)
+    : path.join(root, app.output)
+  return serveArtifact(directory, headers)
+}
+
 async function browserPage(t, url, closeServer) {
   let browser
+  let page
   t.after(async () => {
     try {
-      await browser?.close()
+      if (page && !page.isClosed())
+        await page.screenshot({
+          path: path.join(
+            temporary,
+            `${t.name.split(' ')[0].toLowerCase()}-cloudflare.png`
+          )
+        })
     } finally {
+      await browser?.close()
       await closeServer()
     }
   })
@@ -44,11 +67,15 @@ async function browserPage(t, url, closeServer) {
     channel: 'chrome',
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
   })
-  const page = await browser.newPage({
-    viewport: { width: 1440, height: 1000 }
+  page = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+    deviceScaleFactor:
+      process.env.APP_ARTIFACT_ROOT || process.env.APP_PUBLIC_TEST ? 0.5 : 1
   })
   const errors = []
   const sourceRequests = []
+  const sockets = []
+  page.on('websocket', (socket) => sockets.push(socket.url()))
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
     if (/\/(?:@vite|src)\//.test(new URL(request.url()).pathname))
@@ -57,6 +84,11 @@ async function browserPage(t, url, closeServer) {
   t.after(() => {
     assert.deepEqual(errors, [])
     assert.deepEqual(sourceRequests, [])
+    assert.deepEqual(
+      sockets,
+      [],
+      'Static experience must not connect to a collaboration service'
+    )
   })
   await page.goto(url)
   return page
@@ -72,10 +104,7 @@ test(
     const headers = Object.fromEntries(
       config.headers[0].headers.map(({ key, value }) => [key, value])
     )
-    const server = await serveArtifact(
-      path.join(root, 'apps/asyra-sim/dist'),
-      headers
-    )
+    const server = await appServer('asyra-sim', headers)
     const page = await browserPage(t, server.url, server.close)
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     await expect(
@@ -180,9 +209,7 @@ test(
   'Design production artifact supports local editing and history without dev middleware',
   { timeout: 90_000 },
   async (t) => {
-    const server = await serveArtifact(
-      path.join(root, 'apps/asyra-design/dist/frontend')
-    )
+    const server = await appServer('asyra-design')
     const page = await browserPage(
       t,
       `${server.url}/?fileId=production-artifact`,
@@ -211,6 +238,38 @@ test(
     await page.keyboard.press(`${modifier}+Shift+z`)
     await expect(items).toHaveCount(1)
     assert.equal((await fetch(`${server.url}/api/ai/action-batch`)).status, 404)
+  }
+)
+
+test(
+  'FieldScope production artifact supports local scene editing, history and language persistence',
+  { timeout: 90_000 },
+  async (t) => {
+    const server = await appServer('fieldscope')
+    const page = await browserPage(t, server.url, server.close)
+    await expect(page.getByText('空間模型已就緒')).toBeVisible({
+      timeout: 30_000
+    })
+    await expect(page.getByTestId('scene').locator('canvas')).toBeVisible()
+    await page
+      .getByRole('combobox', { name: '語言', exact: true })
+      .selectOption('en')
+    const width = page.getByLabel('Strip 1 width', { exact: true })
+    await width.fill('1.1')
+    await width.press('Enter')
+    await expect(width).toHaveValue('1.1')
+    await page.getByRole('button', { name: 'Undo ⌘Z', exact: true }).click()
+    await expect(width).toHaveValue('0.9')
+    await page.getByRole('button', { name: 'Redo ⇧⌘Z', exact: true }).click()
+    await expect(width).toHaveValue('1.1')
+    await page.reload()
+    await expect(page.getByText('Scene ready', { exact: true })).toBeVisible({
+      timeout: 30_000
+    })
+    await expect(
+      page.getByRole('combobox', { name: 'Language', exact: true })
+    ).toHaveValue('en')
+    assert.equal((await fetch(`${server.url}/missing-worker.js`)).status, 404)
   }
 )
 

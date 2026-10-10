@@ -61,17 +61,21 @@ for (let mask = 1; mask < 8; mask++) {
         .find((arg) => arg.startsWith('--test-name-pattern='))
         .split('=')[1]
     )
-    assert.equal(
-      titles.length,
-      3,
-      'Every actual browser case must have an explicit selection owner'
-    )
-    for (let index = 0; index < titles.length; index++)
-      assert.equal(
-        pattern.test(titles[index]),
-        Boolean(mask & (1 << index)),
-        titles[index]
+    const owners = {
+      Sim: 'asyra-sim',
+      Design: 'asyra-design',
+      Website: 'asyra-framework',
+      FieldScope: 'fieldscope'
+    }
+    assert.equal(titles.length, Object.keys(owners).length)
+    for (const title of titles) {
+      const owner = owners[title.split(' ')[0]]
+      assert.ok(
+        owner,
+        'Every browser case must have an explicit selection owner'
       )
+      assert.equal(pattern.test(title), selected.includes(owner), title)
+    }
   })
 }
 
