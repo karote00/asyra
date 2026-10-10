@@ -1,6 +1,7 @@
 /* global URL */
 
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
@@ -92,12 +93,16 @@ test('release controller is manual, upstream-main-only and waits for every verif
     assert.match(line, /@[a-f0-9]{40}$/)
 })
 test('all App configs prevent Git auto-deployment before any build is created', () => {
-  for (const file of [
-    'vercel.json',
-    'apps/asyra-sim/vercel.json',
-    'apps/asyra-design/vercel.json',
-    'apps/asyra-framework-site/vercel.json'
-  ]) {
+  const files = execFileSync(
+    'git',
+    ['ls-files', 'vercel.json', 'apps/**/vercel.json'],
+    { cwd: new URL('../../', import.meta.url), encoding: 'utf8' }
+  )
+    .trim()
+    .split('\n')
+  assert.ok(files.includes('vercel.json'))
+  assert.ok(files.includes('apps/fieldscope/vercel.json'))
+  for (const file of files) {
     const config = JSON.parse(read(file))
     assert.equal(config.git.deploymentEnabled, false, file)
     assert.equal(

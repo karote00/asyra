@@ -5,10 +5,6 @@
   "buildCommand": "cd ../.. && corepack yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2",
   "outputDirectory": "dist/frontend",
   "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "development": false,
-      "*": false
-    }
+    "deploymentEnabled": false
   }
 }
