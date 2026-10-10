@@ -203,7 +203,6 @@ export function HomeResources() {
           </div>
         </div>
       </section>
-      <DeveloperEntry />
       <section
         id="start-building"
         aria-labelledby="start-building-title"
@@ -219,6 +218,7 @@ export function HomeResources() {
           >
             Choose your starting point.
           </h2>
+          <DeveloperEntry />
           <div className="mt-12 grid gap-10 md:grid-cols-3">
             {[
               {

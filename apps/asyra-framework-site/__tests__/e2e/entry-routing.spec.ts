@@ -4,24 +4,37 @@ const installGuideUrl =
   'https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md'
 
 for (const width of [320, 820, 1440]) {
-  test(`developer entry connects product examples to AI and self-guided starts at ${width}px`, async ({
+  test(`Skill entry shares the starting point section without repeating the homepage story at ${width}px`, async ({
     page
   }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    const section = page.getByRole('region', {
-      name: 'Focus on your features.'
+    const startingPoint = page.getByRole('region', {
+      name: 'Choose your starting point.'
     })
+    const section = startingPoint.getByRole('region', { name: 'Asyra Skill' })
     await section.scrollIntoViewIfNeeded()
     await expect(section).toContainText('Asyra Skill')
     await expect(section).toContainText('your existing AI coding agent')
     const products = await page.locator('#built-with-asyra').boundingBox()
     const entry = await section.boundingBox()
-    const starters = await page.locator('#start-building').boundingBox()
-    if (!products || !entry || !starters)
+    const starters = await startingPoint.boundingBox()
+    const firstStarter = await startingPoint
+      .locator('article')
+      .first()
+      .boundingBox()
+    if (!products || !entry || !starters || !firstStarter)
       throw new Error('Homepage entry sections are missing')
-    expect(entry.y).toBeGreaterThanOrEqual(products.y + products.height - 1)
-    expect(starters.y).toBeGreaterThanOrEqual(entry.y + entry.height - 1)
+    expect(starters.y).toBeGreaterThanOrEqual(products.y + products.height - 1)
+    expect(entry.y).toBeGreaterThan(starters.y)
+    expect(firstStarter.y).toBeGreaterThanOrEqual(entry.y + entry.height - 1)
+    expect(entry.y + entry.height).toBeLessThan(starters.y + starters.height)
+    await expect(
+      page.getByRole('heading', { name: 'Focus on your features.' })
+    ).toHaveCount(0)
+    await expect(page.locator('#extend')).toContainText(
+      'Your proof of concept is already product code.'
+    )
 
     const install = section.getByRole('link', { name: 'Get Asyra Skill' })
     await expect(install).toHaveAttribute('href', installGuideUrl)
@@ -71,11 +84,6 @@ for (const width of [320, 820, 1440]) {
       expect(box.x).toBeGreaterThanOrEqual(0)
       expect(box.x + box.width).toBeLessThanOrEqual(width)
     }
-    await section.getByRole('link', { name: 'Explore the starters' }).click()
-    await expect(page).toHaveURL(/\/#start-building$/)
-    await expect(
-      page.getByRole('heading', { name: 'Choose your starting point.' })
-    ).toBeInViewport()
     await section.getByRole('link', { name: 'Build with AI guide' }).click()
     await expect(page).toHaveURL(/\/docs\/start\/extend-with-ai$/)
     await expect(

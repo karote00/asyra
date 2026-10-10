@@ -1,6 +1,6 @@
 ---
 ---
 
-Introduce Asyra's shared infrastructure and feature-focused development after
-the homepage App showcases, with Asyra Skill installation, AI development
-guidance, and self-guided Starter entry points.
+Add a compact Asyra Skill introduction and installation links to the existing
+homepage starting points. Clarify that the first proof of concept is already
+product code in the existing growth chapter.

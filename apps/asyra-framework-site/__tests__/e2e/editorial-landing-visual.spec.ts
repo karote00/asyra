@@ -18,7 +18,7 @@ for (const width of [320, 390, 820, 1024, 1280, 1440, 2560]) {
     await page.screenshot({
       path: testInfo.outputPath(`home-opening-${width}.png`)
     })
-    for (const id of ['built-with-asyra', 'build-with-ai', 'start-building']) {
+    for (const id of ['built-with-asyra', 'start-building']) {
       const section = page.locator(`#${id}`)
       await section.scrollIntoViewIfNeeded()
       await expect(section.locator('h2')).toBeVisible()
