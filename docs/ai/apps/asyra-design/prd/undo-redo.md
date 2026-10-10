@@ -19,7 +19,8 @@ Users must be able to recover from mistakes through reliable undo and redo behav
 5. Drag-create interactions must commit as a compact single intended action (no move-spam history entries).
 6. Drag-move interactions must undo/redo element position deterministically as one intended action.
 7. Each successful or partially successful mutating Agent turn creates one
-   intended action; its Message Bar acts only while that AI action is current.
+   intended action accessible through ordinary history controls. Completion
+   messages remain in the AI conversation without a duplicate canvas toast.
 8. Failed, cancelled, denied, unavailable, unsupported, and zero-mutation AI
    turns do not expose a new enabled Undo control.
 9. Undo and Redo default to visible progressive replay. Exact recorded
@@ -44,8 +45,8 @@ Users must be able to recover from mistakes through reliable undo and redo behav
 - `undo-redo.spec.ts` passes
 - creation workflows produce expected reversible history
 - drag-create undo behavior remains compact and deterministic
-- `conversational-ai.spec.ts` proves one action per mutating Agent turn,
-  current-only Message Bar Undo/Redo, and stale-control invalidation
+- Conversation tests prove one action per mutating Agent turn, ordinary
+  Undo/Redo without a completion toast, and stale history-correlation invalidation
 - the explicit 7,076-element gate completes Undo within 12,000 ms, keeps Undo
   at or below 1.5 times the same-run Redo duration, completes Redo within
   30,000 ms, keeps both connected Actors converged within 30,000 ms after

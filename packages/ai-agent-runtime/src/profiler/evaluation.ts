@@ -506,9 +506,14 @@ export const createExecutionPeriodReport = (
   >()
   const configurationFor = (run: (typeof runs)[number]) =>
     Object.fromEntries(
-      ['provider', 'model', 'effort', 'sourceRevision', 'purpose'].map(
-        (key) => [key, text(run.metadata[key])]
-      )
+      [
+        'provider',
+        'model',
+        'effort',
+        'sourceRevision',
+        'sourceFingerprint',
+        'purpose'
+      ].map((key) => [key, text(run.metadata[key])])
     )
   for (const run of runs) {
     const configuration = configurationFor(run)

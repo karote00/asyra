@@ -67,6 +67,10 @@ export interface SceneTreeRawAPIs {
     changes: readonly UpdateElementDataChange[],
     options?: EVENT_OPTIONS
   ) => readonly string[]
+  removeSubtrees: (
+    elementIds: readonly string[],
+    options?: EVENT_OPTIONS
+  ) => readonly string[]
   removeSubtree: (
     elementId: string,
     options?: EVENT_OPTIONS

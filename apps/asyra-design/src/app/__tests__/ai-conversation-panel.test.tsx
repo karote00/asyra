@@ -63,6 +63,60 @@ describe('AI Agent conversation panel intent boundary', () => {
     vi.restoreAllMocks()
   })
 
+  it('shows each concrete work segment and retires current activity on failure', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      void harness.conversation.submit('Refine the tower')
+    })
+    const request = harness.feature.execute.mock
+      .calls[0][0] as AiConversationFeatureRequest
+    for (const message of [
+      '正在加入窗戶光影反射效果',
+      '正在刪除被覆蓋物件',
+      '正在調整屋頂顏色'
+    ]) {
+      await act(async () =>
+        request.progressObserver({
+          phase: 'provider',
+          summary: 'Running a tool',
+          tool: 'update_design_element',
+          toolStatus: 'running',
+          message
+        })
+      )
+      expect(
+        screen.getByRole('status', { name: 'Current activity' }).textContent
+      ).toBe(message)
+      expect(
+        within(screen.getByLabelText('Operational progress'))
+          .getByText(message)
+          .getAttribute('aria-current')
+      ).toBe('step')
+    }
+    await act(async () =>
+      harness.pending.resolve({
+        status: 'failed',
+        stage: 'execution',
+        transaction: { status: 'committed' }
+      })
+    )
+    expect(
+      screen.queryByRole('status', { name: 'Current activity' })
+    ).toBeNull()
+    expect(
+      within(screen.getByLabelText('Operational progress'))
+        .getByText('正在調整屋頂顏色')
+        .hasAttribute('aria-current')
+    ).toBe(false)
+  })
+
   it('does not show a redundant canvas or selection context caption', () => {
     const harness = createPanelHarness()
     render(

@@ -7,6 +7,6 @@ export const designReportPolicy: ExecutionReportPolicy = {
     AiActionNames.READ_DESIGN_CONTEXT,
     AiDesignToolIds.DESCRIBE_DESIGN_APIS
   ],
-  reviewTool: AiDesignToolIds.RECORD_DESIGN_REVIEW,
+  reviewTool: AiDesignToolIds.REVIEW_DRAWING,
   validateEvidenceTool: AiActionNames.VALIDATE_INSPECTION_EVIDENCE
 }

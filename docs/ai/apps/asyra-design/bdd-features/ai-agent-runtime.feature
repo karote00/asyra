@@ -43,13 +43,20 @@ Feature: Optional AI agent runtime
     Then the complete plan is denied before confirmation or transaction execution
     And canonical state is unchanged
 
-  Scenario: Required confirmation can be accepted or cancelled
-    Given every candidate action is registered, schema-valid, and allowed
-    And the app policy requires confirmation
-    When the app receives one immutable redacted confirmation input
-    Then accepting opens one plan transaction
-    But cancelling returns a no-mutation result
-    And the runtime does not require a low-level or visual user preview
+  Scenario: App editing operations execute without approval
+    Given the user requests drawing or editing through registered App actions
+    When the plan deletes, replaces, or adjusts existing elements and their properties
+    Then no Approve interaction is required
+    And schema validation and canonical locks still apply
+    And successful changes retain their ordinary Undo boundary
+
+  Scenario: External-tool or security permission is requested in conversation
+    Given an external-tool operation or security concern needs user permission
+    And the user has not already authorized it
+    When the model follows the App prompt
+    Then it asks through request_clarification and waits for the answer
+    And it does not treat internal editing actions as permission requests
+    And host and external-service security enforcement remains authoritative
 
   Scenario: Valid multi-action plan creates one undo commit
     Given a complete plan has several registered schema-valid allowed actions
@@ -134,3 +141,67 @@ Feature: Optional AI agent runtime
     Then the same preparation owner validates and compiles the repaired source
     And only successful preparation can proceed to apply
     And missing or expired references return a recoverable failure
+
+  Scenario: Delete a requested forest in one canonical owner preparation
+    Given multiple selected elements include nested containers and shared properties
+    When the agent submits one plural deletion
+    Then Scene and Props prepare the combined removal once before writing
+    And shared properties used by surviving elements remain active
+    And Undo restores the exact hierarchy and property values
+
+  Scenario: Correct all matching elements within a region without metadata pages
+    Given an explicit workspace region and a registered plural edit
+    When the agent submits the region as the batch target query
+    Then the backend resolves the complete identity set before writing
+    And incomplete or cancelled query results do not dispatch a mutation
+    And compact structural receipts omit canonical history snapshots
+
+  Scenario: Preserve failed review findings for a targeted correction
+    Given review finds unresolved requested criteria
+    When the review response is returned
+    Then complete findings and known target scope are available for correction
+    And changed drawing data requires fresh evidence before completion
+
+  Scenario: Recover only the missing tool definition scope
+    Given the agent retained a tool definition but lost one field description
+    When it follows the scoped recovery route with a declared delivery failure
+    Then only that requested scope and its local dependencies are returned
+    And the full schema remains available through an explicit full recovery
+    And canonical action validation retains all required constraints
+
+  Scenario: Recover an original reference with diagnostic bounded attempts
+    Given a public reference read has a transient transport failure
+    When the acquisition owner retries within the original deadline
+    Then it performs at most one additional attempt
+    And permanent errors and cancellation do not retry
+    And the failed source retains its stage, reason, status and attempt count
+    And a different admitted source retains original resolution and can be reused
+
+  Scenario: Attribute runs to the actual source snapshot
+    Given a local invocation begins with tracked or untracked source changes
+    When the host captures source identity and passes it to Runtime
+    Then parent and child records retain the same revision and source fingerprint
+    And an unavailable source snapshot does not prevent execution
+    And upstream research payloads not exposed by the provider are explicitly unavailable
+
+
+  Scenario: Correct a derived measurement without discarding an accepted drawing
+    Given the requested drawing has current accepted visual and data evidence
+    And a derived calculation cites retained valid source facts
+    When the calculation is corrected without changing its source facts or canvas geometry
+    Then the calculation retains its full precision
+    And the accepted drawing evidence remains valid
+
+  Scenario: Recheck a changed fact through its affected criteria
+    Given the requested drawing has current accepted evidence
+    When an evidenced source change affects one bound data criterion
+    Then the fact receipt identifies that criterion and its required follow-up
+    And unchanged visual criteria do not require another independent comparison
+    But a canonical drawing change requires current drawing evidence
+
+  Scenario: Distinguish drawing completion from durable storage
+    Given a document session has accepted the drawing publications
+    When the final result captures its document generation and sequence
+    Then persistence is confirmed only by a contiguous backend acknowledgement
+    And later edits do not extend the captured target
+    And a disconnected or failed session does not report durable storage

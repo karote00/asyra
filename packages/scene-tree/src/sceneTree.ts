@@ -80,7 +80,8 @@ import type {
   ResolvedElementPropertyTargets,
   ElementPropertyTargetRequest,
   PreparedElementRemoval,
-  PreparedSubtreeRemoval
+  PreparedSubtreeRemoval,
+  PreparedSubtreesRemoval
 } from './element-mutation.js'
 import { runWithSceneTreeInitialOwnerValues } from './props-manager-context.js'
 
@@ -2112,10 +2113,60 @@ class SceneTree {
   }
 
   prepareSubtreeRemoval(elementId: string): PreparedSubtreeRemoval {
+    return this.prepareSubtreeRootsRemoval(
+      [elementId],
+      false
+    ) as PreparedSubtreeRemoval
+  }
+
+  prepareSubtreesRemoval(
+    elementIds: readonly string[]
+  ): PreparedSubtreesRemoval {
+    return this.prepareSubtreeRootsRemoval(
+      elementIds,
+      true
+    ) as PreparedSubtreesRemoval
+  }
+
+  private prepareSubtreeRootsRemoval(
+    elementIds: readonly string[],
+    batchLeaves: boolean
+  ): PreparedSubtreeRemoval | PreparedSubtreesRemoval {
+    if (
+      !Array.isArray(elementIds) ||
+      elementIds.some((id) => typeof id !== 'string' || !id) ||
+      new Set(elementIds).size !== elementIds.length
+    ) {
+      throw new Error(
+        '[SceneTree] Subtree removal requires unique active element ids'
+      )
+    }
     this.validateCanonicalHierarchy()
+    const selected = new Set(elementIds)
+    const roots = elementIds
+      .map((id) => {
+        const element = this.getElementById(id)
+        if (!element || element.get('type') === EntityTypes.WORKSPACE) {
+          throw new Error(
+            '[SceneTree] Subtree removal requires active non-Workspace elements'
+          )
+        }
+        return element
+      })
+      .filter((element) => {
+        let parentId = element.get('parentId')
+        while (parentId) {
+          if (selected.has(parentId)) return false
+          parentId = this.getElementById(parentId)?.get('parentId') ?? ''
+        }
+        return true
+      })
+    const parentIndexes = new Map<string, ReadonlyMap<string, number>>()
+    const subtrees = roots.map((root) =>
+      this.collectSubtreeRemovalEntries(root.get('id'), parentIndexes)
+    )
     const relationRevisionBefore = this.elementPropertyRelationRevision
-    const removed = this.collectSubtreeRemovalEntries(elementId)
-    const rootEntry = removed[removed.length - 1]
+    const removed = subtrees.flat()
     const removalIds = new Set(removed.map((entry) => entry.elementId))
     const elements = removed.map((entry) => {
       const element = this.getElementById(entry.elementId)
@@ -2147,29 +2198,78 @@ class SceneTree {
         ])
       )
     })
-    const rootParentChildrenBefore = parentChildrenBefore.get(
-      rootEntry.parentId
-    )
-    if (
-      !rootParentChildrenBefore ||
-      rootParentChildrenBefore[rootEntry.index] !== rootEntry.elementId
-    ) {
-      throw new Error(
-        `[SceneTree] Cannot prepare stale subtree root "${rootEntry.elementId}"`
-      )
-    }
     const parentChildrenAfter = new Map(
       [...parentChildrenBefore].map(([parentId, children]) => [
         parentId,
         Object.freeze(children.filter((id) => !removalIds.has(id)))
       ])
     )
-    const rootParentChildrenAfter = parentChildrenAfter.get(rootEntry.parentId)
-    if (!rootParentChildrenAfter) {
-      throw new Error(
-        `[SceneTree] Cannot prepare subtree parent order for "${rootEntry.elementId}"`
-      )
+    // Evidence follows sequential command semantics, while canonical apply shares
+    // one final parent/relation mutation. Leaf runs use existing batch evidence.
+    const evidence: SceneTreeChange[] = []
+    const currentChildren = new Map(
+      [...parentChildrenBefore].map(([id, children]) => [id, [...children]])
+    )
+    const currentSiblings = (parentId: string): string[] => {
+      const children = currentChildren.get(parentId)
+      if (!children)
+        throw new Error('[SceneTree] Missing prepared parent children')
+      return children
     }
+    let leaves: SubtreeRemovalEntry[] = []
+    const flushLeaves = (): void => {
+      if (!leaves.length) return
+      const indexes = new Map<string, ReadonlyMap<string, number>>()
+      leaves.forEach(({ parentId }) => {
+        if (!indexes.has(parentId))
+          indexes.set(
+            parentId,
+            new Map(currentSiblings(parentId).map((id, index) => [id, index]))
+          )
+      })
+      const entries = leaves.map(({ data, parentId, elementId }) => {
+        const index = indexes.get(parentId)?.get(elementId)
+        if (index === undefined)
+          throw new Error('[SceneTree] Missing prepared removal index')
+        return { data, parentId, index }
+      })
+      const ids = new Set(leaves.map(({ elementId }) => elementId))
+      new Set(leaves.map(({ parentId }) => parentId)).forEach((parentId) => {
+        currentChildren.set(
+          parentId,
+          currentSiblings(parentId).filter((id) => !ids.has(id))
+        )
+      })
+      evidence.push({
+        action: SCENE_TREE_ACTIONS.REMOVE_ELEMENTS,
+        eventName: EventTypes.REMOVE_ELEMENTS,
+        undoType: EventTypes.ADD_ELEMENTS,
+        undoAction: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
+        entries
+      })
+      leaves = []
+    }
+    for (const entries of subtrees) {
+      if (batchLeaves && entries.length === 1) {
+        leaves.push(entries[0])
+        continue
+      }
+      flushLeaves()
+      const root = entries[entries.length - 1]
+      const siblings = currentSiblings(root.parentId)
+      const index = siblings.indexOf(root.elementId)
+      const after = siblings.filter((id) => id !== root.elementId)
+      currentChildren.set(root.parentId, after)
+      evidence.push({
+        eventName: EventTypes.CHANGE_SUBTREE,
+        elementId: root.elementId,
+        removed: [...entries.slice(0, -1), { ...root, index }],
+        rootParentChildrenAfter: after,
+        action: SCENE_TREE_ACTIONS.REMOVE_SUBTREE,
+        undoAction: SCENE_TREE_ACTIONS.RESTORE_SUBTREE
+      })
+    }
+    flushLeaves()
     const relationIndexUpdates =
       this.prepareElementPropertyRelationRemovalsFromRelations(
         removed.flatMap(({ data }) => collectElementPropertyRelations(data))
@@ -2193,7 +2293,9 @@ class SceneTree {
       }
     )
     const preparedMutation = cloneAndFreezeSceneValue({
-      kind: 'prepared-subtree-removal',
+      kind: batchLeaves
+        ? 'prepared-subtrees-removal'
+        : 'prepared-subtree-removal',
       orderedElementIds: removed.map(({ elementId: id }) => id),
       relationReleases,
       orphanRootPropertyIds: relationReleases
@@ -2201,18 +2303,9 @@ class SceneTree {
         .map(({ componentId }) => componentId),
       retainedRootPropertyIds:
         this.collectRootPropertyIdsAfterRelationUpdates(relationIndexUpdates),
-      evidence: [
-        {
-          eventName: EventTypes.CHANGE_SUBTREE,
-          elementId: rootEntry.elementId,
-          removed,
-          rootParentChildrenAfter,
-          action: SCENE_TREE_ACTIONS.REMOVE_SUBTREE,
-          undoAction: SCENE_TREE_ACTIONS.RESTORE_SUBTREE
-        } satisfies SubtreeChange
-      ]
-    }) as PreparedSubtreeRemoval
-    const frozenRemoved = preparedMutation.evidence[0].removed
+      evidence
+    }) as PreparedSubtreeRemoval | PreparedSubtreesRemoval
+    const frozenRemoved = cloneAndFreezeSceneValue(removed)
     this.preparedElementMutationArtifacts.set(preparedMutation, {
       kind: 'subtree-removal',
       entries: Object.freeze(
@@ -2289,10 +2382,16 @@ class SceneTree {
     })
     const events = Object.freeze(
       preparedMutation.evidence.map((payload) => {
-        const orderedIds =
-          preparedMutation.kind === 'prepared-element-data-mutation'
-            ? Object.freeze([(payload as UpdateElementDataChange).id])
-            : preparedMutation.orderedElementIds
+        let orderedIds = preparedMutation.orderedElementIds
+        if (preparedMutation.kind === 'prepared-element-data-mutation') {
+          orderedIds = Object.freeze([(payload as UpdateElementDataChange).id])
+        } else if (isElementBatchChange(payload)) {
+          orderedIds = Object.freeze(payload.entries.map(({ data }) => data.id))
+        } else if (payload.eventName === EventTypes.CHANGE_SUBTREE) {
+          orderedIds = Object.freeze(
+            (payload as SubtreeChange).removed.map(({ elementId }) => elementId)
+          )
+        }
         const canonicalEvidence = Object.freeze({
           orderedIds,
           ...(isElementBatchChange(payload)
@@ -2559,7 +2658,8 @@ class SceneTree {
       if (
         preparedMutation.kind !== 'prepared-element-removal' &&
         preparedMutation.kind !== 'prepared-canonical-element-removal' &&
-        preparedMutation.kind !== 'prepared-subtree-removal'
+        preparedMutation.kind !== 'prepared-subtree-removal' &&
+        preparedMutation.kind !== 'prepared-subtrees-removal'
       ) {
         throw new Error(
           '[SceneTree] Element removal artifact does not match its owner-issued preparation'
@@ -3368,6 +3468,7 @@ class SceneTree {
       })
     })
 
+    const parentIds = new Map<string, string>()
     this._elements.forEach((element, elementId) => {
       if (element.get('type') === EntityTypes.WORKSPACE) {
         return
@@ -3386,22 +3487,31 @@ class SceneTree {
         )
       }
 
-      const visited = new Set<string>([elementId])
-      let ancestorId = parentId
-      while (ancestorId) {
-        if (visited.has(ancestorId)) {
+      parentIds.set(elementId, parentId)
+    })
+
+    // Each parent edge is walked once within this validation. No result survives
+    // a subsequent mutation, so corrupt or changed hierarchies are still checked.
+    const verified = new Set<string>()
+    for (const elementId of parentIds.keys()) {
+      if (verified.has(elementId)) continue
+      const path = new Set<string>()
+      let currentId: string | undefined = elementId
+      while (
+        currentId &&
+        parentIds.has(currentId) &&
+        !verified.has(currentId)
+      ) {
+        if (path.has(currentId)) {
           throw new Error(
             `[SceneTree] Invalid canonical hierarchy: cycle at "${elementId}"`
           )
         }
-        visited.add(ancestorId)
-        const ancestor = this.getElementById(ancestorId)
-        if (!ancestor || ancestor.get('type') === EntityTypes.WORKSPACE) {
-          break
-        }
-        ancestorId = ancestor.get('parentId')
+        path.add(currentId)
+        currentId = parentIds.get(currentId)
       }
-    })
+      path.forEach((id) => verified.add(id))
+    }
   }
 
   private assertMoveDoesNotCreateCycle(
@@ -3715,7 +3825,8 @@ class SceneTree {
   }
 
   private collectSubtreeRemovalEntries(
-    elementId: string
+    elementId: string,
+    parentIndexes = new Map<string, ReadonlyMap<string, number>>()
   ): SubtreeRemovalEntry[] {
     const root = this.getElementById(elementId)
     if (!root) {
@@ -3749,12 +3860,18 @@ class SceneTree {
       const currentId = current.get('id')
       const parentId = current.get('parentId')
       const parent = this.getElementById(parentId)
-      const index = parent
-        ? this.getContainerChildren(
-            parent,
-            `Subtree parent "${parentId}"`
-          ).indexOf(currentId)
-        : -1
+      if (parent && !parentIndexes.has(parentId)) {
+        parentIndexes.set(
+          parentId,
+          new Map(
+            this.getContainerChildren(
+              parent,
+              `Subtree parent "${parentId}"`
+            ).map((id, index) => [id, index])
+          )
+        )
+      }
+      const index = parentIndexes.get(parentId)?.get(currentId) ?? -1
       if (index < 0) {
         throw new Error(
           `[SceneTree] Invalid subtree request: missing membership for "${currentId}"`

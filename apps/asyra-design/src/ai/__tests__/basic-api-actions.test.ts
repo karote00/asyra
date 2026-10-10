@@ -49,9 +49,7 @@ it('delegates every contract in parameter order without copying inputs or inject
     )
     for (let i = 0; i < contract.parameters.length; i++)
       expect(method.mock.calls[0][i]).toBe(args[contract.parameters[i]])
-    expect(basicApiPermissionRules[contract.name]).toBe(
-      contract.effect === 'delete' ? 'confirm' : 'allow'
-    )
+    expect(basicApiPermissionRules[contract.name]).toBe('allow')
   }
 })
 

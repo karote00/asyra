@@ -226,11 +226,17 @@ const runLocalAiProvider = async (
     readonly onProgress?: (event: AiToolProgress) => void
     readonly executeBatch?: ExecuteAiBatch
     readonly signal?: AbortSignal
+    readonly retainReference?: (
+      image: { dataUrl: string; mediaType: string },
+      attachmentIndex: number
+    ) => unknown
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly visualAssessmentOnly?: boolean
     readonly recordDirectory?: string
     readonly sourceRevision?: string
+    readonly sourceFingerprint?: string
+    readonly sourceIdentityStatus?: 'captured' | 'configured' | 'unavailable'
   },
   usage?: ReturnType<typeof createAiExecutionProfiler>
 ): Promise<unknown> => {
@@ -260,7 +266,11 @@ const runLocalAiProvider = async (
   }
   const imageTools = createLocalImageTools(input)
   const references = createLocalReferenceTools(
-    imageTools.addReference,
+    (image) => {
+      const index = imageTools.addReference(image)
+      options.retainReference?.(image, index)
+      return index
+    },
     undefined,
     ownerObservation
   )
@@ -302,6 +312,8 @@ const runLocalAiProvider = async (
           preparation,
           executeObservedBatch,
           {
+            resolveSources: imageTools.resolveSources,
+            validateReferences: imageTools.validateReferences,
             getNativeTools: (): NativeToolDescriptor[] =>
               activeToolGroups.flatMap((group) =>
                 (group.owner?.definitions ?? []).map(
@@ -339,6 +351,8 @@ const runLocalAiProvider = async (
                     executable: options.executable,
                     recordDirectory: options.recordDirectory,
                     sourceRevision: options.sourceRevision,
+                    sourceFingerprint: options.sourceFingerprint,
+                    sourceIdentityStatus: options.sourceIdentityStatus,
                     sourceRequestId: usage?.requestId,
                     parentCallId,
                     sourceSpanId,
@@ -583,11 +597,16 @@ const runLocalAiProvider = async (
         return protocolFailure()
       const toolName = String(params.tool)
       let message: string | undefined
-      if (toolName === AiDesignToolIds.RECORD_DESIGN_REVIEW)
-        message =
-          isRecord(params.arguments) && params.arguments.phase === 'plan'
-            ? 'Checking the drawing approach'
-            : 'Checking the requested details'
+      if (toolName === AiDesignToolIds.REVIEW_DRAWING)
+        message = 'Checking the requested details'
+      else if (toolName === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+        message = 'Defining the requested checks'
+      else if (toolName === AiDesignToolIds.RECORD_DESIGN_FACTS)
+        message = 'Recording verified sources'
+      else if (toolName === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS)
+        message = 'Recording derived measurements'
+      else if (toolName === AiDesignToolIds.SELECT_DESIGN_REFERENCES)
+        message = 'Selecting comparison references'
       else if (toolName === AiDesignToolIds.PREPARE_DESIGN)
         message = 'Preparing the design'
       else if (toolName === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN)
@@ -1333,6 +1352,8 @@ interface LocalAiProviderOptions {
   readonly executable: string
   readonly recordDirectory?: string
   readonly sourceRevision?: string
+  readonly sourceFingerprint?: string
+  readonly sourceIdentityStatus?: 'captured' | 'configured' | 'unavailable'
   readonly parentCallId?: string
   readonly sourceSpanId?: string
   readonly onProgress?: (event: AiToolProgress) => void
@@ -1358,6 +1379,8 @@ const requestRecordedLocalAi = async (
       ? (line) => console.error(line)
       : (line) => console.info(line),
     sourceRevision: options.sourceRevision,
+    sourceFingerprint: options.sourceFingerprint,
+    sourceIdentityStatus: options.sourceIdentityStatus,
     lifecycle: true,
     parentCallId: options.parentCallId,
     sourceSpanId: options.sourceSpanId,
@@ -1382,6 +1405,9 @@ const requestRecordedLocalAi = async (
         criteria: input.context.criteria,
         previousFindings: input.context.previousFindings,
         sourceFacts: input.context.sourceFacts,
+        referenceDecisions: input.context.referenceDecisions,
+        unverifiedSourceFacts: input.context.unverifiedSourceFacts,
+        requirementRevision: input.context.requirementRevision,
         referenceImageIndexes: input.context.referenceImageIndexes,
         images: attachments.map(({ dataUrl }, index) => ({
           role: (input.context as { imageRoles: string[] }).imageRoles[index],
@@ -1395,7 +1421,40 @@ const requestRecordedLocalAi = async (
   let outcome: Parameters<typeof usage.finish>[0] = 'failed'
   let resultEvidence: unknown
   try {
-    const result = await runLocalAiProvider(input, options, usage)
+    const retainReference = (
+      image: { dataUrl: string; mediaType: string },
+      attachmentIndex: number
+    ) => {
+      const asset = sink.writeAsset?.(
+        usage.requestId,
+        Buffer.from(image.dataUrl.split(',')[1], 'base64'),
+        image.mediaType
+      )
+      usage.trace('asset_retained', { attachmentIndex, asset })
+      return asset
+    }
+    if (
+      !options.assessmentOnly &&
+      isRecord(input.metadata) &&
+      Array.isArray(input.metadata.imageAttachments)
+    ) {
+      input.metadata.imageAttachments.forEach((image, index) => {
+        if (
+          isRecord(image) &&
+          typeof image.dataUrl === 'string' &&
+          typeof image.mediaType === 'string'
+        )
+          retainReference(
+            { dataUrl: image.dataUrl, mediaType: image.mediaType },
+            index
+          )
+      })
+    }
+    const result = await runLocalAiProvider(
+      input,
+      { ...options, retainReference },
+      usage
+    )
     if (options.visualAssessmentOnly) {
       const context = input.context as {
         criteria: VisualAssessmentInput['criteria']
@@ -1456,6 +1515,9 @@ export const requestLocalVisualAssessment = async (
     images,
     previousFindings,
     sourceFacts,
+    referenceDecisions,
+    unverifiedSourceFacts,
+    requirementRevision,
     referenceImageIndexes
   } = assessment
   const result = await requestRecordedLocalAi(
@@ -1466,6 +1528,9 @@ export const requestLocalVisualAssessment = async (
         criteria,
         previousFindings,
         sourceFacts,
+        referenceDecisions,
+        unverifiedSourceFacts,
+        requirementRevision,
         referenceImageIndexes,
         imageRoles: images.map(({ role }) => role)
       },

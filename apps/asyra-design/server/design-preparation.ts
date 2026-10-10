@@ -1,5 +1,6 @@
 import {
   isDesignFill,
+  isDesignFillTemplate,
   isDesignGradient,
   isDesignInlineFill,
   isDesignSharedFill
@@ -257,8 +258,8 @@ const admitDraft = (input: unknown): DraftNode => {
         type === 'group' || deriveVectorDimensions
           ? 0
           : finite(source.height, 'height', Number.MIN_VALUE),
-      x: finite(source.x ?? 0, 'x'),
-      y: finite(source.y ?? 0, 'y'),
+      x: finite(source.x ?? 0, 'x', -limits.dimension),
+      y: finite(source.y ?? 0, 'y', -limits.dimension),
       padding: finite(source.padding ?? 0, 'padding'),
       gap: finite(source.gap ?? 0, 'gap'),
       columns: Number(columns),
@@ -300,13 +301,13 @@ const admitDraft = (input: unknown): DraftNode => {
     }
     if (type === 'group') {
       const bounds = deriveGroupBounds(node.children)
-      node.x += bounds.x
-      node.y += bounds.y
+      node.x = finite(node.x + bounds.x, 'group x', -limits.dimension)
+      node.y = finite(node.y + bounds.y, 'group y', -limits.dimension)
       node.width = finite(bounds.width, 'group width')
       node.height = finite(bounds.height, 'group height')
       for (const child of node.children) {
-        child.x -= bounds.x
-        child.y -= bounds.y
+        child.x = finite(child.x - bounds.x, 'group child x')
+        child.y = finite(child.y - bounds.y, 'group child y')
       }
     }
     return node
@@ -319,7 +320,15 @@ export const prepareDesign = (
   identity: string = randomUUID(),
   onSourceWork?: (
     summary: ReturnType<typeof constructDesign>['sourceWork']
-  ) => void
+  ) => void,
+  onReuse?: (summary: {
+    fillOccurrences: number
+    compiledFillDefinitions: number
+    fillTemplateUses: number
+    constructionMs: number
+    admissionMs: number
+    compilationMs: number
+  }) => void
 ): AnalyzedDesign => {
   const sharedFills =
     record(input) && input.sharedFills !== undefined ? input.sharedFills : {}
@@ -331,10 +340,35 @@ export const prepareDesign = (
     )
   )
     return fail('sharedFills must define named inline colors or gradients')
+  const fillTemplates =
+    record(input) && input.fillTemplates !== undefined
+      ? input.fillTemplates
+      : {}
+  if (
+    !record(fillTemplates) ||
+    Object.entries(fillTemplates).some(
+      ([key, value]) =>
+        !key.trim() || key.length > 160 || !isDesignInlineFill(value)
+    )
+  )
+    return fail('fillTemplates must define named inline colors or gradients')
+  const reuse = {
+    fillOccurrences: 0,
+    compiledFillDefinitions: 0,
+    fillTemplateUses: 0
+  }
+  const compiledFills = new Map<unknown, Record<string, unknown>>()
   const sharedFillIds: Record<string, string> = Object.create(null)
   const compileFill = (value: unknown, elementId: string): unknown[] => {
     if (value === undefined) return []
+    reuse.fillOccurrences++
     let definition: unknown = value
+    if (isDesignFillTemplate(value)) {
+      if (!Object.hasOwn(fillTemplates, value.template))
+        return fail(`unknown Fill template ${value.template}`)
+      definition = fillTemplates[value.template]
+      reuse.fillTemplateUses++
+    }
     if (isDesignSharedFill(value)) {
       if (!Object.hasOwn(sharedFills, value.shared))
         return fail(`unknown shared Fill ${value.shared}`)
@@ -343,12 +377,13 @@ export const prepareDesign = (
       definition = sharedFills[value.shared]
       sharedFillIds[value.shared] = `${elementId}-fill`
     }
-    if (!isDesignInlineFill(definition)) return fail('fill')
-    return [
-      {
-        id: `${elementId}-fill`,
+    let compiled = compiledFills.get(definition)
+    if (!compiled) {
+      if (!isDesignInlineFill(definition)) return fail('fill')
+      const gradient = isDesignGradient(definition)
+      compiled = {
         type: 'fill',
-        kind: isDesignGradient(definition) ? 'gradient' : 'solid',
+        kind: gradient ? 'gradient' : 'solid',
         color:
           typeof definition === 'string'
             ? definition
@@ -357,18 +392,25 @@ export const prepareDesign = (
         visible: true,
         colorFormat: 'hex',
         defaultColorFormat: 'hex',
-        gradient: isDesignGradient(definition)
-          ? structuredClone(definition)
-          : null
+        gradient: gradient ? structuredClone(definition) : null
       }
-    ]
+      compiledFills.set(definition, compiled)
+      reuse.compiledFillDefinitions++
+    }
+    // Immutable prepared values may be reused; canonical property identities stay independent.
+    return [{ ...compiled, id: `${elementId}-fill` }]
   }
+  const constructionStarted = performance.now()
   const { draft, brief, sourceWork } = constructDesign(
     input,
     `design-${identity}-0`
   )
+  const constructionMs = performance.now() - constructionStarted
   onSourceWork?.(sourceWork)
+  const admissionStarted = performance.now()
   const root = admitDraft(draft)
+  const admissionMs = performance.now() - admissionStarted
+  const compilationStarted = performance.now()
   const entries: PreparedDesignEntry[] = [],
     findings: DesignFinding[] = []
   const keyToId: Record<string, string> = Object.create(null)
@@ -633,7 +675,7 @@ export const prepareDesign = (
     if (!passed) findings.push({ kind: 'requirement', ...check, actual })
     return { ...check, actual, passed }
   })
-  return freeze({
+  const prepared = freeze({
     ...(brief ? { review: { ...brief, checks } } : {}),
     ...(textBoxOverlaps.length
       ? { layoutReview: { textBoxOverlaps, truncated } }
@@ -647,6 +689,13 @@ export const prepareDesign = (
     keyToId,
     findings
   })
+  onReuse?.({
+    ...reuse,
+    constructionMs,
+    admissionMs,
+    compilationMs: performance.now() - compilationStarted
+  })
+  return prepared
 }
 
 export const createDesignPreparationSession = (
@@ -665,17 +714,24 @@ export const createDesignPreparationSession = (
       const artifactId = randomUUID()
       let sourceWork:
         ReturnType<typeof constructDesign>['sourceWork'] | undefined
+      let reuse:
+        | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
+        | undefined
       const { review, layoutReview, sharedFillIds, ...compiled } = compile(
         input,
         artifactId,
         (summary) => {
           sourceWork = summary
+        },
+        (summary) => {
+          reuse = summary
         }
       )
       const artifact = freeze(compiled)
       artifacts.set(artifactId, artifact)
       return {
         artifactId,
+        ...(reuse ? { reuse } : {}),
         ...(sharedFillIds && Object.keys(sharedFillIds).length
           ? { sharedFillIds }
           : {}),

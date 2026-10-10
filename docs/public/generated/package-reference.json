@@ -14,7 +14,7 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "e416d309bad4e73fcf37adaf347310e946413eb45ec7592989f34093993d3556",
+        "contract": "965191380a9021a08c40c0c6c2d0734867d45157688f01a57d87beeaa4806d4b",
         "guide": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
         "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
       },
@@ -71,7 +71,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae",
+        "contract": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -344,7 +344,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5",
+        "contract": "604175024dabe041f911984c3b5080d0009cf2f8331edc0beca1f495f2051640",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
       },

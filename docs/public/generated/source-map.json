@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -82,7 +82,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "622d60d0b19a2b8fff88c23b79f263a40e7b1a1cdd31cb4ea5214125ce6a8efe"
+          "sha256": "010edb78b56af4edd6cf4145e7e9499f19f96012d5be508c84f34da922d518bc"
         }
       ]
     },
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         }
       ]
     },
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -214,7 +214,7 @@
         },
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5"
+          "sha256": "604175024dabe041f911984c3b5080d0009cf2f8331edc0beca1f495f2051640"
         }
       ]
     },
@@ -252,11 +252,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5"
+          "sha256": "604175024dabe041f911984c3b5080d0009cf2f8331edc0beca1f495f2051640"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e416d309bad4e73fcf37adaf347310e946413eb45ec7592989f34093993d3556"
+          "sha256": "965191380a9021a08c40c0c6c2d0734867d45157688f01a57d87beeaa4806d4b"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e416d309bad4e73fcf37adaf347310e946413eb45ec7592989f34093993d3556"
+          "sha256": "965191380a9021a08c40c0c6c2d0734867d45157688f01a57d87beeaa4806d4b"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -326,7 +326,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e416d309bad4e73fcf37adaf347310e946413eb45ec7592989f34093993d3556"
+          "sha256": "965191380a9021a08c40c0c6c2d0734867d45157688f01a57d87beeaa4806d4b"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "94ebb4b7cdea03015293fd20ce126f5cb956185f1935cbc6a920764e8a7958ae"
+          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
         },
         {
           "path": "packages/core/package.json",
@@ -522,7 +522,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "2c87779f4f91e7173e5bc0dd25551c211a3fa6d7e816c109caff587e8d9fe3b5"
+          "sha256": "604175024dabe041f911984c3b5080d0009cf2f8331edc0beca1f495f2051640"
         },
         {
           "path": "packages/scene-tree/package.json",

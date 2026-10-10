@@ -1,7 +1,6 @@
 import {
   createLocalDesignReview,
-  reviewPlanSchema,
-  designReviewDefinition
+  designEvidenceDefinitions
 } from '../local-design-review'
 import { operationInputIssue } from '../operation-input-schema'
 import { describe, expect, it } from 'vitest'
@@ -21,6 +20,15 @@ const imageGuidance = imageDefinitions
   .join('\n')
 
 describe('stage-owned App guidance', () => {
+  it('uses existing activity fields for concrete work without extra reporting calls', () => {
+    expect(general).toContain('existing message field')
+    expect(general).toContain('action summary')
+    expect(general).toContain('current action and target')
+    expect(general).toContain('Adding window reflections')
+    expect(general).toContain('conversation language')
+    expect(general).toContain('Do not add a tool call just to report status')
+  })
+
   it('admits the first ready drawing before review planning without a complete geometry inventory', () => {
     expect(general).toMatch(/first ready part.*before.*plan/s)
     expect(general).not.toMatch(
@@ -33,9 +41,23 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('original user request remains authoritative')
     expect(general).toContain('rough, ugly, simple')
     expect(general).toContain('Never reduce source-image resolution')
-    expect(general).toContain('Preserve verified source results')
+    expect(general).toContain(
+      'Preserve adopted source statements and their limitations'
+    )
     expect(general).toContain('concrete contradictory evidence')
     expect(general).toContain('appearance, not a production-medium requirement')
+  })
+  it('keeps isolated-object presentation within the requested content scope', () => {
+    expect(AI_APP_PROMPT).toContain('Do not add unrequested content')
+    expect(AI_APP_PROMPT).toContain('leave the surrounding canvas transparent')
+    expect(AI_APP_PROMPT).toContain(
+      'Requested scenes and backgrounds remain valid'
+    )
+    expect(AI_APP_PROMPT).toContain('Preserve existing unrelated content')
+    expect(AI_APP_PROMPT).toContain('unsupported additions')
+    expect(AI_OPERATION_INSTRUCTIONS).toContain(
+      'Frame bounds do not require background paint'
+    )
   })
   it('routes missing references without source restrictions or mandatory repeated research', () => {
     expect(general).toContain('Research only missing information')
@@ -78,34 +100,49 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('batch-edit elementIds')
     expect(general).toContain('returned nextOffset')
   })
-  it('retains privacy, approval, editable output and truthful history', () => {
+  it('retains privacy, contextual external permission, editable output and truthful history', () => {
     expect(general).toContain('untrusted data')
     expect(general).toContain('private canvas data or credentials')
     expect(general).toContain('raster bytes stay in backend image tools')
-    expect(general).toContain('Required App approvals')
+    expect(general).toContain(
+      'App editing actions directly without asking for approval'
+    )
+    expect(general).toContain('deleting, replacing')
+    expect(general).toContain('external tools or security concerns')
+    expect(general).toContain('wait for the answer')
+    expect(general).toContain('Do not ask again for permission already granted')
+    expect(general).not.toContain('Required App approvals')
     expect(general).toContain('one Undo action')
     expect(general).toContain(
       'image generation and raster insertion are unavailable'
     )
     expect(general).toContain('Read-only advice leaves the canvas unchanged')
   })
-  it('keeps detailed plan and final acceptance procedures in the review tool', () => {
-    expect(general).toContain('record_design_review')
+  it('routes criteria facts calculations references and review to distinct tools', () => {
+    for (const name of [
+      'define_design_criteria',
+      'record_design_facts',
+      'record_design_calculations',
+      'select_design_references',
+      'review_drawing'
+    ])
+      expect(general).toContain(name)
+    expect(general).not.toContain('record_design_review')
     expect(general).toContain('all original criteria')
-    expect(designReviewDefinition.description).toContain(
-      'phase=visual and final=false'
+    const review = requireTestValue(
+      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(designReviewDefinition.description).toContain('deferredDetails')
-    expect(designReviewDefinition.description).toContain(
-      'referenceImageIndexes'
+    expect(review.description).toContain('final=false')
+    expect(review.description).toContain('deferredDetails')
+    const criteria = requireTestValue(
+      designEvidenceDefinitions.find(
+        (tool) => tool.name === 'define_design_criteria'
+      )
     )
-    const match = designReviewDefinition.description.match(
-      /Plan input example: (.+)/
-    )
+    const match = criteria.description.match(/Plan input example: (.+)/)
     expect(match).not.toBeNull()
-    if (!match) throw new Error('Missing tool-owned plan example')
-    const example = JSON.parse(match[1])
-    expect(operationInputIssue(example, reviewPlanSchema)).toBeUndefined()
+    const example = JSON.parse(requireTestValue(match)[1])
+    expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
     expect(createLocalDesignReview().record(example)).toMatchObject({
       recorded: true
     })
@@ -130,3 +167,8 @@ describe('stage-owned App guidance', () => {
     )
   })
 })
+
+const requireTestValue = <T>(value: T | undefined | null): T => {
+  if (value == null) throw new Error('Required test fixture is unavailable')
+  return value
+}

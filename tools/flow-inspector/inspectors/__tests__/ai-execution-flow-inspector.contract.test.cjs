@@ -11,7 +11,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
   const spec = fs.readFileSync(path.join(root, flow.authority.specPath), 'utf8')
   assert.ok(fs.existsSync(path.join(root, flow.authority.inspectorPath)))
   const headings = new Set(
-    [...spec.matchAll(/^## (.+)$/gm)].map(
+    [...spec.matchAll(/^#{2,6} (.+)$/gm)].map(
       (match) =>
         '#' +
         match[1]
@@ -21,7 +21,10 @@ test('AI execution architecture resolves current authorities and boundaries', ()
     )
   )
   for (const step of flow.steps) {
-    assert.equal(step.ownerPackage, '@asyra/asyra-design')
+    assert.equal(
+      step.ownerPackage,
+      step.id === 'observe' ? '@asyra/ai-agent-runtime' : '@asyra/asyra-design'
+    )
     assert.equal(step.failureOwnerStepId, step.id)
     for (const field of [
       'inputs',
@@ -43,6 +46,13 @@ test('AI execution architecture resolves current authorities and boundaries', ()
       for (const dimension of step.cacheDimensions)
         assert.match(dimension, /request-local/)
       assert.match(step.cacheDimensions.join(' '), /refresh/)
+    } else if (step.id === 'apply') {
+      assert.equal(step.cacheDimensions.length, 1)
+      assert.match(
+        step.cacheDimensions[0],
+        /Render runtime, current workspace, projected geometry and hierarchy/
+      )
+      assert.match(step.cacheDimensions[0], /never viewport pan\/zoom/)
     } else assert.deepEqual(step.cacheDimensions, [])
   }
 })

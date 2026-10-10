@@ -24,6 +24,11 @@ const evidenceKeys = new Set([
   'retryOf',
   'direction',
   'bytes',
+  'asset',
+  'sha256',
+  'path',
+  'reused',
+  'attachmentIndex',
   'stream',
   'executor',
   'channel',
@@ -445,6 +450,8 @@ export const createAiExecutionProfiler = (
     sink?: ExecutionRecordSink
     now?: () => number
     sourceRevision?: string
+    sourceFingerprint?: string
+    sourceIdentityStatus?: 'captured' | 'configured' | 'unavailable'
     purpose?: string
     provider?: string
     effort?: string
@@ -497,6 +504,12 @@ export const createAiExecutionProfiler = (
     effort: options.effort ?? null,
     provider: options.provider ?? null,
     sourceRevision: correlationId(options.sourceRevision) ?? null,
+    sourceFingerprint: /^[a-f0-9]{64}$/.test(options.sourceFingerprint ?? '')
+      ? options.sourceFingerprint
+      : null,
+    sourceIdentityStatus:
+      options.sourceIdentityStatus ??
+      (options.sourceRevision ? 'configured' : 'unavailable'),
     conversationId,
     turnId,
     replyToTurnId,
@@ -595,6 +608,7 @@ export const createAiExecutionProfiler = (
         | 'protocol_rejected'
         | 'settlement'
         | 'visual_assessment_context'
+        | 'asset_retained'
         | 'capabilities_advertised'
         | 'provider_request_started'
         | 'provider_request_completed'
@@ -640,6 +654,19 @@ export const createAiExecutionProfiler = (
               phase,
               value
             ) ?? { status: 'unavailable', path: null }
+          if (stage === 'research_started' || stage === 'research_completed') {
+            const phase = stage === 'research_started' ? 'input' : 'output'
+            // Native item metadata is not the upstream request/response payload.
+            diagnostic = {
+              [phase]: {
+                payload: {
+                  status: 'unavailable',
+                  reason: 'upstream-not-exposed',
+                  path: null
+                }
+              }
+            }
+          }
           if (stage === 'visual_assessment_context')
             diagnostic = {
               input: { payload: payload('input', evidence.arguments) }

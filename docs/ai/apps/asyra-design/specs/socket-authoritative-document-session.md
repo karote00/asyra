@@ -598,3 +598,17 @@ Forbidden paths:
   performance cases pass through the ordinary production path.
 - Current snapshot persistence and non-durable alternate flows are removed
   rather than retained as compatibility fallbacks.
+
+## Captured Persistence Confirmation
+
+`confirm-persistence` observes a specified sequence in the current document
+generation. The persistence queue resolves `whenDurable` only after a contiguous
+backend acknowledgement reaches that sequence. It keeps the normal dirty-window
+cadence and does not block later publication admission or await later sequences.
+The response identifies the document, generation, target sequence and confirmed
+durable watermark. Wrong generations, unknown future sequences, disposal, Reset,
+disconnection and backend failures cannot return success. An aborted browser
+request removes its waiter without disconnecting the shared document session.
+The App confirms publications already queued at invocation; it waits for storage
+outside that queue, preserves later edits and reports storage separately from
+visual drawing completion. Local-only operation has no persistence claim.

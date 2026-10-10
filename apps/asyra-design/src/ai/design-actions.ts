@@ -82,6 +82,9 @@ export const createPreparedDesignAction = (
     const design = admitPreparedDesign(args.design)
     const admissionMs = now() - startedAt
     let createMs = 0,
+      transactionMs = 0,
+      selectionMs = 0,
+      validationMs = 0,
       cooperativeYieldMs = 0,
       sliceCount = 0
     const workspaceId = apis.getWorkspaceId()
@@ -147,7 +150,10 @@ export const createPreparedDesignAction = (
         points += count
         offset++
       }
+      const transactionStartedAt = now()
+      let callbackMs = 0
       const ids = await runAiMutation(context, () => {
+        const callbackStartedAt = now()
         checkCurrent(parentId)
         if (
           descriptors.some(
@@ -156,12 +162,15 @@ export const createPreparedDesignAction = (
         )
           throw new Error('A design object already exists.')
         const createStartedAt = now()
+        validationMs += createStartedAt - callbackStartedAt
         try {
           return apis.create(descriptors, parentId)
         } finally {
           createMs += now() - createStartedAt
+          callbackMs = now() - callbackStartedAt
         }
       })
+      transactionMs += Math.max(0, now() - transactionStartedAt - callbackMs)
       sliceCount++
       if (
         !ids ||
@@ -178,17 +187,43 @@ export const createPreparedDesignAction = (
       cooperativeYieldMs += now() - yieldStartedAt
     }
     checkCurrent(workspaceId ?? '')
+    const selectionStartedAt = now()
+    let selectionCallbackMs = 0
     await runAiMutation(context, () => {
+      const callbackStartedAt = now()
       checkCurrent(workspaceId)
+      const selectStartedAt = now()
+      validationMs += selectStartedAt - callbackStartedAt
       apis.select([design.rootId])
+      selectionMs += now() - selectStartedAt
+      selectionCallbackMs = now() - callbackStartedAt
     })
+    transactionMs += Math.max(
+      0,
+      now() - selectionStartedAt - selectionCallbackMs
+    )
+    const totalMs = now() - startedAt
+    const orchestrationMs = Math.max(
+      0,
+      totalMs -
+        admissionMs -
+        createMs -
+        cooperativeYieldMs -
+        transactionMs -
+        selectionMs -
+        validationMs
+    )
     return {
       status: 'complete',
       timing: {
         admissionMs,
         createMs,
+        transactionMs,
+        selectionMs,
+        validationMs,
+        orchestrationMs,
         cooperativeYieldMs,
-        totalMs: now() - startedAt,
+        totalMs,
         sliceCount,
         elementCount: appliedElementCount
       },

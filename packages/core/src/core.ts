@@ -246,6 +246,7 @@ class Core implements CoreAPIs {
   moveElements!: SceneTreeAPIs['moveElements']
   applyHierarchyMoves!: SceneTreeAPIs['applyHierarchyMoves']
   applyElementDataChanges!: SceneTreeAPIs['applyElementDataChanges']
+  removeSubtrees!: SceneTreeAPIs['removeSubtrees']
   removeSubtree!: SceneTreeAPIs['removeSubtree']
   removeSubtreeFromCanonicalData!: SceneTreeAPIs['removeSubtreeFromCanonicalData']
   removeElementsFromCanonicalData!: SceneTreeAPIs['removeElementsFromCanonicalData']

@@ -25,6 +25,19 @@ export interface ExecutionRecordSink {
     bytes?: number
     sha256?: string
     redactions?: string[]
+    resourceIdentities?: { path: string; sha256: string }[]
+    serializationMs?: number
+  }
+  writeAsset?(
+    requestId: string,
+    bytes: Uint8Array,
+    mediaType: string
+  ): {
+    status: 'queued' | 'failed'
+    path: string | null
+    sha256?: string
+    bytes?: number
+    reused?: boolean
   }
   flush(): Promise<{
     status: 'saved' | 'failed' | 'empty'
@@ -59,7 +72,11 @@ export const parseExecutionRecord = (text: string) => {
   let outcome = 'incomplete'
   let durationMs = 0
   let terminal = false
-  let metadata: Record<string, unknown> = { sourceRevision: null }
+  let metadata: Record<string, unknown> = {
+    sourceRevision: null,
+    sourceFingerprint: null,
+    sourceIdentityStatus: 'unavailable'
+  }
   text.split('\n').forEach((line, index) => {
     if (!line.trim()) return
     let entry: unknown

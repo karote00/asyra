@@ -5,6 +5,10 @@ import {
   type LocalToolObservation
 } from './local-tool-invocation'
 import {
+  ReferenceAcquisitionError,
+  referenceFailure,
+  referenceRejection,
+  type ReferenceFailure,
   downloadReferenceImage,
   downloadReferencePage,
   validateReferenceImageUrl
@@ -13,15 +17,19 @@ import sharp from 'sharp'
 import { AiReferenceToolIds } from './ai-domain-prompt'
 
 const maximumBytes = 6 * 1024 * 1024
-class ReferenceImportError extends Error {}
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-const unavailableReference = (code: string, message: string) =>
+const unavailableReference = (
+  code: string,
+  message: string,
+  failure?: ReferenceFailure
+) =>
   JSON.stringify({
     available: false,
     recoverable: true,
     code,
     message,
+    ...(failure ? { failure } : {}),
     nextStep:
       'This is a source-local failure, not a task-level blocker. Continue research using a different source, query, or supported acquisition method. Do not retry unchanged rejected input or reduce resolution. Do not ask the user to supply public reference material merely because this source failed. For an explicit reproduction, do not substitute an invented or inspired drawing without consent.'
   })
@@ -29,13 +37,11 @@ const readBytes = async (
   response: Response,
   limit: number
 ): Promise<Buffer> => {
-  if (!response.ok) throw new ReferenceImportError(`HTTP ${response.status}`)
+  if (!response.ok)
+    throw referenceRejection('response', 'http', response.status)
   if (Number(response.headers.get('content-length')) > limit)
-    throw new ReferenceImportError(
-      `The source exceeds the ${limit} byte download limit.`
-    )
-  if (!response.body)
-    throw new ReferenceImportError('The source response has no body.')
+    throw referenceRejection('response', 'size-limit')
+  if (!response.body) throw referenceRejection('response', 'empty-body')
   const reader = response.body.getReader()
   const chunks: Uint8Array[] = []
   let size = 0
@@ -44,10 +50,7 @@ const readBytes = async (
       const { done, value } = await reader.read()
       if (done) break
       size += value.length
-      if (size > limit)
-        throw new ReferenceImportError(
-          `The source exceeds the ${limit} byte download limit.`
-        )
+      if (size > limit) throw referenceRejection('response', 'size-limit')
       chunks.push(value)
     }
   } finally {
@@ -61,6 +64,13 @@ export const createLocalReferenceTools = (
     dataUrl: string
     mediaType: string
     size: number
+    validation?: {
+      width: number
+      height: number
+      encoding: string
+      validity: 'decoded'
+      suitability: 'requires-visual-assessment'
+    }
   }) => number,
   download: typeof downloadReferenceImage = downloadReferenceImage,
   observation: LocalToolObservation = {},
@@ -102,6 +112,7 @@ export const createLocalReferenceTools = (
     signal: AbortSignal
   ): Promise<string> => {
     let code = 'REFERENCE_ARGUMENTS_INVALID'
+    let acquisitionAttempts = 1
     try {
       signal.throwIfAborted()
       if (
@@ -121,12 +132,15 @@ export const createLocalReferenceTools = (
       if (/\.svg$/i.test(new URL(imageUrl).pathname))
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
-          'Original SVG import is not supported by this raster importer. No raster thumbnail was substituted.'
+          'Original SVG import is not supported by this raster importer. No raster thumbnail was substituted.',
+          referenceRejection('response', 'unsupported-media').failure
         )
       code = 'REFERENCE_DOWNLOAD_FAILED'
       const response = await download(imageUrl, signal)
+      acquisitionAttempts =
+        response.headers.get('x-reference-attempt-count') === '2' ? 2 : 1
       if (!response.ok)
-        throw new ReferenceImportError(`HTTP ${response.status}`)
+        throw referenceRejection('response', 'http', response.status)
       if (
         !/^image\/(png|jpeg|webp)(;|$)/i.test(
           response.headers.get('content-type') ?? ''
@@ -134,7 +148,8 @@ export const createLocalReferenceTools = (
       )
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
-          'This response is not a supported PNG, JPEG or WebP image.'
+          'This response is not a supported PNG, JPEG or WebP image.',
+          referenceRejection('response', 'unsupported-media').failure
         )
       code = 'REFERENCE_BYTES_REJECTED'
       const bytes = await readBytes(response, maximumBytes)
@@ -146,7 +161,8 @@ export const createLocalReferenceTools = (
       const webp =
         bytes.toString('ascii', 0, 4) === 'RIFF' &&
         bytes.toString('ascii', 8, 12) === 'WEBP'
-      if (!png && !jpeg && !webp) throw new Error('Unsupported image bytes')
+      if (!png && !jpeg && !webp)
+        throw referenceRejection('decode', 'invalid-image-bytes')
       code = 'REFERENCE_DECODE_FAILED'
       const digest = createHash('sha256').update(bytes).digest('hex')
       const previous = admittedBytes.get(digest)
@@ -177,7 +193,11 @@ export const createLocalReferenceTools = (
       if ((metadata.pages ?? 1) !== 1)
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
-          'Animated references are unsupported; no frame was substituted.'
+          'Animated references are unsupported; no frame was substituted.',
+          {
+            ...referenceRejection('decode', 'animated-image').failure,
+            attempts: acquisitionAttempts
+          }
         )
       signal.throwIfAborted()
       const concurrentlyAdmitted = admittedBytes.get(digest)
@@ -193,12 +213,22 @@ export const createLocalReferenceTools = (
       const attachmentIndex = addReference({
         dataUrl,
         mediaType,
-        size: bytes.length
+        size: bytes.length,
+        validation: {
+          width: metadata.autoOrient.width,
+          height: metadata.autoOrient.height,
+          encoding: metadata.format,
+          validity: 'decoded',
+          suitability: 'requires-visual-assessment'
+        }
       })
       const receipt = JSON.stringify({
         available: true,
         attachmentIndex,
+        referenceId: `reference:${digest}`,
+        sha256: digest,
         acquisition: 'downloaded',
+        acquisitionAttempts,
         imageUrl,
         image: {
           width: metadata.autoOrient.width,
@@ -232,15 +262,29 @@ export const createLocalReferenceTools = (
     } catch (error) {
       signal.throwIfAborted()
       let reason = 'This source could not be imported.'
-      if (error instanceof ReferenceImportError) reason = error.message
+      if (error instanceof ReferenceAcquisitionError) reason = error.message
       else if (code === 'REFERENCE_DECODE_FAILED' && error instanceof Error)
         reason = error.message
           .replace(/https?:\/\/\S+|Bearer\s+\S+/gi, '[redacted]')
           .replace(/[\r\n]+/g, ' ')
           .slice(0, 500)
+      let failure = referenceFailure(error, 'request')
+      if (error instanceof ReferenceAcquisitionError)
+        failure = {
+          ...error.failure,
+          attempts: Math.max(acquisitionAttempts, error.failure.attempts)
+        }
+      else if (code === 'REFERENCE_DECODE_FAILED')
+        failure = {
+          ...referenceRejection('decode', 'decode-failed').failure,
+          attempts: acquisitionAttempts
+        }
+      else if (code === 'REFERENCE_ARGUMENTS_INVALID')
+        failure = referenceRejection('url', 'invalid-arguments').failure
       return unavailableReference(
         code,
-        `${reason} Failure stage: ${code}. Download, 6 MiB byte and decoder resource guards remain active. No image was resized or imported by this failed call. Choose another source or method; do not substitute an invented or inspired drawing for an explicitly requested reproduction without consent.`
+        `${reason} Failure stage: ${code}. Download, 6 MiB byte and decoder resource guards remain active. No image was resized or imported by this failed call. Choose another source or method; do not substitute an invented or inspired drawing for an explicitly requested reproduction without consent.`,
+        failure
       )
     }
   }
@@ -290,12 +334,14 @@ export const createLocalReferenceTools = (
         async () => {
           const { response, url } = await downloadPage(pageUrl, signal)
           signal.throwIfAborted()
+          if (!response.ok)
+            throw referenceRejection('response', 'http', response.status)
           if (
             !/^text\/html(;|$)/i.test(
               response.headers.get('content-type') ?? ''
             )
           )
-            throw new Error('Source is not HTML')
+            throw referenceRejection('response', 'unsupported-media')
           const html = (await readBytes(response, 1024 * 1024)).toString('utf8')
           return JSON.stringify({
             pageUrl: url,
@@ -313,6 +359,7 @@ export const createLocalReferenceTools = (
         imageUrl: string
         available: boolean
         code?: string
+        failure?: ReferenceFailure
       }[] = []
       for (const imageUrl of candidates) {
         signal.throwIfAborted()
@@ -322,7 +369,8 @@ export const createLocalReferenceTools = (
         attempts.push({
           imageUrl,
           available: receipt.available === true,
-          ...(receipt.code ? { code: receipt.code } : {})
+          ...(receipt.code ? { code: receipt.code } : {}),
+          ...(receipt.failure ? { failure: receipt.failure } : {})
         })
         if (receipt.available) {
           resolvedPages.set(pageUrl, {
@@ -357,7 +405,8 @@ export const createLocalReferenceTools = (
       signal.throwIfAborted()
       return unavailableReference(
         'REFERENCE_PAGE_DOWNLOAD_FAILED',
-        'The source page could not be read through the public HTML transport. Use another source or a direct original image URL.'
+        'The source page could not be read through the public HTML transport. Use another source or a direct original image URL.',
+        referenceFailure(error, 'request')
       )
     }
   }

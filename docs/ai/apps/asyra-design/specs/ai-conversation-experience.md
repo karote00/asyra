@@ -16,22 +16,40 @@ input, preserving native editing and IME without invoking canvas shortcuts.
 
 Questions expose clickable choices and a text answer path, preserve subject,
 dimensions, attachments and target context, and record the selected answer. Waiting
-for an answer or approval has no active-work spinner. Approval is governed by the
-existing runtime policy, with a concrete change summary and an explicit decision.
+for an answer has no active-work spinner. Registered App editing actions execute
+without an Approve step, including deletion, replacement, Fill/Stroke removal and
+vector-node removal; their ordinary Undo boundary remains available. Operation
+names, delete effects and whether an object already existed do not require approval.
+The App prompt tells the model to assess external-tool use and security concerns
+in context and ask through request_clarification when user permission is needed,
+then wait for the answer. Prior explicit authorization remains valid. This does
+not bypass registered schemas, canonical locks, host security or external-service
+permission enforcement. Unknown actions remain rejected.
 
 Execution activity uses each action’s short visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
 
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the current status below the disclosure and its history.
-Consecutive entries with identical visible labels and messages appear once;
-Research/search/import cycles share one research entry. Semantic drawing,
-inspection and targeted refinement cycles share one drawing entry. Tool completion
-acknowledgements do not create generic review entries; internal resolution,
-permission checks and execution inside a loop do not split it. A genuine phase
-change, user approval, stop or settlement remains visible. Explicit messages
-outside these loops remain concise; preserve their model-authored language. Missing or oversized descriptions use the registered activity label. The panel does not show
-a Canvas/selection-count caption; selected-object context still reaches execution.
+Consecutive entries with identical visible labels and messages appear once.
+Research/search/import and drawing/refinement loops share generic entries only
+when no concrete description is supplied. An existing tool message or execution
+summary takes precedence and describes the current action and target, for example
+"Adding window reflections" or "Adjusting the roof color". Preserve the authored
+language. Ask the model for brief descriptions in the existing fields; do not
+add a reporting tool, model request or private-reasoning feed. A description is
+intent, not evidence of successful mutation.
+
+A new concrete description replaces the current status and remains in ordered
+history. Completion acknowledgements and internal resolution/permission phases
+do not erase it. Generic provider phases, running tools and registered internal
+execution labels preserve the latest concrete work description until new concrete
+work or a control/terminal state arrives. It represents the latest announced work,
+not proof that a substep is still running. Before any concrete description, blank
+or over-1000-character descriptions use the generic label; valid text wraps
+inside the panel. Stop, approval and settled outcome override authored task text.
+The panel does not show a Canvas/selection-count caption; selected-object context
+still reaches execution.
 The projection leaves runtime events intact. Expanding or collapsing Activity
 rechecks the actual scroll extent: Jump to latest appears only while content
 remains below the viewport, without requiring a subsequent scroll event.
@@ -44,8 +62,7 @@ reinterpret newly added content as a reader scrolling away.
 The last list entry represents the current activity, including real approval/stop
 states, without a visible Current badge or separate highlight. Accessibility
 metadata identifies that entry while work is active. Tool events use user-facing descriptions of the work, without tool names or
-AI-wait terminology. Completed tool work transitions to Reviewing the results;
-it does not imply that the whole request has finished. Model-authored operational messages stay attached to their
+AI-wait terminology. Tool completion is an acknowledgement, not a new work phase or proof that the whole request has finished. Model-authored operational messages stay attached to their
 corresponding event. Settlement removes the active disclosure status and its accessibility marker; no Result heading is shown. The authored reply or failure explanation follows Activity so following the latest content reveals the final outcome; questions remain above their answer controls. Partial failures never append Finished after Failed. Terminal replies show their immutable settlement time in the user's local time zone
 using the browser locale, with a full-date tooltip and machine-readable time.
 No completion bell or terminal elapsed timer is displayed. Questions await an

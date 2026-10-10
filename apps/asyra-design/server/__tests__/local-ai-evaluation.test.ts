@@ -59,14 +59,14 @@ describe('execution evaluation', () => {
   ) => [
     {
       stage: 'tool_started',
-      tool: 'record_design_review',
+      tool: 'review_drawing',
       callId,
       elapsedMs: 10,
       evidence: { arguments: { phase: 'plan', method } }
     },
     {
       stage: 'tool_completed',
-      tool: 'record_design_review',
+      tool: 'review_drawing',
       callId,
       elapsedMs: 12,
       evidence: { result: { phase: 'plan', method: output } }
@@ -119,9 +119,9 @@ describe('execution evaluation', () => {
     ]
     const period = createExecutionPeriodReport(
       [
-        run('plan', failure('record_design_review', 'plan')),
-        run('plan-again', failure('record_design_review', 'plan')),
-        run('visual', failure('record_design_review', 'visual')),
+        run('plan', failure('review_drawing', 'plan')),
+        run('plan-again', failure('review_drawing', 'plan')),
+        run('visual', failure('review_drawing', 'visual')),
         run('prepare', failure('prepare_design', ''))
       ],
       { from: '2026-10-01', to: '2026-10-03' }
@@ -131,7 +131,7 @@ describe('execution evaluation', () => {
       (target) => target.phase === 'plan'
     )
     expect(target).toMatchObject({
-      tool: 'record_design_review',
+      tool: 'review_drawing',
       code: 'INPUT_INVALID',
       occurrences: 2,
       requestIds: ['plan', 'plan-again'],
@@ -166,6 +166,22 @@ describe('execution evaluation', () => {
     expect(
       evaluateExecution(run('partial', planEcho('plan', partial))).findings
     ).toEqual([])
+  })
+  it('keeps different dirty source snapshots separate within the same revision', () => {
+    const before = run('before', planEcho('plan', 'Use the supplied outline'))
+    const after = run('after', planEcho('plan', 'Use the supplied outline'))
+    before.metadata.sourceFingerprint = 'a'.repeat(64)
+    after.metadata.sourceFingerprint = 'b'.repeat(64)
+    const period = createExecutionPeriodReport([before, after], {
+      from: '2026-10-01',
+      to: '2026-10-03'
+    })
+    expect(period.investigationTargets).toHaveLength(2)
+    expect(
+      period.investigationTargets.map(
+        (target) => target.configuration.sourceFingerprint
+      )
+    ).toEqual(['a'.repeat(64), 'b'.repeat(64)])
   })
   it('keeps child handler timings separate from the parent tool count and duration', () => {
     const report = evaluateExecution(
@@ -268,7 +284,7 @@ describe('execution evaluation', () => {
     const review = [
       {
         stage: 'tool_started',
-        tool: 'record_design_review',
+        tool: 'review_drawing',
         callId: 'review',
         elapsedMs: 1,
         evidence: {
@@ -281,7 +297,7 @@ describe('execution evaluation', () => {
       },
       {
         stage: 'tool_completed',
-        tool: 'record_design_review',
+        tool: 'review_drawing',
         callId: 'review',
         elapsedMs: 2
       }
@@ -339,7 +355,7 @@ describe('execution evaluation', () => {
         }
       )
       usage.trace('tool_started', {
-        tool: 'record_design_review',
+        tool: 'review_drawing',
         callId: 'review',
         arguments: {
           phase: 'visual',
@@ -354,7 +370,7 @@ describe('execution evaluation', () => {
         }
       })
       usage.trace('tool_completed', {
-        tool: 'record_design_review',
+        tool: 'review_drawing',
         callId: 'review',
         result: { accepted: true }
       })
@@ -470,7 +486,7 @@ describe('execution evaluation', () => {
         run('a', [
           {
             stage: 'tool_started',
-            tool: 'record_design_review',
+            tool: 'review_drawing',
             callId: 'plan',
             elapsedMs: 1,
             evidence: {
@@ -483,13 +499,13 @@ describe('execution evaluation', () => {
           },
           {
             stage: 'tool_completed',
-            tool: 'record_design_review',
+            tool: 'review_drawing',
             callId: 'plan',
             elapsedMs: 2
           },
           {
             stage: 'tool_started',
-            tool: 'record_design_review',
+            tool: 'review_drawing',
             callId: 'review',
             elapsedMs: 90,
             evidence: {
@@ -508,7 +524,7 @@ describe('execution evaluation', () => {
           },
           {
             stage: 'tool_completed',
-            tool: 'record_design_review',
+            tool: 'review_drawing',
             callId: 'review',
             elapsedMs: 91,
             evidence: { result: { accepted: true } }
@@ -536,7 +552,7 @@ describe('execution evaluation', () => {
         { stage: 'lifecycle_started', callId: 'provider-turn', elapsedMs: 0 },
         {
           stage: 'tool_started',
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           elapsedMs: 10,
           evidence: {
@@ -545,7 +561,7 @@ describe('execution evaluation', () => {
         },
         {
           stage: 'tool_completed',
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           elapsedMs: 20,
           evidence: { result: { accepted: true } }
@@ -631,12 +647,12 @@ describe('execution evaluation', () => {
           }
         )
         usage.trace('tool_started', {
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           arguments: { phase: 'visual', checks: [{ status: 'pass' }] }
         })
         usage.trace('tool_completed', {
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           result: { accepted: true }
         })
@@ -675,7 +691,7 @@ describe('execution evaluation', () => {
       run('a', [
         {
           stage: 'tool_started',
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           elapsedMs: 1,
           evidence: {
@@ -684,7 +700,7 @@ describe('execution evaluation', () => {
         },
         {
           stage: 'tool_failed',
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           callId: 'review',
           elapsedMs: 2
         }
@@ -798,6 +814,16 @@ it('counts receipt outcomes separately from completed transport and nested actio
     } as never
   )
   const report = evaluateExecution(run('outcomes', events))
+  const progress = evaluateExecution(
+    run('outcomes', events, '2026-10-02T00:00:00Z', false)
+  )
+  expect(progress.complete).toBe(false)
+  expect(report.complete).toBe(true)
+  expect(progress.toolOutcomes).toEqual(report.toolOutcomes)
+  expect(progress.toolCalls.map((call) => call.execution)).toEqual(
+    report.toolCalls.map((call) => call.execution)
+  )
+
   expect(report.toolCalls.map((call) => call.execution.status)).toEqual([
     'rejected',
     'partial',

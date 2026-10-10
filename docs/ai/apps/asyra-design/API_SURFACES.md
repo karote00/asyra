@@ -223,8 +223,9 @@ Completed plan:
   summaries. Settled UI summaries never render raw arguments, provider bodies,
   canonical ids, secrets, or private chain-of-thought
 - the transaction adapter correlates a newly completed canonical action id with
-  the active AI turn. The Message Bar may call ordinary history APIs only while
-  that id remains the applicable current AI action; later actions invalidate it
+  the active AI turn. The history projection retains current-action correlation;
+  ordinary toolbar and keyboard controls own Undo/Redo. Settled answers remain in
+  the AI conversation without a duplicate completion toast
 - the Asyra Design browser does not read, store, or send a server API
   key. Production providers should use an app/backend endpoint that owns
   vendor credentials and authorization
@@ -872,7 +873,7 @@ and explains unresolved constraints rather than reporting unconditional success.
 The local-only `record_design_review` tool records a pre-mutation plan and a
 post-render assessment. Its published schema requires method, references (an empty
 array is valid), criteria and detailRequired for the plan; structure/visual phases
-require inspectionIds and checks. It never mutates the canvas. Criteria express user intent,
+require checks and either current inspectionIds, explicit inspections targets, or both (24 total). Capture targets share the inspect_drawing schema. The review owner captures and validates each target before assessment. A failed capture returns successful inspectionIds and exact failedInspections for a corrected retry; it never silently drops a required target. It never mutates the canvas. Criteria express user intent,
 including intentionally rough or minimal results; detailed inspection is conditional.
 Inspection receipts carry opaque IDs and a mutation revision. The backend checks
 current evidence IDs, criterion coverage and pass/fail/unverified judgments before

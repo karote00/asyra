@@ -307,3 +307,37 @@ not hidden inference work. Report visibility is separate from ownership coverage
 a provider-owned wait is accounted for but its internal activity remains
 unavailable. Old records retain that limitation. Missing sequence, duplicated
 boundaries, open calls and recording failures cannot produce a complete report.
+
+### Source identity for execution records
+
+The inert Node entry exports `captureAiSourceIdentity({ directory, paths })`.
+The host explicitly selects repository-relative source paths and calls it once
+at invocation entry. It returns a Git revision and a SHA-256 source fingerprint
+that includes dirty and untracked source bytes; staging identical bytes does not
+change it. Symlink text is hashed without following its destination. Missing Git
+or inaccessible source returns `sourceIdentityStatus: unavailable` without
+blocking execution. This is an observed source snapshot, not an assertion that
+every loaded module is an immutable build of those files.
+
+Pass the returned identity into `createAiExecutionProfiler` and inherit it for
+child invocations. A host-provided build revision is marked `configured` instead.
+Period reports separate different source fingerprints even at the same revision.
+Native research item metadata does not expose the upstream request/response:
+those payload slots explicitly report `upstream-not-exposed`, while public item
+metadata, boundaries and durations remain recorded. No hidden provider activity
+or reasoning is inferred.
+
+### Local diagnostic costs and original assets
+
+The Node record sink returns payload serialization durations and opaque SHA-256
+resource identities for redacted URLs. A request's `.recording.json` sidecar
+records payload byte counts and serialization/queue/write durations, keyed by
+call and phase. Queue and inclusive work durations overlap execution spans and
+must not be summed as additional request elapsed time.
+
+Hosts can explicitly call `writeAsset(requestId, bytes, mediaType)` for original
+PNG/JPEG/WebP evidence. The sink copies bytes, writes one digest-addressed local
+asset per request and reports reuse without modifying resolution. Hosts record
+an `asset_retained` trace with their domain identity and returned receipt. The
+sink never uploads assets; final `flush` establishes whether queued evidence was
+saved. Diagnostic errors remain non-authoritative for the host operation.

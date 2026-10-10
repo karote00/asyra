@@ -100,14 +100,27 @@ export const isDesignSharedFill = (v: unknown): v is { shared: string } =>
   v.shared.trim().length > 0 &&
   v.shared.length <= 160
 
+export const isDesignFillTemplate = (v: unknown): v is { template: string } =>
+  record(v) &&
+  exact(v, ['template']) &&
+  typeof v.template === 'string' &&
+  v.template.trim().length > 0 &&
+  v.template.length <= 160
+
 export const isDesignFill = (
   v: unknown
-): v is string | FillGradientData | { shared: string } =>
-  isDesignInlineFill(v) || isDesignSharedFill(v)
+): v is string | FillGradientData | { shared: string } | { template: string } =>
+  isDesignInlineFill(v) || isDesignSharedFill(v) || isDesignFillTemplate(v)
 
 export const designFillSchema = {
   anyOf: [
     ...designInlineFillSchema.anyOf,
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['template'],
+      properties: { template: { type: 'string', minLength: 1, maxLength: 160 } }
+    },
     {
       type: 'object',
       additionalProperties: false,
@@ -117,7 +130,7 @@ export const designFillSchema = {
   ],
   description:
     designInlineFillSchema.description +
-    ' Use {shared: key} to reuse a draft.sharedFills definition. This is a draft-local key, not an existing property ID. Inline equal values remain independent.'
+    ' Use {shared: key} to reuse a draft.sharedFills definition. This is a draft-local key, not an existing property ID. Inline equal values remain independent. Use {template: key} with draft.fillTemplates to reuse a value definition while creating independent editable Fill IDs.'
 }
 
 export const designSharedFillsSchema = {
@@ -126,4 +139,10 @@ export const designSharedFillsSchema = {
   additionalProperties: designInlineFillSchema,
   description:
     'Optional explicit shared Fill definitions keyed by draft-local name. The first use creates a canonical Fill; other uses link its ID. Returned sharedFillIds maps used names to real IDs for later property edits. Definitions cannot reference other definitions. Existing document fills use the public fill linking APIs.'
+}
+
+export const designFillTemplatesSchema = {
+  ...designSharedFillsSchema,
+  description:
+    'Reusable value definitions, not shared canonical properties. Each fill:{template:key} creates its own independent Fill ID. Use sharedFills only for intentionally linked editing. Definitions cannot reference other definitions.'
 }

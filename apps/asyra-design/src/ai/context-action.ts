@@ -12,12 +12,17 @@ export const createDocumentContextAction = (
 ): AiActionDefinition<DesignContextQuery> => ({
   name: AiActionNames.READ_DESIGN_CONTEXT,
   description:
-    'For a localized correction, use scope=region with workspace bounds even when its parent spans a larger area. Spatial candidates use projected bounds, not exact contours or occlusion; optional type/parentId/ancestorId/locked filters apply before pagination. Use result=ids when only targets are needed, then pass elementIds to registered batch edits. Use scope=ids for known IDs, selection for selected objects, and children for hierarchy questions. Prefer retained artifact references and known IDs over another lookup. Default result=elements and fields=[] returns metadata; request only needed property fields, never vector points. Known IDs without limit are returned together. Continue with nextOffset and the same selectors; restart after hierarchy changes. Truncated text is only a preview. Read only when target identities or needed values are unknown.',
+    'For a localized correction, use scope=region with workspace bounds even when its parent spans a larger area. Spatial candidates use projected bounds, not exact contours or occlusion; optional type/parentId/ancestorId/locked filters apply before pagination. For an edit on the entire matching region, pass target={field:"elementIds",query:{scope:"region",bounds,filter}} to execute_design_batch; the backend resolves a complete identity snapshot and submits one plural operation. Use result=ids when you actually need to inspect target identities. Use scope=ids for known IDs, selection for selected objects, and children for hierarchy questions. Prefer retained artifact references and known IDs over another lookup. Default result=elements and fields=[] returns metadata; request only needed property fields, never vector points. Known IDs without limit are returned together. Continue with nextOffset and the same selectors; restart after hierarchy changes. Truncated text is only a preview. Read only when target identities or needed values are unknown.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['scope'],
     properties: {
+      allMatches: {
+        type: 'boolean',
+        description:
+          'Complete identity-only region query for backend target handoff. Requires scope=region and result=ids, no offset/limit or property fields. Prefer execute_design_batch target.query when these IDs are only needed for an edit.'
+      },
       scope: {
         type: 'string',
         enum: ['selection', 'children', 'ids', 'region']

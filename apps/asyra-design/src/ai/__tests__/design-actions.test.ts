@@ -446,6 +446,10 @@ it('measures canonical creation separately from cooperative paint waits', async 
     timing: {
       admissionMs: 0,
       createMs: 9,
+      transactionMs: 0,
+      selectionMs: 0,
+      validationMs: 0,
+      orchestrationMs: 0,
       cooperativeYieldMs: 15,
       totalMs: 24,
       sliceCount: 3,

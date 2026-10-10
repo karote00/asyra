@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest'
-import { validateVisualAssessment } from '../local-visual-assessment'
+import {
+  validateVisualAssessment,
+  visualAssessmentInstructions
+} from '../local-visual-assessment'
 import { createLocalImageTools } from '../local-image-tools'
 
 it('validates every required finding without accepting malformed or missing outcomes', () => {
@@ -102,4 +105,17 @@ it('retains optional polish separately without replacing required findings', () 
   expect(() =>
     validateVisualAssessment({ ...assessment, suggestions: [null] }, criteria)
   ).toThrow()
+})
+
+it('checks unrequested additions without banning requested scenes or deleting existing content', () => {
+  expect(visualAssessmentInstructions).toContain('unrequested additions')
+  expect(visualAssessmentInstructions).toContain(
+    'background panels, labels or decoration'
+  )
+  expect(visualAssessmentInstructions).toContain(
+    'Requested scenes and backgrounds remain valid'
+  )
+  expect(visualAssessmentInstructions).toContain(
+    'Preserve existing unrelated content'
+  )
 })

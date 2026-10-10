@@ -39,6 +39,11 @@ const { spawn, retainedRecords } = vi.hoisted(() => ({
 }))
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
+  captureAiSourceIdentity: vi.fn(async () => ({
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured'
+  })),
   createExecutionRecordSink: () => ({
     write: (record: unknown) => retainedRecords.push(record),
     flush: async () => ({ status: 'saved', path: null })
@@ -730,7 +735,7 @@ describe('local subscription AI backend', () => {
       try {
         const result = await requestLocalAiActionBatch(
           {
-            intent: `Protocol test: discover record_design_review and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
+            intent: `Protocol test: discover review_drawing and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
             context: {},
             actions: [
               {
@@ -755,7 +760,7 @@ describe('local subscription AI backend', () => {
           ])
         })
         expect(calls).toContainEqual({
-          tool: 'record_design_review',
+          tool: 'review_drawing',
           namespace: 'design_operations',
           arguments: plan
         })
@@ -2314,10 +2319,11 @@ it('waits for a canonical operation receipt before continuing the native model',
           arguments: { elementId: 'actual-id', visible: false }
         }
       ],
-      message: 'I am hiding the separate mark.'
+      message: 'Hiding the separate mark'
     }
   })
   spawn.mockReturnValue(child.child)
+  const onProgress = vi.fn()
   const executeBatch = vi.fn(async (prepared) => {
     expect(prepared.actions[0].arguments).toEqual({
       elementId: 'actual-id',
@@ -2345,8 +2351,21 @@ it('waits for a canonical operation receipt before continuing the native model',
         }
       ]
     },
-    { environment, executeBatch }
+    { environment, executeBatch, onProgress }
   )
+  expect(onProgress).toHaveBeenCalledWith({
+    tool: 'execute_design_batch',
+    status: 'running',
+    message: 'Hiding the separate mark'
+  })
+  expect(
+    onProgress.mock.calls.some(
+      ([event]) => event.message === 'This must not reach the product.'
+    )
+  ).toBe(false)
+  expect(
+    child.packets.filter(({ method }) => method === 'turn/start')
+  ).toHaveLength(1)
   expect(executeBatch).toHaveBeenCalledOnce()
   const response = child.packets.find(
     (packet) => 'result' in packet
@@ -2925,12 +2944,12 @@ it('keeps a registered review tool available after rejected input and accepts a 
   const failures: Record<string, unknown>[] = []
   const server = fakeServer({
     toolCall: true,
-    toolName: 'record_design_review',
+    toolName: 'define_design_criteria',
     toolArguments: { phase: 'plan' },
     followupTool: (reply) => {
       failures.push(reply)
       return {
-        name: 'record_design_review',
+        name: 'define_design_criteria',
         args: {
           phase: 'plan',
           method: 'Editable illustration',
@@ -2985,7 +3004,7 @@ it('exposes review planning to the model and traces the operation without certif
   }
   const server = fakeServer({
     toolCall: true,
-    toolName: 'record_design_review',
+    toolName: 'define_design_criteria',
     toolArguments: {
       phase: 'plan',
       method: 'Three deliberately crude shapes',
@@ -3470,7 +3489,7 @@ it('retains compact deferred review evidence without retaining geometry', () => 
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   try {
     createAiExecutionProfiler(input, 'selected-model').trace('tool_completed', {
-      tool: 'record_design_review',
+      tool: 'review_drawing',
       result: {
         deferredDetails: [
           { id: 'rear', description: 'Rear detail', reason: 'Likely hidden' }
@@ -3614,6 +3633,9 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
     {
       model: 'selected-model',
       executable: 'codex',
+      sourceRevision: 'fixture-revision',
+      sourceFingerprint: 'f'.repeat(64),
+      sourceIdentityStatus: 'captured',
       sourceRequestId: 'parent-visual',
       parentCallId: 'review-call',
       sourceSpanId: 'visual-wait'
@@ -3654,6 +3676,9 @@ it('isolates visual assessment from drawing conclusions and returns validated fi
   })
   expect(retainedRecords[0]).toMatchObject({
     purpose: 'execution-assessment',
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured',
     sourceRequestId: 'parent-visual',
     parentCallId: 'review-call',
     sourceSpanId: 'visual-wait'

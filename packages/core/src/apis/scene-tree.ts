@@ -53,6 +53,10 @@ export interface SceneTreeRequests {
     changes: readonly UpdateElementDataChange[],
     options?: EVENT_OPTIONS
   ) => readonly string[]
+  removeSubtrees: (
+    elementIds: readonly string[],
+    options?: EVENT_OPTIONS
+  ) => readonly string[]
   removeSubtree: (
     elementId: string,
     options?: EVENT_OPTIONS
@@ -254,6 +258,12 @@ export const createSceneTreeAPIs = (
       }
       return freezeOrderedElementIds(
         sceneTreeRequests.applyElementDataChanges(changes, options)
+      )
+    },
+    removeSubtrees(elementIds: readonly string[], options?: EVENT_OPTIONS) {
+      if (elementIds.length === 0) return freezeOrderedElementIds([])
+      return freezeOrderedElementIds(
+        sceneTreeRequests.removeSubtrees(elementIds, options)
       )
     },
     removeSubtree(elementId: string, options?: EVENT_OPTIONS) {

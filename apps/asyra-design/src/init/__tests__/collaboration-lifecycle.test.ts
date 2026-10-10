@@ -1043,3 +1043,110 @@ it('settles after remote apply without saving the receiving document', async () 
   ).rejects.toThrow('remote apply failed')
   expect(order).toEqual(['remote-transaction', 'core-apply'])
 })
+
+it('confirms persistence after earlier publications without blocking later publications', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const send = vi
+    .spyOn(
+      CollaborationWebSocketProvider.prototype,
+      'sendPublicationWithAcceptance'
+    )
+    .mockImplementation(async (publication) => ({
+      publicationId: publication.publicationId,
+      sequence: 1
+    }))
+  const receipt = createDeferred<{
+    documentId: string
+    documentGeneration: number
+    sequence: number
+    durableSequence: number
+  }>()
+  const confirm = vi
+    .spyOn(CollaborationWebSocketProvider.prototype, 'confirmPersistence')
+    .mockReturnValue(receipt.promise)
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'file-persistence-boundary',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  publish?.(remotePublication('before-confirmation'))
+  const confirmation = handle.confirmPersistence()
+  await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce())
+  expect(send).toHaveBeenCalledWith(
+    expect.objectContaining({ publicationId: 'before-confirmation' }),
+    expect.any(Function)
+  )
+  publish?.(remotePublication('after-confirmation'))
+  await handle.whenIdle()
+  expect(send).toHaveBeenCalledWith(
+    expect.objectContaining({ publicationId: 'after-confirmation' }),
+    expect.any(Function)
+  )
+  receipt.resolve({
+    documentId: 'file-persistence-boundary',
+    documentGeneration: 0,
+    sequence: 1,
+    durableSequence: 1
+  })
+  await expect(confirmation).resolves.toEqual(
+    expect.objectContaining({ sequence: 1 })
+  )
+})
+
+it('cancels a queued persistence confirmation without waiting for a pending publication', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const accepted = createDeferred<{ publicationId: string; sequence: number }>()
+  const send = vi
+    .spyOn(
+      CollaborationWebSocketProvider.prototype,
+      'sendPublicationWithAcceptance'
+    )
+    .mockReturnValue(accepted.promise)
+  const confirm = vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'confirmPersistence'
+  )
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'file-persistence-cancel',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  publish?.(remotePublication('pending-publication'))
+  await vi.waitFor(() => expect(send).toHaveBeenCalledOnce())
+  const controller = new AbortController()
+  let failure: unknown
+  const confirmation = handle
+    .confirmPersistence(controller.signal)
+    .catch((error: unknown) => {
+      failure = error
+    })
+  controller.abort(new Error('Cancelled confirmation'))
+  try {
+    await vi.waitFor(() =>
+      expect(failure).toEqual(new Error('Cancelled confirmation'))
+    )
+  } finally {
+    accepted.resolve({ publicationId: 'pending-publication', sequence: 1 })
+    await confirmation
+    await handle.whenIdle()
+  }
+  expect(confirm).not.toHaveBeenCalled()
+})

@@ -1,3 +1,10 @@
+import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
+import { requestLocalAiActionBatch } from '../local-ai-provider'
+vi.mock('@asyra/ai-agent-runtime/node', async (original) => ({
+  ...(await original<typeof import('@asyra/ai-agent-runtime/node')>()),
+  captureAiSourceIdentity: vi.fn()
+}))
+vi.mock('../local-ai-provider', () => ({ requestLocalAiActionBatch: vi.fn() }))
 import type {
   AiActionBatch,
   AiProviderInput
@@ -90,6 +97,11 @@ describe('Asyra Design configured AI model backend', () => {
     expect(body.systemPrompt).toMatch(/registered App actions and image tools/i)
     expect(body.imageTools).toEqual([
       {
+        capabilities: ['retained-reference-validation'],
+        id: 'validate_reference_images',
+        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+      },
+      {
         capabilities: ['explicit-solid-background-decomposition'],
         id: 'vectorize_image_layers',
         inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
@@ -139,4 +151,49 @@ describe('Asyra Design configured AI model backend', () => {
       code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
     })
   })
+})
+
+it('captures source once at local invocation entry and preserves execution when unavailable', async () => {
+  vi.mocked(requestLocalAiActionBatch).mockResolvedValue(batch)
+  const capture = vi.mocked(captureAiSourceIdentity)
+  capture.mockClear()
+  const identity = {
+    sourceRevision: 'abc',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured' as const
+  }
+  capture
+    .mockResolvedValueOnce(identity)
+    .mockResolvedValueOnce({ sourceIdentityStatus: 'unavailable' })
+  const environment = {
+    AI_PROVIDER_BACKEND: 'local-codex',
+    AI_PROVIDER_MODEL: 'test-model'
+  }
+  expect(await requestConfiguredAiActionBatch(input, { environment })).toEqual(
+    batch
+  )
+  expect(capture).toHaveBeenCalledTimes(1)
+  expect(requestLocalAiActionBatch).toHaveBeenLastCalledWith(
+    input,
+    expect.objectContaining(identity)
+  )
+  expect(await requestConfiguredAiActionBatch(input, { environment })).toEqual(
+    batch
+  )
+  expect(capture).toHaveBeenCalledTimes(2)
+  expect(requestLocalAiActionBatch).toHaveBeenLastCalledWith(
+    input,
+    expect.objectContaining({ sourceIdentityStatus: 'unavailable' })
+  )
+  await requestConfiguredAiActionBatch(input, {
+    environment: { ...environment, AI_EXECUTION_SOURCE_REVISION: 'build-42' }
+  })
+  expect(capture).toHaveBeenCalledTimes(2)
+  expect(requestLocalAiActionBatch).toHaveBeenLastCalledWith(
+    input,
+    expect.objectContaining({
+      sourceRevision: 'build-42',
+      sourceIdentityStatus: 'configured'
+    })
+  )
 })

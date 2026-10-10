@@ -1,3 +1,4 @@
+import { getActiveCollaborationHandle } from '../collaboration/lifecycle'
 import { recordActionFailure } from './action-failure'
 import { createBasicApiActions } from './basic-api-actions'
 import type {
@@ -71,7 +72,16 @@ export const createAiRuntimeInput = (
   return {
     actionDefinitions: [
       ...createBasicApiActions(),
-      ...createAiActions(),
+      ...createAiActions(undefined, {
+        confirmPersistence: async (signal) => {
+          const session = getActiveCollaborationHandle()
+          if (!session) return { status: 'local-only' }
+          return {
+            status: 'durable',
+            ...(await session.confirmPersistence(signal))
+          }
+        }
+      }),
       createPreparedDesignAction(),
       createDocumentContextAction(),
       createDesignEditAction(),

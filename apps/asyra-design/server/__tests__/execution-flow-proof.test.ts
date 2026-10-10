@@ -1,3 +1,9 @@
+import { projectAiActivity } from '../../src/ai/presentation'
+import { createDocumentPersistenceQueue } from '../document-persistence-queue'
+import { createLocalImageTools } from '../local-image-tools'
+import { createLocalReferenceTools } from '../local-reference-tools'
+import { referenceRejection } from '../reference-image-download'
+import sharp from 'sharp'
 import { createAiInvoker, exportExecutionTrace } from '@asyra/ai-agent-runtime'
 import { designReportPolicy } from '../design-profiler-policy'
 const reviewCriteria = (names: readonly string[]) =>
@@ -247,6 +253,14 @@ it('execution proof preserves partial lookup full recovery and declaration const
     action.inputSchema.properties.elementIds
   )
   expect(fragment.definition.coverage).toBe('partial')
+  const recovered = await read(fragment.definition.recover.arguments)
+  expect(recovered.definition).toMatchObject({
+    coverage: 'partial',
+    deliveryReason: 'recovery',
+    recoveryReason: 'delivery-failure'
+  })
+  expect(recovered.schemaFragments).toEqual(fragment.schemaFragments)
+  expect(recovered.inputSchema).toBeUndefined()
   const full = await read({ names: [action.name] })
   expect(full.inputSchema).toEqual(action.inputSchema)
   const repeated = await read({ names: [action.name] })
@@ -630,6 +644,42 @@ it('execution proof retains immutable preparation within its request only', () =
   session.release([receipt.artifactId])
   expect(() => session.resolve(receipt.artifactId)).toThrow()
   expect(session.resolve(changed.artifactId).entries).toHaveLength(2)
+  const signed = session.prepare({
+    type: 'group',
+    name: 'Signed positions',
+    fillTemplates: { paint: '#123456' },
+    children: [
+      {
+        type: 'rect',
+        key: 'a',
+        name: 'A',
+        x: -10,
+        y: -20,
+        width: 10,
+        height: 10,
+        fill: { template: 'paint' }
+      },
+      {
+        type: 'rect',
+        key: 'b',
+        name: 'B',
+        x: 20,
+        y: 30,
+        width: 10,
+        height: 10,
+        fill: { template: 'paint' }
+      }
+    ]
+  })
+  const entries = session.resolve(signed.artifactId).entries
+  expect(entries[0].descriptor).toMatchObject({ x: -10, y: -20 })
+  expect(entries[1].descriptor).toMatchObject({ x: 0, y: 0 })
+  expect(entries[2].descriptor).toMatchObject({ x: 30, y: 50 })
+  expect(entries[1].descriptor.fills).not.toEqual(entries[2].descriptor.fills)
+  expect(signed.reuse).toMatchObject({
+    fillOccurrences: 2,
+    compiledFillDefinitions: 1
+  })
 })
 
 it('execution proof composes preparation and canonical dispatch without repeated work', async () => {
@@ -798,6 +848,30 @@ it('execution proof distinguishes stage readiness from current final assessment'
   ).toThrow()
   expect(review.getIssue()).toBeTruthy()
   expect(review.record({ phase: 'facts' })).toEqual(savedFacts)
+  const failedReview = review.record({
+    phase: 'visual',
+    inspectionIds: [
+      review.inspect('root', true, true)?.inspectionId,
+      review.inspect('detail', true, false)?.inspectionId
+    ],
+    checks: [
+      check('Silhouette'),
+      {
+        ...check('Finish'),
+        status: 'fail',
+        evidence: 'Missing requested visible trim'
+      }
+    ]
+  })
+  expect(failedReview).toMatchObject({
+    accepted: false,
+    correction: {
+      diagnosticOnly: true,
+      criteria: [
+        { criterionId: 'Finish', evidence: ['Missing requested visible trim'] }
+      ]
+    }
+  })
   expect(
     review.record({
       phase: 'visual',
@@ -851,7 +925,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
   )
   const signal = new AbortController().signal
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
       phase: 'plan',
       method: 'Match the brief',
@@ -870,7 +944,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
   )
   await expect(
     operations.call(
-      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
         inspectionIds: [unrelated.actionResults[0].result.inspectionId],
@@ -887,7 +961,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
     )
   )
   await operations.call(
-    AiDesignToolIds.RECORD_DESIGN_REVIEW,
+    AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
       inspectionIds: [image.actionResults[0].result.inspectionId],
@@ -1146,4 +1220,519 @@ it('execution proof composes a non-drawing host through shared invocation and lo
       (event) => event.name === 'inventory'
     )
   ).toBe(true)
+})
+
+it('execution proof hands a region identity set into one compact plural removal', async () => {
+  const removal = basicApiContracts.find(
+    (api) => api.owner === 'element' && api.method === 'deleteElements'
+  )
+  if (!removal) throw new Error('Missing plural removal contract')
+  const read = {
+    name: AiActionNames.READ_DESIGN_CONTEXT,
+    description: 'Read region targets',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scope: { const: 'region' },
+        bounds: { type: 'object' },
+        allMatches: { type: 'boolean' },
+        result: { const: 'ids' }
+      }
+    }
+  }
+  const ids = Array.from({ length: 288 }, (_, index) => `target-${index}`)
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map(
+        (action): NonNullable<AiBatchReceipt['actionResults']>[number] => ({
+          actionId: action.id,
+          actionName: action.name,
+          result:
+            action.name === read.name
+              ? {
+                  available: true,
+                  total: ids.length,
+                  nextOffset: null,
+                  elementIds: ids,
+                  missingIds: []
+                }
+              : {
+                  status: 'complete',
+                  value: {
+                    removed: ids.map((elementId) => ({
+                      elementId,
+                      data: {
+                        privateHistory: 'history belongs to the canonical owner'
+                      }
+                    }))
+                  }
+                }
+        })
+      )
+    })
+  )
+  const tools = createLocalOperationTools(
+    JSON.parse(JSON.stringify([read, removal])),
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    execute
+  )
+  const receipt = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+      {
+        inspection: 'defer',
+        operations: [
+          {
+            name: removal.name,
+            arguments: {},
+            target: {
+              field: 'elementIds',
+              query: {
+                scope: 'region',
+                bounds: { x: 0, y: 0, width: 100, height: 100 }
+              }
+            }
+          }
+        ]
+      },
+      new AbortController().signal
+    )
+  )
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
+    result: 'ids',
+    allMatches: true
+  })
+  expect(execute.mock.calls[1][0].actions).toHaveLength(1)
+  expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
+    elementIds: ids
+  })
+  expect(receipt.actionResults).toHaveLength(1)
+  expect(receipt.actionResults[0].result.value.removed).toEqual(
+    ids.map((elementId) => ({ elementId }))
+  )
+  expect(JSON.stringify(receipt)).not.toContain('privateHistory')
+})
+
+it('execution proof retains source identity and unavailable upstream payload provenance', () => {
+  const records: ExecutionRecord[] = []
+  const profiler = createProfiler(
+    { actions: [], attempt: 1, context: {}, intent: 'fixture' },
+    'fixture-model',
+    {
+      sourceRevision: 'fixture-revision',
+      sourceFingerprint: 'f'.repeat(64),
+      sourceIdentityStatus: 'captured',
+      sink: {
+        write: (record) => records.push(record),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  profiler.trace('research_started', { callId: 'web-1' })
+  profiler.trace('research_completed', {
+    callId: 'web-1',
+    result: { type: 'webSearch' }
+  })
+  profiler.finish('completed')
+  const parsed = parseExecutionRecord(
+    records.map((record) => JSON.stringify(record)).join('\n')
+  )
+  expect(parsed.metadata).toMatchObject({
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured'
+  })
+  expect(
+    parsed.steps.find((step) => step.callId === 'web-1')?.diagnostics
+  ).toMatchObject({
+    input: {
+      payload: { status: 'unavailable', reason: 'upstream-not-exposed' }
+    },
+    output: {
+      payload: { status: 'unavailable', reason: 'upstream-not-exposed' }
+    }
+  })
+})
+
+it('execution proof recovers a rejected reference through a different original source and reuses it', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#ffffff' }
+  })
+    .png()
+    .toBuffer()
+  const download = vi
+    .fn()
+    .mockRejectedValueOnce(referenceRejection('response', 'http', 403))
+    .mockResolvedValueOnce(
+      new Response(bytes, { headers: { 'content-type': 'image/png' } })
+    )
+  const images = createLocalImageTools({ metadata: {} })
+  const attach = vi.fn(images.addReference)
+  const references = createLocalReferenceTools(attach, download)
+  const signal = new AbortController().signal
+  const rejected = JSON.parse(
+    await references.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://example.org/blocked.png',
+        sourceUrl: 'https://example.org/page'
+      },
+      signal
+    )
+  )
+  expect(rejected.failure).toMatchObject({
+    stage: 'response',
+    reason: 'http',
+    status: 403,
+    retryable: false,
+    attempts: 1
+  })
+  const args = {
+    imageUrl: 'https://example.org/original.png',
+    sourceUrl: 'https://example.org/page'
+  }
+  const admitted = JSON.parse(
+    await references.call('import_reference_image', args, signal)
+  )
+  expect(admitted).toMatchObject({
+    available: true,
+    image: { width: 8, height: 8 },
+    attachmentIndex: 0
+  })
+  expect(
+    JSON.parse(await references.call('import_reference_image', args, signal))
+  ).toMatchObject({
+    available: true,
+    delivery: 'reference',
+    attachmentIndex: 0
+  })
+  expect(download).toHaveBeenCalledTimes(2)
+  expect(attach).toHaveBeenCalledOnce()
+  expect(images.resolveSources(['attachment:0'])).toEqual([
+    admitted.referenceId
+  ])
+  expect(() => images.resolveSources(['attachment:1'])).toThrow(/reference/i)
+  const validation = JSON.parse(
+    await images.call(
+      'validate_reference_images',
+      { attachmentIndexes: [0] },
+      signal
+    )
+  )
+  expect(validation.references[0]).toMatchObject({
+    referenceId: admitted.referenceId,
+    reused: true,
+    validation: { width: 8, height: 8, validity: 'decoded' }
+  })
+})
+
+it('execution proof routes separate evidence tools without canvas mutations', async () => {
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    execute,
+    {
+      validateReferences: (indexes) =>
+        indexes.map((attachmentIndex) => ({
+          attachmentIndex,
+          referenceId: `reference:proof-${attachmentIndex}`
+        }))
+    }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await tools.call(name, args, signal))
+  expect(
+    await call('define_design_criteria', {
+      method: 'Use source dimensions',
+      references: [],
+      criteria: {
+        scale: {
+          requirement: 'Requested scale',
+          description: 'Source dimension',
+          verification: 'data'
+        }
+      },
+      detailRequired: false
+    })
+  ).toMatchObject({ recorded: true })
+  expect(
+    await call('record_design_facts', {
+      facts: [
+        {
+          id: 'height',
+          statement: 'Verified height',
+          scope: 'Height only',
+          sources: ['survey'],
+          verification: 'Survey confirms height',
+          dependencies: [{ key: 'survey', version: '1' }]
+        }
+      ]
+    })
+  ).toMatchObject({ facts: [{ id: 'height', status: 'valid' }] })
+  expect(
+    await call('record_design_calculations', {
+      calculations: [
+        {
+          id: 'projection',
+          value: 0.8,
+          unit: 'px',
+          sourceFactIds: ['height'],
+          verification: 'Derived projection'
+        }
+      ]
+    })
+  ).toMatchObject({
+    diagnosticOnly: true,
+    calculations: [{ value: 0.8, status: 'valid' }]
+  })
+  const selection = await call('select_design_references', {
+    referenceImageIndexes: []
+  })
+  expect(selection).toMatchObject({
+    referenceImageIndexes: [],
+    changed: true,
+    review: { accepted: false, next: { tool: 'review_drawing' } }
+  })
+  expect(selection).not.toHaveProperty('facts')
+  expect(selection).not.toHaveProperty('factBindings')
+  expect(selection).not.toHaveProperty('phase')
+  await expect(call('review_drawing', { phase: 'facts' })).rejects.toThrow()
+  expect(await call('record_design_facts', {})).toMatchObject({
+    facts: [{ id: 'height', status: 'valid' }]
+  })
+  const rejected = await call('select_design_references', {
+    referenceImageIndexes: [0],
+    requirementRevision: 1,
+    referenceDecisions: [
+      {
+        referenceId: 'reference:proof-0',
+        status: 'rejected',
+        criterionIds: [],
+        reason: 'Construction image does not establish finished appearance',
+        limitations: []
+      }
+    ]
+  })
+  expect(rejected.referenceDecisions).toMatchObject([
+    { status: 'rejected', author: 'model', requirementRevision: 1 }
+  ])
+  const evidence = await call('record_design_facts', {})
+  expect(evidence.facts).toMatchObject([
+    {
+      freshness: 'current',
+      evidence: { kind: 'source-assertion', status: 'asserted' }
+    }
+  ])
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('execution proof confirms a durable sequence without extending it to later edits', async () => {
+  let acknowledge!: (value: { durableSequence: number }) => void
+  const queue = createDocumentPersistenceQueue({
+    documentId: 'proof',
+    sendBatch: () =>
+      new Promise((resolve) => {
+        acknowledge = resolve
+      })
+  })
+  const entry = (sequence: number) => ({
+    sequence,
+    publicationId: `publication-${sequence}`,
+    encodedPublicationFrames: [Buffer.from('proof').toString('base64')],
+    byteLength: 5
+  })
+  try {
+    queue.enqueue(entry(1))
+    const confirmation = queue.whenDurable(1)
+    const flush = queue.flushNow()
+    queue.enqueue(entry(2))
+    acknowledge({ durableSequence: 1 })
+    await flush
+    expect(await confirmation).toBe(1)
+    expect(queue.getState()).toMatchObject({
+      durableSequence: 1,
+      headSequence: 2
+    })
+  } finally {
+    queue.dispose()
+  }
+})
+
+it('execution proof preserves concrete work through progress and settlement', async () => {
+  const execute: AiConversationFeature['execute'] = async (request) => {
+    const running = {
+      phase: 'provider' as const,
+      attempt: 1,
+      tool: AiActionNames.UPDATE_DESIGN_ELEMENT,
+      toolStatus: 'running' as const,
+      summary: 'Running a tool',
+      message: 'Adjusting the roof color'
+    }
+    request.progressObserver(running)
+    request.progressObserver({
+      phase: 'execution',
+      attempt: 1,
+      summary: running.message
+    })
+    request.progressObserver({ ...running, toolStatus: 'completed' })
+    request.progressObserver({
+      phase: 'provider',
+      attempt: 1,
+      summary: 'Planning'
+    })
+    request.progressObserver({
+      phase: 'execution',
+      attempt: 1,
+      summary: 'Reading the design'
+    })
+    request.progressObserver({
+      phase: 'provider',
+      attempt: 1,
+      tool: AiActionNames.INSPECT_DRAWING,
+      toolStatus: 'running',
+      summary: 'Running a tool'
+    })
+    const progress = controller.getSnapshot().activeTurn?.progress
+    expect(progress).toHaveLength(6)
+    expect(projectAiActivity(progress ?? []).current.message).toBe(
+      running.message
+    )
+    request.progressObserver({
+      phase: 'settled',
+      attempt: 1,
+      summary: 'Failed',
+      outcome: 'failed'
+    })
+    return {
+      status: 'failed',
+      stage: 'execution',
+      transaction: { status: 'committed' }
+    }
+  }
+  const controller = createAiConversationController({
+    feature: { execute, cancel: () => true },
+    getElementType: () => 'vector'
+  })
+  try {
+    const result = await controller.submit('Refine the roof')
+    expect(result).not.toBeNull()
+    if (!result) throw new Error('Missing settled activity')
+    expect(controller.getSnapshot().activeTurn).toBeNull()
+    expect(
+      projectAiActivity(result.progress, { outcome: result.outcome }).current
+    ).toEqual({ label: 'Failed' })
+  } finally {
+    await controller.dispose()
+  }
+})
+
+it('execution proof composes capture and assessment without dropping unavailable targets', async () => {
+  let detailAvailable = false
+  const captures: string[] = []
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map(
+        (action): AiBatchReceipt['actionResults'][number] => {
+          if (action.name === AiActionNames.INSPECT_DRAWING) {
+            const id = String(
+              (action.arguments as { elementId: string }).elementId
+            )
+            captures.push(id)
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result:
+                id === 'detail' && !detailAvailable
+                  ? {
+                      available: false,
+                      message: 'Native detail needs a smaller region'
+                    }
+                  : {
+                      available: true,
+                      evidence: { sessionId: 'proof', revision: 1 },
+                      image: { dataUrl: 'data:image/png;base64,AA==' }
+                    }
+            }
+          }
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: { current: true, coverage: { complete: true } }
+          }
+        }
+      )
+    })
+  )
+  const assessVisual = vi.fn(async () => ({
+    overall: { status: 'pass' as const, evidence: 'All required parts match' },
+    checks: [
+      {
+        criterionId: 'view',
+        status: 'pass' as const,
+        evidence: 'Current overview and detail'
+      }
+    ]
+  }))
+  const tools = createLocalOperationTools(
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    execute,
+    { reviewTargetId: 'drawing', assessVisual }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await tools.call(name, args, signal))
+  await call('define_design_criteria', {
+    phase: 'plan',
+    method: 'Compare the requested drawing',
+    references: [],
+    criteria: reviewCriteria(['view']),
+    detailRequired: true
+  })
+  const checks = [
+    {
+      criterionId: 'view',
+      status: 'pass',
+      evidence: 'Current requested appearance'
+    }
+  ]
+  const detail = {
+    elementId: 'detail',
+    region: { x: 0, y: 0, width: 100, height: 100 }
+  }
+  const failed = await call('review_drawing', {
+    phase: 'visual',
+    checks,
+    inspections: [{ elementId: 'drawing' }, detail]
+  })
+  expect(failed).toMatchObject({
+    accepted: false,
+    inspectionIds: [expect.any(String)],
+    failedInspections: [{ inspection: detail }]
+  })
+  expect(assessVisual).not.toHaveBeenCalled()
+  detailAvailable = true
+  const reviewed = await call('review_drawing', {
+    phase: 'visual',
+    checks,
+    inspectionIds: failed.inspectionIds,
+    inspections: [detail]
+  })
+  expect(reviewed.accepted).toBe(true)
+  expect(captures).toEqual(['drawing', 'detail', 'detail'])
+  expect(assessVisual).toHaveBeenCalledTimes(1)
 })

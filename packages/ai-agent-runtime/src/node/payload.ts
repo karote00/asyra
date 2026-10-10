@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 /** Local App-tool diagnostics only. Never call with provider prompts or thought events. */
 export const serializeToolPayload = (value: unknown) => {
   const redactions: string[] = []
+  const resourceIdentities: { path: string; sha256: string }[] = []
   const seen = new WeakSet<object>()
   const redact = (path: string, reason: string) => {
     redactions.push(path)
@@ -21,6 +22,10 @@ export const serializeToolPayload = (value: unknown) => {
       if (/^https?:\/\//i.test(input)) {
         try {
           const url = new URL(input)
+          resourceIdentities.push({
+            path,
+            sha256: createHash('sha256').update(input).digest('hex')
+          })
           if (url.search || url.username || url.password || url.hash) {
             url.search = ''
             url.username = ''
@@ -58,6 +63,7 @@ export const serializeToolPayload = (value: unknown) => {
     serialized,
     bytes: Buffer.byteLength(serialized),
     sha256: createHash('sha256').update(serialized).digest('hex'),
-    redactions
+    redactions,
+    resourceIdentities
   }
 }

@@ -3179,3 +3179,94 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     await provider.destroy()
   })
 })
+
+it('confirms the captured document version through the transport worker', async () => {
+  let captured: ClientMessage | undefined
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'confirm-persistence') {
+      captured = message
+      socket.send(
+        JSON.stringify({
+          type: 'response',
+          requestId: message.requestId,
+          ok: true,
+          persistence: {
+            documentId: 'app-file-17',
+            documentGeneration: 0,
+            sequence: 0,
+            durableSequence: 0
+          }
+        })
+      )
+    }
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    await expect(provider.confirmPersistence()).resolves.toEqual({
+      documentId: 'app-file-17',
+      documentGeneration: 0,
+      sequence: 0,
+      durableSequence: 0
+    })
+    expect(captured).toMatchObject({
+      type: 'confirm-persistence',
+      sequence: 0,
+      documentGeneration: 0
+    })
+  } finally {
+    await provider.destroy()
+  }
+})
+
+it('rejects a durable receipt for a different document generation', async () => {
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'confirm-persistence')
+      socket.send(
+        JSON.stringify({
+          type: 'response',
+          requestId: message.requestId,
+          ok: true,
+          persistence: {
+            documentId: 'app-file-17',
+            documentGeneration: 1,
+            sequence: 0,
+            durableSequence: 0
+          }
+        })
+      )
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    await expect(provider.confirmPersistence()).rejects.toThrow(
+      /captured document version/
+    )
+  } finally {
+    await provider.destroy()
+  }
+})
+
+it('cancels persistence confirmation while leaving the document session usable', async () => {
+  const server = await createLoopbackServer((socket, message) => {
+    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+  })
+  const provider = createProvider(server.endpoint)
+  try {
+    await provider.connect()
+    await provider.completeDocumentBootstrap()
+    const controller = new AbortController()
+    const result = expect(
+      provider.confirmPersistence(controller.signal)
+    ).rejects.toThrow('cancelled')
+    controller.abort(new Error('cancelled'))
+    await result
+    expect(provider.getStatus()).toBe('connected')
+  } finally {
+    await provider.destroy()
+  }
+})

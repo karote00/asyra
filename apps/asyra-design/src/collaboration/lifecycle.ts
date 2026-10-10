@@ -24,7 +24,10 @@ import {
   type PublicationOutboxState,
   type PublicationOutboxStorage
 } from './publication-outbox'
-import type { DocumentSessionBootstrap } from './protocol'
+import type {
+  DocumentSessionBootstrap,
+  DocumentPersistenceReceipt
+} from './protocol'
 import { CollaborationWebSocketProvider } from './websocket-provider'
 import type { ApplyRemoteCanonicalChangeSlicesInput as AppRemoteCanonicalChangeSlicesInput } from './app-protocol-types'
 
@@ -109,6 +112,7 @@ export interface CollaborationDebugHandle {
   disconnect(): Promise<void>
   reconnect(): Promise<void>
   whenIdle(): Promise<void>
+  confirmPersistence(signal?: AbortSignal): Promise<DocumentPersistenceReceipt>
   observePublicationOutcomes(
     subscriber: (outcome: CollaborationPublicationOutcome) => void
   ): () => void
@@ -390,6 +394,50 @@ class CollaborationSessionController {
     return this.attemptReconnect()
   }
 
+  async confirmPersistence(
+    signal?: AbortSignal
+  ): Promise<DocumentPersistenceReceipt> {
+    signal?.throwIfAborted()
+    let confirmation: Promise<DocumentPersistenceReceipt> | undefined
+    const boundary = this.schedule(async () => {
+      signal?.throwIfAborted()
+      if (
+        this.disposed ||
+        this.state.connection !== 'connected' ||
+        !this.current
+      )
+        throw new Error('Document session is not connected')
+      if (this.state.sync !== 'synced')
+        throw new Error(
+          'Local publications are pending, conflicted or unavailable'
+        )
+      confirmation = this.current.provider.confirmPersistence(signal)
+      // Observe rejection immediately; awaiting the receipt happens outside the publication queue.
+      void confirmation.catch(() => undefined)
+    })
+    const result = boundary.then(() => {
+      if (!confirmation)
+        throw new Error('Persistence confirmation was not started')
+      return confirmation
+    })
+    if (!signal) return result
+    return new Promise<DocumentPersistenceReceipt>((resolve, reject) => {
+      const onAbort = () => reject(signal.reason)
+      signal.addEventListener('abort', onAbort, { once: true })
+      result.then(
+        (receipt) => {
+          signal.removeEventListener('abort', onAbort)
+          resolve(receipt)
+        },
+        (error: unknown) => {
+          signal.removeEventListener('abort', onAbort)
+          reject(error)
+        }
+      )
+      if (signal.aborted) onAbort()
+    })
+  }
+
   async whenIdle(): Promise<void> {
     let queued: Promise<void>
     let reconnecting: Promise<void> | undefined
@@ -459,6 +507,7 @@ class CollaborationSessionController {
       disconnect: () => this.disconnect(),
       reconnect: () => this.reconnect(),
       whenIdle: () => this.whenIdle(),
+      confirmPersistence: (signal) => this.confirmPersistence(signal),
       observePublicationOutcomes: (subscriber) =>
         this.observePublicationOutcomes(subscriber),
       dispose: () => this.dispose()

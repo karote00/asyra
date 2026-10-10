@@ -379,7 +379,11 @@ it('starts elapsed time at zero without inventing a minimum duration', () => {
 })
 
 it('shows concise execution descriptions instead of Applying changes', () => {
-  for (const summary of ['Smoothing the outlines', 'Reshaping the tail']) {
+  for (const summary of [
+    'Smoothing the outlines',
+    'Reshaping the tail',
+    '正在調整屋頂顏色'
+  ]) {
     expect(
       projectAiActivity([
         {
@@ -394,7 +398,8 @@ it('shows concise execution descriptions instead of Applying changes', () => {
   for (const summary of [
     'Applying changes',
     'Updating the drawing',
-    '調整尾巴'
+    ' '.repeat(3),
+    'x'.repeat(1001)
   ]) {
     expect(
       projectAiActivity([
@@ -480,4 +485,151 @@ it('explains the actual failed step with the safe public reason and recovery', (
   ).toBe(
     'Replacing the drawing could not be completed. The revision target no longer exists. Select the drawing again. Changes already applied have been kept.'
   )
+})
+
+describe('concrete current work', () => {
+  const running = (message?: string) => ({
+    attempt: 1,
+    phase: 'provider' as const,
+    tool: 'update_design_element',
+    toolStatus: 'running' as const,
+    summary: 'Running a tool',
+    ...(message === undefined ? {} : { message })
+  })
+
+  it('keeps concrete work inside drawing loops through internal phases and acknowledgements', () => {
+    const first = running('正在加入窗戶光影反射效果')
+    const second = running('正在調整屋頂顏色')
+    const updates = [
+      first,
+      {
+        ...first,
+        phase: 'resolution' as const,
+        toolStatus: undefined,
+        message: undefined
+      },
+      {
+        ...first,
+        phase: 'permission' as const,
+        toolStatus: undefined,
+        message: undefined
+      },
+      {
+        ...first,
+        phase: 'execution' as const,
+        toolStatus: undefined,
+        message: undefined,
+        summary: '正在加入窗戶光影反射效果'
+      },
+      { ...first, toolStatus: 'completed' as const },
+      second,
+      { ...first, toolStatus: 'completed' as const },
+      second
+    ]
+    const snapshot = structuredClone(updates)
+    const activity = projectAiActivity(updates)
+    expect(activity.entries).toEqual([
+      { label: 'Drawing and refining', message: first.message },
+      { label: 'Drawing and refining', message: second.message }
+    ])
+    expect(activity.current).toBe(activity.entries.at(-1))
+    expect(updates).toEqual(snapshot)
+  })
+
+  it('accepts a concrete execution summary after a generic preparation loop', () => {
+    const activity = projectAiActivity([
+      running(),
+      {
+        attempt: 1,
+        phase: 'execution',
+        tool: 'execute_design_batch',
+        summary: 'Removing covered objects'
+      }
+    ])
+    expect(activity.current.message ?? activity.current.label).toBe(
+      'Removing covered objects'
+    )
+  })
+
+  it('shows bounded authored text without guessing missing or oversized descriptions', () => {
+    const detailed =
+      'Adjusting the roof color to match the selected source and keeping the existing window reflections and shadows intact'
+    expect(projectAiActivity([running(detailed)]).current.message).toBe(
+      detailed
+    )
+    for (const message of [undefined, '', '   ', 'x'.repeat(1001)]) {
+      expect(
+        projectAiActivity([running('Adding windows'), running(message)]).current
+      ).toEqual({ label: 'Drawing and refining', message: 'Adding windows' })
+    }
+  })
+
+  it('preserves announced work through generic read, review and planning substeps', () => {
+    const first = running('Adding window reflections')
+    const internal = [
+      { attempt: 1, phase: 'provider' as const, summary: 'Planning' },
+      { attempt: 1, phase: 'context' as const, summary: 'Context' },
+      {
+        attempt: 1,
+        phase: 'execution' as const,
+        tool: 'read_design_context',
+        summary: 'Reading the design'
+      },
+      {
+        attempt: 1,
+        phase: 'execution' as const,
+        tool: 'inspect_drawing',
+        summary: 'Reviewing the drawing'
+      },
+      {
+        attempt: 1,
+        phase: 'execution' as const,
+        tool: 'validate_inspection_evidence',
+        summary: 'Checking inspection freshness'
+      },
+      { ...running(), tool: 'read_design_context' }
+    ]
+    for (let count = 1; count <= internal.length; count++) {
+      const projected = projectAiActivity([first, ...internal.slice(0, count)])
+      expect(projected.current.message ?? projected.current.label).toBe(
+        first.message
+      )
+      expect(projected.entries).toHaveLength(1)
+    }
+    const next = projectAiActivity([
+      first,
+      ...internal,
+      running('Adjusting the roof color')
+    ])
+    expect(next.entries.map((entry) => entry.message ?? entry.label)).toEqual([
+      'Adding window reflections',
+      'Adjusting the roof color'
+    ])
+    expect(projectAiActivity(internal).current).toBeDefined()
+  })
+
+  it('lets control and terminal state override concrete work', () => {
+    for (const [state, label] of [
+      [{ stopping: true }, 'Stopping…'],
+      [{ awaitingApproval: true }, 'Awaiting approval'],
+      [{ outcome: 'success' as const }, 'Finished'],
+      [{ outcome: 'failed' as const }, 'Failed'],
+      [{ outcome: 'cancelled' as const }, 'Stopped']
+    ] as const) {
+      expect(
+        projectAiActivity([running('Adjusting the roof color')], state).current
+      ).toEqual({ label })
+    }
+    expect(
+      projectAiActivity([
+        running('Adding windows'),
+        {
+          phase: 'settled',
+          summary: 'Done',
+          message: 'Old work',
+          outcome: 'failed'
+        }
+      ]).current
+    ).toEqual({ label: 'Failed' })
+  })
 })

@@ -592,7 +592,6 @@ export const createBasicApiCases = async () => {
     { elementId: rect, values: { name: 'Renamed' } },
     () => equal(core.getElementData(rect)?.name, 'Renamed')
   )
-  add('core', 'removeSubtree', { elementId: rect }, removed)
   add(
     'core',
     'selectByChannel',
@@ -712,7 +711,7 @@ export const createBasicApiCases = async () => {
       equal(core.getElementData(ids[0])?.type, 'vector')
     }
   )
-  add('element', 'deleteElement', { elementId: rect }, removed)
+  add('element', 'deleteElements', { elementIds: [rect] }, removed)
   add('hierarchy', 'groupElements', { elementIds: [rect, frame] }, () => {
     const parent = core.getElementData(rect)?.parentId
     assert(parent !== workspace, 'Ungrouped result')
@@ -732,7 +731,6 @@ export const createBasicApiCases = async () => {
       equal(children.indexOf(rect), children.indexOf(other) + 1)
     }
   )
-  add('hierarchy', 'removeSubtree', { elementId: rect }, removed)
   add(
     'selection',
     'toggleSelection',

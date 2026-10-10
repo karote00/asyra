@@ -96,7 +96,11 @@ const readBrief = (value: unknown): DesignBrief | undefined => {
       return {
         key: label(c.key, 'check key', 160),
         property: c.property as LayoutProperty,
-        expected: number(c.expected, 'check expected', 0),
+        expected: number(
+          c.expected,
+          'check expected',
+          c.property === 'x' || c.property === 'y' ? -limits.dimension : 0
+        ),
         tolerance: number(c.tolerance, 'check tolerance', 0)
       }
     })
@@ -115,8 +119,8 @@ const camera = (value: unknown) => {
   const az = (number(value.azimuth, 'azimuth', -360, 360) * Math.PI) / 180
   const el = (number(value.elevation, 'elevation', -90, 90) * Math.PI) / 180
   const scale = number(value.scale, 'projection scale', Number.MIN_VALUE)
-  const ox = number(value.originX, 'projection originX', 0)
-  const oy = number(value.originY, 'projection originY', 0)
+  const ox = number(value.originX, 'projection originX')
+  const oy = number(value.originY, 'projection originY')
   const ca = Math.cos(az),
     sa = Math.sin(az),
     ce = Math.cos(el),
@@ -227,8 +231,8 @@ export const constructDesign = (
       y = Math.min(...points.map((p) => p.y))
     const width = Math.max(...points.map((p) => p.x)) - x,
       height = Math.max(...points.map((p) => p.y)) - y
-    if (!template) number(x, 'projected x', 0)
-    if (!template) number(y, 'projected y', 0)
+    if (!template) number(x, 'projected x')
+    if (!template) number(y, 'projected y')
     number(width, 'projected width', Number.MIN_VALUE)
     number(height, 'projected height', Number.MIN_VALUE)
     return {
@@ -422,13 +426,11 @@ export const constructDesign = (
             name: `${name} - ${i + 1} - ${compiled.name}`,
             x: number(
               Number(compiled.x) + projected.x - zero.x,
-              'pattern projected x',
-              0
+              'pattern projected x'
             ),
             y: number(
               Number(compiled.y) + projected.y - zero.y,
-              'pattern projected y',
-              0
+              'pattern projected y'
             ),
             ...(Array.isArray(fills) ? { fill: fills[i % fills.length] } : {})
           })
@@ -474,8 +476,8 @@ export const constructDesign = (
         type: 'vector',
         key: `${key}-${index}`,
         name: `${name} - ${index + 1}`,
-        x: number(placement.x, 'vector placement x', 0),
-        y: number(placement.y, 'vector placement y', 0),
+        x: number(placement.x, 'vector placement x'),
+        y: number(placement.y, 'vector placement y'),
         ...(placement.fill !== undefined ? { fill: placement.fill } : {})
       }
     })
@@ -508,6 +510,7 @@ export const constructDesign = (
       delete node.relations
       delete node.projection
       delete node.sharedFills
+      delete node.fillTemplates
     }
     if (node.type === 'projected-face') node = face(node, key, parent)
     nodes.set(key, { node, parent })
@@ -635,12 +638,18 @@ export const constructDesign = (
       entry.node[property] = number(
         relation.factor * sourceValue + relation.offset - anchorOffset,
         'relation result',
-        property === 'width' || property === 'height' ? Number.MIN_VALUE : 0
+        property === 'width' || property === 'height'
+          ? Number.MIN_VALUE
+          : -limits.dimension
       )
       pending.delete(id)
       resolved.add(id)
     }
-    return number(entry.node[property] ?? 0, 'relation source value', 0)
+    return number(
+      entry.node[property] ?? 0,
+      'relation source value',
+      property === 'width' || property === 'height' ? 0 : -limits.dimension
+    )
   }
   for (const relation of relations.values())
     get(relation.target, relation.property)

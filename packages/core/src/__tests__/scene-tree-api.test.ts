@@ -45,6 +45,7 @@ const createRequests = () =>
     applyElementDataChanges: vi.fn<
       SceneTreeRequests['applyElementDataChanges']
     >((changes) => Object.freeze(changes.map(({ id }) => id))),
+    removeSubtrees: vi.fn(() => Object.freeze([] as string[])),
     removeSubtree: vi.fn((elementId: string) => ({
       elementId,
       removed: [],

@@ -698,7 +698,7 @@ const AiConversationFeed = ({
                   <div
                     role="status"
                     aria-label="Current activity"
-                    className="mt-3 text-[#b9b2d4]"
+                    className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
                     {activity.current.message || activity.current.label}
                   </div>

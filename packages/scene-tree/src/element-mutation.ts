@@ -109,6 +109,12 @@ export interface PreparedSubtreeRemoval extends ElementRemovalRelationEvidence {
   readonly evidence: readonly SubtreeChange[]
 }
 
+export interface PreparedSubtreesRemoval extends ElementRemovalRelationEvidence {
+  readonly kind: 'prepared-subtrees-removal'
+  readonly orderedElementIds: readonly string[]
+  readonly evidence: readonly SceneTreeChange[]
+}
+
 export type PreparedElementMutation =
   | PreparedElementDataMutation
   | PreparedElementInsertion
@@ -116,6 +122,7 @@ export type PreparedElementMutation =
   | PreparedElementRemoval
   | PreparedCanonicalElementRemoval
   | PreparedSubtreeRemoval
+  | PreparedSubtreesRemoval
 
 export interface ElementMutationBatchResult {
   readonly orderedElementIds: readonly string[]

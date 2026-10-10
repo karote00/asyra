@@ -26,6 +26,7 @@ export const CollaborationMessageTypes = {
   PEER_APPLIED: 'peer-applied',
   BOOTSTRAP_CONSUMED: 'bootstrap-consumed',
   RESET_DOCUMENT: 'reset-document',
+  CONFIRM_PERSISTENCE: 'confirm-persistence',
   SOURCE_PUBLICATION_SETTLEMENT: 'source-publication-settlement',
   SOURCE_FRAME_ADMITTED: 'source-frame-admitted',
   SOURCE_PUBLICATION_PROPOSED: 'source-publication-proposed',
@@ -83,6 +84,20 @@ export interface BootstrapConsumedRequest {
   readonly headSequence: number
 }
 
+export interface DocumentPersistenceReceipt {
+  readonly documentId: string
+  readonly documentGeneration: number
+  readonly sequence: number
+  readonly durableSequence: number
+}
+
+export interface ConfirmPersistenceRequest {
+  readonly type: typeof CollaborationMessageTypes.CONFIRM_PERSISTENCE
+  readonly requestId: string
+  readonly sequence: number
+  readonly documentGeneration: number
+}
+
 export interface ResetDocumentRequest {
   readonly type: typeof CollaborationMessageTypes.RESET_DOCUMENT
   readonly requestId: string
@@ -102,6 +117,7 @@ export type CollaborationRequestMessage =
   | PeerAppliedRequest
   | BootstrapConsumedRequest
   | ResetDocumentRequest
+  | ConfirmPersistenceRequest
 
 export type CollaborationClientMessage =
   | CollaborationHelloMessage
@@ -146,6 +162,7 @@ export interface SuccessfulResponseMessage {
   readonly requestId: string
   readonly ok: true
   readonly acceptedSequences?: readonly number[]
+  readonly persistence?: DocumentPersistenceReceipt
 }
 
 export interface FailedResponseMessage {
@@ -1660,6 +1677,7 @@ const collaborationControlMessageTypes = new Set<string>([
   CollaborationMessageTypes.PEER_APPLIED,
   CollaborationMessageTypes.BOOTSTRAP_CONSUMED,
   CollaborationMessageTypes.RESET_DOCUMENT,
+  CollaborationMessageTypes.CONFIRM_PERSISTENCE,
   CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT,
   CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
   CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED,
@@ -1904,6 +1922,17 @@ export const parseCollaborationClientMessage = (
             headSequence: value.headSequence
           }
         : undefined
+    case CollaborationMessageTypes.CONFIRM_PERSISTENCE:
+      return isNonBlankString(value.requestId) &&
+        isNonNegativeSafeInteger(value.sequence) &&
+        isNonNegativeSafeInteger(value.documentGeneration)
+        ? {
+            type: value.type,
+            requestId: value.requestId,
+            sequence: value.sequence,
+            documentGeneration: value.documentGeneration
+          }
+        : undefined
     case CollaborationMessageTypes.RESET_DOCUMENT:
       return isNonBlankString(value.requestId)
         ? {
@@ -1939,6 +1968,17 @@ export const parseCollaborationServerMessage = (
       }
       if (value.ok) {
         const acceptedSequences = value.acceptedSequences
+        const persistence = value.persistence
+        if (
+          persistence !== undefined &&
+          (!isRecord(persistence) ||
+            !isNonBlankString(persistence.documentId) ||
+            !isNonNegativeSafeInteger(persistence.documentGeneration) ||
+            !isNonNegativeSafeInteger(persistence.sequence) ||
+            !isNonNegativeSafeInteger(persistence.durableSequence) ||
+            persistence.durableSequence < persistence.sequence)
+        )
+          return undefined
         if (
           Object.prototype.hasOwnProperty.call(value, 'acceptedSequences') &&
           !isContiguousPositiveIntegerArray(acceptedSequences)
@@ -1949,6 +1989,12 @@ export const parseCollaborationServerMessage = (
           type: value.type,
           requestId: value.requestId,
           ok: true,
+          ...(persistence
+            ? {
+                persistence:
+                  persistence as unknown as DocumentPersistenceReceipt
+              }
+            : {}),
           ...(isContiguousPositiveIntegerArray(acceptedSequences)
             ? { acceptedSequences }
             : {})

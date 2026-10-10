@@ -1712,6 +1712,109 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(propsManagerOwner.changes).toEqual([])
   })
 
+  it('validates a deep hierarchy with linear parent reads within each removal preparation', () => {
+    const workspace = sceneTree.currentWorkspace as Workspace
+    const groups = Array.from(
+      { length: 120 },
+      (_, index) =>
+        new RawMutationGroup({
+          id: `deep-${index}`,
+          visible: true,
+          lock: false
+        })
+    )
+    groups.forEach((group, index) =>
+      workspace.addNewElements([group], index ? groups[index - 1] : workspace)
+    )
+    const reads = groups.map((group) => vi.spyOn(group, 'get'))
+    const target = requireTestValue(groups[groups.length - 1])
+    const prepared = sceneTree.prepareSubtreesRemoval([target.get('id')])
+    const parentReads = reads.reduce(
+      (count, spy) =>
+        count + spy.mock.calls.filter(([key]) => key === 'parentId').length,
+      0
+    )
+    expect(parentReads).toBeLessThan(groups.length * 6)
+    expect(prepared.orderedElementIds).toEqual([target.get('id')])
+    reads.forEach((spy) => spy.mockRestore())
+    // A later corruption must not reuse the earlier validation result.
+    workspace.set('children', [
+      ...workspace.get('children'),
+      groups[0].get('id')
+    ])
+    expect(() => sceneTree.prepareSubtreesRemoval([target.get('id')])).toThrow(
+      /duplicate membership/
+    )
+  })
+
+  it('prepares 288 subtree deletions with one hierarchy inventory and retains replay instances', () => {
+    const workspace = sceneTree.currentWorkspace as Workspace
+    const roots = Array.from(
+      { length: 288 },
+      (_, index) =>
+        new RawMutationElement({
+          id: `bulk-remove-${index}`,
+          visible: true,
+          lock: false
+        })
+    )
+    workspace.addNewElements(roots)
+    const unrelatedRead = vi.spyOn(first, 'get')
+    const ids = roots.map((element) => element.get('id'))
+    const prepared = sceneTree.prepareSubtreesRemoval(ids)
+    const reads = unrelatedRead.mock.calls.length
+    expect(reads).toBeLessThan(12)
+    expect(prepared.orderedElementIds).toEqual(ids)
+    expect(prepared.evidence).toHaveLength(1)
+    const owner = createTransactionOwner()
+    runWithTransactionOwner(owner, () =>
+      sceneTree.applyPreparedElementMutation(prepared)
+    )
+    expect(owner.updateTransactionBatch).toHaveBeenCalledOnce()
+    roots.forEach((element) => {
+      expect(sceneTree.getElementById(element.get('id'))).toBeUndefined()
+      expect(sceneTree._deletedMap.get(element.get('id'))).toBe(element)
+    })
+    expect(sceneTree.getElementById(first.get('id'))).toBe(first)
+    expect(sceneTree.getElementById(second.get('id'))).toBe(second)
+    const evidence = prepared.evidence[0] as AddRemoveElementsChange
+    expect(evidence.entries.map(({ data }) => data.id)).toEqual(ids)
+    expect(evidence.entries.map(({ index }) => index)).toEqual(
+      ids.map((_, index) => index + 2)
+    )
+  })
+
+  it('normalizes overlapping subtree targets and rejects an invalid batch before writes', () => {
+    const workspace = sceneTree.currentWorkspace as Workspace
+    const root = new RawMutationGroup({
+      id: 'bulk-root',
+      visible: true,
+      lock: false
+    })
+    const leaf = new RawMutationElement({
+      id: 'bulk-leaf',
+      visible: true,
+      lock: false
+    })
+    workspace.addNewElements([root])
+    workspace.addNewElements([leaf], root)
+    const before = sceneTree.save()
+    const prepared = sceneTree.prepareSubtreesRemoval([
+      leaf.get('id'),
+      root.get('id')
+    ])
+    expect(prepared.orderedElementIds).toEqual([leaf.get('id'), root.get('id')])
+    expect(prepared.evidence).toHaveLength(1)
+    for (const ids of [
+      [root.get('id'), 'missing'],
+      [root.get('id'), root.get('id')],
+      [workspace.get('id')]
+    ]) {
+      expect(() => sceneTree.prepareSubtreesRemoval(ids)).toThrow()
+      expect(sceneTree.save()).toEqual(before)
+    }
+  })
+
   it('prepares one child-first subtree removal preparedMutation with one Scene evidence record', () => {
     const workspace = sceneTree.currentWorkspace as Workspace
     const root = new RawMutationGroup({
@@ -3188,3 +3291,8 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     expect(disposeComputed).toHaveBeenCalledOnce()
   })
 })
+
+const requireTestValue = <T>(value: T | undefined | null): T => {
+  if (value == null) throw new Error('Required test fixture is unavailable')
+  return value
+}

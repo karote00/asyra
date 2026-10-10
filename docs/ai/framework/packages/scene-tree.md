@@ -139,6 +139,14 @@ Scene evidence through one batch handoff.
 
 ### Removal Lifecycle
 
+- `prepareSubtreesRemoval(ids)` validates a forest in one preparation. Duplicate
+  IDs are rejected; a selected descendant of a selected ancestor is removed once.
+  Hierarchy/relation inventories and sibling index maps are shared by the batch.
+  Apply retains removed instances in the deleted map, releases relations and
+  computed subscriptions, and publishes existing canonical evidence. Consecutive
+  leaves use `REMOVE_ELEMENTS`; containers use `CHANGE_SUBTREE` in replay order.
+  No new history or collaboration event format is introduced.
+
 - Direct Scene `removeElement(...)` and `removeSubtree(...)` own Scene
   lifecycle only and retain Props.
 - `prepareCanonicalElementRemoval(...)` validates an ordered exact flat
@@ -274,3 +282,12 @@ Ordered Undo/Redo of raw name/visibility/lock values applies the recorded target
 value even when a later pending producer changed that field. Scene Tree derives
 fresh before evidence from current canonical data. Ordinary command and remote
 stale-evidence validation remains strict; this does not add conflict resolution.
+
+### Hierarchy validation work
+
+Canonical hierarchy validation checks current membership and parent ownership
+before detecting cycles. Each validation owns a temporary parent map and a set
+of completed paths, so ancestor edges are walked once instead of restarting the
+same chain for every element. Nothing is cached across mutations. Plural removal
+continues to validate the full canonical hierarchy and reject corrupt membership,
+missing parents/children and cycles before writes; Undo evidence is unchanged.

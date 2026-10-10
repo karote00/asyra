@@ -15,9 +15,6 @@ if (contractsByName.size !== basicApiContracts.length)
 export const getBasicApiContract = (name: string) => contractsByName.get(name)
 export const basicApiPermissionRules = Object.freeze(
   Object.fromEntries(
-    basicApiContracts.map(({ name, effect }) => [
-      name,
-      effect === 'delete' ? ('confirm' as const) : ('allow' as const)
-    ])
+    basicApiContracts.map(({ name }) => [name, 'allow' as const])
   )
 )

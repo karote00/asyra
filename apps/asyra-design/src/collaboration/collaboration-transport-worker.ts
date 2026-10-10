@@ -12,6 +12,7 @@ import {
   parseCollaborationServerMessage,
   type CollaborationRequestMessage,
   type DocumentSessionBootstrap,
+  type DocumentPersistenceReceipt,
   type PublicationFrameHeader,
   type PublicationFrameMessage,
   type SourcePublicationSettlementMessage
@@ -78,6 +79,7 @@ export interface CollaborationTransportRequestAcceptedResponse {
   readonly generation: number
   readonly requestId: string
   readonly acceptedSequences?: readonly number[]
+  readonly persistence?: DocumentPersistenceReceipt
 }
 
 export interface CollaborationTransportRequestRejectedResponse {
@@ -929,7 +931,8 @@ export class CollaborationTransportWorkerRuntime {
           type: 'request-accepted',
           generation: this.generation,
           requestId: message.requestId,
-          acceptedSequences: message.acceptedSequences
+          acceptedSequences: message.acceptedSequences,
+          persistence: message.persistence
         })
         return
       }
@@ -946,7 +949,8 @@ export class CollaborationTransportWorkerRuntime {
       this.postMessage({
         type: 'request-accepted',
         generation: this.generation,
-        requestId: message.requestId
+        requestId: message.requestId,
+        persistence: message.persistence
       })
       return
     }

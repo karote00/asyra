@@ -757,6 +757,7 @@ it('repairs representative live input failures without research, compilation ret
     expect(compile).toHaveBeenCalledExactlyOnceWith(
       valid.draft,
       expect.any(String),
+      expect.any(Function),
       expect.any(Function)
     )
   }

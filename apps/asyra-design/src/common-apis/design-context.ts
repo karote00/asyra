@@ -3,6 +3,7 @@ import type { Rect } from '@asyra/utils'
 
 export interface DesignContextQuery {
   scope: 'selection' | 'children' | 'ids' | 'region'
+  allMatches?: boolean
   result?: 'elements' | 'ids'
   bounds?: Rect
   filter?: {
@@ -83,10 +84,18 @@ export const createDesignContextReader =
             'fields',
             'bounds',
             'filter',
-            'result'
+            'result',
+            'allMatches'
           ].includes(key)
       ) ||
       !['selection', 'children', 'ids', 'region'].includes(query.scope) ||
+      (query.allMatches !== undefined &&
+        typeof query.allMatches !== 'boolean') ||
+      (query.allMatches === true &&
+        (query.scope !== 'region' ||
+          query.result !== 'ids' ||
+          query.offset !== undefined ||
+          query.limit !== undefined)) ||
       (query.result !== undefined &&
         !['elements', 'ids'].includes(query.result)) ||
       (query.result === 'ids' &&
@@ -163,8 +172,7 @@ export const createDesignContextReader =
     const fields = query.fields ?? []
     const elementIds = query.elementIds ?? []
     const offset = query.offset === undefined ? 0 : query.offset
-    const limit =
-      query.limit ?? (query.scope === 'ids' ? elementIds.length : 50)
+    let limit = query.limit ?? (query.scope === 'ids' ? elementIds.length : 50)
     if (
       !Number.isSafeInteger(offset) ||
       offset < 0 ||
@@ -214,6 +222,7 @@ export const createDesignContextReader =
         }
         return true
       })
+    if (query.allMatches === true) limit = Math.max(ids.length, 1)
     const total = childPage?.total ?? ids.length
     const pageIds =
       query.scope === 'children' ? ids : ids.slice(offset, offset + limit)

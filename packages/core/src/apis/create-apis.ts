@@ -162,6 +162,11 @@ export const createAPIs = (
           .orderedElementIds
       )
     },
+    removeSubtrees: (elementIds, options) => {
+      const prepared = sceneTree.prepareSubtreesRemoval(elementIds)
+      const properties = prepareOrphanPropertyMutation(prepared, options)
+      return applyFullRemoval(prepared, properties, options)
+    },
     removeSubtree: (elementId: string, options?: EVENT_OPTIONS) =>
       applyPreparedSubtreeRemoval(
         sceneTree.prepareSubtreeRemoval(elementId),

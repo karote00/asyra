@@ -311,3 +311,36 @@ it.each([
   expect(() => read(query as never)).toThrow()
   expect(source.getSelectedElementIds).not.toHaveBeenCalled()
 })
+
+it('resolves all identity-only region matches once for backend mutation handoff', () => {
+  const { read, source, records } = fixture()
+  const ids = Array.from({ length: 600 }, (_, i) => `region-${i}`)
+  ids.forEach((id) => {
+    records[id] = { type: 'vector', parentId: 'workspace' }
+  })
+  source.getElementIdsInBounds.mockReturnValue(ids)
+  const result = read({
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    result: 'ids',
+    allMatches: true
+  })
+  expect(result.elementIds).toEqual(ids)
+  expect(result.nextOffset).toBeNull()
+  expect(result.elements).toEqual([])
+  expect(source.getElementIdsInBounds).toHaveBeenCalledOnce()
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(ids.length)
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(() =>
+    read({ scope: 'children', result: 'ids', allMatches: true })
+  ).toThrow()
+  expect(() =>
+    read({
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 1, height: 1 },
+      result: 'ids',
+      allMatches: true,
+      limit: 20
+    })
+  ).toThrow()
+})

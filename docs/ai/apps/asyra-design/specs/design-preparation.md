@@ -420,8 +420,8 @@ only missing ranges through normal preparation/application and uses current arti
 IDs; local pattern keys are not cross-artifact canonical element IDs. No hidden full
 instance array, visibility cache, clipping or geometry deletion is introduced.
 
-`record_design_review` accepts incremental `deferredDetails` (id, description, reason)
-in plan/structure/visual calls. Its existing request-owned review state retains those
+`define_design_criteria` and `review_drawing` accept incremental `deferredDetails`
+(id, description, reason) in their respective criteria and structure/visual calls. Its existing request-owned review state retains those
 parts across mutations. Final visual `deferredChecks` use current inspection IDs and
 one disposition per retained ID: `omit` with visual evidence, `restored` after drawing
 and checking, or `pending`. Missing/pending decisions block acceptance even when all
@@ -453,7 +453,7 @@ remains authoritative and may reveal further errors after schema repair; a repor
 list is not a promise that every other property or visual requirement passed.
 
 Failures distinguish `recovery=correct_input` (repair the same draft) from
-`recovery=review_structure` with `nextTool=record_design_review` (inspect the existing
+`recovery=review_structure` with `nextTool=review_drawing` (inspect the existing
 structure and record current evidence before retrying retained detail). Missing shared
 projection points to the camera and absolute-layout requirement. Nonplanar faces identify
 the face key and vertices; repair/split the plane rather than search again. These
@@ -501,3 +501,22 @@ zero). A supplied width/height pair remains a positive enclosing-bounds assertio
 a partial pair is invalid. Geometry, control coordinates, painter order and fills
 are unchanged. Repeated template rings share one measurement per preparation.
 This does not infer a camera, invent depth or simplify the drawing.
+
+### Signed projection and Group coordinates
+
+Projected positions and draft offsets can be negative within the coordinate
+budget. Group admission computes child bounds, adds the bounds origin to the
+Group position and subtracts it from every child. Final Group child positions
+are nonnegative (zero is valid), preserving each workspace point. This is not a
+camera adjustment or geometry repair. Dimensions remain positive where required;
+vector rings retain their local-coordinate contract. Frames retain explicit
+bounds and report overflow rather than silently relocating content.
+
+### Reusable paint values
+
+`fillTemplates` defines reusable inline paint values. `fill: {template: key}`
+creates a fresh canonical Fill identity per element. `sharedFills` and
+`fill: {shared: key}` intentionally link one canonical Fill across elements.
+Neither form accepts canonical IDs as definition keys to imply sharing.
+Preparation receipts report Fill occurrences, template uses, compiled definitions
+and construction/admission/compilation durations. Caches expire per preparation.
