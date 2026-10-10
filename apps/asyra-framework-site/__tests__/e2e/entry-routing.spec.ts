@@ -10,7 +10,7 @@ for (const width of [320, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     const section = page.getByRole('region', {
-      name: 'Your next app starts with an idea.'
+      name: 'Focus on your features.'
     })
     await section.scrollIntoViewIfNeeded()
     await expect(section).toContainText('Asyra Skill')
@@ -50,6 +50,20 @@ for (const width of [320, 820, 1440]) {
       )
     })
     expect(contrast).toBeGreaterThanOrEqual(4.5)
+    await page.keyboard.press('Tab')
+    await install.focus()
+    const focusStyle = await install.evaluate((element) => ({
+      visible: element.matches(':focus-visible'),
+      color: getComputedStyle(element).outlineColor,
+      width: parseFloat(getComputedStyle(element).outlineWidth)
+    }))
+    expect(focusStyle.visible).toBe(true)
+    expect(focusStyle.width).toBeGreaterThanOrEqual(2)
+    expect(focusStyle.color).not.toBe(
+      await section.evaluate(
+        (element) => getComputedStyle(element).backgroundColor
+      )
+    )
     for (const link of await section.getByRole('link').all()) {
       const box = await link.boundingBox()
       if (!box) throw new Error('Developer entry link is missing')
