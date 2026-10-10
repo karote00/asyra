@@ -41,7 +41,9 @@ verified static directory from the same workflow run. Obsolete main revisions
 are skipped before publication. Per-App jobs report failures independently.
 
 `deployment-version.json` records the exact source SHA. Public verification
-checks it, JavaScript/CSS delivery, preserved response headers and real 404s for
+waits for it with at most 30 read attempts (two seconds apart, ten-second request
+timeout), then checks JavaScript/CSS delivery, preserved response headers and
+real 404s for
 missing APIs and Workers. A real `404.html` disables Pages' implicit SPA fallback;
 these Apps navigate at their root with query parameters.
 
@@ -65,5 +67,8 @@ leaves existing deployments intact. A failed public check is not a successful
 release; inspect the project and source marker before retrying. Correct the
 source through a PR, or dispatch a verified current `main` after an operational
 failure is resolved. No automatic rollback or mutation retry is performed.
+Bounded readiness reads
+allow initial DNS/edge propagation, including transient 522 responses; they never
+accept an old revision or a different App.
 
 API authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/create/" target="_blank" rel="noopener noreferrer">Cloudflare Pages project creation</a> and <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">project lookup</a>.
