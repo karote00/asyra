@@ -47,10 +47,11 @@ jobs:
       - name: Check website source and deployment contract
         run: |
           yarn workspace @asyra/asyra-framework-site lint
-          yarn workspace @asyra/asyra-framework-site test:local
           node --test .github/__tests__/site-cloudflare.test.mjs
       - name: Build production static artifact
         run: yarn workspace @asyra/asyra-framework-site build:static
+      - name: Test website with built workspace dependencies
+        run: yarn workspace @asyra/asyra-framework-site test:local
       - name: Verify generated types and artifact
         working-directory: apps/asyra-framework-site
         env:
