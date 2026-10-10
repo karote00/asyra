@@ -3,17 +3,26 @@ Never record completed plans here.
 # Flow Inspector Plans
 
 This file tracks active and future work for the Flow Inspector tool family.
-The product direction was revised on 2026-09-07: materialize a Plan as concrete
-implementation steps and executable flow contracts to manage human and AI
-development risk. Open-source usefulness, reproducibility, and controlled
-delegation are the success criteria.
+The current follow-up direction was revised on 2026-10-10: eliminate repeated
+failure navigation for humans and AI by connecting existing failed test results
+to recorded responsibility nodes, implementation locations and failure evidence.
+Debugging, repair planning and task dispatch are not the purpose of this follow-up.
+Historical control-plane delivery records remain unchanged.
 
-## Planned Verification Coverage Follow-up
+## Planned Test Failure Localization
 
-- [Verification Coverage Expansion](plans/flow-inspector-verification-coverage-expansion-plan.md)
-  - Proposed on 2026-09-29 following real App and Framework fault injection.
-  - Priorities: expose uncovered steps, admit a complete Design feature, extend
-    declared Framework consumer coverage, and simplify bounded Board tasks.
+- [Test Failure Localization](plans/flow-inspector-verification-coverage-expansion-plan.md)
+  - Originally proposed on 2026-09-29; redirected on 2026-10-10 after the user
+    clarified the primary value as removing unnecessary discovery work.
+  - Current foundation: admitted case-to-step mappings, retained failure evidence,
+    Board failure navigation, and bounded App/CI source and result support.
+  - Priorities: connect ordinary test results to existing ownership records,
+    expose usable node/implementation/reason/rerun context to humans and AI, and
+    prove the complete App and Framework failure/recovery path.
+  - Keep unresolved failures visible. Localization identifies where to start
+    investigating; it does not claim automatic root-cause diagnosis.
+  - New command buttons and comment blocks follow this milestone. Broader
+    coverage is incremental; task orchestration is outside this follow-up.
   - Planning only. The completed multi-PR slice remains closed; implementation
     and repository-wide coverage are not implied.
 
