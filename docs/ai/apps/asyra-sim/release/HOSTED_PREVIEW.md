@@ -2,8 +2,8 @@
 
 The primary frontend workbench is
 <a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">asyra-sim.pages.dev</a>.
-[Cloudflare App delivery](../../../workflows/app-cloudflare.md) owns automatic
-publication after successful main CI, isolated artifacts and public revision
+[Cloudflare App delivery](../../../workflows/app-cloudflare.md) owns manual
+publication from main, isolated artifacts, production checks and public revision
 verification. Sim remains a browser-local workbench without backend or AI services.
 
 Hosting the development workbench does not complete R0 Public Alpha. The

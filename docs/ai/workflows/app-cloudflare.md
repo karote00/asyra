@@ -20,15 +20,22 @@ clone the repository and follow each App's README and local `.env.example`.
 Browser data belongs to its origin; data saved at a Vercel origin is not copied
 to a Pages origin.
 
-## Automatic publication
+## Manual publication
 
-`.github/workflows/app-cloudflare.yml` runs on every push to `main`, independently
-of repository `CI`. It audits dependencies, builds all three Apps in one Turbo
-graph, prepares isolated artifacts, and runs real production browser tests before
-upload. Only its own successful build job permits publication; unrelated Skill
-packaging failures cannot block delivery. This gate does not claim full repository
-CI success. Manual dispatch on `main` uses the same verification. PR, fork and
-non-main runs cannot publish.
+`.github/workflows/app-cloudflare.yml` runs only through
+**Actions > Apps - Cloudflare Pages > Run workflow** with `main` selected.
+Pushes, merges, schedules and completed CI runs never deploy. A manual run builds
+and deploys all three frontend demos; the website has its own separate manual
+workflow.
+
+The run audits dependencies, builds all three Apps in one Turbo graph, prepares
+isolated artifacts, and runs real production browser tests before upload. Only
+its own successful build job permits publication. Forks and non-main runs cannot
+publish. Repository `CI` runs independently and does not start a deployment.
+
+If this workflow is disabled, first merge the manual-only configuration, then
+choose **Enable workflow**. Enabling alone does not deploy; start a separate
+manual run when publication is wanted.
 
 Only publication jobs use the existing `website-production` environment:
 `CLOUDFLARE_API_TOKEN` (Pages Write) and `CLOUDFLARE_ACCOUNT_ID`. Its branch

@@ -3,8 +3,8 @@
 Cloudflare primary website delivery is owned by the separate
 `.github/workflows/site-cloudflare.yml` workflow and
 `apps/asyra-framework-site/docs/static-delivery.md`. The manual entries below
-continue to manage Vercel deployments only. Main updates can automatically
-publish the primary Cloudflare website after its own production checks succeed.
+continue to manage Vercel deployments only. Cloudflare delivery also requires
+an explicit **Run workflow** action; updating or merging main does not deploy.
 
 The three frontend App demos use the separate [Cloudflare App delivery](app-cloudflare.md) workflow. The operator flow below applies only to Vercel.
 

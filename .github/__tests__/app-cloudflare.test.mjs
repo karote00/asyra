@@ -61,13 +61,13 @@ test('deployment tooling resolves its own npm root instead of the Yarn repositor
   }
 })
 
-test('production admission is independent of repository CI and rejects forks, PRs and non-main branches', () => {
+test('production admission allows only explicit manual dispatch on upstream main', () => {
   const evaluate = (github) =>
     Function('github', `return (${workflow.jobs.build.if})`)(github)
   const valid = {
     repository_id: '893098287',
     ref: 'refs/heads/main',
-    event_name: 'push',
+    event_name: 'workflow_dispatch',
     event: {}
   }
   assert.equal(evaluate(valid), true)
@@ -75,13 +75,15 @@ test('production admission is independent of repository CI and rejects forks, PR
   assert.equal(evaluate({ ...valid, repository_id: '1' }), false)
   assert.equal(evaluate({ ...valid, ref: 'refs/heads/feature' }), false)
   for (const event_name of [
+    'push',
+    'schedule',
     'pull_request',
     'pull_request_target',
-    'workflow_run'
+    'workflow_run',
+    'repository_dispatch'
   ])
     assert.equal(evaluate({ ...valid, event_name }), false)
-  assert.deepEqual(workflow.on.push, { branches: ['main'] })
-  assert.equal(workflow.on.workflow_run, undefined)
+  assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch'])
   assert.equal(workflow.env.SOURCE_SHA, '${{ github.sha }}')
 })
 
