@@ -113,8 +113,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Verify website deployment admission
-        run: node --test .github/__tests__/site-cloudflare.test.mjs
+      - name: Verify static deployment admission
+        run: node --test .github/__tests__/site-cloudflare.test.mjs .github/__tests__/app-cloudflare.test.mjs scripts/__tests__/app-cloudflare.test.mjs
 
       - name: Require Changeset record
         if: github.event_name == 'pull_request'
