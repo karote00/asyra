@@ -1,10 +1,19 @@
 /* global structuredClone */
 
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { createRequire } from 'node:module'
+import path from 'node:path'
+import process from 'node:process'
 import test from 'node:test'
-import { URL } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const { load } = require('js-yaml')
@@ -13,6 +22,46 @@ const source = readFileSync(
   'utf8'
 )
 const workflow = load(source)
+
+test('deployment tooling resolves its own npm root instead of the Yarn repository', () => {
+  const root = mkdtempSync(
+    fileURLToPath(new URL('./.cli-test-', import.meta.url))
+  )
+  try {
+    writeFileSync(path.join(root, 'package.json'), '{"private":true}')
+    mkdirSync(path.join(root, 'bin'))
+    writeFileSync(path.join(root, 'bin/gh'), '#!/bin/sh\nprintf test-sha', {
+      mode: 0o755
+    })
+    const prepare = workflow.jobs.publish.steps.find(
+      (step) => step.id === 'current'
+    )
+    execFileSync('bash', ['-c', prepare.run], {
+      cwd: root,
+      env: {
+        ...process.env,
+        PATH: `${path.join(root, 'bin')}${path.delimiter}${process.env.PATH}`,
+        GH_REPO: 'fixture/site',
+        SOURCE_SHA: 'test-sha',
+        GITHUB_OUTPUT: path.join(root, 'output'),
+        GITHUB_STEP_SUMMARY: path.join(root, 'summary')
+      }
+    })
+    const deploy = workflow.jobs.publish.steps.find(
+      (step) => step.id === 'deploy'
+    )
+    const toolRoot = path.join(root, deploy.with.workingDirectory)
+    assert.equal(
+      execFileSync('npm', ['prefix'], {
+        cwd: toolRoot,
+        encoding: 'utf8'
+      }).trim(),
+      toolRoot
+    )
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
 
 test('a clean runner builds workspace dependencies before runtime tests', () => {
   const steps = workflow.jobs.build.steps

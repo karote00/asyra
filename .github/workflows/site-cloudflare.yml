@@ -106,6 +106,7 @@ jobs:
           if [ "$current_sha" = "$SOURCE_SHA" ]; then
             echo 'publish=true' >> "$GITHUB_OUTPUT"
             mkdir -p tmp/cloudflare-cli
+            printf '{"private":true}\n' > tmp/cloudflare-cli/package.json
           else
             echo 'Skipped: main advanced; its successful CI run owns the next deployment.' >> "$GITHUB_STEP_SUMMARY"
           fi
