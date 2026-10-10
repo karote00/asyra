@@ -61,10 +61,10 @@ for the unverified ordinary-hardware target and delivery limits.
 ## Hosted development workbench
 
 The permanent product domain is
-<a href="https://asyra-sim.vercel.app" target="_blank" rel="noopener noreferrer">asyra-sim.vercel.app</a>.
+<a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">asyra-sim.pages.dev</a>.
 It names the evolving product, not this milestone or an R0 release. See the
 [hosted deployment contract](../../docs/ai/apps/asyra-sim/release/HOSTED_PREVIEW.md)
-for Vercel configuration, PR verification and the release boundary.
+for Cloudflare delivery, PR verification and the release boundary.
 
 Analysis and project storage remain browser-local. Hosted access downloads the
 app; it is not the packaged offline distribution. Localhost, PR previews and

@@ -1,15 +1,20 @@
 # Hosted Development Workbench
 
-Asyra Sim has a separate Vercel project named `asyra-sim`. Its permanent product
-domain is `asyra-sim.vercel.app`; do not append milestone, release, version,
-robot, or MVP suffixes. A generated deployment or branch URL identifies a
-review build, not a new product name.
+The primary frontend workbench is
+<a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">asyra-sim.pages.dev</a>.
+[Cloudflare App delivery](../../../workflows/app-cloudflare.md) owns automatic
+publication after successful main CI, isolated artifacts and public revision
+verification. Sim remains a browser-local workbench without backend or AI services.
 
 Hosting the development workbench does not complete R0 Public Alpha. The
 [first-release gates](FIRST_RELEASE.md) and [offline candidate gates](LOCAL_CANDIDATE.md)
 remain separate. This deployment does not authorize real equipment operation.
 
-## Project Configuration
+## Retained Vercel Configuration
+
+The following records the original Vercel setup, retained as a secondary host.
+Current Vercel operations follow [Manual App Release](../../../workflows/manual-app-release.md).
+The original setup and first-deployment history below do not govern Cloudflare.
 
 - Git repository: `karote00/asyra`.
 - Vercel team: `karote00s-projects`; project ID:
@@ -21,8 +26,8 @@ remain separate. This deployment does not authorize real equipment operation.
   `apps/asyra-sim/vercel.json`, not the repository-root Design configuration.
 - Build only Sim and its declared Framework dependency graph, with two
   concurrent build tasks. Serve `apps/asyra-sim/dist`, never repository source.
-- Enable Git deployments for PR previews and ongoing updates. The long-term
-  production branch is `main`; PR review and merge remain human decisions.
+- Vercel Git deployment behavior is governed by the current Manual App Release
+  contract linked above. The production branch remains `main`.
 - No required runtime environment variable, Vercel Function, database service,
   account system, analytics, or cloud solver is added.
 - Keep the Vercel Toolbar disabled for both environments: the app intentionally
@@ -30,14 +35,13 @@ remain separate. This deployment does not authorize real equipment operation.
 
 The first deployment on 2026-09-07 serves PR checkpoint
 `78694410b1c8f0372f42349c12196f90a50071ef` at the production alias, without merging
-the PR. Production branch tracking remains `main`; future merges update that
-same domain. Subsequent feature-branch pushes produce previews, not automatic
-production promotion. Deployment IDs and source commits, rather than the mutable
+the PR. That initial Git-connected setup has since been superseded by the Manual App
+Release workflow. Deployment IDs and source commits, rather than the mutable
 alias alone, identify the build under review.
 
 ## Data and Browser Boundaries
 
-Vercel delivers the static application and receives ordinary hosting requests.
+The hosting provider delivers static files and receives ordinary hosting requests.
 Geometry decoding and analysis execute in same-origin browser module Workers.
 Project saves, assets and retained runs use the browser's local IndexedDB;
 this deployment adds no upload or synchronization API.
@@ -63,7 +67,7 @@ From the repository root, run the maintained normal-app collision journey
 against the exact deployment being reviewed:
 
 ```sh
-APP_URL=https://asyra-sim.vercel.app yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/mixed-pair-feedback.spec.ts
+APP_URL=https://asyra-sim.pages.dev yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/mixed-pair-feedback.spec.ts
 ```
 
 For a PR deployment, substitute its verified HTTPS origin. Access protection
@@ -72,5 +76,5 @@ Record the source commit and deployment URL separately from the permanent
 alias. Inspect the generated screenshots after the test passes. Check HTML,
 script, stylesheet and Worker responses, same-origin security headers, and
 real Worker results. Missing assets must return errors, not a rewritten HTML
-document. Repository CI and the `Vercel - asyra-sim` check must pass for the
-current PR head before handoff.
+document. Repository CI must pass for the current PR head before handoff. Cloudflare
+publication must also pass its exact-source public verification.
