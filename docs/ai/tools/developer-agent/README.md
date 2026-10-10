@@ -23,7 +23,9 @@ dependency upgrades or writes outside the project.
 - `.claude-plugin/marketplace.json` exposes the same plugin tree to Claude Code.
 - `bundle.config.json` lists the exact public guides to distribute.
 - `scripts/developer-agent-bundle.mjs` produces references and `bundle.json`.
-- `bundle.json` records source hashes, file hashes and reference package versions.
+- `bundle.json` records bundled guide source hashes, file hashes and sorted
+  reference package versions. The complete package catalog is not hashed: its
+  descriptions, export listings, formatting and ordering are not Skill inputs.
   These are reproducibility records, not signatures or compatibility promises.
 
 The plugin contains its required guides, so consumer projects do not need the
@@ -65,13 +67,29 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current candidate: 0.1.9, with public display name **Asyra Skill** and retained
+Current candidate: 0.1.10, with public display name **Asyra Skill** and retained
 installation identity `asyra-agent`. See the [capability guidance plan](capability-guidance-plan.md)
 and [support evidence](support-evidence.md). Previous native loading trials are
 versioned historical observations, not acceptance of this candidate. A plugin
 is an installation wrapper; the host agent owns execution and product quality.
 
-The standalone export uses the exact same Skill bytes and bundle record.
+The standalone export generates current guide bytes and a matching bundle record
+from canonical sources. It does not require a prior `--write`, read retained
+reference copies as authority, or mutate the maintained plugin. With synchronized
+sources its output is byte-identical to the maintained Skill. Missing or unsafe
+inputs fail before the destination is created; existing destinations are refused.
+Export is preparation, not release admission: before publishing, synchronize the
+maintained plugin and run `--check --baseline` with the previous release record.
+
+`--check` remains read-only and rejects real source drift. PR selection consumes
+`bundleInputPaths` from the packaging owner, so allowlisted guide and inventory
+changes run the same packaging checks before merge, alongside existing document
+checks. Unrelated catalog metadata requires no bundle update or version bump.
+
+Cloudflare delivery validates its own production artifacts and dependencies;
+its publication does not depend on this adoption tool's packaging tests.
+The repository CI still runs them and reports failures normally.
+
 `inspectSkill` verifies only the record's Skill subtree; `inspectPlugin` verifies
 the full distribution. `pluginVersion` remains the shared release version for
 compatibility with existing version-check prompts. A standalone Skill does not

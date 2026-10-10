@@ -1,5 +1,15 @@
 # Asyra Skill releases
 
+## 0.1.10 - Reproducible delivery candidate
+
+- Track reference package versions without coupling Skill identity to unrelated
+  catalog metadata, formatting or ordering.
+- Generate standalone exports from canonical sources without requiring a prior
+  manual synchronization or rewriting the maintained plugin.
+- Select packaging checks for bundled guide and package inventory changes in PRs.
+- Packaging checks cover this candidate; native host loading and model behavior
+  have not been revalidated for 0.1.10. No release publication is implied.
+
 ## 0.1.9 - Capability guidance candidate
 
 - Route existing-product feasibility, optimization and adoption through a shared

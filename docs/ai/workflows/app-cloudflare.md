@@ -22,10 +22,13 @@ to a Pages origin.
 
 ## Automatic publication
 
-`.github/workflows/app-cloudflare.yml` runs after successful push CI on `main`.
-It builds all three Apps in one Turbo graph, prepares isolated artifacts, and
-runs real production browser tests before upload. Manual dispatch on `main`
-uses the same verification. PR, fork, failed CI and non-main runs cannot publish.
+`.github/workflows/app-cloudflare.yml` runs on every push to `main`, independently
+of repository `CI`. It audits dependencies, builds all three Apps in one Turbo
+graph, prepares isolated artifacts, and runs real production browser tests before
+upload. Only its own successful build job permits publication; unrelated Skill
+packaging failures cannot block delivery. This gate does not claim full repository
+CI success. Manual dispatch on `main` uses the same verification. PR, fork and
+non-main runs cannot publish.
 
 Only publication jobs use the existing `website-production` environment:
 `CLOUDFLARE_API_TOKEN` (Pages Write) and `CLOUDFLARE_ACCOUNT_ID`. Its branch

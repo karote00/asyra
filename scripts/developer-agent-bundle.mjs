@@ -137,6 +137,11 @@ export function renderReference(sourcePath, source, documents) {
   return `<!-- Generated from ${sourcePath}; edit the source and regenerate. External links may describe a newer revision. -->\n\n${body}`
 }
 
+export function bundleInputPaths(root) {
+  const config = JSON.parse(read(contained(root, PLUGIN), 'bundle.config.json'))
+  return [...config.documents, INVENTORY]
+}
+
 export function createBundle(root) {
   const directory = contained(root, PLUGIN)
   const config = JSON.parse(read(directory, 'bundle.config.json'))
@@ -189,7 +194,6 @@ export function createBundle(root) {
   }
   const inventoryBytes = read(root, INVENTORY)
   const inventory = JSON.parse(inventoryBytes)
-  inputs[INVENTORY] = hash(inventoryBytes)
   const referenceVersions = {}
   for (const item of inventory.packages) {
     if (
@@ -206,7 +210,9 @@ export function createBundle(root) {
     schemaVersion: 1,
     pluginVersion: manifest.version,
     inputs,
-    referenceVersions,
+    referenceVersions: Object.fromEntries(
+      Object.entries(referenceVersions).sort(([a], [b]) => a.localeCompare(b))
+    ),
     files
   }
   const record = {
@@ -298,18 +304,27 @@ export function inspectSkill(directory) {
 }
 
 export function exportSkill(root, relative) {
-  const record = checkBundle(root)
+  const { directory, outputs, record } = createBundle(root)
   const destination = contained(root, relative)
   if (fs.existsSync(destination))
     fail('Skill export destination must not exist')
-  const source = contained(root, `${PLUGIN}/${SKILL}`)
   if (destination.startsWith(contained(root, PLUGIN) + path.sep))
     fail('Skill export cannot be inside its source')
+  // Generate from canonical inputs; retained references may belong to an older release.
+  // Resolve every byte before creating the destination, without mutating the checkout.
+  const files = new Map([['bundle.json', outputs.get(RECORD)]])
+  for (const file of Object.keys(record.files)) {
+    if (file.startsWith(`${SKILL}/`))
+      files.set(
+        file.slice(SKILL.length + 1),
+        outputs.get(file) ?? read(directory, file)
+      )
+  }
   fs.mkdirSync(destination, { recursive: true })
-  for (const file of filesUnder(source)) {
+  for (const [file, bytes] of files) {
     const target = contained(destination, file)
     fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.copyFileSync(contained(source, file), target)
+    fs.writeFileSync(target, bytes)
   }
   inspectSkill(destination)
   return record

@@ -100,14 +100,17 @@ References:
 ## Automatic production delivery
 
 `.github/workflows/site-cloudflare.yml` owns automatic delivery to the existing
-Pages Direct Upload project. After the upstream repository's `CI` workflow
-succeeds for a push to `main`, it checks out that exact source SHA, installs the
-locked dependencies, runs website lint/unit checks, builds the static export,
-and checks generated types, metadata, discovery files, headers and browser
-behavior. The same-run artifact is passed to a separate publication job.
-Failed CI, pull-request runs, forks and non-main branches cannot publish.
-A successful CI run for any main push triggers the website workflow; deployment
-is not limited by a manually maintained list of website dependency paths.
+Pages Direct Upload project. Every push to `main` checks out that exact source
+SHA, installs locked dependencies, audits high-severity dependency findings,
+runs website lint/unit checks, builds the static export, and checks generated
+types, metadata, discovery files, headers and browser behavior. Only a successful
+build job passes its same-run artifact to the separate publication job.
+
+Repository `CI` runs independently; unrelated Skill packaging or other product
+checks cannot block website delivery. This is a website production gate, not a
+claim that full repository CI passed. PR runs, forks and non-main branches cannot
+publish. No manually maintained dependency path filter can omit a main update.
+Manual dispatch on `main` runs exactly the same gates.
 
 The publication job uses the `website-production` GitHub Environment. Only
 this job receives the Cloudflare token. It checks the current main SHA before

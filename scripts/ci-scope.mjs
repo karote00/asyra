@@ -1,3 +1,4 @@
+import { bundleInputPaths } from './developer-agent-bundle.mjs'
 import crypto from 'node:crypto'
 import { selectTestImpact, requiresTestParser } from './test-impact.mjs'
 import { rootInputImpact } from './ci-input-impact.mjs'
@@ -1017,7 +1018,11 @@ function classifyChanges(
       )
     ).pages.flatMap((page) => page.sources)
   )
+  const skillSources = new Set(
+    bundleInputPaths(path.join(scriptDirectory, '..'))
+  )
   for (const file of changedPaths) {
+    if (skillSources.has(file)) selectedGroups.add('developerAgent')
     if (relationshipPolicy.registeredScriptTests.includes(file)) {
       directTests.add(file)
       continue

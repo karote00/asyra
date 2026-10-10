@@ -1,5 +1,3 @@
-/* global structuredClone */
-
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import {
@@ -63,52 +61,33 @@ test('deployment tooling resolves its own npm root instead of the Yarn repositor
   }
 })
 
-test('production admission rejects forks, failed CI, PR runs and non-main branches', () => {
-  const condition = workflow.jobs.build.if
-  // GitHub uses this same boolean subset; evaluating fixtures proves its gates.
+test('production admission is independent of repository CI and rejects forks, PRs and non-main branches', () => {
   const evaluate = (github) =>
-    Function('github', `return (${condition})`)(github)
+    Function('github', `return (${workflow.jobs.build.if})`)(github)
   const valid = {
     repository_id: '893098287',
     ref: 'refs/heads/main',
-    event_name: 'workflow_run',
-    event: {
-      workflow_run: {
-        conclusion: 'success',
-        event: 'push',
-        head_branch: 'main',
-        head_repository: { id: 893098287 }
-      }
-    }
+    event_name: 'push',
+    event: {}
   }
   assert.equal(evaluate(valid), true)
-  for (const [field, value] of [
-    ['conclusion', 'failure'],
-    ['conclusion', 'cancelled'],
-    ['event', 'pull_request'],
-    ['head_branch', 'feature'],
-    ['head_repository', { id: 1 }]
-  ]) {
-    const candidate = structuredClone(valid)
-    candidate.event.workflow_run[field] = value
-    assert.equal(evaluate(candidate), false, field)
-  }
+  assert.equal(evaluate({ ...valid, event_name: 'workflow_dispatch' }), true)
   assert.equal(evaluate({ ...valid, repository_id: '1' }), false)
   assert.equal(evaluate({ ...valid, ref: 'refs/heads/feature' }), false)
-  assert.equal(
-    evaluate({ ...valid, event_name: 'workflow_dispatch', event: {} }),
-    true
-  )
+  for (const event_name of [
+    'pull_request',
+    'pull_request_target',
+    'workflow_run'
+  ])
+    assert.equal(evaluate({ ...valid, event_name }), false)
+  assert.deepEqual(workflow.on.push, { branches: ['main'] })
+  assert.equal(workflow.on.workflow_run, undefined)
+  assert.equal(workflow.env.SOURCE_SHA, '${{ github.sha }}')
 })
 
 test('only tested static artifacts reach the three main-only publication jobs', () => {
   const build = workflow.jobs.build
   const publish = workflow.jobs.publish
-  assert.deepEqual(workflow.on.workflow_run, {
-    workflows: ['CI'],
-    types: ['completed'],
-    branches: ['main']
-  })
   assert.equal(publish.needs, 'build')
   assert.equal(publish.environment.name, 'website-production')
   assert.equal(workflow.concurrency['cancel-in-progress'], false)
@@ -152,4 +131,56 @@ test('only tested static artifacts reach the three main-only publication jobs', 
         assert.equal(step.with['persist-credentials'], false)
       }
     }
+})
+
+test('publication waits for its own successful validation and keeps dependency auditing', () => {
+  assert.equal(workflow.jobs.publish.needs, 'build')
+  assert.equal(workflow.jobs.publish.if, undefined)
+  assert.equal(workflow.jobs.build['continue-on-error'], undefined)
+  for (const step of workflow.jobs.build.steps)
+    assert.equal(step['continue-on-error'], undefined)
+  assert.ok(
+    workflow.jobs.build.steps.some((step) =>
+      step.run?.includes('yarn security:audit')
+    )
+  )
+})
+
+test('an obsolete source cannot enable upload or create a deployment tool directory', () => {
+  const root = mkdtempSync(
+    fileURLToPath(new URL('./.obsolete-test-', import.meta.url))
+  )
+  try {
+    mkdirSync(path.join(root, 'bin'))
+    writeFileSync(path.join(root, 'bin/gh'), '#!/bin/sh\nprintf newer-main', {
+      mode: 0o755
+    })
+    const prepare = workflow.jobs.publish.steps.find(
+      (step) => step.id === 'current'
+    )
+    execFileSync('bash', ['-c', prepare.run], {
+      cwd: root,
+      env: {
+        ...process.env,
+        PATH: `${path.join(root, 'bin')}${path.delimiter}${process.env.PATH}`,
+        GH_REPO: 'fixture/site',
+        SOURCE_SHA: 'older-main',
+        GITHUB_OUTPUT: path.join(root, 'output'),
+        GITHUB_STEP_SUMMARY: path.join(root, 'summary')
+      }
+    })
+    assert.match(
+      readFileSync(path.join(root, 'summary'), 'utf8'),
+      /Skipped: main advanced/
+    )
+    assert.throws(() => readFileSync(path.join(root, 'output')), {
+      code: 'ENOENT'
+    })
+    assert.throws(
+      () => readFileSync(path.join(root, 'tmp/cloudflare-cli/package.json')),
+      { code: 'ENOENT' }
+    )
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })
