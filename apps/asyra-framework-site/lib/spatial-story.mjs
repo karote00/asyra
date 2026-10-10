@@ -56,7 +56,7 @@ export const storyChapters = Object.freeze([
     title: 'Build on what\nalready works.',
     eyebrow: 'The same work, growing',
     detail:
-      'Add capabilities and new views as your idea develops. Evolve the same code from proof of concept onward.',
+      'Your proof of concept is already product code. Add features and new views to the same code, without a separate architectural rewrite.',
     steps: [
       'Add history',
       'Derive another view',

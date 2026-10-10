@@ -1,4 +1,5 @@
 import { ProductEvidenceSlider } from '@/components/product-evidence-slider'
+import { DeveloperEntry } from '@/components/developer-entry'
 
 const fieldScopeSlides = [
   {
@@ -217,6 +218,7 @@ export function HomeResources() {
           >
             Choose your starting point.
           </h2>
+          <DeveloperEntry />
           <div className="mt-12 grid gap-10 md:grid-cols-3">
             {[
               {
