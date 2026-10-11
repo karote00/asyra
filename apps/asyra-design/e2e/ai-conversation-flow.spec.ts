@@ -1015,7 +1015,8 @@ for (const width of [360, 1280]) {
           status: 'completed',
           label: 'Drawing and refining',
           message: '正在加入窗戶光影反射效果',
-          expected: '正在刪除被覆蓋物件'
+          expected: '正在刪除被覆蓋物件',
+          expectedLabel: 'Planning the drawing'
         },
         {
           tool: 'set_element_visibility',
@@ -1039,18 +1040,26 @@ for (const width of [360, 1280]) {
           (row.closest('section')?.getBoundingClientRect().top ?? 0) +
           (row.closest('[aria-label="Conversation messages"]')?.scrollTop ?? 0)
       )
+      let activitySequence = 0
       for (const event of events) {
         response.write(
           JSON.stringify({
             type: 'activity',
             tool: event.tool,
             status: event.status,
-            message: event.message
+            message: event.message,
+            activity: {
+              kind: event.message ? 'work' : 'system',
+              callId: event.tool,
+              sequence: ++activitySequence
+            }
           }) + '\n'
         )
-        await expect(status).toHaveText(
-          event.expected ?? event.message ?? event.label
-        )
+        const workMessage = event.expected ?? event.message
+        await expect(status.locator(':scope > span')).toHaveText([
+          event.expectedLabel ?? event.label,
+          ...(workMessage ? [workMessage] : [])
+        ])
         await expect(current).toHaveCount(1)
         await expect(current).toHaveText(
           event.expected ?? event.message ?? event.label
@@ -1110,7 +1119,12 @@ for (const width of [360, 1280]) {
             type: 'activity',
             tool: 'vtracer',
             status: 'running',
-            message
+            message,
+            activity: {
+              kind: 'work',
+              callId: 'work',
+              sequence: ++activitySequence
+            }
           }) + '\n'
         )
         await expect(current).toContainText(message)
@@ -1121,14 +1135,30 @@ for (const width of [360, 1280]) {
         'describe_design_apis'
       ]) {
         response.write(
-          JSON.stringify({ type: 'activity', tool, status: 'running' }) + '\n'
+          JSON.stringify({
+            type: 'activity',
+            tool,
+            status: 'running',
+            message: 'Checking the requested details',
+            activity: {
+              kind: 'system',
+              callId: tool,
+              sequence: ++activitySequence
+            }
+          }) + '\n'
         )
-        await expect(status).toHaveText('正在隱藏右下角的標記。')
+        await expect(status.locator(':scope > span')).toHaveText([
+          'Adjusting element visibility',
+          '正在隱藏右下角的標記。'
+        ])
         await expect(current).toHaveText('正在隱藏右下角的標記。')
       }
       const longDescription = `Adjusting reflections on ${'window-'.repeat(28)}panes`
       await sendActivity(longDescription)
-      await expect(status).toHaveText(longDescription)
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Converting artwork to vectors',
+        longDescription
+      ])
       expect(
         await status.evaluate(
           (element) => element.scrollWidth <= element.clientWidth

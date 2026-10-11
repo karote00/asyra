@@ -18,7 +18,7 @@ export interface DesignContextQuery {
   offset?: number
   limit?: number
 }
-interface DesignContextSource {
+export interface DesignContextSource {
   getCurrentWorkspaceId(): string | null | undefined
   getSelectedElementIds(): string[]
   getElementChildren(

@@ -12,6 +12,15 @@ export type AiMutationExecutor = <T>(mutate: () => T) => Promise<T>
 
 export interface AiExecutionContext {
   signal: AbortSignal
+  readonly observe?: <T>(
+    stage: string,
+    purpose: string,
+    work: () => Promise<T>
+  ) => Promise<T>
+  readonly reportProgress?: (update: {
+    phase: 'settlement'
+    summary: string
+  }) => void
   readonly runMutation?: AiMutationExecutor
 }
 

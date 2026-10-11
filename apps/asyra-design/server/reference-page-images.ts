@@ -34,6 +34,7 @@ export interface ReferencePageImage {
   imageUrl: string
   kind: 'linked-image' | 'structured-image' | 'page-metadata'
   previewUrls: string[]
+  representative?: boolean
 }
 
 /** This relation only ranks page declarations. It NEVER establishes byte/cache identity. */
@@ -193,5 +194,10 @@ export const referencePageImages = (
     for (const resource of resources)
       if (resource.kind === 'structured-image')
         selected.set(resource.imageUrl, resource)
+  // Representative declarations rank automatic acquisition, not subject relevance.
+  for (const candidate of selected.values()) candidate.representative = true
+  for (const resource of resources)
+    if (!selected.has(resource.imageUrl))
+      selected.set(resource.imageUrl, { ...resource, representative: false })
   return [...selected.values()]
 }

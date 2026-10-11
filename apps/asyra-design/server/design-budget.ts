@@ -50,7 +50,9 @@ export const inspectDesignBudget = (draft: unknown) => {
     }
     let instances = 1,
       sourcePoints = 0,
-      generatedNodes = 1
+      generatedNodes = 1,
+      primitivePoints: number | undefined,
+      expandedPoints: number | undefined
     if (value.type === 'vector-pattern') {
       instances = Array.isArray(value.placements) ? value.placements.length : 0
       generatedNodes = instances
@@ -81,6 +83,17 @@ export const inspectDesignBudget = (draft: unknown) => {
         )
       const faces = Array.isArray(value.faces) ? value.faces : []
       generatedNodes = instances * faces.length
+      observed.sourceNodes += faces.length - 1
+      primitivePoints = faces.reduce(
+        (largest, face) =>
+          Math.max(
+            largest,
+            record(face) && Array.isArray(face.vertices)
+              ? face.vertices.length
+              : 0
+          ),
+        0
+      )
       sourcePoints = faces.reduce(
         (total, face) =>
           total +
@@ -89,16 +102,35 @@ export const inspectDesignBudget = (draft: unknown) => {
             : 0),
         0
       )
+    } else if (value.type === 'surface-grid') {
+      instances =
+        Number.isSafeInteger(value.rows) && Number.isSafeInteger(value.columns)
+          ? Math.max(0, Number(value.rows)) * Math.max(0, Number(value.columns))
+          : 0
+      const motifs = Array.isArray(value.motifs) ? value.motifs : []
+      const counts = motifs.map((motif) =>
+        record(motif) && Array.isArray(motif.vertices)
+          ? motif.vertices.length
+          : 0
+      )
+      const motifPoints = counts.reduce((sum, count) => sum + count, 0)
+      sourcePoints =
+        (Array.isArray(value.boundary) ? value.boundary.length : 0) +
+        motifPoints
+      primitivePoints = counts.reduce((max, count) => Math.max(max, count), 4)
+      generatedNodes = instances * motifs.length
+      expandedPoints = instances * motifPoints
+      observed.sourceNodes += motifs.length
     } else if (value.type === 'projected-face') {
       sourcePoints = Array.isArray(value.vertices) ? value.vertices.length : 0
     } else sourcePoints = points(value.rings)
     observed.sourcePrimitivePathCommands = Math.max(
       observed.sourcePrimitivePathCommands,
-      sourcePoints
+      primitivePoints ?? sourcePoints
     )
     observed.expandedNodes += generatedNodes
     observed.sourcePathCommands += sourcePoints
-    observed.expandedPathCommands += sourcePoints * instances
+    observed.expandedPathCommands += expandedPoints ?? sourcePoints * instances
     if (Array.isArray(value.children))
       for (const child of value.children) {
         visit(child, depth + 1)
@@ -132,6 +164,7 @@ export const createDesignSourceWork = () => {
     largestBatchPathCommands = 0
   return {
     admit(points: number) {
+      const previousBatches = batches
       if (points > limits.pathCommands)
         throw new Error('Invalid design: indivisible source vector point limit')
       if (
@@ -154,6 +187,7 @@ export const createDesignSourceWork = () => {
         throw new Error('Invalid design: expanded source work limit')
       largestBatchNodes = Math.max(largestBatchNodes, batchNodes)
       largestBatchPathCommands = Math.max(largestBatchPathCommands, batchPaths)
+      return previousBatches > 0 && batches !== previousBatches
     },
     summary: () => ({
       batches,

@@ -156,6 +156,203 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     sceneTree.cleanChanges()
   })
 
+  it('appends equal batches without traversing prior sibling snapshots and preserves public snapshots', () => {
+    const factory = new Factory()
+    const core = createCoreFacade(factory)
+    const root = sceneTree.currentWorkspace as GroupInstanceTypes
+    const priorSnapshots: string[][] = []
+    const originalGet = root.get.bind(root)
+    let oldMemberReads = 0
+    const get = vi.spyOn(root, 'get')
+    get.mockImplementation(((key: string) => {
+      const value = originalGet(key as never)
+      if (key !== 'children') return value
+      return new Proxy(value as string[], {
+        get(target, property, receiver) {
+          if (property === Symbol.iterator)
+            return function* () {
+              for (const id of target) {
+                oldMemberReads++
+                yield id
+              }
+            }
+          return Reflect.get(target, property, receiver)
+        }
+      })
+    }) as typeof root.get)
+    try {
+      for (let batch = 0; batch < 5; batch++) {
+        priorSnapshots.push(originalGet('children'))
+        oldMemberReads = 0
+        runWithTransactionOwner(factory.getTransactionOwner(), () =>
+          runTransaction(() =>
+            core.createElementsInParent(
+              Array.from({ length: 16 }, (_, index) => ({
+                id: `growth-${batch}-${index}`,
+                type: LEAF_TYPE,
+                x: 0,
+                y: 0
+              })),
+              root.get('id')
+            )
+          )
+        )
+        expect(oldMemberReads).toBe(0)
+      }
+      expect(priorSnapshots.map((snapshot) => snapshot.length)).toEqual([
+        0, 16, 32, 48, 64
+      ])
+      expect(originalGet('children')).toHaveLength(80)
+      factory.undo()
+      expect(originalGet('children')).toHaveLength(64)
+      factory.redo()
+      expect(originalGet('children')).toHaveLength(80)
+    } finally {
+      get.mockRestore()
+      factory.transact.reset()
+    }
+  })
+
+  it.each(['materialization', 'membership', 'property-handoff'])(
+    'recovers ordinary creation before %s handoff and permits continued edits',
+    (failureAt) => {
+      const factory = new Factory()
+      const core = createCoreFacade(factory)
+      const root = sceneTree.currentWorkspace as GroupInstanceTypes & {
+        addNewElements: (...args: unknown[]) => unknown
+      }
+      const create = (id: string) =>
+        runWithTransactionOwner(factory.getTransactionOwner(), () =>
+          runTransaction(() =>
+            core.createElementsInParent(
+              [{ id, type: CANONICAL_LEAF_TYPE, value: 3, x: 0, y: 0 }],
+              root.get('id')
+            )
+          )
+        )
+      create('retained-before-failure')
+      const beforeProps = propsManager.save()
+      const beforeChildren = root.get('children')
+      const failure = new Error('ordinary creation fault')
+      const injectFailure = () => {
+        if (failureAt === 'materialization')
+          return vi
+            .spyOn(sceneTree, 'createElement')
+            .mockImplementationOnce(() => {
+              throw failure
+            })
+        if (failureAt === 'membership') {
+          const membership = vi
+            .spyOn(root, 'addNewElements')
+            .mockImplementationOnce((...args) => {
+              membership.mockRestore()
+              root.addNewElements(...args)
+              throw failure
+            })
+          return membership
+        }
+        return vi
+          .spyOn(propsManager, 'prepareTransactionEvents')
+          .mockImplementationOnce(() => {
+            throw failure
+          })
+      }
+      const spy = injectFailure()
+      try {
+        expect(() => create('failed-ordinary-child')).toThrow(
+          'ordinary creation fault'
+        )
+        expect(root.get('children')).toEqual(beforeChildren)
+        expect(
+          sceneTree.getElementById('failed-ordinary-child')
+        ).toBeUndefined()
+        expect(propsManager.save()).toEqual(beforeProps)
+        expect(sceneTree.changes).toEqual([])
+      } finally {
+        spy.mockRestore()
+      }
+      create('continued-after-failure')
+      expect(root.get('children')).toEqual([
+        'retained-before-failure',
+        'continued-after-failure'
+      ])
+      factory.undo()
+      expect(root.get('children')).toEqual(['retained-before-failure'])
+      factory.redo()
+      expect(root.get('children')).toEqual([
+        'retained-before-failure',
+        'continued-after-failure'
+      ])
+      expect(beforeChildren).toEqual(['retained-before-failure'])
+      const saved = structuredClone(sceneTree.save())
+      const savedProps = structuredClone(propsManager.save())
+      factory.transact.reset()
+      sceneTree.reset()
+      propsManager.reset()
+      propsManager.load(savedProps)
+      sceneTree.load(saved)
+      expect(sceneTree.save()).toEqual(saved)
+      expect(propsManager.save()).toEqual(savedProps)
+    }
+  )
+
+  it('attempts independent cleanup after a recovery error and reports uncertain settlement', () => {
+    const factory = new Factory()
+    const core = createCoreFacade(factory)
+    const root = sceneTree.currentWorkspace as GroupInstanceTypes
+    const statuses: TransactionStatusPayload[] = []
+    factory.subscribeToTransactionStatus((status) => statuses.push(status))
+    const original = propsManager.runInPropertyCreationBatch.bind(propsManager)
+    const property = vi
+      .spyOn(propsManager, 'runInPropertyCreationBatch')
+      .mockImplementation(((...args: Parameters<typeof original>) => {
+        const receipt = original(...args)
+        return {
+          ...receipt,
+          rollback: () => {
+            receipt.rollback()
+            throw new Error('recovery observer failed')
+          }
+        }
+      }) as typeof propsManager.runInPropertyCreationBatch)
+    const handoff = vi
+      .spyOn(propsManager, 'prepareTransactionEvents')
+      .mockImplementationOnce(() => {
+        throw new Error('primary handoff failure')
+      })
+    try {
+      expect(() =>
+        runWithTransactionOwner(factory.getTransactionOwner(), () =>
+          runTransaction(() =>
+            core.createElementsInParent(
+              [
+                {
+                  id: 'cleanup-fault',
+                  type: CANONICAL_LEAF_TYPE,
+                  value: 5,
+                  x: 0,
+                  y: 0
+                }
+              ],
+              root.get('id')
+            )
+          )
+        )
+      ).toThrow()
+      expect(root.get('children')).toEqual([])
+      expect(sceneTree.getElementById('cleanup-fault')).toBeUndefined()
+      expect(propsManager.save()).toEqual({})
+      expect(sceneTree.changes).toEqual([])
+      expect(
+        statuses.some((status) => status.status === 'rollback-failed')
+      ).toBe(true)
+    } finally {
+      property.mockRestore()
+      handoff.mockRestore()
+      factory.transact.reset()
+    }
+  })
+
   it('bulk deletion retains a property shared with a survivor and rejects invalid targets atomically', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)

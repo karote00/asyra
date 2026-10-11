@@ -272,3 +272,228 @@ test('edits a bounded part of one tier without reading its shared parent childre
   expect(result.childReads).toBe(0)
   expect(result.restored).toBe(true)
 })
+
+test('retained region fills use current positions, keep Undo, and reject stale snapshots', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentURL())
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, historyApis, fillApis } =
+      await import('../src/common-apis')
+    const { createRetainedDesignContext } =
+      await import('../src/common-apis/retained-design-context')
+    const { observeDesignChanges } =
+      await import('../src/common-apis/design-review')
+    const { createRetainedFillAction } =
+      await import('../src/ai/retained-fill-action')
+    const { createAiTransactionRunner } = await import('../src/ai/transaction')
+    const workspace = core.getCurrentWorkspaceId()
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          { type: 'rect', x: 0, y: 10, width: 20, height: 20 },
+          { type: 'rect', x: 50, y: 10, width: 20, height: 20 },
+          { type: 'rect', x: 100, y: 10, width: 20, height: 20 }
+        ],
+        workspace
+      )
+    )
+    if (ids.some((id) => !id)) throw new Error('Missing retained fixture')
+    const targets = ids as string[]
+    transactionApis.runTransaction(() =>
+      fillApis.updateFillsAtIndex(targets, 0, { color: '#123456' })
+    )
+    const readColors = () =>
+      targets.map(
+        (id) =>
+          (
+            core.getElementComputedData(id, ['fills'])?.fills as {
+              color: string
+            }[]
+          )[0].color
+      )
+    const store = createRetainedDesignContext(core, observeDesignChanges)
+    try {
+      const first = store.read({
+        scope: 'region',
+        bounds: { x: -1, y: 0, width: 150, height: 50 },
+        filter: { type: 'rect', parentId: workspace },
+        fields: ['x'],
+        delivery: 'reference'
+      })
+      const action = createRetainedFillAction(store)
+      const signal = new AbortController().signal
+      const input = {
+        mappings: [
+          {
+            snapshotId: first.snapshotId,
+            coordinateSpace: 'parent-local' as const,
+            axis: 'x' as const,
+            domain: [0, 100],
+            index: 0,
+            outside: 'clamp' as const,
+            stops: [
+              { at: 0, color: '#000000' },
+              { at: 1, color: '#ffffff' }
+            ]
+          }
+        ]
+      }
+      const runner = createAiTransactionRunner()
+      await runner.run(
+        'Map colors',
+        (runMutation) => action.execute(input, { signal, runMutation }),
+        { signal }
+      )
+      const mapped = readColors()
+      await historyApis.undo()
+      const undone = readColors()
+      await historyApis.redo()
+      const redone = readColors()
+      let stale = ''
+      try {
+        await runner.run(
+          'Stale mapping',
+          (runMutation) => action.execute(input, { signal, runMutation }),
+          { signal }
+        )
+      } catch (error) {
+        stale = String(
+          error instanceof Error && error.cause ? error.cause : error
+        )
+      }
+      const afterRejected = readColors()
+      transactionApis.runTransaction(() =>
+        fillApis.shareFillAtIndex(targets[0], targets.slice(1), 0)
+      )
+      const shared = store.read({
+        scope: 'ids',
+        elementIds: targets,
+        fields: ['x'],
+        delivery: 'reference'
+      })
+      input.mappings[0].snapshotId = shared.snapshotId
+      let conflict = ''
+      try {
+        await runner.run(
+          'Conflicting shared mapping',
+          (runMutation) => action.execute(input, { signal, runMutation }),
+          { signal }
+        )
+      } catch (error) {
+        conflict = String(
+          error instanceof Error && error.cause ? error.cause : error
+        )
+      }
+      const afterConflict = readColors()
+      input.mappings[0].snapshotId = store.read({
+        scope: 'ids',
+        elementIds: targets,
+        fields: ['x'],
+        delivery: 'reference'
+      }).snapshotId
+      input.mappings[0].stops = [
+        { at: 0, color: '#abcdef' },
+        { at: 1, color: '#abcdef' }
+      ]
+      await runner.run(
+        'Consistent shared mapping',
+        (runMutation) => action.execute(input, { signal, runMutation }),
+        { signal }
+      )
+      const sharedMapped = readColors()
+      await historyApis.undo()
+      const sharedUndone = readColors()
+      return {
+        conflict,
+        afterConflict,
+        sharedMapped,
+        sharedUndone,
+        mapped,
+        undone,
+        redone,
+        afterRejected,
+        stale,
+        transferredRows: first.elements.length
+      }
+    } finally {
+      store.dispose()
+    }
+  })
+  expect(result.mapped).toEqual(['#000000', '#808080', '#ffffff'])
+  expect(result.undone).toEqual(['#123456', '#123456', '#123456'])
+  expect(result.redone).toEqual(result.mapped)
+  expect(result.afterRejected).toEqual(result.mapped)
+  expect(result.stale).toContain('stale')
+  expect(result.transferredRows).toBe(0)
+  expect(result.conflict).toMatch(/conflict/i)
+  expect(result.afterConflict).toEqual(['#000000', '#000000', '#000000'])
+  expect(result.sharedMapped).toEqual(['#abcdef', '#abcdef', '#abcdef'])
+  expect(result.sharedUndone).toEqual(result.afterConflict)
+})
+
+test('retained regions invalidate on ancestor moves, new matches and Undo', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentURL())
+  await waitForAppReady(page)
+  const evidence = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, historyApis } = await import('../src/common-apis')
+    const { createRetainedDesignContext } =
+      await import('../src/common-apis/retained-design-context')
+    const { observeDesignChanges } =
+      await import('../src/common-apis/design-review')
+    const workspace = core.getCurrentWorkspaceId()
+    const group = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [{ type: 'group', x: 500, y: 500 }],
+        workspace
+      )
+    )[0]
+    if (!group) throw new Error('Missing group fixture')
+    transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [{ type: 'rect', x: 0, y: 0, width: 20, height: 20 }],
+        group
+      )
+    )
+    const store = createRetainedDesignContext(core, observeDesignChanges)
+    const query = {
+      scope: 'region' as const,
+      bounds: { x: 0, y: 0, width: 1000, height: 1000 },
+      fields: ['x']
+    }
+    const stale = (id: string) => {
+      try {
+        store.get(id)
+        return false
+      } catch {
+        return true
+      }
+    }
+    try {
+      const initial = store.read(query)
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([{ elementId: group, values: { x: 10 } }])
+      )
+      const ancestor = stale(initial.snapshotId)
+      const moved = store.read(query)
+      transactionApis.runTransaction(() =>
+        core.createElementsInParent(
+          [{ type: 'rect', x: 50, y: 50, width: 10, height: 10 }],
+          workspace
+        )
+      )
+      const created = stale(moved.snapshotId)
+      const next = store.read(query)
+      await historyApis.undo()
+      return { ancestor, created, undone: stale(next.snapshotId) }
+    } finally {
+      store.dispose()
+    }
+  })
+  expect(evidence).toEqual({ ancestor: true, created: true, undone: true })
+})

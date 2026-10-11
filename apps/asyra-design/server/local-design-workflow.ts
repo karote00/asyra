@@ -32,6 +32,10 @@ export const createLocalDesignWorkflow = (
     (tool) => tool.name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA
   )
   const single = {
+    rejectInput: (name: string, args: unknown) =>
+      name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
+        ? designs.rejectInput(AiDesignToolIds.PREPARE_DESIGN, args)
+        : undefined,
     explainInputIssue: (name: string, args: unknown) =>
       name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
         ? designs.explainInputIssue(AiDesignToolIds.PREPARE_DESIGN, args)
@@ -300,6 +304,77 @@ export const createLocalDesignWorkflow = (
           JSON.stringify(orderedInputExample)
       }
     ],
+    resultIssue: (_name: string, value: unknown): string | undefined => {
+      const record = (item: unknown): item is Record<string, unknown> =>
+        !!item && typeof item === 'object' && !Array.isArray(item)
+      if (!record(value)) return 'Design workflow returned no result object'
+      const parts = Array.isArray(value.parts) ? value.parts : [value]
+      if (!parts.length && value.status === 'complete')
+        return 'Design workflow omitted completed parts'
+      for (const part of parts) {
+        if (!record(part))
+          return 'Design workflow returned an invalid part receipt'
+        if (
+          part.available === false ||
+          part.applicable === false ||
+          part.failedStep ||
+          part.status === 'failed'
+        )
+          continue
+        const issue = designs.resultIssue(AiDesignToolIds.PREPARE_DESIGN, part)
+        if (issue) return issue
+        if (
+          !Array.isArray(part.completedSteps) ||
+          !Array.isArray(part.actionResults)
+        )
+          return 'Design workflow omitted its completed steps or acknowledged actions'
+        const applied = part.actionResults.find(
+          (entry) =>
+            record(entry) &&
+            entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
+        )
+        if (
+          !record(applied) ||
+          !record(applied.result) ||
+          typeof applied.result.compositionId !== 'string' ||
+          !applied.result.compositionId
+        )
+          return 'Design workflow omitted the acknowledged composition identity; inspect state before retrying'
+      }
+    },
+    rejectInput: (name: string, args: unknown) => {
+      if (
+        name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN ||
+        !args ||
+        typeof args !== 'object'
+      )
+        return
+      if (!('parts' in args)) return single.rejectInput(name, args)
+      if (!Array.isArray(args.parts)) return
+      const rejectedParts = args.parts.flatMap((part, index) => {
+        if (
+          !part ||
+          typeof part !== 'object' ||
+          !('draft' in part) ||
+          !preparation ||
+          !operationInputIssue({ draft: part.draft }, preparation.inputSchema)
+        )
+          return []
+        const details = designs.rejectInput(AiDesignToolIds.PREPARE_DESIGN, {
+          draft: part.draft
+        })
+        return [
+          {
+            index,
+            ...(typeof part.key === 'string' ? { key: part.key } : {}),
+            ...details
+          }
+        ]
+      })
+      return rejectedParts.length
+        ? { recovery: 'correct_input', rejectedParts }
+        : undefined
+    },
     explainInputIssue: (name: string, args: unknown) =>
       args && typeof args === 'object' && 'parts' in args
         ? undefined

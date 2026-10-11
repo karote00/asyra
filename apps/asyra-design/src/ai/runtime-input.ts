@@ -1,3 +1,7 @@
+import core from '../contexts'
+import { createRetainedDesignContext } from '../common-apis/retained-design-context'
+import { observeDesignChanges } from '../common-apis/design-review'
+import { createRetainedFillAction } from './retained-fill-action'
 import { getActiveCollaborationHandle } from '../collaboration/lifecycle'
 import { recordActionFailure } from './action-failure'
 import { createBasicApiActions } from './basic-api-actions'
@@ -30,6 +34,7 @@ import { createAiPermissionPolicy, type AiPermissionRules } from './permission'
 import { createAiTransactionRunner } from './transaction'
 
 export interface CreateAiRuntimeInputOptions {
+  readonly createRecordingSink?: CreateAiAgentRuntimeInput['createRecordingSink']
   readonly provider: AiProvider
   readonly permissionRules: AiPermissionRules
   readonly requestConfirmation?: AiConfirmationRequest
@@ -69,7 +74,11 @@ export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => {
   const evidence = createInspectionEvidence()
+  const queries = createRetainedDesignContext(core, observeDesignChanges)
+  const transactionRunner =
+    options.transactionRunner ?? createAiTransactionRunner()
   return {
+    createRecordingSink: options.createRecordingSink,
     actionDefinitions: [
       ...createBasicApiActions(),
       ...createAiActions(undefined, {
@@ -83,7 +92,8 @@ export const createAiRuntimeInput = (
         }
       }),
       createPreparedDesignAction(),
-      createDocumentContextAction(),
+      createDocumentContextAction(queries.read),
+      createRetainedFillAction(queries),
       createDesignEditAction(),
       createOrganizationAction(),
       createArrangementAction(),
@@ -96,9 +106,17 @@ export const createAiRuntimeInput = (
     ),
     contextProvider: createAiContextProvider(),
     options: { ...options.runtimeOptions, failurePolicy: 'preserve-progress' },
-    ownedResources: [...(options.ownedResources ?? []), evidence],
+    ownedResources: [...(options.ownedResources ?? []), evidence, queries],
     permissionPolicy: createAiPermissionPolicy(options.permissionRules),
     provider: options.provider,
-    transactionRunner: options.transactionRunner ?? createAiTransactionRunner()
+    transactionRunner: {
+      run: async (label, execute, request) => {
+        try {
+          return await transactionRunner.run(label, execute, request)
+        } finally {
+          if (request?.signal) queries.releaseFor(request.signal)
+        }
+      }
+    }
   }
 }

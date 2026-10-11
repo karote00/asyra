@@ -25,11 +25,19 @@ const createVTracerPlugin = (): Plugin => ({
 const createActionBatchPlugin = (): Plugin => ({
   name: 'action-batch-server',
   configureServer(server) {
-    server.middlewares.use(createActionBatchMiddleware())
+    const actionBatch = createActionBatchMiddleware()
+    server.middlewares.use(actionBatch)
+    server.httpServer?.once('close', () => {
+      void actionBatch.dispose()
+    })
     server.middlewares.use(createAiStatusMiddleware())
   },
   configurePreviewServer(server) {
-    server.middlewares.use(createActionBatchMiddleware())
+    const actionBatch = createActionBatchMiddleware()
+    server.middlewares.use(actionBatch)
+    server.httpServer?.once('close', () => {
+      void actionBatch.dispose()
+    })
     server.middlewares.use(createAiStatusMiddleware())
   }
 })

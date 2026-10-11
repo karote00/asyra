@@ -341,3 +341,28 @@ asset per request and reports reuse without modifying resolution. Hosts record
 an `asset_retained` trace with their domain identity and returned receipt. The
 sink never uploads assets; final `flush` establishes whether queued evidence was
 saved. Diagnostic errors remain non-authoritative for the host operation.
+
+### Whole-request and host recording
+
+`createAiAgentRuntime({ createRecordingSink, ... })` optionally owns a recording
+from request admission through provider delegation, final action execution and
+history settlement. Its result exposes `recordingId` when enabled. Provider
+children receive the root identity in object metadata. No diagnostic flush is
+awaited by product completion, and sink failures cannot change product outcome.
+
+Executors may use `context.observe(stage, purpose, work)` for domain waits and
+`context.reportProgress({phase: 'settlement', summary})` for an actual final wait.
+The request progress observer may return an observation receipt; Runtime records
+that receipt independently of the visible status. Work progress carries explicit
+`activity: {kind, callId, sequence}`; only authored work uses `kind: 'work'`.
+
+After Runtime settlement the host can call `runtime.observe({sourceRequestId,
+purpose, metadata, evidence})` to record conversation publication as a separate
+correlated observation. It never appends after the request terminal marker.
+
+`createRecordDeliverySink` batches bounded sequenced records over a host-supplied
+transport independent of the model response stream. The Node
+`createRecordCollector` validates identity, contiguous sequences, idempotent
+retries and the terminal marker before certifying complete delivery. Missing
+sequences, evictions, disconnects and dropped events remain incomplete evidence.
+Collectors have bounded retention and must be disposed with their owning server.

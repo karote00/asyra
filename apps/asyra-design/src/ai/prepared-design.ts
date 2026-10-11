@@ -24,6 +24,7 @@ export const DesignPreparationLimits = Object.freeze({
   dimension: 100000,
   relations: 256,
   checks: 64,
+  retainedTargetBytes: 8 * 1024 * 1024,
   retainedDrafts: 4,
   retainedDraftBytes: 8 * 1024 * 1024
 })

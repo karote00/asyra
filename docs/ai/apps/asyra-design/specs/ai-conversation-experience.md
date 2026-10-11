@@ -26,28 +26,40 @@ then wait for the answer. Prior explicit authorization remains valid. This does
 not bypass registered schemas, canonical locks, host security or external-service
 permission enforcement. Unknown actions remain rejected.
 
-Execution activity uses each action’s short visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
+Execution activity uses each action’s explicitly authored `{kind: "work", text}` visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
 
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the current status below the disclosure and its history.
 Consecutive entries with identical visible labels and messages appear once.
 Research/search/import and drawing/refinement loops share generic entries only
-when no concrete description is supplied. An existing tool message or execution
+when no concrete description is supplied. An explicitly authored work message or execution
 summary takes precedence and describes the current action and target, for example
 "Adding window reflections" or "Adjusting the roof color". Preserve the authored
 language. Ask the model for brief descriptions in the existing fields; do not
 add a reporting tool, model request or private-reasoning feed. A description is
 intent, not evidence of successful mutation.
 
-A new concrete description replaces the current status and remains in ordered
-history. Completion acknowledgements and internal resolution/permission phases
-do not erase it. Generic provider phases, running tools and registered internal
-execution labels preserve the latest concrete work description until new concrete
-work or a control/terminal state arrives. It represents the latest announced work,
-not proof that a substep is still running. Before any concrete description, blank
-or over-1000-character descriptions use the generic label; valid text wraps
-inside the panel. Stop, approval and settled outcome override authored task text.
+Work purpose and observed execution phase are distinct. Public model commentary describes the parent purpose; do not echo the full
+request as a status seed. Registered operation intent provides a call-scoped
+purpose when no authored detail exists, with distinct recorded provenance; explicit tool messages describe a
+call-scoped purpose in their authored language. Queueing, preparation, App
+execution and inspection come from actual owner events. Completion removes that
+call's active phase and purpose; the latest still-active sibling or ancestor is
+shown, ultimately returning to the request purpose with an AI-processing label.
+Public commentary cannot prove that geometry is being computed or applied.
+Internal resolution/permission events do not erase active purpose. Duplicate
+phase/purpose pairs are suppressed, but completion is a real transition.
+Blank or over-1000-character authored descriptions do not replace valid purpose.
+The panel displays both phase and purpose, so a finished drawing verb is never
+presented alone as current execution. Stop, approval and settlement override work.
+The App activity state machine owns legal lifecycle transitions. Saving and
+stopping cannot return to drawing because of delayed progress; settled progress
+cannot reopen a completed turn. Approval resumes on actual execution/provider
+progress, not a tool completion acknowledgement. Conversation settlement remains
+authoritative for partial outcomes and questions. Reading the projection does
+not mutate activity history. Work descriptions are data within this lifecycle,
+not additional states. Transport admission remains the Runtime's responsibility.
 The panel does not show a Canvas/selection-count caption; selected-object context
 still reaches execution.
 The projection leaves runtime events intact. Expanding or collapsing Activity
@@ -278,3 +290,15 @@ recorded when exposed by the provider. Unknown/unexposed search evidence remains
 unknown. Do not log private reasoning, raw prompts, credentials, complete geometry
 or image bytes. URL credentials, query strings and fragments are removed. These
 local server diagnostics do not drive rendering and cannot change settlement.
+
+## Activity provenance and delivery order
+
+Current work consumes explicit authored-work progress, not arbitrary nonempty
+system labels. Provider and internal action producers distinguish work from
+system progress. Transport preserves call identity and producer sequence.
+Duplicate or older events do not replace newer work; completion acknowledgements
+never restore an earlier description. The current Runtime invocation owns its
+progress, and retired attempts cannot publish into its successor. Lifecycle
+states including durable-storage waiting override drawing descriptions. Status
+language remains authored language. The same projection serves history and the
+current status. The test oracle includes actual provider-generated system text.

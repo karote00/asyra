@@ -16,7 +16,11 @@ import type {
   TransactionStatus,
   TransactionStatusPayload
 } from '@asyra/utils'
-import { UNDO, measureBrowserDragPhase } from '@asyra/utils'
+import {
+  UNDO,
+  measureBrowserDragPhase,
+  MutationRecoveryError
+} from '@asyra/utils'
 
 type TransactionPayload = PropsChange | SceneTreeChange | ElementSelectionChange
 interface EffectiveMutationOptions {
@@ -3611,6 +3615,9 @@ class DataTransact {
     precedingFailures: unknown[] = []
   ) {
     this.discardPendingImmediatePublication()
+    if (failure?.cause instanceof MutationRecoveryError) {
+      precedingFailures = [...precedingFailures, failure.cause]
+    }
     if (this.nestedReplaySourceEvents) {
       this.restoringNestedReplay = true
       let failures: unknown[]
@@ -3638,6 +3645,11 @@ class DataTransact {
     }
 
     if (this.journal.length === 0) {
+      if (precedingFailures.length) {
+        const rollbackError = new TransactionRollbackError(precedingFailures)
+        this.emitStatus('rollback-failed', failure, rollbackError)
+        throw rollbackError
+      }
       this.emitStatus('discarded', failure)
       return
     }

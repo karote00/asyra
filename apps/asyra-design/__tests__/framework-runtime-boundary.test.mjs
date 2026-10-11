@@ -241,7 +241,7 @@ for (const configFileName of [
   'vite.collaboration-server.config.ts',
   'vite.document-backend.config.ts'
 ]) {
-  test(`${configFileName} excludes framework modules from the backend graph`, async () => {
+  test(`${configFileName} restricts the backend graph to its independent diagnostic capabilities`, async () => {
     const result = await build({
       root: appDirectory,
       configFile: path.join(appDirectory, configFileName),
@@ -263,7 +263,39 @@ for (const configFileName of [
           /[/\\]node_modules[/\\]@asyra[/\\]/.test(moduleId)
       )
       .map((moduleId) => path.relative(appDirectory, moduleId))
-    assert.deepEqual(frameworkModules, [])
+    let allowedDiagnosticModules = new Set()
+    if (configFileName === 'vite.document-backend.config.ts') {
+      const diagnosticBuild = await build({
+        root: appDirectory,
+        configFile: false,
+        logLevel: 'silent',
+        ssr: { noExternal: true },
+        build: {
+          ssr: path.join(
+            testDirectory,
+            'fixtures/backend-diagnostics-entry.mjs'
+          ),
+          write: false,
+          minify: false
+        }
+      })
+      allowedDiagnosticModules = new Set(
+        (Array.isArray(diagnosticBuild) ? diagnosticBuild : [diagnosticBuild])
+          .flatMap((item) => item.output)
+          .filter((item) => item.type === 'chunk')
+          .flatMap((chunk) => Object.keys(chunk.modules))
+          .map((id) => path.relative(appDirectory, id))
+      )
+      assert.ok(
+        frameworkModules.length > 0,
+        'Persistence diagnostics must be included'
+      )
+    }
+    assert.deepEqual(
+      frameworkModules.filter((id) => !allowedDiagnosticModules.has(id)),
+      [],
+      'Backend may only compose the dependency graph of its public diagnostic functions'
+    )
 
     const frameworkTerms = chunks.flatMap((chunk) =>
       ['@asyra/', 'Factory', 'Core'].filter((term) => chunk.code.includes(term))

@@ -291,3 +291,14 @@ of completed paths, so ancestor edges are walked once instead of restarting the
 same chain for every element. Nothing is cached across mutations. Plural removal
 continues to validate the full canonical hierarchy and reject corrupt membership,
 missing parents/children and cycles before writes; Undo evidence is unchanged.
+
+
+### Canonical batch membership
+
+Group owns its ordered canonical membership. Ordinary batch append inserts only
+new IDs and retains insertion evidence rather than copying all previous siblings
+for recovery. Public children reads and save expose stable array snapshots,
+materialized once per membership revision; later insertion cannot mutate an
+already returned snapshot. Existing string-array persistence remains unchanged.
+A failed pre-handoff creation removes only its attempted memberships and attempts
+independent cleanup. After accepted handoff, Factory remains the recovery owner.

@@ -664,6 +664,33 @@ export const createLocalDesignReview = (
   }
 
   return {
+    preparationContext() {
+      if (!plan)
+        throw new Error(
+          'Define request-linked criteria before prepared review.'
+        )
+      const criteria = plan.criteria
+      const ids = Object.keys(criteria)
+      const decisions = references.snapshot()
+      return {
+        criteria: Object.fromEntries(
+          ids.map((id) => [id, { requirement: criteria[id].requirement }])
+        ),
+        requirementRevision: references.revision(),
+        referenceDecisions: decisions,
+        referenceImageIndexes: (plan.referenceImageIndexes ?? []).filter(
+          (index) =>
+            decisions.some(
+              (decision) =>
+                decision.attachmentIndex === index &&
+                ids.some((id) =>
+                  references.applicable(decision.referenceId, id)
+                )
+            )
+        ),
+        sourceAssertions: facts.snapshot()
+      }
+    },
     selectReferences(
       indexes: unknown,
       decisions: unknown = {}

@@ -190,11 +190,15 @@ const fakeServer = (
   const finish = () => {
     if (finished) return
     finished = true
+    notify('item/started', {
+      item: { id: 'public-purpose', type: 'agentMessage', phase: 'commentary' }
+    })
     notify('item/completed', {
       item: {
         type: 'agentMessage',
+        id: 'public-purpose',
         phase: 'commentary',
-        text: 'This must not reach the product.'
+        text: 'Checking remaining details'
       }
     })
     notify('item/completed', {
@@ -1225,7 +1229,11 @@ describe('local subscription AI backend', () => {
           {
             environment,
             onProgress: (event) => {
-              if (event.tool === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+              if (
+                event.tool === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
+                (event.status === 'completed' ||
+                  event.activity?.phase === 'admission')
+              )
                 progress.push(event.status)
             }
           }
@@ -2356,13 +2364,21 @@ it('waits for a canonical operation receipt before continuing the native model',
   expect(onProgress).toHaveBeenCalledWith({
     tool: 'execute_design_batch',
     status: 'running',
-    message: 'Hiding the separate mark'
+    message: 'Hiding the separate mark',
+    activity: {
+      kind: 'work',
+      callId: 'call-1',
+      sequence: expect.any(Number),
+      phase: 'queued'
+    }
   })
   expect(
     onProgress.mock.calls.some(
-      ([event]) => event.message === 'This must not reach the product.'
+      ([event]) =>
+        event.message === 'Checking remaining details' &&
+        event.activity?.scope === 'request'
     )
-  ).toBe(false)
+  ).toBe(true)
   expect(
     child.packets.filter(({ method }) => method === 'turn/start')
   ).toHaveLength(1)
@@ -2601,10 +2617,22 @@ it('allows native conceptual research without an image and exposes only safe act
   ).toMatchObject({ web_search: 'live', 'features.shell_tool': false })
   expect(onProgress).toHaveBeenCalledWith({
     tool: 'research_design_context',
+    activity: {
+      kind: 'system',
+      callId: expect.any(String),
+      sequence: 1,
+      phase: 'executing'
+    },
     status: 'running'
   })
   expect(onProgress).toHaveBeenCalledWith({
     tool: 'research_design_context',
+    activity: {
+      kind: 'system',
+      callId: expect.any(String),
+      sequence: 2,
+      phase: 'executing'
+    },
     status: 'completed'
   })
   expect(JSON.stringify(onProgress.mock.calls)).not.toContain(
@@ -3107,7 +3135,14 @@ it('exposes review planning to the model and traces the operation without certif
   expect(new Set(records.map((entry) => entry.requestId)).size).toBe(1)
   const evidence = JSON.stringify(trace)
   expect(evidence).toContain('Intentionally ugly face')
-  expect(evidence).toContain('inspectionId')
+  expect(
+    evidence,
+    JSON.stringify(
+      trace
+        .filter((entry) => entry.stage === 'tool_completed')
+        .map((entry) => ({ result: entry.evidence.result }))
+    )
+  ).toContain('inspectionId')
   expect(evidence).toContain('unsupported')
   expect(evidence).not.toContain('base64')
   expect(evidence).not.toContain('This must not reach the product')
@@ -3390,7 +3425,11 @@ it('records reported provider item intervals without retaining reasoning content
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
     expect(
-      records.filter((entry) => entry.stage?.startsWith('provider_item_'))
+      records.filter(
+        (entry) =>
+          entry.stage?.startsWith('provider_item_') &&
+          entry.evidence?.kind === 'reasoning'
+      )
     ).toEqual([
       expect.objectContaining({
         stage: 'provider_item_started',
@@ -3427,8 +3466,10 @@ it('records native orchestration lifecycle metadata without code or output', asy
     server.finish()
     await completion
     const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
-    const events = records.filter((entry) =>
-      entry.stage?.startsWith('provider_item_')
+    const events = records.filter(
+      (entry) =>
+        entry.stage?.startsWith('provider_item_') &&
+        entry.evidence?.kind === 'functionCallOutput'
     )
     expect(events).toHaveLength(2)
     expect(events[0]).toMatchObject({
@@ -3728,45 +3769,38 @@ it.each(['execution', 'delivery'] as const)(
     const traceLog = vi
       .spyOn(console, 'info')
       .mockImplementation(() => undefined)
-    const original = referenceTools.createLocalReferenceTools(vi.fn())
     const attachment = await rasterAttachment()
-    const call = vi
-      .fn()
-      .mockImplementationOnce(async () => {
-        if (stage === 'execution') throw new Error('Reference decode failed')
-        return JSON.stringify({
-          actionResults: [
-            {
-              actionName: 'import_reference_image',
-              result: {
-                available: true,
-                image: { dataUrl: 'broken', width: 1, height: 1 }
-              }
-            }
-          ]
-        })
-      })
-      .mockResolvedValue(
-        JSON.stringify({
-          actionResults: [
-            {
-              actionName: 'import_reference_image',
-              result: {
-                available: true,
-                image: { dataUrl: attachment.dataUrl, width: 1, height: 1 }
-              }
-            }
-          ]
-        })
-      )
-    vi.spyOn(referenceTools, 'createLocalReferenceTools').mockReturnValue({
-      ...original,
-      call
-    })
     const args = {
       imageUrl: 'https://example.com/image.png',
       sourceUrl: 'https://example.com/page'
     }
+    const original = referenceTools.createLocalReferenceTools(
+      vi.fn(() => 0),
+      async () =>
+        new Response(Buffer.from(attachment.dataUrl.split(',')[1], 'base64'), {
+          headers: { 'content-type': attachment.mediaType }
+        })
+    )
+    const receipt = JSON.parse(
+      await original.call(
+        'import_reference_image',
+        args,
+        new AbortController().signal
+      )
+    )
+    const call = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        if (stage === 'execution') throw new Error('Reference decode failed')
+        const broken = structuredClone(receipt)
+        broken.actionResults[0].result.image.dataUrl = 'broken'
+        return JSON.stringify(broken)
+      })
+      .mockResolvedValue(JSON.stringify(receipt))
+    vi.spyOn(referenceTools, 'createLocalReferenceTools').mockReturnValue({
+      ...original,
+      call
+    })
     const followup = vi.fn((receipt: Record<string, unknown>) => {
       expect(receipt).toMatchObject({
         recoverable: true,
@@ -3833,3 +3867,66 @@ function createAiExecutionProfiler(
     ...options
   })
 }
+
+it('publishes registered operation intent with explicit provenance', async () => {
+  const child = fakeServer({
+    toolCall: true,
+    toolName: 'vtracer',
+    toolArguments: { plan: { strategy: 'separate-background' } }
+  })
+  spawn.mockReturnValue(child.child)
+  const onProgress = vi.fn()
+  await requestConfiguredAiActionBatch(input, {
+    environment,
+    onProgress,
+    executeBatch: async () => ({ actionResults: [], context: {} })
+  })
+  const running = onProgress.mock.calls
+    .map(([event]) => event)
+    .find((event) => event.tool === 'vtracer' && event.status === 'running')
+  expect(running).toMatchObject({
+    message: 'Separating drawing layers',
+    activity: { kind: 'work', callId: 'call-1', sequence: expect.any(Number) }
+  })
+})
+
+it('publishes the review operation purpose instead of inheriting earlier drawing commentary', async () => {
+  const child = fakeServer({
+    toolCall: true,
+    toolName: 'review_drawing',
+    toolArguments: {}
+  })
+  spawn.mockReturnValue(child.child)
+  const onProgress = vi.fn()
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        ...input.actions,
+        { name: 'inspect_drawing', description: 'Inspect', inputSchema: {} }
+      ]
+    },
+    { environment, executeBatch: vi.fn(), onProgress }
+  )
+  const review = onProgress.mock.calls
+    .map(([event]) => event)
+    .find(
+      (event) =>
+        event.tool === 'review_drawing' && event.activity?.phase === 'queued'
+    )
+  expect(review).toMatchObject({
+    activity: { kind: 'work' },
+    message: 'Checking the requested details'
+  })
+  expect(
+    retainedRecords.some((value) => {
+      const record = value as {
+        evidence?: { purposeSource?: string; tool?: string }
+      }
+      return (
+        record.evidence?.purposeSource === 'registered-operation' &&
+        record.evidence?.tool === 'review_drawing'
+      )
+    })
+  ).toBe(true)
+})

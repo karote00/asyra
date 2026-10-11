@@ -11,6 +11,14 @@ export interface LocalToolDefinition {
 /** All owners share the same invocation and failure policy. */
 export interface LocalToolOwner {
   call(name: string, args: unknown, signal: AbortSignal): Promise<string>
+  /** Bounded diagnostics only; called after rejection, never executes a tool. */
+  rejectInput?(name: string, args: unknown): Record<string, unknown> | undefined
+  /** Validate successful domain output, including required retained identities. */
+  resultIssue?(name: string, value: unknown): string | undefined
+  resultOutcome?(
+    name: string,
+    value: unknown
+  ): ReturnType<typeof localToolOutcome>
   /** Pure rejection explanation only; no execution, mutation or admission bypass. */
   explainInputIssue?(
     name: string,
@@ -136,26 +144,46 @@ export const invokeLocalTool = async (
   definition: LocalToolDefinition,
   args: unknown,
   signal: AbortSignal,
-  executionEvidence?: () => unknown
+  executionEvidence?: () => unknown,
+  onPhase?: (phase: 'admission' | 'execution' | 'decoding') => void
 ) => {
   signal.throwIfAborted()
   let stage: 'admission' | 'execution' | 'decoding' = 'admission'
+  let decodedResult: unknown
+  const reportPhase = () => {
+    try {
+      onPhase?.(stage)
+    } catch {
+      /* Observation does not alter tool execution. */
+    }
+  }
   try {
+    reportPhase()
     const issue = operationInputIssue(args, definition.inputSchema)
     if (issue) {
       const explanation = owner.explainInputIssue?.(definition.name, args)
       return localToolFailureReply(
         explanation?.message ?? issue,
         explanation?.code ?? 'PREPARATION_REJECTED',
-        { stage, settlement: 'not-started' }
+        {
+          ...owner.rejectInput?.(definition.name, args),
+          stage,
+          settlement: 'not-started'
+        }
       )
     }
     stage = 'execution'
+    reportPhase()
     const text = await owner.call(definition.name, args, signal)
     signal.throwIfAborted()
     stage = 'decoding'
+    reportPhase()
     const value = JSON.parse(text)
-    const toolOutcome = localToolOutcome(value)
+    decodedResult = value
+    const resultIssue = owner.resultIssue?.(definition.name, value)
+    if (resultIssue) throw new Error(resultIssue)
+    const toolOutcome =
+      owner.resultOutcome?.(definition.name, value) ?? localToolOutcome(value)
     return {
       success: toolOutcome.status === 'usable',
       text: JSON.stringify({ ...value, toolOutcome })
@@ -165,7 +193,12 @@ export const invokeLocalTool = async (
     const inputFailure = error instanceof LocalToolInputError
     const batchError =
       error instanceof BrowserBatchExecutionError ? error : undefined
-    const executionResult = executionEvidence?.() ?? batchError?.receipt ?? null
+    const evidence = [executionEvidence?.(), batchError?.receipt, decodedResult]
+    // An empty observer snapshot must not hide an acknowledged owner result.
+    const executionResult =
+      evidence.find(hasAcknowledgedActions) ??
+      evidence.find((value) => value != null) ??
+      null
     const hasPriorExecution =
       record(executionResult) &&
       ((Array.isArray(executionResult.batches) &&
@@ -201,6 +234,12 @@ export const invokeLocalTool = async (
 }
 
 export interface LocalToolObservation {
+  progress?: (event: {
+    tool: string
+    callId: string
+    parentCallId?: string
+    status: 'running' | 'completed'
+  }) => void
   parentCallId?: () => string | undefined
   trace?: (
     stage: 'action_started' | 'action_completed' | 'action_failed',
@@ -228,6 +267,12 @@ export const observeLocalToolExecution = async (
         executor: 'app-server',
         timingScope: 'owner-handoff'
       }
+      observation.progress?.({
+        tool,
+        callId: event.call.callId,
+        parentCallId: event.call.parentCallId,
+        status: event.phase === 'started' ? 'running' : 'completed'
+      })
       if (event.phase === 'started') {
         observation.trace?.('action_started', {
           ...evidence,

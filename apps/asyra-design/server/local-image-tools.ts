@@ -360,6 +360,54 @@ export const createLocalImageTools = (
     }
   ]
   return {
+    resultIssue: (name: string, value: unknown): string | undefined => {
+      if (!isRecord(value)) return 'Image tool returned no result object'
+      if (value.available === false) return
+      if (name === AiImageToolIds.VALIDATE_REFERENCE_IMAGES) {
+        if (
+          !Array.isArray(value.references) ||
+          !value.references.length ||
+          value.references.some(
+            (entry) =>
+              !isRecord(entry) ||
+              !Number.isSafeInteger(entry.attachmentIndex) ||
+              typeof entry.referenceId !== 'string' ||
+              !isRecord(entry.validation) ||
+              !['decoded', 'invalid'].includes(
+                String(entry.validation.validity)
+              )
+          )
+        )
+          return 'Reference validation omitted its identities or validation results'
+        for (const entry of value.references) {
+          if (
+            referenceIdentity(entry.attachmentIndex).referenceId !==
+            entry.referenceId
+          )
+            return 'Reference validation identity is not retained in this request'
+        }
+        return
+      }
+      if (
+        typeof value.imageArtifactId !== 'string' ||
+        !artifacts.has(value.imageArtifactId)
+      )
+        return 'Image tool omitted a retained imageArtifactId'
+      if (
+        name === AiImageToolIds.REVIEW_VECTOR_CONTOURS &&
+        (typeof value.reviewId !== 'string' ||
+          !contourReviews.has(value.reviewId) ||
+          !Array.isArray(value.proposals))
+      )
+        return 'Contour review omitted its retained review or proposals'
+      if (
+        name === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
+        (typeof value.analysisId !== 'string' ||
+          !analyses.has(value.analysisId) ||
+          !Array.isArray(value.paths))
+      )
+        return 'Component analysis omitted its retained analysis or paths'
+    },
     validateReferences,
     resolveSources,
     referenceImages: (indexes?: number[]) => {

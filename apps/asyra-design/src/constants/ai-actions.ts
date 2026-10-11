@@ -5,6 +5,7 @@ export const AiActionNames = Object.freeze({
   ORGANIZE_DESIGN: 'organize_design',
   UPDATE_DESIGN_ELEMENT: 'update_design_element',
   READ_DESIGN_CONTEXT: 'read_design_context',
+  MAP_RETAINED_FILLS: 'map_retained_fills',
   INSPECT_DRAWING: 'inspect_drawing',
   VALIDATE_INSPECTION_EVIDENCE: 'validate_inspection_evidence',
   REPORT_OUTCOME: 'report_outcome',
@@ -33,5 +34,6 @@ export const AiDrawingDetailSelectionIntents = Object.freeze({
 /** Single-object convenience actions execute only as items of execute_design_batch. */
 export const AiBatchOnlyActionNames: readonly string[] = Object.freeze([
   AiActionNames.UPDATE_DESIGN_ELEMENT,
-  AiActionNames.SET_ELEMENT_VISIBILITY
+  AiActionNames.SET_ELEMENT_VISIBILITY,
+  AiActionNames.MAP_RETAINED_FILLS
 ])

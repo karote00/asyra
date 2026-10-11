@@ -69,6 +69,7 @@
         ownerPackage: '@asyra/asyra-design',
         purpose: 'provider',
         inputs: [
+          'artifact:prepared-review',
           'artifact:request-context',
           'registered capability definitions',
           'read-only effective native provider configuration',
@@ -180,10 +181,11 @@
           'Derive vector dimensions from admitted rings when both dimensions are omitted; preserve explicit bounds assertions, exact geometry and per-preparation measurement reuse',
           'Observe per-source acquisition and reuse with parent-linked input/output evidence; concurrent completion is not visual suitability',
           'The request image owner resolves immutable content identities and validates selected or cited attachments before acceptance; mechanical validity does not certify subject, viewpoint or detail suitability',
+          'Retain batches of immutable artifact target subsets under opaque artifact-scoped handles, preserving order and complete capacity admission; artifact release retires sets and canonical consumers recheck current existence and locks',
           'Compile explicit draft-local shared Fill definitions once at first use and emit canonical child-ID references thereafter; fillTemplates reuse immutable value compilation while emitting independent canonical Fill IDs; equal inline values remain independent and missing definitions reject before apply',
           'Preserve supported original raster encoding after decode validation, use decoder-default pixel safety consistently in import and direct image consumers, and retain byte limits without PNG inflation or resampling',
           'Compile ready repeated geometry independently of whole-structure review; final review requirements remain owned by inspect',
-          'Partition cumulative source work into bounded preparation windows inside one artifact; preserve global keys, hierarchy, layout, relations and painter order; reject expanded geometry/depth excess or indivisible oversized primitives without simplifying detail',
+          'Partition cumulative source work into cancellable cooperative preparation windows inside one artifact; count each pattern face as a primitive rather than imposing independent source-list caps; consume constructed output once; preserve global keys, hierarchy, layout, relations and painter order; reject expanded geometry/depth excess or indivisible oversized primitives without simplifying detail',
           'An explicit preserve-vectors image region extracts oriented source pixels without resampling, returns region-local coordinates and source region; oversized conversion reports observed and allowed bytes, not an unavailable converter; successful request-local reuse distinguishes attachment and region',
           'Admit signed curve controls against measured curve bounds and report malformed pairs by semantic node and edge',
           'Draft keys are optional root selectors, never canonical IDs; unnamed roots use the generated element ID and no root name is reserved',
@@ -192,7 +194,8 @@
           'Reference reuse preserves current source attribution and structured failure stage, reason, HTTP status, transient classification and attempts; retry a classified transient read at most once within the original deadline, never permanent failure or cancellation; retain candidate failure evidence during failover',
           'Acquire candidate image URLs in one batch with bounded concurrent I/O, ordered per-source receipts, original images and request-local in-flight reuse; one source failure does not discard siblings; cancellation prevents attachment admission',
           'No cross-request retention without measured reuse and equivalence',
-          'Expand request-local vector templates and placements without losing geometry, painter order or stable keys'
+          'Expand request-local vector templates and placements without losing geometry, painter order or stable keys',
+          'Expand declarative planar convex surface grids from normalized cell motifs using one projected boundary; preserve explicit cell-major or motif-major order, keys, caller-authored per-cell fills, motif world offsets and exact editable vector output; reject unsupported planes and degeneracy rather than approximate them'
         ],
         bypasses: ['Advice and direct edits require no prepared artifact'],
         allowedContributors: [
@@ -206,8 +209,8 @@
           'automatic detail removal'
         ],
         cacheDimensions: [
-          'request-local immutable prepared artifact identity and key map; lazy prefix index retires with the artifact; rejected draft revision retains bounded source only for explicit revalidation',
-          'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failures removed; original image delivery once per attachment with explicit refresh'
+          'request-local immutable prepared artifact identity, key map and bounded target subsets; lazy prefix index and subsets retire with the artifact; rejected draft revision retains bounded source only for explicit revalidation',
+          'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh'
         ],
         implementationBoundary: [
           'apps/asyra-design/server/__tests__/execution-flow-proof.test.ts',
@@ -235,6 +238,7 @@
           'apps/asyra-design/server/design-construction-schema.ts',
           'apps/asyra-design/server/design-preparation-examples.ts',
           'apps/asyra-design/server/__tests__/design-patterns.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-facade-grid.json',
           'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
@@ -257,6 +261,9 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'Reference delivery leases accepted snapshots until consumption, explicit release, request settlement, cancellation or disposal; capacity backpressure preserves existing consumers and leases never bypass revision checks; declarative query mappings prepare all patches before one plural write',
+          'Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural fills and explicit parent-local coordinates',
+          'Ordinary creation appends canonical membership without copying prior siblings; public children snapshots remain independent, pre-handoff failures remove attempted membership and accepted handoff retains Factory recovery ownership',
           'Plural subtree deletion shares canonical hierarchy and orphan-property preparation for the call, preserves deleted-instance retention and reversible evidence, and rejects invalid targets before mutation',
           'Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets',
           'Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write',
@@ -293,7 +300,18 @@
           'Render runtime, current workspace, projected geometry and hierarchy; never viewport pan/zoom'
         ],
         implementationBoundary: [
+          'apps/asyra-design/src/common-apis/retained-design-context.ts',
+          'apps/asyra-design/src/common-apis/__tests__/retained-design-context.test.ts',
+          'apps/asyra-design/src/ai/retained-fill-action.ts',
+          'apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts',
+
+          'packages/utils/src/types/transaction.ts',
+          'packages/factory/src/data-transact.ts',
+          'apps/asyra-design/src/ai/transaction.ts',
+          'apps/asyra-design/src/ai/__tests__/transaction.test.ts',
           'packages/scene-tree/src/sceneTree.ts',
+          'packages/scene-tree/src/components/group.ts',
+          'packages/scene-tree/src/components/workspace.ts',
           'packages/scene-tree/src/element-mutation.ts',
           'packages/scene-tree/src/__tests__/scene-mutation.test.ts',
           'packages/core/src/apis/scene-tree.ts',
@@ -368,8 +386,6 @@
           'apps/asyra-design/src/ai/arrangement-action.ts',
           'apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts',
           'apps/asyra-design/src/ai/__tests__/composition-actions.test.ts',
-          'apps/asyra-design/src/ai/transaction.ts',
-          'apps/asyra-design/src/ai/__tests__/transaction.test.ts',
           'apps/asyra-design/src/ai/__tests__/runtime-integration.test.ts',
           'apps/asyra-design/e2e/local-ai-provider.spec.ts',
           'apps/asyra-design/e2e/ai-conversation-flow.spec.ts',
@@ -401,6 +417,7 @@
         ownerPackage: '@asyra/asyra-design',
         purpose: 'review-coordinator',
         inputs: [
+          'artifact:prepared-artifact',
           'artifact:execution-receipt',
           'canonical change observations',
           'current rendered evidence',
@@ -409,8 +426,9 @@
           'prior independent visual findings retained as revision questions, never proof',
           'evidence-backed source facts and explicit dependency changes'
         ],
-        outputs: ['artifact:inspection-evidence'],
+        outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Prepared-content review reads immutable source recipes and current requirement/reference evidence, reuses only identical dependencies, preserves scoped findings and unverified appearance, rechecks freshness before application, and never substitutes for final canvas review',
           'Consume confirmed plural receipt reviewElementIds into request-owned scope, including direct edits without a prior composition; exclude unavailable targets and retain ordinary evidence requirements',
           'Expose one strict plan schema and executable guidance for standalone and composed first-write admission; allow first criteria after partial drawing while retaining the original request; lock established criteria after mutation and require current full review before approval',
           'Acknowledge plan storage with IDs and fact validity only; retain full request-local criteria and facts for review without echoing submitted narrative or implying visual acceptance',
@@ -455,6 +473,10 @@
         ],
         cacheDimensions: [],
         implementationBoundary: [
+          'apps/asyra-design/server/local-prepared-design-review.ts',
+          'apps/asyra-design/server/__tests__/local-prepared-design-review.test.ts',
+          'apps/asyra-design/server/design-preparation.ts',
+          'apps/asyra-design/server/local-design-tools.ts',
           'apps/asyra-design/server/__tests__/execution-flow-proof.test.ts',
           'apps/asyra-design/server/local-design-review.ts',
           'apps/asyra-design/server/local-visual-assessment.ts',
@@ -511,7 +533,10 @@
         conditions: [
           'Preserve successful work and intended Undo commits',
           'Show settled explanations in the conversation without a duplicate canvas completion/Undo overlay; ordinary toolbar and keyboard history actions remain available',
-          'Project concrete tool messages and execution summaries in their authored language ahead of generic loop labels; preserve order, deduplicate identical entries, ignore completion acknowledgements, preserve announced work through generic phases and registered internal summaries, and let lifecycle state override current work',
+          'Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate identical phase-purpose pairs and let lifecycle state override current work',
+          'The App activity state machine owns legal lifecycle transitions: saving and stopping accept settlement, settled rejects late progress, approval resumes on admitted running progress, and authoritative conversation outcomes remain distinct from provider evidence',
+          'Activity provenance is explicit: authored work starts replace older work, system labels and late acknowledgements do not; call identity and producer order survive transport and stale invocation events are ignored',
+          'Retained query mutations validate membership revision, locks and complete targets inside the synchronous mutation boundary; invalidated or evicted results produce recoverable rejection before writes',
           'Confirm the captured publication sequence through the current document generation and backend durable watermark; keep drawing completion distinct from durable, unavailable and local-only storage',
           'Wait outside the publication queue; later edits do not extend the target, and cancellation, disconnect, Reset or backend failure cannot approve persistence',
           'Questions pause a segment; answers start the next',
@@ -558,6 +583,16 @@
           'apps/asyra-design/server/local-ai-provider.ts',
           'apps/asyra-design/src/ai/conversation.ts',
           'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
+          'packages/ai-agent-runtime/src/provider.ts',
+          'packages/ai-agent-runtime/src/runtime.ts',
+          'packages/ai-agent-runtime/src/__tests__',
+          'apps/asyra-design/src/ai/action-batch-protocol.ts',
+          'apps/asyra-design/src/ai/server-action-batch-provider.ts',
+          'apps/asyra-design/src/ai/__tests__/server-action-batch-provider.test.ts',
+          'apps/asyra-design/server/__tests__/local-ai-provider.test.ts',
+          'apps/asyra-design/server/action-batch.ts',
+          'apps/asyra-design/server/__tests__/action-batch.test.ts',
+          'apps/asyra-design/src/ai/activity-state.ts',
           'apps/asyra-design/src/ai/presentation.ts',
           'apps/asyra-design/src/ai/__tests__/presentation.test.ts',
           'apps/asyra-design/src/ai/__tests__/document-interaction-lock.integration.test.ts'
@@ -587,6 +622,8 @@
           'Shared invocation observes success, rejection, error and cancellation without bypassing canonical policies; next executes at most once',
           'Timestamp transport chunks without retaining bytes; report activity visibility independently from lifecycle coverage and export explicit local traces',
           'Runtime owns portable diagnostics and a separate Node storage/CLI entry; Design supplies domain adapters only',
+          'The request root outlives provider completion through final action and history settlement; independently delivered producer sequences distinguish product outcome from record completeness without blocking product completion',
+          'Persistence spans link captured request sequence ranges to shared durable batches without multiplying batch work across requests',
           'Record continuous App invocation and provider delegation spans; partition child AI waits, App exchanges, tools and provider events without claiming hidden reasoning; missing historical coverage remains a recording defect',
           'Attribute observed native calls and inner App actions with actor, parent, contract identity, purpose, expectation and distinct execution/correctness evidence',
           'Preserve bounded local part key and index on ordered preparation/application spans without retaining arbitrary part metadata or adding a second record owner',
@@ -619,6 +656,26 @@
         ],
         cacheDimensions: [],
         implementationBoundary: [
+          'packages/ai-agent-runtime/src/types.ts',
+          'apps/asyra-design/src/ai/conversation.ts',
+          'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
+          'apps/asyra-design/src/init/init-app.ts',
+          'apps/asyra-design/vite.config.ts',
+          'apps/asyra-design/server/document-persistence-observation.ts',
+          'apps/asyra-design/server/document-backend.ts',
+          'apps/asyra-design/server/document-backend-store.ts',
+          'apps/asyra-design/server/document-materializer.ts',
+          'apps/asyra-design/server/document-canonical-reducer.ts',
+
+          'packages/ai-agent-runtime/src/profiler/record-delivery.ts',
+          'packages/ai-agent-runtime/src/node/record-collector.ts',
+          'packages/ai-agent-runtime/src/__tests__/record-delivery.test.ts',
+          'apps/asyra-design/src/ai/action-batch-endpoint.ts',
+          'apps/asyra-design/src/ai/startup.ts',
+
+          'packages/ai-agent-runtime/src/__tests__/progress.test.ts',
+          'apps/asyra-design/server/action-batch.ts',
+          'apps/asyra-design/server/__tests__/action-batch.test.ts',
           'packages/ai-agent-runtime/src/profiler/__tests__/assessment.test.ts',
           'packages/ai-agent-runtime/src/profiler/__tests__/records.test.ts',
           'packages/ai-agent-runtime/src/profiler/__tests__/report-cli.test.ts',
@@ -672,6 +729,7 @@
       }
     ],
     artifacts: [
+      { id: 'artifact:prepared-review', ownerStepId: 'inspect', consumerStepIds: ['compose'], terminal: false, title: 'Prepared recipe review', channel: 'App execution', description: 'Source-bound recipe findings and unverified appearance, never final canvas approval.' },
       {
         id: 'artifact:request-context',
         ownerStepId: 'request',
@@ -695,7 +753,7 @@
       {
         id: 'artifact:prepared-artifact',
         ownerStepId: 'prepare',
-        consumerStepIds: ['apply'],
+        consumerStepIds: ['apply', 'inspect'],
         terminal: false,
         title: 'prepared artifact',
         channel: 'App execution',
@@ -744,6 +802,8 @@
       }
     ],
     routes: [
+      { id: 'prepare-to-inspect', from: 'prepare', to: 'inspect', kind: 'handoff', producedArtifacts: ['artifact:prepared-artifact'], predicate: 'A retained source recipe requires reference-dependent pre-application review.' },
+      { id: 'prepared-review-to-compose', from: 'inspect', to: 'compose', kind: 'feedback', producedArtifacts: ['artifact:prepared-review'], predicate: 'Recipe findings guide correction or application of the same immutable artifact with current evidence.' },
       {
         id: 'request-to-compose',
         to: 'compose',

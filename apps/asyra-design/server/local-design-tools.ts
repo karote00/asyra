@@ -27,6 +27,7 @@ import { createDesignPreparationSession } from './design-preparation'
 import {
   designConstructionSchema,
   projectedFaceSchema,
+  surfaceGridSchema,
   designPatternSchema
 } from './design-construction-schema'
 
@@ -234,6 +235,7 @@ const preparationSchema = {
       anyOf: [
         nodeSchema,
         projectedFaceSchema,
+        surfaceGridSchema,
         designPatternSchema,
         vectorPatternSchema
       ]
@@ -280,7 +282,134 @@ export const createLocalDesignTools = (
   const enabled = actions.some(
     (a) => a.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
+  const resolveTargets = (value: unknown): string[] => {
+    if (
+      !record(value) ||
+      typeof value.artifactId !== 'string' ||
+      Object.keys(value).some(
+        (key) =>
+          !['artifactId', 'keys', 'keyPrefix', 'targetSetId'].includes(key)
+      ) ||
+      (value.keys !== undefined && value.keyPrefix !== undefined)
+    )
+      throw new DesignReferenceError()
+    if (value.targetSetId !== undefined) {
+      if (
+        typeof value.targetSetId !== 'string' ||
+        value.keys !== undefined ||
+        value.keyPrefix !== undefined
+      )
+        throw new DesignReferenceError()
+      return session.resolveTargetSet(value.artifactId, value.targetSetId)
+    }
+    const design = session.resolve(value.artifactId)
+    let keys: string[]
+    if (value.keys !== undefined) {
+      if (
+        !Array.isArray(value.keys) ||
+        !value.keys.length ||
+        value.keys.some(
+          (key) =>
+            typeof key !== 'string' || !Object.hasOwn(design.keyToId, key)
+        )
+      )
+        throw new DesignReferenceError()
+      keys = value.keys as string[]
+    } else {
+      if (
+        value.keyPrefix !== undefined &&
+        (typeof value.keyPrefix !== 'string' || !value.keyPrefix)
+      )
+        throw new DesignReferenceError()
+      keys = session.selectKeys(
+        value.artifactId,
+        value.keyPrefix as string | undefined
+      )
+    }
+    if (!keys.length) throw new DesignReferenceError()
+    return [...new Set(keys.map((key) => design.keyToId[key]))]
+  }
+  const retainDraft = (draft: unknown) => {
+    const draftId = session.retainRejectedDraft(draft)
+    return draftId
+      ? { draftId, retainedDraft: session.describeRejectedDraft(draftId) }
+      : {
+          retention: 'unavailable',
+          nextStep:
+            'Rejected source exceeds retention limits; resend corrected source rather than using an unavailable draft ID.'
+        }
+  }
   return {
+    resolveRecipe: session.recipe,
+    rejectInput: (name: string, args: unknown) => {
+      if (
+        !enabled ||
+        name !== AiDesignToolIds.PREPARE_DESIGN ||
+        !record(args) ||
+        !('draft' in args)
+      )
+        return
+      const budget = inspectDesignBudget(args.draft)?.budget
+      return {
+        recovery: 'correct_input',
+        ...retainDraft(args.draft),
+        ...(budget ? { budget } : {})
+      }
+    },
+    resultIssue: (name: string, value: unknown): string | undefined => {
+      if (!record(value)) return 'Expected a structured preparation result.'
+      if (value.available === false || value.applicable === false) return
+      if (name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
+        if (
+          value.available !== true ||
+          !Array.isArray(value.targets) ||
+          !value.targets.length
+        )
+          return 'Target retention omitted its handles.'
+        for (const target of value.targets) {
+          if (
+            !record(target) ||
+            typeof target.artifactId !== 'string' ||
+            typeof target.targetSetId !== 'string' ||
+            !Number.isSafeInteger(target.count) ||
+            Number(target.count) < 1
+          )
+            return 'Target retention returned an invalid handle.'
+          try {
+            if (
+              session.resolveTargetSet(target.artifactId, target.targetSetId)
+                .length !== target.count
+            )
+              return 'Target count disagrees with retained identities.'
+          } catch {
+            return 'Retained target identity is unavailable.'
+          }
+        }
+      }
+      if (name === AiDesignToolIds.PREPARE_DESIGN) {
+        if (
+          value.available !== true ||
+          typeof value.artifactId !== 'string' ||
+          !value.artifactId ||
+          !Number.isSafeInteger(value.elementCount) ||
+          Number(value.elementCount) < 1 ||
+          typeof value.applicable !== 'boolean' ||
+          !Array.isArray(value.findings)
+        )
+          return 'Prepared result requires artifactId, elementCount, applicable and findings.'
+        try {
+          session.resolve(value.artifactId)
+        } catch {
+          return 'Prepared artifact identity is unavailable in this request.'
+        }
+      }
+      if (
+        name === AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS &&
+        (!Array.isArray(value.releasedArtifactIds) ||
+          !Array.isArray(value.missingArtifactIds))
+      )
+        return 'Release result requires released and missing artifact identities.'
+    },
     explainInputIssue: (name: string, args: unknown) =>
       enabled && name === AiDesignToolIds.PREPARE_DESIGN && record(args)
         ? inspectDesignBudget(args.draft)
@@ -297,6 +426,43 @@ export const createLocalDesignTools = (
               'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable.' +
               ` Minimal valid input examples (syntax only, adapt to the request; ready parts may include repeated geometry; inspect and review each stage): ${designPreparationExamples.map((example) => JSON.stringify(example)).join(' ; ')}`,
             inputSchema: preparationSchema
+          },
+          {
+            type: 'function',
+            name: AiDesignToolIds.RETAIN_DESIGN_TARGETS,
+            executionAccess: LocalToolAccess.INDEPENDENT,
+            description:
+              'Retain a batch of artifact selections once for repeated reads or edits. Returns artifactId, targetSetId and count only. Use target={field:elementIds,artifactId,targetSetId} in later batches instead of resending keys. Members retain creation identity/order, not live group membership; canonical APIs recheck existence and locks. Artifact release invalidates its sets.',
+            inputSchema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['targets'],
+              properties: {
+                targets: {
+                  type: 'array',
+                  minItems: 1,
+                  maxItems: 128,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['artifactId'],
+                    properties: {
+                      artifactId: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 160
+                      },
+                      keys: {
+                        type: 'array',
+                        minItems: 1,
+                        items: { type: 'string', minLength: 1 }
+                      },
+                      keyPrefix: { type: 'string', minLength: 1 }
+                    }
+                  }
+                }
+              }
+            }
           },
           {
             type: 'function',
@@ -333,43 +499,7 @@ export const createLocalDesignTools = (
             }
           : action
       ),
-    resolveTargets: (value: unknown): string[] => {
-      if (
-        !record(value) ||
-        typeof value.artifactId !== 'string' ||
-        Object.keys(value).some(
-          (key) => !['artifactId', 'keys', 'keyPrefix'].includes(key)
-        ) ||
-        (value.keys !== undefined && value.keyPrefix !== undefined)
-      )
-        throw new DesignReferenceError()
-      const design = session.resolve(value.artifactId)
-      let keys: string[]
-      if (value.keys !== undefined) {
-        if (
-          !Array.isArray(value.keys) ||
-          !value.keys.length ||
-          value.keys.some(
-            (key) =>
-              typeof key !== 'string' || !Object.hasOwn(design.keyToId, key)
-          )
-        )
-          throw new DesignReferenceError()
-        keys = value.keys as string[]
-      } else {
-        if (
-          value.keyPrefix !== undefined &&
-          (typeof value.keyPrefix !== 'string' || !value.keyPrefix)
-        )
-          throw new DesignReferenceError()
-        keys = session.selectKeys(
-          value.artifactId,
-          value.keyPrefix as string | undefined
-        )
-      }
-      if (!keys.length) throw new DesignReferenceError()
-      return [...new Set(keys.map((key) => design.keyToId[key]))]
-    },
+    resolveTargets,
     resolveBatch: (value: unknown): AiActionBatch => {
       if (!record(value) || !Array.isArray(value.actions))
         throw new Error('Invalid action batch')
@@ -422,6 +552,29 @@ export const createLocalDesignTools = (
       signal: AbortSignal
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Design preparation cancelled')
+      if (enabled && name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
+        if (
+          !record(args) ||
+          Object.keys(args).length !== 1 ||
+          !Array.isArray(args.targets) ||
+          !args.targets.length ||
+          args.targets.length > 128
+        )
+          throw new LocalToolInputError('Provide a bounded targets array.')
+        const selections = args.targets.map((target) => {
+          if (
+            !record(target) ||
+            typeof target.artifactId !== 'string' ||
+            target.targetSetId !== undefined
+          )
+            throw new DesignReferenceError()
+          return { artifactId: target.artifactId, ids: resolveTargets(target) }
+        })
+        return JSON.stringify({
+          available: true,
+          targets: session.retainTargetSets(selections)
+        })
+      }
       if (enabled && name === AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS) {
         if (
           !record(args) ||
@@ -452,13 +605,14 @@ export const createLocalDesignTools = (
       try {
         draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
         const budgetIssue = inspectDesignBudget(draft)
-        if (budgetIssue) return JSON.stringify(budgetIssue)
+        if (budgetIssue)
+          return JSON.stringify({ ...budgetIssue, ...retainDraft(draft) })
         const inputIssue = operationInputIssue({ draft }, preparationSchema)
         if (inputIssue)
           return JSON.stringify({
             available: false,
             recovery: 'correct_input',
-            draftId: session.retainRejectedDraft(draft),
+            ...retainDraft(draft),
             message: `${inputIssue}. Correct the listed input fields and resubmit this draft; do not research a new reference. Geometry has not been compiled.`
           })
         if (
@@ -467,7 +621,9 @@ export const createLocalDesignTools = (
           draft.children.some(
             (child) =>
               record(child) &&
-              ['projected-face', 'pattern'].includes(String(child.type))
+              ['projected-face', 'pattern', 'surface-grid'].includes(
+                String(child.type)
+              )
           ) &&
           (!record(draft.projection) ||
             (draft.layout ?? 'absolute') !== 'absolute')
@@ -480,15 +636,24 @@ export const createLocalDesignTools = (
           })
         return JSON.stringify({
           available: true,
-          ...session.prepare(draft)
+          ...(await session.prepareAsync(draft, signal)),
+          preparationInput:
+            record(args.repair) && typeof args.repair.draftId === 'string'
+              ? {
+                  kind: 'retained-repair',
+                  ...session.describeRejectedDraft(args.repair.draftId),
+                  replacementCount: Array.isArray(args.repair.replacements)
+                    ? args.repair.replacements.length
+                    : 0
+                }
+              : { kind: 'source' }
         })
       } catch (error) {
+        signal.throwIfAborted()
         return JSON.stringify({
           available: false,
           recovery: 'correct_input',
-          ...(draft === undefined
-            ? {}
-            : { draftId: session.retainRejectedDraft(draft) }),
+          ...(draft === undefined ? {} : retainDraft(draft)),
           ...(error instanceof DesignKeyConflictError
             ? { conflicts: error.conflicts }
             : {}),

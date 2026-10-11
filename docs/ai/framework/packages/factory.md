@@ -490,3 +490,9 @@ and advisory observer isolation. Core tests prove instance binding and lifecycle
 Existing journal, rollback, collaboration, persistence and progressive replay
 contracts remain required. Mixed deferred hierarchy and immediate computed
 publication must reach consumers in causal order without per-property UI flushes.
+
+
+Canonical owners report `MutationRecoveryError` when pre-handoff cleanup cannot be
+verified. Factory preserves its cause/failures and reports `rollback-failed` even
+when that mutation never entered the journal. It still attempts other admitted
+inverses; an empty journal does not certify the canonical owner's failed recovery.

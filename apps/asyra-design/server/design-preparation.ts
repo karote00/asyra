@@ -7,7 +7,12 @@ import {
 } from '../src/ai/design-fill'
 import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
-import { constructDesign } from './design-construction'
+import {
+  constructDesign,
+  constructDesignSteps,
+  completeDesignSteps,
+  completeDesignStepsAsync
+} from './design-construction'
 import { createDesignTargetIndex } from './design-target-index'
 import { createDesignDraftRepairStore } from './design-draft-repair'
 import {
@@ -315,7 +320,7 @@ const admitDraft = (input: unknown): DraftNode => {
   return admit(input, 1, 'absolute', true)
 }
 
-export const prepareDesign = (
+function* prepareDesignSteps(
   input: unknown,
   identity: string = randomUUID(),
   onSourceWork?: (
@@ -329,7 +334,7 @@ export const prepareDesign = (
     admissionMs: number
     compilationMs: number
   }) => void
-): AnalyzedDesign => {
+): Generator<void, AnalyzedDesign, void> {
   const sharedFills =
     record(input) && input.sharedFills !== undefined ? input.sharedFills : {}
   if (
@@ -401,7 +406,7 @@ export const prepareDesign = (
     return [{ ...compiled, id: `${elementId}-fill` }]
   }
   const constructionStarted = performance.now()
-  const { draft, brief, sourceWork } = constructDesign(
+  const { draft, brief, sourceWork } = yield* constructDesignSteps(
     input,
     `design-${identity}-0`
   )
@@ -698,27 +703,154 @@ export const prepareDesign = (
   return prepared
 }
 
+export const prepareDesign = (...args: Parameters<typeof prepareDesignSteps>) =>
+  completeDesignSteps(prepareDesignSteps(...args))
+
+export const prepareDesignAsync = (
+  signal: AbortSignal,
+  ...args: Parameters<typeof prepareDesignSteps>
+) => completeDesignStepsAsync(prepareDesignSteps(...args), signal)
+
 export const createDesignPreparationSession = (
-  compile: typeof prepareDesign = prepareDesign
+  compile: typeof prepareDesign = prepareDesign,
+  compileAsync: typeof prepareDesignAsync = prepareDesignAsync
 ) => {
   const artifacts = new Map<string, PreparedDesign>()
+  const recipes = new Map<string, unknown>()
+  const targetSets = new Map<
+    string,
+    { artifactId: string; ids: readonly string[]; bytes: number }
+  >()
+  let targetBytes = 0
   const rejectedDrafts = createDesignDraftRepairStore()
   const targetIndexes = new Map<
     string,
     ReturnType<typeof createDesignTargetIndex>
   >()
+  const publish = (
+    artifactId: string,
+    result: AnalyzedDesign,
+    sourceWork: ReturnType<typeof constructDesign>['sourceWork'] | undefined,
+    reuse:
+      | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
+      | undefined
+  ) => {
+    const { review, layoutReview, sharedFillIds, ...compiled } = result
+    const artifact = freeze(compiled)
+    artifacts.set(artifactId, artifact)
+    return {
+      artifactId,
+      ...(reuse ? { reuse } : {}),
+      ...(sharedFillIds && Object.keys(sharedFillIds).length
+        ? { sharedFillIds }
+        : {}),
+      ...(sourceWork ? { sourceWork } : {}),
+      elementCount: artifact.entries.length,
+      findings: artifact.findings,
+      applicable: artifact.findings.every(
+        (f) => f.kind === 'text-metrics-required'
+      ),
+      ...(review ? { review } : {}),
+      ...(layoutReview ? { layoutReview } : {})
+    }
+  }
   return {
+    recipe(artifactId: string) {
+      const artifact = artifacts.get(artifactId)
+      if (!artifact || !recipes.has(artifactId))
+        throw new Error(
+          'Prepared source recipe is unavailable in this request.'
+        )
+      return {
+        recipe: recipes.get(artifactId),
+        findings: artifact.findings,
+        elementCount: artifact.entries.length
+      }
+    },
+    retainTargetSets(
+      selections: readonly { artifactId: string; ids: readonly string[] }[]
+    ) {
+      const prepared = selections.map(({ artifactId, ids }) => {
+        if (!artifacts.has(artifactId) || ids.length === 0)
+          throw new Error(
+            'Target artifact or selected identities are unavailable.'
+          )
+        const unique = Object.freeze([...new Set(ids)])
+        return {
+          artifactId,
+          ids: unique,
+          bytes: Buffer.byteLength(JSON.stringify(unique), 'utf8')
+        }
+      })
+      const additionalBytes = prepared.reduce(
+        (sum, item) => sum + item.bytes,
+        0
+      )
+      if (targetBytes + additionalBytes > limits.retainedTargetBytes)
+        throw new Error(
+          'Retained target capacity exceeded; release unneeded artifacts or reuse existing target sets.'
+        )
+      const receipts = prepared.map((item) => {
+        const targetSetId = randomUUID()
+        targetSets.set(targetSetId, item)
+        return {
+          artifactId: item.artifactId,
+          targetSetId,
+          count: item.ids.length
+        }
+      })
+      targetBytes += additionalBytes
+      return receipts
+    },
+    resolveTargetSet(artifactId: string, targetSetId: string): string[] {
+      const selected = targetSets.get(targetSetId)
+      if (
+        !selected ||
+        selected.artifactId !== artifactId ||
+        !artifacts.has(artifactId)
+      )
+        throw new Error(
+          'Target set is unavailable in this request or belongs to another artifact.'
+        )
+      return [...selected.ids]
+    },
     retainRejectedDraft: rejectedDrafts.retain,
     repairDraft: rejectedDrafts.repair,
-    prepare(input: unknown) {
+    describeRejectedDraft: rejectedDrafts.describe,
+    async prepareAsync(input: unknown, signal: AbortSignal) {
+      signal.throwIfAborted()
+      const recipe = freeze(structuredClone(input))
       const artifactId = randomUUID()
       let sourceWork:
         ReturnType<typeof constructDesign>['sourceWork'] | undefined
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
-      const { review, layoutReview, sharedFillIds, ...compiled } = compile(
-        input,
+      const result = await compileAsync(
+        signal,
+        recipe,
+        artifactId,
+        (value) => {
+          sourceWork = value
+        },
+        (value) => {
+          reuse = value
+        }
+      )
+      signal.throwIfAborted()
+      recipes.set(artifactId, recipe)
+      return publish(artifactId, result, sourceWork, reuse)
+    },
+    prepare(input: unknown) {
+      const recipe = freeze(structuredClone(input))
+      const artifactId = randomUUID()
+      let sourceWork:
+        ReturnType<typeof constructDesign>['sourceWork'] | undefined
+      let reuse:
+        | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
+        | undefined
+      const result = compile(
+        recipe,
         artifactId,
         (summary) => {
           sourceWork = summary
@@ -727,29 +859,21 @@ export const createDesignPreparationSession = (
           reuse = summary
         }
       )
-      const artifact = freeze(compiled)
-      artifacts.set(artifactId, artifact)
-      return {
-        artifactId,
-        ...(reuse ? { reuse } : {}),
-        ...(sharedFillIds && Object.keys(sharedFillIds).length
-          ? { sharedFillIds }
-          : {}),
-        ...(sourceWork ? { sourceWork } : {}),
-        elementCount: artifact.entries.length,
-        findings: artifact.findings,
-        applicable: artifact.findings.every(
-          (f) => f.kind === 'text-metrics-required'
-        ),
-        ...(review ? { review } : {}),
-        ...(layoutReview ? { layoutReview } : {})
-      }
+      recipes.set(artifactId, recipe)
+      return publish(artifactId, result, sourceWork, reuse)
     },
     release(artifactIds: readonly string[]) {
       const releasedArtifactIds: string[] = [],
         missingArtifactIds: string[] = []
       for (const artifactId of new Set(artifactIds)) {
         targetIndexes.delete(artifactId)
+        recipes.delete(artifactId)
+        for (const [id, selected] of targetSets) {
+          if (selected.artifactId === artifactId) {
+            targetBytes -= selected.bytes
+            targetSets.delete(id)
+          }
+        }
         const result = artifacts.delete(artifactId)
           ? releasedArtifactIds
           : missingArtifactIds

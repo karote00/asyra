@@ -1,6 +1,7 @@
 import type { VisualAssessmentInput } from '../local-visual-assessment'
 import { reviewPlanExample } from '../local-design-review'
 import { runInNewContext } from 'node:vm'
+import { createDocumentContextAction } from '../../src/ai/context-action'
 import { prepareOperationBatch } from '../local-operation-batch'
 import { describeBasicApiResult } from '../../src/ai/basic-api-results'
 const reviewCriteria = (names: readonly string[]) =>
@@ -18,6 +19,7 @@ import type {
   AiJsonValue
 } from '../../src/ai/action-batch-protocol'
 import { describe, expect, it, vi } from 'vitest'
+vi.mock('../../src/contexts', () => ({ default: {} }))
 import {
   createLocalOperationTools,
   LocalOperationPreparationError,
@@ -2129,7 +2131,10 @@ it('searches current API descriptions and names without loading every schema or 
     catalogSize: actions.length,
     apis: [{ name: custom.name, description: custom.description }]
   })
-  expect(found.apis[0].inputSchema).toEqual(custom.inputSchema)
+  expect(found.apis[0].inputSchema).toBeUndefined()
+  expect((await call({ names: [custom.name] })).apis[0].inputSchema).toEqual(
+    custom.inputSchema
+  )
   expect(found.count).toBeLessThan(full.catalogSize)
   expect((await call({ names: [custom.name], refresh: true })).apis).toEqual([
     expect.objectContaining(custom)
@@ -3176,10 +3181,19 @@ it('advertises admitted categories and includes their choices in invalid lookup 
     missingNames: ['prepare_design'],
     message: expect.stringContaining('Available categories: fill')
   })
-  for (const selector of [
-    { category: 'creation' },
-    { operation: 'missing.operation' }
-  ]) {
+  expect(
+    JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        { operation: 'missing.operation' },
+        new AbortController().signal
+      )
+    )
+  ).toMatchObject({
+    missingOperations: ['missing.operation'],
+    message: expect.stringContaining('Available categories: fill')
+  })
+  for (const selector of [{ category: 'creation' }]) {
     await expect(
       tools.call('describe_design_apis', selector, new AbortController().signal)
     ).rejects.toThrow('Available categories: fill')
@@ -3531,6 +3545,16 @@ it('resolves mixed action and native names without discarding known matches or d
     const source = native.find(
       (entry) => entry.namespace === tool.namespace && entry.name === tool.name
     )
+    if (tool.name === action.name) {
+      expect(tool.inputSchema).toBeUndefined()
+      expect(tool.schemaLookup.arguments.names).toEqual([
+        `${tool.namespace}.${tool.name}`
+      ])
+      const selected = (await lookup(tool.schemaLookup.arguments.names))
+        .tools[0]
+      expect(selected.inputSchema).toEqual(source?.inputSchema)
+      continue
+    }
     expect(tool.inputSchema).toEqual(source?.inputSchema)
     expect(tool.description).toEqual(source?.description)
     expect(tool.definition.state).toBe('included')
@@ -3799,6 +3823,50 @@ it('retains the exact preparation rejection so the next call can correct it with
       new AbortController().signal
     )
   ).rejects.toThrow('Prepared artifact expired')
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('rejects scalar region references inside target arrays before reading', async () => {
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.READ_DESIGN_CONTEXT,
+        description: 'Read',
+        inputSchema: {
+          type: 'object',
+          properties: { scope: { type: 'string' }, bounds: { type: 'object' } }
+        }
+      },
+      ...basicApiContracts
+    ],
+    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    execute
+  )
+  await expect(
+    tools.call(
+      'execute_design_batch',
+      {
+        inspection: 'defer',
+        operations: [
+          {
+            name: basicActionName('deleteElements'),
+            arguments: {},
+            target: [
+              {
+                field: 'elementId',
+                query: {
+                  scope: 'region',
+                  bounds: { x: 0, y: 0, width: 1, height: 1 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      new AbortController().signal
+    )
+  ).rejects.toThrow('Region query targets require the plural elementIds field.')
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -4439,4 +4507,219 @@ describe('capture-to-review handoff', () => {
     expect(f.execute).not.toHaveBeenCalled()
     expect(f.assessVisual).not.toHaveBeenCalled()
   })
+})
+
+it('reuses each exact partial definition scope and retains its parent constraints', async () => {
+  const action = {
+    name: AiActionNames.ORGANIZE_DESIGN,
+    description: 'Change exactly one property',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['elementId'],
+      oneOf: [{ required: ['x'] }, { required: ['y'] }],
+      properties: {
+        elementId: { type: 'string' },
+        x: { type: 'number' },
+        y: { type: 'number' }
+      }
+    }
+  }
+  const tools = createLocalOperationTools(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    vi.fn()
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    ).apis[0]
+  const selector = { names: [action.name], schemaPaths: ['/properties/x'] }
+  const first = await read(selector)
+  expect(first.schemaContext).toContainEqual(
+    expect.objectContaining({
+      path: '',
+      schema: expect.objectContaining({
+        required: ['elementId'],
+        oneOf: action.inputSchema.oneOf
+      })
+    })
+  )
+  const again = await read(selector)
+  expect(again.definition).toMatchObject({
+    state: 'previously-returned',
+    availableInResponse: false,
+    requestedCoverage: 'partial'
+  })
+  expect(again.schemaFragments).toBeUndefined()
+  const other = await read({
+    names: [action.name],
+    schemaPaths: ['/properties/y']
+  })
+  expect(other.definition.availableInResponse).toBe(true)
+  const recovered = await read(again.definition.recover.arguments)
+  expect(recovered.schemaFragments).toEqual(first.schemaFragments)
+  expect(recovered.schemaContext).toEqual(first.schemaContext)
+  const full = await read({ names: [action.name] })
+  expect(full.inputSchema).toEqual(action.inputSchema)
+})
+
+it('pages broad category discovery and gives registry candidates for an unknown operation', async () => {
+  const tools = createLocalOperationTools(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    vi.fn()
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const inventory = await read({})
+  const category = [...inventory.categories].sort(
+    (a, b) => b.count - a.count
+  )[0]
+  let page = await read({ category: category.category })
+  expect(page.apis.length).toBeLessThanOrEqual(16)
+  const names: string[] = []
+  while (true) {
+    names.push(...page.apis.map((api) => api.name))
+    if (page.complete) break
+    expect(page.next.arguments.offset).toBe(names.length)
+    page = await read(page.next.arguments)
+  }
+  expect(new Set(names).size).toBe(category.count)
+  const missing = await read({ operation: 'fill.updateUnknownField' })
+  expect(missing.apis).toEqual([])
+  expect(missing.missingOperations).toEqual(['fill.updateUnknownField'])
+  expect(missing.candidates.length).toBeGreaterThan(0)
+  expect(missing.candidates.length).toBeLessThanOrEqual(6)
+  for (const candidate of missing.candidates)
+    expect(
+      basicApiContracts.some((api) => api.operation === candidate.operation)
+    ).toBe(true)
+})
+
+describe('registered union target admission', () => {
+  it('binds known artifact IDs through the real context union without exporting identities', () => {
+    const definition = createDocumentContextAction()
+    const resolve = vi.fn(() => ['window-a', 'window-b'])
+    const actions = prepareOperationBatch(
+      [
+        {
+          name: definition.name,
+          arguments: { scope: 'ids', fields: ['x'], delivery: 'reference' },
+          target: { field: 'elementIds', artifactId: 'tower', keys: ['a', 'b'] }
+        }
+      ],
+      [definition],
+      resolve
+    )
+    expect(actions[0].arguments).toEqual({
+      scope: 'ids',
+      fields: ['x'],
+      delivery: 'reference',
+      elementIds: ['window-a', 'window-b']
+    })
+    expect(resolve).toHaveBeenCalledTimes(1)
+  })
+  it('rejects a target in an incompatible retained snapshot branch before resolution', () => {
+    const definition = createDocumentContextAction()
+    const resolve = vi.fn(() => ['window-a'])
+    expect(() =>
+      prepareOperationBatch(
+        [
+          {
+            name: definition.name,
+            arguments: { scope: 'snapshot', snapshotId: 'saved' },
+            target: { field: 'elementIds', artifactId: 'tower' }
+          }
+        ],
+        [definition],
+        resolve
+      )
+    ).toThrow(/unambiguous/)
+    expect(resolve).not.toHaveBeenCalled()
+  })
+})
+
+it('binds multiple retained target sets to exact nested mapping query slots before complete admission', () => {
+  const registered = [
+    {
+      name: 'mapping-contract',
+      description: 'Mapping contract',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['mappings'],
+        properties: {
+          mappings: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['query'],
+              properties: {
+                query: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['scope', 'elementIds'],
+                  properties: {
+                    scope: { const: 'ids' },
+                    elementIds: { type: 'array', items: { type: 'string' } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+  const resolve = vi.fn((reference: unknown) => [
+    (reference as { targetSetId: string }).targetSetId
+  ])
+  const operations = [
+    {
+      name: 'mapping-contract',
+      arguments: {
+        mappings: [{ query: { scope: 'ids' } }, { query: { scope: 'ids' } }]
+      },
+      target: [
+        {
+          field: 'elementIds',
+          path: ['mappings', 0, 'query', 'elementIds'],
+          artifactId: 'a',
+          targetSetId: 'one'
+        },
+        {
+          field: 'elementIds',
+          path: ['mappings', 1, 'query', 'elementIds'],
+          artifactId: 'a',
+          targetSetId: 'two'
+        }
+      ]
+    }
+  ]
+  const prepared = prepareOperationBatch(operations, registered, resolve)
+  expect(prepared[0].arguments).toEqual({
+    mappings: [
+      { query: { scope: 'ids', elementIds: ['one'] } },
+      { query: { scope: 'ids', elementIds: ['two'] } }
+    ]
+  })
+  expect(resolve).toHaveBeenCalledTimes(2)
+  expect(operations[0].arguments.mappings[0].query).toEqual({ scope: 'ids' })
+  operations[0].target[1].path[1] = 3
+  expect(() => prepareOperationBatch(operations, registered, resolve)).toThrow(
+    /path|slot/i
+  )
 })

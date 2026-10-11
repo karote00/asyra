@@ -1,3 +1,7 @@
+import {
+  persistenceSpan,
+  type DocumentPersistenceObservation
+} from './document-persistence-observation'
 import type {
   CanonicalChange,
   AppDocumentData,
@@ -402,9 +406,16 @@ const applyElementRemoval = (
 
 export const applyCanonicalChangesToDocument = (
   document: AppDocumentData,
-  changes: readonly CanonicalChange[]
+  changes: readonly CanonicalChange[],
+  observation?: DocumentPersistenceObservation
 ): AppDocumentData => {
-  const working = createWorkingDocument(document)
+  const endPreparation = persistenceSpan(observation, 'working-map-preparation')
+  let working: AppDocumentData
+  try {
+    working = createWorkingDocument(document)
+  } finally {
+    endPreparation()
+  }
   for (const change of changes) {
     switch (change.kind) {
       case 'property-components':

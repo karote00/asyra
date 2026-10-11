@@ -74,13 +74,21 @@ export const createAiTransactionRunner = (
     ): Promise<T> => {
       let group: HistoryGroupHandle | undefined
       let accepting = true
+      let settlementUnknown = false
       const runMutation: AiMutationExecutor = (mutate) =>
         atIdleBoundary(
           apis,
           () => {
             if (!accepting) throw new Error('The AI mutation scope has closed.')
             group ??= apis.startHistoryGroup()
-            return apis.updateHistoryGroup(group, mutate)
+            const stop = apis.subscribeToTransactionStatus((status) => {
+              if (status.status === 'rollback-failed') settlementUnknown = true
+            })
+            try {
+              return apis.updateHistoryGroup(group, mutate)
+            } finally {
+              stop()
+            }
           },
           request?.signal
         )
@@ -116,11 +124,13 @@ export const createAiTransactionRunner = (
       } catch (error) {
         throw new AiTransactionSettlementError(error, 'unknown')
       }
-      if (failed)
+      if (failed) {
+        const status = committed ? 'committed' : 'rolled-back'
         throw new AiTransactionSettlementError(
           cause,
-          committed ? 'committed' : 'rolled-back'
+          settlementUnknown ? 'unknown' : status
         )
+      }
       return value
     }
   })

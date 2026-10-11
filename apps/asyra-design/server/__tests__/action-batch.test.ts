@@ -462,3 +462,116 @@ it('delivers a real browser failure through HTTP before closing the execution st
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+it('preserves activity provenance and order through the HTTP progress handoff', async () => {
+  const { createServerActionBatchProvider } =
+    await import('../../src/ai/server-action-batch-provider')
+  const events = [
+    {
+      tool: 'execute_design_batch',
+      status: 'running' as const,
+      message: 'Adding windows',
+      activity: { kind: 'work' as const, callId: 'draw-1', sequence: 1 }
+    },
+    {
+      tool: 'prepare_design',
+      status: 'running' as const,
+      message: 'Preparing the design',
+      activity: { kind: 'system' as const, callId: 'prepare-2', sequence: 2 }
+    }
+  ]
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (_input, options) => {
+      for (const event of events) options.onProgress?.(event)
+      return { batchId: 'final', actions: [] }
+    }
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => response.end())
+  })
+  let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+  try {
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    provider = createServerActionBatchProvider({
+      fetch: (async (url, init) =>
+        fetch(origin + String(url), {
+          ...init,
+          headers: { ...init.headers, origin }
+        })) as never
+    })
+    const received: unknown[] = []
+    await provider.requestActionBatch(
+      { intent: 'Draw', context: {}, actions: [], attempt: 1 },
+      {
+        signal: new AbortController().signal,
+        onProgress: (event) => {
+          received.push(event)
+        }
+      }
+    )
+    expect(received).toEqual(events)
+  } finally {
+    provider?.dispose()
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})
+
+it('accepts independently addressed final request records and preserves idempotent acknowledgements', async () => {
+  const { AI_EXECUTION_RECORD_ENDPOINT } =
+    await import('../../src/ai/action-batch-endpoint')
+  const records: unknown[] = []
+  const flush = vi.fn(async () => ({ status: 'saved' as const, path: null }))
+  const requestModelActionBatch = vi.fn()
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch,
+    createRecordingSink: () => ({
+      write: (record) => {
+        records.push(record)
+      },
+      flush
+    })
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => {
+      response.statusCode = 404
+      response.end()
+    })
+  })
+  try {
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}${AI_EXECUTION_RECORD_ENDPOINT}`
+    const send = async (body: unknown, origin?: string) =>
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(origin ? { origin } : {})
+        },
+        body: JSON.stringify(body)
+      })
+    const start = {
+      event: 'ai_request_started',
+      schemaVersion: 2,
+      requestId: 'root',
+      sequence: 0
+    }
+    const end = {
+      event: 'ai_request_usage',
+      schemaVersion: 2,
+      requestId: 'root',
+      sequence: 1
+    }
+    expect(await (await send([start])).json()).toEqual({ complete: false })
+    expect(await (await send([end])).json()).toEqual({ complete: true })
+    expect(await (await send([end])).json()).toEqual({ complete: true })
+    expect((await send([start], 'https://foreign.example')).status).toBe(403)
+    expect(records).toEqual([start, end])
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(requestModelActionBatch).not.toHaveBeenCalled()
+  } finally {
+    await middleware.dispose()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})

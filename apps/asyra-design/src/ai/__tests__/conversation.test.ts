@@ -1,3 +1,4 @@
+import { projectAiActivity } from '../presentation'
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiConversationError,
@@ -296,6 +297,7 @@ describe('Asyra Design AI conversation controller', () => {
         attachments: [
           {
             dataUrl: 'data:text/plain;base64,bm90LWltYWdl',
+            // @ts-expect-error Deliberately invalid wire input must be rejected at runtime.
             mediaType: 'text/plain',
             name: 'notes.txt',
             size: 9
@@ -831,7 +833,7 @@ it('guards navigation during work and keeps navigation snapshots stable during p
   const task = controller.submit('Draw a scene')
   const snapshot = controller.getNavigationSnapshot(),
     calls = listener.mock.calls.length
-  progress?.({ stage: 'requesting', status: 'running' } as never)
+  progress?.({ phase: 'provider', attempt: 1, summary: 'Requesting actions' })
   expect(controller.getNavigationSnapshot()).toBe(snapshot)
   expect(listener).toHaveBeenCalledTimes(calls)
   expect(() => controller.newConversation()).toThrow()
@@ -841,4 +843,53 @@ it('guards navigation during work and keeps navigation snapshots stable during p
   expect(controller.getNavigationSnapshot().busy).toBe(false)
   await controller.dispose()
   expect(() => controller.newConversation()).toThrow()
+})
+
+it('uses the same lifecycle decisions for recorded progress and the visible turn', async () => {
+  const feature = createFeature(async ({ progressObserver }) => {
+    const work = {
+      phase: 'provider' as const,
+      attempt: 1,
+      summary: 'Working',
+      message: 'Adding windows',
+      activity: {
+        kind: 'work' as const,
+        callId: 'windows',
+        sequence: 1,
+        phase: 'provider' as const
+      }
+    }
+    expect(progressObserver(work)).toMatchObject({
+      reason: 'scoped-owner-phase'
+    })
+    expect(
+      progressObserver({
+        phase: 'settlement',
+        attempt: 1,
+        summary: 'Saving the drawing'
+      })
+    ).toMatchObject({ reason: 'lifecycle-control' })
+    expect(
+      progressObserver({ ...work, activity: { ...work.activity, sequence: 2 } })
+    ).toMatchObject({
+      status: 'rejected',
+      reason: 'illegal-lifecycle-transition'
+    })
+    const active = controller.getSnapshot().activeTurn
+    if (!active) throw new Error('Expected an active turn before settlement')
+    expect(projectAiActivity(active.progress).current.label).toBe(
+      'Saving the drawing'
+    )
+    return executed({ status: 'complete' })
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit('Draw windows')
+  const turn = controller.getSnapshot().settledTurns[0]
+  expect(
+    projectAiActivity(turn.progress, { outcome: turn.outcome }).current.label
+  ).toBe('Finished')
+  await controller.dispose()
 })

@@ -1,3 +1,4 @@
+import { MutationRecoveryError } from '@asyra/utils'
 import type {
   ComputedAttrs,
   ComputedDataPatch,
@@ -66,6 +67,7 @@ import componentRegistry from './component-registry.js'
 import { createElement, createWorkspace, isGroupEntity } from './entity-data.js'
 import type Element from './components/element.js'
 import type Workspace from './components/workspace.js'
+import Group from './components/group.js'
 import type {
   PreparedCanonicalElementInsertion,
   CanonicalElementInsertionRequest,
@@ -4596,18 +4598,13 @@ class SceneTree {
       )
     }
 
-    const targetChildren = target.get('children')
-    if (!Array.isArray(targetChildren)) {
-      throw new Error(
-        '[SceneTree] Element batch requires an ordered parent child list'
-      )
-    }
-    const insertionIndex = index > -1 ? index : targetChildren.length
+    const childCount = (target as Group).getCanonicalChildCount()
+    const insertionIndex = index > -1 ? index : childCount
     if (
       !Number.isInteger(index) ||
       index < -1 ||
       insertionIndex < 0 ||
-      insertionIndex > targetChildren.length
+      insertionIndex > childCount
     ) {
       throw new Error('[SceneTree] Element batch index is outside parent order')
     }
@@ -4708,7 +4705,6 @@ class SceneTree {
       tombstones,
       preparedOrdinaryProperties
     } = preflight
-    const originalChildren = [...target.get('children')]
     const elements: ElementInstanceTypes[] = []
     const operationChangeStart = this.changes.length
     const canonicalHandoffState = createCanonicalBatchHandoffState()
@@ -4795,28 +4791,40 @@ class SceneTree {
         this.cleanChanges()
         throw error
       }
-      rollbackPreparedProperties?.()
+      const recoveryFailures: unknown[] = []
+      const recover = (operation: () => void) => {
+        try {
+          operation()
+        } catch (failure) {
+          recoveryFailures.push(failure)
+        }
+      }
+      recover(() => rollbackPreparedProperties?.())
       if (parentMembershipMayHaveChanged) {
-        workspace.replaceBatchParentChildren(target, originalChildren)
+        recover(() =>
+          (target as Group).removeChildrenFromCanonicalBatch(sourceIds)
+        )
       }
       const activeElements = elements.filter(
         (element) => this._elements.get(element.get('id')) === element
       )
-      if (activeElements.length > 0) {
-        this.removeElementsFromCanonicalMap(activeElements)
-      }
-      elements.forEach((element) => {
-        disposeElementComputed(element)
+      if (activeElements.length > 0)
+        recover(() => this.removeElementsFromCanonicalMap(activeElements))
+      elements.forEach((element) =>
+        recover(() => disposeElementComputed(element))
+      )
+      sourceIds.forEach((sourceId) =>
+        recover(() => {
+          const tombstone = tombstones.get(sourceId)
+          if (tombstone) this._deletedMap.set(sourceId, tombstone)
+          else this._deletedMap.delete(sourceId)
+        })
+      )
+      recover(() => {
+        this.changes.splice(operationChangeStart)
       })
-      sourceIds.forEach((sourceId) => {
-        const tombstone = tombstones.get(sourceId)
-        if (tombstone) {
-          this._deletedMap.set(sourceId, tombstone)
-        } else {
-          this._deletedMap.delete(sourceId)
-        }
-      })
-      this.changes.splice(operationChangeStart)
+      if (recoveryFailures.length)
+        throw new MutationRecoveryError(error, recoveryFailures)
       throw error
     }
   }

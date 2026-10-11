@@ -1,3 +1,4 @@
+import { MutationRecoveryError } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import { Factory } from '@asyra/factory'
 import { EventTypes, type AllEvent } from '@asyra/reactive-events'
@@ -43,6 +44,20 @@ const setup = () => {
 }
 
 describe('Design invocation history groups', () => {
+  it('reports unknown when a canonical owner cannot verify pre-handoff recovery', async () => {
+    const { runner } = setup()
+    await expect(
+      runner.run('draw', async (mutate) => {
+        if (!mutate) throw new Error('Expected mutation executor')
+        return mutate(() => {
+          throw new MutationRecoveryError(new Error('primary'), [
+            new Error('cleanup')
+          ])
+        })
+      })
+    ).rejects.toMatchObject({ status: 'unknown' })
+  })
+
   it('publishes each member and permits independent user Undo before sealing one AI entry', async () => {
     const { apis, values, write, runner } = setup()
     const captures = vi.fn()

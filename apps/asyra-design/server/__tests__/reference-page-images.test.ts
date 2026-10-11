@@ -264,3 +264,144 @@ it('reads an ImageObject contentUrl relationship as data without executing scrip
   expect(result.imageUrl).toBe('https://publisher.example/original.jpg')
   expect(download).toHaveBeenCalledOnce()
 })
+
+it('returns gallery alternatives beside a generic representative without fetching all candidates', async () => {
+  const { tools, download } = await fixture(
+    '<meta property="og:image" content="/logo.png"><a href="/building-full.png"><img src="/building-preview.png"></a>'
+  )
+  const result = JSON.parse(
+    await tools.call('import_reference_image', { sourceUrl }, signal())
+  )
+  expect(result.pageAcquisition.candidates).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        imageUrl: 'https://publisher.example/logo.png',
+        representative: true
+      }),
+      expect.objectContaining({
+        imageUrl: 'https://publisher.example/building-full.png',
+        kind: 'linked-image',
+        representative: false
+      })
+    ])
+  )
+  expect(download).toHaveBeenCalledOnce()
+  const selected = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      { sourceUrl, imageUrl: 'https://publisher.example/building-full.png' },
+      signal()
+    )
+  )
+  expect(selected.available).toBe(true)
+  expect(download).toHaveBeenCalledTimes(2)
+})
+
+it('pages candidate discovery while reusing the already selected image bytes', async () => {
+  const gallery = Array.from(
+    { length: 40 },
+    (_, i) => `<a href="/photo-${i}.png"><img src="/preview-${i}.png"></a>`
+  ).join('')
+  const { tools, download, page } = await fixture(
+    '<meta property="og:image" content="/logo.png">' + gallery
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(tools, tools.definitions[0], args, signal())).text
+    )
+  let result = await read({ sourceUrl })
+  const urls: string[] = []
+  while (true) {
+    expect(result.pageAcquisition.candidates.length).toBeLessThanOrEqual(16)
+    urls.push(
+      ...result.pageAcquisition.candidates.map(
+        (candidate) => candidate.imageUrl
+      )
+    )
+    if (result.pageAcquisition.complete) break
+    result = await read(result.pageAcquisition.next.arguments)
+  }
+  expect(new Set(urls).size).toBe(41)
+  expect(download).toHaveBeenCalledOnce()
+  expect(page).toHaveBeenCalledOnce()
+})
+
+it('continues a failed representative page inventory without retrying acquisition', async () => {
+  const page = vi.fn(async () => ({
+    url: 'https://example.com/project',
+    response: new Response(
+      '<meta property="og:image" content="/broken.png">' +
+        Array.from(
+          { length: 30 },
+          (_, i) =>
+            `<a href="/gallery-${i}.jpg"><img src="/preview-${i}.jpg"></a>`
+        ).join(''),
+      { headers: { 'content-type': 'text/html' } }
+    )
+  }))
+  const download = vi.fn(
+    async () =>
+      new Response('invalid', { headers: { 'content-type': 'image/png' } })
+  )
+  const tools = createLocalReferenceTools(vi.fn(), download, {}, page)
+  const call = async (args: unknown) =>
+    JSON.parse(
+      await tools.call(
+        'import_reference_image',
+        args,
+        new AbortController().signal
+      )
+    )
+  const first = await call({ sourceUrl: 'https://example.com/project' })
+  expect(first.available).toBe(false)
+  expect(first.pageAcquisition.complete).toBe(false)
+  const next = await call(first.pageAcquisition.next.arguments)
+  expect(next.pageAcquisition.offset).toBe(16)
+  expect(page).toHaveBeenCalledOnce()
+  expect(download).toHaveBeenCalledOnce()
+})
+
+it.each([true, false])(
+  'reuses the explicitly selected gallery asset after representative success=%s',
+  async (representativeAvailable) => {
+    const { tools, download, page, bytes } = await fixture(
+      '<meta property="og:image" content="/logo.png">' +
+        Array.from(
+          { length: 25 },
+          (_, i) =>
+            `<a href="/gallery-${i}.png"><img src="/preview-${i}.png"></a>`
+        ).join('')
+    )
+    if (!representativeAvailable)
+      download.mockRejectedValueOnce(new Error('Representative unavailable'))
+    const call = async (args: unknown) =>
+      JSON.parse(await tools.call('import_reference_image', args, signal()))
+    const first = await call({ sourceUrl })
+    expect(first.available).toBe(representativeAvailable)
+    // Distinct pixels ensure that attachment identity cannot hide wrong URL reuse.
+    const selectedBytes = await sharp(bytes).negate().png().toBuffer()
+    download.mockImplementation(
+      async () =>
+        new Response(selectedBytes, {
+          headers: { 'content-type': 'image/png' }
+        })
+    )
+    const selected = await call({
+      sourceUrl,
+      imageUrl: 'https://publisher.example/gallery-0.png'
+    })
+    expect(selected.available).toBe(true)
+    const next = await call(first.pageAcquisition.next.arguments)
+    const repeat = await call({ sourceUrl })
+    for (const result of [next, repeat]) {
+      expect(result).toMatchObject({
+        available: true,
+        imageUrl: selected.imageUrl,
+        referenceId: selected.referenceId,
+        attachmentIndex: selected.attachmentIndex
+      })
+    }
+    expect(page).toHaveBeenCalledOnce()
+    expect(download).toHaveBeenCalledTimes(2)
+  }
+)
