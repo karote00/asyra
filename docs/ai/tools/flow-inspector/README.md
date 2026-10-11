@@ -3,6 +3,20 @@
 This folder owns documentation for the project-owned Flow Inspector tool
 family.
 
+## Current Product Direction
+
+The [roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md) and
+[plan index](PLANS.md) were aligned on 2026-10-11 around failure localization:
+existing test results lead humans and AI directly to recorded nodes, relevant
+implementation locations and original failure evidence. New command buttons
+and comment blocks are optional later work. Expanding task dispatch, agent
+execution, delivery management or team operations is outside the current mainline.
+
+This is a planning direction, not a claim of universal test ingestion or mapping
+coverage. The development workflow and implemented contracts below remain in
+force; they do not make the withdrawn roadmap ambitions prerequisites for
+completing the localization milestone.
+
 ## Role in Plan-Driven Development
 
 Flow Inspector supports developing a plan through an explicit flow contract:

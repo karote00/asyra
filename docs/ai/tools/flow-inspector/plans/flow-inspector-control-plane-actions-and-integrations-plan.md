@@ -1,238 +1,88 @@
-# Flow Inspector Control Plane Agent Execution and Integrations Plan
+# Flow Inspector Optional Node Interactions Plan
 
 ## Status and Objective
 
-The bounded deterministic local execution scope is completed in the
-[local closeout record](completed/flow-inspector-phase-5-local-execution-closeout.md).
-The [Sol local integration record](completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
-closes the selected macOS provider trial. Full Phase 5 is not closed. Offline
-contract tests remain separate from live model evidence; supported limits and
-remote uncertainty rules remain in
-[Local Agent Execution](../AGENT_EXECUTION.md#real-provider-contract---active-implementation).
-Phase 5 local isolated execution was activated by the user on 2026-09-08 under
-[Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
-deferred; the original entry criteria and full DoD below are retained for the
-protected integration milestone. The bounded single-user GitHub review slice is activated on 2026-09-09 under
-[PR Review](../PR_REVIEW.md); the remaining Phase 6 scope stays deferred. The existing filename remains stable. This
-plan extends an implemented action, evidence, and CI foundation rather than
-requiring its own future agent controls to exist at entry.
+Re-scoped on 2026-10-11. After the
+[failure-localization milestone](flow-inspector-verification-coverage-expansion-plan.md)
+is proven, optionally reduce actions needed at an already located node through
+command buttons and comment blocks. The filename remains stable for existing
+links. This is not an agent execution, task planning or delivery-management plan.
 
-Enable a human to delegate a concrete step to an AI agent with enforceable
-scope and resource limits, observable progress, and trustworthy delivery.
-Extend the same board to small-team work and selected ticket/PR operations.
-The [roadmap](flow-inspector-workflow-control-plane-roadmap.md) owns risk,
-contract, versioning, and open-source product direction.
+Command buttons and comments are deferred, not activated by this document.
+Existing local execution and GitHub review features remain supported only within
+[their execution contract](../AGENT_EXECUTION.md) and
+[their review contract](../PR_REVIEW.md). No implementation is removed and no
+unfinished full Phase 5/6 requirement is claimed complete.
 
-## Entry Criteria and Scope
+## Prerequisites and Scope Decisions
 
-- Real behavioral conformance, negative proofs, cross-flow regression, and the
-  selected required CI aggregate have passed the preceding plan's gates.
-- UI, CLI, and API already use one typed action owner with capability checks,
-  bounded runner lifecycle, provenance, basic audit, and crash-safe ingestion.
-- Flow versions, accepted-baseline protection, mapping review, and the
-  supported regression set are operational within the declared trial scope.
-- For Phase 5, select one agent backend and its tool/process interface.
-- Before Phase 6, select the shared workspace access model and one ticket
-  provider with explicit initial operations. Those decisions do not block the
-  earlier agent proof.
-- Before agent execution, define the exact containment, usage measurement,
-  cancellation, recovery, and handoff contract, supported adversarial cases,
-  and owner implementation boundary. Unknown capabilities remain unsupported.
+The core path must already provide correct node, implementation, original failure
+reason, source/run identity and rerun context to humans and AI without these
+interactions. A button or comment must shorten that path, not require a new
+workflow or substitute for missing mappings.
 
-The Control Plane stays tool-owned and independent of product runtimes.
-Provider adapters live outside its conformance authority. Existing standing
-authorization applies within its recorded scope; this plan does not authorize
-publication, secret changes, package installation, or unrestricted tool use.
+Before each optional slice, select the supported operation, exact owner, read or
+write effects, evidence binding and permanent acceptance cases. The decisions
+below are future design inputs, not assertions of implemented capability.
 
-The slices below sequence delivery work. Activation must map each implementation
-segment to one exact Inspector owner; a slice heading is not a multi-owner
-implementation allowance.
+## Optional Command Buttons
 
-## Phase 5 - Bounded Agent Execution
+Start with a small explicitly selected node-local operation, such as rerunning
+the recorded test through the existing authorized action service or opening its
+retained evidence. Reuse existing permission, lifecycle and result handling.
+Do not accept arbitrary shell text, create tasks automatically, dispatch an AI
+repair, or bundle PR/merge/deployment into a localization action.
 
-### Slice 1 - Task admission and enforceable capabilities
+Acceptance for an activated button includes correct test/source selection,
+visible result and error, stale-context handling, duplicate invocation handling,
+permission denial without effects and unchanged failure-localization access
+when the operation is unavailable. Executing a command cannot itself establish
+successful behavior; the resulting test evidence does.
 
-Bind a task to one concrete owner step, flow version, source baseline, objective,
-allowed mutations, input/output contract, required validation, capabilities,
-budgets, and stop conditions. Read upstream and downstream contracts before
-admission. Independent steps may run concurrently only with declared resource
-and mutation-conflict rules; overlapping writes cannot rely on last-writer wins.
+## Optional Comment Blocks
 
-Integrate the selected agent through controlled tools and runners. Enforce file,
-process, network, and secret access at the actual execution boundary, and
-verify candidate writes against scope. Include path traversal, symlink escape,
-unregistered commands, and indirect process/network effects in the supported
-boundary tests. A prompt or post-run diff alone is insufficient containment.
+Select the storage owner and scope before implementation: begin with a bounded
+local node discussion, not team accounts or ticket synchronization. Define how
+comments reference a node and source/run, persist and display, and behave when
+that node or mapping changes. Decide supported edits and deletion explicitly.
 
-Bind permission to the task, actor, action, source, and current policy. Existing
-success history does not grant broader capabilities automatically. Repository,
-ticket, log, and model content cannot authorize new scope or change the gate.
-An agent may propose a contract revision, but accepting a revision that expands
-its own assignment or weakens its required proof needs the designated separate
-authority. Candidate test execution must not inherit control-plane secrets.
+Comments are user/AI annotations, separate from original test evidence and
+architecture authority. They cannot rewrite a verdict, grant permissions or
+become executable instructions merely because they appear on a node.
 
-### Slice 2 - Resource limits, progress, and stopping
+Acceptance covers persistence, attribution, correct context, stale references,
+empty/error handling and separation from authoritative failures. Shared editing,
+external notifications and additional access models require separate scope.
 
-Enforce the selected elapsed-time, tool-call, attempt, and concurrency limits.
-For token or cost limits, document the backend's measurement fidelity and
-maximum in-flight exposure. A backend with unavailable usage cannot advertise
-hard token enforcement; use an explicitly bounded supported mode or do not
-admit a task requiring that guarantee.
+## Removed Agent and Delivery Backlog
 
-Persist cumulative consumption across retries, restarts, and handoffs. Check
-admission before each operation; define bounded cancellation for active work.
-Progress records reference reviewable changes, produced artifacts, or completed
-checks. Self-reported completion and repeated equivalent edits are not proof
-of progress.
+New task admission/dispatch, provider expansion, remote reconciliation, budget
+orchestration, team responsibility assignment, ticket/PR synchronization,
+protected delivery and hosting are removed from this plan's remaining work.
+They are neither dependencies nor automatic follow-ons to buttons or comments.
+A separate user decision and plan would be needed to pursue them again.
 
-Repeated failure, stalled progress, incompatible assumptions, proposed scope
-expansion, permission revocation, or exhausted budget stops further admission.
-Replanning remains inside the task contract; a material expansion requires a
-decision from the scope owner. Do not reset a budget by creating another run.
-Human and AI work use the same conformance and delivery standard.
+Existing controls retain their safety and operational requirements when used.
+This scope revision does not weaken cancellation, unresolved remote-state
+handling, provenance or baseline acceptance in existing runtime contracts.
 
-### Slice 3 - Recovery, handoff, and accepted delivery
+## Completion and Effort
 
-Cancellation and timeout must stop or settle owned child processes. Preserve
-partial changes, evidence, failures, consumed budget, and unresolved external
-effects. Recovery must not overwrite unrelated user changes or another task's
-work. Define task-owned rollback separately from external compensation;
-uncertain external effects require reconciliation before retry.
+Each optional interaction closes against its selected cases after focused tests
+and Board review. Neither interaction blocks completion of the core product.
+The previous combined 8-14 person-week agent/team estimate is superseded and
+must not be counted as remaining localization effort. Estimate only a selected
+interaction after its bounded behavior is decided.
 
-Provide a handoff that lets a human or successor agent continue from the same
-contract, source, remaining budget, and known evidence without repeating broad
-discovery. Abandoned and failed tasks remain distinguishable from completed
-work. A resumed task revalidates changed inputs and permissions.
+## Historical Decisions and Accepted Evidence
 
-Completion invokes the preceding plan's verifier and applicable all-flow CI
-gate on the intended delivery revision. A model assertion, passing focused
-test, or finished tool call cannot mark the task delivered. Commit, push,
-release, deployment, and external communication remain separate typed actions
-with their applicable authorization and audit requirements.
+The entries below preserve the original dated wording. Pending Phase 5/6 and
+future-direction statements are historical, not the current backlog. Completed
+records remain unchanged; withdrawal of unfinished ambitions is not completion.
 
-Agent checkpoint: delegate a real bounded task, observe autonomous progress,
-reject an out-of-scope action and a behavioral regression, exercise a resource
-stop and handoff, then accept a conforming result without losing existing flow
-protection. Preserve these as formal cases plus a reproducible demonstration.
-
-## Phase 6 - Team Board, Integrations, and Open-Source Adoption
-
-### Slice 4 - Shared context and everyday lifecycle operations
-
-Extend the preceding plan's shared baseline view with the selected access model,
-responsibility assignment, and supported team operations. Managers inspect the
-goal, available capability, remaining work, blockers, and impact; developers
-inspect the concrete step and its actions. Different views must refer to the
-same contract/source version and expose last observation and stale state.
-
-Choose a small explicit ticket/PR operation set before implementation, such as
-linking a ticket, reading/updating its state, inspecting a PR and CI result,
-and requesting a supported review action. Supported operations execute from a
-card and report progress, result, and failure there. Unsupported operations may
-link out. A collection of external links cannot close the supported action DoD.
-
-Specify field ownership, inbound updates, versions, conflict policy, deleted
-tickets, and permission loss. External ticket edits may update work fields;
-they cannot silently rewrite a flow contract or turn failed verification green.
-Technical ownership and team assignment remain distinct. Do not require full
-enterprise accounts or real-time graph co-editing to prove small-team use.
-
-### Slice 5 - Reliable adapters and runtime hardening
-
-Use the existing typed action and audit boundary for adapters. Outbound work
-has durable outbox identity, deduplication, bounded retries, and reconciliation
-for uncertain completion. Incoming updates include source identity and version
-handling to avoid stale overwrite and synchronization loops. Test partial
-success, duplicate callbacks, reordered delivery, offline recovery, and crash
-after an external effect but before local acknowledgement.
-
-Resolve secrets indirectly; redact config, results, logs, and artifacts.
-Connector failure remains visible without becoming a second conformance owner.
-Required external evidence that is unavailable cannot satisfy a completion
-condition. CI ingestion already exists; this slice adds selected provider
-conveniences rather than delaying core CI correctness until now.
-
-Profile supported graph size, history volume, concurrent tasks, subscriptions,
-artifact storage, watchers, and cleanup. Fix measured bottlenecks while
-preserving truth and the preceding phases' recovery guarantees. Apply retention
-rules that preserve delivered contract and verdict history while making any
-expired detailed artifact explicit. No hidden broad test loop is acceptable.
-
-### Slice 6 - Reproducible open-source use
-
-Provide installation and a local example whose core verification requires no
-paid service. Include a controllable demonstration agent for deterministic
-boundary tests and separately exercise the selected real agent backend before
-claiming that integration supported. External credentials and provider charges,
-when applicable, are explicit optional integration requirements.
-
-Document how users define a concrete flow, connect existing behavioral tests,
-add boundary observations, run CI, and extend actions/adapters. Show successful
-work, an intentional violation, a budget stop, and a recoverable handoff.
-Explain supported guarantees and unverified boundaries in the product itself.
-
-Check the selected license, distribution, contribution instructions, dependency
-obligations, and publication scope before an explicitly authorized open-source
-release. Individuals and companies should be able to understand and extend
-the risk-control mechanisms. Payment willingness is not an acceptance gate.
-
-## Definition of Done
-
-- A real agent completes a scoped step under the same executable contract and
-  regression policy as a human; task completion is backed by actual evidence.
-- Unsupported tool paths and tested scope, filesystem, process, network, and
-  secret violations are denied before their prohibited effects occur.
-- Missing usage telemetry never produces a false hard-budget claim. Applicable
-  limits stop admission and bounded cancellation settles active owned work.
-- Retry, restart, and handoff preserve cumulative consumption; repeated failure
-  or no progress cannot create an unbounded task loop.
-- A contract/gate weakening proposal cannot authorize itself. Revoked or stale
-  capabilities cannot execute a protected action.
-- Partial work can be inspected and resumed or recovered without damaging
-  unrelated changes. External uncertainty is reconciled before replay.
-- A shared-owner regression identifies affected retained flows and prevents
-  delivery until conformance or an authorized requirement revision is proven.
-- Supported ticket/PR actions work from the card, including inbound edits,
-  conflict, deletion, permission loss, retry, and partial-failure cases.
-- Repeated callbacks and crashes do not duplicate external effects or erase
-  audit history. Secrets are absent from ordinary logs and public artifacts.
-- Manager, developer, API, and agent views agree on the selected baseline and
-  expose work progress separately from verification and delivered capability.
-- Another user can reproduce the example and its negative cases. Measured
-  supervision, rework, resource use, and maintenance effort are reported against
-  a defined baseline without requiring a commercial adoption target.
-- Performance, process cleanup, restart, and retention gates pass at the
-  explicitly supported scale. Existing static compatibility remains intact.
-
-## Exclusions and Stop Conditions
-
-Multiple agent backends, additional ticket/CI vendors, arbitrary workflow
-automation, remote runner fleets, enterprise RBAC, hosted multi-tenancy, and
-unrestricted autonomous publication require separate scope decisions.
-
-Stop the affected slice when enforcement depends only on agent obedience, an
-external tool can bypass the task boundary, resource measurement cannot support
-the promised limit, cancellation leaves uncontrolled work, scope can expand
-without its owner, missing evidence is treated as success, or an integration
-must weaken credentials, authorization, or conformance rules to operate.
-
-## Effort and Closure
-
-The roadmap provisionally allocates another 8-14 engineering person-weeks for
-this bounded agent and small-team trial. Re-estimate after Phase 3 and before
-agent activation using the chosen backend's containment, telemetry, and
-cancellation capabilities. Adapter count and per-flow behavioral work are
-separate cost drivers; full existing-flow migration is excluded.
-
-Phase 5 and Phase 6 have separate checkpoints. Close the accepted bounded
-trial without adding unselected providers or team features. Public release is
-a later explicit operation after the selected open-source readiness work.
-
-## References
-
-- [Workflow Control Plane Roadmap](flow-inspector-workflow-control-plane-roadmap.md)
-- [Contract Verification and CI Plan](flow-inspector-control-plane-evidence-and-ci-plan.md)
-- [Flow Inspector contract](../FLOW_INSPECTOR.md)
+- [Local execution](completed/flow-inspector-phase-5-local-execution-closeout.md)
+- [Sol local integration](completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+- [Bounded GitHub review](completed/flow-inspector-phase-6-github-review-closeout.md)
 
 ## Sol Local Integration Checkpoint - 2026-09-08
 

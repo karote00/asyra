@@ -2,89 +2,51 @@ Never record completed plans here.
 
 # Flow Inspector Plans
 
-This file tracks active and future work for the Flow Inspector tool family.
-The current follow-up direction was revised on 2026-10-10: eliminate repeated
-failure navigation for humans and AI by connecting existing failed test results
-to recorded responsibility nodes, implementation locations and failure evidence.
-Debugging, repair planning and task dispatch are not the purpose of this follow-up.
-Historical control-plane delivery records remain unchanged.
+Direction aligned on 2026-10-11: help humans and AI move directly from a failed
+test to its recorded responsibility node, implementation location and original
+failure evidence. Eliminate repeated discovery; debugging and repair remain the
+human or AI's work. The roadmap no longer requires an agent/task/delivery system.
 
-## Planned Test Failure Localization
+## Core Mainline
 
 - [Test Failure Localization](plans/flow-inspector-verification-coverage-expansion-plan.md)
-  - Originally proposed on 2026-09-29; redirected on 2026-10-10 after the user
-    clarified the primary value as removing unnecessary discovery work.
-  - Current foundation: admitted case-to-step mappings, retained failure evidence,
-    Board failure navigation, and bounded App/CI source and result support.
-  - Priorities: connect ordinary test results to existing ownership records,
-    expose usable node/implementation/reason/rerun context to humans and AI, and
-    prove the complete App and Framework failure/recovery path.
-  - Keep unresolved failures visible. Localization identifies where to start
-    investigating; it does not claim automatic root-cause diagnosis.
-  - New command buttons and comment blocks follow this milestone. Broader
-    coverage is incremental; task orchestration is outside this follow-up.
-  - Planning only. The completed multi-PR slice remains closed; implementation
-    and repository-wide coverage are not implied.
+  owns the initial ordinary-test ingestion, mappings, usable failure context and
+  real App/Framework failure-and-recovery acceptance cases.
+- [Failure Localization Roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md)
+  owns product scope, sequencing and completion boundaries. It is not a separate
+  implementation backlog to count twice.
 
-## Deferred Follow-up
+## Supporting Coverage Expansion
 
-1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
-   - GitHub mandatory CI protection is deferred by the user on 2026-09-08 to
-     avoid disrupting concurrent projects and merges. Resume on a separate request.
-   - Remaining: independently protected verifier, issuer-bound required aggregate,
-     trusted remote transport and real GitHub refusal/recovery demonstrations.
-   - [Enforcement gap](../../../../tools/flow-inspector/control-plane/README.md#github-enforcement-gap)
-     retains the necessary setup and acceptance evidence. Local test success
-     does not establish repository-wide or mandatory delivery protection.
+- [Test Result Source Support](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
+  covers separately selected additional runners, CI producers and test sets.
+  Reuse the core result-to-node path. Receiving CI failures does not require
+  required-check configuration, a protected verifier or merge enforcement.
 
-## Pending Provider Acceptance and Future Integration
+## Optional After Core Acceptance
 
-The bounded Sol local integration is recorded in the
-[completed local integration record](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md).
-Its real-provider trial does not complete the full Phase 5/6 plan.
-The local cancellation follow-up adds bounded interruption confirmation and
-persistent investigation guidance; it does not implement remote reconciliation.
+- [Node Interactions](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
+  scopes future command buttons and comment blocks. Neither is activated or
+  required for core completion. Both must reduce actions at an already located
+  node, not introduce task planning or automatic repair.
 
-2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
-   - Remaining Phase 5: independently verifiable remote reconciliation and any
-     additional provider/resource capabilities beyond the accepted macOS Sol trial.
-     Full original protection and delivery requirements remain open.
-   - Bounded single-user GitHub PR review implementation and live acceptance
-     are recorded in the [completed review record](plans/completed/flow-inspector-phase-6-github-review-closeout.md).
-     Historical candidate CI failure remains explicit. The
-     [trusted Changeset closeout](plans/completed/flow-inspector-trusted-changeset-closeout.md)
-     records the subsequent exact candidate PR with all checks passing and closure
-     without merge; the full Phase 6 gaps remain open.
-   - Remaining Phase 6: small-team operations, ticket integration, hosting and
-     broader adoption remain unactivated.
+## Removed from the Mainline
 
-Both existing plan filenames remain stable. No schema, runtime, package,
-dependency, license, or publication change is implied by the planning revision.
+Unimplemented task decomposition/dispatch, provider expansion, remote execution
+reconciliation, agent budget orchestration, ticket/PR synchronization, delivery
+management, protected merge enforcement, team work tracking and hosting are
+withdrawn from the current backlog. They are not merely waiting to become
+mandatory later phases. Reintroduction requires a separate product decision.
 
-## Roadmap and Baseline References
+Existing functionality and its runtime contracts remain intact. Completed work
+is not reopened; unfinished historical full-phase requirements are not falsely
+marked complete. Dated records are preserved in the roadmap and supporting
+plans, with links to their accepted closeout evidence.
 
-- [Completed multi-PR development record](plans/completed/flow-inspector-multi-pr-development-and-integration-plan.md)
-  retains the bounded one-local-owner, one-repository delivery evidence and its
-  separately deferred Phase 5/6 boundaries.
-- [Phase 3 completed record](plans/completed/flow-inspector-phase-3-core-proof-closeout.md)
-  retains merged proof evidence; the living `CORE_PROOF.md` has not moved.
-- [Phase 4 local implementation record](plans/completed/flow-inspector-phase-4-local-implementation-closeout.md)
-  records the accepted local/UX boundary and the explicitly deferred CI criteria.
+## Authority and Activation
 
-- [Workflow Control Plane Roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md)
-  owns cross-phase direction, boundaries, activation decisions, and provisional
-  effort ranges. The phase plans own their delivery cases and DoD.
-- [Static Workspace 0.2.0 record](plans/completed/flow-inspector-static-workspace-0.2.0-closure-plan.md)
-  records the completed Phase 0-2 baseline; its static-only contract remains
-  unchanged.
-
-## Bounded flow target slice
-
-The local target/work admission and Board/API/CLI implementation is described in
-[the living contract](CORE_PROOF.md#flow-targets-and-work-decomposition).
-It retains pending obligations, immutable commitments and exact task links.
-Complete one-source integration assessment, explicit authorized baseline
-acceptance and captured Factory/Collaboration/UI Context runtime evidence close
-the bounded multi-PR plan. Multi-repository coordination, team operation,
-protected remote delivery and the broader Phase 5/6 work remain separately
-deferred.
+The current [Core Proof](CORE_PROOF.md), [static Inspector contract](FLOW_INSPECTOR.md),
+[local execution contract](AGENT_EXECUTION.md) and [review contract](PR_REVIEW.md)
+remain authoritative for implemented behavior. Repository development rules
+remain unchanged. The planning revision grants no implementation, remote action,
+publication or deployment authority. All existing plan filenames stay stable.
