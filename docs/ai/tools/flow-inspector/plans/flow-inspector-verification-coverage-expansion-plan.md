@@ -3,7 +3,7 @@
 ## Status and scope
 
 Proposed follow-up, originally recorded on 2026-09-29 and redirected by the
-user on 2026-10-10. This revision replaces the previous coverage-first and
+user on 2026-10-10, with roadmap alignment on 2026-10-11. This revision replaces the previous coverage-first and
 Board-task priorities. The filename remains stable for existing links.
 
 The purpose is to eliminate repeated navigation and ownership discovery after
@@ -29,9 +29,10 @@ violation; it does not prove which upstream implementation defect caused it.
 The mapped node is the investigation entry point, not a restriction that every
 fix must occur inside that node.
 
-This revision changes this plan and its `PLANS.md` entry only. It neither
-activates production implementation nor changes existing runtime, permissions,
-architecture steps, acceptance authorities, or completed delivery records.
+The original revision changed this plan and its index; the 2026-10-11 revision
+aligns the roadmap and other unfinished plans with the same objective. These
+are planning changes only: runtime, permissions, architecture steps, acceptance
+authorities and completed delivery records remain unchanged.
 Command buttons and comment blocks are deferred until this path is complete.
 
 ## Current implementation and remaining gaps
@@ -209,8 +210,17 @@ from that point remains their work.
   tests and owners at a time. The eventual goal is to account for any received
   test failure; universal runner support and complete repository mappings are
   not current capabilities or prerequisites for the first bounded delivery.
-- Mandatory CI enforcement, hosting, team operation and cross-repository
-  coordination remain deferred in their existing plans.
+- Mandatory CI enforcement, agent execution management, task dispatch, ticket/PR
+  delivery management, hosting, team operation and cross-repository coordination
+  are removed from the current mainline. They are not prerequisites or scheduled
+  follow-ons; reopening them requires a separate product decision.
+- Additional CI or runner result sources use the
+  [result-source support plan](flow-inspector-control-plane-evidence-and-ci-plan.md).
+  Receiving failures does not require merge enforcement. The
+  [node interaction plan](flow-inspector-control-plane-actions-and-integrations-plan.md)
+  owns optional buttons/comments only after core acceptance. The
+  [roadmap](flow-inspector-workflow-control-plane-roadmap.md) sequences this work
+  without duplicating its acceptance gates or effort.
 
 The [living Control Plane contract](../CORE_PROOF.md) and
 [static Inspector contract](../FLOW_INSPECTOR.md) retain current behavioral and
