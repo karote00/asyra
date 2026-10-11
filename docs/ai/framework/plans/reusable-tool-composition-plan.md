@@ -676,6 +676,61 @@ Recording execution card - Runtime `observe`:
 
 PR 1 verification and review - 2026-10-12:
 
+PR #319 follow-up execution card - Design `compose`:
+
+- Review the current registered browser/native definitions, their owner result
+  adapters and direct handoffs. Preserve the bounded PR 1 exclusions above.
+- Contract: the `compose` Inspector requires exact advertised admission and
+  preservation of acknowledged/unknown settlement at one recoverable boundary;
+  the Tool Specification separates result usability from mutation settlement.
+- Inputs are registered schemas, owner receipts and optional diagnostic evidence.
+  Output is an accurately classified receipt or recoverable failure, never replay.
+- Check empty edit properties against their declared minimum, explicit settlement
+  across browser/native wrappers and ordered parts, nested unknown receipts and
+  diagnostic exceptions. Result usability and mutation settlement remain independent;
+  incomplete parent work cannot be overwritten by successful child receipts.
+- Implementation boundary: Design tool-schema/tool-contract/local-tool-invocation,
+  local-design-workflow ordered receipt aggregation and their formal tests. No scheduling, rendering, model, recipe or
+  retained-data redesign. Existing compose routes and bypasses remain authoritative.
+- Add failing regressions before implementation. Then run owner and direct-consumer
+  tests, affected lint/type/build and current flow proof; review the bounded diff.
+  Stop for a genuine new owner or contract change outside this PR's scope.
+
+Follow-up direct-consumer and mutation-proof cards:
+
+- The compose regressions pass. Its real owner fixtures now check successful and
+  partial results against their advertised input/output contracts. This exposed
+  a missing inspection identity list on the source-changed review branch; preserve
+  that list rather than weakening the output schema.
+- The existing release consumer typecheck fails on the new required registration
+  fields (CI job 114526707578). Update only its registered `set_counter` example
+  with real contract metadata, then run the packed clean-consumer gate. This is
+  a direct consumer correction, not a release or dependency change.
+- Mutation proof: the current `mutate` Inspector owns the basic-api-cases fixture
+  and requires exact declared receipts and ordinary Undo. Add output-schema checks
+  to its existing per-API real-browser scenarios, retaining every semantic oracle
+  and cancellation assertion. No production mutation or scheduling changes.
+- Gate: all registered basic API scenarios, affected App checks, naming and current
+  flow proof. Stop if an unrelated product behavior would need changing.
+
+PR #319 follow-up verification:
+
+- Fixed declared object property-count admission, explicit settlement propagation
+  through browser/native and ordered-part boundaries, diagnostic exception isolation,
+  source-change review inspection identities and the packed-consumer registration.
+- Permanent regressions failed before each behavior fix. The final source-verified
+  scoped run passed dependency/shared checks, full Design lint/build/tests (478 AI
+  browser, 907 server, 463 other Vitest and 162 Node cases), 152 real basic-API
+  input/output scenarios within functional E2E (392 passed / 19 conditional skips),
+  collaboration (14 / 3), rendering contracts (3) and the 19-package clean consumer.
+  No flaky pass. Evidence: `tmp/local-validation/pr319-review-verified/result.json`.
+- The standalone packed-consumer fixture has no workspace selector; its exact
+  `release:consumer` gate ran explicitly alongside the affected-owner local runner.
+  Earlier canceled/failed validation records are retained, not counted as passes.
+- All 23 current flow cases passed; the source assessment is eligible. Bounded
+  review found no remaining mismatch in the reviewed contracts and direct handoffs.
+  Opaque result leaves retain the limitations in the Tool Specification.
+
 - Runtime: 202 tests passed, with affected lint/build and public export checks.
   Design: 474 AI browser tests, 885 server tests, 463 other Vitest cases and
   162 Node tests passed; eight server cases retain their explicit opt-in skips.

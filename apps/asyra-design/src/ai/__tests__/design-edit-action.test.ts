@@ -2,6 +2,21 @@ import { expect, it, vi } from 'vitest'
 import type { AiMutationExecutor } from '@asyra/ai-agent-runtime'
 vi.mock('../../common-apis/design-edit', () => ({ editDesignElement: vi.fn() }))
 import { createDesignEditAction } from '../design-edit-action'
+import { observeAiAction } from '../runtime-input'
+
+it('rejects an empty property edit before dispatch through the common boundary', async () => {
+  const edit = vi.fn()
+  const action = observeAiAction(createDesignEditAction(edit))
+  await expect(
+    action.execute({ elementId: 'target', properties: {} }, {
+      signal: new AbortController().signal
+    } as never)
+  ).rejects.toMatchObject({
+    stage: 'input',
+    message: expect.stringContaining('too few properties')
+  })
+  expect(edit).not.toHaveBeenCalled()
+})
 it('forwards targeted edits and rejects an already cancelled operation', async () => {
   const mutationCalls = vi.fn()
   const runMutation: AiMutationExecutor = async (mutate) => {

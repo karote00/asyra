@@ -476,14 +476,20 @@ export const createLocalDesignWorkflow = (
         )
         completed.push({ key: part.key, ...receipt })
         const outcome = localToolOutcome(receipt)
-        if (outcome.status !== 'success')
+        if (outcome.status !== 'success') {
+          let status =
+            index || outcome.status === 'partial' ? 'partial' : 'failed'
+          if (outcome.status === 'unknown') status = 'unknown'
+          let settlement = index ? 'partial' : outcome.settlement
+          if (outcome.settlement === 'unknown') settlement = 'unknown'
           return JSON.stringify({
-            status:
-              index || outcome.status === 'partial' ? 'partial' : 'failed',
+            status,
+            settlement,
             parts: completed,
             failedPart: part.key,
             remainingParts: parts.slice(index + 1).map((entry) => entry.key)
           })
+        }
         const identity = receipt.actionResults?.find(
           (entry: { actionName: string }) =>
             entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN

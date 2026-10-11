@@ -98,6 +98,11 @@ export const operationInputIssue = (
     if (record(v)) {
       const props = record(s.properties) ? s.properties : {}
       const errors: string[] = [...branchErrors]
+      const count = Object.keys(v).length
+      if (typeof s.minProperties === 'number' && count < s.minProperties)
+        errors.push(`${path}: too few properties`)
+      if (typeof s.maxProperties === 'number' && count > s.maxProperties)
+        errors.push(`${path}: too many properties`)
       if (Array.isArray(s.required))
         for (const k of s.required)
           if (typeof k === 'string' && !Object.hasOwn(v, k))

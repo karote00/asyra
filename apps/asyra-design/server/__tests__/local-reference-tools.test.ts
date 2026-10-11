@@ -1,6 +1,9 @@
 import { expect, it, vi } from 'vitest'
 import sharp from 'sharp'
-import { createLocalReferenceTools } from '../local-reference-tools'
+import { createLocalReferenceTools as createOwner } from '../local-reference-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalReferenceTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { createLocalImageTools } from '../local-image-tools'
 import { localToolContent } from '../local-operation-tools'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
@@ -248,7 +251,7 @@ it('imports originals larger than four megapixels without resizing', async () =>
   })
     .png()
     .toBuffer()
-  const add = vi.fn()
+  const add = vi.fn((_image: { dataUrl: string }) => 0)
   const tools = createLocalReferenceTools(
     add,
     async () => new Response(png, { headers: { 'content-type': 'image/png' } })

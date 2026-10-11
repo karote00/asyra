@@ -7,7 +7,10 @@ import { invokeLocalTool } from '../local-tool-invocation'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
 import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
-import { createLocalDesignTools } from '../local-design-tools'
+import { createLocalDesignTools as createOwner } from '../local-design-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalDesignTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import {
   createDesignPreparationSession,
   prepareDesign,

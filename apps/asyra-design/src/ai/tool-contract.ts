@@ -75,10 +75,18 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
       }
     )
   const result = value as Record<string, unknown>
+  const reportedSettlement = [
+    'not-started',
+    'completed',
+    'partial',
+    'unknown'
+  ].includes(String(result.settlement))
+    ? (result.settlement as AiToolOutcome['settlement'])
+    : undefined
   if (result.status === 'unknown')
-    return { status: 'unknown', settlement: 'unknown' }
+    return { status: 'unknown', settlement: reportedSettlement ?? 'unknown' }
   if (result.status === 'partial' || result.complete === false)
-    return { status: 'partial', settlement: 'partial' }
+    return { status: 'partial', settlement: reportedSettlement ?? 'partial' }
   if (
     result.status === 'failed' ||
     result.available === false ||
@@ -86,13 +94,9 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
   )
     return {
       status: 'failed',
-      settlement: ['not-started', 'completed', 'partial', 'unknown'].includes(
-        String(result.settlement)
-      )
-        ? (result.settlement as AiToolOutcome['settlement'])
-        : 'unknown'
+      settlement: reportedSettlement ?? 'unknown'
     }
-  return { status: 'success', settlement: 'completed' }
+  return { status: 'success', settlement: reportedSettlement ?? 'completed' }
 }
 
 /** Canonical effect metadata shared by browser definitions and native wrappers. */

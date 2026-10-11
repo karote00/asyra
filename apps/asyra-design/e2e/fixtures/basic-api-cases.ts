@@ -1019,6 +1019,8 @@ export const createBasicApiCases = async () => {
         name,
         (runMutation) => action.execute(scenario.input, { signal, runMutation })
       )) as Value
+      const outputIssue = operationInputIssue(result, action.outputSchema)
+      assert(!outputIssue, `${name} output: ${outputIssue}`)
       assert(
         result.status !== 'failed' && result.status !== 'partial',
         `Unusable receipt: ${JSON.stringify(result)}`

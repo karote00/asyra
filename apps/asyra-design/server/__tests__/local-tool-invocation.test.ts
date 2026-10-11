@@ -24,6 +24,92 @@ const definition = {
   inputSchema: { type: 'object', additionalProperties: false }
 }
 
+it('preserves an unknown child result and settlement through the native wrapper', async () => {
+  const result = {
+    actionResults: [
+      {
+        actionId: 'one',
+        actionName: 'edit',
+        result: {
+          status: 'unknown',
+          toolOutcome: { status: 'unknown', settlement: 'unknown' }
+        }
+      }
+    ],
+    batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] }
+  }
+  const call = vi.fn(async () => JSON.stringify(result))
+  const reply = await invokeLocalTool({ call }, definition, {}, signal())
+  expect(JSON.parse(reply.text)).toMatchObject({
+    ...result,
+    toolOutcome: { status: 'unknown', settlement: 'unknown' }
+  })
+  expect(reply.success).toBe(false)
+  expect(call).toHaveBeenCalledOnce()
+})
+
+it('retains owner evidence when optional execution observation throws', async () => {
+  const result = {
+    settlement: 'completed',
+    actionResults: [
+      { actionId: 'one', actionName: 'edit', result: { status: 'complete' } }
+    ]
+  }
+  const call = vi.fn(async () => JSON.stringify(result))
+  const reply = await invokeLocalTool(
+    { call, resultIssue: () => 'Required output identity is missing' },
+    definition,
+    {},
+    signal(),
+    () => {
+      throw new Error('Observer unavailable')
+    }
+  )
+  expect(JSON.parse(reply.text)).toMatchObject({
+    code: 'TOOL_RESULT_INVALID',
+    settlement: 'completed',
+    executionResult: result
+  })
+  expect(call).toHaveBeenCalledOnce()
+})
+
+it('does not let successful child receipts erase incomplete parent settlement', () => {
+  expect(
+    localToolOutcome({
+      status: 'partial',
+      actionResults: [{ result: { status: 'complete' } }]
+    })
+  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+})
+
+it('includes compact successful acknowledgements when combining child settlements', () => {
+  expect(
+    localToolOutcome({
+      batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] },
+      actionResults: [
+        { result: { status: 'failed', settlement: 'not-started' } }
+      ]
+    })
+  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+})
+
+it.each(
+  (['success', 'partial', 'failed', 'unknown'] as const).flatMap((status) =>
+    (['not-started', 'completed', 'partial', 'unknown'] as const).map(
+      (settlement) => ({ status, settlement })
+    )
+  )
+)(
+  'preserves a single normalized child $status/$settlement independently',
+  (outcome) => {
+    expect(
+      localToolOutcome({
+        actionResults: [{ result: { toolOutcome: outcome } }]
+      })
+    ).toMatchObject(outcome)
+  }
+)
+
 it('preflights every advertised App tool family before its owner executes', async () => {
   const actions = [
     ...Object.values(AiActionNames).map((name) => ({

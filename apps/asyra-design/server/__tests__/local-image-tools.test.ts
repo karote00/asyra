@@ -1,6 +1,9 @@
 import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalImageTools } from '../local-image-tools'
+import { createLocalImageTools as createOwner } from '../local-image-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalImageTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { AiImageToolIds } from '../ai-domain-prompt'
 import * as analysis from '../local-vector-component-analysis'
 

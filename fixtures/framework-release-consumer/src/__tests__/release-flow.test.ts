@@ -262,6 +262,20 @@ describe.sequential('packed framework public release flow', () => {
         {
           name: 'set_counter',
           description: 'Set the collaborating counter.',
+          revision: 1,
+          effect: 'mutation',
+          resources: ['document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
+          outputSchema: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['value'],
+            properties: { value: { type: 'number' } }
+          },
           inputSchema: {
             type: 'object',
             additionalProperties: false,

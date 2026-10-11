@@ -7,7 +7,10 @@ import {
 } from '../operation-input-schema'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalDesignWorkflow } from '../local-design-workflow'
+import { createLocalDesignWorkflow as createOwner } from '../local-design-workflow'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalDesignWorkflow = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import {
@@ -79,6 +82,40 @@ const setup = () => {
     execute
   }
 }
+
+it('preserves unknown application settlement across an ordered part boundary without replay', async () => {
+  const { workflow, execute } = setup()
+  execute.mockResolvedValueOnce({
+    context: {},
+    actionResults: [
+      {
+        actionId: 'first',
+        actionName: AiActionNames.APPLY_PREPARED_DESIGN,
+        result: { status: 'complete', compositionId: 'first-root' }
+      }
+    ]
+  })
+  execute.mockRejectedValueOnce(new Error('Application acknowledgement lost'))
+  const reply = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    {
+      parts: [
+        { key: 'first', draft },
+        { key: 'second', draft },
+        { key: 'third', draft }
+      ]
+    },
+    new AbortController().signal
+  )
+  expect(JSON.parse(reply.text)).toMatchObject({
+    status: 'partial',
+    failedPart: 'second',
+    remainingParts: ['third'],
+    toolOutcome: { status: 'partial', settlement: 'unknown' }
+  })
+  expect(execute).toHaveBeenCalledTimes(2)
+})
 
 it('executes the advertised ordered input example without hidden envelope fields', async () => {
   const { workflow, compile, execute } = setup()

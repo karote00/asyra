@@ -1888,6 +1888,7 @@ export const createLocalOperationTools = (
               phase,
               accepted: false,
               readyForDetail: false,
+              inspectionIds,
               evidenceValidation: latestEvidenceValidation,
               message,
               independentAssessment: independent,

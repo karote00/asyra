@@ -4,6 +4,29 @@ import { describe, expect, it, vi } from 'vitest'
 import { AiActionNames } from '../actions'
 import { createAiRuntimeInput } from '../runtime-input'
 
+it.each([
+  ['partial', 'unknown'],
+  ['partial', 'completed'],
+  ['unknown', 'completed']
+] as const)(
+  'preserves explicit %s result settlement %s at the browser boundary',
+  async (status, settlement) => {
+    const { observeAiAction } = await import('../runtime-input')
+    const execute = vi.fn(async () => ({ status, settlement }))
+    const action = observeAiAction({
+      ...toolSemantics({ type: 'object' }, 'mutation', ['document']),
+      name: 'edit',
+      description: 'Edit a target',
+      inputSchema: { type: 'object' },
+      execute
+    })
+    await expect(
+      action.execute({}, { signal: new AbortController().signal })
+    ).resolves.toMatchObject({ toolOutcome: { status, settlement } })
+    expect(execute).toHaveBeenCalledOnce()
+  }
+)
+
 describe('Asyra Design Agent runtime input', () => {
   it('builds one concrete server-provider runtime input without a delivery mode', () => {
     const provider: AiProvider = {
