@@ -1820,3 +1820,119 @@ it('execution proof binds prepared recipe assessment to immutable source before 
   ).rejects.toThrow(/correction/)
   expect(execute).not.toHaveBeenCalled()
 })
+
+it('execution proof shares immutable tool contracts and preserves rejected output without replay', async () => {
+  const { createAiToolContract, createAiToolMiddleware } =
+    await import('@asyra/ai-agent-runtime')
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const contract = createAiToolContract({
+    name: 'inventory',
+    description: 'Read inventory',
+    revision: 1,
+    inputSchema: {
+      type: 'object',
+      required: ['item'],
+      properties: { item: { type: 'string' } }
+    },
+    outputSchema: {
+      type: 'object',
+      required: ['quantity'],
+      properties: { quantity: { type: 'integer', minimum: 0 } }
+    },
+    effect: 'read',
+    resources: ['inventory'],
+    lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' }
+  })
+  const execute = vi.fn(async () => ({ quantity: -1 }))
+  const invoker = createAiInvoker({
+    execute,
+    middleware: [
+      createAiToolMiddleware({
+        resolve: () => contract,
+        validate: operationInputIssue,
+        classify: () => ({ status: 'success', settlement: 'completed' })
+      })
+    ]
+  })
+  await expect(
+    invoker.invoke({ name: 'inventory', input: { item: 'bolt' } })
+  ).rejects.toMatchObject({
+    stage: 'output',
+    inspection: {
+      status: 'invalid',
+      settlement: 'completed',
+      value: { quantity: -1 }
+    }
+  })
+  expect(execute).toHaveBeenCalledOnce()
+  expect(createAiToolContract(contract)).toBe(contract)
+  const designs = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ])
+  for (const definition of designs.definitions)
+    expect(() => createAiToolContract(definition)).not.toThrow()
+})
+
+it('execution proof retains offline diagnostics until a matching durable terminal acknowledgement', async () => {
+  const { createRecordDeliveryHost } = await import('@asyra/ai-agent-runtime')
+  const { createRecordCollector } = await import('@asyra/ai-agent-runtime/node')
+  const stored = new Map<number, ExecutionRecord>()
+  const received: ExecutionRecord[] = []
+  const outbox = {
+    append: async (record: ExecutionRecord) => {
+      stored.set(record.sequence, structuredClone(record))
+    },
+    requests: async () => (stored.size ? ['proof-recording'] : []),
+    read: async (_id: string, from: number, count: number) =>
+      [...stored.values()]
+        .filter((record) => record.sequence >= from)
+        .slice(0, count),
+    remove: async () => {
+      stored.clear()
+    }
+  }
+  const collector = createRecordCollector({
+    createSink: () => ({
+      write: (record) => {
+        received.push(record)
+      },
+      checkpoint: async () => ({ status: 'saved', path: null }),
+      flush: async () => ({ status: 'saved', path: null })
+    })
+  })
+  let online = false
+  const host = createRecordDeliveryHost({
+    outbox,
+    send: (batch) => {
+      if (!online) return Promise.reject(new Error('offline'))
+      return collector.accept(batch)
+    }
+  })
+  try {
+    const sink = host.createSink()
+    for (const [sequence, event] of [
+      'ai_request_started',
+      'ai_request_trace',
+      'ai_request_usage'
+    ].entries())
+      sink.write({
+        event,
+        sequence,
+        requestId: 'proof-recording',
+        schemaVersion: 2
+      })
+    expect((await sink.flush()).status).toBe('failed')
+    expect(stored.size).toBe(3)
+    online = true
+    await host.recover()
+    expect(received.map((record) => record.sequence)).toEqual([0, 1, 2])
+    expect(stored.size).toBe(0)
+  } finally {
+    await host.dispose()
+    await collector.dispose()
+  }
+})

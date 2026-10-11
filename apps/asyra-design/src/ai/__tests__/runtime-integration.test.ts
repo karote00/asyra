@@ -55,7 +55,9 @@ const compact16ItemBatch = (): AiActionBatch => {
     name: `Item ${index}`,
     props: {
       dimension: `element-${index}-dimension`,
-      position: `element-${index}-position`
+      position: `element-${index}-position`,
+      fills: `element-${index}-fills`,
+      strokes: `element-${index}-strokes`
     },
     strokes: [],
     type: 'oval',
@@ -88,7 +90,9 @@ const compact16ItemBatch = (): AiActionBatch => {
             name: 'Runtime integration group',
             props: {
               dimension: 'cat-group-dimension',
-              position: 'cat-group-position'
+              position: 'cat-group-position',
+              fills: 'cat-group-fills',
+              strokes: 'cat-group-strokes'
             },
             strokes: [],
             type: 'group',
@@ -277,7 +281,9 @@ describe('Asyra Design server action-batch runtime integration', () => {
       (descriptors) => descriptors.map(({ id }) => id)
     )
 
-    await expect(executeBatch(compact16ItemBatch())).resolves.toMatchObject({
+    const result = await executeBatch(compact16ItemBatch())
+    expect(result.status, JSON.stringify(result)).toBe('executed')
+    expect(result).toMatchObject({
       actionResults: [
         {
           actionName: AiActionNames.INSERT_VECTOR_COMPOSITION,

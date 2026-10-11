@@ -181,7 +181,7 @@ describe('ordered ready parts', () => {
       },
       signal()
     )
-    expect(JSON.parse(reply.text).toolOutcome.status).toBe('unavailable')
+    expect(JSON.parse(reply.text).toolOutcome.status).toBe('failed')
     expect(execute).not.toHaveBeenCalled()
   })
   it('reports partial progress inside the first part without replaying it', async () => {

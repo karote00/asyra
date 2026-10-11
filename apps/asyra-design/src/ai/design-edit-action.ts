@@ -1,3 +1,10 @@
+import {
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { DEFAULT_TEXT_DATA } from '@asyra/preset'
 import {
@@ -9,6 +16,14 @@ import { AiActionNames } from '../constants'
 export const createDesignEditAction = (
   edit: typeof editDesignElement = editDesignElement
 ): AiActionDefinition<DesignElementEdit> => ({
+  ...actionToolSemantics(
+    AiActionNames.UPDATE_DESIGN_ELEMENT,
+    toolResultObject({
+      status: toolResultStatus,
+      compositionId: toolResultString,
+      appliedElementIds: toolResultIds
+    })
+  ),
   name: AiActionNames.UPDATE_DESIGN_ELEMENT,
   description:
     'Revise a known editable object as an item of execute_design_batch; read context only if required identities or values are unknown. Change its name, parent-local geometry, native text/typography, or an existing primary fill/stroke color. Preserve other fields and objects. Returns the edited object for rendered review. Does not add missing fills/strokes or change vector path points.',

@@ -1,6 +1,8 @@
 import {
   createExecutionRecordSink,
-  createRecordCollector
+  createRecordCollector,
+  ExecutionRecordCollectionError,
+  createFileRecordCollector
 } from '@asyra/ai-agent-runtime/node'
 import type {
   AiToolProgress,
@@ -315,14 +317,13 @@ export const createActionBatchMiddleware = (
   } = {}
 ) => {
   const exchange = createBatchExchange()
-  const collector = createRecordCollector({
-    createSink:
-      options.createRecordingSink ??
-      (() =>
-        createExecutionRecordSink(
+  const collector = options.createRecordingSink
+    ? createRecordCollector({ createSink: options.createRecordingSink })
+    : createFileRecordCollector({
+        directory:
           process.env.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions'
-        ))
-  })
+      })
+
   const middleware = async (
     request: IncomingMessage,
     response: ServerResponse,
@@ -340,8 +341,13 @@ export const createActionBatchMiddleware = (
           new AbortController().signal
         )
         sendJson(response, 200, await collector.accept(records))
-      } catch {
-        sendJson(response, 400, { code: 'AI_RECORD_DELIVERY_INCOMPLETE' })
+      } catch (error) {
+        sendJson(response, 400, {
+          code:
+            error instanceof ExecutionRecordCollectionError
+              ? error.code
+              : 'AI_RECORD_DELIVERY_INCOMPLETE'
+        })
       }
       return
     }

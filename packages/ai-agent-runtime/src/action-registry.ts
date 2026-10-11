@@ -1,3 +1,5 @@
+import { createAiToolContract, describeAiTool } from './tool-contract.js'
+import { detachAiJsonValue } from './json-value.js'
 import type {
   AiActionDefinition,
   AiActionDescription,
@@ -24,84 +26,14 @@ const registryError = (
   throw new AiActionRegistryError(code, message)
 }
 
-const detachJsonValue = (
-  value: unknown,
-  ancestors = new WeakSet<object>()
-): AiJsonValue => {
-  if (
-    value === null ||
-    typeof value === 'boolean' ||
-    typeof value === 'string'
-  ) {
-    return value
-  }
-
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      return registryError(
-        'AI_ACTION_INVALID_INPUT_SCHEMA',
-        'Action input schema must contain only finite JSON numbers.'
-      )
-    }
-
-    return value
-  }
-
-  if (typeof value !== 'object') {
-    return registryError(
-      'AI_ACTION_INVALID_INPUT_SCHEMA',
-      'Action input schema must be JSON-compatible.'
-    )
-  }
-
-  if (ancestors.has(value)) {
-    return registryError(
-      'AI_ACTION_INVALID_INPUT_SCHEMA',
-      'Action input schema must not contain cycles.'
-    )
-  }
-
-  ancestors.add(value)
-
+const detachJsonValue = (value: unknown): AiJsonValue => {
   try {
-    if (Array.isArray(value)) {
-      const result: AiJsonValue[] = []
-
-      for (let index = 0; index < value.length; index += 1) {
-        if (!(index in value)) {
-          return registryError(
-            'AI_ACTION_INVALID_INPUT_SCHEMA',
-            'Action input schema must not contain sparse arrays.'
-          )
-        }
-
-        result.push(detachJsonValue(value[index], ancestors))
-      }
-
-      return Object.freeze(result)
-    }
-
-    const prototype = Object.getPrototypeOf(value)
-    if (prototype !== Object.prototype && prototype !== null) {
-      return registryError(
-        'AI_ACTION_INVALID_INPUT_SCHEMA',
-        'Action input schema must contain only plain JSON objects.'
-      )
-    }
-
-    const result: Record<string, AiJsonValue> = {}
-    for (const [key, nestedValue] of Object.entries(value)) {
-      Object.defineProperty(result, key, {
-        configurable: true,
-        enumerable: true,
-        value: detachJsonValue(nestedValue, ancestors),
-        writable: true
-      })
-    }
-
-    return Object.freeze(result)
-  } finally {
-    ancestors.delete(value)
+    return detachAiJsonValue(value)
+  } catch (error) {
+    return registryError(
+      'AI_ACTION_INVALID_INPUT_SCHEMA',
+      error instanceof Error ? error.message : 'Invalid action input schema'
+    )
   }
 }
 
@@ -148,18 +80,10 @@ class DefaultAiActionRegistry implements AiActionRegistry {
     }
 
     const inputSchema = detachJsonValue(action.inputSchema)
+    const contract = createAiToolContract({ ...action, inputSchema })
     const registeredAction: AiActionDefinition<unknown, AiActionResult> =
-      Object.freeze({
-        description: action.description,
-        execute: action.execute,
-        inputSchema,
-        name: action.name
-      })
-    const description: AiActionDescription = Object.freeze({
-      description: action.description,
-      inputSchema,
-      name: action.name
-    })
+      Object.freeze({ ...contract, execute: action.execute })
+    const description = describeAiTool(contract)
 
     this.actions.set(action.name, registeredAction)
     this.descriptions.set(action.name, description)

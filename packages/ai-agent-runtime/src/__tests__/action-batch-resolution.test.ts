@@ -11,6 +11,15 @@ const action = (
 ): AiActionDefinition<{ readonly width: number }> => ({
   description: 'Resize an element',
   execute,
+  revision: 1,
+  outputSchema: true,
+  effect: 'mutation',
+  resources: ['test-document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   inputSchema: {
     type: 'object'
   },

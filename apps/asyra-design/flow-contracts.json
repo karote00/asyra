@@ -6,9 +6,7 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": [
-    "compose.registered-tools"
-  ],
+  "negativeCaseIds": ["compose.registered-tools"],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -29,9 +27,7 @@
     },
     {
       "name": "@asyra/design-system",
-      "inputs": [
-        "src/**"
-      ],
+      "inputs": ["src/**"],
       "entry": "src/index.tsx"
     }
   ],
@@ -154,86 +150,73 @@
           "id": "inspect.prepared-recipe",
           "stepId": "inspect",
           "testName": "execution proof binds prepared recipe assessment to immutable source before applying"
+        },
+        {
+          "id": "compose.common-tool-contract",
+          "stepId": "compose",
+          "testName": "execution proof shares immutable tool contracts and preserves rejected output without replay"
+        },
+        {
+          "id": "observe.durable-outbox",
+          "stepId": "observe",
+          "testName": "execution proof retains offline diagnostics until a matching durable terminal acknowledgement"
         }
       ],
       "handoffs": [
         {
           "routeId": "request-to-compose",
           "decision": "required",
-          "caseIds": [
-            "compose.registered-tools"
-          ]
+          "caseIds": ["compose.registered-tools"]
         },
         {
           "routeId": "compose-to-prepare",
           "decision": "required",
-          "caseIds": [
-            "prepare.lifetime"
-          ]
+          "caseIds": ["prepare.lifetime"]
         },
         {
           "routeId": "compose-to-apply",
           "decision": "required",
-          "caseIds": [
-            "apply.composition"
-          ]
+          "caseIds": ["apply.composition"]
         },
         {
           "routeId": "prepare-to-apply",
           "decision": "required",
-          "caseIds": [
-            "apply.composition"
-          ]
+          "caseIds": ["apply.composition"]
         },
         {
           "routeId": "apply-to-compose",
           "decision": "required",
-          "caseIds": [
-            "request.continuity",
-            "apply.region-removal"
-          ]
+          "caseIds": ["request.continuity", "apply.region-removal"]
         },
         {
           "routeId": "apply-to-inspect",
           "decision": "required",
-          "caseIds": [
-            "inspect.current-evidence"
-          ]
+          "caseIds": ["inspect.current-evidence"]
         },
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": [
-            "settle.partial"
-          ]
+          "caseIds": ["settle.partial"]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": [
-            "inspect.current-evidence"
-          ]
+          "caseIds": ["inspect.current-evidence"]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": [
-            "inspect.current-evidence"
-          ]
+          "caseIds": ["inspect.current-evidence"]
         },
         {
           "routeId": "prepare-to-inspect",
           "decision": "required",
-          "caseIds": [
-            "inspect.prepared-recipe"
-          ]
+          "caseIds": ["inspect.prepared-recipe"]
         },
         {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
-          "caseIds": [
-            "inspect.prepared-recipe"
-          ]
+          "caseIds": ["inspect.prepared-recipe"]
         }
       ]
     }
@@ -248,9 +231,7 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": [
-        "compose.registered-tools"
-      ],
+      "expectedFailedCaseIds": ["compose.registered-tools"],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -260,9 +241,7 @@
     {
       "id": "misclassify-combined-tool",
       "title": "Run a canvas workflow as independent preparation",
-      "expectedFailedCaseIds": [
-        "apply.composition"
-      ],
+      "expectedFailedCaseIds": ["apply.composition"],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
         "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
@@ -272,9 +251,7 @@
     {
       "id": "ignore-canonical-evidence",
       "title": "Ignore a stale App inspection verdict",
-      "expectedFailedCaseIds": [
-        "inspect.current-evidence"
-      ],
+      "expectedFailedCaseIds": ["inspect.current-evidence"],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
         "from": "entry.result.current === true",

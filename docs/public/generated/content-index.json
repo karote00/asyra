@@ -1131,7 +1131,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "bbc0b535f8841bb3e58c076ce64e03c25510d65cc97bdc643619f900b423416b",
+      "contentSha256": "d8677a0ee295a267b87ea01933a38ba5c544e6a02f243d6fec6f401a67eb926b",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1157,6 +1157,10 @@
         {
           "depth": 2,
           "title": "Implementation"
+        },
+        {
+          "depth": 2,
+          "title": "Domain validation"
         },
         {
           "depth": 2,
@@ -1195,7 +1199,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 597
+      "wordCount": 713
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",
@@ -1263,7 +1267,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
+      "contentSha256": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1319,7 +1323,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 419
+      "wordCount": 464
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",

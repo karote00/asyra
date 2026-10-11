@@ -10,7 +10,7 @@ domain meaning, permission, confirmation, transaction, and canonical mutation.
 
 - an app-owned `AiProvider`
 - a bounded context provider
-- registered `AiActionDefinition` values with JSON-compatible input schemas
+- registered `AiActionDefinition` values with input/output schemas, effects and lifecycle
 - explicit permission and optional confirmation policy
 - one app transaction runner and Feature-owned `AbortSignal`
 
@@ -26,6 +26,7 @@ domain prompt, provider credentials, and canonical common APIs.
 
 - `createAiAgentRuntime(...)` and `AiAgentRuntime`
 - `createAiActionRegistry()` and `AiActionDefinition`
+- `createAiToolContract()`, `createAiToolMiddleware()` and `createAiInvoker()`
 - `AiProvider.requestActionBatch(...)`
 - `runtime.run(...)` and `runtime.resolveAiActionBatch(...)`
 - context, permission, confirmation, and transaction adapters
@@ -55,6 +56,16 @@ type SetVisibilityInput = Readonly<{
 const setVisibilityAction: AiActionDefinition<SetVisibilityInput> = {
   name: 'set_visibility',
   description: 'Set one selected record visibility.',
+  revision: 1,
+  effect: 'mutation',
+  resources: ['document'],
+  lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
+  outputSchema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['visible'],
+    properties: { visible: { type: 'boolean' } }
+  },
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -110,6 +121,19 @@ await runtime.run({
 The deterministic provider above makes the orchestration readable. Replace it
 with an app-approved provider adapter; keep the action schema, permission, and
 executor boundaries unchanged.
+
+## Domain validation
+
+The example declares a contract. Registration freezes that contract; it does not
+choose a JSON Schema engine for the app. Install `createAiToolMiddleware({ resolve,
+validate, classify })` on the existing secured `createAiInvoker({ execute,
+middleware }).invoke(...)` boundary. `resolve` returns the registered immutable
+descriptor, `validate` returns a concrete schema issue or `undefined`, and `classify`
+reports execution status and settlement separately. Keep executor errors and known
+partial results; never retry a mutation because its output failed validation.
+Provider descriptions remain compact; host-only output/effect metadata stays in
+registration until a caller needs it. See the package's Tool Specification for the
+contract and the planned reusable-composition lifecycle.
 
 ## Flow
 

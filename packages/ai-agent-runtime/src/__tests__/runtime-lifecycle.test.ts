@@ -18,6 +18,15 @@ const visibilityAction = (
 ): AiActionDefinition<{ elementId: string; visible: boolean }> => ({
   name: 'set_element_visibility',
   description: 'Set element visibility.',
+  revision: 1,
+  outputSchema: true,
+  effect: 'mutation',
+  resources: ['test-document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   inputSchema: {
     type: 'object'
   },

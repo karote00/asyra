@@ -435,6 +435,20 @@ const createAiCase = () => {
             {
               name: 'set_visibility',
               description: 'Set the selected record visibility.',
+              revision: 1,
+              effect: 'mutation',
+              resources: ['document'],
+              lifecycle: {
+                cancellation: 'before-dispatch',
+                retry: 'never',
+                output: 'value'
+              },
+              outputSchema: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['visible'],
+                properties: { visible: { type: 'boolean' } }
+              },
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,

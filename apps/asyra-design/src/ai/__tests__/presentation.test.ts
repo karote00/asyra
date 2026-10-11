@@ -986,3 +986,146 @@ it('closes child phases with their parent and keeps an independent concurrent pu
     message: 'Building details'
   })
 })
+
+it('does not revive superseded stage commentary after a later authored operation completes', () => {
+  const projection = createAiActivityProjection({
+    purpose: 'Draw the entire building'
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Public progress',
+    message: 'Building the eight bamboo tiers',
+    activity: {
+      kind: 'work',
+      callId: 'commentary',
+      sequence: 1,
+      scope: 'request',
+      phase: 'provider'
+    }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Owner activity',
+    tool: 'apply_prepared_design',
+    toolStatus: 'running',
+    message: 'Building the crown and spire',
+    activity: { kind: 'work', callId: 'spire', sequence: 2, phase: 'applying' }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Owner activity',
+    tool: 'apply_prepared_design',
+    toolStatus: 'completed',
+    activity: {
+      kind: 'system',
+      callId: 'spire',
+      sequence: 3,
+      phase: 'applying'
+    }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Draw the entire building'
+  })
+})
+
+it('resolves inherited text from the current request without fabricating an authored parent purpose', () => {
+  const projection = createAiActivityProjection({
+    purpose: 'Draw the entire building'
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Public progress',
+    message: 'Building the tiers',
+    activity: {
+      kind: 'work',
+      callId: 'commentary',
+      sequence: 1,
+      scope: 'request',
+      phase: 'provider'
+    }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Owner activity',
+    tool: 'operation',
+    toolStatus: 'running',
+    activity: {
+      kind: 'system',
+      callId: 'parent',
+      sequence: 2,
+      phase: 'executing'
+    }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Public progress',
+    message: 'Checking the crown proportions',
+    activity: {
+      kind: 'work',
+      callId: 'new-commentary',
+      sequence: 3,
+      scope: 'request',
+      phase: 'provider'
+    }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'Running an operation',
+    message: 'Checking the crown proportions'
+  })
+})
+
+it('keeps newer commentary when an unchanged call purpose repeats during a phase update', () => {
+  const projection = createAiActivityProjection({
+    purpose: 'Draw the building'
+  })
+  const call = {
+    attempt: 1,
+    phase: 'provider' as const,
+    summary: 'Owner activity',
+    tool: 'operation',
+    toolStatus: 'running' as const,
+    message: 'Add the crown'
+  }
+  projection.append({
+    ...call,
+    activity: { kind: 'work', callId: 'crown', sequence: 1, phase: 'queued' }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Public progress',
+    message: 'Inspect the crown proportions',
+    activity: {
+      kind: 'work',
+      callId: 'commentary',
+      sequence: 2,
+      scope: 'request',
+      phase: 'provider'
+    }
+  })
+  projection.append({
+    ...call,
+    activity: { kind: 'work', callId: 'crown', sequence: 3, phase: 'applying' }
+  })
+  projection.append({
+    ...call,
+    toolStatus: 'completed',
+    activity: {
+      kind: 'system',
+      callId: 'crown',
+      sequence: 4,
+      phase: 'applying'
+    }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Inspect the crown proportions'
+  })
+})

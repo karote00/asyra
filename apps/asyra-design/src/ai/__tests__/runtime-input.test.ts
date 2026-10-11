@@ -1,3 +1,4 @@
+import { toolSemantics, toolResultObject } from '../tool-contract'
 import type { AiProvider } from '@asyra/ai-agent-runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { AiActionNames } from '../actions'
@@ -101,6 +102,11 @@ it('measures the real browser handler without treating its duration as server ex
   const { observeAiAction } = await import('../runtime-input')
   let time = 10
   const definition = {
+    ...toolSemantics(
+      toolResultObject({ current: { type: 'boolean' } }),
+      'read',
+      ['document']
+    ),
     name: 'example',
     description: 'Read current data',
     inputSchema: {},
@@ -116,6 +122,7 @@ it('measures the real browser handler without treating its duration as server ex
     } as never)
   ).toEqual({
     current: true,
+    toolOutcome: { status: 'success', settlement: 'completed' },
     actionObservation: { handlerMs: 25, executor: 'app-browser' }
   })
   const error = new Error('canonical failure')
@@ -143,6 +150,7 @@ it('retains measured handler failure without replacing the original public error
   const observed = observeAiAction(
     {
       ...definition,
+      inputSchema: { type: 'object' },
       execute: async () => {
         throw error
       }
@@ -185,5 +193,90 @@ it.each([false, true])(
     await Promise.all(
       (input.ownedResources ?? []).map((resource) => resource.dispose())
     )
+  }
+)
+
+it('advertises one complete contract for every browser tool without exposing executors to discovery', async () => {
+  const { createAiActionRegistry } = await import('@asyra/ai-agent-runtime')
+  const input = createAiRuntimeInput({
+    permissionRules: {},
+    provider: { requestActionBatch: vi.fn() }
+  })
+  const registry = createAiActionRegistry()
+  try {
+    for (const action of input.actionDefinitions) {
+      expect(action, action.name).toMatchObject({
+        revision: 1,
+        outputSchema: expect.any(Object),
+        resources: expect.any(Array)
+      })
+      expect(action.lifecycle.retry).not.toBe('read-only')
+      registry.register(action)
+    }
+    expect(registry.list()).toHaveLength(input.actionDefinitions.length)
+    expect(
+      registry
+        .list()
+        .every((tool) => !('outputSchema' in tool) && !('execute' in tool))
+    ).toBe(true)
+  } finally {
+    registry.dispose()
+    await Promise.all(
+      (input.ownedResources ?? []).map((resource) => resource.dispose())
+    )
+  }
+})
+
+it('rejects malformed successful output after one execution and retains its settlement evidence', async () => {
+  const { observeAiAction } = await import('../runtime-input')
+  const { toolSemantics, toolResultObject } = await import('../tool-contract')
+  const execute = vi.fn(async () => ({ wrong: true }))
+  const action = observeAiAction({
+    name: 'edit',
+    description: 'Edit a target',
+    inputSchema: { type: 'object' },
+    ...toolSemantics(
+      toolResultObject({ changed: { type: 'boolean' } }),
+      'mutation',
+      ['document']
+    ),
+    execute
+  })
+  await expect(
+    action.execute({}, { signal: new AbortController().signal })
+  ).rejects.toMatchObject({
+    stage: 'output',
+    inspection: {
+      status: 'invalid',
+      settlement: 'completed',
+      value: { wrong: true }
+    }
+  })
+  expect(execute).toHaveBeenCalledOnce()
+})
+
+it.each([null, false, [], 'invalid'])(
+  'rejects an unstructured browser receipt without replay: %j',
+  async (value) => {
+    const { observeAiAction } = await import('../runtime-input')
+    const execute = vi.fn(async () => value)
+    const action = observeAiAction({
+      ...toolSemantics(
+        toolResultObject({ changed: { type: 'boolean' } }),
+        'mutation',
+        ['document']
+      ),
+      name: 'edit',
+      description: 'Edit a target',
+      inputSchema: { type: 'object' },
+      execute
+    })
+    await expect(
+      action.execute({}, { signal: new AbortController().signal })
+    ).rejects.toMatchObject({
+      stage: 'output',
+      inspection: { status: 'invalid', settlement: 'unknown', value }
+    })
+    expect(execute).toHaveBeenCalledOnce()
   }
 )

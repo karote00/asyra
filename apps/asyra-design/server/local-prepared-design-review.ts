@@ -1,3 +1,9 @@
+import {
+  toolResultBoolean,
+  toolResultObject,
+  toolResultString,
+  toolSemantics
+} from '../src/ai/tool-contract'
 import { createHash } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { LocalToolAccess } from './local-tool-scheduler'
@@ -26,6 +32,20 @@ export interface PreparedRecipePacket extends PreparedRecipeContext {
 }
 export const preparedReviewDefinition = {
   type: 'function',
+  ...toolSemantics(
+    toolResultObject({
+      available: { const: true },
+      artifactId: toolResultString,
+      recipeRevision: toolResultString,
+      evidenceRevision: toolResultString,
+      status: { enum: ['pass', 'fail', 'unverified'] },
+      appearance: { const: 'unverified' },
+      evidenceCurrent: toolResultBoolean,
+      assessment: toolResultObject({ checks: { type: 'array' } })
+    }),
+    'prepare',
+    ['request-artifacts']
+  ),
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:

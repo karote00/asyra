@@ -160,6 +160,7 @@ interface ActivityState {
   readonly loop?: string
   readonly attempt: number
   readonly sequence: number
+  readonly objective?: string
   readonly requestPurpose?: string
   readonly closedCalls?: Readonly<Record<string, true>>
   readonly calls: Readonly<Record<string, ActiveCall>>
@@ -189,7 +190,7 @@ const allowedTransitions: Readonly<
 }
 
 const initialActivityState = (purpose?: string): ActivityState => ({
-  requestPurpose: purpose,
+  objective: purpose,
   calls: {},
   lifecycle: 'running',
   entry: { label: 'Starting request' },
@@ -197,6 +198,27 @@ const initialActivityState = (purpose?: string): ActivityState => ({
   sequence: 0,
   failed: false
 })
+
+/** Inheritance is a projection, never a new authored purpose on the receiving call. */
+const projectCallEntry = (
+  current: ActiveCall | undefined,
+  calls: Readonly<Record<string, ActiveCall>>,
+  fallback: ActivityEntry
+): ActivityEntry => {
+  if (!current) return fallback
+  const visited = new Set<ActiveCall>()
+  let source: ActiveCall | undefined = current
+  while (source && !visited.has(source)) {
+    if (source.entry.message)
+      return { label: current.entry.label, message: source.entry.message }
+    visited.add(source)
+    source = source.parentCallId ? calls[source.parentCallId] : undefined
+  }
+  return {
+    label: current.entry.label,
+    ...(fallback.message ? { message: fallback.message } : {})
+  }
+}
 
 const transitionKind = (
   update: AiRuntimeProgressUpdate
@@ -290,6 +312,8 @@ export const reduceAiActivity = (
     ...state,
     attempt: update.attempt,
     sequence,
+    requestPurpose:
+      update.attempt > state.attempt ? undefined : state.requestPurpose,
     calls: update.attempt > state.attempt ? {} : state.calls,
     closedCalls: update.attempt > state.attempt ? {} : state.closedCalls
   }
@@ -319,7 +343,10 @@ export const reduceAiActivity = (
   }
 
   // Scoped owner activity overrides generic loop labels, never lifecycle controls.
-  if (update.activity && (update.activity.phase || state.requestPurpose)) {
+  if (
+    update.activity &&
+    (update.activity.phase || state.requestPurpose || state.objective)
+  ) {
     const activity = update.activity
     const calls: Record<string, ActiveCall> =
       update.attempt > state.attempt ? {} : { ...state.calls }
@@ -352,15 +379,12 @@ export const reduceAiActivity = (
     ) {
       return transition(ordered, 'rejected', 'completed-call')
     } else {
-      const parent = activity.parentCallId
-        ? calls[activity.parentCallId]
-        : undefined
       const previous = calls[activity.callId]
-      const message =
-        authored ??
-        previous?.entry.message ??
-        parent?.entry.message ??
-        requestPurpose
+      // A later concrete operation supersedes earlier stage commentary. The
+      // stable request objective and genuine live call purposes remain valid.
+      if (authored && authored !== previous?.entry.message)
+        requestPurpose = undefined
+      const message = authored ?? previous?.entry.message
       calls[activity.callId] = {
         entry: {
           label: ownerPhaseLabels[activity.phase ?? 'provider'],
@@ -373,10 +397,11 @@ export const reduceAiActivity = (
     const current = Object.values(calls).sort(
       (a, b) => b.sequence - a.sequence
     )[0]
-    const entry = current?.entry ?? {
+    const purpose = requestPurpose ?? ordered.objective
+    const entry = projectCallEntry(current, calls, {
       label: ownerPhaseLabels.provider,
-      ...(requestPurpose ? { message: requestPurpose } : {})
-    }
+      ...(purpose ? { message: purpose } : {})
+    })
     const next = {
       ...ordered,
       lifecycle,
@@ -393,16 +418,20 @@ export const reduceAiActivity = (
       'scoped-owner-phase'
     )
   }
-  if (Object.keys(ordered.calls).length || ordered.requestPurpose) {
+  if (
+    Object.keys(ordered.calls).length ||
+    ordered.requestPurpose ||
+    ordered.objective
+  ) {
     const current = Object.values(ordered.calls).sort(
       (a, b) => b.sequence - a.sequence
     )[0]
-    const entry = current?.entry ?? {
+    const entry = projectCallEntry(current, ordered.calls, {
       label: ['provider', 'execution'].includes(update.phase)
         ? ownerPhaseLabels.provider
         : activityLabel(update),
-      message: ordered.requestPurpose
-    }
+      message: ordered.requestPurpose ?? ordered.objective
+    })
     return transition(
       { ...ordered, lifecycle, entry },
       sameActivity(state.entry, entry) ? 'retained' : 'accepted',

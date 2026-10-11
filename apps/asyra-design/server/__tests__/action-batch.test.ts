@@ -527,6 +527,7 @@ it('accepts independently addressed final request records and preserves idempote
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch,
     createRecordingSink: () => ({
+      checkpoint: async () => ({ status: 'saved', path: null }),
       write: (record) => {
         records.push(record)
       },
@@ -563,9 +564,21 @@ it('accepts independently addressed final request records and preserves idempote
       requestId: 'root',
       sequence: 1
     }
-    expect(await (await send([start])).json()).toEqual({ complete: false })
-    expect(await (await send([end])).json()).toEqual({ complete: true })
-    expect(await (await send([end])).json()).toEqual({ complete: true })
+    expect(await (await send([start])).json()).toEqual({
+      complete: false,
+      requestId: 'root',
+      acknowledgedSequence: 0
+    })
+    expect(await (await send([end])).json()).toEqual({
+      complete: true,
+      requestId: 'root',
+      acknowledgedSequence: 1
+    })
+    expect(await (await send([end])).json()).toEqual({
+      complete: true,
+      requestId: 'root',
+      acknowledgedSequence: 1
+    })
     expect((await send([start], 'https://foreign.example')).status).toBe(403)
     expect(records).toEqual([start, end])
     expect(flush).toHaveBeenCalledTimes(1)

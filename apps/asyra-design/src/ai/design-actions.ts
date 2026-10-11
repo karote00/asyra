@@ -1,4 +1,12 @@
 import {
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
+import {
   subscribeToBrowserDragPhases,
   subscribeToDiagnosticCounters
 } from '@asyra/utils'
@@ -56,6 +64,37 @@ export const createPreparedDesignAction = (
   parentId?: string
   response?: 'compact' | 'full'
 }> => ({
+  ...actionToolSemantics(AiActionNames.APPLY_PREPARED_DESIGN, {
+    allOf: [
+      toolResultObject({
+        status: toolResultStatus,
+        compositionId: toolResultString,
+        timing: { type: 'object' }
+      }),
+      {
+        anyOf: [
+          {
+            required: ['appliedElementCount'],
+            properties: { appliedElementCount: toolResultCount }
+          },
+          {
+            required: ['appliedElementIds', 'keyToId', 'roleToElementIds'],
+            properties: {
+              appliedElementIds: toolResultIds,
+              keyToId: {
+                type: 'object',
+                additionalProperties: toolResultString
+              },
+              roleToElementIds: {
+                type: 'object',
+                additionalProperties: toolResultIds
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }),
   name: AiActionNames.APPLY_PREPARED_DESIGN,
   description:
     'Apply a server-prepared editable design with native text, shapes and illustration paths. Use the backend preparation receipt; never invent canonical descriptors.',

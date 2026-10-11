@@ -1,6 +1,6 @@
 # Reusable Tool Composition
 
-Status: APPROVED - sequential implementation authorized; completion requires the proofs below.
+Status: IN PROGRESS - PR 1 implemented; sequential delivery authorized, later stages pending.
 
 ## Planning task contract
 
@@ -70,16 +70,16 @@ The retained evidence is under the predecessor worktree's
 `99b74684-88c2-49e3-bba2-c575ee04545c`; the browser record is
 `c91b45ca-45ca-492c-96de-007f8db25f34`. Evidence is read in place.
 
-| Observation | Consequence for this plan |
-| --- | --- |
-| Completion 2269.476 s; first visible content 244.600 s; 46,763 objects | Measure the complete delivery path, not only a faster apply function. Earlier runs contain different generated workloads and are not controlled speed comparisons. |
-| 19 prepared applications: 77.333 s; UI scene-tree projection 24.252 s within 36.227 s synchronous creation | Preserve incremental membership. Profile repeated projection work separately; nested durations must not be summed. |
-| 19 recipe assessments: 592.956 s, ten failures; three final canvas assessments still needed | A model review per artifact is not established as beneficial. Structured review needs current attachment context and narrower admission. |
-| One batch input: 2,324,430 bytes of expanded target keys; 23 distinct key-list groups | Fix producer-to-consumer references. Identical list retransmission was not demonstrated in this run; large payload and repeated serialization are separate questions. |
-| No live use of `retain_design_targets` | Exposing a capability does not establish that the normal workflow uses it. |
-| Child completion restores stale parent wording | Purpose freshness and observed execution phase are different contracts. |
-| 69/70 records complete; browser record ends at 1827.215 s | Missing final evidence prevents exact browser settlement timing. The failed live batch was not retained, so the triggering condition is unproven. |
-| Recording probes: 82.103 s over 2,091 observations | Harness overhead must be measured separately and reduced at its owner. It is not product idle time or guaranteed removable wall time. |
+| Observation                                                                                                | Consequence for this plan                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completion 2269.476 s; first visible content 244.600 s; 46,763 objects                                     | Measure the complete delivery path, not only a faster apply function. Earlier runs contain different generated workloads and are not controlled speed comparisons.    |
+| 19 prepared applications: 77.333 s; UI scene-tree projection 24.252 s within 36.227 s synchronous creation | Preserve incremental membership. Profile repeated projection work separately; nested durations must not be summed.                                                    |
+| 19 recipe assessments: 592.956 s, ten failures; three final canvas assessments still needed                | A model review per artifact is not established as beneficial. Structured review needs current attachment context and narrower admission.                              |
+| One batch input: 2,324,430 bytes of expanded target keys; 23 distinct key-list groups                      | Fix producer-to-consumer references. Identical list retransmission was not demonstrated in this run; large payload and repeated serialization are separate questions. |
+| No live use of `retain_design_targets`                                                                     | Exposing a capability does not establish that the normal workflow uses it.                                                                                            |
+| Child completion restores stale parent wording                                                             | Purpose freshness and observed execution phase are different contracts.                                                                                               |
+| 69/70 records complete; browser record ends at 1827.215 s                                                  | Missing final evidence prevents exact browser settlement timing. The failed live batch was not retained, so the triggering condition is unproven.                     |
+| Recording probes: 82.103 s over 2,091 observations                                                         | Harness overhead must be measured separately and reduced at its owner. It is not product idle time or guaranteed removable wall time.                                 |
 
 Current code establishes these constraints:
 
@@ -132,13 +132,13 @@ provider capability; it is not persisted as an executable App program.
 
 Names below express proposed responsibilities, not newly available APIs.
 
-| Owner | Responsibility | Forbidden responsibility |
-| --- | --- | --- |
-| `@asyra/ai-agent-runtime` | Recipe format/validation, operation references, composition lifecycle, invocation causality, generic storage interface and diagnostics delivery protocol | Design geometry, concrete App selection, renderer access, granting permissions |
-| Design tool registry and server adapters | Current operation schemas, outcome decoding, effect/resource metadata, operation search, preparation and semantic assessment | A second generic recipe interpreter or parallel capability catalog |
-| Design Feature/common APIs/Core | Current document resolution, retained target ownership, finite writes, recovery, grouped Undo and persistence | Executing arbitrary generated code or trusting saved IDs as current authority |
-| Host persistence adapter | Private durable recipe store and diagnostic outbox using existing host facilities | Automatically loading recipes into document content or copying credentials into them |
-| Design UI | Project current purpose/phase and library management into the existing panel | Inferring execution state from a timer or inventing a successful outcome |
+| Owner                                    | Responsibility                                                                                                                                           | Forbidden responsibility                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `@asyra/ai-agent-runtime`                | Recipe format/validation, operation references, composition lifecycle, invocation causality, generic storage interface and diagnostics delivery protocol | Design geometry, concrete App selection, renderer access, granting permissions       |
+| Design tool registry and server adapters | Current operation schemas, outcome decoding, effect/resource metadata, operation search, preparation and semantic assessment                             | A second generic recipe interpreter or parallel capability catalog                   |
+| Design Feature/common APIs/Core          | Current document resolution, retained target ownership, finite writes, recovery, grouped Undo and persistence                                            | Executing arbitrary generated code or trusting saved IDs as current authority        |
+| Host persistence adapter                 | Private durable recipe store and diagnostic outbox using existing host facilities                                                                        | Automatically loading recipes into document content or copying credentials into them |
+| Design UI                                | Project current purpose/phase and library management into the existing panel                                                                             | Inferring execution state from a timer or inventing a successful outcome             |
 
 Use the existing invoker's `invoke` boundary for both a composition and every
 leaf operation. Distinguish primitive/composition identities by registry kind,
@@ -300,30 +300,30 @@ AI-authored input is a proposal, not a second tool-definition format. Admission
 produces the common registered descriptor from it. The model supplies desired
 semantics and choices; the system derives what the existing registry already knows.
 
-| Information | Producer and validation |
-| --- | --- |
-| Purpose, meaningful parameter names, desired bindings and limitations | AI proposes; host validates format and representability without pretending to prove design quality. |
-| Required fields and input/output shapes of existing steps | Canonical registry supplies them through scoped schema retrieval; AI references rather than copies them. |
-| Public input and output schema | AI chooses the public interface and result bindings; Runtime derives referenced field schemas where possible and verifies declared constraints. New constants/parameters need explicit valid schemas, not guessed types. |
-| Stable registered identity and immutable revision | Registry assigns/resolves them under existing naming rules, checking collisions and expected prior revision. Display wording is not authority to overwrite another tool. |
-| Dependency revisions, effects, permissions and artifact lifetimes | Host derives and checks them from canonical dependencies. AI cannot self-certify them or reduce leaf restrictions. |
-| Validation and execution evidence | Actual validator/executor records, bound to the candidate revision; never accepted as model-authored proof. |
+| Information                                                           | Producer and validation                                                                                                                                                                                                  |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Purpose, meaningful parameter names, desired bindings and limitations | AI proposes; host validates format and representability without pretending to prove design quality.                                                                                                                      |
+| Required fields and input/output shapes of existing steps             | Canonical registry supplies them through scoped schema retrieval; AI references rather than copies them.                                                                                                                 |
+| Public input and output schema                                        | AI chooses the public interface and result bindings; Runtime derives referenced field schemas where possible and verifies declared constraints. New constants/parameters need explicit valid schemas, not guessed types. |
+| Stable registered identity and immutable revision                     | Registry assigns/resolves them under existing naming rules, checking collisions and expected prior revision. Display wording is not authority to overwrite another tool.                                                 |
+| Dependency revisions, effects, permissions and artifact lifetimes     | Host derives and checks them from canonical dependencies. AI cannot self-certify them or reduce leaf restrictions.                                                                                                       |
+| Validation and execution evidence                                     | Actual validator/executor records, bound to the candidate revision; never accepted as model-authored proof.                                                                                                              |
 
 ### Handoff receipts and repair loop
 
 The following names describe required receipt meanings, not finalized wire names.
 Every response uses the common outcome contract and a bounded payload.
 
-| Handoff | Consumer receives | Failure and recovery owner |
-| --- | --- | --- |
-| Discover to schema retrieval | Exact identity, applicability, availability and current contract revision, with a scoped retrieval route | Registry reports unavailable/ambiguous choices; no silent name substitution. |
+| Handoff                        | Consumer receives                                                                                                                  | Failure and recovery owner                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Discover to schema retrieval   | Exact identity, applicability, availability and current contract revision, with a scoped retrieval route                           | Registry reports unavailable/ambiguous choices; no silent name substitution.                                     |
 | Schema retrieval to submission | Required fields, typed binding grammar, applicable input/output schemas and exact revision; one bounded valid example where useful | Definition delivery distinguishes already delivered from missing; explicit scoped refresh recovers lost context. |
-| Submission to admission | Proposed interface/steps and submission identity, with referenced revisions | Runtime returns structured issues before registering executable behavior. |
-| Admission to registry | Immutable validated descriptor/recipe, dependency digest, candidate identity/revision and invocation route | Registration conflict leaves existing entries unchanged and returns the current revision or exact collision. |
-| Registry to execution | Candidate reference plus fresh arguments and current run context | Existing invocation/host checks enforce freshness, resources, permission and actual input/output validity. |
-| Execution to promotion | Settled receipts and applicable assessments for that exact recipe revision | Runtime keeps partial, failed or unknown runs as evidence without marking reusable eligibility. |
-| Promotion to persistence | Descriptor, recipe, dependency evidence and eligible state | Store returns durable acknowledgement or explicit save failure; retry saves only, never reruns steps. |
-| Next request to reuse | Revalidated eligible descriptor from the local library, retrieved through ordinary discovery | Changed/missing dependencies suspend that entry; return why and the supported repair route. |
+| Submission to admission        | Proposed interface/steps and submission identity, with referenced revisions                                                        | Runtime returns structured issues before registering executable behavior.                                        |
+| Admission to registry          | Immutable validated descriptor/recipe, dependency digest, candidate identity/revision and invocation route                         | Registration conflict leaves existing entries unchanged and returns the current revision or exact collision.     |
+| Registry to execution          | Candidate reference plus fresh arguments and current run context                                                                   | Existing invocation/host checks enforce freshness, resources, permission and actual input/output validity.       |
+| Execution to promotion         | Settled receipts and applicable assessments for that exact recipe revision                                                         | Runtime keeps partial, failed or unknown runs as evidence without marking reusable eligibility.                  |
+| Promotion to persistence       | Descriptor, recipe, dependency evidence and eligible state                                                                         | Store returns durable acknowledgement or explicit save failure; retry saves only, never reruns steps.            |
+| Next request to reuse          | Revalidated eligible descriptor from the local library, retrieved through ordinary discovery                                       | Changed/missing dependencies suspend that entry; return why and the supported repair route.                      |
 
 A rejection includes stage, candidate/submission revision where available, issue
 code, affected step and binding/schema path, expected type or constraint, a bounded
@@ -571,6 +571,138 @@ to normal App use or publish local-only recording fixtures.
   continuation. Durable recipe storage is not a durable mutation workflow engine.
 
 ## Implementation sequence and verification
+
+### PR 1 - Common contracts and recording foundation
+
+Authorized on 2026-10-11. Worktree `.worktrees/ai-tool-contract-foundation`,
+branch `codex/ai-tool-contract-foundation`, based on the PR #317 documentation
+head `435f4918c99b124e59810267ac6cb63cea39bfbb` (which contains the fetched main).
+While #317 is open, delivery targets its branch; merge is not authorized.
+
+The bounded objective is Stage A: one executable tool descriptor and normalized
+outcome boundary, reliable diagnostic delivery with explicit incompleteness, and
+current-purpose freshness. Generated public API documentation and the bundled
+AI action guide must be regenerated with their source contracts; the documentation
+bundle version changes, but no installed plugin or runtime dependency is upgraded.
+Scope is Runtime registry/types/invocation/profiler,
+Design's direct registration, provider/result adapters, activity and host recording
+storage, plus their public exports, current specifications, Inspector contracts,
+formal tests and release metadata. Discovery is limited to those owners, direct
+callers, existing tests and the retained live evidence above.
+
+Preserve secured dispatch, actual resource scheduling, recoverable tool failures,
+finite mutation settlement, grouped Undo, authored language, existing model and
+effort, and compact provider declarations. Do not implement recipe execution,
+recipe storage, target-lifetime redesign, semantic review redesign, scene-tree
+optimization, rendering changes or a new live 101 run in this PR.
+
+Prove immutable contract registration and exact output/error/partial classification;
+invalid outputs must not trigger replay. Prove ordered durable diagnostic delivery,
+reconnect, duplicate receipt, restart, quota failure and terminal completeness.
+Prove child closure, sibling/retry/stale events and saving retain only current
+purposes. Run focused tests per owner, naming, affected lint/build/tests, current
+flow proof and applicable pre-push checks after integration. Self-review the diff
+and direct consumers. Push and create a PR for user review only after those gates;
+do not close this whole plan or merge the PR.
+
+First execution card - Runtime registry contract:
+
+- Owner/route: Runtime `describe-action-registry` into Design `compose`.
+- Input: host-registered tool definitions; output: immutable canonical descriptors
+  and verified invocation contracts, with compact provider projections.
+- Invariants: no shared mutable schema, no executor in discovery, no granted
+  permissions, no second catalog, no automatic retry of a completed/uncertain write.
+- Cases: descriptor mutation isolation, malformed output, outcome preservation,
+  provider projection size, all advertised tools with a declared result contract.
+- Boundary: Runtime registry/types/invocation and direct Design definition adapters,
+  public exports, current tool spec, matching Inspector routes and formal tests.
+- Failure owner: registration rejects malformed descriptors; invocation reports
+  invalid output with the original settlement evidence and never repeats execution.
+- Gate: formal registry/invocation tests and Design adapter contract tests, then
+  affected type/lint checks and naming before advancing to recording delivery.
+
+Direct-consumer correction - Runtime Atlas registered action:
+
+- The existing six-case browser gate fails at the AI case after required tool
+  metadata becomes mandatory. Its isolated canonical test reproduces the same
+  registration failure before this correction.
+- Add the real output, revision, effect, resource and lifecycle fields to the
+  existing `set_visibility` definition in the website Runtime Atlas harness.
+  Preserve its public Runtime dispatch, one transaction and actual visibility
+  result; do not change the website interaction or introduce a legacy fallback.
+- Boundary: `apps/asyra-framework-site/lib/runtime-atlas/runtime.mjs` and its
+  canonical regression test. This is a direct consumer of the changed contract.
+- Gate: isolated canonical case and the existing six-case browser acceptance,
+  followed by affected website validation. The current Atlas harness ownership
+  and detached-evidence flow remain unchanged.
+
+Activity execution card - Design `settle`:
+
+- Evidence: live status at 10:45:25.426Z restores the earlier bamboo commentary
+  immediately after the spire operation. This is stale request-level purpose, not
+  evidence that the spire's canonical application continues.
+- Input: ordered authored request/call messages and observed owner phases. Output:
+  current phase with a still-valid purpose; no language inference or model request.
+- Distinguish stable request objective, transient request commentary, and explicit
+  call purpose. New authored call work supersedes earlier transient commentary.
+  Inherited purposes resolve from active ancestors at projection time, rather than
+  becoming fabricated call-authored copies. Closing a call cannot revive superseded
+  commentary. Existing genuinely authored live parent/sibling purposes remain valid.
+- Boundary: activity-state.ts, presentation tests, current execution spec and settle
+  Inspector conditions. Preserve lifecycle precedence, ordering, retry and loop
+  deduplication. Do not change producer language or infer freshness from wording.
+- Cases: exact bamboo/spire event ordering, inherited parent after request update,
+  authored parent/sibling retention, stale/retry events and saving/terminal state.
+- Gate: presentation suite, then direct conversation consumers and execution proof.
+
+Recording execution card - Runtime `observe`:
+
+- Input: immutable ordered records, a host-owned durable outbox and collector
+  acknowledgements; output: complete durable receipt or explicit incomplete evidence.
+- Persist before sending. Keep admitted records until the matching terminal
+  acknowledgement. Network failure suspends delivery, not capture; a bounded retry
+  or host reconnect resumes the retained stream without repeating product work.
+- Outbox recovery is independent from the product AbortSignal. Memory capacity
+  bounds pending persistence, not all historical records. Quota/write failure is
+  explicit and cannot certify completeness. No unbounded retry timer is added.
+- Node collection acknowledges durable checkpoints, validates matching duplicate
+  sequences and reopens persisted streams after process restart. Terminal receipt
+  requires the contiguous terminal record and a successful durable checkpoint.
+- Boundary: Runtime profiler delivery/records and Node collector/sink, Design host
+  IndexedDB adapter/startup/HTTP route, their existing tests and current contracts.
+- Cases: offline capture, reconnect, lost/foreign acknowledgement, sink and process
+  restart, quota exhaustion, missing sequence, terminal-before-data and disposal.
+- Gate: permanent delivery/collector/storage tests, App integration and flow proof.
+
+PR 1 verification and review - 2026-10-12:
+
+- Runtime: 202 tests passed, with affected lint/build and public export checks.
+  Design: 474 AI browser tests, 885 server tests, 463 other Vitest cases and
+  162 Node tests passed; eight server cases retain their explicit opt-in skips.
+- Browser acceptance: Design functional 392 passed / 19 conditional skips,
+  collaboration 14 passed / three conditional skips, rendering contracts three
+  passed; website 102 passed / five conditional skips. No flaky pass was reported.
+- Current flow: all 23 owner cases passed on source candidate
+  `3eabec6b-63a1-4c8d-ad52-68164787e7f2`; integration assessment
+  `df493fd5-48c0-410f-8562-885e33273364` is current and eligible.
+- Shared checks, dependency/declaration checks, Runtime, Design, website and
+  Inspector validation passed. Source-verified evidence is retained under
+  `tmp/local-validation/3f11f420-17e3-43c5-87f0-185bd6049aaa`,
+  `tmp/local-validation/delivery-remaining`, `tmp/local-validation/delivery-final`
+  and `tmp/local-validation/delivery-e2e`. Failed checks remain in their original
+  runs; their corrected replacements passed. Unchanged owner results were reused
+  only after input hashes matched. The final E2E source check passed.
+- Bounded review corrected classified-output error wrapping, explicit native and
+  browser settlement preservation, recovery admission races and the Runtime Atlas
+  direct consumer. Permanent tests reproduced the contract failures before fixes.
+  The partial-refinement E2E now asserts the precise schema error as well as
+  retained drawing and one Undo/Redo; no assertion or validation was removed.
+- Generated public documentation, bundled action guidance and the Inspector
+  workspace projection are synchronized. Opaque result leaves, storage quota and
+  corrupt/incomplete streams remain explicit limitations rather than success.
+- The App model and effort are unchanged. No recipe execution/library, rendering
+  optimization or new live drawing run is included. PR 2 and PR 3 remain planned;
+  this verification does not close the overall reusable-tool composition plan.
 
 Before production edits, promote the approved product behavior into current specs
 and update the applicable Runtime/Design Inspector steps with exact owners, inputs,

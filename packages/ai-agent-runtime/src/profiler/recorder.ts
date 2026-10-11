@@ -400,10 +400,19 @@ const outputDiagnostic = (
   const outcome = isRecord(result.toolOutcome) ? result.toolOutcome : {}
   if (
     !failed &&
-    ['usable', 'unavailable', 'partial'].includes(String(outcome.status))
+    [
+      'success',
+      'failed',
+      'unknown',
+      'usable',
+      'unavailable',
+      'partial'
+    ].includes(String(outcome.status))
   ) {
-    usability =
-      outcome.status === 'unavailable' ? 'unusable' : String(outcome.status)
+    usability = String(outcome.status)
+    if (outcome.status === 'unavailable' || outcome.status === 'failed')
+      usability = 'unusable'
+    else if (outcome.status === 'success') usability = 'usable'
     basis =
       'The App invocation owner classified execution output; this does not certify visual correctness.'
   } else if (

@@ -1,4 +1,11 @@
 import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultObject,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
+import {
   RetainedQueryError,
   type RetainedContextQuery
 } from '../common-apis/retained-design-context'
@@ -99,6 +106,17 @@ export const createDocumentContextAction = (
     return readDesignContext(query)
   }
 ): AiActionDefinition<RetainedContextQuery> => ({
+  ...actionToolSemantics(AiActionNames.READ_DESIGN_CONTEXT, {
+    anyOf: [
+      toolResultObject({
+        available: toolResultBoolean,
+        snapshotId: toolResultString,
+        total: toolResultCount,
+        elements: { type: 'array', items: { type: 'object' } }
+      }),
+      toolResultObject({ released: toolResultBoolean })
+    ]
+  }),
   name: AiActionNames.READ_DESIGN_CONTEXT,
   description:
     'Results include an opaque snapshotId bound to the current document revision. Continue with scope=snapshot and snapshotId; delivery=reference returns a capacity-admitted leaseId with the receipt for map_retained_fills. Pass both IDs when consuming it. Pending leases cannot be evicted; consume/release them on capacity refusal or pass a query directly to the mapping action. Consumption, cancellation and request settlement release leases. columns returns only IDs and requested fields. x/y columns are parent-local. release=true on a snapshot page releases it. Stale or evicted references require a new read. For a localized correction, use scope=region with workspace bounds even when its parent spans a larger area. Spatial candidates use projected bounds, not exact contours or occlusion; optional type/parentId/ancestorId/locked filters apply before pagination. For an edit on the entire matching region, pass target={field:"elementIds",query:{scope:"region",bounds,filter}} to execute_design_batch; the backend resolves a complete identity snapshot and submits one plural operation. Use result=ids when you actually need to inspect target identities. Use scope=ids for known IDs, selection for selected objects, and children for hierarchy questions. Prefer retained artifact references and known IDs over another lookup. Default result=elements and fields=[] returns metadata; request only needed property fields, never vector points. Known IDs without limit are returned together. Continue with nextOffset and the same selectors; restart after hierarchy changes. Truncated text is only a preview. Read only when target identities or needed values are unknown.',

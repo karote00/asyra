@@ -1192,7 +1192,6 @@ and cooperative preparation windows. Global key conflicts remain errors. Invalid
 or nonplanar/degenerate surfaces reject before application; no approximation is
 used to fit them into the supported primitive.
 
-
 ### Retained consumer lifetime
 
 Reference delivery admits a request-owned lease before returning a snapshot receipt.
@@ -1205,7 +1204,6 @@ mapping may query its required position column internally, consume it and releas
 that lease while preparing patches. Every mapping, target lock and shared-fill
 conflict is checked before the one plural write; no intermediate mutation occurs.
 
-
 ### Prepared recipe review
 
 `review_prepared_design` reviews a retained artifact's actual source recipe against
@@ -1217,3 +1215,35 @@ remains required. Identical recipes reuse assessment only with identical scope a
 evidence. Changed requirements, source facts or reference applicability invalidate
 reuse; changes during assessment never produce fresh approval. Applying a reviewed
 artifact rechecks its evidence identity and blocks known contradictory recipes.
+
+## Shared tool contract
+
+All advertised tools derive input/output schemas, canonical identity and revision,
+effects and lifecycle from the Runtime common tool contract. Provider declarations
+are compact projections of that descriptor. Host result adapters explicitly report
+outcome and settlement and validate actual successful or partial values against
+that descriptor. Invalid outputs retain settlement evidence without replaying the
+operation. Registration and validation do not grant permission or replace the
+existing scheduler. The Runtime tool specification owns the portable contract;
+Design owns operation-specific schemas, actual resource access and result meaning.
+
+### Purpose lifetime
+
+The original request objective remains valid for the request. Authored request
+commentary describes a current stage; a subsequent authored tool-call purpose
+supersedes that earlier commentary. Completion returns to still-current commentary
+or the original objective, never a superseded stage. A call's own authored purpose
+remains scoped to that live call. Inherited parent/request text is resolved from
+current state rather than copied into the call as authored text. Closing a child
+preserves genuine live parent and independent sibling purposes. Observed phase,
+ordering and stopping/saving/terminal lifecycle take precedence independently.
+
+### Diagnostic delivery lifetime
+
+Diagnostic records are committed to the host's local outbox before transport.
+Transport failure suspends delivery while bounded capture continues. The outbox
+retains each stream until a matching, contiguous terminal durable acknowledgement.
+Reconnect and restart resend stored evidence through the same collector, which
+validates duplicate content rather than duplicating it. Recovery never invokes
+an App operation. Resource, quota and persistence failures are explicit recording
+failures; they do not alter product completion or claim a complete trace.

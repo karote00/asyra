@@ -3805,7 +3805,7 @@ it.each(['execution', 'delivery'] as const)(
       expect(receipt).toMatchObject({
         recoverable: true,
         toolOutcome: {
-          status: stage === 'delivery' ? 'partial' : 'unavailable'
+          status: stage === 'delivery' ? 'partial' : 'failed'
         }
       })
       expect(receipt.message).toEqual(expect.any(String))

@@ -59,6 +59,15 @@ const serverAction = (
 ): AiActionDefinition => ({
   description: 'Insert one server-prepared composition',
   execute,
+  revision: 1,
+  outputSchema: true,
+  effect: 'mutation',
+  resources: ['test-document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   inputSchema: {
     type: 'object'
   },

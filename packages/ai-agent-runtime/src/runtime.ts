@@ -1,3 +1,4 @@
+import { AiToolContractError } from './tool-contract.js'
 import { isExecutionActivity } from './provider.js'
 import { createAiExecutionProfiler } from './profiler/recorder.js'
 import type { ExecutionRecordSink } from './profiler/records.js'
@@ -731,6 +732,13 @@ const stableFailure = (
       code: error.code,
       message: error.message,
       stage: error.stage
+    }
+  }
+  if (error instanceof AiToolContractError) {
+    return {
+      code: 'AI_EXECUTION_FAILED',
+      message: error.message.slice(0, 1000),
+      stage: 'execution'
     }
   }
   if (error instanceof AiTransactionError) {
@@ -1651,6 +1659,17 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                           } catch {
                             if (signal.aborted) throw INVOCATION_ABORTED
                           }
+                          let settlement:
+                            | 'unknown'
+                            | 'not-started'
+                            | 'completed'
+                            | 'partial' =
+                            stage === 'execution' || stage === 'context'
+                              ? 'unknown'
+                              : 'not-started'
+                          if (error instanceof AiToolContractError)
+                            settlement =
+                              error.inspection?.settlement ?? 'not-started'
                           currentStage = 'provider'
                           return Object.freeze({
                             actionResults: allResults.slice(resultOffset),
@@ -1663,10 +1682,20 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                               actionId:
                                 stage === 'execution' ? failedActionId : null,
                               actionExecutionMs,
-                              settlement:
-                                stage === 'execution' || stage === 'context'
-                                  ? ('unknown' as const)
-                                  : ('not-started' as const),
+                              settlement,
+                              ...(error instanceof AiToolContractError
+                                ? {
+                                    contractStage: error.stage,
+                                    ...(error.inspection
+                                      ? {
+                                          observedResult: redactAiValue(
+                                            error.inspection.value,
+                                            this.redactionOptions
+                                          )
+                                        }
+                                      : {})
+                                  }
+                                : {}),
                               contextFresh: !contextStale
                             }
                           })

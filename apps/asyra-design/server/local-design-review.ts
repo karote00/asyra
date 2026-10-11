@@ -1,3 +1,10 @@
+import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  toolSemantics
+} from '../src/ai/tool-contract'
 import { inspectionInputSchema } from '../src/ai/inspection-schema'
 import {
   createReferenceDecisions,
@@ -323,6 +330,15 @@ const sourceEvidenceSchema = optionalPhaseSchema(reviewFactsSchema)
 export const designEvidenceDefinitions = [
   {
     type: 'function',
+    ...toolSemantics(
+      toolResultObject({
+        phase: { const: 'plan' },
+        recorded: { const: true },
+        criterionIds: toolResultIds
+      }),
+      'prepare',
+      ['request-artifacts']
+    ),
     name: AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     description:
       'Define request-linked criteria before review, after the first ready drawing if appropriate. Store requirements; this does not inspect or approve the drawing. phase is fixed by this tool and may be omitted. ' +
@@ -331,6 +347,11 @@ export const designEvidenceDefinitions = [
   },
   {
     type: 'function',
+    ...toolSemantics(
+      toolResultObject({ phase: { const: 'facts' }, facts: { type: 'array' } }),
+      'prepare',
+      ['request-artifacts']
+    ),
     name: AiDesignToolIds.RECORD_DESIGN_FACTS,
     description:
       'Record or retrieve verified source facts and their criterion/element bindings. A source fact requires id, statement, scope, sources, verification and dependencies:[{key,version}]. Preserve unchanged facts. Use dependencyChanges only for actual changed sources or contrary evidence, never to fix an arithmetic transcription. Use sourceCorrections:[{factId,sources,verification,reason}] to correct only a citation without changing its statement or dependency versions. Use retained referenceId or an existing attachment:N for image sources; source URLs remain attributed assertions. Use record_design_calculations for derived numbers. Bind with factId, criterionId and known elementIds. Omit all fields to retrieve existing facts. A changed source returns the pending review scope; recording facts is not approval. Examples use placeholder identities; substitute real evidence and known IDs.\n' +
@@ -339,6 +360,11 @@ export const designEvidenceDefinitions = [
   },
   {
     type: 'function',
+    ...toolSemantics(
+      toolResultObject({ calculations: { type: 'array' } }),
+      'prepare',
+      ['request-artifacts']
+    ),
     name: AiDesignToolIds.RECORD_DESIGN_CALCULATIONS,
     description:
       'Store or retrieve derived numeric notes using existing valid sourceFactIds. Dependencies come from those facts; do not repeat source versions. Corrections replace the note with new evidence and full precision, not source facts or canvas geometry. These notes never certify the drawing. Omit calculations to retrieve notes and their current validity. Do not redraw for negligible numerical narration unless the user requires that precision.',
@@ -346,6 +372,14 @@ export const designEvidenceDefinitions = [
   },
   {
     type: 'function',
+    ...toolSemantics(
+      toolResultObject({
+        referenceImageIndexes: { type: 'array', items: toolResultCount },
+        referenceDecisions: { type: 'array' }
+      }),
+      'prepare',
+      ['request-artifacts']
+    ),
     name: AiDesignToolIds.SELECT_DESIGN_REFERENCES,
     description:
       'Select imported reference attachment indexes for independent visual comparison. Identical selection preserves approval; changed selection requires a new comparison. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and assess their immutable referenceId against exact criterionIds. Rejected and undecided images are retained but excluded from comparison.',
@@ -361,6 +395,15 @@ export const designEvidenceDefinitions = [
   },
   {
     type: 'function',
+    ...toolSemantics(
+      toolResultObject({
+        phase: { enum: ['structure', 'visual'] },
+        accepted: toolResultBoolean,
+        inspectionIds: toolResultIds
+      }),
+      'prepare',
+      ['request-artifacts']
+    ),
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
       'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual with final=false checks supplied criteria; phase=visual with final=true (default) checks all requirements and required native detail for completion. Supply checks [{criterionId,status,evidence}] with inspections [{elementId,view?,region?}] for fresh capture and review, current inspectionIds for reuse, or both (24 total). Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful inspectionIds and failedInspections without assessment. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence).',

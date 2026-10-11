@@ -1,3 +1,9 @@
+import {
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  actionToolSemantics
+} from './tool-contract'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import {
   arrangeDesign,
@@ -8,6 +14,13 @@ import { AiActionNames } from '../constants'
 export const createArrangementAction = (
   arrange: typeof arrangeDesign = arrangeDesign
 ): AiActionDefinition<DesignArrangementRequest> => ({
+  ...actionToolSemantics(
+    AiActionNames.ARRANGE_DESIGN,
+    toolResultObject({
+      status: toolResultStatus,
+      appliedElementIds: toolResultIds
+    })
+  ),
   name: AiActionNames.ARRANGE_DESIGN,
   description:
     'Align or evenly distribute current siblings after reading their context. Uses native projected bounds along parent-local horizontal/vertical axes. Align start/center/end within the selection bounds. Distribute in current spatial order: omit gap to preserve outer extent, or specify a nonnegative gap keeping the first edge fixed. Preserves sizes, styles and layer order. Inspect the result.',

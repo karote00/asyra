@@ -1,3 +1,8 @@
+import {
+  toolResultObject,
+  toolResultStatus,
+  actionToolSemantics
+} from './tool-contract'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import {
   organizeDesign,
@@ -8,6 +13,13 @@ import { AiActionNames } from '../constants'
 export const createOrganizationAction = (
   organize: typeof organizeDesign = organizeDesign
 ): AiActionDefinition<DesignOrganizationRequest> => ({
+  ...actionToolSemantics(
+    AiActionNames.ORGANIZE_DESIGN,
+    toolResultObject({
+      status: toolResultStatus,
+      operation: { enum: ['group', 'ungroup', 'reorder'] }
+    })
+  ),
   name: AiActionNames.ORGANIZE_DESIGN,
   description:
     'Organize current layers after reading their hierarchy. Group siblings with an optional name, ungroup one official Group while preserving its children, or reorder siblings using an insertion index in the remaining sibling list. Uses native coordinate and stacking behavior. Structural receipt confirms the result; explicitly inspect if stacking changes need visual review. Does not delete artwork, reparent across containers or create reusable component instances.',

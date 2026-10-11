@@ -567,7 +567,7 @@ it('retries a failed acquisition without replaying successful siblings', async (
     await tools.call('import_reference_image', args, signal)
   )
   expect(failed.references[0].available).toBe(false)
-  expect(localToolOutcome(failed).status).toBe('unavailable')
+  expect(localToolOutcome(failed).status).toBe('failed')
   expect(
     JSON.parse(await tools.call('import_reference_image', args, signal))
       .references[0].available
@@ -599,7 +599,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
     available: false,
     recoverable: true,
     toolOutcome: {
-      status: 'unavailable',
+      status: 'failed',
       issues: expect.arrayContaining([
         expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
       ])

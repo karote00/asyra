@@ -184,14 +184,19 @@ export const evaluateExecution = (
         'usable' | 'partial' | 'rejected' | 'failed' | 'unknown' = 'unknown'
       if (outcome.status === 'partial' || result.status === 'partial')
         executionStatus = 'partial'
-      else if (outcome.status === 'unavailable' || result.available === false) {
+      else if (
+        outcome.status === 'failed' ||
+        outcome.status === 'unavailable' ||
+        result.available === false
+      ) {
         executionStatus = 'failed'
         if (
           result.stage === 'admission' ||
           result.code === 'PREPARATION_REJECTED'
         )
           executionStatus = 'rejected'
-      } else if (outcome.status === 'usable') executionStatus = 'usable'
+      } else if (outcome.status === 'success' || outcome.status === 'usable')
+        executionStatus = 'usable'
       const execution = object(object(step.diagnostics?.output).execution)
       if (
         ['usable', 'partial', 'rejected', 'failed', 'unknown'].includes(

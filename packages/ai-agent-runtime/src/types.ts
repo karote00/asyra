@@ -1,3 +1,4 @@
+import type { AiToolContractInput } from './tool-contract.js'
 export type AiJsonPrimitive = boolean | null | number | string
 
 export type AiJsonValue =
@@ -26,10 +27,10 @@ export interface AiExecutionContext {
 
 export type AiActionResult = unknown
 
-export interface AiActionDefinition<TArgs = unknown, TResult = AiActionResult> {
-  name: string
-  description: string
-  inputSchema: unknown
+export interface AiActionDefinition<
+  TArgs = unknown,
+  TResult = AiActionResult
+> extends AiToolContractInput {
   execute(args: TArgs, context: AiExecutionContext): Promise<TResult>
 }
 

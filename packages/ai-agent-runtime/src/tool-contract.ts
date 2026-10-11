@@ -1,0 +1,211 @@
+import { detachAiJsonValue } from './json-value.js'
+import type {
+  AiInvocationContext,
+  AiInvocationMiddleware
+} from './invocation.js'
+import type { AiActionDescription, AiJsonValue } from './types.js'
+
+export interface AiToolContractInput {
+  name: string
+  description: string
+  revision: number
+  inputSchema: unknown
+  outputSchema: unknown
+  effect: 'read' | 'prepare' | 'mutation' | 'external'
+  resources: readonly string[]
+  lifecycle: {
+    cancellation: 'cooperative' | 'before-dispatch'
+    retry: 'never' | 'read-only' | 'reconcile'
+    output: 'value' | 'request-artifact' | 'document-artifact'
+  }
+}
+
+export interface AiToolContract {
+  readonly name: string
+  readonly description: string
+  readonly revision: number
+  readonly inputSchema: AiJsonValue
+  readonly outputSchema: AiJsonValue
+  readonly effect: AiToolContractInput['effect']
+  readonly resources: readonly string[]
+  readonly lifecycle: Readonly<AiToolContractInput['lifecycle']>
+}
+
+export interface AiToolOutcome {
+  readonly status: 'success' | 'partial' | 'failed' | 'unknown'
+  readonly settlement: 'not-started' | 'completed' | 'partial' | 'unknown'
+}
+
+export type AiToolResultInspection =
+  | (AiToolOutcome & { readonly value: unknown })
+  | {
+      readonly status: 'invalid'
+      readonly settlement: AiToolOutcome['settlement']
+      readonly reportedStatus: AiToolOutcome['status']
+      readonly issue: string
+      readonly value: unknown
+    }
+
+const nonempty = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0
+
+const registeredContracts = new WeakSet<object>()
+
+/** One portable descriptor; host validators retain authority over schema semantics. */
+export const createAiToolContract = (
+  input: AiToolContractInput
+): AiToolContract => {
+  if (registeredContracts.has(input)) return input as AiToolContract
+  if (
+    !nonempty(input.name) ||
+    !nonempty(input.description) ||
+    !Number.isSafeInteger(input.revision) ||
+    input.revision < 1
+  )
+    throw new TypeError(
+      'Tool identity, description and positive contract revision are required'
+    )
+  if (!['read', 'prepare', 'mutation', 'external'].includes(input.effect))
+    throw new TypeError('Unknown tool effect')
+  if (
+    !Array.isArray(input.resources) ||
+    !input.resources.every(nonempty) ||
+    new Set(input.resources).size !== input.resources.length
+  )
+    throw new TypeError('Tool resources must be unique non-empty names')
+  const lifecycle = input.lifecycle
+  if (
+    !lifecycle ||
+    !['cooperative', 'before-dispatch'].includes(lifecycle.cancellation) ||
+    !['never', 'read-only', 'reconcile'].includes(lifecycle.retry) ||
+    !['value', 'request-artifact', 'document-artifact'].includes(
+      lifecycle.output
+    )
+  )
+    throw new TypeError('Invalid tool lifecycle')
+  if (lifecycle.retry === 'read-only' && input.effect !== 'read')
+    throw new TypeError('Only read tools can declare read-only retry')
+  const contract = Object.freeze({
+    name: input.name,
+    description: input.description,
+    revision: input.revision,
+    inputSchema: detachAiJsonValue(input.inputSchema),
+    outputSchema: detachAiJsonValue(input.outputSchema),
+    effect: input.effect,
+    resources: Object.freeze([...input.resources]),
+    lifecycle: Object.freeze({ ...lifecycle })
+  })
+  registeredContracts.add(contract)
+  return contract
+}
+
+/** Provider wire formats need not receive host-only lifecycle or output metadata. */
+export const describeAiTool = (contract: AiToolContract): AiActionDescription =>
+  Object.freeze({
+    name: contract.name,
+    description: contract.description,
+    inputSchema: contract.inputSchema
+  })
+
+/** Inspects evidence only. It cannot execute, retry, roll back or grant authority. */
+export const inspectAiToolResult = (
+  contract: AiToolContract,
+  value: unknown,
+  options: {
+    outcome: AiToolOutcome
+    validate: (value: unknown, schema: AiJsonValue) => string | undefined
+  }
+): AiToolResultInspection => {
+  const { outcome } = options
+  const validStatus =
+    outcome &&
+    ['success', 'partial', 'failed', 'unknown'].includes(outcome.status)
+  const validSettlement =
+    outcome &&
+    ['not-started', 'completed', 'partial', 'unknown'].includes(
+      outcome.settlement
+    )
+  if (!validStatus || !validSettlement)
+    return {
+      status: 'invalid',
+      settlement: validSettlement ? outcome.settlement : 'unknown',
+      reportedStatus: validStatus ? outcome.status : 'unknown',
+      issue: 'Host returned an invalid tool outcome or settlement',
+      value
+    }
+  if (outcome.status === 'failed' || outcome.status === 'unknown')
+    return { ...outcome, value }
+  let issue: string | undefined
+  try {
+    issue = options.validate(value, contract.outputSchema)
+  } catch (error) {
+    issue = error instanceof Error ? error.message : String(error)
+    if (!issue) issue = 'Tool result validation failed'
+  }
+  return issue
+    ? {
+        status: 'invalid',
+        settlement: outcome.settlement,
+        reportedStatus: outcome.status,
+        issue,
+        value
+      }
+    : { ...outcome, value }
+}
+
+export class AiToolContractError extends Error {
+  constructor(
+    readonly stage: 'registration' | 'input' | 'output',
+    message: string,
+    readonly inspection?: AiToolResultInspection
+  ) {
+    super(message)
+    this.name = 'AiToolContractError'
+  }
+}
+
+/** Uses the host's registry and schema authority at the existing invocation boundary. */
+export const createAiToolMiddleware =
+  <T>(options: {
+    resolve: (name: string) => AiToolContract | undefined
+    validate: (value: unknown, schema: AiJsonValue) => string | undefined
+    classify: (value: T, call: AiInvocationContext) => AiToolOutcome
+  }): AiInvocationMiddleware<T> =>
+  async (call, next) => {
+    const contract = options.resolve(call.name)
+    if (!contract)
+      throw new AiToolContractError(
+        'registration',
+        `Tool contract unavailable: ${call.name}`
+      )
+    let issue: string | undefined
+    try {
+      issue = options.validate(call.input, contract.inputSchema)
+    } catch (error) {
+      issue = error instanceof Error ? error.message : String(error)
+      if (!issue) issue = 'Tool input validation failed'
+    }
+    if (issue) throw new AiToolContractError('input', issue)
+    const value = await next()
+    let outcome: AiToolOutcome
+    try {
+      outcome = options.classify(value, call)
+    } catch (error) {
+      if (error instanceof AiToolContractError && error.stage === 'output')
+        throw error
+      throw new AiToolContractError(
+        'output',
+        error instanceof Error
+          ? error.message
+          : 'Tool outcome classification failed',
+        { status: 'unknown', settlement: 'unknown', value }
+      )
+    }
+    const inspection = inspectAiToolResult(contract, value, {
+      outcome,
+      validate: options.validate
+    })
+    if (inspection.status === 'invalid')
+      throw new AiToolContractError('output', inspection.issue, inspection)
+    return value
+  }

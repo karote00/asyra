@@ -1,12 +1,12 @@
 # Tool Specification
 
-Status: PROPOSED - design document, not an implemented API reference.
+Status: Common contract foundation implemented; composition and library lifecycle remain proposed.
 
 This specification is owned by `@asyra/ai-agent-runtime` and applies equally to
-primitive and composed tools. Implementation is pending under the
+primitive and future composed tools. The remaining implementation is tracked by the
 [Reusable Tool Composition plan](../../docs/ai/framework/plans/reusable-tool-composition-plan.md).
-Existing exported types remain the current implementation authority until the
-approved contract, code and formal tests are updated together.
+Exported types and formal tests are the authority for the implemented foundation.
+The recipe, library and model-acquisition sections below describe subsequent PRs.
 
 ## One canonical contract
 
@@ -16,16 +16,16 @@ composed tools, each model provider or the reusable-tool library.
 
 The following are semantic requirements, not finalized TypeScript field names:
 
-| Section | Required meaning | Primary consumer |
-| --- | --- | --- |
-| Identity | Stable registered identity, display name where useful, contract revision | Registry, discovery, persistence |
-| Description | Purpose, applicability, limitations and parameter/result meaning | Model and developer |
-| Input | Executable schema, required/optional fields, units and coordinate/reference semantics where applicable | Admission, composition validator, model |
-| Output | Executable successful-result schema, including typed artifact references when used | Host validator, downstream tools, model when needed |
-| Outcomes | Explicit successful, failed, partial or unknown-settlement semantics, with actionable errors | Runtime and caller |
-| Execution | Registered implementation or declarative composition recipe | Host executor through Runtime invocation |
-| Effects | Read/prepare/mutation/external effects and declared resource access | Host scheduling and authorization |
-| Lifecycle | Cancellation, settlement, artifact lifetime and supported recovery behavior | Runtime and host |
+| Section     | Required meaning                                                                                       | Primary consumer                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| Identity    | Stable registered identity, display name where useful, contract revision                               | Registry, discovery, persistence                    |
+| Description | Purpose, applicability, limitations and parameter/result meaning                                       | Model and developer                                 |
+| Input       | Executable schema, required/optional fields, units and coordinate/reference semantics where applicable | Admission, composition validator, model             |
+| Output      | Executable successful-result schema, including typed artifact references when used                     | Host validator, downstream tools, model when needed |
+| Outcomes    | Explicit successful, failed, partial or unknown-settlement semantics, with actionable errors           | Runtime and caller                                  |
+| Execution   | Registered implementation or declarative composition recipe                                            | Host executor through Runtime invocation            |
+| Effects     | Read/prepare/mutation/external effects and declared resource access                                    | Host scheduling and authorization                   |
+| Lifecycle   | Cancellation, settlement, artifact lifetime and supported recovery behavior                            | Runtime and host                                    |
 
 Reuse the existing canonical operation identity; do not require a new UUID merely
 because tools are persisted. Human display names and per-invocation call IDs are
@@ -36,6 +36,48 @@ tool has no mutation settlement, while a mutating tool must declare its real
 settlement/recovery contract. The absence of proven retry safety never means a
 write can be repeated automatically. Optional extensions apply where meaningful;
 authors do not fill irrelevant boilerplate merely to make descriptions longer.
+
+## Common contract foundation
+
+The PR 1 contract exposes `AiToolContract`: canonical name, description, positive
+integer revision, input and successful-output schemas, effect, resource names and
+lifecycle. Schema validation is supplied by the host's existing schema authority;
+Runtime does not substitute a weaker validator. The same immutable descriptor is
+used for lookup and invocation. A compact provider projection includes only name,
+description and input schema. Obtaining that projection does not grant execution.
+
+The host classifies an observed result as success, partial, failed or unknown and
+reports settlement separately as not-started, completed, partial or unknown.
+The installed middleware or native invocation adapter validates successful and
+partial values against the declared output schema using the host validator.
+An invalid output preserves the actual value and settlement, reports the precise
+validation issue and is never silently reclassified as a successful tool result.
+A thrown host validator is also an explicit validation failure. Classification is
+not inferred from truthiness, HTTP success or an empty object. Runtime does not
+retry execution during validation. Failed and unknown receipts remain actionable
+without pretending they satisfy the successful-result schema.
+
+Registration rejects empty identity/description, invalid revision, non-JSON schemas,
+unknown effects or lifecycle values and invalid resource names. Descriptors are
+recursively detached and frozen, including schemas and arrays. Schema semantics
+remain the host validator's responsibility. Definitions must provide real schemas;
+a permissive placeholder does not establish a composable result contract.
+
+Acceptance covers nested mutation isolation, malformed registration, compact
+projection, false/empty successful values, partial values, unavailable results,
+unknown settlement and a throwing validator. Design adapters must additionally
+prove their actual operation-specific result shapes and outcomes before PR 1 closes.
+
+Design keeps a shared canonical effect declaration for browser action definitions
+and native wrappers. A read or selection operation must not become a document
+mutation merely because it passes through a generic executor. Actual host scheduling
+and permission policy retain authority; metadata grants no permission.
+
+Polymorphic getter values and transport receipt contents may have an explicitly
+opaque leaf (`true`) inside an otherwise validated receipt. Such a leaf does not
+prove a typed downstream binding. Recipe composition must obtain an owner-specific
+schema or reject a binding that requires unknown structure; it cannot infer fields
+from a successful example. PR 1 does not implement that recipe validator.
 
 ## Execution variants
 
