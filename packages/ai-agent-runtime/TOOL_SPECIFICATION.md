@@ -49,6 +49,12 @@ records and host permission rules. Compound declarations cannot override the
 effects or authorization of their leaves. Runtime checks the expanded dependency
 graph rather than trusting a model-authored claim that a recipe is read-only.
 
+A composition coordinator enters validation and causal invocation but does not
+hold a host scheduler barrier while awaiting its children. Actual leaf/domain
+calls acquire scheduling resources through the secured host executor. This applies
+to nested compositions as well; the host retains authorization, cancellation and
+resource ordering without a second queue or a parent-child scheduling deadlock.
+
 ## What is saved
 
 Persist the shared serializable descriptor once, plus the composition recipe,
@@ -66,7 +72,12 @@ receives fresh per-run admission and current host checks.
 Compact discovery exposes identity, purpose, applicability and enough effect/input
 information to choose. Selected-tool retrieval exposes precise input requirements,
 result meaning and requested usage/schema detail. Full schemas remain retrievable.
-Execution returns a bounded result or a resolvable artifact reference.
+Execution returns a bounded result or a resolvable artifact reference. Returned
+references retain caller/request ownership before a child invocation cleans up
+its private intermediates. Completion cannot release borrowed inputs or sibling
+leases. Explicit owner release or request termination cleans up exported request
+artifacts; revision/permission invalidation still applies, and references never
+become cross-request reusable recipe data.
 
 Dependency digests, storage locations, historical validation runs and internal
 delivery bookkeeping remain host metadata unless a specific recovery requires
@@ -141,3 +152,6 @@ Provider projections, saved descriptors and examples must agree with registratio
 Test real downstream validation, malformed results, changed dependencies, cancelled
 calls and unknown settlement. Verify compact discovery actually reduces routine
 delivery without preventing retrieval of necessary detail.
+
+Verify nested scheduling, cancellation while queued, returned-handle consumption
+after child completion, shared lease isolation and terminal request cleanup.

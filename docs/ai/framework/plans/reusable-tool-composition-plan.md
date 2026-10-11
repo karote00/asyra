@@ -1,11 +1,11 @@
 # Reusable Tool Composition
 
-Status: PLANNED - self-reviewed proposal; implementation and model selection pending.
+Status: APPROVED - sequential implementation authorized; completion requires the proofs below.
 
 ## Planning task contract
 
-Produce an implementation-ready design for composing registered basic capabilities
-into reusable high-level tools, including the unresolved observations from the
+The initial planning task was to produce an implementation-ready design for
+composing registered basic capabilities into reusable high-level tools, including the unresolved observations from the
 last complete Taipei 101 run. This task changes only this plan, its Framework
 plan-index entry, and the user-requested proposed Runtime tool specification.
 It does not implement capabilities, change current product or
@@ -24,7 +24,7 @@ Inspector contracts, run another live drawing, change model/effort, or push.
   bounded diff checks. Runtime feasibility remains subject to the proofs below.
 - Stop after the briefing so the user can decide implementation model and effort.
 
-Future implementation scope is proposed below, not authorized by this document.
+Implementation authorization is recorded in the current delivery contract below.
 The existing profiler plan is not closed by creating this plan. Its specific
 follow-up findings are associated here; unrelated unfinished work remains there.
 
@@ -35,6 +35,28 @@ and creating a documentation-only PR, without running tests. This supersedes the
 planning task's no-push checkpoint for these documents only. Implementation, model
 selection, runtime tests and merge remain outside this delivery. Review the three
 document paths, links and whitespace; do not claim runtime or Inspector admission.
+
+### Sequential delivery authorization - 2026-10-12
+
+The user authorized implementation, scoped validation, push and merge of the
+complete plan, one PR at a time. This supersedes the initial briefing/model and
+no-implementation/no-merge checkpoints. Keep the App model `gpt-6-astra` with
+`medium` effort unchanged. Do not start a successor until its predecessor merges.
+
+First repair the two planning-review gaps in PR #317: scheduler acquisition for
+nested invocation and returned-reference ownership. This documentation slice is
+limited to the three original document paths, their linked owner contracts and
+these handoffs. It does not change production or Inspector semantics. Its gates
+are source/owner and bounded diff review, document links, formatting and applicable
+metadata/changeset checks. Merge only after latest-head applicable CI passes.
+
+Every subsequent PR requires a bounded implementation contract, exact current
+Inspector flow, applicable tests, self-review and correction before push. Recheck
+latest-head CI and head identity before merging. After all three implementation
+PRs merge, review every acceptance case and carry-over against main. Correct any
+remaining mismatch in a new worktree through implementation, self-review,
+iteration, applicable validation, PR and CI-gated merge. Do not close the plan
+merely because its initially planned PR count has been reached.
 
 ## Evidence and diagnosis
 
@@ -121,8 +143,15 @@ Names below express proposed responsibilities, not newly available APIs.
 Use the existing invoker's `invoke` boundary for both a composition and every
 leaf operation. Distinguish primitive/composition identities by registry kind,
 not by ambiguous names or a second dispatch mechanism. A composition expands to
-calls passed to the existing host scheduler and secured executor. Runtime does
-not acquire a competing mutation queue or open a long physical transaction.
+calls passed to the existing host scheduler and secured executor. The outer
+composition coordinator must not hold a scheduler barrier while awaiting its
+children: doing so would make a scheduled child wait for its own parent. Only
+leaf/domain operations acquire and release host scheduling resources. Both parent
+and leaf still traverse validation and causal invocation; derived parent effect
+metadata does not bypass live leaf authorization. Nested compositions follow the
+same rule. Runtime does not acquire a competing mutation queue or open a long
+physical transaction. Cancellation stops further dispatch; queued and running
+leaves retain the host's cancellation and settlement rules.
 
 ### Tool contracts required for composition
 
@@ -398,9 +427,18 @@ columns/full recovery for legitimate inspection or lost-context cases.
 
 Reuse current query owners and leases. Bind query artifacts to document/workspace
 generation, canonical revision and query identity. Pin through the last dependent
-consumer, releasing on success/failure/cancel; capacity pressure rejects a new
-handoff recoverably rather than evicting a live dependency. Prevent cross-request
-handle reuse even when two requests happen to use the same workspace.
+consumer. Separate borrowed input references, owned intermediate leases and public
+returned references. Before a child composition finishes, transfer or retain its
+returned-reference ownership for the calling parent/request; local completion
+must not invalidate the next consumer's input. Release only locally owned,
+unreturned intermediates with no remaining consumers, never a borrowed or sibling
+lease. Explicit caller release or request termination releases exported request
+artifacts. Partial/failure receipts may preserve useful returned artifacts under
+the same ownership rule; unreturned intermediates are cleaned up on failure or
+cancellation. Capacity pressure rejects a new handoff recoverably rather than
+evicting a live dependency. Prevent cross-request handle reuse even when two
+requests happen to use the same workspace. Ownership retention never overrides
+revision invalidation, permission changes or reference freshness.
 
 Not all artifacts have the same invalidation: an immutable prepared source is
 different from a current-scene query. After a mutation, do not reuse a stale query
@@ -512,7 +550,8 @@ to normal App use or publish local-only recording fixtures.
   permission, resource, schema or reference checks.
 - Reuse the existing host scheduler's resource ordering. Initially execute recipe
   steps in declared order; do not introduce a second parallel executor. Independent
-  direct read calls keep their existing scheduling behavior.
+  direct read calls keep their existing scheduling behavior. Composition coordinators
+  await leaves without acquiring a parent barrier, including nested compositions.
 - Budget expanded steps, composition depth, retained bytes, actual item expansion
   and work per domain operation. Reject cycles and unbounded expansion. A rejected
   admission returns the limiting dimension and a supported partition boundary;
@@ -539,6 +578,21 @@ outputs, conditions, bypasses, failure owners, direct contributors and boundarie
 Use existing supported Inspector admission paths and executable cases. This plan
 does not claim Inspector admission or runtime verification has already happened.
 
+### Ordered PR boundaries
+
+| Delivery | Included stages and closure boundary |
+| --- | --- |
+| PR 1 - Common contracts and recording foundation (#319) | Stage A: shared registration/output/outcome contracts, invocation diagnostics and durable delivery, current-purpose freshness. Retain its existing validated implementation and review corrections. |
+| PR 2 - Runtime composition and durable library | Stage C and generic Stage D: typed finite recipes, admission/repair, registry dispatch, nested invocation, host-store interface, eligibility and save/reload. Prove with neutral hosts; no Design-specific geometry or alternate scheduler. |
+| PR 3 - Design integration and complete acceptance | Stage B, Design-specific Stage D, Stage E and Stage F: normal query handles, preparation/review reuse, embedded authoring/discovery/storage/management, recorded repeated-work corrections and complete integration acceptance. Every remaining acceptance case must be accounted for before whole-plan closeout. |
+
+Promote current specs and the exact Inspector steps with each implementation PR;
+this sequence is not permission to publish unimplemented capabilities. PR 2 starts
+from merged PR 1; PR 3 starts from merged PR 2. The final review includes preserved
+primitive operation behavior, not only successful composition examples. The user
+has authorized the complete plan's final recorded 101 acceptance; it follows the
+deterministic integration gates and retains the existing final-reference report.
+
 | Stage | Implementation boundary and completion evidence |
 | --- | --- |
 | A - Observability and invocation contracts | Runtime invocation/profiler/types, Design result adapters/collector/activity. Test-first lost delivery, typed results and stale purpose; retain complete observable causality before judging later speed. |
@@ -546,7 +600,7 @@ does not claim Inspector admission or runtime verification has already happened.
 | C - Generic composition | Runtime format/validator/interpreter through existing invoke and host scheduler; direct package tests. Ordered typed graph, dependency revisions, partial outcomes, cancellation and finite budgets. Extend existing exact lookup/dispatch to composed entries before exposing submission. Prove portability with a second neutral test host, not another product implementation. |
 | D - Durable library and discovery | Runtime host-store interface, existing Design local host persistence and discovery adapters. Registered submission schema, bounded repair, candidate publication, save, reload, compact search, version eligibility, disable/remove, no captured state or double execution. Add minimal management within existing panel, no separate catalog product. |
 | E - Large-document integration | Canonical creation publication and Design scene-tree projection only where recorded repeated work is proved; direct affected tests. Compose domain bulk operations, preserve selection/Undo/remote interleaving and observed drawing updates. |
-| F - End-to-end acceptance | Deterministic direct-versus-composed equivalence, new-request reuse, failures and one separately authorized complete recorded 101 run. Report limitations and final references. Full local CI belongs to a later explicitly requested release checkpoint. |
+| F - End-to-end acceptance | Deterministic direct-versus-composed equivalence, new-request reuse, failures and the authorized complete recorded 101 run. Report limitations and final references. Full local CI belongs to a later explicitly requested release checkpoint. |
 
 For each stage, run focused existing owner tests plus new formal regressions that
 fail before the fix. Naming validation precedes identifier-bearing implementation.
@@ -572,7 +626,10 @@ Required behavioral cases:
 6. Cancellation inside a chunk, user/remote edits between chunks, Undo/Redo during
    an open group, downstream failure and uncertain settlement preserve host rules.
 7. Live lease survives cache pressure; stale query fails explicitly; using mutation
-   receipts avoids illegal stale-query reuse; cancellation releases ownership.
+   receipts avoids illegal stale-query reuse. A child returns a handle, completes,
+   then its outer consumer resolves it successfully. Borrowed/sibling leases survive
+   unrelated cleanup; cancellation and request termination release the correct
+   ownership without leaks or cross-request reuse.
 8. Repeated motifs within reviewed scope avoid redundant model review; new source,
    parent transform, relevant scene change or requirement invalidates it. Final
    appearance remains unverified until actual canvas assessment.
@@ -600,6 +657,10 @@ Required behavioral cases:
 16. Reject control-plane operations nested in recipes through capability metadata;
     verify that submission is not discoverable before its returned invocation and
     schema-retrieval routes are operational.
+17. A nested composition with ordered mutations completes through the real host
+    scheduler without holding a parent barrier. Direct authorized operations can
+    interleave at host boundaries. Cancellation while a leaf is queued prevents
+    subsequent dispatch and preserves the queued/current leaf settlement contract.
 
 DoD is the above behavior with bounded work and correct handoffs, not a promised
 model duration. Report AI boundary waits, tool work, App apply/projection, queues,
@@ -615,7 +676,7 @@ planning. Coding capability and the App's executing model are separate decisions
 This design must work through provider-independent Runtime contracts rather than
 depending on a particular model to avoid malformed input.
 
-After the briefing, select implementation model/effort with the user. If an App
+The implementation authorization keeps the current model/effort. If an App
 model comparison is authorized, compare fixed operation selection, typed recipe
 construction, repair and reuse cases first, with identical tool definitions,
 document fixtures, reference evidence and budgets. Track correctness, unnecessary
@@ -667,4 +728,4 @@ run then tests product behavior, not a statistically reliable speed claim.
 Remaining implementation proofs are real gates: canonical output normalization,
 host outbox acknowledgement across reload, no stale handles across mutations,
 preserved Undo/interleaving, and demonstrated use of saved tools in a later request.
-The plan is ready for user review, not a claim that those proofs already pass.
+The plan is approved for sequential execution, not a claim that those proofs already pass.
