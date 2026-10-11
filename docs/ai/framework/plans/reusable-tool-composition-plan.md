@@ -916,3 +916,28 @@ Remaining implementation proofs are real gates: canonical output normalization,
 host outbox acknowledgement across reload, no stale handles across mutations,
 preserved Undo/interleaving, and demonstrated use of saved tools in a later request.
 The plan is approved for sequential execution, not a claim that those proofs already pass.
+
+PR 1 CI consumer-input correction - 2026-10-12:
+
+- CI run 38161848080 and the local scope CLI both reject the standalone packed
+  consumer fixture as an unknown input. The consumer suite itself already passed.
+- Bounded owner: the existing release-readiness input relationship and classifier,
+  its permanent classification test, and this plan evidence. Recognize the exact
+  consumer fixture family, select its release gate, and preserve fail-closed
+  handling of unrelated unknown paths. No runtime, Inspector semantics, new
+  scheduler or repository-wide CI redesign is included.
+- Test first: fixture test/source/manifest changes select release readiness with
+  no unrelated workspace, Design E2E or FieldScope profile selection. Then run
+  classification/local-selector regressions, actual-head classification, naming,
+  scoped shared checks, and retain the already-passed packed consumer evidence
+  only if its complete source inputs remain unchanged.
+
+- Verification: the new classification regression failed before the fix; all
+  89 classification/local-selector/runner cases passed afterward, as did focused
+  ESLint and naming. `yarn validate:local --base HEAD --run` selected only shared
+  checks and passed with source verification (evidence
+  `tmp/local-validation/c9cbabf6-eaad-4474-9ccf-3a8a30437c39/result.json`).
+  Actual PR inputs now select Runtime, Design, the website and Inspector, with
+  no unknown paths or FieldScope heavy profiles. Runtime and consumer source
+  remain identical to the prior validated commit. Main integration and new-head
+  CI remain required before merge.
