@@ -4,6 +4,18 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## Reusable Tool Composition
+
+- [Reusable Tool Composition](plans/reusable-tool-composition-plan.md)
+  - APPROVED. Typed reusable compositions through the existing Runtime invocation
+    boundary, with private host storage and current per-run capability checks.
+  - Includes remaining Design handoff, review, activity and diagnostic-delivery
+    findings from the PR #316 progress release. Sequential implementation is
+    authorized: common contracts/recording, Runtime composition/library, then
+    Design integration/acceptance. Each PR requires self-review and passing CI
+    before merge; final main-versus-plan review closes any remaining gaps.
+    The App model and effort remain unchanged.
+
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
