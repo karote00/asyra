@@ -20,14 +20,63 @@ const correlationId = (value: unknown): string | undefined =>
 // Evidence is deliberately allowlisted: never retain raw prompts, provider events,
 // credentials, bitmap bytes, SVG/path coordinates or complete document payloads.
 const evidenceKeys = new Set([
+  'activity',
+  'sourceWork',
+  'preparationInput',
+  'retainedDraft',
+  'draftId',
+  'sourceBytes',
+  'replacementCount',
+  'reuse',
+  'fillOccurrences',
+  'compiledFillDefinitions',
+  'fillTemplateUses',
+  'constructionMs',
+  'compilationMs',
+  'expansionWork',
+  'identityWork',
+  'batches',
+  'nodes',
+  'pathCommands',
+  'projectionCalls',
+  'largestBatchNodes',
+  'largestBatchPathCommands',
+  'definition',
+  'coverage',
+  'requestedCoverage',
+  'availableInResponse',
+  'deliveryReason',
+  'state',
+  'schemaPaths',
+  'decision',
+  'reason',
+  'phase',
+  'sequence',
+  'kind',
+  'observation',
   'actor',
+  'documentId',
+  'documentGeneration',
+  'firstSequence',
+  'lastSequence',
+  'durableSequence',
+  'targetSequence',
+  'snapshotId',
+  'revision',
+  'reused',
+  'coordinateSpace',
+  'selectionExecutions',
+  'candidateCount',
+  'matchedCount',
+  'metadataReadCount',
+  'computedReadCount',
+  'retainedRows',
   'retryOf',
   'direction',
   'bytes',
   'asset',
   'sha256',
   'path',
-  'reused',
   'attachmentIndex',
   'stream',
   'executor',
@@ -121,6 +170,7 @@ const evidenceKeys = new Set([
   'batchSummary',
   'operationCount',
   'actionCount',
+  'followupActionCount',
   'actionName',
   'status',
   'available',
@@ -433,10 +483,29 @@ const outputDiagnostic = (
         'Recorded criterion judgments only; see each check and its evidence. This is not independent verification of the artwork.'
     }
   }
+  let executionStatus: string = usability
+  if (usability === 'unusable')
+    executionStatus =
+      result.stage === 'admission' || result.code === 'PREPARATION_REJECTED'
+        ? 'rejected'
+        : 'failed'
+  if (failed) executionStatus = 'failed'
   return {
     ...payloadDiagnostic(value),
     correctness,
     usability,
+    execution: {
+      status: executionStatus,
+      stage:
+        typeof result.stage === 'string' ? result.stage.slice(0, 128) : null,
+      code: typeof result.code === 'string' ? result.code.slice(0, 128) : null,
+      settlement:
+        typeof result.settlement === 'string'
+          ? result.settlement.slice(0, 128)
+          : null,
+      recoverable:
+        typeof result.recoverable === 'boolean' ? result.recoverable : null
+    },
     basis,
     feedback: typeof feedback === 'string' ? summarizeEvidence(feedback) : null
   }
@@ -550,7 +619,8 @@ export const createAiExecutionProfiler = (
   const root = {
     callId: 'request-lifecycle',
     owner: 'app' as const,
-    purpose: 'Compose, execute and settle this provider invocation'
+    purpose:
+      options.purpose ?? 'Compose, execute and settle this provider invocation'
   }
   if (options.lifecycle) lifecycle('lifecycle_started', root, 0)
   return {
@@ -591,6 +661,8 @@ export const createAiExecutionProfiler = (
     },
     trace(
       stage:
+        | 'progress_projection'
+        | 'host_observation'
         | 'action_started'
         | 'action_completed'
         | 'action_failed'

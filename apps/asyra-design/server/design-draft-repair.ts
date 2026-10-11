@@ -33,6 +33,12 @@ export const createDesignDraftRepairStore = () => {
       retainedBytes += bytes
       return id
     },
+    describe(draftId: string) {
+      const draft = drafts.get(draftId)
+      return draft
+        ? { draftId, revision: draftId, sourceBytes: draft.bytes }
+        : undefined
+    },
     repair(value: unknown): unknown {
       if (
         !record(value) ||

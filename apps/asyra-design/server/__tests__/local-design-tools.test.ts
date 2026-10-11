@@ -10,7 +10,8 @@ import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
 import { createLocalDesignTools } from '../local-design-tools'
 import {
   createDesignPreparationSession,
-  prepareDesign
+  prepareDesign,
+  prepareDesignAsync
 } from '../design-preparation'
 import { createLocalImageTools } from '../local-image-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
@@ -159,6 +160,7 @@ describe('local semantic design tools', () => {
     const tools = createLocalDesignTools(actions)
     expect(tools.definitions.map((t) => t.name)).toEqual([
       'prepare_design',
+      'retain_design_targets',
       'release_design_artifacts'
     ])
     const schema = tools.modelActions(actions)[0].inputSchema
@@ -186,8 +188,8 @@ describe('local semantic design tools', () => {
     expect(definition.description).toContain('not live Auto Layout')
   })
   it('returns compact findings and resolves the same immutable artifact without recomputing', async () => {
-    const compile = vi.fn(prepareDesign),
-      session = createDesignPreparationSession(compile)
+    const compile = vi.fn(prepareDesignAsync),
+      session = createDesignPreparationSession(prepareDesign, compile)
     const tools = createLocalDesignTools(actions, session)
     const reply = await tools.call(
       'prepare_design',
@@ -248,13 +250,13 @@ describe('local semantic design tools', () => {
     ).toMatchObject({ available: true })
   })
   it('does not prepare after cancellation', async () => {
-    const compile = vi.fn(prepareDesign),
+    const compile = vi.fn(prepareDesignAsync),
       controller = new AbortController()
     controller.abort()
     await expect(
       createLocalDesignTools(
         actions,
-        createDesignPreparationSession(compile)
+        createDesignPreparationSession(prepareDesign, compile)
       ).call('prepare_design', { draft: draft() }, controller.signal)
     ).rejects.toThrow()
     expect(compile).not.toHaveBeenCalled()
@@ -406,10 +408,10 @@ it('keeps brief evidence on the server receipt and sends the existing canonical 
 })
 
 it('compiles a ready repeated stage while whole-structure review remains pending', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const stage = designPreparationExamples.find((example) =>
     example.draft.children.some((child) => child.type === 'pattern')
@@ -462,10 +464,13 @@ it('releases only explicitly discarded preparation artifacts without affecting r
   expect(session.resolve(b.artifactId)).toBe(retained)
 })
 
-it('resolves prepared keys without canvas reads and never retains references after release', () => {
-  const compile = vi.fn(prepareDesign)
-  const session = createDesignPreparationSession(compile)
-  const receipt = session.prepare(draft())
+it('resolves prepared keys without canvas reads and never retains references after release', async () => {
+  const compile = vi.fn(prepareDesignAsync)
+  const session = createDesignPreparationSession(prepareDesign, compile)
+  const receipt = await session.prepareAsync(
+    draft(),
+    new AbortController().signal
+  )
   const tools = createLocalDesignTools(actions, session)
   const ref = { artifactId: receipt.artifactId, keys: ['heading'] }
   expect(tools.resolveTargets(ref)).toEqual([
@@ -495,10 +500,10 @@ it('resolves prepared keys without canvas reads and never retains references aft
 })
 
 it('reports all independent input mistakes with paths before compiling geometry', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const result = JSON.parse(
     await tools.call(
@@ -531,10 +536,10 @@ it('reports all independent input mistakes with paths before compiling geometry'
 })
 
 it('identifies missing shared projection as a local input repair, not a reference search', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const result = JSON.parse(
     await tools.call(
@@ -568,10 +573,10 @@ it('identifies missing shared projection as a local input repair, not a referenc
 })
 
 it('reports malformed repeated geometry as input recovery even while structure is pending', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const result = JSON.parse(
     await tools.call(
@@ -595,10 +600,10 @@ it('reports malformed repeated geometry as input recovery even while structure i
 
 // Reproduces the error classes observed in live run 24, not its private input.
 it('reports only the selected construction type when repairing a malformed projected face', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const result = JSON.parse(
     await tools.call(
@@ -651,10 +656,10 @@ it('reports only the selected construction type when repairing a malformed proje
 
 it('advertises executable examples that prepare once and preserve their authored detail', async () => {
   for (const example of designPreparationExamples) {
-    const compile = vi.fn(prepareDesign)
+    const compile = vi.fn(prepareDesignAsync)
     const tools = createLocalDesignTools(
       actions,
-      createDesignPreparationSession(compile)
+      createDesignPreparationSession(prepareDesign, compile)
     )
     expect(tools.definitions[0].description).toContain(JSON.stringify(example))
     expect(
@@ -724,10 +729,10 @@ it('repairs representative live input failures without research, compilation ret
     { path: 'draft.children.0.rings' }
   ]
   for (const mutation of mutations) {
-    const compile = vi.fn(prepareDesign)
+    const compile = vi.fn(prepareDesignAsync)
     const tools = createLocalDesignTools(
       actions,
-      createDesignPreparationSession(compile)
+      createDesignPreparationSession(prepareDesign, compile)
     )
     const invalid = structuredClone(valid)
     const keys = mutation.path.split('.')
@@ -755,6 +760,7 @@ it('repairs representative live input failures without research, compilation ret
       elementCount: 2
     })
     expect(compile).toHaveBeenCalledExactlyOnceWith(
+      expect.any(AbortSignal),
       valid.draft,
       expect.any(String),
       expect.any(Function),
@@ -763,10 +769,10 @@ it('repairs representative live input failures without research, compilation ret
   }
 })
 it('uses retained semantic identities for repeated edits without rebuilding or adding covering layers', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const receipt = JSON.parse(
     await tools.call('prepare_design', designPreparationExamples[0], signal())
@@ -853,10 +859,10 @@ it('defaults application to compact receipts while retaining all prepared identi
 it.each([false, true])(
   'compiles a ready vector repetition batch without waiting for global structure, nested=%s',
   async (nested) => {
-    const compile = vi.fn(prepareDesign)
+    const compile = vi.fn(prepareDesignAsync)
     const tools = createLocalDesignTools(
       actions,
-      createDesignPreparationSession(compile)
+      createDesignPreparationSession(prepareDesign, compile)
     )
     const child = designPreparationExamples[2].draft.children[0]
     const input = {
@@ -921,8 +927,8 @@ it('admits signed cubic controls when the measured curve stays inside its declar
 })
 
 it('prepares large source input through bounded work windows without changing hierarchy or IDs', async () => {
-  const compile = vi.fn(prepareDesign)
-  const session = createDesignPreparationSession(compile)
+  const compile = vi.fn(prepareDesignAsync)
+  const session = createDesignPreparationSession(prepareDesign, compile)
   const tools = createLocalDesignTools(actions, session)
   const source = {
     type: 'frame',
@@ -971,10 +977,10 @@ it('prepares large source input through bounded work windows without changing hi
 })
 
 it('retains expanded geometry ceilings before compiling and rejects indivisible source geometry', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const source = {
     type: 'group',
@@ -1047,10 +1053,10 @@ it('counts pattern expansion and source points without generating or measuring g
 })
 
 it('uses the same vector discriminator in reusable templates without changing expanded geometry', async () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const tools = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const template = {
     type: 'vector',
@@ -1153,4 +1159,215 @@ it('admits shared definitions through the advertised preparation contract', asyn
     applicable: true,
     sharedFillIds: { red: expect.any(String) }
   })
+})
+
+it('admits a declarative surface grid through native and public schemas without expanding its input', async () => {
+  const tools = createLocalDesignTools(actions)
+  const definition = tools.definitions.find(
+    (tool) => tool.name === 'prepare_design'
+  )
+  if (!definition) throw new Error('Preparation tool is not registered')
+  const input = {
+    draft: {
+      type: 'group',
+      name: 'Grid',
+      projection: {
+        azimuth: 25,
+        elevation: 30,
+        scale: 1,
+        originX: 0,
+        originY: 0
+      },
+      children: [
+        {
+          type: 'surface-grid',
+          key: 'facade',
+          name: 'Facade',
+          rows: 50,
+          columns: 60,
+          order: 'cell-major',
+          boundary: [
+            { x: -100, y: 0, z: 0 },
+            { x: 100, y: 0, z: 0 },
+            { x: 80, y: 0, z: 300 },
+            { x: -80, y: 0, z: 300 }
+          ],
+          motifs: [
+            {
+              key: 'pane',
+              name: 'Pane',
+              fill: '#224466',
+              fills: ['#123456', '#654321'],
+              offset: { x: 0, y: 2, z: 0 },
+              vertices: [
+                { u: 0.1, v: 0.1 },
+                { u: 0.9, v: 0.1 },
+                { u: 0.9, v: 0.9 },
+                { u: 0.1, v: 0.9 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+  expect(
+    operationInputIssue(input, nativeToolInputSchema(definition.inputSchema))
+  ).toBeUndefined()
+  const result = await invokeLocalTool(
+    tools,
+    definition,
+    input,
+    new AbortController().signal
+  )
+  expect(result.success).toBe(true)
+  expect(JSON.parse(result.text)).toMatchObject({
+    elementCount: 3001,
+    sourceWork: {
+      projectionCalls: 6,
+      pathCommands: 8,
+      expansionWork: { nodes: 3001, batches: 4 }
+    }
+  })
+  const over = structuredClone(input)
+  over.draft.children[0].rows = 1000
+  const rejected = await invokeLocalTool(
+    tools,
+    definition,
+    over,
+    new AbortController().signal
+  )
+  expect(JSON.parse(rejected.text)).toMatchObject({
+    available: false,
+    code: 'DESIGN_BUDGET_EXCEEDED'
+  })
+  for (const issue of ['nonplanar', 'crossed', 'degenerate', 'uv'] as const) {
+    const invalid = structuredClone(input)
+    const grid = invalid.draft.children[0]
+    if (issue === 'nonplanar') grid.boundary[2].y = 10
+    if (issue === 'crossed')
+      [grid.boundary[1], grid.boundary[2]] = [
+        grid.boundary[2],
+        grid.boundary[1]
+      ]
+    if (issue === 'degenerate') grid.boundary[1] = { ...grid.boundary[0] }
+    if (issue === 'uv') grid.motifs[0].vertices[0].u = -0.1
+    const response = await invokeLocalTool(
+      tools,
+      definition,
+      invalid,
+      new AbortController().signal
+    )
+    expect(response.success, issue).toBe(false)
+    expect(JSON.parse(response.text), issue).not.toHaveProperty('artifactId')
+  }
+})
+
+it('retains a large exact target subset once and reuses opaque handles in source order', async () => {
+  const keys = Array.from({ length: 17004 }, (_, index) => `window-${index}`)
+  const keyToId = Object.fromEntries(keys.map((key) => [key, `id-${key}`]))
+  const compile = () => ({ ...prepareDesign(draft()), keyToId })
+  const session = createDesignPreparationSession(compile)
+  const artifact = session.prepare({})
+  const tools = createLocalDesignTools(actions, session)
+  const retained = JSON.parse(
+    await tools.call(
+      'retain_design_targets',
+      { targets: [{ artifactId: artifact.artifactId, keys }] },
+      signal()
+    )
+  )
+  expect(retained.targets[0].count).toBe(17004)
+  const reference = {
+    artifactId: artifact.artifactId,
+    targetSetId: retained.targets[0].targetSetId
+  }
+  expect(JSON.stringify(reference).length).toBeLessThan(200)
+  for (let i = 0; i < 3; i++)
+    expect(tools.resolveTargets(reference)).toEqual(
+      keys.map((key) => keyToId[key])
+    )
+  tools.resolveTargets(reference).pop()
+  expect(tools.resolveTargets(reference)).toHaveLength(17004)
+  expect(() =>
+    tools.resolveTargets({ ...reference, keys: [keys[0]] })
+  ).toThrow()
+  session.release([artifact.artifactId])
+  expect(() => tools.resolveTargets(reference)).toThrow()
+})
+
+it('blocks a contradicted reviewed artifact through both native and batch apply routes without writes', async () => {
+  const registered = [
+    ...actions,
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: { type: 'object' }
+    }
+  ]
+  const session = createDesignPreparationSession()
+  const tools = createLocalDesignTools(registered, session)
+  const prepared = session.prepare(draft())
+  const execute = vi.fn()
+  const operations = createLocalOperationTools(registered, tools, execute, {
+    assessPrepared: async (packet) => ({
+      overall: {
+        status: 'fail',
+        evidence: 'The source recipe adds unrequested content.'
+      },
+      checks: Object.keys(packet.criteria).map((criterionId) => ({
+        criterionId,
+        status: 'fail',
+        evidence: 'Unrequested content in recipe.'
+      }))
+    })
+  })
+  const signal = new AbortController().signal
+  await operations.call(
+    'define_design_criteria',
+    {
+      method: 'Create the requested journal',
+      detailRequired: false,
+      references: [],
+      criteria: {
+        subject: {
+          requirement: 'Only a journal title',
+          description: 'Only a journal title',
+          verification: 'visual'
+        }
+      }
+    },
+    signal
+  )
+  const reviewed = JSON.parse(
+    await operations.call(
+      'review_prepared_design',
+      { artifactId: prepared.artifactId },
+      signal
+    )
+  )
+  expect(reviewed).toMatchObject({ status: 'fail', appearance: 'unverified' })
+  await expect(
+    operations.call(
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      { arguments: { artifactId: prepared.artifactId }, inspection: 'defer' },
+      signal
+    )
+  ).rejects.toThrow(/correction/i)
+  await expect(
+    operations.call(
+      'execute_design_batch',
+      {
+        operations: [
+          {
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            arguments: { artifactId: prepared.artifactId }
+          }
+        ],
+        inspection: 'defer'
+      },
+      signal
+    )
+  ).rejects.toThrow(/correction/i)
+  expect(execute).not.toHaveBeenCalled()
 })

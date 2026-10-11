@@ -1,3 +1,4 @@
+import { setImmediate as yieldTurn } from 'node:timers/promises'
 import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
 import { randomUUID } from 'node:crypto'
 import { isDesignFill } from '../src/ai/design-fill'
@@ -164,24 +165,48 @@ const planar = (points: Point3[]) => {
 }
 
 /** Pure, bounded pre-compilation; never edits canonical state or the caller draft. */
-export const constructDesign = (
+export function* constructDesignSteps(
   input: unknown,
   generatedRootId: string = randomUUID()
-): {
-  draft: Node
-  brief?: DesignBrief
-  sourceWork: ReturnType<ReturnType<typeof createDesignSourceWork>['summary']>
-} => {
+): Generator<
+  void,
+  {
+    draft: Node
+    brief?: DesignBrief
+    sourceWork: ReturnType<
+      ReturnType<typeof createDesignSourceWork>['summary']
+    > & {
+      projectionCalls: number
+      expansionWork: ReturnType<
+        ReturnType<typeof createDesignSourceWork>['summary']
+      >
+      identityWork: ReturnType<
+        ReturnType<typeof createDesignSourceWork>['summary']
+      >
+    }
+  },
+  void
+> {
   if (!record(input)) return fail('draft')
+  const rootLayout = input.layout ?? 'absolute'
   const rootKey =
     input.key === undefined
       ? generatedRootId
       : label(input.key, 'node key', 160)
-  const brief = readBrief(input.brief),
-    project = camera(input.projection)
+  const brief = readBrief(input.brief)
+  const projection = camera(input.projection)
+  let projectionCalls = 0
+  const project = projection
+    ? (point: Point3) => {
+        projectionCalls++
+        return projection(point)
+      }
+    : undefined
   const nodes = new Map<string, { node: Node; parent?: string }>()
   const keyPaths = new Map<string, string[]>()
   const sourceWork = createDesignSourceWork()
+  const expansionWork = createDesignSourceWork()
+  const identityWork = createDesignSourceWork()
   let nodeCount = 0,
     vertexCount = 0
   const consumeSourceNode = (value: unknown) =>
@@ -193,11 +218,7 @@ export const constructDesign = (
     template = false
   ): Node => {
     fields(node, ['key', 'name', 'type', 'fill', 'vertices'], 'projected face')
-    if (
-      !project ||
-      parent !== rootKey ||
-      (input.layout ?? 'absolute') !== 'absolute'
-    )
+    if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('projected face requires a shared camera and absolute root')
     if (
       !Array.isArray(node.vertices) ||
@@ -222,6 +243,14 @@ export const constructDesign = (
       )
     }
     const points = vertices.map(project)
+    return vectorFromPoints(node, key, points, template)
+  }
+  const vectorFromPoints = (
+    node: Node,
+    key: string,
+    points: { x: number; y: number }[],
+    template = false
+  ): Node => {
     const area = points.reduce((sum, p, i) => {
       const q = points[(i + 1) % points.length]
       return sum + p.x * q.y - p.y * q.x
@@ -257,7 +286,7 @@ export const constructDesign = (
       z: number(v.z, 'pattern z')
     }
   }
-  const expand = (value: Node, parent: string): Node[] => {
+  function* expand(value: Node, parent: string): Generator<void, Node[], void> {
     fields(
       value,
       [
@@ -272,11 +301,7 @@ export const constructDesign = (
       ],
       'pattern'
     )
-    if (
-      !project ||
-      parent !== rootKey ||
-      (input.layout ?? 'absolute') !== 'absolute'
-    )
+    if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('pattern requires shared projection and absolute root')
     if (
       ['key', 'name', 'origin', 'axes', 'faces'].some(
@@ -313,11 +338,7 @@ export const constructDesign = (
       value.instanceRanges === undefined
         ? [{ start: 0, end: totalCount }]
         : value.instanceRanges
-    if (
-      !Array.isArray(ranges) ||
-      !ranges.length ||
-      ranges.length > limits.nodes
-    )
+    if (!Array.isArray(ranges) || !ranges.length)
       return fail('pattern instanceRanges')
     let previousEnd = 0
     const selectedRanges = ranges.map((range) => {
@@ -350,15 +371,16 @@ export const constructDesign = (
     const fills = value.fills
     if (
       fills !== undefined &&
-      (!Array.isArray(fills) ||
-        !fills.length ||
-        fills.length > limits.nodes ||
-        !fills.every(isDesignFill))
+      (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
     )
       return fail('pattern fills')
     const seen = new Set<string>()
-    let templatePointCount = 0
-    const templates = value.faces.map((v) => {
+    const templates: {
+      compiled: Node
+      bounds: { min: Point3; max: Point3 }
+      faceKey: string
+    }[] = []
+    for (const v of value.faces) {
       if (!record(v)) return fail('pattern face')
       fields(v, ['key', 'name', 'fill', 'vertices'], 'pattern face')
       const faceKey = label(v.key, 'pattern face key', 40)
@@ -372,7 +394,7 @@ export const constructDesign = (
         vertexCount + vertices.length * count > limits.expandedPathCommands
       )
         return fail('pattern vertices')
-      templatePointCount += vertices.length
+      if (sourceWork.admit(vertices.length)) yield
       const points = vertices.map(point3)
       const bounds = {
         min: { x: Infinity, y: Infinity, z: Infinity },
@@ -398,9 +420,8 @@ export const constructDesign = (
       vertexCount += (count - 1) * points.length
       if (vertexCount > limits.expandedPathCommands)
         return fail('pattern vertex limit')
-      return { compiled, bounds, faceKey }
-    })
-    sourceWork.admit(templatePointCount)
+      templates.push({ compiled, bounds, faceKey })
+    }
     const zero = project({ x: 0, y: 0, z: 0 }),
       result: Node[] = []
     for (const range of selectedRanges) {
@@ -416,6 +437,7 @@ export const constructDesign = (
         }
         const projected = project(offset)
         for (const { compiled, bounds, faceKey } of templates) {
+          if (expansionWork.admit(sourcePathCommandCount(compiled))) yield
           for (const k of ['x', 'y', 'z'] as const) {
             number(bounds.min[k] + offset[k], 'pattern world extent')
             number(bounds.max[k] + offset[k], 'pattern world extent')
@@ -439,7 +461,160 @@ export const constructDesign = (
     }
     return result
   }
-  const expandVectors = (value: Node): Node[] => {
+  function* expandGrid(
+    value: Node,
+    parent: string
+  ): Generator<void, Node[], void> {
+    fields(
+      value,
+      ['type', 'key', 'name', 'boundary', 'rows', 'columns', 'motifs', 'order'],
+      'surface grid'
+    )
+    if (!project || parent !== rootKey || rootLayout !== 'absolute')
+      return fail('surface grid requires shared projection and absolute root')
+    const key = label(value.key, 'surface grid key', 80)
+    const name = label(value.name, 'surface grid name', 60)
+    const rows = number(
+      value.rows,
+      'surface grid rows',
+      1,
+      limits.expandedNodes
+    )
+    const columns = number(
+      value.columns,
+      'surface grid columns',
+      1,
+      limits.expandedNodes
+    )
+    if (!Number.isInteger(rows) || !Number.isInteger(columns))
+      return fail('surface grid integer counts')
+    if (value.order !== 'cell-major' && value.order !== 'motif-major')
+      return fail('surface grid order')
+    if (!Array.isArray(value.boundary) || value.boundary.length !== 4)
+      return fail('surface grid boundary')
+    if (sourceWork.admit(4)) yield
+    const boundary = value.boundary.map(point3)
+    planar(boundary)
+    const corners = boundary.map(project)
+    let winding = 0
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i],
+        b = corners[(i + 1) % 4],
+        c = corners[(i + 2) % 4]
+      const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+      if (Math.abs(cross) <= 1e-8 || (winding && Math.sign(cross) !== winding))
+        return fail(
+          'surface grid boundary must project to a nondegenerate convex quadrilateral'
+        )
+      winding = Math.sign(cross)
+    }
+    const count = rows * columns
+    if (
+      !Array.isArray(value.motifs) ||
+      !value.motifs.length ||
+      nodeCount + count * value.motifs.length > limits.expandedNodes
+    )
+      return fail('surface grid node limit')
+    const motifs: {
+      key: string
+      name: string
+      fill: unknown
+      fills?: unknown[]
+      offset: { x: number; y: number }
+      vertices: { u: number; v: number }[]
+    }[] = []
+    const keys = new Set<string>()
+    for (const item of value.motifs) {
+      if (!record(item)) return fail('surface grid motif')
+      fields(
+        item,
+        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
+        'surface grid motif'
+      )
+      const motifKey = label(item.key, 'surface grid motif key', 40)
+      if (keys.has(motifKey)) return fail('duplicate surface grid motif key')
+      keys.add(motifKey)
+      if (item.fill !== undefined && !isDesignFill(item.fill))
+        return fail('surface grid motif fill')
+      const fills = item.fills
+      if (
+        fills !== undefined &&
+        (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
+      )
+        return fail('surface grid motif fills')
+      let offset = { x: 0, y: 0 }
+      if (item.offset !== undefined) {
+        const shift = point3(item.offset)
+        const zero = project({ x: 0, y: 0, z: 0 })
+        const moved = project(shift)
+        offset = { x: moved.x - zero.x, y: moved.y - zero.y }
+      }
+      if (!Array.isArray(item.vertices) || item.vertices.length < 3)
+        return fail('surface grid motif vertices')
+      if (sourceWork.admit(item.vertices.length)) yield
+      vertexCount += count * item.vertices.length
+      if (vertexCount > limits.expandedPathCommands)
+        return fail('surface grid vertex limit')
+      const vertices = item.vertices.map((point) => {
+        if (!record(point)) return fail('surface grid motif point')
+        fields(point, ['u', 'v'], 'surface grid motif point')
+        return {
+          u: number(point.u, 'surface grid u', 0, 1),
+          v: number(point.v, 'surface grid v', 0, 1)
+        }
+      })
+      motifs.push({
+        key: motifKey,
+        name: label(item.name, 'surface grid motif name', 60),
+        fill: item.fill,
+        fills: fills as unknown[] | undefined,
+        offset,
+        vertices
+      })
+    }
+    const result: Node[] = []
+    const total = count * motifs.length
+    for (let index = 0; index < total; index++) {
+      const cell =
+        value.order === 'cell-major'
+          ? Math.floor(index / motifs.length)
+          : index % count
+      const motif =
+        motifs[
+          value.order === 'cell-major'
+            ? index % motifs.length
+            : Math.floor(index / count)
+        ]
+      if (expansionWork.admit(motif.vertices.length)) yield
+      const points = motif.vertices.map((point) => {
+        const u = ((cell % columns) + point.u) / columns
+        const v = (Math.floor(cell / columns) + point.v) / rows
+        const weights = [(1 - u) * (1 - v), u * (1 - v), u * v, (1 - u) * v]
+        return {
+          x:
+            motif.offset.x +
+            corners.reduce((sum, p, i) => sum + weights[i] * p.x, 0),
+          y:
+            motif.offset.y +
+            corners.reduce((sum, p, i) => sum + weights[i] * p.y, 0)
+        }
+      })
+      result.push(
+        vectorFromPoints(
+          {
+            name: `${name} - ${cell + 1} - ${motif.name}`,
+            fill: motif.fills
+              ? motif.fills[cell % motif.fills.length]
+              : motif.fill
+          },
+          `${key}-${cell}-${motif.key}`,
+          points
+        )
+      )
+    }
+    return result
+  }
+  function* expandVectors(value: Node): Generator<void, Node[], void> {
     fields(
       value,
       ['key', 'name', 'type', 'template', 'placements'],
@@ -468,10 +643,12 @@ export const constructDesign = (
       nodeCount + value.placements.length > limits.expandedNodes
     )
       return fail('vector pattern node limit')
-    return value.placements.map((placement, index) => {
+    const result: Node[] = []
+    for (const [index, placement] of value.placements.entries()) {
+      if (expansionWork.admit(sourcePathCommandCount(value))) yield
       if (!record(placement)) return fail('vector placement')
       fields(placement, ['x', 'y', 'fill'], 'vector placement')
-      return {
+      result.push({
         ...template,
         type: 'vector',
         key: `${key}-${index}`,
@@ -479,17 +656,20 @@ export const constructDesign = (
         x: number(placement.x, 'vector placement x'),
         y: number(placement.y, 'vector placement y'),
         ...(placement.fill !== undefined ? { fill: placement.fill } : {})
-      }
-    })
+      })
+    }
+    return result
   }
-  const copy = (
+  function* copy(
     value: unknown,
     parent?: string,
     depth = 1,
     generated = false,
     path = ''
-  ): Node => {
-    if (!generated) consumeSourceNode(value)
+  ): Generator<void, Node, void> {
+    if (identityWork.admit(0)) yield
+    if (!generated && consumeSourceNode(value)) yield
+    if (!generated && expansionWork.admit(sourcePathCommandCount(value))) yield
     if (!record(value)) return fail('node must be an object')
     if (++nodeCount > limits.expandedNodes)
       return fail(
@@ -520,25 +700,27 @@ export const constructDesign = (
         node.children.length > limits.expandedNodes
       )
         return fail('children limit')
-      node.children = node.children.flatMap((child, childIndex) => {
+      const children: Node[] = []
+      for (const [childIndex, child] of node.children.entries()) {
         const childPath = `${path}/children/${childIndex}`
         if (record(child) && child.type === 'vector-pattern') {
-          consumeSourceNode(child)
-          return expandVectors(child).map((item) =>
-            copy(item, key, depth + 1, true, childPath)
-          )
-        }
-        if (record(child) && child.type === 'pattern') {
-          return expand(child, key).map((item) =>
-            copy(item, key, depth + 1, true, childPath)
-          )
-        }
-        return [copy(child, key, depth + 1, false, childPath)]
-      })
+          if (consumeSourceNode(child)) yield
+          for (const item of yield* expandVectors(child))
+            children.push(yield* copy(item, key, depth + 1, true, childPath))
+        } else if (record(child) && child.type === 'surface-grid') {
+          for (const item of yield* expandGrid(child, key))
+            children.push(yield* copy(item, key, depth + 1, true, childPath))
+        } else if (record(child) && child.type === 'pattern') {
+          for (const item of yield* expand(child, key))
+            children.push(yield* copy(item, key, depth + 1, true, childPath))
+        } else
+          children.push(yield* copy(child, key, depth + 1, false, childPath))
+      }
+      node.children = children
     }
     return node
   }
-  const draft = copy(input)
+  const draft = yield* copy(input)
   const conflicts = [...keyPaths]
     .filter(([, paths]) => paths.length > 1)
     .map(([key, paths]) => ({ key, paths }))
@@ -655,5 +837,56 @@ export const constructDesign = (
     get(relation.target, relation.property)
   for (const check of brief?.checks ?? [])
     if (!nodes.has(check.key)) fail('check key is missing')
-  return { draft, brief, sourceWork: sourceWork.summary() }
+  return {
+    draft,
+    brief,
+    sourceWork: {
+      ...sourceWork.summary(),
+      projectionCalls,
+      expansionWork: expansionWork.summary(),
+      identityWork: identityWork.summary()
+    }
+  }
 }
+
+/** Synchronous callers and server callers execute the same construction steps. */
+export const completeDesignSteps = <T>(steps: Generator<void, T, void>): T => {
+  let current = steps.next()
+  while (!current.done) current = steps.next()
+  return current.value
+}
+
+export const completeDesignStepsAsync = async <T>(
+  steps: Generator<void, T, void>,
+  signal: AbortSignal
+): Promise<T> => {
+  try {
+    signal.throwIfAborted()
+    let current = steps.next()
+    while (!current.done) {
+      await yieldTurn(undefined, { signal })
+      signal.throwIfAborted()
+      current = steps.next()
+    }
+    signal.throwIfAborted()
+    return current.value
+  } catch (error) {
+    signal.throwIfAborted()
+    throw error
+  } finally {
+    // Release the invocation-local generator, including on cancellation.
+    steps.return(undefined as T)
+  }
+}
+
+export const constructDesign = (
+  input: unknown,
+  generatedRootId = randomUUID()
+) => completeDesignSteps(constructDesignSteps(input, generatedRootId))
+
+export const constructDesignAsync = (
+  input: unknown,
+  generatedRootId: string,
+  signal: AbortSignal
+) =>
+  completeDesignStepsAsync(constructDesignSteps(input, generatedRootId), signal)

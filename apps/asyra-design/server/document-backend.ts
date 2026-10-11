@@ -1,3 +1,5 @@
+import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
+import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
 import { Buffer } from 'node:buffer'
 import {
   createServer,
@@ -148,8 +150,54 @@ export const createDocumentBackendServer = ({
         })
         return
       }
-      const acknowledgement = await materializer.materialize(batch)
-      sendJson(response, 200, acknowledgement)
+      let recording: ReturnType<typeof createAiExecutionProfiler> | undefined
+      let sink: ReturnType<typeof createExecutionRecordSink> | undefined
+      try {
+        sink = createExecutionRecordSink(
+          process.env.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions'
+        )
+        recording = createAiExecutionProfiler(
+          {
+            intent: 'Persist admitted document batch',
+            context: {},
+            actions: [],
+            attempt: 1
+          },
+          'none',
+          {
+            sink,
+            lifecycle: true,
+            provider: 'document-backend',
+            purpose: 'durable-batch',
+            log: () => undefined
+          }
+        )
+      } catch {
+        /* Storage diagnostics must not affect the document. */
+      }
+      let spanSequence = 0
+      try {
+        const acknowledgement = await materializer.materialize(batch, {
+          span: (stage) =>
+            recording?.span({
+              callId: `${stage}-${++spanSequence}`,
+              owner: 'app',
+              purpose: stage
+            }) ?? (() => undefined),
+          detail: (values) => recording?.trace('settlement', values)
+        })
+        sendJson(response, 200, acknowledgement)
+        recording?.finish('completed')
+      } catch (error) {
+        recording?.finish('failed')
+        throw error
+      } finally {
+        try {
+          void sink?.flush().catch(() => undefined)
+        } catch {
+          /* Nonblocking diagnostic delivery. */
+        }
+      }
     })().catch((error: unknown) => {
       sendJson(response, 409, {
         error: error instanceof Error ? error.message : String(error)

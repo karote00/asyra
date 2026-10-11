@@ -1,3 +1,5 @@
+import { applyCanonicalChangesToDocument } from '../../../server/document-canonical-reducer'
+import { createFormalInitialDocument } from '../../collaboration/initial-document'
 import type { CanonicalChange } from '@asyra/core'
 import { Buffer } from 'node:buffer'
 import type {
@@ -1790,6 +1792,73 @@ const persistenceBatch = (
 })
 
 describe('Asyra Design backend document materialization', () => {
+  it('prepares the real checkpoint maps once per durable batch and keeps exact retries free of work', async () => {
+    const document = createFormalInitialDocument()
+    document.props['position-a'] = {
+      id: 'position-a',
+      type: 'position' as never,
+      x: 0,
+      y: 0
+    }
+    const propsKeys = vi.fn((target: object) => Reflect.ownKeys(target))
+    const input = {
+      ...document,
+      props: new Proxy(document.props, { ownKeys: propsKeys })
+    }
+    let record: MaterializedDocumentRecord<typeof document> = {
+      document: input,
+      durableSequence: 0,
+      publicationSequences: {},
+      batches: {}
+    }
+    const service = createDocumentMaterializationService({
+      authorize: async () => undefined,
+      applyCanonicalChanges: (current, changes, observation) => {
+        const next = applyCanonicalChangesToDocument(
+          current,
+          changes,
+          observation
+        )
+        return { ...next, props: new Proxy(next.props, { ownKeys: propsKeys }) }
+      },
+      store: {
+        transact: async (_id, execute) => {
+          let next: typeof record | undefined
+          const result = await execute(record, (value) => {
+            next = value
+          })
+          if (next) record = next
+          return result
+        }
+      }
+    })
+    const batch = persistenceBatch(
+      [10, 20, 30].map((x, index) => ({
+        sequence: index + 1,
+        publication: publication(
+          propertyUpdateDeliveries('position-a', { x }),
+          `publication-${index}`
+        )
+      }))
+    )
+    const stages: string[] = []
+    await service.materialize(batch, {
+      span: (stage) => {
+        stages.push(stage)
+        return () => undefined
+      },
+      detail: () => undefined
+    })
+    expect(
+      stages.filter((stage) => stage === 'working-map-preparation')
+    ).toHaveLength(1)
+    expect(propsKeys).toHaveBeenCalledTimes(1)
+    expect(record.document.props['position-a']).toMatchObject({ x: 30 })
+    expect(document.props['position-a']).toMatchObject({ x: 0 })
+    await service.materialize(batch)
+    expect(propsKeys).toHaveBeenCalledTimes(1)
+  })
+
   it('decodes and applies every publication in sequence before acknowledging the contiguous durable sequence', async () => {
     const harness = createMaterializationHarness()
     const batch = persistenceBatch([
@@ -1812,7 +1881,7 @@ describe('Asyra Design backend document materialization', () => {
     await expect(harness.service.materialize(batch)).resolves.toEqual({
       durableSequence: 2
     })
-    expect(harness.apply).toHaveBeenCalledTimes(2)
+    expect(harness.apply).toHaveBeenCalledTimes(1)
     expect(harness.getRecord()).toMatchObject({
       document: { appliedValues: [10, 20] },
       durableSequence: 2,
@@ -1945,19 +2014,17 @@ describe('Asyra Design backend document materialization', () => {
 
   it('does not commit any publication or advance durability when a later publication fails', async () => {
     const harness = createMaterializationHarness((document, changes) => {
-      const nextValue = changes.flatMap((change) =>
+      const nextValues = changes.flatMap((change) =>
         change.kind === 'property-components'
           ? change.updates.flatMap(({ values }) =>
               typeof values.x === 'number' ? [values.x] : []
             )
           : []
-      )[0]
-      if (nextValue === 20) throw new Error('backend canonical apply failed')
+      )
+      if (nextValues.includes(20))
+        throw new Error('backend canonical apply failed')
       return {
-        appliedValues:
-          nextValue === undefined
-            ? document.appliedValues
-            : [...document.appliedValues, nextValue]
+        appliedValues: [...document.appliedValues, ...nextValues]
       }
     })
 

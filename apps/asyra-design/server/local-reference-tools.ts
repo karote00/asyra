@@ -289,20 +289,24 @@ export const createLocalReferenceTools = (
     }
   }
 
+  interface ReferencePageInventory {
+    attempts: unknown[]
+    candidateImageUrls: string[]
+    candidates: ReturnType<typeof referencePageImages>
+  }
   const resolvedPages = new Map<
     string,
-    {
-      imageUrl: string
-      attempts: unknown[]
-      candidateImageUrls: string[]
-      candidates: ReturnType<typeof referencePageImages>
-    }
+    ReferencePageInventory & { imageUrl: string }
+  >()
+  const failedPageInventories = new Map<
+    string,
+    Record<string, unknown> & { pageAcquisition: ReferencePageInventory }
   >()
   const pageInFlight = new WeakMap<AbortSignal, Map<string, Promise<string>>>()
   const pageResolutionEvidence = {
     sourceResolution: 'unverified',
     nextStep:
-      'These are unchanged bytes from a page-declared representative image, which may be a preview rather than the original source. The App has not resized it. Verify both subject suitability and source resolution. Use a verified original imageUrl when needed; do not call a preview the original or reduce resolution. Other declared candidates are returned in pageAcquisition.'
+      'These are unchanged bytes from a page-declared representative image, which may be a preview rather than the original source. The App has not resized it. Verify both subject suitability and source resolution. Use a verified original imageUrl when needed; do not call a preview the original or reduce resolution. Other declared candidates are returned in pageAcquisition; follow next.arguments when complete=false. Candidate inventory does not establish subject suitability and does not download its alternatives.'
   }
   const importPage = async (
     name: string,
@@ -354,7 +358,9 @@ export const createLocalReferenceTools = (
       const declarations = JSON.parse(page).candidates as ReturnType<
         typeof referencePageImages
       >
-      const candidates = declarations.map((candidate) => candidate.imageUrl)
+      const candidates = declarations
+        .filter((candidate) => candidate.representative)
+        .map((candidate) => candidate.imageUrl)
       const attempts: {
         imageUrl: string
         available: boolean
@@ -373,6 +379,7 @@ export const createLocalReferenceTools = (
           ...(receipt.failure ? { failure: receipt.failure } : {})
         })
         if (receipt.available) {
+          failedPageInventories.delete(pageUrl)
           resolvedPages.set(pageUrl, {
             imageUrl,
             attempts,
@@ -392,15 +399,21 @@ export const createLocalReferenceTools = (
           })
         }
       }
-      return JSON.stringify({
+      const failedReceipt = {
         ...JSON.parse(
           unavailableReference(
             'REFERENCE_PAGE_IMAGES_UNAVAILABLE',
             'No declared image could be imported. Use a direct original image URL or another relevant source page; page metadata does not establish subject suitability.'
           )
         ),
-        pageAcquisition: { attempts }
-      })
+        pageAcquisition: {
+          attempts,
+          candidates: declarations,
+          candidateImageUrls: candidates
+        }
+      }
+      failedPageInventories.set(pageUrl, failedReceipt)
+      return JSON.stringify(failedReceipt)
     } catch (error) {
       signal.throwIfAborted()
       return unavailableReference(
@@ -478,9 +491,16 @@ export const createLocalReferenceTools = (
       const receipt = JSON.parse(await pending)
       signal.throwIfAborted()
       if (receipt.source) receipt.source.url = sourceUrl
-      const page = resolvedPages.get(sourceUrl)
-      if (receipt.available && page?.candidateImageUrls.includes(imageUrl))
-        page.imageUrl = imageUrl
+      const page =
+        resolvedPages.get(sourceUrl) ??
+        failedPageInventories.get(sourceUrl)?.pageAcquisition
+      if (
+        receipt.available &&
+        page?.candidates.some((candidate) => candidate.imageUrl === imageUrl)
+      ) {
+        resolvedPages.set(sourceUrl, { ...page, imageUrl })
+        failedPageInventories.delete(sourceUrl)
+      }
       return JSON.stringify(receipt)
     } finally {
       if (requests.get(imageUrl) === pending) requests.delete(imageUrl)
@@ -496,6 +516,36 @@ export const createLocalReferenceTools = (
     )
 
   return {
+    resultIssue: (_name: string, value: unknown): string | undefined => {
+      if (!isRecord(value)) return 'Reference import returned no result object'
+      const entries = Array.isArray(value.references)
+        ? value.references
+        : [value]
+      if (!entries.length) return 'Reference import omitted per-source outcomes'
+      for (const entry of entries) {
+        if (!isRecord(entry) || typeof entry.available !== 'boolean')
+          return 'Reference import omitted availability'
+        if (!entry.available) continue
+        if (
+          !Number.isSafeInteger(entry.attachmentIndex) ||
+          Number(entry.attachmentIndex) < 0 ||
+          typeof entry.sha256 !== 'string' ||
+          !admittedBytes.has(entry.sha256) ||
+          entry.referenceId !== `reference:${entry.sha256}` ||
+          !isRecord(entry.image) ||
+          !(Number(entry.image.width) > 0) ||
+          !(Number(entry.image.height) > 0) ||
+          !isRecord(entry.source) ||
+          typeof entry.source.url !== 'string'
+        )
+          return 'Reference import omitted its retained asset, dimensions or provenance'
+        const retainedBytes = admittedBytes.get(entry.sha256)
+        if (!retainedBytes) return 'Reference asset is no longer retained'
+        const retained = JSON.parse(retainedBytes)
+        if (retained.attachmentIndex !== entry.attachmentIndex)
+          return 'Reference attachment identity does not match its retained asset'
+      }
+    },
     definitions: [
       {
         type: 'function',
@@ -508,6 +558,12 @@ export const createLocalReferenceTools = (
           oneOf: [{ required: ['references'] }, { required: ['sourceUrl'] }],
           properties: {
             refresh: { type: 'boolean' },
+            candidateOffset: {
+              type: 'integer',
+              minimum: 0,
+              description:
+                'Continue a source-page candidate inventory using next.arguments; does not select or fetch the listed candidates.'
+            },
             references: {
               type: 'array',
               minItems: 1,
@@ -538,11 +594,79 @@ export const createLocalReferenceTools = (
           'REFERENCE_ARGUMENTS_INVALID',
           'refresh must be a boolean.'
         )
-      const { refresh, ...input } = args
+      const { refresh, candidateOffset, ...input } = args
+      if (
+        candidateOffset !== undefined &&
+        (!Number.isSafeInteger(candidateOffset) ||
+          Number(candidateOffset) < 0 ||
+          typeof input.sourceUrl !== 'string' ||
+          input.imageUrl !== undefined ||
+          input.references !== undefined)
+      )
+        return unavailableReference(
+          'REFERENCE_ARGUMENTS_INVALID',
+          'candidateOffset requires a sourceUrl-only page lookup.'
+        )
+      const pageCandidates = (
+        receipt: Record<string, unknown>,
+        sourceUrl: unknown,
+        offset = 0
+      ) => {
+        if (
+          !isRecord(receipt.pageAcquisition) ||
+          !Array.isArray(receipt.pageAcquisition.candidates)
+        )
+          return receipt
+        const acquisition = receipt.pageAcquisition
+        const all = acquisition.candidates as unknown[]
+        if (offset > all.length)
+          return JSON.parse(
+            unavailableReference(
+              'REFERENCE_ARGUMENTS_INVALID',
+              'Candidate offset is beyond the current page inventory. Restart at offset 0.'
+            )
+          )
+        const candidates = all.slice(offset, offset + 16)
+        const end = offset + candidates.length
+        return {
+          ...receipt,
+          pageAcquisition: {
+            ...acquisition,
+            candidates,
+            candidateImageUrls: candidates.flatMap((candidate) =>
+              isRecord(candidate) ? [candidate.imageUrl] : []
+            ),
+            offset,
+            count: all.length,
+            complete: end === all.length,
+            ...(end < all.length
+              ? {
+                  next: {
+                    tool: AiReferenceToolIds.IMPORT_REFERENCE_IMAGE,
+                    arguments: { sourceUrl, candidateOffset: end }
+                  }
+                }
+              : {})
+          }
+        }
+      }
       if (!('references' in input)) {
-        const receipt = JSON.parse(await acquire(name, input, signal))
+        const inventory =
+          candidateOffset !== undefined && typeof input.sourceUrl === 'string'
+            ? failedPageInventories.get(
+                validateReferenceImageUrl(input.sourceUrl).href
+              )
+            : undefined
+        const receipt =
+          inventory ?? JSON.parse(await acquire(name, input, signal))
         signal.throwIfAborted()
-        return JSON.stringify(projectDelivery(receipt, refresh === true))
+        return JSON.stringify(
+          pageCandidates(
+            projectDelivery(receipt, refresh === true),
+            input.sourceUrl,
+            Number(candidateOffset ?? 0)
+          )
+        )
       }
       signal.throwIfAborted()
       if (
@@ -577,10 +701,10 @@ export const createLocalReferenceTools = (
       signal.throwIfAborted()
       const images = new Set<number>()
       const actionResults: unknown[] = []
-      const references = receipts.map((original) => {
-        const { actionResults: results, ...receipt } = projectDelivery(
-          original,
-          refresh === true
+      const references = receipts.map((original, index) => {
+        const { actionResults: results, ...receipt } = pageCandidates(
+          projectDelivery(original, refresh === true),
+          isRecord(candidates[index]) ? candidates[index].sourceUrl : undefined
         )
         if (
           typeof receipt.attachmentIndex === 'number' &&

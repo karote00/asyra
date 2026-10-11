@@ -32,7 +32,8 @@ import type { AiConversationFeature } from '../../src/ai/conversation'
 import { createAiConversationController } from '../../src/ai/conversation'
 import {
   createDesignPreparationSession,
-  prepareDesign
+  prepareDesign,
+  prepareDesignAsync
 } from '../design-preparation'
 import { createAiExecutionProfiler as createProfiler } from '@asyra/ai-agent-runtime'
 import {
@@ -50,9 +51,9 @@ vi.mock('node:child_process', () => ({ spawn }))
 
 it('execution proof resolves batched semantic identities and applies ordered ready parts', async () => {
   const order: string[] = []
-  const session = createDesignPreparationSession((...args) => {
+  const session = createDesignPreparationSession(prepareDesign, (...args) => {
     order.push('prepare')
-    return prepareDesign(...args)
+    return prepareDesignAsync(...args)
   })
   const actions: AiActionDescription[] = JSON.parse(
     JSON.stringify([
@@ -472,12 +473,15 @@ it('execution proof preserves registered native capability envelopes', async ({
   const categoryDiscovery = packets.find(
     (packet) => packet.id === 101 && packet.result
   )?.result
-  expect(categoryDiscovery?.success).toBe(true)
+  expect(categoryDiscovery?.success, JSON.stringify(categoryDiscovery)).toBe(
+    true
+  )
   if (!categoryDiscovery) throw new Error('Missing category discovery receipt')
   const categoryApis = JSON.parse(categoryDiscovery.contentItems[0].text).apis
   expect(categoryApis).toEqual(
     basicApiContracts
       .filter((api) => api.category === 'fill')
+      .slice(0, 16)
       .map((api) =>
         expect.objectContaining({
           name: api.name,
@@ -690,10 +694,10 @@ it('execution proof composes preparation and canonical dispatch without repeated
       inputSchema: {}
     }
   ]
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const designs = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const execute = vi.fn(
     async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
@@ -1576,7 +1580,8 @@ it('execution proof preserves concrete work through progress and settlement', as
       tool: AiActionNames.UPDATE_DESIGN_ELEMENT,
       toolStatus: 'running' as const,
       summary: 'Running a tool',
-      message: 'Adjusting the roof color'
+      message: 'Adjusting the roof color',
+      activity: { kind: 'work' as const, callId: 'roof', sequence: 1 }
     }
     request.progressObserver(running)
     request.progressObserver({
@@ -1735,4 +1740,83 @@ it('execution proof composes capture and assessment without dropping unavailable
   expect(reviewed.accepted).toBe(true)
   expect(captures).toEqual(['drawing', 'detail', 'detail'])
   expect(assessVisual).toHaveBeenCalledTimes(1)
+})
+
+it('execution proof binds prepared recipe assessment to immutable source before applying', async () => {
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    },
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: {}
+    }
+  ]
+  const session = createDesignPreparationSession()
+  const designs = createLocalDesignTools(actions, session)
+  const execute = vi.fn()
+  const assessPrepared = vi.fn(async (packet) => ({
+    overall: {
+      status: 'fail' as const,
+      evidence: 'Unrequested decoration in source recipe.'
+    },
+    checks: Object.keys(packet.criteria).map((criterionId) => ({
+      criterionId,
+      status: 'fail' as const,
+      evidence: 'The recipe adds an unrequested panel.'
+    }))
+  }))
+  const operations = createLocalOperationTools(actions, designs, execute, {
+    assessPrepared
+  })
+  const signal = new AbortController().signal
+  const recipe = {
+    type: 'group',
+    name: 'Icon',
+    children: [
+      {
+        type: 'rect',
+        key: 'decoration',
+        name: 'Extra panel',
+        width: 10,
+        height: 10
+      }
+    ]
+  }
+  const prepared = session.prepare(recipe)
+  await operations.call(
+    AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
+    {
+      method: 'Create one icon',
+      references: [],
+      criteria: reviewCriteria(['Only the requested icon']),
+      detailRequired: false
+    },
+    signal
+  )
+  const result = JSON.parse(
+    await operations.call(
+      AiDesignToolIds.REVIEW_PREPARED_DESIGN,
+      { artifactId: prepared.artifactId },
+      signal
+    )
+  )
+  expect(result).toMatchObject({
+    artifactId: prepared.artifactId,
+    status: 'fail',
+    appearance: 'unverified',
+    finalCanvasReviewRequired: true
+  })
+  expect(assessPrepared.mock.calls[0][0].recipe).toEqual(recipe)
+  await expect(
+    operations.call(
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      { arguments: { artifactId: prepared.artifactId } },
+      signal
+    )
+  ).rejects.toThrow(/correction/)
+  expect(execute).not.toHaveBeenCalled()
 })

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { emitBrowserDragPhase, emitDiagnosticCounter } from '@asyra/utils'
 import {
   prepareDesign,
   createDesignPreparationSession
@@ -56,6 +57,32 @@ const context = () => ({ signal: new AbortController().signal }) as never
 const mutable = () => JSON.parse(JSON.stringify(fixture()))
 
 describe('prepared editable design application', () => {
+  it('records canonical phase work only during its own creation callbacks', async () => {
+    const api = apis()
+    api.create = (entries) => {
+      emitBrowserDragPhase('scene-tree:element-batch:materialize', 4)
+      emitDiagnosticCounter(
+        'scene-tree:membership:inserted-items',
+        entries.length
+      )
+      return entries.map((entry) => entry.id)
+    }
+    const result = await createPreparedDesignAction(api, async () => {
+      emitBrowserDragPhase('scene-tree:element-batch:materialize', 1000)
+      emitDiagnosticCounter('scene-tree:membership:inserted-items', 1000)
+    }).execute({ design: fixture() }, context())
+    expect(result).toMatchObject({
+      timing: {
+        canonicalWork: {
+          phases: {
+            'scene-tree:element-batch:materialize': { count: 3, totalMs: 12 }
+          },
+          counters: { 'scene-tree:membership:inserted-items': 3 }
+        }
+      }
+    })
+  })
+
   it('enrolls each native write while leaving cooperative work outside the member', async () => {
     const api = apis()
     let inMutation = false

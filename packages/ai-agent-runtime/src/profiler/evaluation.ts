@@ -178,6 +178,29 @@ export const evaluateExecution = (
         callId: step.callId
       }
       const outcome = object(result.toolOutcome)
+      // A completed transport is not evidence that its operation was usable.
+      // Retain unknown for older/omitted replies instead of inventing success.
+      let executionStatus:
+        'usable' | 'partial' | 'rejected' | 'failed' | 'unknown' = 'unknown'
+      if (outcome.status === 'partial' || result.status === 'partial')
+        executionStatus = 'partial'
+      else if (outcome.status === 'unavailable' || result.available === false) {
+        executionStatus = 'failed'
+        if (
+          result.stage === 'admission' ||
+          result.code === 'PREPARATION_REJECTED'
+        )
+          executionStatus = 'rejected'
+      } else if (outcome.status === 'usable') executionStatus = 'usable'
+      const execution = object(object(step.diagnostics?.output).execution)
+      if (
+        ['usable', 'partial', 'rejected', 'failed', 'unknown'].includes(
+          String(execution.status)
+        )
+      )
+        executionStatus = execution.status as typeof executionStatus
+      if (step.status === 'failed') executionStatus = 'failed'
+      const metadata = Object.keys(execution).length ? execution : result
       if (
         step.status === 'completed' &&
         step.tool === options.policy?.reviewTool &&
@@ -219,9 +242,7 @@ export const evaluateExecution = (
       }
       if (
         step.status === 'completed' &&
-        (result.available === false ||
-          outcome.status === 'unavailable' ||
-          outcome.status === 'partial')
+        ['partial', 'rejected', 'failed'].includes(executionStatus)
       )
         findings.push({
           ...identity,
@@ -272,30 +293,17 @@ export const evaluateExecution = (
           })
         else exactReads.set(key, step.callId)
       }
-      // A completed transport is not evidence that its operation was usable.
-      // Retain unknown for older/omitted replies instead of inventing success.
-      let executionStatus:
-        'usable' | 'partial' | 'rejected' | 'failed' | 'unknown' = 'unknown'
-      if (outcome.status === 'partial' || result.status === 'partial')
-        executionStatus = 'partial'
-      else if (outcome.status === 'unavailable' || result.available === false) {
-        executionStatus = 'failed'
-        if (
-          result.stage === 'admission' ||
-          result.code === 'PREPARATION_REJECTED'
-        )
-          executionStatus = 'rejected'
-      } else if (outcome.status === 'usable') executionStatus = 'usable'
-      if (step.status === 'failed') executionStatus = 'failed'
       return {
         ...identity,
         execution: {
           status: executionStatus,
-          stage: text(result.stage),
-          code: text(result.code) ?? text(evidence.code),
-          settlement: text(result.settlement),
+          stage: text(metadata.stage),
+          code: text(metadata.code) ?? text(evidence.code),
+          settlement: text(metadata.settlement),
           recoverable:
-            typeof result.recoverable === 'boolean' ? result.recoverable : null
+            typeof metadata.recoverable === 'boolean'
+              ? metadata.recoverable
+              : null
         },
         tool: step.tool,
         phase: text(args.phase),

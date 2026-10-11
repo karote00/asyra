@@ -23,14 +23,24 @@ describe('stage-owned App guidance', () => {
   it('uses existing activity fields for concrete work without extra reporting calls', () => {
     expect(general).toContain('existing message field')
     expect(general).toContain('action summary')
-    expect(general).toContain('current action and target')
-    expect(general).toContain('Adding window reflections')
+    expect(general).toContain('work purpose and target')
+    expect(general).toContain('The App supplies the observed execution phase')
+    expect(general).toContain('Public commentary may announce')
+    expect(general).not.toContain('current action and target')
+    expect(general).toContain('Window reflections')
     expect(general).toContain('conversation language')
     expect(general).toContain('Do not add a tool call just to report status')
   })
 
-  it('admits the first ready drawing before review planning without a complete geometry inventory', () => {
-    expect(general).toMatch(/first ready part.*before.*plan/s)
+  it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
+    expect(general).toContain('Draw each coherent ready part')
+    expect(general).toContain('review_prepared_design')
+    expect(general).toContain(
+      'Direct known-value edits need no prepared-content review'
+    )
+    expect(general).not.toMatch(
+      /Draw the first ready part before creating a review plan/
+    )
     expect(general).not.toMatch(
       /Before the first mutation, save|Plan input example:|factBindings|dependencyChanges|instanceRanges/
     )

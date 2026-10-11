@@ -52,3 +52,15 @@ export interface TransactionStatusPayload {
   error?: unknown
   timestamp: number
 }
+
+/** A canonical owner could not prove recovery, even before journal admission. */
+export class MutationRecoveryError extends Error {
+  readonly cause: unknown
+  readonly recoveryFailures: readonly unknown[]
+  constructor(cause: unknown, recoveryFailures: readonly unknown[]) {
+    super('Canonical mutation recovery could not be verified')
+    this.cause = cause
+    this.name = 'MutationRecoveryError'
+    this.recoveryFailures = Object.freeze([...recoveryFailures])
+  }
+}

@@ -8,12 +8,80 @@ import {
 } from '../../node/index.js'
 import { partitionExecutionTime, summarizeAppCallGaps } from '../../index.js'
 import { createAiExecutionProfiler as createProfiler } from '../../index.js'
+import { evaluateExecution } from '../evaluation.js'
 
 const workspace = async () => {
   const root = join(process.cwd(), 'tmp')
   await mkdir(root, { recursive: true })
   return mkdtemp(join(root, 'execution-record-test-'))
 }
+
+it.each([
+  [{ toolOutcome: { status: 'usable' } }, 'usable'],
+  [{ toolOutcome: { status: 'partial' } }, 'partial'],
+  [
+    {
+      toolOutcome: { status: 'unavailable' },
+      stage: 'admission',
+      code: 'PREPARATION_REJECTED',
+      settlement: 'not-started'
+    },
+    'rejected'
+  ],
+  [{ available: false, settlement: 'unknown' }, 'failed'],
+  [{ status: 'new-contract' }, 'unknown']
+])(
+  'preserves execution classification after large receipt summaries exhaust their budget: %s',
+  (outcome, expected) => {
+    const records: unknown[] = []
+    const usage = createProfiler(
+      { intent: '', context: {}, actions: [], attempt: 1 },
+      'test',
+      {
+        sink: {
+          write: (record) => records.push(record),
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
+    )
+    usage.trace('tool_started', {
+      tool: 'read',
+      callId: 'large',
+      arguments: {}
+    })
+    usage.trace('tool_completed', {
+      tool: 'read',
+      callId: 'large',
+      result: {
+        actionResults: Array.from({ length: 50 }, () => ({
+          result: {
+            scope: 'region',
+            parentId: null,
+            offset: 0,
+            limit: 0,
+            count: 2892,
+            field: 'x',
+            keyPrefix: 'windows',
+            fields: ['x', 'y', 'width', 'height'],
+            revision: 143340
+          }
+        })),
+        ...outcome
+      }
+    })
+    usage.finish('completed')
+    const run = parseExecutionRecord(
+      records.map((record) => JSON.stringify(record)).join('\n')
+    )
+    const report = evaluateExecution(run)
+    expect(report.toolCalls[0].execution.status).toBe(expected)
+    expect(
+      report.findings.some((finding) => finding.kind === 'unavailable-result')
+    ).toBe(['partial', 'rejected', 'failed'].includes(expected))
+    if ('settlement' in outcome)
+      expect(report.toolCalls[0].execution.settlement).toBe(outcome.settlement)
+  }
+)
 
 describe('local execution records', () => {
   it('retains ordered workflow part correlation on the existing owner spans', () => {
@@ -1245,5 +1313,69 @@ it('distinguishes redacted resource variants and measures local recording work',
     expect(costs.payloads[0].queueMs).toBeGreaterThanOrEqual(0)
   } finally {
     await rm(directory, { recursive: true, force: true })
+  }
+})
+
+it('retains owner phase correlation, source work and definition delivery scope without geometry', () => {
+  const records: Record<string, unknown>[] = []
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  try {
+    const usage = createProfiler(
+      { intent: 'private', context: {}, actions: [], attempt: 1 },
+      'gpt-6-astra',
+      {
+        sink: {
+          write: (record) => records.push(record),
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
+    )
+    usage.trace('provider_notification', {
+      method: 'app/activity',
+      activity: {
+        callId: 'prepare',
+        parentCallId: 'work',
+        phase: 'preparing',
+        scope: 'call',
+        sequence: 4
+      }
+    })
+    usage.trace('tool_completed', {
+      tool: 'prepare_design',
+      callId: 'prepare',
+      result: {
+        sourceWork: {
+          batches: 4,
+          nodes: 3001,
+          pathCommands: 20,
+          projectionCalls: 4,
+          largestBatchNodes: 1000,
+          largestBatchPathCommands: 20000
+        },
+        definition: {
+          revision: 'version',
+          coverage: 'partial',
+          requestedCoverage: 'partial',
+          availableInResponse: false,
+          state: 'previously-returned'
+        },
+        vertices: [{ x: 998877 }]
+      }
+    })
+    const result = records.find((entry) => entry.stage === 'tool_completed')
+      ?.evidence as Record<string, unknown>
+    expect(result.result).toMatchObject({
+      sourceWork: { projectionCalls: 4, pathCommands: 20, batches: 4 },
+      definition: { requestedCoverage: 'partial', availableInResponse: false }
+    })
+    expect(
+      (
+        records.find((entry) => entry.stage === 'provider_notification')
+          ?.evidence as Record<string, unknown>
+      ).activity
+    ).toMatchObject({ parentCallId: 'work', phase: 'preparing', sequence: 4 })
+    expect(JSON.stringify(records)).not.toContain('998877')
+  } finally {
+    log.mockRestore()
   }
 })

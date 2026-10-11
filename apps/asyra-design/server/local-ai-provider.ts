@@ -1,3 +1,7 @@
+import {
+  preparedAssessmentInstructions,
+  type PreparedRecipePacket
+} from './local-prepared-design-review'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 import { createAiInvoker } from '@asyra/ai-agent-runtime'
 import { nativeToolInputSchema } from './operation-input-schema'
@@ -233,6 +237,7 @@ const runLocalAiProvider = async (
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly visualAssessmentOnly?: boolean
+    readonly preparedAssessmentOnly?: boolean
     readonly recordDirectory?: string
     readonly sourceRevision?: string
     readonly sourceFingerprint?: string
@@ -240,9 +245,29 @@ const runLocalAiProvider = async (
   },
   usage?: ReturnType<typeof createAiExecutionProfiler>
 ): Promise<unknown> => {
-  const reportProgress = (event: AiToolProgress) => {
+  let progressSequence = 0
+  const reportProgress = (
+    event: AiToolProgress,
+    purposeSource = 'public-authored'
+  ) => {
+    const activity = {
+      ...event.activity,
+      phase: event.activity?.phase ?? ('executing' as const),
+      kind: event.activity?.kind ?? ('system' as const),
+      callId: event.activity?.callId ?? event.tool,
+      sequence: ++progressSequence
+    }
+    usage?.trace('provider_notification', {
+      method: 'app/activity',
+      tool: event.tool,
+      status: event.status,
+      activity,
+      purpose: event.activity?.kind === 'work' ? event.message : null,
+      purposeSource:
+        event.activity?.kind === 'work' ? purposeSource : 'inherited'
+    })
     try {
-      options.onProgress?.(event)
+      options.onProgress?.({ ...event, activity })
     } catch {
       usage?.trace('provider_notification', {
         method: 'app/progressObserverFailed',
@@ -256,9 +281,30 @@ const runLocalAiProvider = async (
   const callContext = new AsyncLocalStorage<{
     id: string
     receipts: unknown[]
+    inspectionId?: string
   }>()
   const ownerObservation = {
     parentCallId: () => callContext.getStore()?.id,
+    progress: (event: {
+      tool: string
+      callId: string
+      parentCallId?: string
+      status: 'running' | 'completed'
+    }) =>
+      reportProgress({
+        tool: event.tool,
+        status: event.status,
+        activity: {
+          kind: 'system',
+          callId: event.callId,
+          parentCallId: event.parentCallId,
+          sequence: 0,
+          phase:
+            event.tool === AiDesignToolIds.PREPARE_DESIGN
+              ? 'preparing'
+              : 'executing'
+        }
+      }),
     trace: (
       stage: 'action_started' | 'action_completed' | 'action_failed',
       evidence: Record<string, unknown>
@@ -277,6 +323,7 @@ const runLocalAiProvider = async (
   const designs = createLocalDesignTools(input.actions)
   const preparation: LocalActionPreparation = {
     resolveTargets: designs.resolveTargets,
+    resolveRecipe: designs.resolveRecipe,
     modelActions: (actions) =>
       designs.modelActions(imageTools.modelActions(actions)),
     resolveBatch: (value) =>
@@ -290,9 +337,30 @@ const runLocalAiProvider = async (
         const receipt = await observeActionBatch(
           batch,
           async (batch) => {
-            const receipt = await executeBatch(batch)
-            callContext.getStore()?.receipts.push(receipt)
-            return receipt
+            const parentCallId = callContext.getStore()?.id
+            const activity = {
+              kind: 'system' as const,
+              callId: batch.batchId,
+              parentCallId,
+              sequence: 0,
+              phase: batch.actions.some(
+                (action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN
+              )
+                ? ('applying' as const)
+                : ('executing' as const)
+            }
+            reportProgress({ tool: 'app-batch', status: 'running', activity })
+            try {
+              const receipt = await executeBatch(batch)
+              callContext.getStore()?.receipts.push(receipt)
+              return receipt
+            } finally {
+              reportProgress({
+                tool: 'app-batch',
+                status: 'completed',
+                activity
+              })
+            }
           },
           input.actions,
           callContext.getStore()?.id,
@@ -325,9 +393,82 @@ const runLocalAiProvider = async (
                   })
                 )
               ),
+            assessPrepared: async (packet, signal) => {
+              const sourceSpanId = randomUUID()
+              const parentCallId = callContext.getStore()?.id
+              const activity = {
+                kind: 'work' as const,
+                callId: sourceSpanId,
+                parentCallId,
+                sequence: 0,
+                phase: 'inspecting' as const
+              }
+              reportProgress(
+                {
+                  tool: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
+                  status: 'running',
+                  message:
+                    'Prepared composition and detail recipes against the selected references',
+                  activity
+                },
+                'registered-operation'
+              )
+              const finish = usage?.span({
+                callId: sourceSpanId,
+                owner: 'provider',
+                purpose: 'Assess retained source recipe before application',
+                parentCallId
+              })
+              try {
+                return await requestLocalPreparedAssessment(
+                  input.intent,
+                  packet,
+                  imageTools.referenceImages(packet.referenceImageIndexes),
+                  {
+                    model: options.model,
+                    executable: options.executable,
+                    recordDirectory: options.recordDirectory,
+                    sourceRevision: options.sourceRevision,
+                    sourceFingerprint: options.sourceFingerprint,
+                    sourceIdentityStatus: options.sourceIdentityStatus,
+                    sourceRequestId: usage?.requestId,
+                    parentCallId,
+                    sourceSpanId,
+                    signal
+                  }
+                )
+              } finally {
+                reportProgress(
+                  {
+                    tool: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
+                    status: 'completed',
+                    activity
+                  },
+                  'registered-operation'
+                )
+                finish?.()
+              }
+            },
             assessVisual: async (comparison, signal) => {
               const sourceSpanId = randomUUID()
               const parentCallId = callContext.getStore()?.id
+              const reviewActivity = {
+                kind: 'work' as const,
+                callId: sourceSpanId,
+                parentCallId,
+                sequence: 0,
+                phase: 'inspecting' as const
+              }
+              reportProgress(
+                {
+                  tool: AiDesignToolIds.REVIEW_DRAWING,
+                  status: 'running',
+                  message:
+                    'Current drawing against the selected references and requirements',
+                  activity: reviewActivity
+                },
+                'registered-operation'
+              )
               const finish = usage?.span({
                 callId: sourceSpanId,
                 owner: 'provider',
@@ -360,6 +501,14 @@ const runLocalAiProvider = async (
                   }
                 )
               } finally {
+                reportProgress(
+                  {
+                    tool: AiDesignToolIds.REVIEW_DRAWING,
+                    status: 'completed',
+                    activity: reviewActivity
+                  },
+                  'registered-operation'
+                )
                 finish?.()
               }
             },
@@ -369,11 +518,24 @@ const runLocalAiProvider = async (
               typeof input.metadata.aiTargets.compositionId === 'string'
                 ? input.metadata.aiTargets.compositionId
                 : undefined,
-            onInspection: (status) =>
+            onInspection: (status) => {
+              const context = callContext.getStore()
+              if (!context) return
+              if (status === 'running') context.inspectionId = randomUUID()
+              if (!context.inspectionId) return
               reportProgress({
                 tool: AiActionNames.INSPECT_DRAWING,
-                status
+                status,
+                activity: {
+                  kind: 'system',
+                  callId: context.inspectionId,
+                  parentCallId: context.id,
+                  sequence: 0,
+                  phase: 'inspecting'
+                }
               })
+              if (status === 'completed') delete context.inspectionId
+            }
           }
         )
       : undefined
@@ -414,9 +576,11 @@ const runLocalAiProvider = async (
       owner: operations
     }
   ]
-  const isolatedInstructions = options.visualAssessmentOnly
-    ? visualAssessmentInstructions
-    : assessmentInstructions
+  let isolatedInstructions = assessmentInstructions
+  if (options.visualAssessmentOnly)
+    isolatedInstructions = visualAssessmentInstructions
+  if (options.preparedAssessmentOnly)
+    isolatedInstructions = preparedAssessmentInstructions
   const activeToolGroups = options.assessmentOnly ? [] : toolGroups
   const nativeDefinitions = activeToolGroups.flatMap(
     ({ name, description, owner }) =>
@@ -597,7 +761,11 @@ const runLocalAiProvider = async (
         return protocolFailure()
       const toolName = String(params.tool)
       let message: string | undefined
-      if (toolName === AiDesignToolIds.REVIEW_DRAWING)
+      if (toolName === AiDesignToolIds.REVIEW_PREPARED_DESIGN)
+        message = 'Checking the prepared composition and detail recipe'
+      else if (toolName === AiDesignToolIds.RETAIN_DESIGN_TARGETS)
+        message = 'Retaining the selected object sets for subsequent changes'
+      else if (toolName === AiDesignToolIds.REVIEW_DRAWING)
         message = 'Checking the requested details'
       else if (toolName === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
         message = 'Defining the requested checks'
@@ -637,11 +805,28 @@ const runLocalAiProvider = async (
         params.arguments.message.length <= 1000
       )
         message = params.arguments.message
-      reportProgress({
-        tool: toolName,
-        status: 'running',
-        ...(message ? { message } : {})
-      })
+      const authoredMessage =
+        isRecord(params.arguments) &&
+        typeof params.arguments.message === 'string' &&
+        params.arguments.message.trim().length > 0 &&
+        params.arguments.message.length <= 1000
+          ? params.arguments.message
+          : undefined
+      if (authoredMessage) message = authoredMessage
+      reportProgress(
+        {
+          tool: toolName,
+          status: 'running',
+          activity: {
+            kind: message ? 'work' : 'system',
+            callId: params.callId,
+            sequence: 0,
+            phase: 'queued'
+          },
+          ...(message ? { message } : {})
+        },
+        authoredMessage ? 'public-authored' : 'registered-operation'
+      )
       toolCalls.add(params.callId)
       const toolStartedAt = performance.now()
       let executionStartedAt: number | undefined
@@ -650,6 +835,19 @@ const runLocalAiProvider = async (
       const task = createAiInvoker({
         execute: () =>
           schedule(binding.access, async () => {
+            reportProgress({
+              tool: toolName,
+              status: 'running',
+              activity: {
+                kind: 'system',
+                callId: params.callId as string,
+                sequence: 0,
+                phase:
+                  toolName === AiDesignToolIds.PREPARE_DESIGN
+                    ? 'preparing'
+                    : 'executing'
+              }
+            })
             executionStartedAt = performance.now()
             usage?.trace('tool_execution_started', {
               tool: toolName,
@@ -665,7 +863,27 @@ const runLocalAiProvider = async (
                     binding.definition,
                     params.arguments,
                     toolController.signal,
-                    () => ({ batches: callContext.getStore()?.receipts ?? [] })
+                    () => ({ batches: callContext.getStore()?.receipts ?? [] }),
+                    (phase) => {
+                      let observedPhase:
+                        'admission' | 'preparing' | 'executing' = 'executing'
+                      if (phase === 'admission') observedPhase = 'admission'
+                      else if (
+                        phase === 'execution' &&
+                        toolName === AiDesignToolIds.PREPARE_DESIGN
+                      )
+                        observedPhase = 'preparing'
+                      reportProgress({
+                        tool: toolName,
+                        status: 'running',
+                        activity: {
+                          kind: 'system',
+                          callId: params.callId as string,
+                          sequence: 0,
+                          phase: observedPhase
+                        }
+                      })
+                    }
                   )
               )
               try {
@@ -796,7 +1014,12 @@ const runLocalAiProvider = async (
           toolTasks.delete(task)
           reportProgress({
             tool: toolName,
-            status: 'completed'
+            status: 'completed',
+            activity: {
+              kind: 'system',
+              callId: params.callId as string,
+              sequence: 0
+            }
           })
           writeProtocol(
             JSON.stringify({
@@ -963,7 +1186,8 @@ const runLocalAiProvider = async (
       )
       reportProgress({
         tool: AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT,
-        status: value.method === 'item/started' ? 'running' : 'completed'
+        status: value.method === 'item/started' ? 'running' : 'completed',
+        activity: { kind: 'system', callId: params.item.id, sequence: 0 }
       })
       return
     }
@@ -993,7 +1217,25 @@ const runLocalAiProvider = async (
     if (value.method === 'item/completed') {
       const item = params.item
       if (!isRecord(item)) return protocolFailure()
-      if (item.type === 'agentMessage' && item.phase !== 'commentary') {
+      if (item.type === 'agentMessage' && item.phase === 'commentary') {
+        if (
+          typeof item.text === 'string' &&
+          item.text.trim() &&
+          item.text.length <= 1000
+        )
+          reportProgress({
+            tool: 'public-progress',
+            status: 'running',
+            message: item.text,
+            activity: {
+              kind: 'work',
+              callId: typeof item.id === 'string' ? item.id : randomUUID(),
+              sequence: 0,
+              scope: 'request',
+              phase: 'provider'
+            }
+          })
+      } else if (item.type === 'agentMessage') {
         if (typeof item.text !== 'string' || finalText !== undefined)
           return protocolFailure()
         finalText = item.text
@@ -1366,8 +1608,11 @@ const requestRecordedLocalAi = async (
   options: LocalAiProviderOptions & {
     assessmentOnly?: boolean
     visualAssessmentOnly?: boolean
+    preparedAssessmentOnly?: boolean
   }
 ) => {
+  let purpose = options.assessmentOnly ? 'execution-assessment' : 'drawing'
+  if (options.preparedAssessmentOnly) purpose = 'prepared-assessment'
   const sink = createExecutionRecordSink(
     options.recordDirectory ?? 'tmp/ai-executions'
   )
@@ -1384,9 +1629,8 @@ const requestRecordedLocalAi = async (
     lifecycle: true,
     parentCallId: options.parentCallId,
     sourceSpanId: options.sourceSpanId,
-    purpose: options.assessmentOnly ? 'execution-assessment' : 'drawing',
+    purpose,
     sourceRequestId:
-      options.assessmentOnly &&
       isRecord(input.metadata) &&
       typeof input.metadata.sourceRequestId === 'string'
         ? input.metadata.sourceRequestId
@@ -1501,6 +1745,33 @@ export const requestLocalAiAssessment = (
     },
     { ...options, executeBatch: undefined, assessmentOnly: true }
   )
+
+export const requestLocalPreparedAssessment = async (
+  request: string,
+  packet: PreparedRecipePacket,
+  images: { role: string; dataUrl: string }[],
+  options: Omit<LocalAiProviderOptions, 'executeBatch' | 'onProgress'> & {
+    sourceRequestId?: string
+  }
+) => {
+  const result = await requestRecordedLocalAi(
+    {
+      intent: request,
+      context: { ...packet, imageRoles: images.map(({ role }) => role) },
+      actions: [],
+      attempt: 1,
+      metadata: {
+        purpose: 'prepared-assessment',
+        ...(options.sourceRequestId
+          ? { sourceRequestId: options.sourceRequestId }
+          : {}),
+        imageAttachments: images.map(({ dataUrl }) => ({ dataUrl }))
+      }
+    },
+    { ...options, assessmentOnly: true, preparedAssessmentOnly: true }
+  )
+  return validateVisualAssessment(result.value, packet.criteria)
+}
 
 export const requestLocalVisualAssessment = async (
   assessment: VisualAssessmentInput,

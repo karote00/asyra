@@ -1,4 +1,8 @@
-import { canRetryAiTurn, projectAiQuestion } from './presentation'
+import {
+  canRetryAiTurn,
+  projectAiQuestion,
+  createAiActivityProjection
+} from './presentation'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
   AiJsonValue,
@@ -93,6 +97,7 @@ export interface AiConversationNavigationSnapshot {
 }
 
 export interface CreateAiConversationControllerOptions {
+  readonly onPublished?: (turn: AiSettledTurn) => void
   readonly confirmation?: {
     beginTurn(turnId: string): void
     cancel(reason?: unknown): boolean
@@ -645,6 +650,7 @@ export const createAiConversationController = (
       const aiTargets = revalidateTargetHints()
       notify()
 
+      const activityProjection = createAiActivityProjection()
       const progressObserver: AiRuntimeProgressObserver = (update) => {
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
           return
@@ -659,7 +665,9 @@ export const createAiConversationController = (
           currentTurn.waitingSinceMs = undefined
         }
         currentTurn.progress.push(update)
+        const decision = activityProjection.append(update)
         notify()
+        return decision
       }
 
       let result: unknown
@@ -754,6 +762,11 @@ export const createAiConversationController = (
       if (!disposed) {
         settledTurns.push(settled)
         notify()
+        try {
+          options.onPublished?.(settled)
+        } catch {
+          /* Publication observers cannot change the outcome. */
+        }
       }
       return settled
     },

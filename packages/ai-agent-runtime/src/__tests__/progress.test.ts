@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   AI_REDACTED_VALUE,
+  isExecutionActivity,
   AiProviderError,
   createAiAgentRuntime,
   type AiActionDefinition,
@@ -435,4 +436,323 @@ it('forwards bounded provider tool progress only during the owning request', asy
   report?.({ tool: 'vectorizer', status: 'completed' })
   expect(updates).toHaveLength(count)
   await runtime.dispose()
+})
+
+it('retains activity identity while dropping duplicate and stale producer events', async () => {
+  const updates: AiRuntimeProgressUpdate[] = []
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          const event = {
+            tool: 'execute_design_batch',
+            status: 'running' as const,
+            message: 'Adding windows',
+            activity: {
+              kind: 'work' as const,
+              callId: 'draw',
+              parentCallId: 'request',
+              scope: 'call' as const,
+              phase: 'applying' as const,
+              sequence: 2
+            }
+          }
+          options.onProgress?.(event)
+          options.onProgress?.(event)
+          options.onProgress?.({
+            ...event,
+            message: 'Old work',
+            activity: { ...event.activity, sequence: 1 }
+          })
+          return candidateActionBatch()
+        }
+      }
+    })
+  )
+  try {
+    await runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal,
+      progressObserver: (event) => updates.push(event)
+    })
+    expect(updates.filter((event) => event.activity)).toEqual([
+      expect.objectContaining({
+        message: 'Adding windows',
+        activity: {
+          kind: 'work',
+          callId: 'draw',
+          parentCallId: 'request',
+          scope: 'call',
+          phase: 'applying',
+          sequence: 1
+        }
+      })
+    ])
+  } finally {
+    await runtime.dispose()
+  }
+})
+
+it('keeps the request record open through final action and history settlement without waiting for diagnostic delivery', async () => {
+  const records: { event: string; [key: string]: unknown }[] = []
+  const action = deferred<unknown>()
+  const history = deferred<undefined>()
+  const upload = deferred<{ status: 'saved'; path: null }>()
+  const write = (record: { event: string; [key: string]: unknown }) => {
+    records.push(record)
+  }
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      createRecordingSink: () => ({ write, flush: () => upload.promise }),
+      actionDefinitions: [visibilityAction(vi.fn(() => action.promise))],
+      transactionRunner: {
+        run: async (_label, execute) => {
+          const result = await execute()
+          await history.promise
+          return result
+        }
+      }
+    })
+  )
+  try {
+    const pending = runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal
+    })
+    await vi.waitFor(() =>
+      expect(records.some((record) => record.stage === 'action_started')).toBe(
+        true
+      )
+    )
+    expect(records.some((record) => record.event === 'ai_request_usage')).toBe(
+      false
+    )
+    action.resolve({ saved: true })
+    await vi.waitFor(() =>
+      expect(
+        records.some((record) => record.stage === 'action_completed')
+      ).toBe(true)
+    )
+    expect(records.some((record) => record.event === 'ai_request_usage')).toBe(
+      false
+    )
+    history.resolve(undefined)
+    expect((await pending).status).toBe('executed')
+    expect(
+      records.filter((record) => record.event === 'ai_request_usage')
+    ).toHaveLength(1)
+    upload.resolve({ status: 'saved', path: null })
+  } finally {
+    action.resolve({})
+    history.resolve(undefined)
+    upload.resolve({ status: 'saved', path: null })
+    await runtime.dispose()
+  }
+})
+
+it('records domain waits and shows settlement progress after provider completion', async () => {
+  const records: {
+    stage?: unknown
+    evidence?: { purpose?: unknown }
+    [key: string]: unknown
+  }[] = []
+  const updates: AiRuntimeProgressUpdate[] = []
+  const definition = visibilityAction()
+  definition.execute = async (_args, context) => {
+    context.reportProgress?.({
+      phase: 'settlement',
+      summary: 'Saving the drawing'
+    })
+    if (!context.observe)
+      throw new Error('Missing Runtime observation boundary')
+    return context.observe(
+      'durability',
+      'Confirm durable publication target',
+      async () => ({ durableSequence: 7 })
+    )
+  }
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      actionDefinitions: [definition],
+      createRecordingSink: () => ({
+        write: (entry) => {
+          records.push(entry)
+        },
+        flush: async () => ({ status: 'saved', path: null })
+      })
+    })
+  )
+  try {
+    expect(
+      (
+        await runtime.run({
+          intent: 'Draw',
+          signal: new AbortController().signal,
+          progressObserver: (event) => updates.push(event)
+        })
+      ).status
+    ).toBe('executed')
+    expect(updates).toContainEqual(
+      expect.objectContaining({
+        phase: 'settlement',
+        summary: 'Saving the drawing'
+      })
+    )
+    expect(
+      records
+        .filter(
+          (entry) =>
+            entry.evidence?.purpose === 'Confirm durable publication target'
+        )
+        .map((entry) => entry.stage)
+    ).toEqual(['lifecycle_started', 'lifecycle_completed'])
+  } finally {
+    await runtime.dispose()
+  }
+})
+
+it.each(['failed', 'cancelled'] as const)(
+  'closes the request record once for %s execution and preserves product outcome on sink failure',
+  async (outcome) => {
+    const records: { event: string; [key: string]: unknown }[] = []
+    const controller = new AbortController()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        createRecordingSink: () => ({
+          write: (record) => {
+            records.push(record)
+          },
+          flush: async () => {
+            throw new Error('diagnostics unavailable')
+          }
+        }),
+        actionDefinitions: [
+          visibilityAction(
+            vi.fn(async () => {
+              if (outcome === 'cancelled') controller.abort()
+              throw new Error('action failed')
+            })
+          )
+        ]
+      })
+    )
+    try {
+      const result = await runtime.run({
+        intent: 'Draw',
+        signal: controller.signal
+      })
+      expect(result.status).toBe(outcome)
+      expect(
+        records.filter((record) => record.event === 'ai_request_usage')
+      ).toEqual([expect.objectContaining({ outcome })])
+    } finally {
+      await runtime.dispose()
+    }
+  }
+)
+
+it('links host publication observations without appending after the request terminal marker', async () => {
+  const streams: { event: string; [key: string]: unknown }[][] = []
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      createRecordingSink: () => {
+        const records: { event: string; [key: string]: unknown }[] = []
+        streams.push(records)
+        return {
+          write: (record) => {
+            records.push(record)
+          },
+          flush: async () => ({ status: 'saved', path: null })
+        }
+      }
+    })
+  )
+  try {
+    const result = await runtime.run({
+      intent: 'Draw',
+      signal: new AbortController().signal
+    })
+    if (!result.recordingId) throw new Error('Missing request recording ID')
+    runtime.observe?.({
+      sourceRequestId: result.recordingId,
+      purpose: 'conversation-publication',
+      evidence: { outcome: 'success' }
+    })
+    expect(streams).toHaveLength(2)
+    expect(streams[0][streams[0].length - 1]?.event).toBe('ai_request_usage')
+    expect(streams[1][0]).toMatchObject({
+      sourceRequestId: result.recordingId,
+      purpose: 'conversation-publication'
+    })
+  } finally {
+    await runtime.dispose()
+  }
+})
+
+it('separates mutation admission from canonical work and gives repeated domain spans distinct identities', async () => {
+  const records: {
+    stage?: unknown
+    evidence?: { purpose?: unknown }
+    [key: string]: unknown
+  }[] = []
+  const definition = visibilityAction()
+  definition.execute = async (_args, context) => {
+    await context.runMutation?.(() => 'written')
+    await context.observe?.('verify', 'Check result', async () => true)
+    await context.observe?.('verify', 'Check result', async () => true)
+  }
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      actionDefinitions: [definition],
+      transactionRunner: {
+        run: async (_label, execute) => execute(async (write) => write())
+      },
+      createRecordingSink: () => ({
+        write: (entry) => {
+          records.push(entry)
+        },
+        flush: async () => ({ status: 'saved', path: null })
+      })
+    })
+  )
+  try {
+    expect(
+      (
+        await runtime.run({
+          intent: 'Draw',
+          signal: new AbortController().signal
+        })
+      ).status
+    ).toBe('executed')
+    const started = records.filter(
+      (entry) => entry.stage === 'lifecycle_started'
+    )
+    expect(started.map((entry) => entry.evidence?.purpose)).toContain(
+      'Await mutation admission'
+    )
+    expect(started.map((entry) => entry.evidence?.purpose)).toContain(
+      'Apply canonical mutation'
+    )
+    const checks = started.filter(
+      (entry) => entry.evidence?.purpose === 'Check result'
+    )
+    expect(new Set(checks.map((entry) => entry.callId)).size).toBe(2)
+  } finally {
+    await runtime.dispose()
+  }
+})
+
+it('rejects invalid activity parent and phase contracts at the shared transport owner', () => {
+  const value = {
+    kind: 'work',
+    callId: 'prepare',
+    parentCallId: 'workflow',
+    phase: 'preparing',
+    scope: 'call',
+    sequence: 1
+  }
+  expect(isExecutionActivity(value)).toBe(true)
+  expect(isExecutionActivity({ ...value, parentCallId: 'prepare' })).toBe(false)
+  expect(isExecutionActivity({ ...value, phase: 'imaginary' })).toBe(false)
+  expect(isExecutionActivity({ ...value, sequence: 0 })).toBe(false)
 })

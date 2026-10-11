@@ -101,15 +101,12 @@ class Workspace extends Group {
         (this.firstFrame as GroupInstanceTypes | null) ?? undefined
     }
     const target = (availableParent ?? this) as Group
-    const children = [...target.get('children')]
-    const insertionIndex = index > -1 ? index : children.length
-    children.splice(
-      insertionIndex,
-      0,
-      ...elements.map((element) => element.get('id'))
-    )
+    const insertionIndex = index > -1 ? index : target.getCanonicalChildCount()
     this.registry.addManyToMap(elements, target.get('id'))
-    target.replaceChildrenFromCanonicalBatch(children)
+    target.insertChildrenFromCanonicalBatch(
+      insertionIndex,
+      elements.map((element) => element.get('id'))
+    )
     return target as GroupInstanceTypes
   }
 

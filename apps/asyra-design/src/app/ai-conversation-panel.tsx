@@ -700,7 +700,10 @@ const AiConversationFeed = ({
                     aria-label="Current activity"
                     className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
-                    {activity.current.message || activity.current.label}
+                    <span>{activity.current.label}</span>
+                    {activity.current.message ? (
+                      <span className="block">{activity.current.message}</span>
+                    ) : null}
                   </div>
                 ) : null}
                 {confirmationSnapshot.decisions

@@ -1,6 +1,8 @@
+import { AI_EXECUTION_RECORD_ENDPOINT } from './action-batch-endpoint'
 import { basicApiPermissionRules } from './basic-api-catalog'
 import {
   createAiAgentRuntime,
+  createRecordDeliverySink,
   type AiAgentRuntime,
   type AiProvider
 } from '@asyra/ai-agent-runtime'
@@ -53,6 +55,7 @@ export const createAiStartup = (
           [AiActionNames.REVIEW_DESIGN]: 'allow',
           [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'allow',
           [AiActionNames.READ_DESIGN_CONTEXT]: 'allow',
+          [AiActionNames.MAP_RETAINED_FILLS]: 'allow',
           [AiActionNames.INSPECT_DRAWING]: 'allow',
           [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: 'allow',
           [AiActionNames.REPORT_OUTCOME]: 'allow',
@@ -66,6 +69,23 @@ export const createAiStartup = (
           [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'allow'
         },
         provider,
+        createRecordingSink: () =>
+          createRecordDeliverySink({
+            send: async (records) => {
+              const response = await fetch(AI_EXECUTION_RECORD_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(records),
+                signal: AbortSignal.timeout(10_000)
+              })
+              if (!response.ok)
+                throw new Error('Execution record delivery failed')
+              const receipt = await response.json()
+              if (typeof receipt?.complete !== 'boolean')
+                throw new Error('Invalid execution record receipt')
+              return receipt
+            }
+          }),
         requestConfirmation: confirmation.requestConfirmation,
         transactionRunner: createAiTransactionRunner({ history })
       })

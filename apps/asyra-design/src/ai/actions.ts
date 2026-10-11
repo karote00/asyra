@@ -1015,7 +1015,19 @@ export const createAiActions = (
       let persistence: unknown
       if (args.outcome === 'completed' && options.confirmPersistence) {
         try {
-          persistence = await options.confirmPersistence(context.signal)
+          context.reportProgress?.({
+            phase: 'settlement',
+            summary: 'Saving the drawing'
+          })
+          const confirmPersistence = options.confirmPersistence
+          const confirm = () => confirmPersistence(context.signal)
+          persistence = context.observe
+            ? await context.observe(
+                'durability',
+                'Confirm durable publication target',
+                confirm
+              )
+            : await confirm()
         } catch (error) {
           assertNotAborted(context)
           persistence = {

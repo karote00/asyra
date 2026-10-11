@@ -2455,10 +2455,15 @@ describe('SceneTree', () => {
       workspace,
       'replaceChildrenFromCanonicalBatch'
     )
+    const insertChildren = vi.spyOn(
+      workspace,
+      'insertChildrenFromCanonicalBatch'
+    )
     const readBoundary = () => ({
       registryBatchCalls: addManyToMap.mock.calls.length,
       registeredElementCount: addManyToMap.mock.calls[0]?.[0].length ?? 0,
-      parentReplacementCalls: replaceChildren.mock.calls.length
+      parentReplacementCalls: replaceChildren.mock.calls.length,
+      parentInsertionCalls: insertChildren.mock.calls.length
     })
 
     expect(
@@ -2471,6 +2476,7 @@ describe('SceneTree', () => {
 
     addManyToMap.mockClear()
     replaceChildren.mockClear()
+    insertChildren.mockClear()
 
     expect(
       sceneTree.addNewElements(
@@ -2491,8 +2497,13 @@ describe('SceneTree', () => {
     expect(normalSingleBoundary).toEqual({
       registryBatchCalls: 1,
       registeredElementCount: 1,
-      parentReplacementCalls: 1
+      parentReplacementCalls: 0,
+      parentInsertionCalls: 1
     })
+    expect(workspace.get('children')).toEqual([
+      'normal-single',
+      'explicit-batch-of-one'
+    ])
   })
 
   it('Step 4 canonical owner: hands off one ordered Props and Scene batch or restores the complete pre-apply state', () => {

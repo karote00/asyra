@@ -1,8 +1,12 @@
 import type { SharedPublication } from '@asyra/factory'
 import { Buffer } from 'node:buffer'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...actual, writeFile: vi.fn(actual.writeFile) }
+})
 import { createFormalInitialDocument } from '../../src/collaboration/initial-document'
 import {
   CollaborationMessageTypes,
@@ -175,4 +179,83 @@ describe('document backend destructive Reset boundary', () => {
       await backend.close()
     }
   })
+})
+
+it('records checkpoint admission, serialization, write and rename in durable order', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  const events: string[] = []
+  const details: Record<string, unknown>[] = []
+  await store.transact(
+    'observed',
+    async (current, commit) => {
+      commit({ ...current, durableSequence: 7 })
+    },
+    {
+      span: (stage) => {
+        events.push(`${stage}:start`)
+        return () => {
+          events.push(`${stage}:end`)
+        }
+      },
+      detail: (value) => {
+        details.push(value)
+      }
+    }
+  )
+  expect(events).toEqual([
+    'checkpoint-admission-wait:start',
+    'checkpoint-admission-wait:end',
+    'checkpoint-read:start',
+    'checkpoint-read:end',
+    'checkpoint-serialization:start',
+    'checkpoint-serialization:end',
+    'checkpoint-write:start',
+    'checkpoint-write:end',
+    'checkpoint-rename:start',
+    'checkpoint-rename:end'
+  ])
+  expect(details).toContainEqual(
+    expect.objectContaining({ durableSequence: 7, bytes: expect.any(Number) })
+  )
+  expect((await store.readCheckpoint('observed')).durableSequence).toBe(7)
+})
+it('keeps checkpoint durability independent from diagnostic failures', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  await store.transact(
+    'observer-failure',
+    async (current, commit) => {
+      commit({ ...current, durableSequence: 3 })
+    },
+    {
+      span: () => {
+        throw new Error('observer unavailable')
+      },
+      detail: () => {
+        throw new Error('observer unavailable')
+      }
+    }
+  )
+  expect((await store.readCheckpoint('observer-failure')).durableSequence).toBe(
+    3
+  )
+})
+
+it('keeps the previous cached and on-disk watermark when checkpoint writing fails', async () => {
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  await store.transact('failed-write', async (current, commit) => {
+    commit({ ...current, durableSequence: 1 })
+  })
+  vi.mocked(writeFile).mockRejectedValueOnce(
+    new Error('checkpoint write failed')
+  )
+  await expect(
+    store.transact('failed-write', async (current, commit) => {
+      commit({ ...current, durableSequence: 2 })
+    })
+  ).rejects.toThrow('checkpoint write failed')
+  expect((await store.readCheckpoint('failed-write')).durableSequence).toBe(1)
+  const freshStore = createFileDocumentMaterializationStore(dataDirectory)
+  expect(
+    (await freshStore.readCheckpoint('failed-write')).durableSequence
+  ).toBe(1)
 })

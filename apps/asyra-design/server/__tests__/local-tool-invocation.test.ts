@@ -368,3 +368,201 @@ it('records unusable internal output without changing the returned value or leav
     })
   ])
 })
+
+it('retains a rejected draft at public admission and repairs only the incorrect field', async () => {
+  const designs = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ])
+  const definition = designs.definitions[0]
+  const invalid = {
+    type: 'group',
+    name: 'Building',
+    children: [
+      { type: 'rect', key: 'wall', name: 'Wall', width: -1, height: 10 }
+    ]
+  }
+  const call = vi.spyOn(designs, 'call')
+  const failed = JSON.parse(
+    (await invokeLocalTool(designs, definition, { draft: invalid }, signal()))
+      .text
+  )
+  expect(failed).toMatchObject({
+    available: false,
+    settlement: 'not-started',
+    draftId: expect.any(String)
+  })
+  expect(call).not.toHaveBeenCalled()
+  const fixed = await invokeLocalTool(
+    designs,
+    definition,
+    {
+      repair: {
+        draftId: failed.draftId,
+        replacements: [{ path: '/children/0/width', value: 10 }]
+      }
+    },
+    signal()
+  )
+  expect(fixed.success).toBe(true)
+  expect(JSON.parse(fixed.text)).toMatchObject({
+    artifactId: expect.any(String),
+    elementCount: 2,
+    preparationInput: {
+      kind: 'retained-repair',
+      draftId: failed.draftId,
+      revision: failed.draftId,
+      replacementCount: 1,
+      sourceBytes: expect.any(Number)
+    }
+  })
+})
+
+it('rejects a claimed preparation success without its required artifact identity', async () => {
+  const designs = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ])
+  vi.spyOn(designs, 'call').mockResolvedValue(
+    JSON.stringify({ available: true })
+  )
+  const result = await invokeLocalTool(
+    designs,
+    designs.definitions[0],
+    { draft: { type: 'group', name: 'Building' } },
+    signal()
+  )
+  expect(result.success).toBe(false)
+  expect(JSON.parse(result.text)).toMatchObject({
+    code: 'TOOL_RESULT_INVALID',
+    stage: 'decoding',
+    settlement: 'unknown'
+  })
+})
+
+it('rejects missing retained identities at each preparation, image and workflow output boundary', async () => {
+  const actions = [
+    ...Object.values(AiActionNames).map((name) => ({
+      name,
+      description: name,
+      inputSchema: { type: 'object' }
+    })),
+    ...basicApiContracts
+  ]
+  const designs = createLocalDesignTools(actions)
+  const images = createLocalImageTools({})
+  const operations = createLocalOperationTools(actions, designs, vi.fn())
+  const owners = [
+    images,
+    operations,
+    createLocalReferenceTools(images.addReference),
+    createLocalDesignWorkflow(designs, operations)
+  ]
+  for (const owner of owners) {
+    const call = vi
+      .spyOn(owner, 'call')
+      .mockResolvedValue(
+        JSON.stringify({ available: true, status: 'complete' })
+      )
+    for (const tool of owner.definitions) {
+      const reply = await invokeLocalTool(
+        owner,
+        { ...tool, inputSchema: {} },
+        {},
+        signal()
+      )
+      expect(JSON.parse(reply.text), tool.name).toMatchObject({
+        code: 'TOOL_RESULT_INVALID',
+        settlement: 'unknown'
+      })
+      expect(reply.success, tool.name).toBe(false)
+    }
+    call.mockRestore()
+  }
+})
+
+it('distinguishes usable discovery pages from incomplete mutations through public admission', async () => {
+  const designs = createLocalDesignTools(basicApiContracts)
+  const operations = createLocalOperationTools(
+    basicApiContracts,
+    designs,
+    vi.fn()
+  )
+  const tool = operations.definitions.find(
+    (entry) => entry.name === 'describe_design_apis'
+  )
+  if (!tool) throw new Error('Discovery tool is not registered')
+  const first = await invokeLocalTool(
+    operations,
+    tool,
+    { category: 'fill' },
+    signal()
+  )
+  expect(first.success).toBe(true)
+  const page = JSON.parse(first.text)
+  expect(page).toMatchObject({
+    complete: false,
+    toolOutcome: { status: 'usable' }
+  })
+  expect(page.next.arguments.offset).toBe(page.apis.length)
+  const next = await invokeLocalTool(
+    operations,
+    tool,
+    page.next.arguments,
+    signal()
+  )
+  expect(next.success).toBe(true)
+  expect(JSON.parse(next.text).complete).toBe(true)
+  const call = vi
+    .spyOn(operations, 'call')
+    .mockResolvedValue(JSON.stringify({ ...page, next: undefined }))
+  expect(
+    JSON.parse(
+      (await invokeLocalTool(operations, tool, { category: 'fill' }, signal()))
+        .text
+    ).code
+  ).toBe('TOOL_RESULT_INVALID')
+  call.mockRestore()
+})
+
+it.each([undefined, () => ({ batches: [] })])(
+  'preserves acknowledged output when its owner rejects the rest of that output contract with observer %s',
+  async (executionEvidence) => {
+    const receipt = {
+      actionResults: [
+        {
+          actionId: 'one',
+          actionName: 'mutation',
+          result: { status: 'complete', value: null }
+        }
+      ]
+    }
+    const owner = {
+      call: async () => JSON.stringify(receipt),
+      resultIssue: () => 'Missing successor identity'
+    }
+    const reply = JSON.parse(
+      (
+        await invokeLocalTool(
+          owner,
+          definition,
+          {},
+          signal(),
+          executionEvidence
+        )
+      ).text
+    )
+    expect(reply).toMatchObject({
+      code: 'TOOL_RESULT_INVALID',
+      settlement: 'unknown',
+      executionResult: receipt,
+      toolOutcome: { status: 'partial' }
+    })
+  }
+)

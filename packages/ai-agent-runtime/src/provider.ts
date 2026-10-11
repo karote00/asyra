@@ -1,5 +1,53 @@
 import type { AiActionDescription, AiJsonValue } from './types.js'
 
+/** Ordered public purpose and observed owner phase, independent of outcome. */
+export interface ExecutionActivity {
+  readonly kind: 'work' | 'system'
+  readonly callId: string
+  readonly sequence: number
+  readonly parentCallId?: string
+  readonly scope?: 'request' | 'call'
+  readonly phase?:
+    | 'provider'
+    | 'queued'
+    | 'admission'
+    | 'preparing'
+    | 'executing'
+    | 'applying'
+    | 'inspecting'
+}
+
+/** Shared transport admission for public activity, without altering its language. */
+export const isExecutionActivity = (
+  value: unknown
+): value is ExecutionActivity => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const activity = value as ExecutionActivity
+  const identity = (id: unknown) =>
+    typeof id === 'string' && id.length > 0 && id.length <= 256
+  return (
+    ['work', 'system'].includes(activity.kind) &&
+    identity(activity.callId) &&
+    Number.isSafeInteger(activity.sequence) &&
+    activity.sequence > 0 &&
+    (activity.parentCallId === undefined ||
+      (identity(activity.parentCallId) &&
+        activity.parentCallId !== activity.callId)) &&
+    (activity.scope === undefined ||
+      ['request', 'call'].includes(activity.scope)) &&
+    (activity.phase === undefined ||
+      [
+        'provider',
+        'queued',
+        'admission',
+        'preparing',
+        'executing',
+        'applying',
+        'inspecting'
+      ].includes(activity.phase))
+  )
+}
+
 export interface AiActionBatchAction {
   readonly id: string
   readonly name: string
@@ -51,6 +99,7 @@ export interface AiProvider {
         readonly tool: string
         readonly status: 'running' | 'completed'
         readonly message?: string
+        readonly activity?: ExecutionActivity
       }) => void
     }
   ): Promise<AiActionBatch>

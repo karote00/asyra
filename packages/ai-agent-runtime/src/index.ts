@@ -13,7 +13,7 @@ export {
   shouldRetryAiProviderFailure,
   toAiProviderRequestFailure
 } from './provider-retry.js'
-export { AiProviderError } from './provider.js'
+export { AiProviderError, isExecutionActivity } from './provider.js'
 export { createGenericHttpAiProvider } from './providers/generic-http.js'
 export { AI_REDACTED_VALUE, redactAiValue } from './redaction.js'
 export {
@@ -55,7 +55,8 @@ export type {
   AiProvider,
   AiProviderErrorCode,
   AiProviderErrorOptions,
-  AiProviderInput
+  AiProviderInput,
+  ExecutionActivity
 } from './provider.js'
 export type {
   AiFetch,
@@ -116,3 +117,5 @@ export * from './profiler/evaluation.js'
 export * from './profiler/assessment.js'
 export * from './invocation.js'
 export * from './profiler/trace.js'
+
+export { createRecordDeliverySink } from './profiler/record-delivery.js'

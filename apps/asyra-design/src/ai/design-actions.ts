@@ -1,3 +1,7 @@
+import {
+  subscribeToBrowserDragPhases,
+  subscribeToDiagnosticCounters
+} from '@asyra/utils'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { yieldToCooperativeHost } from '@asyra/core'
 import {
@@ -81,6 +85,12 @@ export const createPreparedDesignAction = (
     const startedAt = now()
     const design = admitPreparedDesign(args.design)
     const admissionMs = now() - startedAt
+    const canonicalWork = {
+      scope: 'synchronous-core-creation',
+      timing: 'inclusive-owner-phases',
+      phases: {} as Record<string, { count: number; totalMs: number }>,
+      counters: {} as Record<string, number>
+    }
     let createMs = 0,
       transactionMs = 0,
       selectionMs = 0,
@@ -163,9 +173,21 @@ export const createPreparedDesignAction = (
           throw new Error('A design object already exists.')
         const createStartedAt = now()
         validationMs += createStartedAt - callbackStartedAt
+        const stopPhases = subscribeToBrowserDragPhases((name, durationMs) => {
+          const entry = canonicalWork.phases[name] ?? { count: 0, totalMs: 0 }
+          entry.count++
+          entry.totalMs += durationMs
+          canonicalWork.phases[name] = entry
+        })
+        const stopCounters = subscribeToDiagnosticCounters((name, value) => {
+          canonicalWork.counters[name] =
+            (canonicalWork.counters[name] ?? 0) + value
+        })
         try {
           return apis.create(descriptors, parentId)
         } finally {
+          stopPhases()
+          stopCounters()
           createMs += now() - createStartedAt
           callbackMs = now() - callbackStartedAt
         }
@@ -216,6 +238,7 @@ export const createPreparedDesignAction = (
     return {
       status: 'complete',
       timing: {
+        canonicalWork,
         admissionMs,
         createMs,
         transactionMs,

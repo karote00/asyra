@@ -1551,3 +1551,1863 @@ Completion evidence:
   apps/asyra-design/test-results/ai-conversation-flow-current-activity outputs.
   Test-owned services exited; ports 3000, 4101 and 4201 have no listeners.
   No full local CI, live 101 request, commit or push was performed.
+
+## Task - whole-request activity, query reuse and durable settlement
+
+Status: implementation complete with scoped formal verification. No push.
+The five review gaps below are binding implementation requirements. This follow-up supersedes the earlier activity closure claim for
+real provider-to-panel handoffs; those focused tests did not exercise the actual
+producer's generic messages. The current contract preserves concrete work across
+generic progress. Historical validation evidence is retained, not treated as
+proof that the full handoff works.
+
+Association: this plan, this task, current conversation as closeout owner.
+Base: e07bbd222c68e6806708fb450ac886dc47a07f4f on
+codex/full-101-review-20261010 in the existing ai-runtime-profiler worktree.
+
+### Bounded objective and evidence
+
+Diagnose and plan corrections for current activity replacement, repeated context
+reads, final persistence waiting and missing lifecycle records. Discovery is
+limited to the recorded run, the four direct producer/consumer paths below,
+their current specs/Inspector steps and formal tests. This task changes this
+plan and the direct Runtime/App owners, public types, transport, tests, specs and
+Inspector routes below. Local diagnostic evidence remains with the run. No full
+local CI, new live model run or push. No new dependency or storage format.
+
+Evidence root: tmp/full-101-merged-20261010. Read verified-timing.json,
+call-details.json, retained input/output payloads, the saved backend document and
+diagnosis/measured.json. Request: 6795a59b-7b95-47d4-b0cd-fb9b50dce7c2.
+
+| Finding                                                    | Evidence and limit                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System labels overwrite authored work                      | local-ai-provider.ts puts fixed labels such as Checking the requested details into message. The transport retains message and presentation.ts treats any bounded message as concrete work. Existing continuity fixtures omitted message on generic progress.                          |
+| Unchanged query results are delivered again                | 105 read_design_context calls include 37 identical repeated pages for the same 7,248 objects, with no intervening mutation: 2,301,585 repeated output bytes. Two repeated root-bounds queries changed results and are not counted as redundant.                                       |
+| Pagination repeats selection work                          | design-context.ts filters region candidates and reconstructs metadata per invocation before slicing the page. fields limits computed fields but does not remove the fixed row metadata. There is no retained revision-bound page result.                                              |
+| Read-dependent edits lack a complete retained-data handoff | Following writes use thousands of IDs and distinct per-object fill patches. Existing region query targets handle uniform edits; created artifact keys already support some reuse. Those capabilities do not alone carry selected position columns through a varying fill calculation. |
+| Durable batches repeat whole-document preparation          | document-materializer.ts invokes the reducer per publication. Every invocation copies both complete maps. The saved document has 36,221 elements, 851,204 properties, 1,196 publications and 36 durable batches.                                                                      |
+| The recording lifetime ends too early                      | requestRecordedLocalAi finishes and flushes its profiler before the browser executes the final report_outcome persistence confirmation. App completion follows provider completion by 114.488 seconds outside that recorded root.                                                     |
+
+The two 37-page scans each execute in about one second. These are not evidence
+of 74 separate model reasoning rounds. Recorded tool-output bytes are not proof
+of bytes inserted into model context. The model's reason for requesting a second
+scan is not observable; the missing retained-result handoff is observable.
+
+Offline feasibility probe using the actual reducer and saved 101 document:
+eight ordered element-name updates took 4,163 ms with eight reducer calls and
+518 ms with one call containing those same changes. A small instrumented fixture
+counted eight versus one property-map enumerations. The checked result and input
+immutability agree. This is not a replay of the original publications or proof
+of equivalence for every change kind, and does not attribute all 114.488 seconds.
+The store also serializes and writes a full checkpoint per durable batch.
+
+Correct completion time is 1,045.855 seconds (17m25.855s), with first visible
+content at 41.524 seconds. The recording harness noticed completion 30.918 seconds
+late while reading a disappearing locator; that delay is not App runtime time.
+
+### Proposed complete flow and owners
+
+Runtime request start -> provider child invocation -> authored work/system
+progress -> App query or mutation -> publication admission -> backend ordered
+materialization -> checkpoint commit -> captured-sequence acknowledgement ->
+final action/history settlement -> Runtime request terminal event.
+
+1. **Activity semantics.** Keep generic tool/lifecycle labels separate from
+   authored work through the provider, Runtime progress contract, transport and
+   projection. Introduce an explicit discriminant at the owning progress type;
+   do not infer provenance from English strings. Preserve supplied work messages
+   instead of overriding them in specialized tool branches. Generic events still
+   remain observable but do not replace the latest concrete work. Waiting for
+   durable storage is an explicit lifecycle state, not stale drawing activity.
+   Preserve authored language, call ordering, terminal/control precedence and
+   current/history consistency. No model call, timer or polling is needed.
+2. **Whole-request records.** The Runtime run owns the root lifetime; provider
+   invocation is a child. Reuse Runtime recorder, invocation middleware, trace
+   projection and local sink. App adapters contribute domain spans without
+   creating a second profiler. Carry request/call identity and publication
+   sequence ranges through browser, AI server, collaboration and persistence.
+   Record final action, admission wait, durability wait and history settlement
+   before closing the Runtime root. App conversation publication is a subsequent
+   correlated host event; it does not rewrite the Runtime duration. Provider
+   completion alone must never certify whole-request coverage. A lost client or stream produces an
+   explicitly incomplete record, not synthetic completion.
+3. **Durable batch work.** Preserve validated publication order, per-publication
+   identity and existing transaction boundaries, but apply the ordered canonical
+   changes to one working document per existing durable batch. Validate and
+   commit the batch atomically, preserving the original checkpoint on any
+   failure. Do not merge across queue transactions or alter sequence semantics.
+   Keep the current storage format and checkpoint write/rename boundary. The
+   captured sequence must actually become durable before success is returned.
+4. **Retained query-to-write data.** Reuse created artifact identity and pattern
+   membership when available; do not parse display names or guess object roles.
+   For live spatial queries, the App query owner retains one ordered result with
+   document/workspace identity, explicit coordinate space, dependency revision,
+   selector and requested columns. Subsequent pages reference that result.
+   Region edits remain direct region selection; hierarchy traversal must not
+   replace the requested bounds. The server passes opaque result references to
+   registered batch actions without returning thousands of rows to the model.
+   Existing region target queries remain the route for uniform edits.
+5. **Varying edits.** First reuse existing calculation/construction operators.
+   Complete the typed handoff for the observed position-dependent fill case:
+   selected current positions -> explicit normalization/mapping parameters ->
+   per-target new fill values -> canonical batch write. AI chooses the mapping
+   and visual intent; the owner computes values. Add only a bounded registered
+   operator if no existing operator can express this case. Do not accept JS
+   functions, callbacks, arbitrary eval or inferred artistic corrections.
+   A read/export path remains available when actual reasoning needs the data.
+
+Retained results have an explicit release/eviction lifetime and byte limit;
+eviction returns a recoverable missing-result response. Mutation, Undo/Redo,
+remote edits, hierarchy changes and Reset invalidate affected dependencies.
+Viewport-only pan/zoom does not invalidate world-space results. Check freshness,
+locks and existence at consumption; do not silently reselect or replay a stale
+mutation. Keep immutable creation membership separate from mutable current
+positions/properties. Reuse canonical change notifications for invalidation,
+not a second independently maintained document model.
+
+### Recording contract and diagnostic cost
+
+- Activity records retain call identity, provenance, accepted/replaced/retained
+  projection decision and reason, allowing a status transition to be explained.
+- Query records retain normalized selector identity, snapshot/revision,
+  candidate/filter counts, requested columns, cache/reuse outcome and consumer
+  call identity. Distinguish App-to-executor output bytes from known
+  executor-to-model delivery; unavailable upstream delivery remains explicit.
+- Persistence records separate queue delay, validation/decode, canonical apply,
+  map preparation, serialization, write, rename and acknowledgement. Retain
+  publication counts, changed counts, snapshot size and durable watermarks.
+- Use local monotonic clocks for durations and causal correlation between
+  processes. Do not subtract unsynchronized clocks or double-count overlapping
+  waits. Preserve execution success separately from correctness and usability.
+- Reuse sanitized payload references and digests; do not copy the whole document
+  into each record. Bound queues and record dropped/unavailable observations.
+  Diagnostic failure must not turn a successful drawing into a product failure.
+- Correct the local recording harness terminal observer separately. Keep its
+  detection/recording duration outside App completion metrics; do not add the
+  user-specific full-101 recording workflow to CI.
+
+### Implementation order and acceptance
+
+Before implementation, update/admit the current product contract and exact
+Inspector routes: ai-execution-flow settle/observe/query-execution boundaries
+and the existing document materialization owner in the conversational drawing
+flow. Current flow must describe the new contract, not retain obsolete ownership.
+Create one owner step card at a time; this proposal is not an admission result.
+
+1. Prove actual provider-to-panel status replacement and delayed final action
+   omissions with failing formal tests. Fix typed progress and root recording
+   together, then verify real transport handoffs with a deterministic provider.
+2. With persistence spans available, prove repeated map preparation in the
+   materializer plus real reducer. Implement one preparation per durable batch.
+   Measure the saved 101 locally after correctness and work-count gates pass.
+3. Prove repeated selection/filter/column work across query pages and direct
+   query-to-write composition. Implement retained selection and the bounded
+   varying-fill handoff; align tool schemas, operation discovery and guidance.
+4. Review the complete sequence, all direct consumers and diagnostic overhead.
+   Run only applicable focused tests and bounded headless integration tests.
+   A subsequent user-authorized full 101 run supplies end-to-end measurements;
+   this planning task does not start one automatically.
+
+Formal regression owners and required assertions:
+
+- Provider, transport, Runtime and presentation tests: actual fixed-label
+  producer events after authored work, repeated/late acknowledgements,
+  concurrent call ordering, no concrete message yet, language preservation,
+  cancellation/failure and explicit final persistence state.
+- Runtime profiler and execution-flow-proof tests: provider returns while final
+  action is blocked; root remains open, both success and failure finalize once,
+  child calls join correctly, missing telemetry lowers coverage, and recording
+  overhead does not recurse or copy large payloads per event.
+- collaboration-operations.test.ts, document-canonical-reducer.test.ts,
+  persistence queue/store and Reset tests: ordered create/update/delete,
+  shared properties, hierarchy, Undo/Redo publications, failed later change,
+  checkpoint write failure, duplicate publication/batch retries, lost ACK,
+  cancellation and Reset. One working-map preparation per durable batch;
+  later edits must not extend a captured completion target. Existing mock
+  materializer output tests alone cannot prove reducer work reuse.
+- design-context tests and local operation integration: one candidate selection
+  per retained revision, stable pages, minimal requested columns, patterned
+  membership reuse, exact spatial scope, coordinate-space correctness,
+  bounded memory/release, changed dependency invalidation and stale-result
+  rejection without mutation. Varying fills must match explicit intended values
+  through the real batch API, including shared-property and Undo behavior.
+- Current flow/specs, naming and scoped type/lint checks apply to implemented
+  slices. CI tests assert deterministic correctness and work counts, not local
+  milliseconds. No full repository validation or remote operation is implied.
+
+Self-review: this addresses producers, transport and consumers rather than only
+UI projection; retention alone does not solve read-dependent mutation, so the
+typed consumer is included. Batching does not weaken durability or reorder
+changes. Root records include final App work instead of extending a provider
+timer and relabeling it. Checkpoint rewrite cost remains measured separately;
+a journal/storage-format redesign is not justified by this probe and is outside
+this proposal. If checkpoint I/O remains dominant after the bounded batch fix,
+report its measured cost and revise the storage plan before changing formats.
+No renderer, Group geometry, reference selection, model/effort, dependency or
+unrelated CI changes are included.
+
+### Resolved review gaps and implementation contract
+
+1. **Membership invalidation.** A retained spatial selection depends on the
+   query, workspace/document lifetime and all events that can change membership,
+   not just IDs already in the result. Creation, deletion, bounds changes,
+   ancestor transforms/reparenting and filter-property changes invalidate the
+   relevant selection. Use canonical publication/change subscriptions; where
+   the owner cannot reliably identify affected regions, invalidate spatial
+   selection for that document instead of returning a stale hit. An explicit
+   document revision is a safe conservative first boundary; finer invalidation
+   is permitted only with equivalent work-count tests. Never scan the whole
+   document to detect changes. A snapshot's requested values and membership
+   share one version. Required cases include an outside object entering, a newly
+   created match, an ancestor moving descendants and Undo/remote replay.
+2. **Atomic consumption.** A retained-result mutation enters the existing
+   runMutation boundary. Inside its synchronous callback, validate session,
+   revision, current locks and complete target existence, compute the admitted
+   mapping and apply the canonical batch. No await between final validation and
+   write. Reset/eviction/stale references reject with a recoverable classified
+   result and zero writes. Multiple operations explicitly using one snapshot
+   validate together before their first write, not after their own writes have
+   invalidated it. Preserve unrelated user/remote edits and existing rollback.
+3. **Record delivery and closure.** A host-owned request recording session uses
+   the Runtime recorder and local sink for both provider children and post-provider
+   events. A bounded independently addressed delivery channel remains usable
+   after the model response stream ends. Request/producer identity plus a
+   monotonic producer sequence makes retries idempotent. A final producer marker
+   specifies its last sequence; collector completeness requires those records,
+   not merely a terminal UI event. Product settlement never waits for diagnostic
+   upload. Trace state distinguishes product outcome from collection completeness;
+   disconnect/disposal or missing sequences leave explicit incomplete coverage.
+   Runtime emits terminal state after action/history settlement; the App supplies
+   a correlated conversation-publication event without redefining Runtime timing.
+   Child requests cannot close the parent. Same-document multi-actor persistence
+   batches may serve several requests: link request sequence targets to the
+   batch once, do not duplicate its measured work for each request.
+4. **Activity identity and ordering.** Runtime/provider types own a structured
+   activity kind (work or system), call identity and producer sequence. Runtime
+   associates them with its invocation/attempt; transport preserves them. Only
+   a newer work-start event can replace concrete activity. Late completions,
+   duplicates and events from an earlier invocation cannot replace current work.
+   Among overlapping work calls, latest admitted work-start wins; a completion
+   does not restore an older description. Explicit control/terminal states win.
+   Generic providers may omit activity metadata and receive ordinary phase
+   labels; do not infer concrete provenance from their text. Internal execution
+   summaries require explicit authored provenance too. Add transport tests with
+   real adapter-produced system messages rather than fixtures omitting message.
+5. **Bounded varying-fill contract.** Reuse the existing fill and calculation
+   schemas before adding an operator. The intended consumer accepts an opaque
+   snapshot, selected position columns with declared coordinate space, an
+   explicit axis/domain and a finite piecewise-linear mapping of normalized
+   values to fill parameters. Invalid/non-finite values, missing columns and
+   zero-width domains reject before writes; endpoint handling is explicit in
+   the schema. The AI supplies the mapping, not the App. Outputs are canonical
+   new-value fill patches and a compact receipt with count/version/provenance;
+   retain full details for explicit inspection. Exclude arbitrary expressions,
+   JS callbacks and automatic artistic corrections. Prove equivalence to the
+   same explicit patches through the public fill API, including shared fills.
+
+Self-review after these additions: no result can remain valid solely because its
+original members did not change; atomic validation occurs after queued user work;
+recording delivery does not hold product completion open; generic progress no
+longer masquerades as authored work; and the varying-edit operator has bounded
+inputs rather than an open-ended language. Per-owner gates below must demonstrate
+these claims before closure. Complete source-bound flow admission before each
+implementation step. Do not claim runtime completion from this design review.
+
+Step execution card - settle activity: inputs are registered provider progress
+and ordered action starts; output is one current/history activity projection.
+System/late/duplicate events bypass concrete replacement; control/terminal events
+win. Runtime owns progress identity, App adapters own authored provenance and
+presentation. Allowlisted files are provider/runtime types, local provider,
+wire adapter, presentation and direct tests in the settle Inspector step. No
+language inference, timer, canonical write or second UI state is permitted.
+Cases: real producer generic message after work, old start, late completion,
+retry/invocation retirement and current/history parity. Test-first gate: provider
+and presentation regressions; then transport/Runtime and flow proof. Failure owner
+is settle. Stop if provenance needs an unreviewed input or lifecycle mechanism.
+
+Step execution card - observe request lifetime: Runtime run is the producer of
+request start, provider/action child spans and settled outcome; App supplies a
+nonblocking sink and domain observations. The collector admits sequenced local
+records after the model stream closes, with explicit incomplete delivery. No
+provider-only timer may represent the request; no diagnostic failure changes
+canonical work. Boundary: Runtime runtime/profiler/record delivery, App recording
+adapter and existing HTTP middleware, direct tests and specs. Tests first block
+the final action and history independently, keep upload pending and assert one
+terminal record only after product settlement. Failure owner observe. Stop for
+unreviewed recording ownership or a requirement to block product completion.
+
+Step execution card - durable materialization: the current socket-authoritative
+session admits ordered, decoded canonical publications. Its backend materializer
+must create one working document per admitted durable batch, then atomically
+commit document and sequence registries. Retried batches bypass canonical apply.
+Allowlisted owners are document-materializer, canonical reducer, backend store,
+backend domain observations and their formal tests. Inputs retain document and
+batch identity plus publication ranges; output remains the captured durable
+sequence. No queue transaction merging, storage-format change, payload omission
+or optimistic acknowledgement. Test-first: count real reducer map preparation
+for multiple publications and reject a later invalid canonical change without
+advancing the checkpoint. Existing queue, retry, Reset and reducer suites remain
+required. Failure owner: open-socket-authoritative-document-session.
+
+Observe slice checkpoint: Runtime root, independent delivery and activity
+transport focused tests pass. Additional App domain/persistence observations and
+final integration remain open; no complete recording claim is made yet.
+
+Step execution card - retained query consumption: the App context owner retains
+ordered query membership and requested values with canonical document revision
+and workspace identity. Existing public Core metadata, spatial selection and
+child APIs remain authoritative. Read references are opaque and bounded;
+consumption validates every reference and target inside runMutation before any
+write. A bounded fill-mapping action uses the public plural fill API, never a
+model callback. Query/mapping schemas and operation discovery are direct
+consumers. Formal cases: one selection across pages, outside/new/ancestor changes,
+workspace replacement, eviction/release, stale-after-admission and exact mapped
+new values. No scene-tree traversal for a bounds query, inferred color intent,
+renderer cache or second document model. Failure owner: apply and settle.
+
+### Completed implementation and bounded review - 2026-10-10
+
+All five review gaps are implemented in the existing task worktree. Production
+changes are confined to the admitted Runtime/App owners and direct adapters.
+No renderer, Group geometry, model, reference acquisition, storage format or
+third-party dependency changed. Nothing was pushed.
+
+- Activity kind, call identity and sequence survive the real provider and HTTP
+  handoff. System messages and late acknowledgements cannot replace authored
+  work. Explicit durability settlement supersedes drawing activity. The shared
+  transition owner computes recording decisions incrementally, without replaying
+  earlier progress for every diagnostic event; current display and history use
+  the same transition rules.
+- Runtime records provider, context, resolution, permissions, confirmation,
+  mutation admission, canonical write, domain waits, action outcome and history
+  settlement. Its terminal record follows product settlement. Independent bounded
+  delivery and sequenced collection handle lost acknowledgements, cancellation,
+  incomplete streams, capacity and expiry. Conversation publication links back to
+  the completed Runtime request. Diagnostics do not block product completion.
+- One durable batch invokes the real canonical reducer once. Formal work-count
+  evidence counts one property-map enumeration for three ordered publications,
+  and no additional preparation on exact retry. Store observations distinguish
+  admission, read, serialization, write and rename. The real reducer's map
+  preparation observation is forwarded through the materializer; a formal
+  regression detects a missing adapter handoff. Failed writes and changes retain
+  the original checkpoint and watermarks.
+- Retained queries perform one selection and property read per revision. Pages
+  use an ID-to-row index; reference-only replies do not clone or transfer rows.
+  Receipts record candidate, selected, metadata-read and computed-read counts,
+  revision and reuse. The first three-row query reads three property rows; a
+  repeated page reads zero properties and performs zero selections. Canonical
+  revision invalidates potential new members, not merely original members.
+- The registered batch-only mapping action is discoverable by operation and
+  accepts its advertised schema through the real batch preparation owner. Inside
+  synchronous mutation admission it validates freshness, target/ancestor locks,
+  columns and all mappings, resolves current fill identities, rejects conflicting
+  simultaneous values for a shared fill, and calls the public plural fill API.
+  Existing fill APIs retain their ordered-update semantics; the mapping does not
+  detach shared properties. Real App tests verify mapped values and Undo/Redo.
+
+Self-review corrections included indexed page delivery, zero-row reference
+receipts, exact snapshot schema/native-admission agreement, ancestor locks,
+shared-fill conflict admission, map-preparation observation forwarding and
+incremental activity diagnostics. Each discovered mismatch was reproduced by a
+formal failing case before its owner correction. Existing behavior assertions
+were retained; old status fixtures were updated to declare authored provenance.
+
+Focused evidence (no full local CI):
+
+| Gate                                                                        | Result                                                                                      | Evidence                                                                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Runtime progress, delivery, portable boundary, execution and record parsing | 62 passed                                                                                   | tmp/whole-request-runtime-complete.log                                                                           |
+| Query/mapping/schema, canonical materialization/reducer and backend Reset   | 92 passed                                                                                   | tmp/whole-request-app-final4.log; tmp/whole-request-checkpoint-failure.log                                       |
+| Provider, HTTP transport and execution flow proof                           | 191 passed; 3 existing opt-in skips                                                         | tmp/whole-request-transport-final.log                                                                            |
+| Activity, conversation and rendered panel                                   | 82 passed                                                                                   | tmp/whole-request-ui-final4.log                                                                                  |
+| Runtime input, startup, App startup, HTTP client and actions                | 41 passed                                                                                   | tmp/whole-request-consumers-final.log                                                                            |
+| Headless App integration                                                    | 4 passed: two viewport sizes, shared mapping/Undo and ancestor/new-member/Undo invalidation | tmp/whole-request-e2e-complete.log                                                                               |
+| Runtime build and App production source typecheck                           | Passed; zero production diagnostics with unchanged tsconfig options                         | tmp/whole-request-runtime-build-final.log; tmp/whole-request-app-production-types.log                            |
+| Server typecheck, changed-source ESLint and naming                          | Passed; ESLint has zero errors and five existing console warnings                           | tmp/whole-request-server-types-final.log; tmp/whole-request-eslint-final.log; tmp/whole-request-naming-final.log |
+
+The current execution-flow source candidate is
+a4fcac40-15f3-435f-8c4b-1edbff2c95ad, source fingerprint
+94b902bdcdb68a480d63e3906f3a301d88bb71df00922e7334f81afe24fe05e4.
+Its current baseline flow cases pass. Contract review
+c1e0fe4693cce12f3cbd67cc5170000a63bdf87f911c847f25a088caa71ceee4
+has no blockers and is accepted through the supported CLI. Scoped tests above
+supply the additional new behavior proof; the baseline flow case set alone does
+not claim that proof. Test-owned ports 3441/4440/4441 were closed after execution.
+
+Decisions and limits: use a conservative document revision before attempting
+fine-grained spatial invalidation; unrelated canonical edits can invalidate a
+snapshot safely. Retention defaults to eight snapshots with a 32 MiB serialized-data budget;
+capacity/release/staleness are actionable failures, never silent reselection.
+Record completeness and product success remain separate. The previous saved-101
+probe remains immutable evidence, not a replay or a claimed time saving. No new
+live model/101 run was performed in this implementation task, and the remaining
+checkpoint serialization cost has not been represented as solved by a storage
+format change. A subsequent explicitly requested full run can measure the new
+whole-request evidence.
+
+### Follow-up - explicit activity state machine - 2026-10-11
+
+User authorization: refactor in this same worktree; no push. Association and base
+remain the whole-request task above. Scope is the App activity projection, its
+direct consumers/tests and current conversation/Inspector contracts. Exclude
+provider behavior, transport schemas, query/storage owners, model runs and full
+local CI. Preserve language, loop compaction, concrete-work continuity, event
+ordering, final outcome authority and current/history identity.
+
+Design review: the current projection is already the shared owner, but its
+boolean flags do not guard lifecycle transitions. A delayed running event after
+settlement can replace completion or saving. Extract one App-owned pure reducer
+with explicit running, awaiting-approval, saving, stopping and settled states.
+Work descriptions remain data, not dynamically created states. Progress is
+normalized to work/system/control events at this owner. Attempt/sequence guards
+precede transitions. Completion acknowledgements do not resume approval; actual
+execution/provider progress can. Saving accepts only settlement; stopping accepts
+only settlement; settled rejects later progress. Authoritative conversation
+snapshots finalize partial/failure/cancellation and clarification without
+changing source events. Rendering history is read-only and repeatable.
+
+Step Execution Card - settle: inputs are existing ordered Runtime progress and
+conversation controls/outcome; output is one visible activity/history projection
+and its accepted/retained/rejected reason. Allowed contributors are the App
+presentation, turn controller and existing runtime event contract; no model
+inference, string-based phase detection, timers, canonical data or new dependency.
+Implementation boundary: activity-state.ts, presentation.ts and their direct
+formal tests, under the existing settle route. Failure owner: settle. The state
+machine does not replace Runtime's transport-admission validation.
+
+Test-first cases: late work after saving/terminal, control resume, stale attempt
+and sequence, duplicate visible work, repeated result reads, authoritative partial
+failure and question behavior. Existing presentation/conversation/panel suites
+remain regression obligations. Gates: focused tests, changed-source lint, naming,
+production typecheck and current source-bound Inspector proof. Stop if a wire or
+Runtime lifecycle change is needed; that is outside this follow-up. Self-review
+findings resolved before implementation: avoid a second display owner, preserve
+an explicit work entry through generic internal phases, keep host snapshots
+separate from provider evidence, and avoid replaying history per recorded event.
+
+Follow-up completion: the App-owned activity-state.ts now contains one pure
+lifecycle reducer and the existing activity-label projection. presentation.ts
+re-exports the unchanged consumer entrypoints and reuses the same tool labels
+for outcome summaries. No Runtime or transport change was needed. Running work,
+approval, saving, stopping, settlement and clarification have explicit transition
+semantics; authored descriptions remain data. History reads are side-effect-free.
+Generic loops, language, stale-event guards, partial failure and final outcome
+contracts remain covered. Diagnostic decisions and panel replay use the same
+reducer; no earlier progress is reread for an incremental recording decision.
+
+Five new formal cases failed before implementation. Bounded review also caught
+late approval reopening stopping; its regression failed before correction. The
+existing invalid-MIME test now explicitly marks its intentional type violation,
+and two existing status fixtures supply the required attempt field. Their
+runtime rejection/behavior assertions are unchanged.
+
+Validation: 101 focused cases passed (43 presentation, 25 conversation and 33
+panel), including 19 added cases; production sources plus the two touched test
+files typecheck with zero diagnostics (249 roots). Changed-source ESLint and
+naming pass; App frontend build passes with its existing bundle-size warning.
+Evidence: tmp/activity-machine-consumers-final.log,
+tmp/activity-machine-types-final.log, tmp/activity-machine-lint-final.log,
+tmp/activity-machine-naming-final.log and tmp/activity-machine-build.log.
+Source-bound Inspector candidate 7b086b59-3680-412f-8c3b-ce55a514c8df passes;
+source fingerprint 258d3efa5e98e738ba7ba282090da124993d380adcc7c8375ec47bf808c0ef49.
+Contract review 10a3d6bfd6a21cc5be2ae9195bee0f0fdeedfb5bf43efe0d2bd0bf9681afb8e3
+has no blockers and is accepted. No live 101 run, browser visual review, full
+local CI, commit or push was performed for this follow-up.
+
+### Live validation - full Taipei 101 - 2026-10-11
+
+User-authorized one complete model run on the current dirty worktree. Reuse the
+full-building prompt, headless recording and recording-only bounds fitting;
+retain ten seconds after completion. Scope is the normal App provider-to-status,
+query/mutation and durable settlement path. Evidence owner is settle/observe;
+source-bound formal checks above remain prerequisite evidence. Use
+http://localhost:3000 with isolated document/record directories under
+tmp/full-101-state-machine-20261011. Command: node
+tmp/full-101-state-machine-20261011/run.cjs. Capture status/outcome mutations,
+request records, service logs, screenshots and video; inspect the final image
+and compare status transitions with actual progress records. Read DOM state
+without locator waits after the status node disappears, to avoid adding the
+prior harness's 30-second completion delay. No product edit, push or full CI
+is part of this validation. Preserve the original result on failure.
+
+Live validation result: one request completed successfully. Send-to-first-visible
+was 72.582 s; DOM outcome completion was 490.426 s (panel: 8m 10s). Final drawing
+contains 12,547 objects, excluding workspace. The video is verified H.264 MP4,
+1920x1080, 504.88 s, with the requested ten-second final hold. Both first and
+final bounds fits occurred; the initial frame already covered final bounds.
+
+The observed status sequence contains 17 authored work transitions. The shared
+projection retained work through 123 generic progress events and 54 completion
+acknowledgements; nine duplicates were suppressed. No generic label replaced
+concrete work after its first appearance. Saving then settlement occurred in
+14 ms. Final durability confirmation took 3.2 ms and history settlement 6.8 ms;
+provider end to DOM completion was 192.3 ms. Fifteen background durable batches
+completed, totaling 6.884 s of inclusive batch work, overlapping the main run.
+All 19 request records completed; 201 payload files and four reference assets
+passed digest verification. Source hashes captured before the run are unchanged.
+
+Two recoverable issues remain in this evidence: a source-page download returned
+partial, and 1,011 pattern faces exceeded the source limit before a 943-face
+retry succeeded. The run did not exercise large retained region-query editing,
+so it is not evidence for that workload. Compared with the prior 36,220-object
+run, this run is shorter but has fewer objects and a slower first frame. No
+constant-work speedup claim follows. Re-read settle/observe contracts at closure;
+this is live evidence for continuity, durable completion and record ownership,
+not a replacement for focused regression checks or a visual-accuracy guarantee.
+
+Evidence: tmp/full-101-state-machine-20261011/report.html, verified-timing.json,
+current-status-analysis.json, analysis-verification.json, persistence-spans.json,
+trace.json, tool-timeline.csv, source-verification.json and video-metadata.json.
+The final screenshot and sampled MP4 ending were inspected. Backend checkpoint
+backup is preserved. Three test-owned services were stopped; ports 3000, 4101
+and 4201 have no listeners. No production edit, second model run, full local CI,
+commit or push occurred in this validation.
+
+## Follow-up proposal - truthful activity and bounded drawing preparation
+
+Status: user-authorized implementation, 2026-10-11. The revised limit policy
+and whole-flow proposal have been self-reviewed; implementation starts at prepare. The user rejected generic waiting labels and
+requested an audit across handoffs rather than further isolated fixes. This section supersedes the interpretation that
+retaining a concrete activity proves that the displayed action is still running.
+The historical run measurements above remain evidence, not acceptance of that
+interpretation. The reported pattern rejection is a schema/budget inconsistency,
+not proof that the requested geometry exceeded the aggregate work budget.
+
+### Current task boundary
+
+Association: this plan, current conversation, codex/full-101-review-20261010,
+base e07bbd222c68e6806708fb450ac886dc47a07f4f, existing ai-runtime-profiler
+worktree. The current request authorizes this complete revised plan, owner implementation,
+formal tests and matching App/Runtime specs and Inspector contracts. Preserve all
+pre-existing edits. Diagnostics remain under the existing run diagnosis directory.
+Fixed discovery: the five native tool families, their advertised schemas and
+170 action descriptors from the saved invocation, and the current registration,
+discovery, admission, scheduling, construction, canonical dispatch, receipts,
+repair/reuse, activity and trace handoffs. Compare current specs and focused
+formal tests with those paths and the saved failures. Inspect direct consumers
+only; do not turn this into an unrelated repository-wide cleanup.
+Work through the reviewed owner slices and integrated focused verification. No
+push, full local CI, additional model run, dependency change or unrelated renderer
+work. A new full model run requires the requested verification checkpoint.
+
+### Findings and causal evidence
+
+1. **The activity contract itself retains completed actions.** At provider time
+   71.914-71.971 s, prepare_and_apply_design finishes the base. At 86.016-86.019 s,
+   criteria and API description calls finish; the next recorded call starts at
+   113.635 s. The user's panel screenshot at request elapsed 101 s nevertheless
+   says that the base is being drawn. Provider time starts approximately 0.260 s
+   after Send. activity-state.ts unconditionally retains completed tool updates
+   and keeps state.work across generic updates. The settle Inspector condition
+   explicitly says to ignore completion acknowledgements. This is an incorrect
+   product/architecture contract, not merely an untranslated verb or missing
+   duplicate filter. Current tests proving continuity do not prove truthfulness.
+2. **First visible latency contains reference selection and provider intervals.**
+   First visible is 72.582 s after Send. The first schema call returns five full
+   definitions (69,098 bytes). Page imports yield a generic site metadata image
+   and a Wikipedia logo before a direct building aerial image is acquired at
+   provider time 49.177-49.303 s. The first drawing call begins at 71.914 s:
+   22.611 s later. The App does not execute drawing during that gap. Criteria and
+   fact tools run after the first drawing, so mandatory plan-before-draw gating
+   is not its demonstrated cause. Five earlier native search events total about
+   11.665 s; image imports total about 1.912 s. Do not describe every remaining
+   interval as model reasoning or promise that one App change removes it.
+3. **Reference discovery suppresses useful candidates.** reference-page-images.ts
+   prioritizes images connected to page metadata, and includes other structured
+   images only when metadata is absent. A generic social/branding image can
+   suppress project gallery candidates. Decoding successfully establishes image
+   validity, not subject relevance. The retained source-to-image evidence allows
+   this selection mistake to be distinguished from a download failure.
+4. **Pattern admission disagrees with construction.** designPatternSchema.faces
+   uses limits.nodes (1,000), whereas aggregate admission permits 10,000 expanded
+   nodes. The rejected input has 1,011 faces, eight instances, 4,048 source points,
+   8,089 total nodes including root and 32,384 expanded points. An offline replay
+   reports no aggregate budget issue; constructDesign succeeds with 8,088 children.
+   The pattern schema alone rejects it. The retry has 943 faces and omits 68 face
+   keys from the rejected input. This establishes changed geometry input, not an
+   objective visual-quality judgment. The diagnostic never applies invalid input
+   to an App document or bypasses production admission.
+5. **Admission prevents retained repair.** invokeLocalTool returns immediately on
+   schema failure. Its pure explainInputIssue hook returns only code/message;
+   the downstream design owner that retains rejected drafts is never invoked.
+   The failed and retry payloads transmit 274,722 and 259,166 bytes. A recoverable
+   flag alone does not provide a reusable draft or an actionable numeric limit.
+6. **The largest transfer is new geometry, not a children query.** Ten preparation
+   inputs total 2,092,336 bytes. One base-detail input alone is 1,046,087 bytes:
+   3,221 projected faces with 12,888 vertices. Current world patterns support
+   constant translations; vector-pattern placements also supply only x/y/fill.
+   They cannot directly express the tapered facade grid. Four recorded grid
+   families cover 3,000 faces. A pure bilinear row/column reconstruction of their
+   vertices differs by at most 4.78e-11 world-coordinate units across 36,000
+   coordinates. This proves representation feasibility for these regular faces,
+   not general surface support or permission to approximate irregular geometry.
+7. **Discovery and transport need separate accounting.** Nine definition queries
+   return 113,486 bytes; the first prepare-and-apply definition is 46,076 bytes.
+   Exact names can return both tool and action representations. A failed
+   element.remove operation lookup is followed by a 26-entry element-category
+   response and then element.deleteElements. Full-schema/usage/schemaPaths
+   already exist; inventing a second catalog would duplicate ownership. Native
+   tools are deferred, so registration bytes do not prove all definitions enter
+   model context. Provider IPC totals, model-visible content, expanded App data
+   and recorder files are different costs. Recorded App inputs do not establish
+   whether the provider's internal code execution or the model authored every
+   expanded coordinate.
+
+Evidence: call-details.json and retained execution payloads in the run root;
+`diagnosis/verify-input.ts` with `input-contract.json`, and
+`diagnosis/verify-grid.cjs` with `grid-feasibility.json`. The pure probes run with
+existing tsx/Node dependencies and perform no model request or document mutation.
+
+### Audit conclusion - why the previous fixes did not close the flow
+
+The saved invocation advertises 29 native tools in five families (image analysis
+6, references 1, preparation 2, combined workflow 1, operations 19), plus 170
+App actions. This is a registration and handoff audit, not a claim that all 199
+entries were semantically executed in this turn. Existing basic-API browser tests
+and public signature checks remain useful and must not be replaced.
+
+The inventory is saved as diagnosis/advertised-tool-inventory.json. Seven current
+test files passed all 251 tests during this audit (audit-focused-tests.log): presentation,
+design-patterns, local-design-workflow, local-tool-invocation,
+operation-input-schema, reference-page-images and local-operation-tools.
+The saved failure still reproduces. Specifically, audit-admission.ts returns a
+repairable draft ID through direct preparation, but no draft ID through any of
+public prepare_design, public prepare_and_apply_design or its parts envelope.
+All four paths reject without canvas dispatch. This is a concrete test-boundary
+gap, not a hypothesis about the model ignoring instructions.
+
+A separate fault injection uses the actual prepare_design input definition and a
+valid saved draft, but substitutes a result containing only {available:true}.
+invokeLocalTool reports success=true and toolOutcome=usable despite the missing
+prepared artifact. localToolOutcome checks generic failure fields, not the tool's
+required successful-result shape. This demonstrates an output-validation gap; it
+is not evidence that this malformed result occurred during the live run. Preserve
+that distinction in reports. Result: diagnosis/admission-audit.json.
+
+The causal gaps are:
+
+- **Acceptance drift:** presentation tests deliberately require completion to
+  retain the previous active verb, matching the wrong product contract. A state
+  machine implements that mistake consistently; it cannot correct the contract.
+- **Bypassed boundaries in proofs:** repair and large-pattern tests call owner or
+  workflow methods directly. The large-pattern fixture uses one face repeated
+  1,200 times, which cannot detect 1,011 source faces rejected before expansion.
+- **Missing output-contract enforcement:** JSON decoding plus absence of known
+  failure flags is insufficient to prove downstream usability. Input schemas are
+  explicit while successful output requirements can be assumed by each consumer.
+  This lets a missing producer value surface as a later consumer problem.
+- **Shared-oracle blind spots:** some all-basic-API native-schema comparisons use
+  only empty/invalid inputs. Equal rejection by two schemas does not prove that
+  either admits every intended valid request. Valid examples exist for other
+  subsets; coverage is uneven, not universally absent.
+- **Fragmented limits and wording:** aggregate construction, per-list schema and
+  tool descriptions reuse the same limits for different concepts. One layer can
+  be fixed while another continues to reject the request or teaches a stale rule.
+- **Retention without end-to-end consumption:** repair storage, partial schema
+  delivery and reference reuse exist, but entrypoint reachability, representation
+  scope and selected subject identity are not all proven across their consumers.
+- **Intent and execution are mixed at both ends:** local-ai-provider emits running
+  before schedule/admission. The result then emits completed for both success and
+  structured rejection without including outcome in that progress event. Public
+  commentary agentMessage items currently do not update activity. The screenshot
+  therefore cannot be fixed solely by changing the completion reducer.
+
+The record is not evidence that every earlier fix was a cosmetic adjustment:
+Undo, canonical dispatch, bounded reuse and formal API tests exist. It is evidence
+that closure was repeatedly judged at a local boundary and sometimes against the
+wrong expected behavior. Do not add another prompt paragraph as the sole repair.
+
+### Proposed implementation sequence and acceptance
+
+#### 0. Establish one authoritative contract per concern before changing behavior
+
+Use the existing owners rather than inventing a second universal tool registry.
+App operation owners supply identity, supported input, resource semantics,
+execution route, effects, output interpretation and repair capability. Runtime
+owns generic invocation lifecycle/correlation and observation; it does not infer
+App geometry or whether a reference depicts the intended building. Core/App APIs
+remain authoritative for canonical writes, current permissions and history.
+
+Derive advertised schemas, compact documentation and error limits from those
+owners. Keep semantic validity, structural validity and current-state admission
+separate: a locked or stale target must still reject otherwise valid input. Public
+wrapper and combined-tool contracts must route to the same admitted owner value,
+not rebuild an independent interpretation. Source-list limits, per-primitive
+limits, total expansion and execution slices each need their own resource meaning.
+
+Review these handoffs together before production edits:
+
+| Handoff                  | Acceptance contract                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Intent to discovery      | Existing request terms and intended scope survive; only registered routes can execute.                                                       |
+| Discovery to admission   | Returned usage, examples, schema fragments and native schema agree with the intended valid input domain.                                     |
+| Admission to preparation | Invalid input cannot write; a repairable rejection has an actually consumable bounded recovery artifact.                                     |
+| Preparation to apply     | The admitted ordered artifact is consumed without AI retranscription; keys, shared properties and coordinate spaces retain meaning.          |
+| Apply to reply           | Receipt distinguishes no write, acknowledged partial write, complete write and unknown disposition; compact replies retain recovery handles. |
+| Reply to successor       | Actual returned IDs, query references, source assets and unresolved review findings remain usable with correct revisions and lifetimes.      |
+| Invocation to status     | Purpose comes from authorized intent; phases and outcomes come from actual owners; neither substitutes for the other.                        |
+| Invocation to trace      | One correlation chain links advertised contract, input, owner phases, result delivery and UI projection.                                     |
+
+Synchronize only the affected clauses of ai-execution-flow.md,
+ai-conversation-experience.md and existing compose/prepare/apply/inspect/settle/
+observe routes. Inspect owns evidence freshness and unresolved review state;
+changes there are limited to handoff preservation. Existing render, persistence,
+spatial-query and transaction contracts are preserved, not redesigned.
+
+Formal test coverage must enumerate current registered capabilities, so a new
+exposed tool cannot silently inherit missing contract coverage. Reuse existing
+fixtures rather than creating a documentation-only coverage registry. Each native
+tool needs a valid routed case and applicable input/result/failure cases; basic
+APIs retain their existing executable cases plus discovery-to-dispatch coverage.
+Independent spec-derived cases must judge semantics, not merely compare two
+validators generated from the same mistaken definition. No fake model is needed
+to test these deterministic handoffs.
+
+#### 1. Display the current purpose with a truthful execution phase
+
+Product decision: no generic "waiting for next step" status. Display the current
+work purpose throughout processing, with actual phase where it matters. Keep
+purpose separate from a transient action verb. For example, a facade-reflection
+purpose can pass through AI processing, geometry preparation, canvas application
+and checking without losing its subject or claiming continuous drawing.
+
+Purpose is attached to a work scope, not copied permanently from the last finished
+tool call. Use explicit bounded public intent already supplied in the request,
+public model progress or existing call metadata; keep its language. Parent scope
+purpose remains valid across its child calls. When a child ends and no new child
+purpose has been supplied, use the still-active parent purpose, ultimately the
+user's overall requested work. Do not keep a completed child as the current task
+or invent the next detail. No separate status tool, extra model request, forced
+planning stage, private reasoning extraction or language-specific verb parsing.
+
+A public commentary item may update purpose if scoped to the current request; it
+cannot prove computation, canvas mutation or success. The provider's current
+commentary omission must be covered by a real producer/consumer test. Optional
+purpose metadata belongs at the shared invocation/progress boundary, not as an
+undeclared argument added separately to every strict App API schema.
+
+Actual owner events supply admission, queueing, preparation, mutation, publication,
+inspection, failure, cancellation and settlement. Emitting an intent must not mark
+its tool as executing before scheduling. Ending a child removes its active phase,
+not the live parent purpose. Opaque model intervals may show the known purpose
+with an AI-processing phase; they cannot be described as measured geometry
+calculation. UI wording does not replace fine-grained profiler attribution.
+
+Use existing Runtime invocation identity/order and App activity state machine.
+Handle parent/child and concurrent calls explicitly, including old completion,
+retry attempts and events after Stop/settlement. Preserve generic-update dedupe,
+saving, approval and durable outcomes. Completion is a real transition rather
+than loop spam; never add arbitrary display delays to hide it. A receipt with a
+rejection must not appear as a successful completed drawing.
+
+Test first through provider, Runtime, transport and panel: announce before input
+is ready; queued tool before admission; rejected input; prepare then apply;
+completed base followed by the screenshot's 101-second interval; child/parent
+purpose; parallel read calls; stale completion; retry; cancellation and final
+save. Assert purpose retention AND phase truth, not just stable visible text.
+The timeline must show a live work purpose without generic waiting labels or a
+stale active-drawing claim.
+
+#### 2. Unify input/output contracts and make rejected input repairable
+
+Owner: App prepare, common invocation admission and retained draft repair.
+Use one resource contract for source primitives, source points, expanded objects,
+expanded points and internal execution slices. Schema lists must reflect the
+same valid-input domain as aggregate admission; aggregate checks still run before
+expansion. Remove the independent 1,000-item maximum from pattern faces, fills and selected
+ranges, and the obsolete source-node instruction. Do not replace it with another
+arbitrary list length. Retain 1,000 nodes / 20,000 points as internal work-window
+sizes. Count and process source faces individually: a motif containing many faces
+is not one indivisible vector. A genuine indivisible face/vector still obeys its
+point guard. Validate sorted selected ranges and count their actual expanded
+work; palette validity is separate from geometry-window size.
+
+The existing per-artifact 10,000-node / 200,000-point resource ceilings remain
+explicit protections in this slice, not a per-request limit. Do not silently claim
+unbounded streaming: arbitrary global layout/relations currently require a
+complete admitted artifact. Within that valid artifact, preparation and apply
+partition work at their own owners, preserving one global key/layout context,
+root, painter order and grouped Undo. Prove real per-window processing and
+cancellation opportunities, not only a larger schema maximum or a batch counter.
+Actual expansion beyond resource ceilings remains an actionable rejection; future
+unbounded artifact paging cannot be inferred from removing the stale list cap.
+
+Add a bounded owner rejection-receipt path at shared admission, separate from
+pure explanation and normal execution. A schema rejection can retain the
+request-local draft and return draft identity, revision, exact path, observed
+quantity, allowed quantity and supported repair operations. Keep the existing
+four-draft/8-MiB retention limits and request cleanup. Invalid or excessive inputs
+must not be retained unboundedly. Repaired input traverses the full current
+schema/budget/semantic checks. Composite tools must preserve repair identity and
+path mapping. Uncertain writes cannot be retried as if nothing happened.
+
+Test first through the real advertised-tool entrypoint: the saved 1,011-by-eight
+case succeeds unchanged; resource boundaries and true over-budget inputs reject
+before expansion/writes; repair changes only the selected retained fields;
+eviction, stale revisions and oversized retention return explicit recovery.
+Verify identical painter order, object identity rules, shared fills, partial
+failure receipts and intended grouped Undo through current direct consumers.
+
+Enforce owner-defined output contracts at the same shared boundary. Preparation
+success requires the prepared identity and its necessary receipt; an image result
+requires its actual asset/provenance handle; query success must distinguish empty,
+complete and paginated results; mutation receipts preserve acknowledged writes.
+Reuse declared result types/contracts where available instead of inventing a
+universal nonempty-result requirement. Legitimate void/no-op APIs may return an
+explicit successful acknowledgement. Do not infer result validity solely from
+status names, object presence or the absence of a failure property.
+
+Keep domain payloads at their owners, with one small common outcome/recovery
+contract: current phase, usable/partial/unavailable result, write disposition,
+issue details and actual recovery action or handle. Recoverable does not mean
+safe to replay. A missing or invalid output after a possible write must retain
+execution evidence and require inspection, not replay the mutation. Validate
+compact and full replies against the same semantic receipt and prove that the
+next tool can consume their advertised handles. Fault-injection cases include
+missing artifact/asset/query IDs, malformed nested outcomes, valid empty results,
+partial mutation, cancellation after acknowledgement and response delivery failure.
+
+#### 3. Improve reference and API discovery at their existing owners
+
+Owner: App compose/reference acquisition. Return a bounded candidate inventory
+with source URL, declaration kind and retained identity. Distinguish representative
+metadata from gallery/structured/body candidates. A generic metadata image must
+not suppress all alternatives. Do not certify subject correctness because an
+image decoded, execute arbitrary page scripts, fetch every candidate or introduce
+Taipei-specific URL rules. The model selects relevance; the tool verifies fetch,
+identity, dimensions and provenance, retains the selected bytes, and reuses them
+for later crops/reviews. Preserve network and untrusted-input protections.
+
+Owner: App operation registry/discovery. Return an explicit route discriminator
+for action versus orchestrating tool, recommend the applicable registered route,
+and avoid duplicate full contracts unless requested. Preserve access to both
+real capabilities. Reuse existing usage/schemaPaths/full recovery; return the
+needed schema with constraint/reference closure. Scope delivery receipts by
+representation, selected fields and revision. Start with tools needed for the
+current stage, rather than describing final review in the first call. Unknown
+operations return a small registry-derived candidate set; broad category queries
+return a bounded index with explicit continuation, not every full usage entry.
+
+Tests: generic metadata plus valid gallery; logo-only/no-candidate pages; failed
+fetch and reuse of the same retained bytes; operation/action collisions; unknown
+operation recovery; nested constraints and full-schema recovery; repeated partial
+queries and revision changes. Measure returned bytes and fetch/selection counts.
+Schema correctness takes precedence over shortening a response.
+
+#### 4. Express regular surface detail without transmitting every vertex
+
+Owner: App preparation/construction. Extend the existing declarative construction
+contract with a planar surface/grid primitive: surface boundary, row/column
+layout, normalized cell motifs, caller-controlled keys/order and material choices.
+The backend generates world points, projects and applies through existing owners.
+No executable JS/callback input, automatic viewpoint/material choice, hidden-face
+creation, arbitrary rounding, automatic raster flattening or silent simplification.
+Irregular details retain explicit geometry. Reuse projection, source accounting,
+ordered slices, shared properties and editable vector output.
+
+Before implementation, formalize the generic mapping and unsupported geometry in
+the spec and prepare Inspector step. Compare the recorded 3,000 regular faces to
+explicit geometry with a justified floating-point tolerance; preserve all fills,
+keys, winding and interleaved painter order. Test holes/irregular details via the
+existing explicit path, degenerate/nonplanar surfaces, true expanded limits,
+cancellation between slices and Undo. Prove source computation counts, not merely
+matching final pixels. If a proposed mapping cannot preserve these semantics,
+revise that primitive before implementation rather than changing drawing quality.
+
+#### 5. Close trace gaps at the actual boundaries
+
+Owner: Runtime observe plus App domain adapters. Correlate provider item, tool
+invocation, retained input, compilation, apply/publication and displayed phase.
+Record raw input bytes, retained/reused bytes, repair delta bytes, expanded node
+counts, schema representation/revision, outcome and rejection path. Each payload
+has an ID/digest; duplicate references and actual retransmissions are separately
+counted. Preserve local-only data handling and bounded recording overhead.
+
+Distinguish provider waiting, visible output delivery, App computation and
+transport. A provider-owned opaque interval is an observed boundary, not a claim
+about private reasoning or an unowned gap. Expose missing start/end/parent
+correlations as diagnostics rather than synthesizing success. Replay checks must
+prove that every active UI action is backed by a currently active owner phase.
+
+### Integrated regression and self-review
+
+The implementation is one integrated change with owner-sized development slices;
+a slice passing does not close the task. Before another live run, combine the
+following sequences using real App adapters and deterministic external fixtures:
+
+- Discover the needed contract, create a first ready part without a mandatory
+  whole-design plan, compile repeated detail, apply ordered parts, inspect and
+  repair through returned handles. Include an existing-document edit with no new
+  root, arbitrary 2D geometry without projection, and shared-property updates.
+- Validate source-face counts around 1,000 independently of expanded counts;
+  test single, combined and parts envelopes with the same valid source. Test
+  exact aggregate and primitive boundaries, invalid depth and negative world
+  coordinates using the already-correct world/local conversion owner.
+- Reject before writes, repair a retained field, apply, then fail a later part.
+  Preserve completed receipts and target links; do not replay the first part.
+  Cover cancellation while queued, during preparation, after an acknowledged
+  mutation and before response delivery. Keep fatal transport termination distinct
+  from recoverable domain rejection.
+- Discover two image candidates including a logo, select the actual subject,
+  reuse its identity for a crop and final comparison, and retire a rejected
+  candidate without repeatedly importing it. Missing/expired image references
+  restore through the owner; acquisition never certifies subject suitability.
+- Retrieve partial and full schema scopes, lose one scope, recover just that scope,
+  consume a region-query handle for a patch, then change relevant data and reject
+  stale reuse. Full recovery remains possible and bounded.
+- Replay activity events and trace correlation over the same sequence, including
+  variable delays and concurrent reads. Verify there are no duplicate mutations,
+  fabricated computation labels, lost purpose or success claims after failure.
+
+Keep existing direct-API E2E, retained-query invalidation, grouped Undo, shared
+Fill, group-coordinate and durable-settlement tests as accepted-behavior guards.
+Test changed owner contracts with valid, boundary, malformed, stale, partial,
+cancelled and delivery-failed inputs as applicable. Enumerate the live registry
+for coverage, then use independent assertions for results and work counts.
+A single full 101 run exercises only one path and cannot replace these proofs.
+
+Count projections, compilation, serialization, asset fetches, schema deliveries
+and canonical writes across repeated calls. Distinguish intended trust-boundary
+validation from avoidable reconstruction. Do not remove validation or change
+scheduler concurrency just because a helper is called twice: current evidence
+has not shown either to dominate this run. Keep browser-drawn results, object
+counts and pixel/geometry fidelity separate from bytes and model latency.
+
+Self-review revised the earlier proposal in seven places: generic waiting wording
+was removed; the tool-start-before-admission path was added; announced purpose
+was separated from completed child work; real public admission now precedes the
+repair proof; output usability gained owner-defined validation rather than generic
+failure-field inference; schema equivalence gained independently valid boundary
+inputs; and
+surface-grid feasibility must preserve interleaved materials and painter order,
+not coordinates alone. All are requirements of this proposal, not completed fixes.
+
+### Completion boundary
+
+Reviewed dependencies: the activity fix changes the current accepted contract,
+so spec/Inspector correction precedes code; pure admission remains non-mutating;
+retained repair never bypasses revalidation; geometry compression preserves order
+and explicit artistic decisions; candidate discovery does not certify relevance;
+no output-only cache proof or model-second performance promise is sufficient.
+The probes establish admission/recovery failures, an output-validation gap and
+one feasible geometry representation. They do not establish production readiness
+or completion of the proposed fixes. Repeated review found no further concrete
+contradiction within this bounded proposal; the formal failing cases and owner
+contract updates remain required before implementation.
+
+Implement one owner slice at a time under the current authorization, with formal failing
+regressions before fixes and scoped lint/type/build checks for touched owners.
+Existing related behavior remains in the focused gates. After all slices, use one
+user-authorized complete recorded Taipei 101 run to inspect truthful activity,
+first visible time, repair/reuse, selected references and final artwork. Report
+workload and bytes alongside time; do not compare unequal object counts as a fixed
+speed benchmark. Full local CI and push remain excluded from this task.
+
+### Step Execution Card - prepare - resource windows and public admission
+
+Owner: prepare with compose-to-prepare and prepare-to-apply handoffs. Source:
+ai-execution-flow.md preparation contract and ai-execution-flow Inspector prepare
+conditions, artifacts and implementation boundary. Inputs: admitted declarative
+draft/repair, shared projection, fill templates, selected ranges and cancellation.
+Outputs: the same ordered immutable artifact, accurate source work windows, or
+structured rejection with no canonical mutation. Allowed: existing construction,
+preparation, shared admission, budget and schema owners. Forbidden: canvas access,
+AI/manual splitting, geometry simplification, changed global resource ceilings,
+new IDs per resumed window or a second layout/projection owner. Advice and direct
+edits continue to bypass preparation. Failure owner: prepare; apply retains
+canonical locks, finite mutation members and acknowledged receipts.
+
+Files: server/design-construction{,-schema}.ts, design-budget.ts,
+design-preparation.ts, local-design-tools.ts, local-design-workflow.ts,
+local-tool-invocation.ts, their direct formal tests and src/ai/prepared-design.ts.
+First regression passes the same >1,000-face source through advertised/native
+schemas and real shared admission, single and parts routes; requires unchanged
+expanded output, bounded source windows and ordinary apply slicing. Follow with
+palette/range boundaries, invalid primitives/expansion, cancellation, repair and
+output-contract cases. Run focused tests, naming, changed-source lint and types,
+then current Inspector candidate/contract review; no whole local CI. Stop the
+segment if canonical renderer or new persistence changes become necessary.
+
+Naming decision: retain existing public tool IDs and artifact version. Resource
+names describe source windows versus aggregate ceilings, not model or branding.
+Any new progress/result metadata is request-scoped and will have its own Runtime
+owner step; this prepare slice does not introduce a persisted schema migration.
+
+Self-review: the stale cap removal does not authorize unlimited expansion;
+source batching must execute work rather than only count it; whole-artifact
+identity/layout and application chunking remain coupled by the existing artifact;
+invalid later inputs cannot create a partial document during preparation. The
+public-entry regression precedes implementation. No unresolved contract conflict
+remains for this bounded prepare slice after the matching spec/Inspector edit.
+
+### Prepare slice evidence - cooperative construction
+
+The native/public 1,011-face regression failed before implementation. The corrected
+route retains all 8,088 expanded faces. Synchronous and cooperative construction
+share one generator; the server consumes it with cancellation checkpoints before
+publication. Independent faces are counted independently, including 5,001 faces
+with 20,004 source points. Sparse ranges and palette phase survive windows.
+The existing preparation session also retains its synchronous domain utility;
+server tool invocations always use its cooperative compiler. Focused tests now
+observe that compiler rather than the synchronous utility.
+
+### Step Execution Card - prepare/compose - rejection and result handoff
+
+Objective: preserve bounded rejected drafts at shared admission and validate the
+required prepared artifact before a caller treats its result as usable. Inputs
+remain the advertised schemas; rejected sources do not execute or bypass schema
+validation. Owners supply diagnostic retention and result validation to the shared
+invoker. Ordered parts retain exact part keys and repair handles without executing
+siblings. Output failures retain unknown write disposition rather than replaying.
+Files: local-tool-invocation.ts, local-design-tools.ts, local-design-workflow.ts,
+direct formal tests, matching spec and Inspector prepare/compose contracts.
+Test first: invalid public single/parts input returns repair handles and zero
+writes; repair succeeds through the same entry; missing prepared identity rejects.
+No generic nonempty-result requirement; documented void/no-op tools remain valid.
+
+### Step Execution Card - observe - purpose and observed phase
+
+Objective: project the currently active owner phase with its scoped purpose,
+returning to the public request purpose after child completion. Runtime owns the
+progress envelope and correlation; the App adapter emits scheduling, preparation,
+application and public commentary events; the App reducer owns UI projection.
+Inputs: ordered call identities, parent identities, scope, explicit phase, authored
+purpose. Outputs: truthful current phase/purpose and rejection/retention diagnostics.
+Files: Runtime provider/runtime progress contract; Design local-ai-provider,
+local-tool-invocation observation, activity-state, conversation/panel projection,
+related formal tests and matching prompt/spec/Inspector. No new model calls,
+private reasoning access, verb rewriting or timers that hide completion.
+Test first: a completed base at 72 seconds followed by provider processing uses
+the parent purpose, never the completed drawing action. Nested and concurrent
+calls preserve live ancestors; late completions cannot replace newer work.
+
+### Step Execution Card - compose - bounded discovery and scoped delivery
+
+Owner: existing operation registry and reference-page acquisition. Scope: partial
+schema delivery receipts keyed by representation/field set/revision; parent
+constraint closure; registry-derived recovery candidates and paginated category
+menus; page candidate inventory without automatic subject selection. Reuse
+existing full recovery, immutable images and acquisition protections. Files:
+local-operation-tools.ts, reference-page-images.ts, local-reference-tools.ts,
+direct tests and matching compose/prepare spec and Inspector. Formal tests first
+prove repeated partial delivery and suppressed page alternatives. No renderer,
+model changes, arbitrary scripts, hidden detail removal or private data search.
+
+### Step Execution Card - prepare - declarative surface grids
+
+Inputs: planar convex quadrilateral, row/column counts, normalized polygon motifs,
+material/key/name data and explicit cell-major or motif-major order. Output:
+ordinary editable vectors in one artifact. Owner: construction with existing
+projection, budget, global identity and Group normalization owners. Files:
+design-construction{,-schema}.ts, design-budget.ts, local-design-tools.ts,
+preparation examples/prompt, direct tests, preparation spec/Inspector. Reject
+unsupported geometry rather than changing it. Test explicit 3,000-face equivalence,
+source projection count, winding/order/fills/keys, true resource limits,
+cancellation, invalid planes and public native admission. No JS callbacks.
+
+### Prepare slice review - recorded grid material and plane fidelity
+
+The recorded 3,000 faces interleave glass and edge motifs, use per-cell fills,
+and translate edge surfaces by two world units. The initial generic grid test
+covered shape and uniform materials but could not prove this recorded case.
+Continue the prepare card above: add optional motif `offset` and `fills` using
+existing world-point and pattern-fill semantics; derive projection deltas once
+per motif, never per generated face. These are request input fields, not persisted
+components; no saved document migration is involved. A recorded geometry fixture
+and independent explicit-face comparison must preserve order and every material;
+original source keys map explicitly to generated keys without canonical ID changes.
+Formal tests precede the construction/schema extension. Boundary scope remains
+construction, its schema and tests, with matching preparation spec/Inspector.
+No approximation or automatic material assignment is allowed. Naming baseline:
+15 checks passed. Existing cooperative windows and aggregate ceilings remain.
+
+### Compose/prepare handoff review - selected reference lifetime
+
+The real candidate-selection regression found that only representative URLs
+updated the retained page choice; newly exposed gallery candidates did not. A
+failed representative inventory could also shadow a later successful explicit
+selection. The existing compose discovery card covers this correction: reuse
+all declared candidate identities, replace the page's selected asset after
+successful explicit acquisition, and retire its obsolete failure receipt.
+Continuation retains the page inventory; fresh acquisition remains retryable.
+Two formal cases first failed with distinct decoded image bytes. Their producer
+and reuse consumer now assert the same reference and attachment identities,
+one page fetch and exactly two image acquisitions. No subject selection policy,
+image resizing, fallback image or automatic retry is introduced.
+
+### Resumed implementation checkpoint - 2026-10-11
+
+Status: this follow-up implementation and scoped deterministic verification are
+complete. Live full-101 acceptance has not been rerun. No push, full local CI,
+new model request, recording or App server was started in this segment.
+
+The resumed bounded review corrected three concrete gaps: an empty outer evidence
+snapshot could hide acknowledged output; the initial grid omitted the recorded
+per-cell material choices and offset trims; candidate-page reuse could return the
+old representative after explicit gallery selection. Each behavior now has a
+permanent regression, with failing-before evidence under the existing diagnosis
+directory. Public ordered-part tests also prove repair without geometry resend
+and continuation after a later failure without replaying the completed part.
+The prompt contract test now checks purpose plus observed phase rather than
+requiring the superseded continuous-action wording.
+
+Verification on the final affected source:
+
+| Gate                                                                    | Result                                                  | Evidence under run diagnosis                                                  |
+| ----------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Server, tool contracts, preparation, discovery and provider adapters    | 548 passed, 3 conditional live-protocol probes skipped  | resume-server-closure.log                                                     |
+| Activity, conversation, panel, transport and retained-context consumers | 134 passed                                              | resume-ui-final.log                                                           |
+| Runtime progress, delivery and profiler records/trace                   | 60 passed                                               | resume-runtime.log                                                            |
+| Runtime build, server types and App types                               | Passed                                                  | resume-runtime-types.log, resume-server-types-final.log, resume-app-types.log |
+| Touched-source lint                                                     | No errors; 3 explicit console logging warnings retained | resume-lint2.log, resume-reference-lint.log, resume-prompt-lint.log           |
+| Naming                                                                  | 15 passed                                               | resume-naming-final.log                                                       |
+| Current-source Inspector owner proof                                    | Passed                                                  | resume-final-candidate2.log                                                   |
+
+The three skipped probes require real provider/discovery configuration and are
+outside this segment's no-model-run boundary; they are not reported as passed.
+Inspector candidate 86392e1e-b90d-4413-9ccf-25a6a665d4c5 captured source
+48465eb51b37811078086782c320c812b80ac80753e87e66dac1ec6265e75953;
+review 91510b8ea67f9c4e21ac34a148132cbc879bfd7d35ada943aec4d36a48690cd1
+accepts the current contract. Later edits only append these plan notes.
+
+The permanent recorded-facade fixture compares all 3,000 faces, their order,
+material references and source-to-generated key mapping against explicit geometry
+within 1e-8 coordinate tolerance. It includes signed projection offsets and the
+original shared fill templates. Source projection calls are 12 versus 12,000;
+compact input is under one tenth of explicit input for that fixture. This is
+computation/representation evidence, not a model-latency or visual-quality claim.
+
+Closure review: canonical APIs, Group normalization, shared properties and Undo
+remain their existing owners. The backend cooperatively processes source,
+expansion and identity work; final whole-artifact admission/layout compilation
+still runs synchronously inside the unchanged aggregate limits. No unbounded
+streaming, automatic material/subject selection, silent geometry simplification,
+arbitrary executable callback or universal semantic validator was introduced.
+Owner result contracts validate usable handoffs; registered action semantics and
+retained-query freshness remain enforced by their canonical producers/consumers.
+The next live 101 run must still verify actual model use and visible status; unit
+and adapter evidence does not certify that future artwork or provider duration.
+
+### Full Taipei 101 live acceptance - 2026-10-11
+
+User-authorized single complete drawing run, recorded headlessly, with final
+ten-second hold and harness-only bounds fitting. No push or full local CI.
+Step execution: exercise current compose/apply/inspect/settle/observe contracts
+without production edits; compare phase-purpose DOM history with invocation
+spans, preserve all run outcomes, timing evidence and selected reference assets.
+Existing accepted candidate remains the implementation source authority.
+Evidence: `tmp/full-101-truthful-status-20261011/`.
+
+#### Live acceptance result - 2026-10-11
+
+One request completed successfully, with two independent final assessments
+(first required revision, second accepted). First visible geometry: 40.529 s;
+DOM completion: 1175.186 s; final retained objects excluding workspace: 81,981.
+The recording includes final fit and a ten-second hold. All 141 execution
+records completed; no browser errors or user confirmation prompts occurred.
+Runtime source fingerprints remained unchanged throughout the run. No push
+or full local CI was performed; the three task-owned services were stopped.
+
+Observed exclusive drawing lifecycle: provider 868.365 s (including 52.262 s
+child assessment), browser/App 299.503 s, tool backend 6.774 s; no uncovered
+lifecycle interval. This does not expose private provider-internal activities.
+Final durability was already satisfied; history settlement took 79.2 ms.
+
+The live run does not close every acceptance issue:
+
+- Observed canvas/processing phases switch correctly, but final review retains
+  a broad earlier purpose with a generic operation label; initial activity also
+  echoes the full prompt before authored commentary arrives.
+- One batch produced ten retained context snapshots against the eight-entry
+  owner cache; the oldest snapshot was evicted before mapped fill mutation.
+- Artifact targets for read_design_context were rejected by argument-path
+  resolution. The model recovered through other calls rather than stopping.
+- Three inputs repeated identical 17,004-key targets (about 396-400 KB each).
+- Equal-count 5,761-object/181-slice application receipts grew from 16.045 s
+  to 38.773 s as this large document developed. This needs bounded owner
+  analysis; it is not proof of a renderer-only regression.
+- One raw usable query receipt is projected as unknown in the offline report.
+- Two source-local acquisition failures (HTTP 403 and original-image size)
+  remained recoverable; final assessment used retained image indexes 1, 3, 4.
+
+Successful backend generation expanded 1,402 source nodes into 83,252 prepared
+objects in 96 windows, maximum 1,000 expanded nodes per window. All fourteen
+prepare-and-apply calls were usable; no source-size admission rejection occurred.
+Prepared totals include objects later replaced, unlike final retained counts.
+Evidence and exact timings: tmp/full-101-truthful-status-20261011/report.html,
+verified-findings.json, application-analysis.json, verified-timing.json and trace.json.
+
+### Large-document execution and pre-drawing review revision - 2026-10-11
+
+Status: implementation and bounded self-review complete; focused closure and the
+user-authorized complete recorded Taipei 101 run are in progress.
+Baseline: e07bbd222c68e6806708fb450ac886dc47a07f4f plus the existing worktree
+changes fingerprinted by the live run. Preserve those changes. The user has
+authorized implementation and one complete live generation after review. No push
+or full local CI is authorized.
+
+#### Bounded audit and confirmed findings
+
+Discovery is limited to the latest live records, their current producer and
+consumer paths, canonical batch creation/settlement, retained queries/targets,
+activity projection, report classification, and prepared/reference review.
+Current authorities are ai-execution-flow.md, ai-conversation-experience.md,
+the execution Inspector's compose/prepare/apply/inspect/settle/observe steps,
+and the corresponding formal tests. Historical output is evidence, not a new
+product contract. Do not reopen unrelated rendering or reference acquisition.
+
+1. **Application cost:** 28 successful applications consumed 262.567 s within
+   the 299.503 s App interval. Equal 5,761-element/181-slice calls grew from
+   16.045 to 38.773 s. Creation, transaction settlement, and host yield all
+   grew; yield includes scheduled work and is not idle time. Current canonical
+   creation copies the full parent child list for rollback, copies it again in
+   Workspace.addNewElements, and copies it in Group's canonical replacement.
+   This establishes accumulating-parent work, not its share of the 262.567 s.
+   Existing App admission tests prohibit full parent snapshots in the wrapper,
+   but do not detect these deeper copies. The recording harness also requests
+   all-element bounds every second; its cost must be separated from product work.
+2. **Invalid query handoff:** ten snapshots were returned successfully against
+   the eight-entry cache. The ninth/tenth insertions evicted live dependencies
+   before map_retained_fills consumed them. Capacity is a storage policy, but
+   the public receipt currently behaves like a durable handoff. Existing tests
+   cover stale/released/single over-capacity results, not this producer-consumer
+   sequence. Pinning alone would not fix revision invalidation after writes.
+3. **Target admission defect:** context-action.ts exposes a root oneOf, while
+   local-operation-batch.ts targetPath walks properties only. A valid scope=ids
+   reference has no discovered path and is rejected before dispatch. Recovery
+   used ten broad region queries: each inspected 81,140 metadata candidates
+   before the parent filter. This is not evidence that local spatial indexing
+   itself is missing; an exact identity route was unavailable to the caller.
+4. **Repeated identity delivery:** three inputs repeated the same 17,004 keys,
+   with target digest 9015019a988a6d49671248cab63a2fbc1650afa4065a1af835a04fd3694f5a32.
+   Each complete input was approximately 396-400 KB. Existing artifact/prefix
+   reuse handles simple families, but these selected subsets are repeatedly
+   represented as expanded keys. Repeated metadata reads are a separate cost.
+   Diagnostic storage is not wire traffic: primary records identify 757 unique
+   payload paths totaling 393,498,830 bytes, but exact repeated digests account
+   for only 13,990 redundant bytes across 43 groups. Whole-file hash deduplication
+   alone will not solve this volume. Compare semantic artifact identity and field
+   lineage across envelopes before classifying the remaining bytes as redundant.
+5. **Activity purpose:** the scoped state machine correctly ends canvas phases,
+   but a phase-only child inherits previous/parent/request text. Final assessment
+   therefore displays an earlier construction purpose. The request seed also
+   echoes the full prompt. Neither needs a language override or a waiting label.
+6. **Classification:** exec-cd4aaafb-6c65-41fc-91ec-e707ee7853f2 has canonical
+   toolOutcome=usable and diagnostic.output.usability=usable. The generic evidence
+   summarizer exhausts its budget in actionResults, replacing toolOutcome with
+   '[evidence budget exhausted]'. The evaluator reads that lossy evidence instead
+   of the retained outcome and reports unknown. Full payload 511-output.json is
+   preserved. This is a projection defect, not a failed query or missing duration.
+7. **Late repeated-detail correction:** the first final assessment requested
+   window construction/material depth and entrance detail; subsequent repair
+   included eight 5,761-object batches. This is a candidate for early prototype
+   review, not proof that every requested repair was necessary. Reference camera,
+   actual visibility, original requirements and optional polish must be checked
+   before treating an assessment suggestion as a mandatory addition.
+
+#### Intended end-to-end flow
+
+Retained reference evidence -> current requirement/fact bindings -> coherent
+part recipe and reusable detail prototype -> read-only draft review -> repair
+only a contradicted recipe/prototype -> canonical preparation -> ordered apply
+windows -> current-state inspection -> independent final visual assessment.
+
+Parallel to this product flow, Runtime carries scoped work identity, actual
+phase, durable outcome metadata and correlated owner spans. The App supplies
+domain purpose/evidence; the profiler never approves content or controls writes.
+
+#### Implementation order and owner contracts
+
+**1. Make evidence and activity trustworthy before performance changes.**
+
+Runtime recorder/evaluator must retain a bounded typed execution outcome outside
+the optional narrative/array summary budget. Preserve transport outcome,
+domain usability, mutation settlement and visual correctness as separate fields.
+Contradictory evidence is explicit; an exception after acknowledged writes is
+not not-started. A validated before-write rejection can say not-started when
+the executor supplies that evidence. Missing evidence never implies success.
+Report from this canonical outcome, not a second interpretation of truncated
+payloads. Large payloads remain local digest references, with explicit recovery.
+
+Activity retains the state machine and call/attempt ordering. Each owner entry
+supplies an actual phase and a task-scoped purpose with provenance; inherit
+subject context only, not an earlier execution verb. Review tools publish the
+review purpose before entering the child model and retain it for that call.
+Closing a child restores the live parent purpose, never a finished child or
+unrelated sibling. Use registered task/operation purpose until model-authored
+detail arrives; do not echo the full prompt or add a separate labeling model.
+Do not fabricate private provider activity. Language remains model-selected.
+
+Add child spans/counters at existing canonical creation and Factory publication
+boundaries. Distinguish creation, parent membership, property preparation,
+history validation, observer delivery, persistence capture, and host scheduling.
+Reuse existing canonical phase hooks where available. Record harness bounds
+reads separately. Owner adapters feed the Runtime sink; no per-element log flood,
+new telemetry, or duplicate profiler. Count scans, copied memberships, delivered
+changes and serialized bytes alongside durations. Exclusive intervals must not
+double-count nested observer/persistence work.
+
+**2. Repair target and result lifetimes as one producer-consumer contract.**
+
+Use the authoritative registered schema to resolve the applicable target slot
+across oneOf/anyOf and nested objects using supplied discriminators. Reject
+conflicts or genuine ambiguity; never guess by tool name, select a first branch,
+or weaken final schema validation. Prefer explicit typed target-binding metadata
+at the registry owner when schema semantics cannot uniquely express a binding.
+
+Artifact preparation owns immutable named subsets/prototype instances and stable
+opaque target-set handles. Resolve an arbitrary supplied subset once; subsequent
+reads and mutations consume its handle instead of retransmitting expanded keys.
+Existing exact-key and prefix routes remain valid current selectors. Preserve
+identity order, missing-member errors, release, document/request ownership and
+current existence/lock checks. A creation set is not live Group membership.
+No generated element IDs become semantic names; no implicit root is introduced.
+
+Separate a reusable selector from a revision-bound value snapshot. Add an owned
+consumer lease for snapshots that have been accepted for pending work; eviction
+may reclaim only unleased entries. Budget admission precedes a successful lease
+receipt. Exhaustion returns capacity/backpressure before writes, never a usable
+reference immediately invalidated by sibling production. Release on explicit
+release, consumer completion, cancellation or request disposal. Retaining a lease
+does not make stale values current. Keep canonical revision checks; finer field
+invalidation requires authoritative change evidence and its own tests, not an
+assumption that fills cannot affect a query.
+
+For query-to-fill mapping, add a bounded declarative selector-and-mapping route
+at the current mapping owner: resolve required columns, prepare patches, validate
+all conflicts/locks and consume within the declared batch lifetime. It accepts
+the existing mapping descriptors and artifact/region selectors, not JS callbacks.
+Do not silently convert an atomic mapping to query/write/query/write streaming.
+If a larger operation explicitly selects ordered-part semantics, return completed
+part receipts and reject stale pending parts; never replay completed writes.
+This route removes the need to export ten snapshots and ask the model to stitch
+them together. Standalone reusable reads retain their explicit lease contract.
+
+Exact identities use direct lookup. Narrow bounds continue to use spatial
+candidates. Parent-only questions use the hierarchy owner. For combined broad
+bounds and selective parent filters, use existing candidate-set intersection or
+shared immutable candidate selection when it demonstrably reduces work, while
+preserving spatial ordering. Do not enumerate an eight-tier subtree for a small
+local region. No new global index is justified without measured owner evidence.
+
+**3. Remove accumulating work beneath cooperative batch application.**
+
+First add a formal same-size creation sequence against growing documents and
+growing parents through the actual Core path. Count canonical memberships copied,
+property preparation, publication and observer work; include independent parents
+to distinguish parent growth from document growth. Replay retained descriptors
+without a model, with capture on/off and harness polling separately attributed.
+
+Replace full-parent copy/replace per append slice with canonical ordered insertion
+evidence and its exact inverse at Scene Tree's membership owner. Rollback removes
+only the attempted insertion and restores its relationships; preserve ordered
+ADD_ELEMENT evidence, snapshots returned to readers, custom containers, shared
+properties and inverse behavior. Do not mutate an exposed readonly snapshot or
+bypass computed invalidation. Arbitrary insertion/reorder may have legitimate
+suffix work; the normal append path must not repeatedly clone old siblings.
+
+Keep publishable slices and grouped Undo. Coalesce work only inside its valid
+transaction boundary; do not hold one giant transaction across asynchronous
+generation, suppress required notifications, reduce detail, or increase slice
+limits to conceal repeated work. Repair publication/subscriber work only after
+the owner counters identify a concrete accumulating scan or rebuild. Yield time
+needs scheduling and browser-profile evidence; it cannot be relabeled as render
+cost. This substep remains a diagnostic gate, not a claim of a proven single cause.
+
+**4. Add pre-drawing content review without another full-design planning barrier.**
+
+The existing prepare_design checks syntax, layout and canonical descriptors;
+recorded criteria/facts and reference acquisition do not review an unseen result.
+Add a distinct read-only prepared-content review responsibility in the Design
+review owner, provisionally review_prepared_design, registered through the same
+invocation/schema contract. Input is a retained draft/artifact revision plus
+requirement, applicable reference/fact revisions, intended view and explicit scope.
+Backend derives the review packet from actual source, not only the drawing agent's
+claim that its plan is correct. No raw geometry resubmission or canvas mutation.
+
+Deterministic checks cover coordinate frames, units, projected bounds, attachment,
+declared repeated-part counts and unsupported capabilities. A separate tool-free
+model assessment examines reference-supported structure/arrangement, visible
+surfaces, material/detail recipe and unresolved assumptions. Return scoped
+pass/fail/unverified findings, source/part keys, required corrections and optional
+polish separately. This is preparation evidence, never final visual approval or
+a guarantee of 'almost no problems'. Unknown source dimensions stay assumptions.
+
+Review the whole composition's lightweight structural recipe and one prototype
+per materially different repeated detail before expanding it widely. For Taipei
+101 this includes the window frame/glass/shadow recipe and entrance arrangement;
+it does not require reviewing every window or completing every tower surface
+before the first batch. Review per coherent ready part; completed review is reused
+for identical prototype/view/material dependencies. Only changed dependencies
+invalidate it. Instance placement and exceptions retain deterministic checks.
+Fix source recipes before expansion rather than adding another full layer later.
+
+Prompt guidance requests this route for reference-dependent composition or heavily
+repeated detail. Direct known-value edits remain direct batch actions. On a review
+failure, repair the identified draft part and review its changed dependency scope;
+do not restart research or regenerate the whole drawing without new evidence.
+The producer passes the admitted recipe revision to preparation/application, which
+checks that identity; a review of revision A cannot certify regenerated revision B.
+Final current-canvas visual review remains mandatory under the existing contract.
+
+A fidelity limitation is explicit: Core.captureElementSnapshot currently accepts
+an existing element ID, not an unapplied artifact. Do not promise an offscreen
+visual preview by reusing that signature, render into the user's document and
+delete it, or add a parallel SVG/Pixi approximation. Initial pre-drawing review
+can examine actual structured recipes plus selected reference images and must
+label appearance as unverified. If representative pre-drawing pixels are required
+to close material defects, first prove isolated canonical rendering with the
+same engine via an owner-approved Core API, with no live document, Undo,
+collaboration or persistence effects and explicit resource disposal. This is a
+separate feasibility checkpoint before that implementation, not a hidden fallback.
+
+#### Required proofs and completion conditions
+
+- Replay the successful ten-query receipt above with oversized/reordered fields:
+  outcome remains usable; actual partial/rejected/unknown remain distinct. UI,
+  records and report agree for the same call without opening every payload.
+- Activity replay covers first intent, prepare, apply, yield/provider, final
+  assessment, nested/sibling completion, reordered updates, Stop and late events.
+  Purpose and phase match the active owner throughout, not merely at endpoints.
+- Ten dependent snapshots under the current bounded policy cannot return doomed
+  success handles. Test leased pressure, explicit refusal, release, invalidation,
+  workspace replacement, cancellation, overlapping mappings and shared-fill
+  conflict rejection. Invalid queries write nothing; no automatic mutation replay.
+- The real oneOf context action accepts artifact targets only in the compatible
+  branch. Test ambiguous branches, conflicting explicit IDs and malformed input.
+  Repeat the same 17,004-member subset through reads and edits: membership bytes
+  travel once, later calls carry references, output/ordering equals explicit IDs.
+- Growing-document application preserves ordinary creation, computed data,
+  selection, Undo/Redo, rollback, shared properties and user/remote interleaving.
+  Work-count tests must fail on unnecessary old-member traversal; timing alone
+  and mocked App create calls do not close this issue. No machine FPS CI threshold.
+- Draft review catches wrong units/frame/view constraints, unsupported source
+  assertions, contradictory repeated-detail recipes and unrequested decoration;
+  it does not demand occluded features from another reference viewpoint. Identical
+  recipes reuse evidence, changed material/view/reference invalidates the affected
+  scope, and any unrendered appearance remains unverified. Include a non-building
+  request and an existing-object edit so guidance is not Taipei-specific.
+- Use existing focused owner suites and new permanent regressions first. Before
+  future production slices, update the thin specs and the exact affected Inspector
+  routes and run supported admission/review. Current admission does not certify
+  this proposed extension. A later authorized complete 101 run records first
+  visibility, correction reasons/counts/objects, serialized bytes, query work,
+  application phase work, status timeline and final references. Do not compare
+  different object counts as equal-work benchmarks or promise fixed model seconds.
+
+Future implementation boundaries: Design's existing preparation/review tools,
+target adapter, context/mapping owners, activity projection and prompt; Runtime's
+invocation/activity/profiler owners; the demonstrated Scene Tree membership path
+and its Core/Factory consumers only as supported by counters. Their direct tests,
+current specs and execution Inspector are included. General renderer acceleration,
+reference search/retry changes, model settings, external tools/dependencies and
+unrelated Framework cleanup are excluded. Offscreen preview has the separate
+feasibility gate above. This task edits only this plan.
+
+#### Self-review outcome
+
+The first design pass had four risks: leases alone do not prevent stale revisions;
+streaming mapping could change atomic behavior; a textual prototype review cannot
+certify material appearance; larger application windows could mask parent copying.
+The revised design explicitly separates selector/value lifetimes, preserves atomic
+mapping or explicit ordered-part semantics, labels missing visual evidence, and
+requires canonical work-count proofs with unchanged cooperative behavior.
+
+Review also found an important scope distinction: exact-ID routing is broken,
+but the recorded broad bounds genuinely contain the tower. Fix routing before
+claiming the spatial index is slow or creating another index. Current evidence
+proves parent-list copying and status/outcome handoff defects; it does not quantify
+all creation/observer/scheduling costs. The remaining owner measurement and any
+isolated-preview feasibility must pass before those production changes. This plan
+is a reviewed investigation and implementation sequence, not an all-causes-fixed
+claim. No additional concrete handoff contradiction was found in the bounded
+second review; the stated measurement and feasibility checkpoints remain open.
+
+#### Approved execution and recoverability decision - 2026-10-11
+
+The user approved the detailed implementation direction and explicitly permitted
+replacing or removing costly ACID-related mechanisms when the system still
+protects its data and supports continued work after errors. This is conditional
+authorization to simplify the mechanism, not a requirement to remove transactions,
+Undo, persistence acknowledgement or every inverse record. No push is authorized.
+
+The product objective is recoverable progress with bounded normal-path overhead:
+completed coherent parts remain useful; a failed part leaves no broken canonical
+relationships; users can continue or explicitly undo completed work. An entire
+long-running AI request need not be all-or-nothing. Existing per-member publication
+and the single request history group already support that distinction.
+
+Current code findings refine the implementation decision:
+
+- SceneTree.addNewElementBatch saves the full old child list before materializing
+  a batch. The local catch uses it only when membership may have changed before
+  the transaction owner accepts the handoff. After acceptance, the local owner
+  does not independently restore membership; Factory owns settlement. Preserve
+  this exactly-one-recovery-owner boundary when replacing the snapshot.
+- Workspace.addNewElements and Group.replaceChildrenFromCanonicalBatch also copy
+  the growing list. Disabling failure rollback alone would leave those costs.
+- Setter.get returns the stored value directly. In-place append is not a safe
+  replacement until public reader/snapshot aliasing is resolved. An older result
+  must not silently change because an internal writer reused its array.
+- Factory shares inverse/replay primitives with Undo and remote compensation.
+  rollbackable=false does not remove undoable inverse requirements; changing that
+  option is not evidence of reduced work. Its current validation context scans
+  the current journal, not proof of a full-document validation on every commit.
+- Existing insertion/removal tests exercise rejected handoff and cleanup paths.
+  They are evidence of failure cases that need a replacement, not a mandate to
+  preserve their current copying algorithm. The direct ordinary-creation path
+  must receive its own fault-injection coverage rather than borrowing proof from
+  the separate prepared-insertion path.
+
+Design choice: prioritize incremental canonical membership evidence and shared
+inverse data over full-parent rollback snapshots. Keep finite, consistent commit
+boundaries, but do not preserve duplicated validation, snapshots or bookkeeping
+merely because they were introduced with ACID work. Measure normal-path snapshot,
+validation, history and publication work separately from actual error recovery.
+Broader deletion of the transaction machinery is not currently justified by the
+recorded timings and would remove behavior shared by unrelated operations.
+
+Recovery cases for the apply-step revision:
+
+1. Invalid input: reject before writes; return repairable input evidence.
+2. Failure before owner handoff: clean up the attempted membership, property
+   relationships and computed instances using the bounded insertion evidence.
+3. Failure after accepted handoff: Factory alone settles the accepted mutation;
+   the caller reports that settlement and does not independently delete it.
+4. Failure after earlier parts committed: preserve those parts, seal ordinary
+   grouped history when the request ends, and identify unfinished parts. No blind
+   replay of acknowledged mutations and no long-lived global interaction lock.
+5. Projection failure with verified canonical data: report the failed projection
+   and permit its existing owner rebuild path; do not label it a failed canonical
+   write or recreate already-created objects.
+6. Recovery itself fails: attempt independent remaining cleanup, preserve the
+   primary error plus recovery failures, and do not claim the document is safe.
+   Existing persistence protections remain until consistency is established.
+   Never silently reload away unsaved work or overwrite a known-good save.
+
+Before removing any existing protection, prove the replacement through the real
+Core creation path: fail during materialization, parent membership, property
+handoff, accepted publication and cleanup; then test another valid edit,
+Undo/Redo and save/load. Count old-membership copies and inverse work on successful
+calls. Preserve shared property ownership, sibling order, custom containers,
+user/remote interleaving, and exposed snapshot independence. A faster successful
+path with damaged failure behavior does not meet the user's recoverability goal.
+
+This amendment changes the approved design constraints only. Production changes
+remain subject to the existing owner-step readiness and test-first sequence;
+the open aliasing and isolated-preview experiments remain explicit prerequisites.
+
+#### Step Execution Card - observe - outcome metadata independent of summaries
+
+Owner: Runtime observe/trace-owner, existing Inspector observe conditions for
+receipt usability and transport separation; spec: ai-execution-flow.md, Shared
+Runtime profiler and Execution recording. Inputs: actual tool result and failure
+at the shared invocation boundary. Output: bounded outcome metadata independent
+of optional payload summaries, consumed by the existing offline report. No model,
+canvas, mutation or retry decisions. Missing historical evidence remains unknown.
+Boundary: profiler recorder.ts, evaluation.ts and their existing records tests,
+already in the observe implementation boundary. Failure owner: Runtime recorder
+or report projection. Required cases: oversized and reordered successful results,
+admission rejection, partial outcome, failed transport and unknown contracts;
+existing profiler suites preserve payload redaction and diagnostic isolation.
+First prove the successful receipt is misclassified before implementing; run
+focused profiler tests and naming review. Stop if classification needs new App
+semantics rather than preserving the original received execution evidence.
+
+
+#### Step Execution Card - apply - registered union target binding
+
+Owner: Design operation adapter, apply step; existing registered schema admission
+and identity reference contracts. Input: registered action schema, supplied
+arguments, explicit target reference. Output: one unambiguous applicable target
+path, followed by unchanged complete argument validation. Boundary:
+local-operation-batch.ts and local-operation-tools.test.ts. Branches constrained
+by supplied enum/const discriminators must participate exactly when compatible;
+unknown or overlapping paths remain rejected. Test the real read_design_context
+union before changing implementation, incompatible snapshot scope, nested paths,
+conflicts and ambiguity. No identity lookup on structural rejection and no writes.
+
+
+#### Step Execution Card - compose - current operation purpose
+
+Owner: Design provider progress adapter and conversation projection. Existing
+compose current-work contract and conversation execution phase contract. Registered
+operation descriptions are scoped work intent; phase-only children inherit that
+live intent. Record registered-operation provenance separately from public-authored
+commentary. The visual-assessment owner emits its review scope before child model
+entry and closes it in finally. Remove raw full-request seeding from both live and
+replayed panel projections; model commentary establishes request-level purpose.
+Boundary: local-ai-provider.ts, conversation.ts, ai-conversation-panel.tsx and
+existing provider/conversation/presentation tests. Preserve message language,
+sequence, closed-call tombstones, sibling restoration and lifecycle precedence.
+Focused provider regression precedes production edits; no new label model.
+
+
+#### Step Execution Card - apply - retained consumer lifetime
+
+Owner: retained-design-context, context action and retained-fill-action; runtime-input
+owns request cleanup around its existing transaction runner. Reference delivery
+returns a consumer lease bound to the request signal; successful leased entries
+cannot be evicted by sibling reads. Release on consumption, explicit release,
+request settlement, abort or owner disposal. Leases do not override revision or
+workspace validity. Capacity refusal precedes returning a reference and preserves
+existing consumers. Ordinary pages remain evictable. A declarative query mapping
+prepares all disjoint patches before the single canonical fill write, releasing
+internal query leases as columns are consumed; no query/write streaming or callback
+code. Formal pressure and stale-value regressions precede implementation.
+
+
+#### Step Execution Card - prepare - immutable target subsets
+
+Owner: request-local preparation session and target adapter. Retain a batch of
+explicit artifact selectors once; return opaque targetSetId plus artifactId and
+count, never expanded membership. Subsequent batch targets use that pair. Preserve
+requested identity order and deduplication, artifact release/request lifetime,
+complete selector admission and canonical existence/lock admission on use. Budget
+all requested subsets before storing any; reject rather than evict live handles.
+Boundary: design-preparation.ts, local-design-tools.ts, operation target schema,
+AiDesignToolIds and their existing formal tests. No names substituted for IDs and
+no claim that creation membership equals current children. Test 17,004 identities,
+repeated consumption, defensive arrays, wrong artifact, conflicts and release.
+
+
+#### Step Execution Card - apply - canonical append and bounded recovery
+
+Owner: Scene Tree Group ordered membership, Workspace insertion and SceneTree
+ordinary creation recovery; Core/Factory integration is the behavioral oracle.
+Group owns one mutable canonical order and lazily materializes a cached immutable
+array snapshot for public get/save. Canonical append uses count/insertion methods
+without materializing that snapshot. Mutation invalidates the snapshot, while
+previous returned arrays remain unchanged. Serialized children stays string[].
+Ordinary pre-handoff recovery removes attempted IDs using insertion evidence;
+accepted handoff remains Factory-owned. Independent cleanup is attempted even
+when another cleanup fails, and uncertainty is reported rather than claiming a
+successful rollback. Test actual Core growing batches, snapshot independence,
+Undo/Redo, middle insertion, save/load, properties and failure injection. Existing
+diagnostic phase/counter hooks observe work; no second transaction/cache owner.
+Boundary extends the existing apply membership route to components/group.ts and
+components/workspace.ts and their tests, as authorized by this plan's canonical
+membership scope. No general rendering or unrelated transaction rewrite.
+
+
+#### Step Execution Card - observe - synchronous canonical work
+
+Use the existing diagnostic phase and counter subscriptions only around the
+prepared action's synchronous Core creation callback. Aggregate by owner phase
+with explicit inclusive timing semantics; never collect unrelated user work while
+the action awaits the host. The existing transaction/yield timings remain separate.
+Record these aggregates in the existing result timing receipt and Runtime payload.
+Boundary: design-actions.ts and its permanent tests. Prove an emitted host-wait
+sample is excluded, while every own slice is counted. No second trace recorder.
+
+
+#### Step Execution Card - inspect - prepared recipe review
+
+Owner: Design prepared review coordinator, using the existing preparation owner
+for immutable source recipes and the current review owner for requirement/reference
+state. Review a retained artifact or explicit named source parts without canvas
+writes. A tool-free provider checks the actual recipe plus applicable reference
+images; deterministic compilation findings remain authoritative. Bind reuse to
+recipe, scope and current evidence, and recheck evidence after asynchronous review
+and before applying an assessed artifact. Appearance remains unverified. Failed
+assessments require source correction; absent review does not block ordinary edits.
+Boundary: local-prepared-design-review.ts, its permanent tests, design-preparation,
+local-design-tools/review/operation-tools/provider, constants and App prompt.
+Executable cases: actual source rather than caller narrative, reuse, changed
+source/reference invalidation, contradictory findings, no canvas writes, explicit
+partial scope and unrendered appearance. No preview renderer or new dependency.
+
+
+#### Step Execution Card - apply - failed recovery settlement
+
+The direct Core fault injection proves a cleanup exception currently prevents
+remaining membership/map cleanup. Complete independent cleanup attempts, preserving
+the original cause plus failures. Shared transaction types own the neutral
+MutationRecoveryError contract; Factory reports rollback-failed even with an empty
+journal when a canonical owner reports that error. Design observes its own member
+settlement and reports unknown rather than claiming rollback success. This is the
+approved recovery-failure case, not a new rollback manager. Extend the existing
+apply boundary only to the transaction type, Factory settlement, and Design runner
+with their focused permanent regressions. No removal of persistence protection.
+
+
+#### Bounded implementation self-review - 2026-10-11
+
+The owner review verified canonical append work without old sibling copies,
+independent read snapshots, partial publication recovery, failed-cleanup reporting,
+Undo/Redo and persisted round trips. Query leases preserve accepted dependencies;
+target sets and nested union paths feed one admitted plural mapping without
+repeating identity arrays. The review found and corrected the multi-target region
+precheck and a partial-review success incorrectly clearing a whole-recipe conflict.
+Both have permanent failing-before-fix regressions.
+
+Pre-drawing review is a tool-free assessment of the actual immutable recipe and
+applicable retained images. It is not a rendered preview and does not certify
+appearance. Identical recipe/evidence/scope reuses assessment. Evidence changes
+invalidate application; scoped success preserves unresolved broader conflicts.
+Canonical findings remain authoritative and final canvas review remains necessary.
+The full public child snapshot is materialized lazily when read, not removed;
+reads can still incur work and must be measured independently of canonical append.
+ACID-related full-parent backups were replaced with attempted-membership recovery;
+Factory settlement, Undo, persistence protections and shared-property ownership
+remain. No general transaction machinery removal is justified by current evidence.
+
+Validation uses focused Runtime, Core, Scene Tree, Design tool and UI-state tests,
+production/server type checks, scoped lint and naming. A broad default App tsc
+command also includes legacy test doubles and surfaced unrelated test typing;
+the maintained production and AI-server configurations are the applicable gates.
+No full local CI has run. The following recorded run must verify actual current
+status, owner timing, reviewed recipe application and retained reference evidence.
+
+
+#### Complete live acceptance result - 2026-10-11
+
+Status: PARTIAL ACCEPTANCE - implementation is present, but the intended whole-flow
+improvement is not achieved. Do not claim this revision complete or ready to push.
+The user-authorized single complete run is finished; no additional live run or
+full local CI was started. Source candidate 91d755f0-9286-4080-8504-71a96883d74e
+passed the execution owner proof; the reviewed source contract was accepted.
+
+Evidence: tmp/full-101-large-document-20261011/report.html, run.json,
+application-analysis.json, final-assessments.json, target-repetition.json and
+record-completeness.json. Primary request 99b74684-88c2-49e3-bba2-c575ee04545c;
+whole-request record c91b45ca-45ca-492c-96de-007f8db25f34. UI completion 2269.476 s;
+first visible canvas 244.600 s; final objects 46,763. Recording continued ten
+seconds after completion and fit was performed on first content and completion.
+Overall bounds did not change between them. The previous run completed in
+1175.186 s with 81,981 objects; these are different generated workloads.
+
+Observed improvements: 19 prepared applications consumed 77.333 s. Synchronous
+canonical creation emitted zero old-membership snapshot items; 46,773 insertions
+used incremental membership. Outcome classification retained native tool status
+outside oversized summaries. New phase counters identify UI scene-tree projection
+at 24.252 s within 36.227 s of synchronous creation; nested phases overlap.
+Formal tests cover target unions/nested plural paths, leases, atomic mappings,
+cleanup failures, continued edits, Undo/Redo and save/load. The live run did not
+exercise retain_design_targets; do not present its unit proof as live evidence.
+
+Failed objectives and bounded replanning inputs:
+
+- Nineteen prepared-recipe assessments consumed 592.956 s, ten returned fail, and
+  three independent final canvas assessments were still required. The new owner
+  validates immutable recipe data but lacks the actual existing-canvas attachment
+  context. Recipe review does not establish appearance or whole-composition fit.
+  Review admission and evidence scope need revision before another implementation
+  iteration; an extra model gate per artifact is not a demonstrated improvement.
+- Child completion still restores stale authored parent purpose. Explicit phases
+  distinguish mutation from processing, but tower/spire completion can restore
+  bamboo wording. Model-authored wording and observed step identity must retain
+  separate freshness rather than treating all retained text as current activity.
+- A batch input still carries 2,324,430 bytes of expanded target keys. There are
+  23 distinct target key-list groups and no identical repeated list in this run.
+  Target-reference capability alone did not cause the producer to choose it.
+  Revisit the producer-consumer handoff instead of merely expanding limits.
+- The primary drawing record is complete with no primary ownership gap, but the
+  browser whole-request record stops at 1827.215 s with open lifecycle/action
+  spans: 69 of 70 retained records are complete. Delivery drops into a permanent
+  failure state after a pending-byte overflow or two send failures, and the App
+  HTTP adapter discards the specific rejection cause. The failed live batch was
+  not retained, so the exact triggering condition is unproven. Recovery must
+  preserve bounded durable evidence and explicit errors without blocking product
+  work; do not claim a verified final persistence duration from the missing tail.
+- Recording-only all-bounds probes consumed 82.103 s across 2,091 observations.
+  This is measured harness work, not product idle time; it cannot be added to the
+  owner total or mechanically subtracted as a speedup.
+
+These findings require a bounded task iteration under the existing plan before
+more production edits. Preserve the completed run and failed acceptance evidence;
+do not hide the regression by reporting only the faster application receipts.
+
+
+### User-authorized progress release - 2026-10-11
+
+The user now authorizes pushing and merging the current implemented progress
+before planning reusable tool compositions. This supersedes the earlier no-push
+checkpoint, but does not convert partial live acceptance into full acceptance.
+The release scope is the existing tracked implementation, permanent regression
+tests, current contracts, and release metadata in this worktree. No new recipe
+library implementation or unrelated cleanup belongs in this release.
+
+Preserve the recorded regression and follow-up requirements above: pre-drawing
+review admission, stale purpose restoration, producer adoption of target handles,
+and incomplete browser record delivery. They remain explicit planning inputs
+after merge. The new reusable-composition plan must consider these issues.
+
+Integrate current main, run the relationship-map-selected local checks (not the
+repository-wide full validation mode), review this bounded diff, and add package
+release metadata. Failed applicable checks block push; failed or pending CI blocks
+merge. Merge only the reviewed exact source head after applicable CI passes.
+No additional live AI generation is needed for this release checkpoint.
+
+
+#### Release verification correction - backend diagnostic composition
+
+Owner: observe. The existing boundary test fails because the approved document
+persistence recorder now bundles Runtime's recorder, payload writer, and record
+sink. The source import rule already permits the two independent Runtime public
+entries, but the older backend graph oracle still rejects every framework file.
+Correct that inconsistent oracle using the actual tree-shaken dependency graph
+of a permanent diagnostic-only entry fixture. The document backend may contain
+only that diagnostic graph; the collaboration backend retains zero framework
+modules. Existing public-entry isolation tests continue to reject other framework
+execution owners. No production bundler or runtime behavior changes.
+
+Evidence before correction: local validation
+881a9804-6258-4321-b5cb-048d4a13e2d1, 5.log,
+framework-runtime-boundary.test.mjs document-backend graph assertion.
+This is a broken-oracle correction under the test-first rule, not relaxation of
+Core, rendering, mutation, or dependency boundaries.
+
+
+#### Release verification correction - current action and activity inputs
+
+The full Design gate found two stale test inputs/oracles. Context reads now
+forward cancellation to their read owner, so assert the exact same AbortSignal
+as well as the query. The panel's purpose test must supply the current explicit
+provider activity phase when expecting AI processing; an unphased running edit
+event exercises the generic drawing label instead. Preserve all existing purpose
+and failure assertions. Only formal test inputs change; no production behavior.
+Evidence: local validation 6f626c77-a862-4cec-b4d1-5e1eadfc35a4, 5.log.
+
+
+#### Release correction - one immutable preparation input
+
+Owner: prepare. The current work-count regression detects two reads of template
+vertices: construction reads caller input, then recipe retention clones that
+input again. Freeze one detached input snapshot before compilation and use the
+same snapshot for compilation and retained review. This also prevents an async
+caller from changing the reviewed recipe while compilation yields. Preserve
+all admission limits, findings, artifact ownership and cancellation. Extend the
+existing permanent work-count regression to both sync and async session entry
+points before changing production code. No new cache or changed drawing policy.
+
+
+#### Progress release validation - 2026-10-11
+
+All applicable local release checks pass on the integrated main source
+`9f3c5b561866f0915d56b729a9e14698ea97bc40`. The supported local validation
+runner selected 24 workspace owners, shared checks, four Fieldscope profiles,
+and Design E2E. Unchanged owner results were reused only after comparing exact
+input fingerprints; corrected owner tests were rerun. Final evidence is
+`tmp/local-validation/progress-release-e2e-final/result.json`, with
+`sourceVerified: true` and the reused source evidence chain in its plan.
+
+- Functional E2E: 392 executed, including five intentional negative cases;
+  19 existing conditional skips; zero unexpected failures and zero flaky tests.
+- Collaboration E2E: 14 executed. Rendering contracts: three executed.
+- Nineteen Framework package archives, all four clean-consumer phases, and
+  release records pass. No package publication is authorized or performed.
+- The current execution-owner source candidate
+  `e29488a8-2774-42bd-937d-9634837f5e8a` passes. Contract review has no semantic
+  changes, blockers or evidence invalidation and is accepted.
+
+Release verification also synchronized the generated Inspector catalog, the
+Scene Tree insertion work-count oracle, and the current two-line activity E2E
+oracle. A direct Utils regression now covers immutable recovery-failure evidence
+and primary error identity. The activity oracle retains mobile/desktop coverage,
+stale-completion rejection, stable history, wrapping and scrolling assertions.
+These are direct validation corrections, not new feature scope.
+
+The complete live run predates the final immutable preparation-input correction.
+Its failed objectives above remain open; this progress release does not close
+whole-flow acceptance or authorize reusable-tool composition implementation.

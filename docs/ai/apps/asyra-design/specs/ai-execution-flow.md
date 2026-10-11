@@ -163,6 +163,13 @@ Prepared target selectors use exact immutable artifact identities. Repeated pref
 queries reuse an artifact-owned key index and preserve source order; releasing
 an artifact releases its lookup state. A prefix miss remains a recoverable error,
 not permission to select the entire artifact. Exact keys require no full-key walk.
+retain_design_targets accepts a batch of exact-key or prefix selections and stores
+immutable ordered identity subsets under artifactId/targetSetId. Subsequent batch
+targets send that pair rather than expanded keys. Admission budgets the complete
+retention request before storing any subset; exhausted capacity cannot evict live
+references. Releasing an artifact also releases its target sets. These identities
+remain creation members, not live Group children; current canonical admission
+continues to check existence and locks.
 
 Local corrections may query a workspace region, then filter candidate identities
 by current type, hierarchy and flags before using registered batch mutations.
@@ -814,7 +821,13 @@ Preparation partitions source work automatically inside one immutable artifact;
 parent structure, key identity, painter order, layouts and cross-node relations
 remain global. Expanded geometry/depth ceilings and per-primitive validation
 remain enforced; no simplification or model-assisted splitting is needed merely
-because cumulative source work exceeds one preparation window.
+because cumulative source work exceeds one preparation window. Pattern faces,
+Fill palettes and selected instance ranges have no independent 1,000-item input
+ceiling. Each source face is an individual primitive. Construction yields between
+bounded work windows so cancellation can run before publication or canvas writes.
+The artifact still admits at most 10,000 expanded nodes and 200,000 expanded
+points; a single primitive remains bounded to 20,000 points. Compilation uses the
+constructed result once, without rebuilding earlier windows.
 
 Visual judgment is bounded by the user's requested quality. Optional polish must
 not become a blocking defect through model-authored criteria, reference detail,
@@ -1087,3 +1100,120 @@ away required failures or substitute an overview for requested native detail.
 Retry may combine successful current IDs with corrected pending targets. Missing,
 stale, mixed-generation or insufficient-coverage evidence still blocks review;
 all original criteria and post-assessment freshness checks remain in effect.
+
+## Whole-request observation and retained query consumption
+
+The Runtime request owns timing through final action and history settlement;
+provider completion ends only a child invocation. App adapters report domain
+work. Independently sequenced delivery remains available after the model stream
+ends. Collection completeness requires producer end markers and contiguous
+sequences; missing records remain incomplete even when product execution succeeds.
+Diagnostics never delay or fail product settlement. Persistence batch work links
+to all affected request sequence ranges without duplicating measured work.
+
+A retained spatial query belongs to one document/workspace generation and
+revision, including changes to potential matches outside the original result.
+Creation, moves, ancestor transforms, filter changes, Undo/Redo and remote edits
+invalidate affected membership/values. Pan/zoom does not invalidate world-space
+queries. Referenced batch mutations validate freshness, locks and all targets
+inside the synchronous canonical write boundary; stale/evicted results reject
+before writes without silently reselecting. Data-dependent fill computation uses
+explicit position space, finite mapping parameters and new values, never arbitrary
+code. AI chooses visual intent. Full explicit data inspection remains available.
+
+### Durable batch preparation
+
+The backend applies ordered canonical changes from all publications in one
+admitted persistence batch to one working document. Publication sequence and
+identity registries remain exact; no acknowledgement precedes checkpoint commit.
+A failed change or checkpoint write preserves the original document and
+watermark. Retries perform no canonical apply. Preparation work counts are
+asserted using the real reducer, independently of machine-specific duration.
+
+### Retained query and fill mapping
+
+The App context reader retains ordered membership and requested property columns
+under a bounded snapshotId, document revision and workspace identity. Repeated
+pages reuse that result. `delivery=reference` returns a compact receipt for a
+consumer; `delivery=columns` excludes row metadata. Scope=snapshot reads or
+releases an existing reference. Canonical scene/props changes and file load
+invalidate snapshots, including an outside object entering a region. Viewport
+changes alone do not invalidate parent-local property columns or workspace bounds.
+
+`map_retained_fills` is a registered batch-only action. It maps x/y parent-local
+columns through a finite increasing domain and explicit piecewise-linear RGB
+stops, with optional opacity and declared clamp/reject endpoint behavior. One
+call may combine disjoint mappings at one fill index. It validates every snapshot,
+column and current target inside mutation admission, then calls the public plural
+fill API once. The mapping owner resolves fill identities through the public API
+and rejects conflicting simultaneous values for one shared fill before writing;
+it does not change the public API's ordered-update semantics or detach relationships. Stale or evicted references produce
+an actionable recoverable failure, never an automatic reselection or replay.
+
+### Scoped discovery and surface grids
+
+Definition delivery is keyed by identity, revision, representation and selected
+field set. A repeated partial result references its delivered scope; recovery
+restores exactly that scope. Partial definitions include ancestor constraints
+and reference dependencies and do not constitute standalone validation schemas.
+Category and lexical discovery return bounded pages with explicit continuation;
+unknown operations return registered candidates, never inferred executable aliases.
+Reference pages retain other linked/structured image candidates alongside the
+representative declaration. Candidate pages do not fetch alternatives or certify
+subject suitability. Selecting an explicit candidate uses the ordinary immutable
+image acquisition/reuse path. Explicit acquisition of any known gallery candidate
+updates the page's selected asset, including after representative acquisition
+failed. Page continuation reuses the retained candidate inventory without retrying
+a failed representative; a later successful selection replaces that failed
+receipt. Fresh acquisition can still retry a failure. All inventory is request-local.
+
+A `surface-grid` is a root child under the existing shared orthographic projection.
+Its four world corners are ordered (u,v)=(0,0),(1,0),(1,1),(0,1), are coplanar,
+and project to a strictly convex, nondegenerate quadrilateral. Rows and columns
+partition normalized surface coordinates uniformly. Each motif is a polygon of
+normalized cell-local (u,v) vertices, with its own key, name and fill. An optional
+motif world-space `offset` translates its plane without changing order. Optional
+`fills` cycles by row-major cell index and overrides the motif's default fill,
+using the same fill contract as patterns; a complete per-cell list expresses
+irregular material assignment without retransmitting geometry. Projection of a
+motif offset is reused across its cells. No material is selected by the backend. Bilinear
+interpolation maps each cell vertex to the surface, then the existing projection
+maps it to the canvas. Equivalently the backend interpolates the four projected
+corners, projecting the source boundary once. Signed projected offsets pass
+through the existing Group normalization.
+
+The caller chooses cell-major or motif-major painter order. Within each order,
+rows precede columns and motif/vertex order is preserved. Generated keys use
+`gridKey-flatCellIndex-motifKey`, where flatCellIndex=row*columns+column.
+No depth sorting, hidden faces, automatic materials or executable callbacks are
+introduced. Irregular geometry and holes remain on the explicit vector path.
+Source motifs, expanded nodes and expanded points use the same resource contract
+and cooperative preparation windows. Global key conflicts remain errors. Invalid
+or nonplanar/degenerate surfaces reject before application; no approximation is
+used to fit them into the supported primitive.
+
+
+### Retained consumer lifetime
+
+Reference delivery admits a request-owned lease before returning a snapshot receipt.
+Leased entries cannot be evicted; exhaustion rejects the new handoff with capacity
+feedback while preserving existing consumers. Explicit release, mapping consumption,
+request settlement, cancellation and host disposal release leases. Workspace and
+canonical revision checks remain mandatory; retention never makes stale values valid.
+Ordinary inspection pages remain bounded, evictable snapshots. Declarative fill
+mapping may query its required position column internally, consume it and release
+that lease while preparing patches. Every mapping, target lock and shared-fill
+conflict is checked before the one plural write; no intermediate mutation occurs.
+
+
+### Prepared recipe review
+
+`review_prepared_design` reviews a retained artifact's actual source recipe against
+current requirements and applicable references. Optional named source parts define
+explicit partial coverage. Compilation findings cannot be overridden by a model.
+A separate tool-free assessment returns required corrections separately from
+optional polish. Rendered appearance stays unverified, and final canvas review
+remains required. Identical recipes reuse assessment only with identical scope and
+evidence. Changed requirements, source facts or reference applicability invalidate
+reuse; changes during assessment never produce fresh approval. Applying a reviewed
+artifact rechecks its evidence identity and blocks known contradictory recipes.

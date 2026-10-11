@@ -16,7 +16,8 @@ import {
 } from '../local-tool-scheduler'
 import {
   createDesignPreparationSession,
-  prepareDesign
+  prepareDesign,
+  prepareDesignAsync
 } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type {
@@ -48,10 +49,10 @@ const draft = {
   ]
 }
 const setup = () => {
-  const compile = vi.fn(prepareDesign)
+  const compile = vi.fn(prepareDesignAsync)
   const designs = createLocalDesignTools(
     actions,
-    createDesignPreparationSession(compile)
+    createDesignPreparationSession(prepareDesign, compile)
   )
   const execute = vi.fn(
     async (_batch: AiActionBatch): Promise<AiBatchReceipt> => ({
@@ -299,7 +300,7 @@ describe('ordered ready parts', () => {
     const order: string[] = []
     compile.mockImplementation((...args) => {
       order.push('prepare')
-      return prepareDesign(...args)
+      return prepareDesignAsync(...args)
     })
     execute.mockImplementation(async (batch) => {
       order.push('apply')
@@ -513,6 +514,59 @@ describe('combined design preparation and application', () => {
         }
       ).design.entries
     ).toHaveLength(1201)
+  })
+  it('admits a many-face motif through native and public invocation without dropping source faces', async () => {
+    const { workflow, execute } = setup()
+    const definition = workflow.definitions[0]
+    const input = {
+      draft: {
+        type: 'group',
+        name: 'Facade',
+        projection: {
+          azimuth: 0,
+          elevation: 0,
+          scale: 1,
+          originX: 0,
+          originY: 100
+        },
+        children: [
+          {
+            type: 'pattern',
+            key: 'panes',
+            name: 'Panes',
+            origin: { x: 0, y: 0, z: 0 },
+            axes: [{ count: 8, step: { x: 10, y: 0, z: 0 } }],
+            faces: Array.from({ length: 1011 }, (_, i) => ({
+              key: `face-${i}`,
+              name: `Face ${i}`,
+              fill: '#123456',
+              vertices: [
+                { x: 0, y: 0, z: 0 },
+                { x: 8, y: 0, z: 0 },
+                { x: 8, y: 0, z: 8 },
+                { x: 0, y: 0, z: 8 }
+              ]
+            }))
+          }
+        ]
+      },
+      inspection: 'defer'
+    }
+    expect(
+      operationInputIssue(input, nativeToolInputSchema(definition.inputSchema))
+    ).toBeUndefined()
+    const result = await invokeLocalTool(workflow, definition, input, signal())
+    expect(result.success).toBe(true)
+    expect(execute).toHaveBeenCalledTimes(1)
+    const entries = (
+      execute.mock.calls[0][0].actions[0].arguments as {
+        design: { entries: { key: string }[] }
+      }
+    ).design.entries
+    expect(entries).toHaveLength(8089)
+    expect(entries[1].key).toBe('panes-0-face-0')
+    expect(entries[1011].key).toBe('panes-0-face-1010')
+    expect(entries[8088].key).toBe('panes-7-face-1010')
   })
   it('retains full receipts when code needs IDs, without re-preparing', async () => {
     const { workflow, compile } = setup()
@@ -783,7 +837,14 @@ const reviewedWorkflow = () => {
     }
   ]
   const designs = createLocalDesignTools(allActions)
-  const execute = vi.fn(async () => ({ context: {}, actionResults: [] }))
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result: { status: 'complete', compositionId: 'retained-composition' }
+    }))
+  }))
   const operations = createLocalOperationTools(allActions, designs, execute)
   const workflow = createLocalDesignWorkflow(designs, operations)
   return { workflow, operations, execute }
@@ -954,4 +1015,111 @@ it('draws a ready part without plan generation and records initial criteria afte
     )
   )
   expect(planned.recorded).toBe(true)
+})
+
+it('repairs a rejected public part and consumes its retained source without resending geometry', async () => {
+  const { workflow, execute, compile } = setup()
+  const definition = workflow.definitions[0]
+  const rejected = await invokeLocalTool(
+    workflow,
+    definition,
+    {
+      parts: [
+        {
+          key: 'base',
+          draft: {
+            ...draft,
+            children: [{ ...draft.children[0], width: 'invalid' }]
+          }
+        }
+      ]
+    },
+    signal()
+  )
+  expect(rejected.success).toBe(false)
+  expect(execute).not.toHaveBeenCalled()
+  expect(compile).not.toHaveBeenCalled()
+  const receipt = JSON.parse(rejected.text)
+  expect(receipt.rejectedParts).toHaveLength(1)
+  expect(receipt.rejectedParts[0]).toMatchObject({
+    index: 0,
+    key: 'base',
+    draftId: expect.any(String)
+  })
+  const repaired = await invokeLocalTool(
+    workflow,
+    definition,
+    {
+      parts: [
+        {
+          key: 'base',
+          repair: {
+            draftId: receipt.rejectedParts[0].draftId,
+            replacements: [{ path: '/children/0/width', value: 40 }]
+          }
+        }
+      ]
+    },
+    signal()
+  )
+  expect(repaired.success, repaired.text).toBe(true)
+  expect(compile).toHaveBeenCalledOnce()
+  expect(execute).toHaveBeenCalledOnce()
+  expect(
+    JSON.parse(repaired.text).parts[0].actionResults[0].result.compositionId
+  ).toBe('root')
+})
+
+it('recovers only the failed public part after an acknowledged earlier mutation', async () => {
+  const { workflow, execute, compile } = setup()
+  const definition = workflow.definitions[0]
+  const response = await invokeLocalTool(
+    workflow,
+    definition,
+    {
+      parts: [
+        { key: 'base', draft },
+        {
+          key: 'detail',
+          parentPart: 'base',
+          draft: { ...draft, children: [draft.children[0], draft.children[0]] }
+        },
+        { key: 'later', draft }
+      ]
+    },
+    signal()
+  )
+  const receipt = JSON.parse(response.text)
+  expect(response.success).toBe(false)
+  expect(receipt).toMatchObject({
+    status: 'partial',
+    failedPart: 'detail',
+    remainingParts: ['later'],
+    toolOutcome: { status: 'partial' }
+  })
+  expect(execute).toHaveBeenCalledOnce()
+  expect(compile).toHaveBeenCalledTimes(2)
+  const repaired = await invokeLocalTool(
+    workflow,
+    definition,
+    {
+      parts: [
+        {
+          key: 'detail',
+          parentId: receipt.parts[0].actionResults[0].result.compositionId,
+          repair: {
+            draftId: receipt.parts[1].draftId,
+            replacements: [{ path: '/children/1/key', value: 'second-face' }]
+          }
+        }
+      ]
+    },
+    signal()
+  )
+  expect(repaired.success, repaired.text).toBe(true)
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(compile).toHaveBeenCalledTimes(3)
+  expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
+    parentId: 'root'
+  })
 })

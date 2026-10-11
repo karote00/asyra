@@ -9,21 +9,90 @@ const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
 // The operation registry owns argument locations. Do not guess from API names.
-const targetPath = (schema: unknown, field: string): string[] => {
-  const paths: string[][] = []
-  const visit = (value: unknown, path: string[]) => {
-    if (!record(value) || !record(value.properties)) return
+const targetPath = (
+  schema: unknown,
+  field: string,
+  input: Record<string, unknown>,
+  requested?: unknown
+): string[] => {
+  const paths = new Map<string, string[]>()
+  const visit = (
+    value: unknown,
+    path: string[],
+    supplied: unknown,
+    depth = 0
+  ) => {
+    if (!record(value) || depth > 64) return
+    // Only supplied scalar constraints exclude a branch. Missing fields remain
+    // for complete admission after identities have been bound.
+    if (record(supplied) && record(value.properties)) {
+      for (const [key, constraint] of Object.entries(value.properties)) {
+        if (
+          record(constraint) &&
+          (Array.isArray(constraint.enum) ||
+            Object.hasOwn(constraint, 'const')) &&
+          Object.hasOwn(supplied, key) &&
+          (supplied[key] === null || typeof supplied[key] !== 'object') &&
+          operationInputIssue(supplied[key], constraint)
+        )
+          return
+      }
+    }
+    if (typeof value.$ref === 'string' && value.$ref.startsWith('#/')) {
+      let resolved: unknown = schema
+      for (const key of value.$ref.slice(2).split('/'))
+        resolved = record(resolved)
+          ? resolved[key.replace(/~1/g, '/').replace(/~0/g, '~')]
+          : undefined
+      visit(resolved, path, supplied, depth + 1)
+    }
+    for (const mode of ['oneOf', 'anyOf', 'allOf']) {
+      if (Array.isArray(value[mode]))
+        for (const branch of value[mode])
+          visit(branch, path, supplied, depth + 1)
+    }
+    if (record(value.items) && Array.isArray(supplied)) {
+      supplied.forEach((item, index) =>
+        visit(value.items, [...path, String(index)], item, depth + 1)
+      )
+    }
+    if (!record(value.properties)) return
     for (const [key, child] of Object.entries(value.properties)) {
-      if (key === field) paths.push([...path, key])
-      else visit(child, [...path, key])
+      const childPath = [...path, key]
+      if (key === field) paths.set(JSON.stringify(childPath), childPath)
+      else
+        visit(
+          child,
+          childPath,
+          record(supplied) ? supplied[key] : undefined,
+          depth + 1
+        )
     }
   }
-  visit(schema, [])
-  if (paths.length !== 1)
+  visit(schema, [], input)
+  if (requested !== undefined) {
+    if (
+      !Array.isArray(requested) ||
+      !requested.length ||
+      requested.some(
+        (part) =>
+          typeof part !== 'string' &&
+          (!Number.isSafeInteger(part) || Number(part) < 0)
+      )
+    )
+      throw new Error('Invalid explicit target path.')
+    const exact = paths.get(JSON.stringify(requested.map(String)))
+    if (!exact)
+      throw new Error(
+        'Target path does not identify a registered supplied argument slot.'
+      )
+    return exact
+  }
+  if (paths.size !== 1)
     throw new Error(
       'Target reference needs one unambiguous registered argument path. Supply explicit arguments for this operation.'
     )
-  return paths[0]
+  return [...paths.values()][0]
 }
 
 const assignTarget = (
@@ -38,6 +107,21 @@ const assignTarget = (
     return { ...input, [key]: value }
   }
   const child = Object.hasOwn(input, key) ? input[key] : {}
+  if (Array.isArray(child)) {
+    const [slot, ...nested] = rest
+    const index = Number(slot)
+    if (
+      !Number.isSafeInteger(index) ||
+      index < 0 ||
+      index >= child.length ||
+      !record(child[index]) ||
+      !nested.length
+    )
+      throw new Error('Target path requires an existing object array slot.')
+    const items = [...child]
+    items[index] = assignTarget(child[index], nested, value)
+    return { ...input, [key]: items }
+  }
   if (!record(child))
     throw new Error('Target reference ancestor must be an object.')
   return { ...input, [key]: assignTarget(child, rest, value) }
@@ -68,21 +152,36 @@ export const prepareOperationBatch = (
     const input = operation.arguments
     let inputs = [input]
     if (operation.target !== undefined) {
-      const target = operation.target
-      if (
-        !record(target) ||
-        !['elementId', 'elementIds'].includes(String(target.field))
-      )
-        throw new Error('Invalid or conflicting target reference.')
-      const { field, ...reference } = target
-      const path = targetPath(definition.inputSchema, String(field))
-      // Validate conflicts before resolving any request-owned identity reference.
-      assignTarget(input, path, undefined)
-      if (!resolveTargets)
-        throw new Error('Artifact references are unavailable.')
-      const ids = resolveTargets(reference)
-      if (field === 'elementIds') inputs = [assignTarget(input, path, ids)]
-      else inputs = ids.map((elementId) => assignTarget(input, path, elementId))
+      const targets = Array.isArray(operation.target)
+        ? operation.target
+        : [operation.target]
+      if (!targets.length) throw new Error('Target references cannot be empty.')
+      for (const target of targets) {
+        if (
+          !record(target) ||
+          !['elementId', 'elementIds'].includes(String(target.field)) ||
+          (targets.length > 1 && target.field !== 'elementIds')
+        )
+          throw new Error(
+            'Invalid or conflicting target reference; multiple bindings require plural elementIds.'
+          )
+        const { field, path: requested, ...reference } = target
+        const path = targetPath(
+          definition.inputSchema,
+          String(field),
+          input,
+          requested
+        )
+        for (const current of inputs) assignTarget(current, path, undefined)
+        if (!resolveTargets)
+          throw new Error('Artifact references are unavailable.')
+        const ids = resolveTargets(reference)
+        inputs = inputs.flatMap((current) =>
+          field === 'elementIds'
+            ? [assignTarget(current, path, ids)]
+            : ids.map((elementId) => assignTarget(current, path, elementId))
+        )
+      }
     }
     for (const args of inputs) {
       const issue = operationInputIssue(args, definition.inputSchema)

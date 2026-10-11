@@ -137,7 +137,6 @@ export const designPatternSchema = {
     instanceRanges: {
       type: 'array',
       minItems: 1,
-      maxItems: limits.nodes,
       description:
         'Optional sorted nonoverlapping flat instance intervals [start,end), zero-based, last axis fastest. Only selected instances are computed. Keep original indices and palette phase when restoring deferred ranges in a later artifact. Omit a whole pattern rather than sending an empty selection.',
       items: {
@@ -153,7 +152,6 @@ export const designPatternSchema = {
     faces: {
       type: 'array',
       minItems: 1,
-      maxItems: limits.nodes,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -169,10 +167,65 @@ export const designPatternSchema = {
     fills: {
       type: 'array',
       minItems: 1,
-      maxItems: limits.nodes,
       items: projectedFaceSchema.properties.fill
     }
   },
   description:
-    'Root child under shared projection only. Describe a repeated planar motif once as faces, then one/two translation axes; backend expands count products into editable vectors. Last axis varies fastest, each instance preserves face painter order. origin translates all instances; optional fills cycles by instance, otherwise face fills remain. No automatic lighting, depth sorting or clipping. Compact input is bounded to 1000 source nodes. The backend expands up to 10000 total objects including the root and 200000 total points per artifact; application automatically slices this ordered output. Do not manually split a valid stage at 1000 expanded objects. Selected instance counts times faces count expanded output; omitted ranges do not consume output budgets or get projected. Source guards remain unchanged. Each face requires both key and name. Use separate patterns/explicit geometry for genuinely different details; never simplify irregular details to fit a pattern.'
+    'Root child under shared projection only. Describe a repeated planar motif once as faces, then one/two translation axes; backend expands count products into editable vectors. Last axis varies fastest, each instance preserves face painter order. origin translates all instances; optional fills cycles by instance, otherwise face fills remain. No automatic lighting, depth sorting or clipping. Source faces are prepared in internal work windows, without a separate 1000-item face, palette or range limit. The backend expands up to 10000 total objects including the root and 200000 total points per artifact; application automatically slices this ordered output. Do not manually split a valid stage at 1000 expanded objects. Selected instance counts times faces count expanded output; omitted ranges do not consume output budgets or get projected. Each individual face must fit the primitive point budget. Each face requires both key and name. Use separate patterns/explicit geometry for genuinely different details; never simplify irregular details to fit a pattern.'
+}
+
+export const surfaceGridSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'type',
+    'key',
+    'name',
+    'boundary',
+    'rows',
+    'columns',
+    'motifs',
+    'order'
+  ],
+  properties: {
+    type: { const: 'surface-grid' },
+    key: { ...key, maxLength: 80 },
+    name: { ...key, maxLength: 60 },
+    boundary: { type: 'array', minItems: 4, maxItems: 4, items: worldPoint },
+    rows: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
+    columns: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
+    order: { enum: ['cell-major', 'motif-major'] },
+    motifs: {
+      type: 'array',
+      minItems: 1,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['key', 'name', 'vertices'],
+        properties: {
+          key: { ...key, maxLength: 40 },
+          name: { ...key, maxLength: 60 },
+          fill: designFillSchema,
+          fills: { type: 'array', minItems: 1, items: designFillSchema },
+          offset: worldPoint,
+          vertices: {
+            type: 'array',
+            minItems: 3,
+            maxItems: limits.pathCommands,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['u', 'v'],
+              properties: {
+                u: { type: 'number', minimum: 0, maximum: 1 },
+                v: { type: 'number', minimum: 0, maximum: 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  description:
+    'Root child with shared orthographic projection. Four planar convex boundary corners in (0,0),(1,0),(1,1),(0,1) order; uniformly partition rows and columns. Each motif polygon uses cell-local u/v in [0,1]; optional world offset translates its plane. Optional fills cycles by row-major cell index and overrides fill; supply a full cell list for irregular materials. Offsets are projected once per motif. Backend projects the boundary once, bilinearly expands editable vectors in bounded windows. Explicit cell-major (row-major cells, then motifs) or motif-major painter order. Keys: gridKey-cellIndex-motifKey. Preserve irregular geometry with explicit faces; no automatic approximation, clipping, lighting or hidden-face removal. Expanded artifact budgets still apply.'
 }

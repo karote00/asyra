@@ -1,3 +1,4 @@
+import { isExecutionActivity } from '@asyra/ai-agent-runtime'
 import {
   AiProviderError,
   createGenericHttpAiProvider,
@@ -125,9 +126,13 @@ const readActivityStream = async (
       (event.status !== 'running' && event.status !== 'completed')
     )
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    const activity = event.activity as AiToolProgress['activity']
+    if (activity !== undefined && !isExecutionActivity(activity))
+      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     if (!signal.aborted) {
       try {
         onProgress?.({
+          ...(activity ? { activity } : {}),
           tool: event.tool,
           status: event.status,
           ...(typeof event.message === 'string' && event.message.length <= 1000

@@ -157,3 +157,33 @@ it('retains measured handler failure without replacing the original public error
     message: error.message
   })
 })
+
+it.each([false, true])(
+  'releases only the settled request query leases after failure=%s',
+  async (failed) => {
+    const input = createAiRuntimeInput({
+      provider: { requestActionBatch: vi.fn() },
+      permissionRules: {},
+      transactionRunner: { run: async (_label, execute) => execute() }
+    })
+    const queries = input.ownedResources?.find(
+      (resource) => 'releaseFor' in resource
+    ) as { releaseFor(signal: AbortSignal): void; dispose(): void }
+    const release = vi.spyOn(queries, 'releaseFor')
+    const signal = new AbortController().signal
+    const result = input.transactionRunner.run(
+      'request',
+      async () => {
+        if (failed) throw new Error('failed')
+        return 42
+      },
+      { signal }
+    )
+    if (failed) await expect(result).rejects.toThrow('failed')
+    else await expect(result).resolves.toBe(42)
+    expect(release).toHaveBeenCalledExactlyOnceWith(signal)
+    await Promise.all(
+      (input.ownedResources ?? []).map((resource) => resource.dispose())
+    )
+  }
+)

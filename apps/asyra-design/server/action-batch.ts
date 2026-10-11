@@ -1,3 +1,7 @@
+import {
+  createExecutionRecordSink,
+  createRecordCollector
+} from '@asyra/ai-agent-runtime/node'
 import type {
   AiToolProgress,
   ExecuteAiBatch
@@ -11,6 +15,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createBatchExchange } from './batch-exchange'
 import {
   ACTION_BATCH_ENDPOINT,
+  AI_EXECUTION_RECORD_ENDPOINT,
   AI_BATCH_RECEIPT_HEADER,
   AI_BATCH_EXECUTION_HEADER
 } from '../src/ai/action-batch-endpoint'
@@ -303,16 +308,43 @@ const readJsonBody = async (
 
 export const createActionBatchMiddleware = (
   options: {
+    readonly createRecordingSink?: () => ReturnType<
+      typeof createExecutionRecordSink
+    >
     readonly requestModelActionBatch?: RequestModelActionBatch
   } = {}
 ) => {
   const exchange = createBatchExchange()
-  return async (
+  const collector = createRecordCollector({
+    createSink:
+      options.createRecordingSink ??
+      (() =>
+        createExecutionRecordSink(
+          process.env.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions'
+        ))
+  })
+  const middleware = async (
     request: IncomingMessage,
     response: ServerResponse,
     next: MiddlewareNext
   ): Promise<void> => {
     const url = new URL(request.url ?? '/', 'http://app.local')
+    if (url.pathname === AI_EXECUTION_RECORD_ENDPOINT) {
+      if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
+        sendJson(response, 403, { code: 'AI_RECORD_DELIVERY_FORBIDDEN' })
+        return
+      }
+      try {
+        const records = await readJsonBody(
+          request,
+          new AbortController().signal
+        )
+        sendJson(response, 200, await collector.accept(records))
+      } catch {
+        sendJson(response, 400, { code: 'AI_RECORD_DELIVERY_INCOMPLETE' })
+      }
+      return
+    }
     if (url.pathname !== ACTION_BATCH_ENDPOINT) {
       next()
       return
@@ -391,6 +423,7 @@ export const createActionBatchMiddleware = (
                 type: 'activity',
                 tool: event.tool,
                 status: event.status,
+                ...(event.activity ? { activity: event.activity } : {}),
                 ...(event.message ? { message: event.message } : {})
               }) + '\n'
             )
@@ -440,4 +473,5 @@ export const createActionBatchMiddleware = (
       request.removeListener('aborted', abort)
     }
   }
+  return Object.assign(middleware, { dispose: () => collector.dispose() })
 }

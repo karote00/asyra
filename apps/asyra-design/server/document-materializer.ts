@@ -1,3 +1,8 @@
+import {
+  persistenceSpan,
+  persistenceDetail,
+  type DocumentPersistenceObservation
+} from './document-persistence-observation'
 import { Buffer } from 'node:buffer'
 import { decodeDocumentPublication } from '../src/collaboration/operations'
 import { decodePublicationFramePublication } from '../src/collaboration/protocol'
@@ -51,7 +56,8 @@ export interface DocumentMaterializationStore<Document> {
     execute: (
       current: MaterializedDocumentRecord<Document>,
       commit: (next: MaterializedDocumentRecord<Document>) => void
-    ) => Promise<Result>
+    ) => Promise<Result>,
+    observation?: DocumentPersistenceObservation
   ): Promise<Result>
 }
 
@@ -63,12 +69,16 @@ export interface DocumentMaterializationServiceOptions<Document> {
   ) => Awaitable<void>
   readonly applyCanonicalChanges: (
     document: Document,
-    changes: readonly CanonicalChange[]
+    changes: readonly CanonicalChange[],
+    observation?: DocumentPersistenceObservation
   ) => Awaitable<Document>
 }
 
 export interface DocumentMaterializationService {
-  materialize(input: unknown): Promise<Readonly<{ durableSequence: number }>>
+  materialize(
+    input: unknown,
+    observation?: DocumentPersistenceObservation
+  ): Promise<Readonly<{ durableSequence: number }>>
 }
 
 interface PreparedPublication {
@@ -236,83 +246,114 @@ export const createDocumentMaterializationService = <Document>({
   authorize,
   applyCanonicalChanges
 }: DocumentMaterializationServiceOptions<Document>): DocumentMaterializationService => ({
-  async materialize(input) {
-    const batch = parsePersistenceBatch(input)
-    await authorize(batch.documentId, batch)
+  async materialize(input, observation) {
+    const endDecode = persistenceSpan(observation, 'validate-and-decode')
+    let batch: DocumentPersistenceBatch
+    let prepared: readonly PreparedPublication[]
+    try {
+      batch = parsePersistenceBatch(input)
+      await authorize(batch.documentId, batch)
 
-    const prepared = Object.freeze(
-      batch.entries.map((entry) => {
-        const decoded = decodePublicationFramePublication(
-          entry.encodedPublicationFrames.map(
-            (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
+      prepared = Object.freeze(
+        batch.entries.map((entry) => {
+          const decoded = decodePublicationFramePublication(
+            entry.encodedPublicationFrames.map(
+              (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
+            )
           )
-        )
-        if (decoded.publication.publicationId !== entry.publicationId) {
-          throw new Error(
-            '[document-materializer] publication identity conflicts with encoded bytes'
-          )
-        }
-        return Object.freeze({
-          sequence: entry.sequence,
-          publicationId: entry.publicationId,
-          canonicalChanges: decodeDocumentPublication(decoded.publication)
+          if (decoded.publication.publicationId !== entry.publicationId) {
+            throw new Error(
+              '[document-materializer] publication identity conflicts with encoded bytes'
+            )
+          }
+          return Object.freeze({
+            sequence: entry.sequence,
+            publicationId: entry.publicationId,
+            canonicalChanges: decodeDocumentPublication(decoded.publication)
+          })
         })
-      })
-    )
+      )
+    } finally {
+      endDecode()
+    }
+    persistenceDetail(observation, {
+      documentId: batch.documentId,
+      batchId: batch.batchId,
+      firstSequence: batch.firstSequence,
+      lastSequence: batch.lastSequence,
+      count: prepared.length
+    })
     const publicationIds = Object.freeze(
       prepared.map(({ publicationId }) => publicationId)
     )
 
-    return store.transact(batch.documentId, async (current, commit) => {
-      const existingBatch = assertExistingBatchIdentity(
-        current,
-        batch,
-        publicationIds
-      )
-      const publicationRetry = isFullyDurablePublicationRetry(current, prepared)
-      if (existingBatch || publicationRetry) {
-        if (current.durableSequence < batch.lastSequence) {
+    return store.transact(
+      batch.documentId,
+      async (current, commit) => {
+        const existingBatch = assertExistingBatchIdentity(
+          current,
+          batch,
+          publicationIds
+        )
+        const publicationRetry = isFullyDurablePublicationRetry(
+          current,
+          prepared
+        )
+        if (existingBatch || publicationRetry) {
+          if (current.durableSequence < batch.lastSequence) {
+            throw new Error(
+              '[document-materializer] durable retry watermark is inconsistent'
+            )
+          }
+          return Object.freeze({
+            durableSequence: current.durableSequence
+          })
+        }
+
+        if (current.durableSequence !== batch.expectedDurableSequence) {
           throw new Error(
-            '[document-materializer] durable retry watermark is inconsistent'
+            '[document-materializer] expected durable sequence conflicts with stored checkpoint'
           )
         }
-        return Object.freeze({
-          durableSequence: current.durableSequence
+
+        persistenceDetail(observation, {
+          documentGeneration: current.documentGeneration ?? 0
         })
-      }
+        const endApply = persistenceSpan(observation, 'canonical-apply')
+        let document: Document
+        try {
+          document = await applyCanonicalChanges(
+            current.document,
+            prepared.flatMap((item) => item.canonicalChanges),
+            observation
+          )
+        } finally {
+          endApply()
+        }
 
-      if (current.durableSequence !== batch.expectedDurableSequence) {
-        throw new Error(
-          '[document-materializer] expected durable sequence conflicts with stored checkpoint'
-        )
-      }
+        const publicationSequences = copyRegistry(current.publicationSequences)
+        prepared.forEach(({ publicationId, sequence }) => {
+          publicationSequences[publicationId] = sequence
+        })
+        const batches = copyRegistry(current.batches)
+        batches[batch.batchId] = Object.freeze({
+          firstSequence: batch.firstSequence,
+          lastSequence: batch.lastSequence,
+          publicationIds
+        })
+        commit({
+          document,
+          documentGeneration: current.documentGeneration ?? 0,
+          durableSequence: batch.lastSequence,
+          publicationSequences: Object.freeze(publicationSequences),
+          batches: Object.freeze(batches)
+        })
 
-      let document = current.document
-      for (const item of prepared) {
-        document = await applyCanonicalChanges(document, item.canonicalChanges)
-      }
-
-      const publicationSequences = copyRegistry(current.publicationSequences)
-      prepared.forEach(({ publicationId, sequence }) => {
-        publicationSequences[publicationId] = sequence
-      })
-      const batches = copyRegistry(current.batches)
-      batches[batch.batchId] = Object.freeze({
-        firstSequence: batch.firstSequence,
-        lastSequence: batch.lastSequence,
-        publicationIds
-      })
-      commit({
-        document,
-        documentGeneration: current.documentGeneration ?? 0,
-        durableSequence: batch.lastSequence,
-        publicationSequences: Object.freeze(publicationSequences),
-        batches: Object.freeze(batches)
-      })
-
-      return Object.freeze({
-        durableSequence: batch.lastSequence
-      })
-    })
+        return Object.freeze({
+          durableSequence: batch.lastSequence
+        })
+      },
+      observation
+    )
   }
 })

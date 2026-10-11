@@ -1101,6 +1101,7 @@
       ],
       outputs: ['artifact:socket-authoritative-document-session-status'],
       conditions: [
+        'Apply all ordered canonical changes from one admitted durable batch to one working document; preserve publication identities, atomic checkpoint commit and exact retry watermarks. Never merge across durable transactions.',
         'A missing or empty fileId does not open a document session.',
         'Every required fileId selects one local document identity. A non-empty configured Collaboration endpoint additionally creates one socket-authoritative document and Collaboration identity; no fileId selects a second RenderApp, Core.load, or persistence owner.',
         'With a configured endpoint, RenderApp prepares the socket checkpoint and pending tail before Core starts, supplies only that checkpoint through SocketDocumentSession, and activates live publication delivery only after Core hydration.',
@@ -1151,6 +1152,8 @@
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'apps/asyra-design/server/document-materializer.ts',
+        'apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts',
         'apps/asyra-design/package.json',
         'apps/asyra-design/README.md',
         'apps/asyra-design/vite.config.ts',

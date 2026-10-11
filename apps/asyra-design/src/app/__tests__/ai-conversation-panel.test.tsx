@@ -77,6 +77,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     const request = harness.feature.execute.mock
       .calls[0][0] as AiConversationFeatureRequest
+    let sequence = 0
     for (const message of [
       '正在加入窗戶光影反射效果',
       '正在刪除被覆蓋物件',
@@ -88,12 +89,19 @@ describe('AI Agent conversation panel intent boundary', () => {
           summary: 'Running a tool',
           tool: 'update_design_element',
           toolStatus: 'running',
+          attempt: 1,
+          activity: {
+            kind: 'work',
+            callId: `work-${++sequence}`,
+            sequence,
+            phase: 'provider'
+          },
           message
         })
       )
       expect(
         screen.getByRole('status', { name: 'Current activity' }).textContent
-      ).toBe(message)
+      ).toBe(`AI processing${message}`)
       expect(
         within(screen.getByLabelText('Operational progress'))
           .getByText(message)
@@ -254,7 +262,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     )
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('Separating drawing layers')
+    ).toBe('Converting artwork to vectorsSeparating drawing layers')
     const disclosure = screen.getByLabelText('Work history')
     expect(disclosure.textContent).toMatch(/^Working for /)
     expect(disclosure.textContent).not.toContain('Separating drawing layers')
@@ -998,6 +1006,7 @@ describe('AI Agent conversation panel intent boundary', () => {
             actionCount: 1,
             attempt: 1,
             phase: 'execution',
+            activity: { kind: 'work', callId: 'tail', sequence: 1 },
             summary: 'Reshaping the tail'
           })
           now = 3_250

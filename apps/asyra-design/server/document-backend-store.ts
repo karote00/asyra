@@ -1,3 +1,8 @@
+import {
+  persistenceSpan,
+  persistenceDetail,
+  type DocumentPersistenceObservation
+} from './document-persistence-observation'
 import { Buffer } from 'node:buffer'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -129,7 +134,8 @@ export const createFileDocumentMaterializationStore = (
 
   const persist = async (
     documentId: string,
-    record: MaterializedDocumentRecord<AppDocumentData>
+    record: MaterializedDocumentRecord<AppDocumentData>,
+    observation?: DocumentPersistenceObservation
   ): Promise<void> => {
     await mkdir(directory, { recursive: true })
     const filePath = resolve(directory, documentFileName(documentId))
@@ -141,11 +147,35 @@ export const createFileDocumentMaterializationStore = (
       documentId,
       record
     }
-    await writeFile(temporaryPath, JSON.stringify(stored), {
-      encoding: 'utf8',
-      flag: 'wx'
+    const endSerialize = persistenceSpan(
+      observation,
+      'checkpoint-serialization'
+    )
+    let serialized: string
+    try {
+      serialized = JSON.stringify(stored)
+    } finally {
+      endSerialize()
+    }
+    persistenceDetail(observation, {
+      bytes: Buffer.byteLength(serialized),
+      durableSequence: record.durableSequence
     })
-    await rename(temporaryPath, filePath)
+    const endWrite = persistenceSpan(observation, 'checkpoint-write')
+    try {
+      await writeFile(temporaryPath, serialized, {
+        encoding: 'utf8',
+        flag: 'wx'
+      })
+    } finally {
+      endWrite()
+    }
+    const endRename = persistenceSpan(observation, 'checkpoint-rename')
+    try {
+      await rename(temporaryPath, filePath)
+    } finally {
+      endRename()
+    }
   }
 
   const store: FileDocumentMaterializationStore = {
@@ -162,7 +192,8 @@ export const createFileDocumentMaterializationStore = (
       execute: (
         current: MaterializedDocumentRecord<AppDocumentData>,
         commit: (next: MaterializedDocumentRecord<AppDocumentData>) => void
-      ) => Promise<Result>
+      ) => Promise<Result>,
+      observation?: DocumentPersistenceObservation
     ): Promise<Result> {
       const previous = transactionTails.get(documentId) ?? Promise.resolve()
       let releaseTransaction: (() => void) | undefined
@@ -171,9 +202,20 @@ export const createFileDocumentMaterializationStore = (
       })
       const tail = previous.then(() => transactionDone)
       transactionTails.set(documentId, tail)
-      await previous
+      const endQueue = persistenceSpan(observation, 'checkpoint-admission-wait')
       try {
-        const current = await load(documentId)
+        await previous
+      } finally {
+        endQueue()
+      }
+      try {
+        const endLoad = persistenceSpan(observation, 'checkpoint-read')
+        let current: MaterializedDocumentRecord<AppDocumentData>
+        try {
+          current = await load(documentId)
+        } finally {
+          endLoad()
+        }
         let committed: MaterializedDocumentRecord<AppDocumentData> | undefined
         const result = await execute(current, (next) => {
           if (committed) {
@@ -184,7 +226,7 @@ export const createFileDocumentMaterializationStore = (
           committed = next
         })
         if (committed) {
-          await persist(documentId, committed)
+          await persist(documentId, committed, observation)
           cache.set(documentId, committed)
         }
         return result

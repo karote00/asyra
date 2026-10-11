@@ -11,6 +11,10 @@ export interface AiActionDescription {
   readonly inputSchema: AiJsonValue
 }
 
+// Progress identity and phase are owned by the Runtime contract.
+import type { ExecutionActivity } from '@asyra/ai-agent-runtime'
+export type { ExecutionActivity } from '@asyra/ai-agent-runtime'
+
 export interface AiActionBatchAction {
   readonly id: string
   readonly name: string
@@ -33,6 +37,7 @@ export interface AiProviderInput<TContext = unknown> {
 }
 
 export interface AiToolProgress {
+  readonly activity?: ExecutionActivity
   readonly tool: string
   readonly status: 'running' | 'completed'
   readonly message?: string
