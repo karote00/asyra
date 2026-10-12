@@ -4,6 +4,7 @@ description: Enforce git/gh CLI separation rule for version control operations
 license: MIT
 compatibility: opencode
 metadata:
+  internal: true
   category: version-control
   workflow: git
 ---

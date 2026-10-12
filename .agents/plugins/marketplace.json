@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "asyra-agent",
+      "name": "asyra-skill",
       "source": {
         "source": "local",
-        "path": "./plugins/asyra-agent"
+        "path": "./plugins/asyra-skill"
       },
       "policy": {
         "installation": "AVAILABLE",

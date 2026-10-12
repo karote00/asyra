@@ -19,7 +19,7 @@ export function DeveloperEntry() {
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-base md:flex-col md:items-start">
         <a
-          href="https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md"
+          href="https://github.com/karote00/asyra/blob/main/plugins/asyra-skill/README.md"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-11 items-center rounded-full bg-[#183f35] px-6 py-3 text-[#f4f1e7]! focus-visible:outline-[#183f35]!"

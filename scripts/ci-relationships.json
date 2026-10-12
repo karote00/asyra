@@ -157,7 +157,9 @@
       "patterns": [
         ".agents/plugins/marketplace.json",
         ".claude-plugin/marketplace.json",
+        "plugins/asyra-skill/**",
         "plugins/asyra-agent/**",
+        ".claude/skills/*/SKILL.md",
         "plugins/asyra-developer/**",
         "docs/ai/tools/developer-agent/*.md",
         "docs/ai/tools/developer-agent/baselines/*.bundle.json",

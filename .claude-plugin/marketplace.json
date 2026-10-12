@@ -5,8 +5,8 @@
   },
   "plugins": [
     {
-      "name": "asyra-agent",
-      "source": "./plugins/asyra-agent",
+      "name": "asyra-skill",
+      "source": "./plugins/asyra-skill",
       "description": "Build and extend products with Asyra using its public APIs, ownership patterns and formal verification. Includes versioned reference guides."
     }
   ]

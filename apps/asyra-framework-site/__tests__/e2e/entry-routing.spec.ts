@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const installGuideUrl =
-  'https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md'
+  'https://github.com/karote00/asyra/blob/main/plugins/asyra-skill/README.md'
 
 for (const width of [320, 820, 1440]) {
   test(`Skill entry shares the starting point section without repeating the homepage story at ${width}px`, async ({
@@ -95,6 +95,22 @@ for (const width of [320, 820, 1440]) {
     await expect(
       page.getByRole('link', { name: 'Asyra Skill installation guide' })
     ).toHaveAttribute('href', installGuideUrl)
+    await expect(
+      page.getByRole('heading', {
+        name: 'Install and update in your product',
+        exact: true
+      })
+    ).toBeVisible()
+    for (const command of [
+      'npx skills add karote00/asyra',
+      'npx skills update asyra-skill --project',
+      'npx openskills@1.5.0 update asyra-skill',
+      'npx openskills@1.5.0 sync --yes'
+    ]) {
+      await expect(
+        page.locator('pre').filter({ hasText: command }).first()
+      ).toBeAttached()
+    }
   })
 }
 

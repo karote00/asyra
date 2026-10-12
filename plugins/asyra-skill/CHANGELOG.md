@@ -1,5 +1,15 @@
 # Asyra Skill releases
 
+## 0.1.12 - Installer guidance candidate
+
+- Document project-scoped Vercel Skills and OpenSkills installation and updates.
+- Rename the installation identity and paths to `asyra-skill`; previous
+  `asyra-agent` installations require removal and reinstallation.
+- Expose only Asyra Skill through default repository discovery with
+  `npx skills add karote00/asyra`; mark contributor Skills internal.
+- Preserve the complete offline reference bundle.
+- Installer validation does not establish native model behavior or publish a release.
+
 ## 0.1.11 - Common tool contract documentation
 
 - Synchronize bundled AI action guidance with the required common tool descriptor
