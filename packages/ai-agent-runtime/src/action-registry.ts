@@ -2,10 +2,14 @@ import { createAiToolContract, describeAiTool } from './tool-contract.js'
 import { detachAiJsonValue } from './json-value.js'
 import type {
   AiActionDefinition,
+  AiRegisteredActionDefinition,
   AiActionDescription,
-  AiActionRegistry,
+  AiVersionedActionRegistry,
+  AiActionLookup,
+  AiActionRegistrationOptions,
+  AiActionRegistration,
+  AiActionAvailability,
   AiActionRegistryErrorCode,
-  AiActionResult,
   AiJsonValue
 } from './types.js'
 
@@ -37,15 +41,22 @@ const detachJsonValue = (value: unknown): AiJsonValue => {
   }
 }
 
-class DefaultAiActionRegistry implements AiActionRegistry {
-  private readonly actions = new Map<
-    string,
-    AiActionDefinition<unknown, AiActionResult>
-  >()
-  private readonly descriptions = new Map<string, AiActionDescription>()
+interface RegistryEntry {
+  readonly definition: AiRegisteredActionDefinition
+  readonly description: AiActionDescription
+  readonly kind: 'primitive' | 'composition'
+  readonly requestId?: string
+  availability: AiActionAvailability
+}
+
+class DefaultAiActionRegistry implements AiVersionedActionRegistry {
+  private readonly actions = new Map<string, Map<number, RegistryEntry>>()
   private disposed = false
 
-  register(action: AiActionDefinition): void {
+  register(
+    action: AiActionDefinition,
+    options: AiActionRegistrationOptions = {}
+  ): void {
     this.assertActive()
 
     if (typeof action.name !== 'string' || action.name.trim().length === 0) {
@@ -72,40 +83,151 @@ class DefaultAiActionRegistry implements AiActionRegistry {
       )
     }
 
-    if (this.actions.has(action.name)) {
+    const versions = this.actions.get(action.name)
+    const previousEntries = versions ? [...versions.values()] : []
+    const latest = previousEntries[previousEntries.length - 1]
+    if (latest && options.expectedRevision === undefined) {
       return registryError(
         'AI_ACTION_DUPLICATE',
         `Action "${action.name}" is already registered.`
       )
     }
+    if (
+      (latest &&
+        (options.expectedRevision !== latest.definition.revision ||
+          action.revision !== latest.definition.revision + 1)) ||
+      (!latest && options.expectedRevision !== undefined)
+    ) {
+      return registryError(
+        'AI_ACTION_REVISION_CONFLICT',
+        'The expected registry revision does not match.'
+      )
+    }
+    if (
+      (options.kind !== undefined &&
+        !['primitive', 'composition'].includes(options.kind)) ||
+      (options.requestId !== undefined && !options.requestId.trim()) ||
+      (options.kind === 'composition' && !options.requestId) ||
+      (latest?.availability === 'candidate' &&
+        latest.requestId !== options.requestId) ||
+      (latest && latest.kind !== (options.kind ?? 'primitive'))
+    ) {
+      return registryError(
+        'AI_ACTION_INVALID_VISIBILITY',
+        'Invalid registration kind or request ownership.'
+      )
+    }
 
     const inputSchema = detachJsonValue(action.inputSchema)
     const contract = createAiToolContract({ ...action, inputSchema })
-    const registeredAction: AiActionDefinition<unknown, AiActionResult> =
-      Object.freeze({ ...contract, execute: action.execute })
-    const description = describeAiTool(contract)
-
-    this.actions.set(action.name, registeredAction)
-    this.descriptions.set(action.name, description)
+    const registeredAction = Object.freeze({
+      ...contract,
+      execute: action.execute
+    })
+    const entry: RegistryEntry = {
+      definition: registeredAction,
+      description: describeAiTool(contract),
+      kind: options.kind ?? 'primitive',
+      ...(options.requestId === undefined
+        ? {}
+        : { requestId: options.requestId }),
+      availability: options.requestId === undefined ? 'eligible' : 'candidate'
+    }
+    const target = versions ?? new Map<number, RegistryEntry>()
+    target.set(contract.revision, entry)
+    this.actions.set(contract.name, target)
   }
 
-  get(name: string): AiActionDefinition | undefined {
+  registration(
+    name: string,
+    lookup: AiActionLookup = {}
+  ): AiActionRegistration | undefined {
     this.assertActive()
-
-    return this.actions.get(name)
+    const versions = this.actions.get(name)
+    if (!versions) return undefined
+    const entries =
+      lookup.revision === undefined
+        ? [...versions.values()].reverse()
+        : [versions.get(lookup.revision)]
+    const entry = entries.find(
+      (candidate) =>
+        candidate &&
+        (candidate.availability !== 'candidate' ||
+          candidate.requestId === lookup.requestId)
+    )
+    if (
+      !entry ||
+      entry.availability === 'suspended' ||
+      entry.availability === 'retired'
+    )
+      return undefined
+    return Object.freeze({
+      definition: entry.definition,
+      kind: entry.kind,
+      availability: entry.availability,
+      ...(entry.requestId === undefined ? {} : { requestId: entry.requestId })
+    })
   }
 
-  list(): readonly AiActionDescription[] {
-    this.assertActive()
+  get(
+    name: string,
+    lookup?: AiActionLookup
+  ): AiRegisteredActionDefinition | undefined {
+    return this.registration(name, lookup)?.definition
+  }
 
-    if (this.descriptions.size === 0) {
+  list(lookup?: AiActionLookup): readonly AiActionDescription[] {
+    this.assertActive()
+    const result: AiActionDescription[] = []
+    for (const name of this.actions.keys()) {
+      const action = this.get(name, lookup)
+      const description =
+        action && this.actions.get(name)?.get(action.revision)?.description
+      if (description) result.push(description)
+    }
+    if (!result.length)
       return registryError(
         'AI_ACTION_REGISTRY_EMPTY',
         'At least one action must be registered before a provider request.'
       )
-    }
+    return Object.freeze(result)
+  }
 
-    return Object.freeze([...this.descriptions.values()])
+  availability(
+    name: string,
+    revision: number
+  ): AiActionAvailability | undefined {
+    this.assertActive()
+    return this.actions.get(name)?.get(revision)?.availability
+  }
+
+  setAvailability(
+    name: string,
+    revision: number,
+    availability: AiActionAvailability
+  ): void {
+    this.assertActive()
+    const entry = this.actions.get(name)?.get(revision)
+    if (
+      !entry ||
+      !['candidate', 'eligible', 'suspended', 'retired'].includes(
+        availability
+      ) ||
+      entry.availability === 'retired' ||
+      (availability === 'candidate' && !entry.requestId)
+    )
+      return registryError(
+        'AI_ACTION_INVALID_VISIBILITY',
+        'Invalid availability transition.'
+      )
+    entry.availability = availability
+  }
+
+  remove(name: string, revision: number): void {
+    this.assertActive()
+    const versions = this.actions.get(name)
+    versions?.delete(revision)
+    if (versions?.size === 0) this.actions.delete(name)
   }
 
   dispose(): void {
@@ -115,7 +237,6 @@ class DefaultAiActionRegistry implements AiActionRegistry {
 
     this.disposed = true
     this.actions.clear()
-    this.descriptions.clear()
   }
 
   private assertActive(): void {
@@ -128,5 +249,5 @@ class DefaultAiActionRegistry implements AiActionRegistry {
   }
 }
 
-export const createAiActionRegistry = (): AiActionRegistry =>
+export const createAiActionRegistry = (): AiVersionedActionRegistry =>
   new DefaultAiActionRegistry()

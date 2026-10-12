@@ -1,4 +1,4 @@
-import type { AiToolContractInput } from './tool-contract.js'
+import type { AiToolContractInput, AiToolContract } from './tool-contract.js'
 export type AiJsonPrimitive = boolean | null | number | string
 
 export type AiJsonValue =
@@ -40,14 +40,60 @@ export interface AiActionDescription {
   readonly inputSchema: AiJsonValue
 }
 
+export interface AiActionLookup {
+  readonly requestId?: string
+  readonly revision?: number
+}
+
+export type AiActionAvailability =
+  'candidate' | 'eligible' | 'suspended' | 'retired'
+export interface AiActionRegistrationOptions {
+  readonly kind?: 'primitive' | 'composition'
+  readonly requestId?: string
+  readonly expectedRevision?: number
+}
+export type AiRegisteredActionDefinition = AiToolContract & {
+  readonly execute: AiActionDefinition['execute']
+}
+
+export interface AiActionRegistration {
+  readonly definition: AiRegisteredActionDefinition
+  readonly kind: 'primitive' | 'composition'
+  readonly availability: AiActionAvailability
+  readonly requestId?: string
+}
+export interface AiVersionedActionRegistry extends AiActionRegistry {
+  get(
+    name: string,
+    lookup?: AiActionLookup
+  ): AiRegisteredActionDefinition | undefined
+  remove(name: string, revision: number): void
+  register(
+    action: AiActionDefinition,
+    options?: AiActionRegistrationOptions
+  ): void
+  registration(
+    name: string,
+    lookup?: AiActionLookup
+  ): AiActionRegistration | undefined
+  availability(name: string, revision: number): AiActionAvailability | undefined
+  setAvailability(
+    name: string,
+    revision: number,
+    availability: AiActionAvailability
+  ): void
+}
+
 export interface AiActionRegistry {
   register(action: AiActionDefinition): void
-  get(name: string): AiActionDefinition | undefined
-  list(): readonly AiActionDescription[]
+  get(name: string, lookup?: AiActionLookup): AiActionDefinition | undefined
+  list(lookup?: AiActionLookup): readonly AiActionDescription[]
   dispose(): void
 }
 
 export type AiActionRegistryErrorCode =
+  | 'AI_ACTION_REVISION_CONFLICT'
+  | 'AI_ACTION_INVALID_VISIBILITY'
   | 'AI_ACTION_DUPLICATE'
   | 'AI_ACTION_INVALID_DESCRIPTION'
   | 'AI_ACTION_INVALID_EXECUTOR'

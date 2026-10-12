@@ -1,12 +1,12 @@
 # Tool Specification
 
-Status: Common contract foundation implemented; composition and library lifecycle remain proposed.
+Status: Common contracts and generic composition/library implementation present; PR 2 validation in progress. Embedded Design integration remains planned.
 
 This specification is owned by `@asyra/ai-agent-runtime` and applies equally to
-primitive and future composed tools. The remaining implementation is tracked by the
+primitive and composed tools. The remaining implementation is tracked by the
 [Reusable Tool Composition plan](../../docs/ai/framework/plans/reusable-tool-composition-plan.md).
 Exported types and formal tests are the authority for the implemented foundation.
-The recipe, library and model-acquisition sections below describe subsequent PRs.
+The model-acquisition section specifies host integration; Design adopts it in PR 3.
 
 ## One canonical contract
 
@@ -14,7 +14,7 @@ One registered tool definition supplies discovery, invocation, validation and
 storage projections. Do not keep separately authored copies for basic tools,
 composed tools, each model provider or the reusable-tool library.
 
-The following are semantic requirements, not finalized TypeScript field names:
+The following sections map to the exported common contract and composition APIs:
 
 | Section     | Required meaning                                                                                       | Primary consumer                                    |
 | ----------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
@@ -77,7 +77,7 @@ Polymorphic getter values and transport receipt contents may have an explicitly
 opaque leaf (`true`) inside an otherwise validated receipt. Such a leaf does not
 prove a typed downstream binding. Recipe composition must obtain an owner-specific
 schema or reject a binding that requires unknown structure; it cannot infer fields
-from a successful example. PR 1 does not implement that recipe validator.
+from a successful example. The recipe validator rejects such bindings without changing primitive invocation.
 
 ## Execution variants
 
@@ -132,6 +132,9 @@ Descriptive annotations do not grant authority.
 
 ## Embedded AI authoring lifecycle
 
+The generic library supports this lifecycle. Advertising the construction and
+discovery tools in the embedded Design host belongs to PR 3.
+
 The model learns the construction interface through an ordinary registered
 submission tool and scoped discovery, not by reading this Markdown file or loading
 a local developer skill. Its input schema defines the required proposal fields:
@@ -180,7 +183,7 @@ Reviewed on 2026-10-11:
   include input schema, optional output schema, display metadata and behavior
   annotations. The protocol distinguishes structured outputs and tool errors.
 
-The proposed Runtime contract shares these concepts. Its additional recipe
+The Runtime contract shares these concepts. Its additional recipe
 dependencies, per-run reference lifetimes, mutation settlement and durable reuse
 are host execution responsibilities, not evidence of a superior model interface.
 No MCP transport, new provider integration or arbitrary code executor is implied.
@@ -197,3 +200,84 @@ delivery without preventing retrieval of necessary detail.
 
 Verify nested scheduling, cancellation while queued, returned-handle consumption
 after child completion, shared lease isolation and terminal request cleanup.
+
+## Typed recipe admission
+
+The PR 2 implementation target is a version-1 finite ordered recipe. Public
+parameters/results use JSON Schema. Bindings are literal JSON, a JSON Pointer into
+public input or an earlier step result, or an explicitly constructed object/array.
+There are no expressions, branches, loops, callbacks or dynamic dependency names.
+A proposal names exact registered dependency revisions. Host limits bound encoded
+size, step count, nesting, expansion and repair issues; exceeding them rejects the
+proposal without partial registration or execution.
+
+Only dependencies explicitly marked composition-eligible by their host can enter
+a recipe. Control-plane tools remain ineligible. This is shared contract metadata,
+not a tool-name list. Metadata derives from the actual dependency graph; a model
+cannot downgrade mutation/external effects or grant resource access.
+
+Static binding proof supports closed objects, homogeneous arrays and primitive
+schemas with required fields, enums and numeric/string/array bounds. Unsupported
+keywords, opaque leaves, optional source paths and uncertain assignability reject
+with the path and an actionable reason; actual invocation still uses the host's
+full validator. This deliberately does not claim general JSON Schema implication.
+The `x-runtime-value` schema annotation identifies `request`, `document` and
+`secret` values. A binding may forward a compatible typed value from fresh input
+or a prior output; a recipe may not persist a literal or default of that type.
+The host owns correct annotations; Runtime does not infer document identity from
+string spelling. Ordinary primitive invocation does not require the restricted
+composition subset.
+
+Admission returns a detached frozen proposal and derived descriptor or independent
+issues with step/path, expected/actual summaries and recovery. The returned issue
+count is bounded and reports omitted issues. It never calls a dependency to infer
+its result type. Registration consumes this artifact; successful admission alone
+does not make a recipe durable or eligible for another request.
+
+## Durable host store
+
+The generic store adapter reads entries and performs atomic compare-and-swap writes
+with opaque storage versions. A successful write acknowledges durable storage of
+that exact record. The adapter is host-injected; importing Runtime performs no IO.
+The saved record contains the common descriptor once, the recipe steps/output
+binding, exact dependency revisions/fingerprints, availability and compact scoped
+validation evidence. It contains no execution arguments, outputs, credentials,
+request handles, or author request identity.
+
+Eligibility requires a genuine complete Runtime receipt for the exact admitted
+recipe and successful host-supplied applicability checks. A caller-authored JSON
+receipt cannot establish eligibility. This is scoped evidence, not proof of all
+possible requests or visual correctness. Saving a candidate remains supported;
+a restart exposes it for explicit inspection/resumption, never automatic execution.
+
+Store conflicts and failures leave product completion unchanged. Retrying save
+performs storage work only. Reload checks the current canonical dependencies and
+re-enters admission; unknown formats, corrupted entries and changed dependencies
+remain unavailable with individual reasons. Suspended and retired tools are not
+invokable in future calls. An invocation already holding a validated graph keeps
+its revision; live host security still applies at every leaf. Host request cleanup
+releases exported request references and the corresponding unsaved candidates.
+
+## Authoring schema and host lifecycle
+
+`aiRecipeInputSchema` publishes the exact JSON submission envelope and recursive
+binding alternatives. The admission parser derives its accepted field inventories
+from that same format owner. This transport schema is not semantic approval:
+`admitAiRecipe` additionally checks structural schema implication, runtime-value
+classification, current dependencies and finite host budgets. The host exposes this
+schema through its registered authoring operation; model-specific schema encoding
+belongs to that adapter and never weakens admission.
+
+Store reload requires a complete bounded inventory before selecting current
+revisions. A corrupt identified revision blocks publication of that tool family,
+while unrelated families remain usable. A saved candidate is not advertised after
+restart; `resume` explicitly admits it for a fresh author request without running
+it. Suspension/retirement updates both durable state and local registry metadata,
+including private candidates. `library.remove` releases a host-selected in-memory
+composition; retire durable entries first when permanent removal is intended.
+Pinned active runs keep their captured definitions and finish normally unless the
+host revokes a capability or the caller cancels.
+
+The lease adapter's `release` is idempotent for its exact call scope and accepts
+absent or partly initialized scopes after `open` fails. It must never release
+borrowed inputs or sibling scopes.

@@ -196,3 +196,91 @@ it('retains the common immutable contract while projecting only provider input f
   expect(registry.list()[0]).not.toHaveProperty('outputSchema')
   expect(Object.isFrozen(registry.get('resize')?.outputSchema)).toBe(true)
 })
+
+describe('revisioned request visibility', () => {
+  it('keeps a candidate private in both lookup and compact discovery', () => {
+    const registry = createAiActionRegistry()
+    registry.register(action('basic'))
+    registry.register(action('recipe'), {
+      kind: 'composition',
+      requestId: 'author'
+    })
+    expect(registry.get('recipe')).toBeUndefined()
+    expect(registry.list().map((item) => item.name)).toEqual(['basic'])
+    expect(registry.get('recipe', { requestId: 'other' })).toBeUndefined()
+    expect(registry.get('recipe', { requestId: 'author' })).toBeDefined()
+    expect(
+      registry.list({ requestId: 'author' }).map((item) => item.name)
+    ).toEqual(['basic', 'recipe'])
+    expect(registry.registration('recipe', { requestId: 'author' })?.kind).toBe(
+      'composition'
+    )
+  })
+
+  it('preserves immutable revisions and refuses stale revision replacement', () => {
+    const registry = createAiActionRegistry()
+    registry.register(action('basic'))
+    const first = registry.get('basic')
+    registry.register(
+      { ...action('basic'), revision: 2 },
+      { expectedRevision: 1 }
+    )
+    expect(registry.get('basic')?.revision).toBe(2)
+    expect(registry.get('basic', { revision: 1 })).toBe(first)
+    expect(() =>
+      registry.register(
+        { ...action('basic'), revision: 3 },
+        { expectedRevision: 1 }
+      )
+    ).toThrow()
+    expect(registry.get('basic')?.revision).toBe(2)
+  })
+
+  it('publishes only an explicit eligible transition and preserves pinned definitions', () => {
+    const registry = createAiActionRegistry()
+    registry.register(action('recipe'), {
+      kind: 'composition',
+      requestId: 'author'
+    })
+    registry.setAvailability('recipe', 1, 'eligible')
+    const pinned = registry.get('recipe')
+    expect(pinned).toBeDefined()
+    registry.setAvailability('recipe', 1, 'suspended')
+    expect(registry.get('recipe')).toBeUndefined()
+    expect(registry.get('recipe', { requestId: 'author' })).toBeUndefined()
+    expect(pinned?.revision).toBe(1)
+    registry.setAvailability('recipe', 1, 'retired')
+    expect(() => registry.setAvailability('recipe', 1, 'eligible')).toThrow()
+  })
+
+  it('does not let another request replace a private candidate', () => {
+    const registry = createAiActionRegistry()
+    registry.register(action('recipe'), {
+      kind: 'composition',
+      requestId: 'author'
+    })
+    expect(() =>
+      registry.register(
+        { ...action('recipe'), revision: 2 },
+        {
+          kind: 'composition',
+          requestId: 'other',
+          expectedRevision: 1
+        }
+      )
+    ).toThrow()
+    expect(registry.get('recipe', { requestId: 'author' })?.revision).toBe(1)
+  })
+})
+
+it('does not silently reactivate an older revision after a newer one is suspended', () => {
+  const registry = createAiActionRegistry()
+  registry.register(action('basic'))
+  registry.register(
+    { ...action('basic'), revision: 2 },
+    { expectedRevision: 1 }
+  )
+  registry.setAvailability('basic', 2, 'suspended')
+  expect(registry.get('basic')).toBeUndefined()
+  expect(registry.get('basic', { revision: 1 })?.revision).toBe(1)
+})

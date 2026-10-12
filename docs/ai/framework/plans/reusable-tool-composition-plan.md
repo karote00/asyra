@@ -1,6 +1,6 @@
 # Reusable Tool Composition
 
-Status: IN PROGRESS - PR 1 implemented; sequential delivery authorized, later stages pending.
+Status: IN PROGRESS - PR 1 merged; PR 2 implemented and under bounded verification; PR 3 pending.
 
 ## Planning task contract
 
@@ -769,11 +769,11 @@ does not claim Inspector admission or runtime verification has already happened.
 
 ### Ordered PR boundaries
 
-| Delivery | Included stages and closure boundary |
-| --- | --- |
-| PR 1 - Common contracts and recording foundation (#319) | Stage A: shared registration/output/outcome contracts, invocation diagnostics and durable delivery, current-purpose freshness. Retain its existing validated implementation and review corrections. |
-| PR 2 - Runtime composition and durable library | Stage C and generic Stage D: typed finite recipes, admission/repair, registry dispatch, nested invocation, host-store interface, eligibility and save/reload. Prove with neutral hosts; no Design-specific geometry or alternate scheduler. |
-| PR 3 - Design integration and complete acceptance | Stage B, Design-specific Stage D, Stage E and Stage F: normal query handles, preparation/review reuse, embedded authoring/discovery/storage/management, recorded repeated-work corrections and complete integration acceptance. Every remaining acceptance case must be accounted for before whole-plan closeout. |
+| Delivery                                                | Included stages and closure boundary                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR 1 - Common contracts and recording foundation (#319) | Stage A: shared registration/output/outcome contracts, invocation diagnostics and durable delivery, current-purpose freshness. Retain its existing validated implementation and review corrections.                                                                                                               |
+| PR 2 - Runtime composition and durable library          | Stage C and generic Stage D: typed finite recipes, admission/repair, registry dispatch, nested invocation, host-store interface, eligibility and save/reload. Prove with neutral hosts; no Design-specific geometry or alternate scheduler.                                                                       |
+| PR 3 - Design integration and complete acceptance       | Stage B, Design-specific Stage D, Stage E and Stage F: normal query handles, preparation/review reuse, embedded authoring/discovery/storage/management, recorded repeated-work corrections and complete integration acceptance. Every remaining acceptance case must be accounted for before whole-plan closeout. |
 
 Promote current specs and the exact Inspector steps with each implementation PR;
 this sequence is not permission to publish unimplemented capabilities. PR 2 starts
@@ -782,14 +782,14 @@ primitive operation behavior, not only successful composition examples. The user
 has authorized the complete plan's final recorded 101 acceptance; it follows the
 deterministic integration gates and retains the existing final-reference report.
 
-| Stage | Implementation boundary and completion evidence |
-| --- | --- |
-| A - Observability and invocation contracts | Runtime invocation/profiler/types, Design result adapters/collector/activity. Test-first lost delivery, typed results and stale purpose; retain complete observable causality before judging later speed. |
-| B - Current handoffs and review | Design operation/workflow/preparation/review/retained-context owners and direct tests. Default producer handles, narrow attachment context, scoped review reuse. Prove genuine bounds queries do not expand unrelated siblings or return large lists to AI. |
-| C - Generic composition | Runtime format/validator/interpreter through existing invoke and host scheduler; direct package tests. Ordered typed graph, dependency revisions, partial outcomes, cancellation and finite budgets. Extend existing exact lookup/dispatch to composed entries before exposing submission. Prove portability with a second neutral test host, not another product implementation. |
-| D - Durable library and discovery | Runtime host-store interface, existing Design local host persistence and discovery adapters. Registered submission schema, bounded repair, candidate publication, save, reload, compact search, version eligibility, disable/remove, no captured state or double execution. Add minimal management within existing panel, no separate catalog product. |
-| E - Large-document integration | Canonical creation publication and Design scene-tree projection only where recorded repeated work is proved; direct affected tests. Compose domain bulk operations, preserve selection/Undo/remote interleaving and observed drawing updates. |
-| F - End-to-end acceptance | Deterministic direct-versus-composed equivalence, new-request reuse, failures and the authorized complete recorded 101 run. Report limitations and final references. Full local CI belongs to a later explicitly requested release checkpoint. |
+| Stage                                      | Implementation boundary and completion evidence                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A - Observability and invocation contracts | Runtime invocation/profiler/types, Design result adapters/collector/activity. Test-first lost delivery, typed results and stale purpose; retain complete observable causality before judging later speed.                                                                                                                                                                         |
+| B - Current handoffs and review            | Design operation/workflow/preparation/review/retained-context owners and direct tests. Default producer handles, narrow attachment context, scoped review reuse. Prove genuine bounds queries do not expand unrelated siblings or return large lists to AI.                                                                                                                       |
+| C - Generic composition                    | Runtime format/validator/interpreter through existing invoke and host scheduler; direct package tests. Ordered typed graph, dependency revisions, partial outcomes, cancellation and finite budgets. Extend existing exact lookup/dispatch to composed entries before exposing submission. Prove portability with a second neutral test host, not another product implementation. |
+| D - Durable library and discovery          | Runtime host-store interface, existing Design local host persistence and discovery adapters. Registered submission schema, bounded repair, candidate publication, save, reload, compact search, version eligibility, disable/remove, no captured state or double execution. Add minimal management within existing panel, no separate catalog product.                            |
+| E - Large-document integration             | Canonical creation publication and Design scene-tree projection only where recorded repeated work is proved; direct affected tests. Compose domain bulk operations, preserve selection/Undo/remote interleaving and observed drawing updates.                                                                                                                                     |
+| F - End-to-end acceptance                  | Deterministic direct-versus-composed equivalence, new-request reuse, failures and the authorized complete recorded 101 run. Report limitations and final references. Full local CI belongs to a later explicitly requested release checkpoint.                                                                                                                                    |
 
 For each stage, run focused existing owner tests plus new formal regressions that
 fail before the fix. Naming validation precedes identifier-bearing implementation.
@@ -953,7 +953,6 @@ exact remote-commit leases, unrelated work, no-push requests, and separate merge
 and release authority. This is a documentation-only scope addition; verify the
 policy references and shared workflow checks without changing runtime contracts.
 
-
 PR 1 CI functional-suite deadline correction - 2026-10-12:
 
 - Run 38202123199 on 5f6f235ee reached test 385 of 411 with continued progress
@@ -969,3 +968,194 @@ PR 1 CI functional-suite deadline correction - 2026-10-12:
   runtime behavior remain unchanged. The failed CI run supplies the regression
   evidence; workflow/runner contract tests and scoped shared validation check
   the correction before pushing. Exact-head CI must complete before merge.
+
+### PR 2 bounded implementation - 2026-10-12
+
+PR 1 merged as `d3ee5d410de92ec8a4f161f4142ffeadc7e0132f` after its
+latest-head applicable CI passed. PR 2 starts from that main revision in
+`.worktrees/ai-reusable-tool-runtime`. The selected task is Ordered PR boundaries,
+PR 2; this conversation retains final closeout ownership.
+
+Scope: Runtime typed admission, same-registry composition invocation, revisioned
+request visibility, host-injected artifact lifetime and durable library adapters;
+their direct tests, exports, current specification, package guide and dedicated
+Inspector contract. Discovery is limited to those owners, existing invocation,
+registry and schema authorities, direct Design consumers (read-only), and the
+required repository gates. No Design implementation, provider change, geometry,
+arbitrary code execution, dependency addition or new scheduler belongs to PR 2.
+
+The new recipe wire format starts at version 1; it has no legacy migration path.
+Tool names remain canonical registry identities. Revisions, request ownership and
+submission identities are separate. Composition eligibility is canonical host
+metadata, defaulting to unavailable until the host explicitly opts a tool in.
+Schema annotations classify request/document references and secrets; the validator
+rejects saved literals of these types instead of guessing from ID-shaped strings.
+
+Owner order: admit -> register -> invoke -> persist. Admission resolves exact
+contracts and validates finite bindings without execution. Registration owns
+idempotent submissions and visibility; invocation pins the graph and uses the
+existing invoker around every parent and leaf. Persistence consumes exact receipts
+and atomic host acknowledgements; it never runs a recipe. Load returns through
+admission. Hosts retain security, permissions, resource scheduling and storage IO.
+
+Required gates: focused owner tests, Runtime complete tests/build/lint, naming,
+current Inspector source proof and negative proof, public-doc generation/check,
+packed consumer and directly affected consumer checks, then selected local
+validation before push. Do not repeat unrelated live drawings in PR 2. Review
+includes cycles/expansion, non-JSON input, unknown schemas, partial/uncertain
+settlement, parent scheduling, reference lifetime, cancellation, concurrent
+revision conflicts, lost responses, save-only retry and isolated corrupt reload.
+
+#### Step execution card - admit
+
+- Authority: Tool Specification - Typed recipe admission; Inspector `admit`.
+- Inputs: JSON proposal, host limits/validator and current registered contracts.
+- Output: immutable admitted recipe/derived contract or bounded path-specific
+  repair issues; no registration, scheduling, storage or product writes.
+- Conditions: finite ordered steps, exact revisions, opt-in dependencies, proven
+  structural bindings. Bypass: invalid input returns issues before execution.
+- Contributors: canonical contract descriptors, JSON detachment, host validator.
+  Forbidden: model-supplied permissions, string-ID heuristics, JS evaluation.
+- Boundary: recipe types/schema/admission, common contract eligibility metadata,
+  their formal tests and public exports as listed in the Inspector.
+- Cases: valid neutral-host chain, empty/malformed proposals, unsupported schema,
+  optional/path/type mismatch, captured reference, future output, stale revision,
+  control-plane dependency, oversized expansion and bounded independent issues.
+- DoD: formal tests and package build/lint/naming pass; downstream registered
+  candidate consumes the immutable result without re-deriving its semantics.
+- Stop: an unresolved contract contradiction or a need for an out-of-scope owner.
+
+Self-review: the parent does not enter the host scheduler; child-output ownership
+is transferred before cleanup; no success receipt implies durable publication;
+unsupported structural proof fails explicitly while ordinary primitive invocation
+keeps the host's existing full-schema validator. These handoffs cover the reviewed
+PR 1 preservation requirements. Production implementation has not started yet.
+
+Admission slice evidence: 29 new admission cases and all 231 Runtime tests passed;
+package build, focused lint and naming passed. The initial missing-module failure
+proved the feature was absent, not an existing bug reproduction. Static proof
+preserves bounds, required paths, escaped pointers and inherited reference types;
+ordinary primitive contracts remain unchanged. The new Inspector manifest was
+admitted through `loadContract` with all four owner handoffs. Runtime source proof
+runs after the remaining owner cases exist; contract admission is not completion.
+
+#### Step execution card - register
+
+- Authority: Tool Specification - Embedded AI authoring lifecycle; Inspector
+  `register`, including all incoming/outgoing artifact routes.
+- Inputs: admitted immutable recipe, creating request, submission identity,
+  explicit expected revision. Outputs: scoped canonical registry entry and receipt.
+- Conditions: identical submission replay is inert; revisions are immutable;
+  candidates cannot escape the creating request. A rejected revision preserves
+  existing tools. Saved eligibility is a separate persistence-owned transition.
+- Allowed: existing registry, admitted descriptors, host-created executors.
+  Forbidden: a parallel capability catalog, native provider hot-registration
+  assumptions, execution during registration, candidate publication before ack.
+- Files: `action-registry.ts`, `types.ts`, `tool-library.ts`, their tests and
+  exports; exact implementation boundary in the Inspector.
+- Cases/gates: existing registry behavior; scoped discovery/lookup parity,
+  expected-revision conflict, immutable older revisions, suspended/retired lookup,
+  retry-safe submission; focused tests, build, lint, naming.
+- Stop: scope ambiguity or a required out-of-owner mutation. Invocation and storage
+  internals remain separate subsequent segments.
+
+Registration slice evidence: all 241 Runtime tests, build, focused lint and naming
+passed. New cases prove same-registry private lookup/discovery, immutable revisions,
+explicit conflicts, suspension without silent old-version fallback, inert retry,
+request cleanup, and expanded-step admission before registration. Scope review
+found no new scheduler or execution during submission. Durable publication is not
+yet implemented; its future adapter alone will request the eligible transition.
+
+#### Step execution card - invoke
+
+- Authority: Tool Specification - Execution variants and What the model sees;
+  Inspector `invoke` and `register-to-invoke`.
+- Inputs: exact registered revision, fresh request/input/signal, pinned admitted
+  recipes, secured host executor, host schema classifier and lease adapter.
+- Outputs: classified receipt with independent settlement and causal child spans;
+  exported values retain caller ownership before local cleanup.
+- Conditions: pin the full finite graph before writes; common invocation and
+  schema middleware surround parents and leaves. Only the host leaf executor
+  acquires scheduling resources. Partial/unknown/error stops successors.
+- Bypass: cancellation before dispatch produces not-started; a failed invocation
+  never automatically retries. No body of a recipe is executable JavaScript.
+- Allowed: registered descriptors, typed bindings, existing invoker/middleware,
+  host permissions/scheduler and artifact-lifetime adapters.
+- Forbidden: parent barriers, second queue, global mutable execution state,
+  release of borrowed inputs, inferred successful settlement after a host throw.
+- Boundary: recipe execution/types, invocation/common middleware value projection,
+  their direct tests and exports. The common middleware extension selects a value
+  from an explicit host receipt while preserving the default primitive behavior.
+- Cases/gates: neutral host nested scheduler, direct equivalence, exact graph pin,
+  invalid output, failed/partial/unknown receipt, cancellation between steps,
+  returned/borrowed/sibling handles and cleanup errors; Runtime tests/build/lint.
+- Stop: an unresolved lifecycle or downstream schema mismatch; no Design edits.
+
+Invocation slice: the focused 12 cases include a real lease-owner map proving
+intermediate release, surviving final/borrowed/sibling handles, and request-end
+cleanup. Common middleware now accepts an explicit host-result value projection;
+its ordinary behavior is preserved. Completion follows retention and cleanup,
+including an already-aborted call's causal identity. Build and focused lint pass.
+
+#### Step execution card - persist
+
+- Authority: Tool Specification - What is saved, Embedded AI authoring lifecycle;
+  Inspector `persist`, admitted/registered/execution inputs and reload route.
+- Inputs: exact admitted definition, trusted execution receipt, host applicability
+  check, bounded store enumeration and atomic compare-and-swap acknowledgement.
+- Outputs: durable saved state or explicit unsaved failure; validated reload into
+  the same registry; unavailable/candidate entries remain explicit.
+- Conditions: only the Runtime-produced complete receipt for this exact recipe
+  plus host checks can establish eligible state. The store writes descriptor,
+  recipe payload, dependency fingerprints and evidence together. Save-only retries
+  never invoke leaves. Restart never executes a definition.
+- Bypass: candidates can be saved without evidence but do not auto-publish;
+  corrupt/unknown-format/stale-dependency entries are isolated on reload.
+- Allowed: same admission/library/registry, immutable definitions and host IO.
+  Forbidden: automatic IO at import, captured request data, fabricated success,
+  upgrading stale definitions or falling back to an older eligible revision.
+- Boundary: `tool-store.ts`, library lifecycle handoff, exports and store tests;
+  current specification/Inspector routes. Host storage owns atomic durable writes.
+- Gates: saved candidate, successful run/save failure/save-only retry, fabricated
+  receipt rejection, fresh-request reuse, dependency invalidation, corruption,
+  optimistic conflict and suspension/retirement; full Runtime build/tests/lint.
+- Stop: a required storage security boundary outside host-injected IO or an
+  unresolved contract conflict. No new database or package is introduced.
+
+Persistence slice evidence: full Runtime 268 tests pass, including ten storage
+cases and four captured-flow handoff cases. Generic source proof passed on source
+`39f6bbb1ec0e7c68ce39bb662f2ed0799e991896fe59ee7985f47c02aa3055db`;
+`prove` rejected exactly `admit.handoff` when control-plane eligibility enforcement
+was deliberately removed, then recovered on the same source. Evidence:
+`tmp/runtime-proof.log`. This is scoped package evidence, not PR 2 completion.
+
+Bounded review is now limited to the new Runtime diff, existing registry/invocation
+consumers, the four lifecycle handoffs and fixed gates. The captured proof keeps
+its small neutral host fixture inline because source verification captures the
+explicit proof file/config, not arbitrary test helpers. Ordinary storage tests
+reuse their separate fixture. No Inspector production behavior was changed.
+
+Lifecycle review: two formal regressions first failed for private-candidate
+retirement and partially opened artifact scopes. Persistence now reads the host
+registry's lifecycle metadata without relying on model-visible discovery; the
+invoker cleans the exact call scope even when opening throws. Host release is
+idempotent and must tolerate an absent or partly initialized local scope. The
+registry metadata API exposes no candidate descriptor or executable body. These
+changes remain within persist/invoke ownership and direct registry handoff.
+
+Final owner review also completed the canonical machine-readable proposal schema,
+explicit saved-candidate resume and local composition removal. Reload rejects an
+incomplete inventory and avoids silently restoring an older corrupt tool family.
+Formal regressions cover these handoffs; no model calls or product mutations run
+during save/load/resume. The host adapter and model-facing authoring operations
+remain PR 3 work, as planned.
+
+Final validation sequence: build declarations before generating the public API
+index, then run the selected local gates. The first shared gate correctly rejected
+an index generated before the latest declarations. A final idempotency review
+also reproduced a second candidate-resume attempt being mistaken for a changed
+submission; resume and load now share the exact-definition restore path. Review
+is closed to these lifecycle corrections and the fixed gates, with no further
+unrelated discovery. Runtime regression coverage now includes repeat resume and
+removed-submission refusal. The earlier partial local validation was cancelled
+before final E2E to verify the corrected source consistently.

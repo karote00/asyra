@@ -14,7 +14,7 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "e0f0efec88bb2df564ed7d278f73a36ec4285f6cdbb14447affe1844b4472136",
+        "contract": "63fe0fc3b9acfcdefb99a5e6edeacb98f7387db9d36172dc71c608e5d1aa6208",
         "guide": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
         "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
       },
