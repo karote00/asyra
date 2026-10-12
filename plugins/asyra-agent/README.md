@@ -62,6 +62,8 @@ Framework dependencies or purchase model access.
 
 ### Vercel Skills - Codex and Claude Code
 
+Requires Node.js **22.20.0 or newer** for the pinned installer.
+
 ```sh
 npx skills@1.7.2 add https://github.com/karote00/asyra/tree/main/plugins/asyra-agent/skills/asyra-agent --skill asyra-agent --agent codex claude-code --yes
 ```
@@ -78,6 +80,8 @@ npx skills@1.7.2 update asyra-agent --project --yes
 ```
 
 ### OpenSkills - agents that read AGENTS.md and can run commands
+
+Requires Node.js **20.6.0 or newer** for the pinned installer.
 
 ```sh
 npx openskills@1.5.0 install karote00/asyra/plugins/asyra-agent/skills/asyra-agent --universal --yes

@@ -28,6 +28,8 @@ The complete Skill includes `SKILL.md`, `bundle.json` and `references/`.
 
 ### Vercel Skills
 
+Requires Node.js **22.20.0 or newer** for the pinned installer.
+
 For Codex and Claude Code (keep only the host names you use):
 
 ```sh
@@ -39,6 +41,8 @@ The first command installs into `.agents/skills/asyra-agent/` and links Claude
 Code's project Skill directory. Run the second command later to update it.
 
 ### OpenSkills
+
+Requires Node.js **20.6.0 or newer** for the pinned installer.
 
 For agents that read `AGENTS.md` and can execute shell commands:
 

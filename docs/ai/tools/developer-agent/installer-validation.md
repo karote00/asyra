@@ -49,7 +49,7 @@ The complete bundle suite passed 24 tests with the live installer gate enabled.
 Public baseline digest:
 `bcb08aa797c68583ae84f903e4db3fb9b19bb324d763d3979b6a603aca1d460e`.
 Candidate digest:
-`5aa920b5d0655f4bb3cba5de70fb4e7ed781513cedcea3143383aa977742d5bd`.
+`ecdde3c058b464af713efecf32c95007a2bafc391466a9cea0176fe6799f956a`.
 The test compares installed files with the archived reviewed commit and then
 with the generated candidate, rather than trusting CLI success messages.
 
