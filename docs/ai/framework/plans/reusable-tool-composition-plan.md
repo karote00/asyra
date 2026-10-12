@@ -577,7 +577,9 @@ to normal App use or publish local-only recording fixtures.
 Authorized on 2026-10-11. Worktree `.worktrees/ai-tool-contract-foundation`,
 branch `codex/ai-tool-contract-foundation`, based on the PR #317 documentation
 head `435f4918c99b124e59810267ac6cb63cea39bfbb` (which contains the fetched main).
-While #317 is open, delivery targets its branch; merge is not authorized.
+PR #317 is merged as `04a5e07e3e241d7af0d65fc75c6266cde34b9843`.
+Delivery now targets main. The user's sequential-delivery authorization covers
+push and merge after current-head applicable CI passes.
 
 The bounded objective is Stage A: one executable tool descriptor and normalized
 outcome boundary, reliable diagnostic delivery with explicit incompleteness, and
@@ -603,7 +605,7 @@ Prove child closure, sibling/retry/stale events and saving retain only current
 purposes. Run focused tests per owner, naming, affected lint/build/tests, current
 flow proof and applicable pre-push checks after integration. Self-review the diff
 and direct consumers. Push and create a PR for user review only after those gates;
-do not close this whole plan or merge the PR.
+merge only after latest-head applicable CI passes; do not close the whole plan.
 
 First execution card - Runtime registry contract:
 
@@ -941,3 +943,12 @@ PR 1 CI consumer-input correction - 2026-10-12:
   no unknown paths or FieldScope heavy profiles. Runtime and consumer source
   remain identical to the prior validated commit. Main integration and new-head
   CI remain required before merge.
+
+User-authorized Git policy correction - 2026-10-12:
+
+The user reaffirmed standing authorization for necessary fetch/rebase and safe
+source-branch updates within an authorized delivery task. Remove the redundant
+approval checkpoint from the canonical Git policy and its AGENTS summary. Preserve
+exact remote-commit leases, unrelated work, no-push requests, and separate merge
+and release authority. This is a documentation-only scope addition; verify the
+policy references and shared workflow checks without changing runtime contracts.
