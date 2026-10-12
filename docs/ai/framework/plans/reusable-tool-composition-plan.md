@@ -952,3 +952,20 @@ approval checkpoint from the canonical Git policy and its AGENTS summary. Preser
 exact remote-commit leases, unrelated work, no-push requests, and separate merge
 and release authority. This is a documentation-only scope addition; verify the
 policy references and shared workflow checks without changing runtime contracts.
+
+
+PR 1 CI functional-suite deadline correction - 2026-10-12:
+
+- Run 38202123199 on 5f6f235ee reached test 385 of 411 with continued progress
+  and no unexpected assertion failure when the 30-minute job deadline canceled
+  it. Browser execution began at 04:05:13Z; test 385 began at 04:32:56Z and the
+  job was canceled at 04:33:01Z. The prior CI suite completed in about 24 minutes;
+  the same local inventory passed with 392 tests and 19 conditional skips in
+  16.4 minutes. These are observations, not product performance thresholds.
+- Bounded correction: allow 45 minutes for the functional E2E job, including
+  setup, the serial suite, result collection and cleanup. Preserve test-level
+  timeouts, single-worker isolation, fail-fast, zero ordinary retries, all
+  assertions, report identity and process cleanup. Other job deadlines and
+  runtime behavior remain unchanged. The failed CI run supplies the regression
+  evidence; workflow/runner contract tests and scoped shared validation check
+  the correction before pushing. Exact-head CI must complete before merge.
