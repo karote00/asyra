@@ -14,7 +14,7 @@ available contracts. Existing-product adoption starts with the assessment below.
 Asyra Skill supplies shared development instructions and maintained reference
 guides to your existing coding agent. Plugins provide tool-specific installation
 wrappers around the same Skill. See the
-[Asyra Skill installation guide](../../../plugins/asyra-agent/README.md) for
+[Asyra Skill installation guide](../../../plugins/asyra-skill/README.md) for
 available routes, candidate versions and actual host validation status.
 The host agent owns reasoning, implementation and verification. This development
 Skill is separate from the optional in-app `@asyra/ai-agent-runtime`.
@@ -28,17 +28,21 @@ The complete Skill includes `SKILL.md`, `bundle.json` and `references/`.
 
 ### Vercel Skills
 
-Requires Node.js **22.20.0 or newer** for the pinned installer.
+Tested with Skills 1.7.2, which requires Node.js **22.20.0 or newer**.
+The short command uses the current published installer; future versions may
+change their requirements.
 
-For Codex and Claude Code (keep only the host names you use):
+Install Asyra Skill, then select your coding tool and project installation:
 
 ```sh
-npx skills@1.7.2 add https://github.com/karote00/asyra/tree/main/plugins/asyra-agent/skills/asyra-agent --skill asyra-agent --agent codex claude-code --yes
-npx skills@1.7.2 update asyra-agent --project --yes
+npx skills add karote00/asyra
+npx skills update asyra-skill --project
 ```
 
-The first command installs into `.agents/skills/asyra-agent/` and links Claude
-Code's project Skill directory. Run the second command later to update it.
+After this candidate merges, default repository discovery finds only `asyra-skill` (Asyra Skill). Choose
+project scope when prompted. For Codex and Claude Code, the installer uses
+`.agents/skills/asyra-skill/` and links Claude Code's Skill directory.
+Run the second command later to update the project installation.
 
 ### OpenSkills
 
@@ -47,22 +51,28 @@ Requires Node.js **20.6.0 or newer** for the pinned installer.
 For agents that read `AGENTS.md` and can execute shell commands:
 
 ```sh
-npx openskills@1.5.0 install karote00/asyra/plugins/asyra-agent/skills/asyra-agent --universal --yes
+npx openskills@1.5.0 install karote00/asyra/plugins/asyra-skill/skills/asyra-skill --universal --yes
 npx openskills@1.5.0 sync --yes
 ```
 
-This installs into `.agent/skills/asyra-agent/`. Sync adds the loading workflow
+This installs into `.agent/skills/asyra-skill/`. Sync adds the loading workflow
 to `AGENTS.md`; review its changes. Existing prose outside the managed block is
-preserved. The host loads the Skill through `npx openskills@1.5.0 read asyra-agent`;
+preserved. The host loads the Skill through `npx openskills@1.5.0 read asyra-skill`;
 that directory alone does not guarantee native discovery in every AI tool.
 Target the complete subdirectory above to avoid installing contributor Skills.
 
 To update later:
 
 ```sh
-npx openskills@1.5.0 update asyra-agent
+npx openskills@1.5.0 update asyra-skill
 npx openskills@1.5.0 sync --yes
 ```
+
+### Moving from the old name
+
+If you installed `asyra-agent`, preserve any customizations and remove it with
+its original installer or host before installing `asyra-skill`. Updating the old
+identity does not rename it. Use one installation route and start a fresh session.
 
 ### Confirm what your agent loaded
 
@@ -75,13 +85,13 @@ references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
 Skill files. Do not modify files.
 ```
 
-The command versions pin the tested installers, not the Skill version. Both
+OpenSkills is pinned; the short Skills command uses its current installer. Both
 routes follow merged `main`; updates require an explicit command. Preserve local
 customizations separately and avoid duplicate plugin/standalone installations.
 Installer trials verified all 19 bundled guides and changed-source updates;
 they do not certify model behavior. These commands do not install Framework
 packages or update your product's dependencies. Claude Desktop's cloud settings
-still use the [Skill ZIP-upload route](../../../plugins/asyra-agent/README.md#claude-desktop-skill-upload).
+still use the [Skill ZIP-upload route](../../../plugins/asyra-skill/README.md#claude-desktop-skill-upload).
 
 ## Describe the product outcome
 

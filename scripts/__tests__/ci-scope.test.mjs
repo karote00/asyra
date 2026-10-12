@@ -1336,12 +1336,14 @@ test('developer Agent inputs select their packaging contract without product bui
     '.agents/plugins/marketplace.json',
     '.claude-plugin/marketplace.json',
     // Git diffs retain the previous identity as deleted paths during the rename.
+    'plugins/asyra-agent/.codex-plugin/plugin.json',
+    '.claude/skills/git-operations/SKILL.md',
     'plugins/asyra-developer/.codex-plugin/plugin.json',
     'plugins/asyra-developer/skills/asyra-developer/SKILL.md',
-    'plugins/asyra-agent/.codex-plugin/plugin.json',
-    'plugins/asyra-agent/skills/asyra-agent/SKILL.md',
-    'plugins/asyra-agent/skills/asyra-agent/bundle.json',
-    'plugins/asyra-agent/skills/asyra-agent/references/docs/public/index.md',
+    'plugins/asyra-skill/.codex-plugin/plugin.json',
+    'plugins/asyra-skill/skills/asyra-skill/SKILL.md',
+    'plugins/asyra-skill/skills/asyra-skill/bundle.json',
+    'plugins/asyra-skill/skills/asyra-skill/references/docs/public/index.md',
     'docs/ai/tools/developer-agent/baselines/0.1.1.bundle.json',
     'scripts/developer-agent-bundle.mjs'
   ]) {
@@ -1697,7 +1699,7 @@ test('owners without a separate profile runner retain profile-named tests in the
 test('Skill source inputs select packaging checks before merge alongside their existing owners', () => {
   const config = JSON.parse(
     fs.readFileSync(
-      path.join(repositoryRoot, 'plugins/asyra-agent/bundle.config.json'),
+      path.join(repositoryRoot, 'plugins/asyra-skill/bundle.config.json'),
       'utf8'
     )
   )

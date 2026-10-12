@@ -4,8 +4,8 @@ import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-const PLUGIN = 'plugins/asyra-agent'
-const SKILL = 'skills/asyra-agent'
+const PLUGIN = 'plugins/asyra-skill'
+const SKILL = 'skills/asyra-skill'
 const RECORD = `${SKILL}/bundle.json`
 const MANIFEST = '.codex-plugin/plugin.json'
 const CLAUDE_MANIFEST = '.claude-plugin/plugin.json'
@@ -81,7 +81,7 @@ function manifestAt(directory) {
   const manifest = JSON.parse(read(directory, MANIFEST))
   version(manifest.version)
   if (
-    manifest.name !== 'asyra-agent' ||
+    manifest.name !== 'asyra-skill' ||
     manifest.skills !== './skills/' ||
     !manifest.author?.name ||
     !manifest.description
@@ -148,7 +148,7 @@ export function createBundle(root) {
   const identity = config.identity
   version(identity?.version)
   if (
-    identity.name !== 'asyra-agent' ||
+    identity.name !== 'asyra-skill' ||
     !identity.author?.name ||
     !identity.description ||
     !identity.license ||
@@ -337,7 +337,7 @@ export function checkBundle(root, baseline) {
     if (read(directory, relative) !== expected)
       fail(`Stale bundle: ${relative}; run --write`)
   const marketplace = JSON.parse(read(root, '.agents/plugins/marketplace.json'))
-  const entry = marketplace.plugins?.find((item) => item.name === 'asyra-agent')
+  const entry = marketplace.plugins?.find((item) => item.name === 'asyra-skill')
   if (
     marketplace.name !== 'asyra' ||
     entry?.source?.source !== 'local' ||
@@ -350,7 +350,7 @@ export function checkBundle(root, baseline) {
   if (baseline) checkVersion(record, baseline)
   const otherMarket = JSON.parse(read(root, '.claude-plugin/marketplace.json'))
   const otherEntry = otherMarket.plugins?.find(
-    (item) => item.name === 'asyra-agent'
+    (item) => item.name === 'asyra-skill'
   )
   if (
     otherMarket.name !== marketplace.name ||
@@ -397,7 +397,7 @@ function main(args) {
   if (args[0] === '--export-skill' && args.length === 2) {
     const record = exportSkill(root, args[1])
     process.stdout.write(
-      `Asyra Agent ${record.pluginVersion} - Skill exported to ${args[1]}\n`
+      `Asyra Skill ${record.pluginVersion} - Skill exported to ${args[1]}\n`
     )
     return
   }
@@ -418,7 +418,7 @@ function main(args) {
       baselinePath ? JSON.parse(read(root, baselinePath)) : null
     )
   process.stdout.write(
-    `Asyra Agent ${record.pluginVersion} - ${mode.slice(2)} passed - ${record.contentDigest.slice(0, 12)}\n`
+    `Asyra Skill ${record.pluginVersion} - ${mode.slice(2)} passed - ${record.contentDigest.slice(0, 12)}\n`
   )
 }
 if (

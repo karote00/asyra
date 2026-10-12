@@ -1,5 +1,5 @@
 ---
-name: asyra-agent
+name: asyra-skill
 description: Build or extend an Asyra product, turn a product idea into an Asyra App, assess Asyra adoption or optimization in an existing project, or diagnose Asyra integration and ownership problems. Use for Asyra development and feasibility requests; exclude unrelated development and operating the in-app AI chat.
 ---
 

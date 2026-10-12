@@ -2,33 +2,37 @@
 
 ## Task contract
 
-Standalone installation/onboarding follow-up requested on 2026-10-12. Base:
-`dd6757567` on `origin/main`. One writer in `codex/skill-installers`.
-Validate OpenSkills and Vercel Skills public GitHub install/update with the real
-published CLIs; compare every installed Skill resource with the expected bundle.
-Also prove a changed-source update using a controlled Git source with the merged
-bundle and this candidate, preserving unrelated consumer files and instructions.
+Continuation of PR #321, approved on 2026-10-12. Base: `dd6757567` on
+`origin/main`; one writer in `codex/skill-installers`.
+Unify active public identifiers and paths as `asyra-skill`. Make default Vercel
+Skills repository discovery expose only that Skill, so users can run
+`npx skills add karote00/asyra`. Preserve contributor Skills using the installer's
+supported internal metadata. Preserve historical release evidence verbatim.
 
-Scope: the existing bundle test owner and its embedded installer-isolation fixture;
-this evidence document and maintenance links; root README, plugin README/changelog/config and
-generated bundle; the existing public AI guide, its generated site content and direct entry browser test;
-an empty Changeset. No Framework/App runtime, global installations, account
-changes, publication, host-model trials or new root dependencies. The existing
-homepage links to the public guide and README, so no layout change is needed.
+Scope: plugin source/registries/generator; discovery metadata of the ten existing
+Claude contributor Skills; direct bundle/naming/CI tests and CI path ownership;
+installation README/public guide/site links and generated content; this task's
+evidence and maintenance docs. No Framework/App runtime, global installations,
+account changes, release publication, model trials or new root dependencies.
+Explicitly document the one-time identity transition without retaining aliases.
 
-Use existing bundle identity/hashes as the integrity oracle. Preserve the
-`asyra-agent` identity; the README/reference change advances 0.1.11 to 0.1.12.
-The public network gate is opt-in and bounded, not an implicit network dependency
-of ordinary repository tests. Keep CLI dependencies, temporary homes, clones,
-logs and consumer fixtures under the worktree. Do not replace HOME or CODEX_HOME.
+Real published CLIs must prove single-Skill root discovery, installation,
+changed-source updates, all bundled resources and unrelated consumer-file
+preservation. Before merge, distinguish public baseline trials from candidate
+Git-source trials; a local Git URL rewrite is not a live GitHub release.
+Keep all test homes, caches and sources inside this worktree; never replace
+HOME or CODEX_HOME. Ordinary tests remain offline; real installer tests opt in.
 
-Required gates: naming before/after identifiers, actual installer trials,
-byte/hash integrity and offline links after install/update, AGENTS.md preservation,
-normal bundle regressions/freshness, public generators/validation, source lint,
-resolved shared/site/production CI checks, changeset and bounded diff review.
-Stop unsupported routes rather than documenting them as working; retain exact
-installer versions, source revisions and limitations. Finish local gates before
-pushing and creating an English PR. No remote CI result is assumed.
+Required gates: naming before/after identifiers; test-first discovery regression;
+real installer trials; bundle integrity/offline links; public generators;
+resolved shared/site/production CI checks; Changeset and bounded diff review.
+Stop unsupported routes rather than documenting success. Validate the exact
+version before updating the existing English PR. Do not publish or merge.
+
+## Previous installer evidence (before the identity rename)
+
+The following observations concern the historical `asyra-agent` identity.
+Current rename/discovery evidence is recorded separately below.
 
 ## Results
 
@@ -69,8 +73,9 @@ npm --cache ./tmp/npm-cache install --prefix ./tmp/skill-installers/tools --no-a
 ```
 
 Generate/check the candidate through the normal public-doc and bundle workflow.
-Select the full reviewed public `main` SHA as `INSTALLER_BASE_REF`, with an older
-bundle version than the candidate. The trial fails if public `main` changes
+Select the full reviewed pre-rename public `main` SHA as `INSTALLER_BASE_REF`.
+The historical public check expects the old installation identity; the controlled
+update uses a synthetic older-version fixture with the new identity. The trial fails if public `main` changes
 during execution, or if the README/public guide commands drift from the tested
 arguments. Run:
 
@@ -80,9 +85,8 @@ RUN_SKILL_INSTALLER_TESTS=1 INSTALLER_BASE_REF=dd6757567fcda182c68370569e54f3a6c
 
 The test prints `tmp/developer-agent-tests/installers-*/report.json`; sibling
 logs retain each real command's output. Standard tests skip this opt-in network
-gate. Re-running it after this candidate merges requires the next deliberately
-versioned candidate; this is a release-transition proof, not a self-update from
-a version to itself.
+gate. After main changes, deliberately refresh the public baseline route and assertion
+before repeating the public check. Do not rewrite historical evidence.
 
 The permanent test embeds its home/temp isolation fixture and preloads it into
 the real Node CLIs and their children. `os.homedir()` and `os.tmpdir()` resolve
@@ -96,3 +100,38 @@ The installer package versions are pinned for reproducibility. Their upstream
 documentation is linked from the public installation guide. Updating those
 pins requires repeating this gate; file integrity does not certify arbitrary
 future installer versions or native host discovery.
+
+## Rename and repository discovery results
+
+The current 0.1.12 candidate uses `asyra-skill` for both plugin manifests,
+marketplace entries, Skill frontmatter, source/export paths and invocation.
+Previous evidence above remains a historical record of the old identity.
+
+- Test-first metadata/identity regression failed on the original contributor
+  Skills, then passed after the supported `metadata.internal: true` annotations.
+- Skills 1.7.2 default `add karote00/asyra --list` found exactly one Skill,
+  `asyra-skill`, with all ten actual contributor Skills present in the source.
+- The unmodified CLI installed from `add karote00/asyra`; noninteractive tests
+  append `--agent codex claude-code --yes` to answer tool/scope prompts.
+- OpenSkills 1.5.0 installed from the exact new public Skill subdirectory.
+- Both tools updated a synthetic 0.1.11 fixture using the new identity to the
+  reviewed 0.1.12 candidate. Every Skill file, 19 references and offline links
+  matched; unrelated consumer data remained intact. Claude Code's link resolved
+  to the installed Skill. OpenSkills read and repeated sync passed and preserved
+  existing AGENTS.md prose.
+- The separate live GitHub baseline installation and no-change update still
+  passed for the actual released 0.1.11 old identity.
+
+Candidate source transport was redirected with process-local Git `insteadOf`
+configuration to repository-local fixtures. This tests the real shorthand parser,
+marketplace discovery, installers and update commands without publishing a
+candidate. It does not establish availability on public `main` before merge or
+exercise native model loading. No global installation or host settings changed.
+The Vercel source fixture contains the marketplace and contributor catalog; the
+OpenSkills exact-subdirectory route does not rely on internal metadata support.
+
+The live installer gate passed all 25 bundle tests. Candidate bundle digest:
+`6730b8707cf4fbdb4fa339c618a2f0e75f02514e24f15dd9fdbba453dd114efb`.
+Local report: `tmp/developer-agent-tests/installers-cLZMEg/report.json`.
+The two source fixtures deliberately change both bundle version and reference
+bytes, so an updater that merely exits successfully cannot pass.

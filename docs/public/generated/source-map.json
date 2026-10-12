@@ -30,7 +30,7 @@
     },
     {
       "id": "start/extend-with-ai",
-      "pageSha256": "06d91f9e8a40bdd148fb6bc60642be895dfc47e56787c2bfc2ca4ec76b407f33",
+      "pageSha256": "9bc6624fc65276ddd302ba9c54bab20a866ab5516aa2f028965e0845d194dcf6",
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",

@@ -166,10 +166,10 @@ const pluginIdentityOwners = new Set([
   'scripts/__tests__/brand-neutral-code.test.mjs',
   '.agents/plugins/marketplace.json',
   '.claude-plugin/marketplace.json',
-  'plugins/asyra-agent/.codex-plugin/plugin.json',
-  'plugins/asyra-agent/.claude-plugin/plugin.json',
-  'plugins/asyra-agent/bundle.config.json',
-  'plugins/asyra-agent/skills/asyra-agent/bundle.json',
+  'plugins/asyra-skill/.codex-plugin/plugin.json',
+  'plugins/asyra-skill/.claude-plugin/plugin.json',
+  'plugins/asyra-skill/bundle.config.json',
+  'plugins/asyra-skill/skills/asyra-skill/bundle.json',
   'scripts/developer-agent-bundle.mjs',
   'scripts/__tests__/developer-agent-bundle.test.mjs',
   'scripts/ci-relationships.json',
@@ -181,7 +181,14 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   const relativePath = path.relative(repositoryRoot, filePath)
   if (
     pluginIdentityOwners.has(relativePath) &&
-    (token === 'asyra-agent' ||
+    (token === 'asyra-skill' ||
+      (token === 'asyra-agent' &&
+        [
+          'scripts/__tests__/brand-neutral-code.test.mjs',
+          'scripts/__tests__/developer-agent-bundle.test.mjs',
+          'scripts/__tests__/ci-scope.test.mjs',
+          'scripts/ci-relationships.json'
+        ].includes(relativePath)) ||
       (token === 'asyra-developer' &&
         [
           'scripts/__tests__/brand-neutral-code.test.mjs',
@@ -192,6 +199,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
         [
           '.agents/plugins/marketplace.json',
           '.claude-plugin/marketplace.json',
+          'scripts/__tests__/developer-agent-bundle.test.mjs',
           'scripts/developer-agent-bundle.mjs'
         ].includes(relativePath))) &&
     new RegExp(`(['"])[^'"\\n]*${escapedToken}[^'"\\n]*\\1`, 'u').test(line)
@@ -263,7 +271,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
 }
 
 test('plugin distribution identities remain scoped to quoted owner data', () => {
-  const token = `${repositoryBrand}-agent`
+  const token = `${repositoryBrand}-skill`
   const owner = path.join(repositoryRoot, 'scripts/developer-agent-bundle.mjs')
   assert.equal(
     isAllowedPublicIdentity(token, `const name = '${token}'`, owner),
@@ -633,21 +641,21 @@ test('Programmatic code and configuration use brand-neutral identifiers', () => 
 test('portable distribution identities remain limited to exact owners', () => {
   for (const owner of [
     '.claude-plugin/marketplace.json',
-    'plugins/asyra-agent/.claude-plugin/plugin.json',
-    'plugins/asyra-agent/bundle.config.json'
+    'plugins/asyra-skill/.claude-plugin/plugin.json',
+    'plugins/asyra-skill/bundle.config.json'
   ]) {
     assert.equal(
       isAllowedPublicIdentity(
-        'asyra-agent',
-        '"name": "asyra-agent"',
+        'asyra-skill',
+        '"name": "asyra-skill"',
         path.join(repositoryRoot, owner)
       ),
       true
     )
     assert.equal(
       isAllowedPublicIdentity(
-        'asyra-agent',
-        'asyra-agent',
+        'asyra-skill',
+        'asyra-skill',
         path.join(repositoryRoot, owner)
       ),
       false
@@ -655,8 +663,8 @@ test('portable distribution identities remain limited to exact owners', () => {
   }
   assert.equal(
     isAllowedPublicIdentity(
-      'asyra-agent',
-      '"name": "asyra-agent"',
+      'asyra-skill',
+      '"name": "asyra-skill"',
       path.join(repositoryRoot, 'packages/core/src/internal.ts')
     ),
     false

@@ -19,11 +19,19 @@ boundaries, and downstream projections.
 - <a href="https://asyra-design.vercel.app/?fileId=demo" target="_blank" rel="noopener noreferrer">Try Asyra Design</a>
 - [Explore the Generic Starter source](#generic-starter)
 - [Read the documentation](docs/public/index.md)
-- [Install Asyra Skill for your coding agent](plugins/asyra-agent/README.md) -
+- [Install Asyra Skill for your coding agent](plugins/asyra-skill/README.md) -
   project installation and updates with Vercel Skills or OpenSkills, plus
   native plugin and Claude Desktop ZIP routes.
 - [Create an Asyra Design app](#complete-design-product)
 - [Install `@asyra/core`](#advanced-composition)
+
+Install the Skill in your product folder:
+
+```sh
+npx skills add karote00/asyra
+```
+
+Select your coding tool and installation scope when prompted.
 
 ## Try the demo
 

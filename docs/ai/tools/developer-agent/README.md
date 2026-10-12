@@ -4,8 +4,8 @@
 
 Asyra Skill helps users build products with Asyra in Codex,
 Claude Code and Grok Build. Plugins provide host-specific installation. Its public entry is
-[installation and usage](../../../../plugins/asyra-agent/README.md).
-Its instruction owner is the plugin's `skills/asyra-agent/SKILL.md`.
+[installation and usage](../../../../plugins/asyra-skill/README.md).
+Its instruction owner is the plugin's `skills/asyra-skill/SKILL.md`.
 Canonical Framework and App documentation stays authoritative.
 
 The [persistent scope exception](../../workflows/task-context.md#asyra-developer-agent-scope-exception)
@@ -18,7 +18,7 @@ dependency upgrades or writes outside the project.
 ## Source and packaging owners
 
 - `.agents/plugins/marketplace.json` registers the local plugin with Codex.
-- `plugins/asyra-agent/bundle.config.json` owns the shared release identity.
+- `plugins/asyra-skill/bundle.config.json` owns the shared release identity.
 - Codex and Claude plugin manifests are generated from that identity.
 - `.claude-plugin/marketplace.json` exposes the same plugin tree to Claude Code.
 - `bundle.config.json` lists the exact public guides to distribute.
@@ -70,8 +70,8 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current candidate: 0.1.12, with public display name **Asyra Skill** and retained
-installation identity `asyra-agent`. See the [capability guidance plan](capability-guidance-plan.md)
+Current candidate: 0.1.12, with public display name **Asyra Skill** and unified
+installation identity `asyra-skill`. See the [capability guidance plan](capability-guidance-plan.md)
 and [support evidence](support-evidence.md). Previous native loading trials are
 versioned historical observations, not acceptance of this candidate. A plugin
 is an installation wrapper; the host agent owns execution and product quality.
@@ -97,7 +97,7 @@ The repository CI still runs them and reports failures normally.
 the full distribution. `pluginVersion` remains the shared release version for
 compatibility with existing version-check prompts. A standalone Skill does not
 need sibling plugin metadata. Export to a new project-relative directory with
-`--export-skill dist/asyra-agent`; the command never writes host settings.
+`--export-skill dist/asyra-skill`; the command never writes host settings.
 
 ## Capability decision guidance
 
@@ -141,3 +141,14 @@ For the approved standard and current evidence, see Tasks 2 and 3 in
 `apps/starter-app/docs/ARCHITECTURE.md` and `ONBOARDING.md`; update those canonical
 owners first when App behavior changes, then regenerate the plugin. Never edit
 bundled copies or the installed cache to conceal source drift.
+
+## Public discovery identity
+
+Use `asyra-skill` for the current installation identifier and paths. The prior
+plans and support evidence retain the identities actually used in those trials.
+The ten contributor Skills under `.claude/skills` have `metadata.internal: true`
+so default Vercel Skills discovery exposes only the public Skill. This metadata
+does not change their local instructions. Explicit internal discovery is outside
+the public installation route; OpenSkills still targets the exact subdirectory.
+See [installer validation](installer-validation.md) for the rename and root-source
+acceptance checks.
