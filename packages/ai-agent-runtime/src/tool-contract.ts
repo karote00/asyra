@@ -13,6 +13,8 @@ export interface AiToolContractInput {
   outputSchema: unknown
   effect: 'read' | 'prepare' | 'mutation' | 'external'
   resources: readonly string[]
+  /** Only explicitly admitted data-plane tools can be recipe dependencies. */
+  composition?: 'allowed' | 'control-plane'
   lifecycle: {
     cancellation: 'cooperative' | 'before-dispatch'
     retry: 'never' | 'read-only' | 'reconcile'
@@ -28,6 +30,7 @@ export interface AiToolContract {
   readonly outputSchema: AiJsonValue
   readonly effect: AiToolContractInput['effect']
   readonly resources: readonly string[]
+  readonly composition?: 'allowed' | 'control-plane'
   readonly lifecycle: Readonly<AiToolContractInput['lifecycle']>
 }
 
@@ -73,6 +76,11 @@ export const createAiToolContract = (
     new Set(input.resources).size !== input.resources.length
   )
     throw new TypeError('Tool resources must be unique non-empty names')
+  if (
+    input.composition !== undefined &&
+    !['allowed', 'control-plane'].includes(input.composition)
+  )
+    throw new TypeError('Invalid composition eligibility')
   const lifecycle = input.lifecycle
   if (
     !lifecycle ||
@@ -93,7 +101,10 @@ export const createAiToolContract = (
     outputSchema: detachAiJsonValue(input.outputSchema),
     effect: input.effect,
     resources: Object.freeze([...input.resources]),
-    lifecycle: Object.freeze({ ...lifecycle })
+    lifecycle: Object.freeze({ ...lifecycle }),
+    ...(input.composition === undefined
+      ? {}
+      : { composition: input.composition })
   })
   registeredContracts.add(contract)
   return contract
@@ -170,6 +181,7 @@ export const createAiToolMiddleware =
     resolve: (name: string) => AiToolContract | undefined
     validate: (value: unknown, schema: AiJsonValue) => string | undefined
     classify: (value: T, call: AiInvocationContext) => AiToolOutcome
+    selectValue?: (value: T) => unknown
   }): AiInvocationMiddleware<T> =>
   async (call, next) => {
     const contract = options.resolve(call.name)
@@ -188,8 +200,10 @@ export const createAiToolMiddleware =
     if (issue) throw new AiToolContractError('input', issue)
     const value = await next()
     let outcome: AiToolOutcome
+    let selectedValue: unknown
     try {
       outcome = options.classify(value, call)
+      selectedValue = options.selectValue ? options.selectValue(value) : value
     } catch (error) {
       if (error instanceof AiToolContractError && error.stage === 'output')
         throw error
@@ -201,7 +215,7 @@ export const createAiToolMiddleware =
         { status: 'unknown', settlement: 'unknown', value }
       )
     }
-    const inspection = inspectAiToolResult(contract, value, {
+    const inspection = inspectAiToolResult(contract, selectedValue, {
       outcome,
       validate: options.validate
     })

@@ -384,3 +384,66 @@ The Node `createRecordCollector()` checkpoints the sink before acknowledging a b
 sequences after process restart; malformed or unterminated files are rejected.
 Collectors retain bounded queues and record limits and must be disposed with their
 server. Recovery does not resume or replay an interrupted drawing.
+
+## Reusable tool composition
+
+The generic composition APIs share the existing registry, immutable tool contracts
+and `createAiInvoker` boundary. Design integration and model-facing construction
+entry points are delivered separately. No provider setting changes are required.
+See [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md)
+for the current declarative format and lifecycle.
+
+- `admitAiRecipe(proposal, options)` returns a frozen typed recipe/derived contract
+  or bounded repair issues, without execution. Limits bound bytes, steps and
+  bindings. The deliberately conservative schema subset proves field/type handoffs;
+  the host's full validator remains authoritative for actual inputs and outputs.
+- Primitive tools opt into composition with `composition: 'allowed'` on their
+  canonical descriptor. Control-plane tools use `composition: 'control-plane'`.
+  An omitted declaration remains unavailable for composition, while ordinary
+  primitive invocation is unchanged. Annotate reference/credential schema values
+  with `x-runtime-value` so they can be forwarded but never persisted as literals.
+- `createAiActionRegistry()` returns a versioned registry. Registering a successor
+  needs an exact `expectedRevision`. `get` and `list` accept request/revision scope;
+  candidates are private, immutable older definitions can be pinned, and suspended
+  revisions do not silently reactivate older defaults. Host lifecycle methods
+  are not exposed as composition-eligible tools.
+- `createAiToolLibrary({ registry, validate, limits, capacity, createExecutor })`
+  owns retry-safe submissions and admitted implementation payloads. Its executor
+  constructor is trusted host code, never a model-supplied callback. Configure the
+  host's registered-operation dispatcher to route primitive and composed entries
+  through the composition-aware invoker before advertising submission. Do not
+  route a coordinator through a legacy host queue that holds resources for children.
+- `createAiRecipeInvoker({ registry, recipe, validate, execute, leases, maxSteps })`
+  pins the admitted graph before dispatch. Only `execute` for primitive leaves
+  reaches the existing host scheduler/security/transaction boundary; every node
+  emits ordinary invocation events. Validate live permissions and references there.
+  A parent never holds a scheduling barrier while waiting for a child.
+- `leases.open`, `retain` and `release` are host-owned resource operations.
+  Retain child outputs for the caller before releasing call-local leases. The host
+  identifies references in values, preserves borrowed/sibling ownership and bounds
+  storage; request termination releases exported request leases and calls
+  `library.releaseRequest`. No Runtime import installs IO or a global resource pool.
+- `createAiToolPersistence({ registry, library, store, capacity, check })` separates
+  save from execution. The host's store atomically compares opaque versions and
+  acknowledges exact durable records. `save` requires a genuine completed receipt
+  and scoped host checks for eligibility; without a receipt it saves a candidate.
+  Failed persistence retries only persistence. `load` validates dependencies and
+  admission without executing anything. `setState` suspends or retires future use.
+
+Generic adapters do not establish distributed locking across independent host
+instances. Hosts sharing durable storage must supply atomic compare-and-swap and
+propagate revocation to their own live permission/availability boundary. Storage
+bytes and applicability checks are trusted host inputs; they are not model-authored
+claims. Saved records exclude execution arguments/results and request identities.
+A successful scalar-host test is not a claim of Design geometry, grouped Undo or
+visual equivalence; those integration contracts belong to PR 3 acceptance.
+
+Hosts can expose `aiRecipeInputSchema` for model-authored proposals, then call
+`library.submit` for semantic admission. The transport schema does not replace
+current dependency, runtime-value or finite-budget checks. Persistence `resume`
+re-admits a saved candidate for an explicitly supplied request without execution.
+`registry.availability` is host lifecycle metadata, independent of request-scoped
+discovery. Retire a durable definition before `library.remove` if it must stay
+unavailable after restart. Removal affects future lookup; already pinned calls
+retain their immutable graph. Lease `release` must tolerate partially initialized
+scopes so failed `open` never leaves owned artifacts behind.

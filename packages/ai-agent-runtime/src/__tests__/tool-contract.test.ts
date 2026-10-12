@@ -258,3 +258,34 @@ it('preserves a classified output rejection and its settlement without replay', 
   )
   expect(execute).toHaveBeenCalledOnce()
 })
+
+it('validates the explicit value projection of a host receipt without changing its settlement', async () => {
+  const contract = createAiToolContract({
+    ...definition(),
+    inputSchema: true,
+    outputSchema: { type: 'number' }
+  })
+  const receipt = {
+    value: 7,
+    status: 'success' as const,
+    settlement: 'completed' as const
+  }
+  const validate = vi.fn((value, schema) =>
+    schema === contract.outputSchema && typeof value !== 'number'
+      ? 'Expected number'
+      : undefined
+  )
+  const invoker = createAiInvoker({
+    execute: async () => receipt,
+    middleware: [
+      createAiToolMiddleware({
+        resolve: () => contract,
+        validate,
+        classify: (value) => value,
+        selectValue: (value) => value.value
+      })
+    ]
+  })
+  expect(await invoker.invoke({ name: contract.name, input: {} })).toBe(receipt)
+  expect(validate).toHaveBeenLastCalledWith(7, contract.outputSchema)
+})

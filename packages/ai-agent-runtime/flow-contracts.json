@@ -1,0 +1,91 @@
+{
+  "version": 2,
+  "manifestPath": "packages/ai-agent-runtime/flow-contracts.json",
+  "targetId": "reusable-tool-composition",
+  "architecturePath": "tools/flow-inspector/inspectors/reusable-tool-composition-flow-inspector.data.cjs",
+  "specPath": "packages/ai-agent-runtime/TOOL_SPECIFICATION.md",
+  "testFile": "packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts",
+  "configFile": "packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts",
+  "negativeCaseIds": ["admit.handoff"],
+  "externalInputs": [],
+  "flows": [
+    {
+      "id": "reusable-tool-lifecycle",
+      "title": "Reusable tool lifecycle",
+      "goal": "Verify typed admission, same-registry request visibility, secured invocation and durable reuse.",
+      "stepIds": ["admit", "register", "invoke", "persist"],
+      "cases": [
+        {
+          "id": "admit.handoff",
+          "stepId": "admit",
+          "testName": "recipe proof rejects ineligible dependencies before registration"
+        },
+        {
+          "id": "register.handoff",
+          "stepId": "register",
+          "testName": "recipe proof registers retry-safe scoped candidates in the canonical registry"
+        },
+        {
+          "id": "invoke.handoff",
+          "stepId": "invoke",
+          "testName": "recipe proof executes nested tools without scheduler deadlock or lost references"
+        },
+        {
+          "id": "persist.handoff",
+          "stepId": "persist",
+          "testName": "recipe proof saves without replay and validates durable reuse"
+        }
+      ],
+      "handoffs": [
+        {
+          "routeId": "admit-to-register",
+          "decision": "required",
+          "caseIds": ["register.handoff"]
+        },
+        {
+          "routeId": "admit-to-persist",
+          "decision": "required",
+          "caseIds": ["persist.handoff"]
+        },
+        {
+          "routeId": "register-to-invoke",
+          "decision": "required",
+          "caseIds": ["invoke.handoff"]
+        },
+        {
+          "routeId": "register-to-persist",
+          "decision": "required",
+          "caseIds": ["persist.handoff"]
+        },
+        {
+          "routeId": "invoke-to-persist",
+          "decision": "required",
+          "caseIds": ["persist.handoff"]
+        },
+        {
+          "routeId": "persist-to-admit",
+          "decision": "required",
+          "caseIds": ["persist.handoff"]
+        }
+      ]
+    }
+  ],
+  "defaultNegativeScenario": "allow-control-plane",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current composition owners",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "allow-control-plane",
+      "title": "Allow a control-plane dependency",
+      "expectedFailedCaseIds": ["admit.handoff"],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/recipe-admission.ts",
+        "from": "contract.composition !== 'allowed'",
+        "to": "false"
+      }
+    }
+  ]
+}

@@ -103,6 +103,12 @@ export type {
   AiActionDescription,
   AiActionRegistry,
   AiActionRegistryErrorCode,
+  AiVersionedActionRegistry,
+  AiRegisteredActionDefinition,
+  AiActionLookup,
+  AiActionAvailability,
+  AiActionRegistration,
+  AiActionRegistrationOptions,
   AiActionResult,
   AiExecutionContext,
   AiMutationExecutor,
@@ -144,3 +150,39 @@ export type {
   ExecutionRecordDeliveryOptions,
   ExecutionRecordDeliveryIssue
 } from './profiler/record-outbox.js'
+
+export { admitAiRecipe } from './recipe-admission.js'
+export type {
+  AiRecipe,
+  AiRecipeBinding,
+  AiRecipeLimits,
+  AiRecipeIssue,
+  AiRecipeAdmission,
+  AiRecipeAdmissionOptions,
+  AdmittedAiRecipe
+} from './recipe-types.js'
+
+export { createAiToolLibrary } from './tool-library.js'
+export type {
+  AiRecipeSubmission,
+  AiRecipeSubmissionResult,
+  AiToolLibraryOptions
+} from './tool-library.js'
+
+export { createAiRecipeInvoker } from './recipe-execution.js'
+export type {
+  AiRecipeCallReceipt,
+  AiRecipeExecutionResult,
+  AiRecipeLeaseAdapter,
+  AiRecipeInvokerOptions
+} from './recipe-execution.js'
+
+export { createAiToolPersistence } from './tool-store.js'
+export type {
+  AiToolStore,
+  AiToolStoreEntry,
+  AiToolSaveResult,
+  AiToolPersistenceOptions
+} from './tool-store.js'
+
+export { aiRecipeInputSchema } from './recipe-format.js'
