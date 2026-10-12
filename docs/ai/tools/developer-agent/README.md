@@ -54,6 +54,9 @@ its bundled behavior does. Update the reference allowlist deliberately; the
 script rejects missing sources, stale files, traversal, symlinks and unknown
 plugin files. Hashes detect drift; they do not authenticate an untrusted bundle.
 
+See [installer validation](installer-validation.md) for the bounded real-CLI
+install/update gate and its versioned file-delivery evidence.
+
 ## Native and behavioral acceptance
 
 Packaging tests prove reproducibility, release version checks and standalone
@@ -67,7 +70,7 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current candidate: 0.1.10, with public display name **Asyra Skill** and retained
+Current candidate: 0.1.12, with public display name **Asyra Skill** and retained
 installation identity `asyra-agent`. See the [capability guidance plan](capability-guidance-plan.md)
 and [support evidence](support-evidence.md). Previous native loading trials are
 versioned historical observations, not acceptance of this candidate. A plugin

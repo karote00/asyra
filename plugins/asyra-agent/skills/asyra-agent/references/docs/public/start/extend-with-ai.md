@@ -21,6 +21,66 @@ available routes, candidate versions and actual host validation status.
 The host agent owns reasoning, implementation and verification. This development
 Skill is separate from the optional in-app `@asyra/ai-agent-runtime`.
 
+## Install and update in your product
+
+Choose one installation route, then run its commands from your product root.
+Both installers fetch the public GitHub source directly; maintainers do not need
+to register or upload another package. Node.js/npm and Git are required.
+The complete Skill includes `SKILL.md`, `bundle.json` and `references/`.
+
+### Vercel Skills
+
+For Codex and Claude Code (keep only the host names you use):
+
+```sh
+npx skills@1.7.2 add https://github.com/karote00/asyra/tree/main/plugins/asyra-agent/skills/asyra-agent --skill asyra-agent --agent codex claude-code --yes
+npx skills@1.7.2 update asyra-agent --project --yes
+```
+
+The first command installs into `.agents/skills/asyra-agent/` and links Claude
+Code's project Skill directory. Run the second command later to update it.
+
+### OpenSkills
+
+For agents that read `AGENTS.md` and can execute shell commands:
+
+```sh
+npx openskills@1.5.0 install karote00/asyra/plugins/asyra-agent/skills/asyra-agent --universal --yes
+npx openskills@1.5.0 sync --yes
+```
+
+This installs into `.agent/skills/asyra-agent/`. Sync adds the loading workflow
+to `AGENTS.md`; review its changes. Existing prose outside the managed block is
+preserved. The host loads the Skill through `npx openskills@1.5.0 read asyra-agent`;
+that directory alone does not guarantee native discovery in every AI tool.
+Target the complete subdirectory above to avoid installing contributor Skills.
+
+To update later:
+
+```sh
+npx openskills@1.5.0 update asyra-agent
+npx openskills@1.5.0 sync --yes
+```
+
+### Confirm what your agent loaded
+
+Start a fresh session in the product and ask:
+
+```text
+Load the installed Asyra Skill. Read bundle.json beside that exact SKILL.md.
+Report both full paths, pluginVersion and whether the bundled
+references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
+Skill files. Do not modify files.
+```
+
+The command versions pin the tested installers, not the Skill version. Both
+routes follow merged `main`; updates require an explicit command. Preserve local
+customizations separately and avoid duplicate plugin/standalone installations.
+Installer trials verified all 19 bundled guides and changed-source updates;
+they do not certify model behavior. These commands do not install Framework
+packages or update your product's dependencies. Claude Desktop's cloud settings
+still use the <a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-agent/README.md#claude-desktop-skill-upload" target="_blank" rel="noopener noreferrer">Skill ZIP-upload route</a>.
+
 ## Describe the product outcome
 
 Tell the agent what you want the product to do, which project to work in, and

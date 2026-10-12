@@ -19,14 +19,14 @@ proof in your product; the Skill does not supply an automatic optimizer.
 
 ## Release status and support
 
-**0.1.9 is an unpublished local candidate.** These instructions describe its
-source. The merged 0.1.8 is the portable baseline; a GitHub source on `main` may
+**0.1.12 is an unpublished local candidate.** These instructions describe its
+source. The tested merged 0.1.11 is the public installation baseline; a GitHub source on `main` may
 contain a different version from a release archive or this candidate. Verify
 `pluginVersion` after installing. Publication is a separate action.
 
 | Surface                                 | Delivery                              | What is established                                                                                    |
 | --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.9 loading and product trials pending                           |
+| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.12 loading and product trials pending                          |
 | Claude Code                             | Plugin or standalone Skill            | Shared packaging; fresh native trials pending                                                          |
 | Claude Desktop                          | Skill ZIP upload                      | 0.1.7 loading observed; user reported GitHub-to-ZIP upload/loading of 0.1.8; no complete product trial |
 | Grok Build CLI                          | Standalone Skill or compatible plugin | Local 0.1.7 plugin and reference loading observed; product trials pending, free quota exhausted        |
@@ -49,8 +49,80 @@ No maintainer worktree is required. Use a reviewed release ref when available;
 assuming the newest GitHub Release and `main` are identical. A source checkout
 contains the complete Skill at `plugins/asyra-agent/skills/asyra-agent`.
 
-For testing unpublished 0.1.9, use the local candidate checkout in the routes
+For testing unpublished 0.1.12, use the local candidate checkout in the routes
 below. Do not describe that private local path as a public installation source.
+
+## Install and update with a Skill installer
+
+Choose **one** route per product. Run these commands from your product's root
+folder, with Node.js/npm and Git available. No account registration or separate
+upload to either installer service is required: both read our public GitHub
+repository. These commands install project files; they do not install Asyra
+Framework dependencies or purchase model access.
+
+### Vercel Skills - Codex and Claude Code
+
+```sh
+npx skills@1.7.2 add https://github.com/karote00/asyra/tree/main/plugins/asyra-agent/skills/asyra-agent --skill asyra-agent --agent codex claude-code --yes
+```
+
+Keep only the host names you use after `--agent`. The tested command creates
+`.agents/skills/asyra-agent/` and links `.claude/skills/asyra-agent/` to it.
+It includes `SKILL.md`, `bundle.json` and all 19 reference guides. Start a new
+host session in this product, then use the verification prompt below.
+
+To update this project's installation from its recorded source:
+
+```sh
+npx skills@1.7.2 update asyra-agent --project --yes
+```
+
+### OpenSkills - agents that read AGENTS.md and can run commands
+
+```sh
+npx openskills@1.5.0 install karote00/asyra/plugins/asyra-agent/skills/asyra-agent --universal --yes
+npx openskills@1.5.0 sync --yes
+```
+
+Use the full Skill subdirectory above. Installing the repository root with
+`--yes` can select unrelated contributor Skills. `--universal` installs into
+`.agent/skills/asyra-agent/`; `sync` adds loading instructions to `AGENTS.md`.
+Review that diff: sync refreshes its managed block for discovered Skills while
+preserving prose outside the block. This does not make `.agent/skills/` a native
+Skill discovery directory for every host. The agent must read `AGENTS.md` and
+be able to run `npx openskills@1.5.0 read asyra-agent` to load the instructions.
+
+Update the installed Skill, then refresh its discovery instructions:
+
+```sh
+npx openskills@1.5.0 update asyra-agent
+npx openskills@1.5.0 sync --yes
+```
+
+### Source, updates and limitations
+
+The versions after `skills@` and `openskills@` pin the tested **installer**;
+`bundle.json` identifies the installed **Asyra Skill**. These public commands
+follow merged `main`. Before this candidate merges, they fetch 0.1.11, not
+0.1.12. Updates are explicit commands, not a background updater. Preserve any
+local Skill customizations separately before replacement; start a new session
+and verify the loaded bundle afterward.
+
+Both real CLIs passed public installation/no-change update checks and a
+controlled Git update from 0.1.11 to 0.1.12. Every bundled Skill file was checked
+byte-for-byte, including offline reference links. The Vercel Claude Code link,
+OpenSkills reading/sync and preservation of existing `AGENTS.md` prose were
+also checked. This establishes file delivery, not native model behavior.
+The maintained test and its limitations are recorded in
+`docs/ai/tools/developer-agent/installer-validation.md` in the source checkout.
+
+These terminal routes do not install into Claude Desktop's cloud Skill settings;
+use the ZIP-upload route below there. Other tools still need compatible Skill
+loading or the OpenSkills command workflow. You do not need a separate copy of
+the Asyra instructions for each installer.
+
+- <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener noreferrer">Vercel Skills documentation</a>
+- <a href="https://github.com/numman-ali/openskills" target="_blank" rel="noopener noreferrer">OpenSkills documentation</a>
 
 ## Start with the same Skill everywhere
 
@@ -186,7 +258,7 @@ references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
 Skill files, not the Asyra development checkout. Do not modify files.
 ```
 
-Expect **0.1.9** for this candidate. `pluginVersion` remains the compatibility
+Expect **0.1.12** for this candidate. `pluginVersion` remains the compatibility
 field for the shared Skill version even in standalone installations. The record
 also contains the full plugin distribution inventory; entries outside the Skill
 subtree do not need to exist beside a standalone Skill. Its hashes detect drift,
@@ -225,7 +297,9 @@ not the everyday way to ask for product work.
 
 ## Updates and replacement
 
-- Standalone Skill: obtain the intended reviewed version, replace the complete
+- Installer-managed Skill: use the matching update command above in the product
+  where it was installed. Avoid installing a second copy through another route.
+- Manually copied standalone Skill: obtain the intended reviewed version, replace the complete
   installed Skill folder deliberately, and verify in a new session. Preserve
   local customizations separately; do not merge old and new reference files.
   There is no standalone background updater.

@@ -95,6 +95,21 @@ for (const width of [320, 820, 1440]) {
     await expect(
       page.getByRole('link', { name: 'Asyra Skill installation guide' })
     ).toHaveAttribute('href', installGuideUrl)
+    await expect(
+      page.getByRole('heading', {
+        name: 'Install and update in your product',
+        exact: true
+      })
+    ).toBeVisible()
+    for (const command of [
+      'npx skills@1.7.2 update asyra-agent --project --yes',
+      'npx openskills@1.5.0 update asyra-agent',
+      'npx openskills@1.5.0 sync --yes'
+    ]) {
+      await expect(
+        page.locator('pre').filter({ hasText: command }).first()
+      ).toBeAttached()
+    }
   })
 }
 

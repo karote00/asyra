@@ -510,3 +510,284 @@ test('Skill export refuses overwrites, traversal, symlinks and missing sources',
   assert.throws(() => exportSkill(root, 'new-skill'), /ENOENT/)
   assert.ok(!fs.existsSync(path.join(root, 'new-skill')))
 })
+
+test(
+  'real Skill installers preserve public installs and changed-source updates',
+  {
+    skip: process.env.RUN_SKILL_INSTALLER_TESTS !== '1',
+    timeout: 600_000
+  },
+  () => {
+    const root = fs.mkdtempSync(path.join(scratch, 'installers-'))
+    const toolsRoot = path.join(ROOT, 'tmp/skill-installers/tools/node_modules')
+    const preload = path.join(root, 'installer-home.cjs')
+    write(
+      root,
+      'installer-home.cjs',
+      `// Isolate installer-owned home/temp files without changing the user's HOME.
+const os = require('node:os')
+const { syncBuiltinESMExports } = require('node:module')
+const path = require('node:path')
+const fs = require('node:fs')
+const root = process.env.INSTALLER_TEST_ROOT
+if (!root || !path.isAbsolute(root))
+  throw new Error('Installer test root required')
+for (const name of ['home', 'temp'])
+  fs.mkdirSync(path.join(root, name), { recursive: true })
+os.homedir = () => path.join(root, 'home')
+os.tmpdir = () => path.join(root, 'temp')
+syncBuiltinESMExports()
+`
+    )
+    const env = {
+      ...process.env,
+      INSTALLER_TEST_ROOT: root,
+      NODE_OPTIONS: `--require=${JSON.stringify(preload)}`,
+      TMPDIR: path.join(root, 'temp'),
+      XDG_STATE_HOME: path.join(root, 'state'),
+      DISABLE_TELEMETRY: '1',
+      DO_NOT_TRACK: '1',
+      GIT_TERMINAL_PROMPT: '0',
+      GIT_LFS_SKIP_SMUDGE: '1'
+    }
+    fs.mkdirSync(env.TMPDIR, { recursive: true })
+    const run = (command, args, cwd, label) => {
+      const result = spawnSync(command, args, {
+        cwd,
+        env,
+        encoding: 'utf8',
+        timeout: 150_000,
+        maxBuffer: 8 * 1024 * 1024
+      })
+      write(root, `${label}.log`, (result.stdout || '') + (result.stderr || ''))
+      assert.equal(
+        result.status,
+        0,
+        `${label}: ${result.error?.message || result.stderr?.slice(-1000) || result.stdout?.slice(-1000)}; logs: ${root}`
+      )
+      return result.stdout
+    }
+    const git = (args, cwd, label) => run('git', args, cwd, label)
+    const verify = (directory, expectedDirectory) => {
+      const record = JSON.parse(read(expectedDirectory, 'bundle.json'))
+      assert.deepEqual(JSON.parse(read(directory, 'bundle.json')), record)
+      for (const file of Object.keys(record.files).filter((file) =>
+        file.startsWith(`${SKILL}/`)
+      )) {
+        const relative = file.slice(SKILL.length + 1)
+        assert.deepEqual(
+          fs.readFileSync(path.join(directory, relative)),
+          fs.readFileSync(path.join(expectedDirectory, relative)),
+          relative
+        )
+      }
+      const markdown = fs
+        .readdirSync(path.join(directory, 'references'), { recursive: true })
+        .filter((file) => file.endsWith('.md'))
+      for (const relative of [
+        'SKILL.md',
+        ...markdown.map((file) => `references/${file}`)
+      ]) {
+        for (const [, href] of read(directory, relative)
+          .replace(/```[\s\S]*?```/g, '')
+          .matchAll(/(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)/g)) {
+          if (/^(https?:|#)/.test(href)) continue
+          const target = path.resolve(
+            directory,
+            path.dirname(relative),
+            href.split('#')[0]
+          )
+          assert.ok(target.startsWith(directory + path.sep), href)
+          assert.ok(fs.existsSync(target), href)
+        }
+      }
+      return {
+        version: record.pluginVersion,
+        digest: record.contentDigest,
+        referenceCount: markdown.length
+      }
+    }
+    const source = path.join(root, 'source.git')
+    fs.mkdirSync(source)
+    git(['init', '-b', 'main'], source, 'source-init')
+    git(['config', 'user.name', 'Installer Test'], source, 'source-name')
+    git(
+      ['config', 'user.email', 'installer-test@example.invalid'],
+      source,
+      'source-email'
+    )
+    const base = process.env.INSTALLER_BASE_REF
+    assert.match(
+      base || '',
+      /^[a-f0-9]{40}$/,
+      'Supply the reviewed baseline commit'
+    )
+    const archive = spawnSync('git', ['archive', base, `${PLUGIN}/${SKILL}`], {
+      cwd: ROOT,
+      maxBuffer: 8 * 1024 * 1024
+    })
+    assert.equal(archive.status, 0)
+    assert.equal(
+      spawnSync('tar', ['-x', '-C', source], { input: archive.stdout }).status,
+      0
+    )
+    git(['add', '.'], source, 'source-add-baseline')
+    git(['commit', '-m', 'Baseline Skill'], source, 'source-baseline')
+    const sourceSkill = path.join(source, PLUGIN, SKILL)
+    const baselineRecord = JSON.parse(read(sourceSkill, 'bundle.json'))
+    const candidateRecord = checkBundle(ROOT)
+    assert.notEqual(candidateRecord.pluginVersion, baselineRecord.pluginVersion)
+    const publicUrl =
+      'https://github.com/karote00/asyra/tree/main/plugins/asyra-agent/skills/asyra-agent'
+    const remote = 'https://github.com/karote00/asyra.git'
+    const publicHead = () =>
+      git(['ls-remote', remote, 'refs/heads/main'], ROOT, 'public-head')
+        .trim()
+        .split(/\s+/)[0]
+    assert.equal(
+      publicHead(),
+      base,
+      'Public main moved; select a fresh reviewed baseline'
+    )
+    const cases = [
+      {
+        name: 'skills',
+        version: '1.7.2',
+        cli: 'skills/bin/cli.mjs',
+        directory: '.agents/skills/asyra-agent',
+        publicSource: publicUrl,
+        install: (value) => [
+          'add',
+          value,
+          '--skill',
+          'asyra-agent',
+          '--agent',
+          'codex',
+          'claude-code',
+          '--yes'
+        ],
+        update: ['update', 'asyra-agent', '--project', '--yes']
+      },
+      {
+        name: 'openskills',
+        version: '1.5.0',
+        cli: 'openskills/dist/cli.js',
+        directory: '.agent/skills/asyra-agent',
+        publicSource: publicUrl
+          .replace('https://github.com/', '')
+          .replace('/tree/main/', '/'),
+        install: (value) => ['install', value, '--universal', '--yes'],
+        update: ['update', 'asyra-agent']
+      }
+    ]
+    const report = {
+      baseline: base,
+      candidate: candidateRecord.pluginVersion,
+      tools: []
+    }
+    for (const item of cases) {
+      const cli = path.join(toolsRoot, item.cli)
+      assert.equal(
+        JSON.parse(read(toolsRoot, `${item.name}/package.json`)).version,
+        item.version
+      )
+      for (const document of [
+        `${PLUGIN}/README.md`,
+        'docs/public/start/extend-with-ai.md'
+      ]) {
+        for (const args of [item.install(item.publicSource), item.update]) {
+          assert.ok(
+            read(ROOT, document).includes(
+              `npx ${item.name}@${item.version} ${args.join(' ')}`
+            ),
+            `Tested command missing from ${document}`
+          )
+        }
+      }
+      assert.ok(
+        fs.existsSync(cli),
+        `Install pinned CLI dependencies first: ${cli}`
+      )
+      const consumer = path.join(root, `${item.name}-public`)
+      fs.mkdirSync(consumer)
+      write(
+        consumer,
+        'AGENTS.md',
+        '# Consumer rules\n\nPreserve these instructions.\n'
+      )
+      const invoke = (args, cwd, suffix) =>
+        run(process.execPath, [cli, ...args], cwd, `${item.name}-${suffix}`)
+      invoke(item.install(item.publicSource), consumer, 'public-install')
+      const installed = path.join(consumer, item.directory)
+      const snapshot = path.join(root, `${item.name}-public-snapshot`)
+      fs.cpSync(installed, snapshot, { recursive: true, dereference: true })
+      // The bundle verifier accepts only distribution files; OpenSkills metadata is installer-owned.
+      if (fs.existsSync(path.join(snapshot, '.openskills.json')))
+        fs.unlinkSync(path.join(snapshot, '.openskills.json'))
+      inspectSkill(snapshot)
+      const before = verify(installed, sourceSkill)
+      assert.deepEqual(fs.readdirSync(path.dirname(installed)), ['asyra-agent'])
+      if (item.name === 'skills') {
+        const adapter = path.join(consumer, '.claude/skills/asyra-agent')
+        assert.equal(fs.realpathSync(adapter), fs.realpathSync(installed))
+        verify(adapter, sourceSkill)
+      }
+      invoke(item.update, consumer, 'public-update')
+      assert.deepEqual(
+        verify(installed, snapshot),
+        before,
+        'An unchanged public source must retain every resource'
+      )
+      assert.equal(
+        read(consumer, 'AGENTS.md'),
+        '# Consumer rules\n\nPreserve these instructions.\n'
+      )
+      if (item.name === 'openskills') {
+        invoke(['sync', '--yes'], consumer, 'sync')
+        const synced = read(consumer, 'AGENTS.md')
+        assert.ok(synced.includes('Preserve these instructions.'))
+        assert.ok(synced.includes('asyra-agent'))
+        invoke(['sync', '--yes'], consumer, 'sync-repeat')
+        assert.equal(read(consumer, 'AGENTS.md'), synced)
+        invoke(['read', 'asyra-agent'], consumer, 'read')
+      }
+      const controlled = path.join(root, `${item.name}-controlled`)
+      fs.mkdirSync(controlled)
+      write(controlled, 'keep.txt', 'Consumer data\n')
+      invoke(item.install(`file://${source}`), controlled, 'baseline-install')
+      verify(path.join(controlled, item.directory), sourceSkill)
+      report.tools.push({
+        name: item.name,
+        installerVersion: item.version,
+        public: before,
+        consumer,
+        controlled
+      })
+    }
+    assert.equal(
+      publicHead(),
+      base,
+      'Public source must remain fixed during trials'
+    )
+    fs.rmSync(sourceSkill, { recursive: true })
+    fs.cpSync(path.join(ROOT, PLUGIN, SKILL), sourceSkill, { recursive: true })
+    git(['add', '.'], source, 'source-add-candidate')
+    git(['commit', '-m', 'Candidate Skill'], source, 'source-candidate')
+    for (const item of cases) {
+      const result = report.tools.find((value) => value.name === item.name)
+      run(
+        process.execPath,
+        [path.join(toolsRoot, item.cli), ...item.update],
+        result.controlled,
+        `${item.name}-changed-update`
+      )
+      result.updated = verify(
+        path.join(result.controlled, item.directory),
+        sourceSkill
+      )
+      assert.equal(read(result.controlled, 'keep.txt'), 'Consumer data\n')
+    }
+    saveJson(root, 'report.json', report)
+    console.log(`Installer evidence: ${root}/report.json`)
+  }
+)

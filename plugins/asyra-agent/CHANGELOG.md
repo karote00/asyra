@@ -1,5 +1,11 @@
 # Asyra Skill releases
 
+## 0.1.12 - Installer guidance candidate
+
+- Document project-scoped Vercel Skills and OpenSkills installation and updates.
+- Preserve the shared Skill identity and complete offline reference bundle.
+- Installer validation does not establish native model behavior or publish a release.
+
 ## 0.1.11 - Common tool contract documentation
 
 - Synchronize bundled AI action guidance with the required common tool descriptor
