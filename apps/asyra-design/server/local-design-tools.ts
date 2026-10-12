@@ -1,3 +1,10 @@
+import {
+  toolResultBoolean,
+  toolResultIds,
+  toolResultObject,
+  toolResultString,
+  toolSemantics
+} from '../src/ai/tool-contract'
 import { inspectDesignBudget } from './design-budget'
 import { DesignKeyConflictError } from './design-construction'
 import { LocalToolInputError } from './local-tool-invocation'
@@ -418,6 +425,18 @@ export const createLocalDesignTools = (
       ? [
           {
             type: 'function',
+            ...toolSemantics(
+              toolResultObject({
+                available: { const: true },
+                artifactId: toolResultString,
+                applicable: toolResultBoolean,
+                elementCount: { type: 'integer', minimum: 1 },
+                findings: { type: 'array' }
+              }),
+              'prepare',
+              ['request-artifacts'],
+              'request-artifact'
+            ),
             name: AiDesignToolIds.PREPARE_DESIGN,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
@@ -429,6 +448,23 @@ export const createLocalDesignTools = (
           },
           {
             type: 'function',
+            ...toolSemantics(
+              toolResultObject({
+                available: { const: true },
+                targets: {
+                  type: 'array',
+                  minItems: 1,
+                  items: toolResultObject({
+                    artifactId: toolResultString,
+                    targetSetId: toolResultString,
+                    count: { type: 'integer', minimum: 1 }
+                  })
+                }
+              }),
+              'prepare',
+              ['request-artifacts'],
+              'request-artifact'
+            ),
             name: AiDesignToolIds.RETAIN_DESIGN_TARGETS,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
@@ -466,7 +502,16 @@ export const createLocalDesignTools = (
           },
           {
             type: 'function',
+            ...toolSemantics(
+              toolResultObject({
+                releasedArtifactIds: toolResultIds,
+                missingArtifactIds: toolResultIds
+              }),
+              'prepare',
+              ['request-artifacts']
+            ),
             name: AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS,
+            executionAccess: LocalToolAccess.EXCLUSIVE,
             description:
               'Release explicitly unneeded prepared design artifact IDs from this request. This frees preparation memory only; it never changes canvas objects or Undo. Retain artifacts still needed for comparison or later use. Released IDs cannot be applied; group releases in native code instead of returning to the model for each artifact.',
             inputSchema: {

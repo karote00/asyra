@@ -118,4 +118,29 @@ export * from './profiler/assessment.js'
 export * from './invocation.js'
 export * from './profiler/trace.js'
 
-export { createRecordDeliverySink } from './profiler/record-delivery.js'
+export {
+  createRecordDeliverySink,
+  createRecordDeliveryHost,
+  recoverRecordDelivery
+} from './profiler/record-delivery.js'
+
+export {
+  AiToolContractError,
+  createAiToolContract,
+  createAiToolMiddleware,
+  describeAiTool,
+  inspectAiToolResult
+} from './tool-contract.js'
+export type {
+  AiToolContract,
+  AiToolContractInput,
+  AiToolOutcome,
+  AiToolResultInspection
+} from './tool-contract.js'
+
+export type {
+  ExecutionRecordOutbox,
+  ExecutionRecordAcknowledgement,
+  ExecutionRecordDeliveryOptions,
+  ExecutionRecordDeliveryIssue
+} from './profiler/record-outbox.js'

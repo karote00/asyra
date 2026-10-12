@@ -55,6 +55,30 @@ test('model reference classification does not admit executable or unrelated asse
   }
 })
 
+test('standalone release consumer inputs select release readiness without unrelated workspaces', () => {
+  for (const input of [
+    'fixtures/framework-release-consumer/src/__tests__/release-flow.test.ts',
+    'fixtures/framework-release-consumer/src/consumer.ts',
+    'fixtures/framework-release-consumer/package.json'
+  ]) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(result.unknownPaths, [], input)
+    assert.equal(result.frameworkReleaseRequired, true, input)
+    assert.deepEqual(names(result), [], input)
+    assert.equal(
+      result.relationshipMap.fieldscopeProfilesRequired,
+      false,
+      input
+    )
+    assert.equal(result.designE2ERequired, false, input)
+  }
+  assert.deepEqual(
+    classifyChanges(['fixtures/unregistered-consumer/run.ts'], manifests)
+      .unknownPaths,
+    ['fixtures/unregistered-consumer/run.ts']
+  )
+})
+
 test('an app change selects its package scripts and dependent workspace consumers', () => {
   const result = classifyChanges(['apps/asyra-design/src/main.tsx'], manifests)
   assert.deepEqual(names(result), ['@asyra/asyra-design'])

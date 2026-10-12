@@ -107,9 +107,19 @@ Composition and execution:
 Actions and action batches:
 
 - `createAiActionRegistry()`
-- `AiActionDefinition`
-- `AiActionDefinition.inputSchema` is the JSON-compatible backend-facing action
-  description; `AiActionDefinition.execute` is the app-owned executor
+- `AiActionDefinition` extends `AiToolContractInput`: name, description, positive
+  revision, input/output schemas, effect, resource names and lifecycle are required;
+  `execute` remains the app-owned executor.
+- `createAiToolContract()` detaches and freezes the descriptor;
+  `describeAiTool()` projects only name, description and input schema for providers.
+- `createAiToolMiddleware()` uses the host's resolver, schema validator and outcome
+  classifier at `createAiInvoker().invoke()`. Registry declaration alone does not
+  validate domain input/output. The host installs middleware at its secured
+  invocation boundary; native adapters may use `inspectAiToolResult()` directly.
+- `AiToolOutcome` separates success/partial/failed/unknown from settlement.
+  `AiToolContractError` retains invalid output and settlement evidence. Batch
+  failure receipts expose `contractStage` and redacted `observedResult`; validation
+  does not retry a write or discard an acknowledged result.
 - `AiActionDescription`
 - `AiActionBatch`, `AiActionBatchAction`, `ResolvedAiActionBatch`,
   `PermissionReadyAiActionBatch`, and `AiActionBatchPreview`
@@ -360,9 +370,17 @@ After Runtime settlement the host can call `runtime.observe({sourceRequestId,
 purpose, metadata, evidence})` to record conversation publication as a separate
 correlated observation. It never appends after the request terminal marker.
 
-`createRecordDeliverySink` batches bounded sequenced records over a host-supplied
-transport independent of the model response stream. The Node
-`createRecordCollector` validates identity, contiguous sequences, idempotent
-retries and the terminal marker before certifying complete delivery. Missing
-sequences, evictions, disconnects and dropped events remain incomplete evidence.
-Collectors have bounded retention and must be disposed with their owning server.
+`createRecordDeliverySink({ outbox, send, onIssue })` persists ordered records in
+host-owned durable storage before sending bounded batches. A transient send failure
+suspends delivery, not capture. `createRecordDeliveryHost()` owns live sinks,
+reconnect recovery and disposal; close storage after host disposal.
+`recoverRecordDelivery()` replays diagnostic records only, never product actions.
+Delete a retained stream only after its matching contiguous terminal acknowledgement.
+Capacity, storage/quota failure and inconsistent acknowledgements remain explicit
+incomplete evidence with bounded failure reasons and sequence ranges.
+
+The Node `createRecordCollector()` checkpoints the sink before acknowledging a batch.
+`createFileRecordCollector()` restores existing JSONL streams and validates duplicate
+sequences after process restart; malformed or unterminated files are rejected.
+Collectors retain bounded queues and record limits and must be disposed with their
+server. Recovery does not resume or replay an interrupted drawing.

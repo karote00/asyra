@@ -1,5 +1,11 @@
 # Asyra Skill releases
 
+## 0.1.11 - Common tool contract documentation
+
+- Synchronize bundled AI action guidance with the required common tool descriptor
+  and host validation boundary. No plugin runtime or installed host changes.
+- This source bundle update does not publish a release.
+
 ## 0.1.10 - Reproducible delivery candidate
 
 - Track reference package versions without coupling Skill identity to unrelated

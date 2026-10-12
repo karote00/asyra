@@ -105,15 +105,20 @@ const preparedDrawingArtifact = (): PreparedDrawingArtifact => {
 }
 
 describe('server-prepared Asyra Design action consumers', () => {
-  it('publishes only the backend input schema and executor contract', () => {
+  it('publishes the common tool contract without frontend preparation', () => {
     const actions = createAiActions(actionApis())
 
     actions.forEach((action) => {
       expect(Reflect.ownKeys(action).sort()).toEqual([
         'description',
+        'effect',
         'execute',
         'inputSchema',
-        'name'
+        'lifecycle',
+        'name',
+        'outputSchema',
+        'resources',
+        'revision'
       ])
       expect(action.inputSchema).toEqual(expect.any(Object))
       expect(action).not.toHaveProperty('schema')

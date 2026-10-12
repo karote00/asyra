@@ -226,7 +226,7 @@ test('retains drawing after a failed refinement with one undo and redo', async (
     'partial'
   )
   await expect(page.getByTestId('ai-agent-message')).toContainText(
-    'Refining the drawing could not be completed. Changes already applied have been kept.'
+    'Refining the drawing could not be completed. arguments.updates: expected array Changes already applied have been kept.'
   )
   await expect(
     page.getByRole('button', { name: 'Try again', exact: true })

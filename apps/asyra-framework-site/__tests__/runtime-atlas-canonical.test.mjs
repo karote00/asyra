@@ -56,3 +56,10 @@ test('invalid input rolls back the complete preview without history', async () =
   assert.equal(result.result.undoDepth, 0)
   assert.match(result.result.failure, /greater than or equal to zero/i)
 })
+
+test('registered AI action executes through the current Runtime contract', async () => {
+  const result = await runIsolatedCase('ai-registered-action')
+  assert.equal(result.status, 'succeeded')
+  assert.equal(result.result.visible, false)
+  assert.equal(result.result.transactionCount, 1)
+})

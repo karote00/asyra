@@ -379,6 +379,7 @@ applies before all Inspector rules below, including readiness and step execution
 - Read `docs/ai/framework/FRAMEWORK_ESSENTIALS.md` before framework work
 - Use direct assignment for mocking dynamic methods: `instance.method = vi.fn()`
 - Local step/stage commits are allowed after scoped validation and staged-diff
-  review; remote push, history rewrite, release, and merge operations still
-  require explicit user authorization. Follow
+  review. Push authorization includes necessary task-branch fetch/rebase and
+  exact lease-protected updates without renewed approval; other history rewrites,
+  releases and merges retain their separate authorization requirements. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.

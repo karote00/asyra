@@ -566,12 +566,10 @@ function classifyChanges(
       changedCreateAppDirectories.add(createApp.directory)
       continue
     }
-    if (
-      [...releasePaths].some(
-        (pattern) => matchesPattern(changedPath, pattern).matched
-      )
+    const releaseInput = [...releasePaths].some(
+      (pattern) => matchesPattern(changedPath, pattern).matched
     )
-      frameworkReleaseRequired = true
+    if (releaseInput) frameworkReleaseRequired = true
     let matched = false
     for (const rule of relationshipPolicy.workspaceInputRules) {
       const match = matchesPattern(changedPath, rule.pattern)
@@ -592,6 +590,7 @@ function classifyChanges(
     }
     if (matched) continue
     if (
+      releaseInput ||
       Object.values(relationshipPolicy.repositoryScriptGroups).some(
         (group) =>
           group.ownsInputs &&

@@ -14,8 +14,8 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "839293ccdea40185f0408419e64224fce760b219a32fc9c1e8580e5bf49a6a4d",
-        "guide": "d89302dd045712e4c510fe1f85da2fec803c21f3332166bbb8f65051dac01254",
+        "contract": "e0f0efec88bb2df564ed7d278f73a36ec4285f6cdbb14447affe1844b4472136",
+        "guide": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
         "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
       },
       "version": "0.5.1"

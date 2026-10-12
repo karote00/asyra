@@ -1,3 +1,10 @@
+import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  actionToolSemantics
+} from './tool-contract'
 import type { createInspectionEvidence } from '../common-apis/inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { reviewDesign } from '../common-apis/design-review'
@@ -6,6 +13,17 @@ export const createDesignReviewAction = (
   review: typeof reviewDesign = reviewDesign,
   evidence?: ReturnType<typeof createInspectionEvidence>
 ): AiActionDefinition<{ elementId: string }> => ({
+  ...actionToolSemantics(
+    AiActionNames.REVIEW_DESIGN,
+    toolResultObject({
+      complete: toolResultBoolean,
+      truncated: toolResultBoolean,
+      checkedElements: toolResultCount,
+      measuredTextCount: toolResultCount,
+      measuredTextIds: toolResultIds,
+      findings: { type: 'array', items: { type: 'object' } }
+    })
+  ),
   name: AiActionNames.REVIEW_DESIGN,
   description:
     'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. No screenshot. Fix concrete findings using current IDs, then review again before visual inspection. Complete means the supported checks ran, not that design quality or brief compliance passed. Truncation and unavailable checks must not be reported as full verification.',

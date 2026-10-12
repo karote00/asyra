@@ -114,7 +114,9 @@ jobs:
       FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
     if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'functional') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The serial functional inventory can exceed 30m on a slower runner.
+    # Keep per-test timeouts and fail-fast; allow setup and report cleanup too.
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code

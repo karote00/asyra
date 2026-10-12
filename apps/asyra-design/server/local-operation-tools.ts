@@ -1,4 +1,11 @@
 import {
+  toolResultCount,
+  toolResultObject,
+  toolResultString,
+  toolSemantics,
+  actionToolSemantics
+} from '../src/ai/tool-contract'
+import {
   createPreparedDesignReview,
   preparedReviewDefinition,
   type PreparedRecipePacket
@@ -975,6 +982,16 @@ export const createLocalOperationTools = (
         ? [
             {
               type: 'function',
+              ...toolSemantics(
+                {
+                  anyOf: [
+                    toolResultObject({ apis: { type: 'array' } }),
+                    toolResultObject({ categories: { type: 'array' } })
+                  ]
+                },
+                'read',
+                ['tool-registry']
+              ),
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
@@ -1058,6 +1075,23 @@ export const createLocalOperationTools = (
         ? [
             {
               type: 'function',
+              ...toolSemantics(
+                toolResultObject({
+                  actionResults: {
+                    type: 'array',
+                    items: toolResultObject({
+                      actionId: toolResultString,
+                      actionName: toolResultString,
+                      result: true
+                    })
+                  },
+                  batchSummary: toolResultObject({
+                    actionCount: toolResultCount
+                  })
+                }),
+                'mutation',
+                ['document']
+              ),
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
                 'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
@@ -1124,6 +1158,19 @@ export const createLocalOperationTools = (
         )
         .map((action) => ({
           type: 'function',
+          ...actionToolSemantics(
+            action.name,
+            toolResultObject({
+              actionResults: {
+                type: 'array',
+                items: toolResultObject({
+                  actionId: toolResultString,
+                  actionName: toolResultString,
+                  result: true
+                })
+              }
+            })
+          ),
           name: action.name,
           description: action.description,
           inputSchema: {
@@ -1841,6 +1888,7 @@ export const createLocalOperationTools = (
               phase,
               accepted: false,
               readyForDetail: false,
+              inspectionIds,
               evidenceValidation: latestEvidenceValidation,
               message,
               independentAssessment: independent,

@@ -1,3 +1,10 @@
+import {
+  createAiToolContract,
+  createAiToolMiddleware,
+  createAiInvoker
+} from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from './tool-schema'
+import { designActionOutcome } from './tool-contract'
 import core from '../contexts'
 import { createRetainedDesignContext } from '../common-apis/retained-design-context'
 import { observeDesignChanges } from '../common-apis/design-review'
@@ -47,28 +54,44 @@ export interface CreateAiRuntimeInputOptions {
 export const observeAiAction = (
   definition: AiActionDefinition,
   now: () => number = () => performance.now()
-): AiActionDefinition => ({
-  ...definition,
-  execute: async (input, context) => {
-    const started = now()
-    let result
-    try {
-      result = await definition.execute(input, context)
-    } catch (error) {
-      recordActionFailure(error, definition.name, Math.max(0, now() - started))
-      throw error
-    }
-    if (!result || typeof result !== 'object' || Array.isArray(result))
-      return result
-    return {
-      ...result,
-      actionObservation: {
-        handlerMs: Math.max(0, now() - started),
-        executor: 'app-browser'
+): AiActionDefinition => {
+  const contract = createAiToolContract(definition)
+  const middleware = createAiToolMiddleware({
+    resolve: (name) => (name === contract.name ? contract : undefined),
+    validate: operationInputIssue,
+    classify: designActionOutcome
+  })
+  return {
+    ...contract,
+    execute: async (input, context) => {
+      const started = now()
+      let result
+      try {
+        result = await createAiInvoker({
+          execute: () => definition.execute(input, context),
+          middleware: [middleware]
+        }).invoke({ name: contract.name, input, signal: context.signal })
+      } catch (error) {
+        recordActionFailure(
+          error,
+          definition.name,
+          Math.max(0, now() - started)
+        )
+        throw error
+      }
+      if (!result || typeof result !== 'object' || Array.isArray(result))
+        return result
+      return {
+        ...result,
+        toolOutcome: designActionOutcome(result),
+        actionObservation: {
+          handlerMs: Math.max(0, now() - started),
+          executor: 'app-browser'
+        }
       }
     }
   }
-})
+}
 
 export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions

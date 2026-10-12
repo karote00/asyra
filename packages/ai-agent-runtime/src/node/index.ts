@@ -4,4 +4,8 @@ export * from './payload.js'
 export * from './report-cli.js'
 export * from './action-observation.js'
 export * from './source-identity.js'
-export { createRecordCollector } from './record-collector.js'
+export {
+  createRecordCollector,
+  ExecutionRecordCollectionError
+} from './record-collector.js'
+export { createFileRecordCollector } from './file-record-collector.js'

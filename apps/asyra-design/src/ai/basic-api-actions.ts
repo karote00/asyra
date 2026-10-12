@@ -9,7 +9,11 @@ import {
   viewportApis
 } from '../common-apis'
 import { basicApiContracts } from './basic-api-catalog'
-import { describeBasicApiResult } from './basic-api-results'
+import { toolSemantics } from './tool-contract'
+import {
+  describeBasicApiResult,
+  basicApiResultSchema
+} from './basic-api-results'
 import type { BasicApiOwner } from './basic-api-contracts'
 
 type ApiOwners = Record<BasicApiOwner, object>
@@ -31,6 +35,13 @@ export const createBasicApiActions = (
   getOwners: () => ApiOwners = owners
 ): AiActionDefinition[] =>
   basicApiContracts.map((contract) => ({
+    ...toolSemantics(
+      basicApiResultSchema(contract),
+      contract.effect === 'read' ? 'read' : 'mutation',
+      ['viewport', 'selection'].includes(contract.effect)
+        ? [contract.effect]
+        : ['document']
+    ),
     name: contract.name,
     description: contract.description,
     inputSchema: contract.inputSchema,

@@ -14,6 +14,8 @@ export interface ExecutionRecord {
 
 export interface ExecutionRecordSink {
   write(record: ExecutionRecord): void
+  /** Durable record barrier without closing the producer. Required by collectors. */
+  checkpoint?(): ReturnType<ExecutionRecordSink['flush']>
   writePayload?(
     requestId: string,
     callId: string,

@@ -1,3 +1,8 @@
+import {
+  toolResultObject,
+  toolResultStatus,
+  toolResultIds
+} from './tool-contract'
 import type { BasicApiContract } from './basic-api-contracts'
 
 /** Interpret only declared owner return contracts. Never reread the document or invent before/after data. */
@@ -150,4 +155,44 @@ export const describeBasicApiResult = (
         }
       : {})
   }
+}
+
+/** The value column is intentionally opaque only for polymorphic public getters. */
+export const basicApiResultSchema = (contract: BasicApiContract) => {
+  const kind = contract.result.kind
+  let valueSchema: unknown = true
+  if (kind === 'created-items')
+    valueSchema = {
+      type: 'array',
+      items: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] }
+    }
+  else if (kind === 'boolean-items')
+    valueSchema = { type: 'array', items: { type: 'boolean' } }
+  else if (kind === 'status-items')
+    valueSchema = {
+      type: 'array',
+      items: { enum: ['changed', 'unchanged', 'unavailable'] }
+    }
+  else if (kind === 'moves' || kind === 'removed')
+    valueSchema = toolResultObject({ [kind]: { type: 'array' } })
+  const fields: Record<string, unknown> = {
+    status: toolResultStatus,
+    value: valueSchema
+  }
+  if (kind === 'created-items') fields.appliedElementIds = toolResultIds
+  if (kind === 'created-items' || kind === 'boolean-items')
+    fields.items = {
+      type: 'array',
+      items: toolResultObject({
+        index: { type: 'integer', minimum: 0 },
+        status: toolResultStatus,
+        value: true
+      })
+    }
+  if (kind === 'status-items') fields.reviewElementIds = toolResultIds
+  if (kind === 'transient' || kind === 'value') {
+    fields.execution = { const: 'complete' }
+    fields.application = { const: kind === 'value' ? 'read-only' : 'transient' }
+  }
+  return toolResultObject(fields)
 }

@@ -24,6 +24,19 @@ const action = (
   name: string,
   schema: unknown = inputSchema()
 ): AiActionDefinition<ResizeArgs, { resized: true }> => ({
+  revision: 1,
+  outputSchema: {
+    type: 'object',
+    required: ['resized'],
+    properties: { resized: { const: true } }
+  },
+  effect: 'mutation',
+  resources: ['document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   description: `Execute ${name}`,
   execute: vi.fn(async (): Promise<{ resized: true }> => ({
     resized: true
@@ -84,19 +97,14 @@ describe('AI action registry', () => {
     expect(Object.isFrozen(descriptions[0].inputSchema)).toBe(true)
   })
 
-  it('registers only the input schema and executor without a client schema surface', () => {
+  it('registers the common contract and executor without an alternate schema surface', () => {
     const registry = createAiActionRegistry()
     const resize = action('resize')
 
     registry.register(resize)
 
     const registered = registry.get('resize')
-    expect(registered).toEqual({
-      description: 'Execute resize',
-      execute: resize.execute,
-      inputSchema: inputSchema(),
-      name: 'resize'
-    })
+    expect(registered).toEqual(resize)
     expect(registered).not.toHaveProperty('schema')
     expect(registered).not.toHaveProperty('parse')
     expect(registered).not.toHaveProperty('prepare')
@@ -158,4 +166,33 @@ describe('AI action registry', () => {
     )
     expectRegistryError(() => second.list(), 'AI_ACTION_REGISTRY_EMPTY')
   })
+})
+
+it('retains the common immutable contract while projecting only provider input fields', () => {
+  const registry = createAiActionRegistry()
+  const outputSchema = {
+    type: 'object',
+    required: ['resized'],
+    properties: { resized: { const: true } }
+  }
+  registry.register({
+    ...action('resize'),
+    revision: 1,
+    outputSchema,
+    effect: 'mutation',
+    resources: ['document'],
+    lifecycle: {
+      cancellation: 'before-dispatch',
+      retry: 'never',
+      output: 'value'
+    }
+  })
+  outputSchema.required.push('unexpected')
+  expect(registry.get('resize')).toMatchObject({
+    revision: 1,
+    outputSchema: { required: ['resized'] },
+    effect: 'mutation'
+  })
+  expect(registry.list()[0]).not.toHaveProperty('outputSchema')
+  expect(Object.isFrozen(registry.get('resize')?.outputSchema)).toBe(true)
 })

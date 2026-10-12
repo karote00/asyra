@@ -1,8 +1,11 @@
+import { createBrowserRecordOutbox } from './record-outbox'
 import { AI_EXECUTION_RECORD_ENDPOINT } from './action-batch-endpoint'
 import { basicApiPermissionRules } from './basic-api-catalog'
 import {
   createAiAgentRuntime,
-  createRecordDeliverySink,
+  createRecordDeliveryHost,
+  type ExecutionRecord,
+  type ExecutionRecordDeliveryIssue,
   type AiAgentRuntime,
   type AiProvider
 } from '@asyra/ai-agent-runtime'
@@ -42,6 +45,49 @@ export const createAiStartup = (
 ): AiStartup => {
   const confirmation = factories.createConfirmation()
   const history = factories.createHistory()
+  const outbox = createBrowserRecordOutbox()
+  let deliveryClosed = false
+  const deliveryOptions = {
+    outbox,
+    onIssue: (issue: ExecutionRecordDeliveryIssue) => {
+      console.warn(
+        JSON.stringify({ event: 'ai_record_delivery_incomplete', ...issue })
+      )
+    },
+    send: async (records: readonly ExecutionRecord[]) => {
+      const response = await fetch(AI_EXECUTION_RECORD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(records),
+        signal: AbortSignal.timeout(10_000)
+      })
+      if (!response.ok) {
+        const failure = await response.json().catch(() => undefined)
+        const code =
+          typeof failure?.code === 'string' &&
+          /^AI_RECORD_[A-Z_]+$/.test(failure.code)
+            ? failure.code
+            : 'AI_RECORD_DELIVERY_INCOMPLETE'
+        throw new Error(`HTTP ${response.status} ${code}`)
+      }
+      const receipt = await response.json()
+      if (
+        typeof receipt?.complete !== 'boolean' ||
+        typeof receipt?.requestId !== 'string' ||
+        !Number.isSafeInteger(receipt?.acknowledgedSequence)
+      )
+        throw new Error('Invalid execution record receipt')
+      return receipt
+    }
+  }
+  const deliveryHost = createRecordDeliveryHost(deliveryOptions)
+  let recovery = Promise.resolve()
+  const reconnect = () => {
+    if (deliveryClosed) return
+    recovery = recovery.then(async () => {
+      if (!deliveryClosed) await deliveryHost.recover()
+    })
+  }
   let runtime: AiAgentRuntime | undefined
   try {
     const provider = factories.createProvider()
@@ -69,34 +115,34 @@ export const createAiStartup = (
           [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'allow'
         },
         provider,
-        createRecordingSink: () =>
-          createRecordDeliverySink({
-            send: async (records) => {
-              const response = await fetch(AI_EXECUTION_RECORD_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(records),
-                signal: AbortSignal.timeout(10_000)
-              })
-              if (!response.ok)
-                throw new Error('Execution record delivery failed')
-              const receipt = await response.json()
-              if (typeof receipt?.complete !== 'boolean')
-                throw new Error('Invalid execution record receipt')
-              return receipt
+        createRecordingSink: () => deliveryHost.createSink(),
+        ownedResources: [
+          {
+            dispose: async () => {
+              deliveryClosed = true
+              globalThis.removeEventListener?.('online', reconnect)
+              await recovery
+              await deliveryHost.dispose()
+              await outbox.close()
             }
-          }),
+          }
+        ],
         requestConfirmation: confirmation.requestConfirmation,
         transactionRunner: createAiTransactionRunner({ history })
       })
     )
 
+    globalThis.addEventListener?.('online', reconnect)
+    reconnect()
     return Object.freeze({
       confirmation,
       history,
       runtime
     })
   } catch (error) {
+    deliveryClosed = true
+    globalThis.removeEventListener?.('online', reconnect)
+    void deliveryHost.dispose().finally(() => outbox.close())
     history.dispose()
     void Promise.allSettled([
       confirmation.dispose(),

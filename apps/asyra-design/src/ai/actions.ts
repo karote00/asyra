@@ -1,3 +1,12 @@
+import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
 import { AiActionExecutionError, runAiMutation } from '@asyra/ai-agent-runtime'
 import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
@@ -391,6 +400,19 @@ const createCompositionActions = (
         }
       }
     },
+    ...actionToolSemantics(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        compositionId: toolResultString,
+        appliedElementIds: toolResultIds,
+        roleToElementIds: {
+          type: 'object',
+          additionalProperties: toolResultIds
+        },
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.INSERT_VECTOR_COMPOSITION,
     inputSchema: PREPARED_DRAWING_INPUT_SCHEMA
   })
@@ -684,6 +706,14 @@ const createCompositionActions = (
           status: statusForMutation(appliedElementIds.length, skipped.length)
         })
       },
+      ...actionToolSemantics(
+        AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+        toolResultObject({
+          status: toolResultStatus,
+          appliedElementIds: toolResultIds,
+          skipped: { type: 'array' }
+        })
+      ),
       name: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       inputSchema: Object.freeze({
         additionalProperties: false,
@@ -777,6 +807,14 @@ const createCompositionActions = (
         status: statusForMutation(appliedElementIds.length, 0)
       })
     },
+    ...actionToolSemantics(
+      AiActionNames.REMOVE_AI_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        appliedElementIds: toolResultIds,
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.REMOVE_AI_COMPOSITION,
     inputSchema: Object.freeze({
       additionalProperties: false,
@@ -795,6 +833,15 @@ const createCompositionActions = (
     readonly compositionId: string
     readonly drawing: PreparedDrawingArtifact
   }> = Object.freeze({
+    ...actionToolSemantics(
+      AiActionNames.REPLACE_VECTOR_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        compositionId: toolResultString,
+        appliedElementIds: toolResultIds,
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.REPLACE_VECTOR_COMPOSITION,
     description:
       'Replace the referenced existing AI composition with a fully prepared drawing in one transaction. Use this instead of separate remove and insert actions. If insertion is incomplete, the old drawing is preserved.',
@@ -863,6 +910,16 @@ export const createAiActions = (
     options.waitForPaint ?? options.yieldToHost ?? waitForCooperativePaint
   const drawingDetailChoice: AiActionDefinition<RequestDrawingDetailChoiceArgs> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
+        toolResultObject({
+          status: { const: 'no-change' },
+          clarification: toolResultObject({
+            kind: { const: 'drawing-detail' },
+            optionIds: toolResultIds
+          })
+        })
+      ),
       name: AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       description:
         'Request an App-owned choice between supported drawing detail levels without mutating the document.',
@@ -891,6 +948,13 @@ export const createAiActions = (
     })
   const visibility: AiActionDefinition<SetElementVisibilityArgs> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.SET_ELEMENT_VISIBILITY,
+        toolResultObject({
+          changed: toolResultBoolean,
+          elementId: toolResultString
+        })
+      ),
       name: AiActionNames.SET_ELEMENT_VISIBILITY,
       description: 'Set whether one existing element is visible.',
       inputSchema: Object.freeze({
@@ -924,6 +988,10 @@ export const createAiActions = (
     })
 
   const selection: AiActionDefinition<SelectElementsArgs> = Object.freeze({
+    ...actionToolSemantics(
+      AiActionNames.SELECT_ELEMENTS,
+      toolResultObject({ selectedCount: toolResultCount })
+    ),
     name: AiActionNames.SELECT_ELEMENTS,
     description: `Select from 1 to ${AI_SELECTION_LIMIT} existing elements.`,
     inputSchema: Object.freeze({
@@ -957,6 +1025,16 @@ export const createAiActions = (
 
   const clarification: AiActionDefinition<{ readonly question: string }> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.REQUEST_CLARIFICATION,
+        toolResultObject({
+          status: { const: 'no-change' },
+          clarification: toolResultObject({
+            kind: { const: 'question' },
+            question: toolResultString
+          })
+        })
+      ),
       name: AiActionNames.REQUEST_CLARIFICATION,
       description:
         'Ask one concise question for material ambiguity, user-only resources, or external-tool/security permission when needed. App editing itself requires no approval. Return this action alone without mutations and wait for the answer.',
@@ -990,6 +1068,14 @@ export const createAiActions = (
     readonly outcome: 'completed' | 'unsupported'
     readonly message: string
   }> = {
+    ...actionToolSemantics(
+      AiActionNames.REPORT_OUTCOME,
+      toolResultObject({
+        status: { const: 'no-change' },
+        outcome: { enum: ['completed', 'unsupported'] },
+        message: toolResultString
+      })
+    ),
     name: AiActionNames.REPORT_OUTCOME,
     description:
       'End this request with a specific user-facing result or capability limitation. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',

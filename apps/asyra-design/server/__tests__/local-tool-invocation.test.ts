@@ -1,6 +1,9 @@
+import { toolSemantics } from '../../src/ai/tool-contract'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
+  localToolOutcome,
   invokeLocalTool,
   LocalToolInputError,
   observeLocalToolExecution
@@ -15,9 +18,97 @@ import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
 const signal = () => new AbortController().signal
 const definition = {
+  ...toolSemantics({ type: 'object' }, 'prepare', ['request-artifacts']),
+  description: 'Prepare test data',
   name: 'registered-operation',
   inputSchema: { type: 'object', additionalProperties: false }
 }
+
+it('preserves an unknown child result and settlement through the native wrapper', async () => {
+  const result = {
+    actionResults: [
+      {
+        actionId: 'one',
+        actionName: 'edit',
+        result: {
+          status: 'unknown',
+          toolOutcome: { status: 'unknown', settlement: 'unknown' }
+        }
+      }
+    ],
+    batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] }
+  }
+  const call = vi.fn(async () => JSON.stringify(result))
+  const reply = await invokeLocalTool({ call }, definition, {}, signal())
+  expect(JSON.parse(reply.text)).toMatchObject({
+    ...result,
+    toolOutcome: { status: 'unknown', settlement: 'unknown' }
+  })
+  expect(reply.success).toBe(false)
+  expect(call).toHaveBeenCalledOnce()
+})
+
+it('retains owner evidence when optional execution observation throws', async () => {
+  const result = {
+    settlement: 'completed',
+    actionResults: [
+      { actionId: 'one', actionName: 'edit', result: { status: 'complete' } }
+    ]
+  }
+  const call = vi.fn(async () => JSON.stringify(result))
+  const reply = await invokeLocalTool(
+    { call, resultIssue: () => 'Required output identity is missing' },
+    definition,
+    {},
+    signal(),
+    () => {
+      throw new Error('Observer unavailable')
+    }
+  )
+  expect(JSON.parse(reply.text)).toMatchObject({
+    code: 'TOOL_RESULT_INVALID',
+    settlement: 'completed',
+    executionResult: result
+  })
+  expect(call).toHaveBeenCalledOnce()
+})
+
+it('does not let successful child receipts erase incomplete parent settlement', () => {
+  expect(
+    localToolOutcome({
+      status: 'partial',
+      actionResults: [{ result: { status: 'complete' } }]
+    })
+  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+})
+
+it('includes compact successful acknowledgements when combining child settlements', () => {
+  expect(
+    localToolOutcome({
+      batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] },
+      actionResults: [
+        { result: { status: 'failed', settlement: 'not-started' } }
+      ]
+    })
+  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+})
+
+it.each(
+  (['success', 'partial', 'failed', 'unknown'] as const).flatMap((status) =>
+    (['not-started', 'completed', 'partial', 'unknown'] as const).map(
+      (settlement) => ({ status, settlement })
+    )
+  )
+)(
+  'preserves a single normalized child $status/$settlement independently',
+  (outcome) => {
+    expect(
+      localToolOutcome({
+        actionResults: [{ result: { toolOutcome: outcome } }]
+      })
+    ).toMatchObject(outcome)
+  }
+)
 
 it('preflights every advertised App tool family before its owner executes', async () => {
   const actions = [
@@ -39,6 +130,17 @@ it('preflights every advertised App tool family before its owner executes', asyn
     },
     vi.fn()
   )
+  expect(
+    operations.definitions.find(
+      (tool) => tool.name === AiActionNames.READ_DESIGN_CONTEXT
+    )
+  ).toMatchObject({ effect: 'read', resources: ['document'] })
+  expect(
+    operations.definitions.find(
+      (tool) => tool.name === AiActionNames.SELECT_ELEMENTS
+    )
+  ).toMatchObject({ effect: 'mutation', resources: ['selection'] })
+  expect(designs.definitions[0].lifecycle.output).toBe('request-artifact')
   const owners = [
     designs,
     images,
@@ -49,6 +151,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
   for (const owner of owners) {
     const call = vi.spyOn(owner, 'call')
     for (const tool of owner.definitions) {
+      expect(() => createAiToolContract(tool), tool.name).not.toThrow()
       const reply = await invokeLocalTool(owner, tool, null, signal())
       expect(reply.success, tool.name).toBe(false)
       expect(JSON.parse(reply.text), tool.name).toMatchObject({
@@ -101,16 +204,16 @@ it('rejects extra fields without guessing aliases and allows a corrected call', 
 })
 
 it.each([
-  [{ available: false, message: 'Source failed' }, false, 'unavailable'],
+  [{ available: false, message: 'Source failed' }, false, 'failed'],
   [
     { available: true, applicable: false, findings: ['overflow'] },
     false,
-    'unavailable'
+    'failed'
   ],
-  [{ accepted: false, checks: [{ status: 'fail' }] }, true, 'usable'],
+  [{ accepted: false, checks: [{ status: 'fail' }] }, true, 'success'],
   [{ status: 'partial', skipped: ['locked'] }, false, 'partial'],
   [{ available: true, complete: false }, false, 'partial'],
-  [{ available: true, partial: true, imageScope: 'region' }, true, 'usable'],
+  [{ available: true, partial: true, imageScope: 'region' }, true, 'success'],
   [{ actionResults: [{ result: { status: 'partial' } }] }, false, 'partial'],
   [
     {
@@ -508,7 +611,7 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   const page = JSON.parse(first.text)
   expect(page).toMatchObject({
     complete: false,
-    toolOutcome: { status: 'usable' }
+    toolOutcome: { status: 'success' }
   })
   expect(page.next.arguments.offset).toBe(page.apis.length)
   const next = await invokeLocalTool(
@@ -564,5 +667,94 @@ it.each([undefined, () => ({ batches: [] })])(
       executionResult: receipt,
       toolOutcome: { status: 'partial' }
     })
+  }
+)
+
+it('validates the declared native output schema even when the owner forgot a result callback', async () => {
+  const call = vi.fn(async () => JSON.stringify({ wrong: true }))
+  const reply = await invokeLocalTool(
+    { call },
+    {
+      ...definition,
+      description: 'Prepare a retained artifact',
+      revision: 1,
+      outputSchema: {
+        type: 'object',
+        required: ['artifactId'],
+        properties: { artifactId: { type: 'string' } }
+      },
+      effect: 'prepare',
+      resources: ['request-artifacts'],
+      lifecycle: {
+        cancellation: 'cooperative',
+        retry: 'never',
+        output: 'request-artifact'
+      }
+    },
+    {},
+    signal()
+  )
+  expect(reply.success).toBe(false)
+  expect(JSON.parse(reply.text)).toMatchObject({
+    code: 'TOOL_RESULT_INVALID',
+    stage: 'decoding',
+    settlement: 'unknown',
+    executionResult: { wrong: true }
+  })
+  expect(call).toHaveBeenCalledOnce()
+})
+
+it.each(['not-started', 'completed', 'partial', 'unknown'] as const)(
+  'preserves explicit failure settlement across native and browser adapters: %s',
+  async (settlement) => {
+    const { designActionOutcome } = await import('../../src/ai/tool-contract')
+    const receipt = {
+      status: 'failed',
+      settlement,
+      message: 'Owner rejected output'
+    }
+    expect(localToolOutcome(receipt)).toMatchObject({
+      status: 'failed',
+      settlement
+    })
+    expect(designActionOutcome(receipt)).toEqual({
+      status: 'failed',
+      settlement
+    })
+  }
+)
+it('keeps an uncertain native receipt unknown instead of claiming failure', () => {
+  expect(localToolOutcome({ status: 'unknown' })).toMatchObject({
+    status: 'unknown',
+    settlement: 'unknown'
+  })
+})
+
+it.each([false, true])(
+  'preserves explicit owner settlement after result rejection, semantic=%s',
+  async (semantic) => {
+    const value = { status: 'partial', settlement: 'partial', changed: 2 }
+    const call = vi.fn(async () => JSON.stringify(value))
+    const reply = await invokeLocalTool(
+      {
+        call,
+        ...(semantic
+          ? { resultIssue: () => 'Missing required receipt field' }
+          : {})
+      },
+      {
+        ...definition,
+        outputSchema: { type: 'object', required: ['requiredReceipt'] }
+      },
+      {},
+      signal()
+    )
+    expect(JSON.parse(reply.text)).toMatchObject({
+      code: 'TOOL_RESULT_INVALID',
+      settlement: 'partial',
+      toolOutcome: { settlement: 'partial' },
+      executionResult: value
+    })
+    expect(call).toHaveBeenCalledOnce()
   }
 )

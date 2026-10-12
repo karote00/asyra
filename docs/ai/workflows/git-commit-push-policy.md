@@ -75,8 +75,16 @@ Before every commit:
   remote action such as push, publish, or pull-request creation.
 - A request to create a pull request authorizes only the minimum source-branch
   push required for that pull request, unless the user says not to push.
-- Never force-push, rewrite remote history, publish a release, or merge a pull
-  request without explicit user authorization for that operation.
+- Push or PR authorization includes the fetch, rebase and conflict resolution
+  needed to integrate the intended current target branch. It also includes an
+  exact `--force-with-lease=<source-ref>:<expected-remote-commit>` update of that
+  task's source branch when the rebase rewrites its published commits. This is
+  standing authorization; do not ask for separate approval for these steps.
+- Before rewriting, fetch and inspect both target and source. Preserve unexpected
+  remote commits; a rejected lease requires re-inspection, never a blind retry or
+  unconditional force. A no-push instruction still prohibits remote updates.
+- Publishing releases and merging pull requests require their own explicit user
+  authorization.
 - Registry publication may run from either `main` or a non-main feature branch.
   The branch name is not a readiness signal: publication requires a clean exact
   source commit, completed scoped gates, a reviewed artifact manifest and
@@ -102,10 +110,9 @@ verification, not the first place to discover locally detectable failures.
    source branch. If the target contains commits not included in the source,
    rebase the source branch onto the fetched target before continuing. Recheck
    target freshness immediately before every push; if it advanced during
-   validation, rebase and repeat affected local checks before pushing. This
-   requirement does not authorize force-pushing or rewriting already-shared
-   source history; if the required rebase would need either, stop and obtain
-   explicit authorization.
+   validation, rebase and repeat affected local checks before pushing. Necessary
+   source-branch history updates are already covered by Push Authority; use the
+   inspected remote commit as the exact lease and do not request approval again.
 3. Run the required local checks after the last relevant edit. Cover focused
    behavior tests, applicable lint/typecheck/build, generated-file checks and
    directly affected repository contracts. For a new workspace, include
@@ -143,10 +150,11 @@ publication or deployment permission, or replace a requested review.
 
 ## History Safety
 
-- Do not amend, squash, rebase, reset, prune, or otherwise rewrite commits that
-  may already be shared unless the user explicitly authorizes the history
-  operation.
-- Prefer a new corrective commit over rewriting an existing commit.
+- Necessary task-branch rebases and exact lease-protected updates follow the
+  standing Push Authority above. Other history rewrites, destructive resets or
+  pruning require explicit authorization; never rewrite the protected main branch.
+- Prefer a new corrective commit for ordinary fixes; rebase when integrating the
+  intended current target branch.
 - Main-branch integration remains a human-owned pull-request action unless the
   user explicitly requests an allowed remote operation.
 

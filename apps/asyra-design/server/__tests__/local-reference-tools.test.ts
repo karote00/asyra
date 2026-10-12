@@ -1,6 +1,9 @@
 import { expect, it, vi } from 'vitest'
 import sharp from 'sharp'
-import { createLocalReferenceTools } from '../local-reference-tools'
+import { createLocalReferenceTools as createOwner } from '../local-reference-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalReferenceTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { createLocalImageTools } from '../local-image-tools'
 import { localToolContent } from '../local-operation-tools'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
@@ -248,7 +251,7 @@ it('imports originals larger than four megapixels without resizing', async () =>
   })
     .png()
     .toBuffer()
-  const add = vi.fn()
+  const add = vi.fn((_image: { dataUrl: string }) => 0)
   const tools = createLocalReferenceTools(
     add,
     async () => new Response(png, { headers: { 'content-type': 'image/png' } })
@@ -567,7 +570,7 @@ it('retries a failed acquisition without replaying successful siblings', async (
     await tools.call('import_reference_image', args, signal)
   )
   expect(failed.references[0].available).toBe(false)
-  expect(localToolOutcome(failed).status).toBe('unavailable')
+  expect(localToolOutcome(failed).status).toBe('failed')
   expect(
     JSON.parse(await tools.call('import_reference_image', args, signal))
       .references[0].available
@@ -599,7 +602,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
     available: false,
     recoverable: true,
     toolOutcome: {
-      status: 'unavailable',
+      status: 'failed',
       issues: expect.arrayContaining([
         expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
       ])

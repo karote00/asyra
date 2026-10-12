@@ -10,6 +10,15 @@ import {
   operationInputIssue
 } from '../operation-input-schema'
 
+it('enforces declared object property counts', () => {
+  const schema = { type: 'object', minProperties: 1, maxProperties: 2 }
+  expect(operationInputIssue({}, schema)).toContain('too few properties')
+  expect(operationInputIssue({ x: 0 }, schema)).toBeUndefined()
+  expect(operationInputIssue({ x: 0, y: 0, z: 0 }, schema)).toContain(
+    'too many properties'
+  )
+})
+
 it('does not bypass overlapping oneOf branches when one branch has a matching discriminator', () => {
   expect(
     operationInputIssue(

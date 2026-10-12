@@ -1,4 +1,11 @@
 import {
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  actionToolSemantics
+} from './tool-contract'
+import {
   AiActionExecutionError,
   runAiMutation,
   type AiActionDefinition
@@ -39,6 +46,15 @@ export const createRetainedFillAction = (
     update: fillApis.updateFillFieldsBatch
   }
 ): AiActionDefinition<{ mappings: FillMapping[] }> => ({
+  ...actionToolSemantics(
+    AiActionNames.MAP_RETAINED_FILLS,
+    toolResultObject({
+      status: toolResultStatus,
+      appliedCount: toolResultCount,
+      snapshots: toolResultIds,
+      coordinateSpace: { const: 'parent-local' }
+    })
+  ),
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
     'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; consumption releases the lease. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',

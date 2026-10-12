@@ -18,7 +18,24 @@ interface SetVisibilityArgs {
 const setVisibility: AiActionDefinition<SetVisibilityArgs> = {
   name: 'set_visibility',
   description: 'Set one existing element visibility.',
+  revision: 1,
+  effect: 'mutation',
+  resources: ['document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   inputSchema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['elementId', 'visible'],
+    properties: {
+      elementId: { type: 'string', minLength: 1 },
+      visible: { type: 'boolean' }
+    }
+  },
+  outputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['elementId', 'visible'],
@@ -31,15 +48,20 @@ const setVisibility: AiActionDefinition<SetVisibilityArgs> = {
     if (signal.aborted) {
       throw new Error('App action was aborted.')
     }
-    return elementApis.setElementVisible(elementId, visible, {
+    await elementApis.setElementVisible(elementId, visible, {
       undoable: true,
       sharedDelivery: 'transaction-end'
     })
+    return { elementId, visible }
   }
 }
 
 const actions = [setVisibility]
 ```
+
+The descriptor follows the shared [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md). Revision, effect, resources and lifecycle
+are host declarations. The output schema describes the value returned after the
+canonical operation completes; these fields do not grant permission or enable retries.
 
 `inputSchema` is the backend-facing JSON-compatible action description sent to
 the provider. The backend prepares each action's execution arguments and

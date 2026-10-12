@@ -1,12 +1,16 @@
-import { createAiInvoker } from '@asyra/ai-agent-runtime'
+import {
+  createAiInvoker,
+  createAiToolContract,
+  inspectAiToolResult,
+  type AiToolContractInput,
+  type AiToolOutcome
+} from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import { operationInputIssue } from './operation-input-schema'
+import { designActionOutcome } from '../src/ai/tool-contract'
 
-export interface LocalToolDefinition {
-  name: string
-  inputSchema: unknown
-}
+export interface LocalToolDefinition extends AiToolContractInput {}
 
 /** All owners share the same invocation and failure policy. */
 export interface LocalToolOwner {
@@ -53,12 +57,23 @@ const incomplete = (value: Record<string, unknown>) =>
 export const localToolOutcome = (value: unknown) => {
   if (!record(value)) throw new Error('App tool returned a non-object result')
   const results = Array.isArray(value.actionResults) ? value.actionResults : []
-  const receipts = results.flatMap((entry) =>
+  const receipts: Record<string, unknown>[] = results.flatMap((entry) =>
     record(entry) && record(entry.result)
       ? [{ ...entry.result, actionName: entry.actionName }]
       : []
   )
-  const observations: Record<string, unknown>[] = [value, ...receipts]
+  const childOutcomes = receipts.map((receipt) =>
+    designActionOutcome(
+      record(receipt.toolOutcome) ? receipt.toolOutcome : receipt
+    )
+  )
+  const observations: Record<string, unknown>[] = [
+    value,
+    ...receipts.map((receipt, index) => ({
+      ...receipt,
+      ...childOutcomes[index]
+    }))
+  ]
   const issues = observations
     .filter((item) => unavailable(item) || incomplete(item))
     .map((issue) => {
@@ -83,16 +98,43 @@ export const localToolOutcome = (value: unknown) => {
           record(entry) && typeof entry.count === 'number' && entry.count > 0
       )
     : false
-  let status: 'usable' | 'unavailable' | 'partial' = 'usable'
+  let status: AiToolOutcome['status'] =
+    value.status === 'unknown' ? 'unknown' : 'success'
   if (issues.length)
     status =
       observations.some(incomplete) ||
       acknowledged ||
       hasAcknowledgedActions(value.executionResult) ||
-      receipts.some((item) => !unavailable(item))
+      childOutcomes.some((outcome) => outcome.status === 'success')
         ? 'partial'
-        : 'unavailable'
-  return { status, issues }
+        : 'failed'
+  if (
+    value.status === 'unknown' ||
+    childOutcomes.some((outcome) => outcome.status === 'unknown')
+  )
+    status = 'unknown'
+  let settlement: AiToolOutcome['settlement'] = 'unknown'
+  if (status === 'success') settlement = 'completed'
+  else if (status === 'partial') settlement = 'partial'
+  if (childOutcomes.length) {
+    const settlements = new Set(
+      childOutcomes.map((outcome) => outcome.settlement)
+    )
+    if (acknowledged) settlements.add('completed')
+    if (settlements.has('unknown')) settlement = 'unknown'
+    else if (!unavailable(value) && !incomplete(value)) {
+      if (settlements.has('partial') || settlements.size > 1)
+        settlement = 'partial'
+      else settlement = childOutcomes[0].settlement
+    }
+  }
+  if (
+    ['not-started', 'completed', 'partial', 'unknown'].includes(
+      String(value.settlement)
+    )
+  )
+    settlement = value.settlement as AiToolOutcome['settlement']
+  return { status, settlement, issues }
 }
 
 const hasAcknowledgedActions = (value: unknown): boolean => {
@@ -125,7 +167,12 @@ export const localToolFailureReply = (
     toolOutcome: {
       status: hasAcknowledgedActions(details.executionResult)
         ? 'partial'
-        : 'unavailable',
+        : 'failed',
+      settlement: ['not-started', 'completed', 'partial', 'unknown'].includes(
+        String(details.settlement)
+      )
+        ? details.settlement
+        : 'unknown',
       issues: [{ code, message }]
     }
   })
@@ -159,7 +206,8 @@ export const invokeLocalTool = async (
   }
   try {
     reportPhase()
-    const issue = operationInputIssue(args, definition.inputSchema)
+    const contract = createAiToolContract(definition)
+    const issue = operationInputIssue(args, contract.inputSchema)
     if (issue) {
       const explanation = owner.explainInputIssue?.(definition.name, args)
       return localToolFailureReply(
@@ -184,8 +232,13 @@ export const invokeLocalTool = async (
     if (resultIssue) throw new Error(resultIssue)
     const toolOutcome =
       owner.resultOutcome?.(definition.name, value) ?? localToolOutcome(value)
+    const inspected = inspectAiToolResult(contract, value, {
+      outcome: toolOutcome,
+      validate: operationInputIssue
+    })
+    if (inspected.status === 'invalid') throw new Error(inspected.issue)
     return {
-      success: toolOutcome.status === 'usable',
+      success: toolOutcome.status === 'success',
       text: JSON.stringify({ ...value, toolOutcome })
     }
   } catch (error) {
@@ -193,7 +246,13 @@ export const invokeLocalTool = async (
     const inputFailure = error instanceof LocalToolInputError
     const batchError =
       error instanceof BrowserBatchExecutionError ? error : undefined
-    const evidence = [executionEvidence?.(), batchError?.receipt, decodedResult]
+    let observedEvidence: unknown
+    try {
+      observedEvidence = executionEvidence?.()
+    } catch {
+      /* Optional diagnostics must not prevent delivery of the owner's failure. */
+    }
+    const evidence = [observedEvidence, batchError?.receipt, decodedResult]
     // An empty observer snapshot must not hide an acknowledged owner result.
     const executionResult =
       evidence.find(hasAcknowledgedActions) ??
@@ -205,6 +264,13 @@ export const invokeLocalTool = async (
         executionResult.batches.length > 0) ||
         (Array.isArray(executionResult.actionResults) &&
           executionResult.actionResults.length > 0))
+    const reportedSettlement =
+      record(decodedResult) &&
+      ['not-started', 'completed', 'partial', 'unknown'].includes(
+        String(decodedResult.settlement)
+      )
+        ? (decodedResult.settlement as AiToolOutcome['settlement'])
+        : undefined
     return localToolFailureReply(
       localToolErrorMessage(error),
       inputFailure
@@ -221,7 +287,9 @@ export const invokeLocalTool = async (
         settlement:
           (inputFailure || stage === 'admission') && !hasPriorExecution
             ? 'not-started'
-            : (batchError?.receipt?.failure?.settlement ?? 'unknown'),
+            : (batchError?.receipt?.failure?.settlement ??
+              reportedSettlement ??
+              'unknown'),
         recovery:
           'Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.',
         ...(batchError ? { batchFailure: batchError.failure } : {}),
@@ -298,9 +366,7 @@ export const observeLocalToolExecution = async (
           return
         }
         observation.trace?.(
-          outcome.status === 'unavailable'
-            ? 'action_failed'
-            : 'action_completed',
+          outcome.status === 'failed' ? 'action_failed' : 'action_completed',
           {
             ...evidence,
             result,

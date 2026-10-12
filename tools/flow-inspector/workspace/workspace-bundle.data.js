@@ -169,7 +169,7 @@
               "artifact:tool-program"
             ],
             "conditions": [
-              "Preserve all registered capabilities and exact tool identities",
+              "Preserve registered identities; common immutable input/output, revision, effect and lifecycle contracts derive compact provider definitions. Browser and native adapters share canonical action effects; host validation rejects malformed output while preserving actual settlement and never replaying execution.",
               "App prompt directs internal edits without approval and contextual external-tool or security questions through request_clarification; await the answer when permission is needed and retain prior authorization without bypassing host security",
               "Validate the advertised input including nullable unions and unique-item constraints at one invocation boundary before dispatch; preserve specific preparation rejection reasons without calling the canvas owner",
               "Use one failure receipt boundary for every registered owner, never owner opt-ins, tool-name recovery lists or automatic replay of uncertain writes",
@@ -221,6 +221,12 @@
               "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse"
             ],
             "implementationBoundary": [
+              "packages/ai-agent-runtime/src/tool-contract.ts",
+              "packages/ai-agent-runtime/src/json-value.ts",
+              "packages/ai-agent-runtime/src/action-registry.ts",
+              "packages/ai-agent-runtime/src/__tests__/action-registry.test.ts",
+              "packages/ai-agent-runtime/src/__tests__/tool-contract.test.ts",
+              "packages/ai-agent-runtime/src/index.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
               "apps/asyra-design/server/local-design-workflow.ts",
@@ -249,9 +255,27 @@
               "apps/asyra-design/server/design-preparation-examples.ts",
               "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
               "apps/asyra-design/server/local-reference-tools.ts",
-              "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts"
+              "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+              "apps/asyra-design/src/ai/tool-contract.ts",
+              "apps/asyra-design/src/ai/tool-schema.ts",
+              "apps/asyra-design/src/ai/basic-api-actions.ts",
+              "apps/asyra-design/src/ai/basic-api-results.ts",
+              "apps/asyra-design/src/ai/arrangement-action.ts",
+              "apps/asyra-design/src/ai/organization-action.ts",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/context-action.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/retained-fill-action.ts",
+              "apps/asyra-design/src/ai/inspection.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "packages/ai-agent-runtime/src/provider.ts",
+              "packages/ai-agent-runtime/src/types.ts",
+              "packages/ai-agent-runtime/src/runtime.ts",
+              "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts"
             ],
             "specRefs": [
+              "#shared-tool-contract",
               "#capability-discovery-and-composition"
             ],
             "failureOwnerStepId": "compose"
@@ -644,6 +668,7 @@
               "artifact:visible-outcome"
             ],
             "conditions": [
+              "Keep the stable request objective separate from transient authored commentary; new authored call work supersedes older commentary, and inherited text resolves from live ancestry rather than becoming a copied authored purpose",
               "Preserve successful work and intended Undo commits",
               "Show settled explanations in the conversation without a duplicate canvas completion/Undo overlay; ordinary toolbar and keyboard history actions remain available",
               "Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate identical phase-purpose pairs and let lifecycle state override current work",
@@ -713,6 +738,7 @@
               "apps/asyra-design/src/ai/__tests__/document-interaction-lock.integration.test.ts"
             ],
             "specRefs": [
+              "#purpose-lifetime",
               "#evidence-and-completion"
             ],
             "failureOwnerStepId": "settle"
@@ -737,6 +763,7 @@
               "artifact:execution-trace"
             ],
             "conditions": [
+              "Persist diagnostic records in a host outbox before sending; retain unacknowledged streams on failure and recover through idempotent durable collection without replaying product operations",
               "Measure recording serialization, queue and write costs outside recursive trace emission; retain explicitly supplied original image assets locally by immutable digest and distinguish redacted URL resource variants without exposing credentials",
               "Shared invocation observes success, rejection, error and cancellation without bypassing canonical policies; next executes at most once",
               "Timestamp transport chunks without retaining bytes; report activity visibility independently from lifecycle coverage and export explicit local traces",
@@ -777,6 +804,11 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "packages/ai-agent-runtime/src/profiler/record-outbox.ts",
+              "packages/ai-agent-runtime/src/node/file-record-collector.ts",
+              "packages/ai-agent-runtime/src/node/__tests__/record-collector.test.ts",
+              "apps/asyra-design/src/ai/record-outbox.ts",
+              "apps/asyra-design/src/ai/__tests__/record-outbox.test.ts",
               "packages/ai-agent-runtime/src/types.ts",
               "apps/asyra-design/src/ai/conversation.ts",
               "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
@@ -839,6 +871,7 @@
               "apps/asyra-design/server/local-ai-provider.ts"
             ],
             "specRefs": [
+              "#diagnostic-delivery-lifetime",
               "#ownership-and-diagnostics",
               "#shared-runtime-profiler",
               "#execution-recording",

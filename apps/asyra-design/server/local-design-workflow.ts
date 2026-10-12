@@ -1,4 +1,9 @@
 import {
+  toolSemantics,
+  toolResultObject,
+  toolResultStatus
+} from '../src/ai/tool-contract'
+import {
   invokeLocalTool,
   observeLocalToolExecution,
   localToolOutcome,
@@ -45,6 +50,22 @@ export const createLocalDesignWorkflow = (
         ? [
             {
               ...preparation,
+              ...toolSemantics(
+                {
+                  anyOf: [
+                    toolResultObject({
+                      actionResults: { type: 'array' },
+                      completedSteps: { type: 'array' }
+                    }),
+                    toolResultObject({
+                      status: toolResultStatus,
+                      parts: { type: 'array', items: { type: 'object' } }
+                    })
+                  ]
+                },
+                'mutation',
+                ['document', 'request-artifacts']
+              ),
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
@@ -123,7 +144,7 @@ export const createLocalDesignWorkflow = (
       const completedSteps: string[] = []
       const runStep = async (
         owner: typeof designs | typeof operations,
-        step: { name: string; inputSchema: unknown; description: string },
+        step: import('./local-tool-invocation').LocalToolDefinition,
         arguments_: unknown
       ) => {
         signal.throwIfAborted()
@@ -150,7 +171,7 @@ export const createLocalDesignWorkflow = (
           step.description
         )
         const result = JSON.parse(text)
-        if (localToolOutcome(result).status === 'usable')
+        if (localToolOutcome(result).status === 'success')
           completedSteps.push(step.name)
         return result
       }
@@ -168,7 +189,7 @@ export const createLocalDesignWorkflow = (
       signal.throwIfAborted()
       if (input.plan !== undefined && review) {
         const planned = await runStep(operations, review, input.plan)
-        if (localToolOutcome(planned).status !== 'usable')
+        if (localToolOutcome(planned).status !== 'success')
           return JSON.stringify(stoppedAt(planned, review.name))
       }
       const receipt = await runStep(operations, apply, {
@@ -182,7 +203,7 @@ export const createLocalDesignWorkflow = (
           ? {}
           : { inspection: input.inspection })
       })
-      if (localToolOutcome(receipt).status !== 'usable')
+      if (localToolOutcome(receipt).status !== 'success')
         return JSON.stringify(stoppedAt(receipt, apply.name))
       if (input.response !== 'full') {
         delete receipt.context
@@ -455,14 +476,20 @@ export const createLocalDesignWorkflow = (
         )
         completed.push({ key: part.key, ...receipt })
         const outcome = localToolOutcome(receipt)
-        if (outcome.status !== 'usable')
+        if (outcome.status !== 'success') {
+          let status =
+            index || outcome.status === 'partial' ? 'partial' : 'failed'
+          if (outcome.status === 'unknown') status = 'unknown'
+          let settlement = index ? 'partial' : outcome.settlement
+          if (outcome.settlement === 'unknown') settlement = 'unknown'
           return JSON.stringify({
-            status:
-              index || outcome.status === 'partial' ? 'partial' : 'failed',
+            status,
+            settlement,
             parts: completed,
             failedPart: part.key,
             remainingParts: parts.slice(index + 1).map((entry) => entry.key)
           })
+        }
         const identity = receipt.actionResults?.find(
           (entry: { actionName: string }) =>
             entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN

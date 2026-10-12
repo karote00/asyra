@@ -21,11 +21,14 @@ import type {
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 import {
-  createLocalOperationTools,
+  createLocalOperationTools as createOwner,
   LocalOperationPreparationError,
   localToolContent,
   localToolResultExample
 } from '../local-operation-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalOperationTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { createLocalImageTools } from '../local-image-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 

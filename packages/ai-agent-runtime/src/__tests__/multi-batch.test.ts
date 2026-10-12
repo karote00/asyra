@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiProviderError,
+  AiToolContractError,
   AiActionExecutionError,
   AiTransactionSettlementError,
   createAiAgentRuntime,
@@ -39,6 +40,15 @@ describe('one invocation with dependent prepared batches', () => {
         {
           name: 'edit',
           description: 'Edit',
+          revision: 1,
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
           inputSchema: {},
           execute: async (args: { id: string }) => {
             if (args.id === 'broken')
@@ -101,6 +111,15 @@ describe('one invocation with dependent prepared batches', () => {
         {
           name: 'edit',
           description: 'Edit',
+          revision: 1,
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
           inputSchema: {},
           execute: async (args: { id: string }) => {
             writes.push(args.id)
@@ -143,6 +162,15 @@ describe('one invocation with dependent prepared batches', () => {
         {
           name: 'edit',
           description: 'Edit',
+          revision: 1,
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
           inputSchema: {},
           execute: async () => {
             throw new Error('Rejected before write')
@@ -181,6 +209,15 @@ describe('one invocation with dependent prepared batches', () => {
           {
             name: 'edit',
             description: 'Edit',
+            revision: 1,
+            outputSchema: true,
+            effect: 'mutation',
+            resources: ['test-document'],
+            lifecycle: {
+              cancellation: 'before-dispatch',
+              retry: 'never',
+              output: 'value'
+            },
             inputSchema: {},
             execute: async () => {
               if (mode === 'stop') controller.abort()
@@ -238,6 +275,15 @@ describe('one invocation with dependent prepared batches', () => {
         {
           name: 'edit',
           description: 'Edit',
+          revision: 1,
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
           inputSchema: {},
           execute: async (args: { id: string }, context) =>
             runAiMutation(context, () => {
@@ -301,6 +347,15 @@ describe('one invocation with dependent prepared batches', () => {
         {
           name: 'edit',
           description: 'Edit',
+          revision: 1,
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
           inputSchema: {},
           execute: async (args: { id: string }) => {
             expect(open).toBe(true)
@@ -452,4 +507,71 @@ describe('one invocation with dependent prepared batches', () => {
     expect(state.history).toEqual([])
     expect(state.isOpen()).toBe(false)
   })
+})
+
+it('preserves a rejected output and known settlement in the recoverable batch receipt', async () => {
+  const writes: string[] = []
+  let failedReceipt: unknown
+  const runtime = createAiAgentRuntime({
+    provider: {
+      requestActionBatch: async (_input, options) => {
+        if (!options.executeBatch) throw new Error('Batch executor unavailable')
+        failedReceipt = await options.executeBatch(batch('invalid-output'))
+        return batch('finish')
+      }
+    },
+    actionDefinitions: [
+      {
+        name: 'edit',
+        description: 'Edit a document',
+        revision: 1,
+        inputSchema: { type: 'object' },
+        outputSchema: { type: 'object' },
+        effect: 'mutation',
+        resources: ['document'],
+        lifecycle: {
+          cancellation: 'cooperative',
+          retry: 'never',
+          output: 'value'
+        },
+        execute: async (args: { id: string }) => {
+          writes.push(args.id)
+          if (args.id === 'invalid-output')
+            throw new AiToolContractError('output', 'Missing changed field', {
+              status: 'invalid',
+              reportedStatus: 'success',
+              settlement: 'completed',
+              issue: 'Missing changed field',
+              value: { actualId: 'created' }
+            })
+          return { changed: true }
+        }
+      }
+    ],
+    contextProvider: { getContext: async () => ({ ids: writes }) },
+    permissionPolicy: { evaluate: () => 'allow' },
+    confirmationHandler: { confirm: async () => true },
+    transactionRunner: { run: async (_label, execute) => execute() }
+  })
+  try {
+    expect(
+      (
+        await runtime.run({
+          intent: 'Draw',
+          signal: new AbortController().signal
+        })
+      ).status
+    ).toBe('executed')
+    expect(failedReceipt).toMatchObject({
+      failure: {
+        message: 'Missing changed field',
+        settlement: 'completed',
+        contractStage: 'output',
+        observedResult: { actualId: 'created' }
+      }
+    })
+    expect(writes).toEqual(['invalid-output', 'finish'])
+  } finally {
+    await runtime.dispose()
+  }
 })

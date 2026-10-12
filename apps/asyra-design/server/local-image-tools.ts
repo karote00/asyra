@@ -1,3 +1,9 @@
+import {
+  toolResultCount,
+  toolResultObject,
+  toolResultString,
+  toolSemantics
+} from '../src/ai/tool-contract'
 import sharp from 'sharp'
 import { LocalToolAccess } from './local-tool-scheduler'
 import {
@@ -215,6 +221,23 @@ export const createLocalImageTools = (
   const definitions = [
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          references: {
+            type: 'array',
+            minItems: 1,
+            items: toolResultObject({
+              referenceId: toolResultString,
+              attachmentIndex: toolResultCount,
+              validation: toolResultObject({
+                validity: { enum: ['decoded', 'invalid'] }
+              })
+            })
+          }
+        }),
+        'read',
+        ['references']
+      ),
       name: AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
       executionAccess: LocalToolAccess.INDEPENDENT,
       description:
@@ -236,6 +259,15 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          reviewId: toolResultString,
+          proposals: { type: 'array' }
+        }),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
       executionAccess: LocalToolAccess.INDEPENDENT,
       description:
@@ -259,6 +291,15 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          imageArtifactId: toolResultString,
+          changes: { type: 'array' }
+        }),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
       description:
         'Apply an explicit non-overlapping subset of same-request contour proposals. Creates a NEW artifact without touching the canvas; use its returned imageArtifactId in existing drawing actions. Retains anchors, fills, order and coordinate frame; validates combined topology and <=0.5 source-pixel displacement against the original trace across all refinements. Returns before/after evidence. Rejected proposals do not change any artifact. Choose according to the original reference; metrics cannot certify visual fidelity.',
@@ -280,6 +321,12 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({ imageArtifactId: toolResultString }),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
       description:
         'Separate an AI-selected solid native rect/oval background BEFORE tracing the residual foreground. Specify source-pixel bounds/fill, colorTolerance (0 exact to 32), and clipToBackground (true explicitly discards everything outside that region). Optional foregroundColors explicitly quantizes this region to the selected flat foreground palette plus background (instead of colorTolerance); omit for shading or uncertain colors. Only matching pixels inside that region are replaced by the native base, including matching interior details; this is compositing, not semantic object segmentation. Use only when a solid native base matches the intended design, never gradients/textures. Returns one imageArtifactId carrying background plus foreground; insert/replace it once, do not add another background. Coordinates share the returned sourceBounds, so exclusions never stretch foreground. No match fails; review the returned evidence and actual rendered result.',
@@ -287,6 +334,12 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({ imageArtifactId: toolResultString }),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.VTRACER,
       description:
         'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. A preserve-vectors plan may select a native-pixel region for a local detail or oversized conversion; no resampling occurs and the returned coordinates are local to that region. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Consider relevant shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
@@ -339,6 +392,15 @@ export const createLocalImageTools = (
     },
     {
       type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          analysisId: toolResultString,
+          paths: { type: 'array' }
+        }),
+        'prepare',
+        ['request-artifacts'],
+        'request-artifact'
+      ),
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
       executionAccess: LocalToolAccess.INDEPENDENT,
       description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,

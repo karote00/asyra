@@ -1,3 +1,4 @@
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import {
   preparedAssessmentInstructions,
   type PreparedRecipePacket
@@ -384,14 +385,10 @@ const runLocalAiProvider = async (
             validateReferences: imageTools.validateReferences,
             getNativeTools: (): NativeToolDescriptor[] =>
               activeToolGroups.flatMap((group) =>
-                (group.owner?.definitions ?? []).map(
-                  ({ name, description, inputSchema }) => ({
-                    namespace: group.name,
-                    name,
-                    description,
-                    inputSchema
-                  })
-                )
+                (group.owner?.definitions ?? []).map((definition) => ({
+                  ...definition,
+                  namespace: group.name
+                }))
               ),
             assessPrepared: async (packet, signal) => {
               const sourceSpanId = randomUUID()
@@ -623,7 +620,7 @@ const runLocalAiProvider = async (
                 `${name}.${definition.name}`,
                 {
                   owner,
-                  definition,
+                  definition: createAiToolContract(definition),
                   access:
                     'executionAccess' in definition
                       ? definition.executionAccess

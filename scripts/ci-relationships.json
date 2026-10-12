@@ -138,6 +138,7 @@
     }
   ],
   "frameworkReleaseReadinessPaths": [
+    "fixtures/framework-release-consumer/**",
     "scripts/framework-release-artifacts.js",
     "scripts/framework-release-packages.js",
     "scripts/release-package-artifacts.js",

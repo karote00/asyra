@@ -7,6 +7,7 @@ app-approved actions.
 
 - provider request, small control-envelope validation, and ordered action
   resolution
+- immutable common tool contracts and host-supplied validation middleware
 - permission and optional confirmation sequencing
 - one app transaction-runner invocation around accepted executors
 - bounded redaction, progress observation, audit, terminal results, and cleanup
@@ -31,6 +32,10 @@ context provider, `AiActionDefinition` catalog, permission policy, confirmation
 handler, transaction runner, and Feature-owned `AbortSignal`. Important
 surfaces include `createAiAgentRuntime(...)`, `createAiActionRegistry()`,
 `runtime.run(...)`, and `createGenericHttpAiProvider(...)`.
+Each action also declares revision, output schema, effect, resources and lifecycle.
+`createAiToolMiddleware()` enforces host schemas through `createAiInvoker()`;
+registration alone is a declaration. Recording uses `createRecordDeliveryHost()`
+with host-owned durable outbox storage. Diagnostic recovery never replays actions.
 
 ## Lifecycle, inputs, outputs, and failure
 

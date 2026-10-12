@@ -1,3 +1,9 @@
+import {
+  toolResultBoolean,
+  toolResultObject,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
 import { inspectionInputSchema } from './inspection-schema'
 import type {
   createInspectionEvidence,
@@ -19,6 +25,13 @@ export const createAiInspectionAction = (
   region?: { x: number; y: number; width: number; height: number }
   view?: 'overview' | 'detail'
 }> => ({
+  ...actionToolSemantics(
+    AiActionNames.INSPECT_DRAWING,
+    toolResultObject({
+      available: { const: true },
+      image: toolResultObject({ dataUrl: toolResultString })
+    })
+  ),
   name: AiActionNames.INSPECT_DRAWING,
   description:
     'Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
@@ -43,6 +56,10 @@ export const createInspectionValidationAction = (
   evidence: { sessionId: string; revision: number }
   scope?: InspectionScopeQuery
 }> => ({
+  ...actionToolSemantics(
+    AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+    toolResultObject({ current: toolResultBoolean })
+  ),
   name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
   description:
     'Check whether an App-issued inspection stamp still matches the canonical document. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Stamp-only checks take constant work. Missing, retired or changed evidence is not current.',

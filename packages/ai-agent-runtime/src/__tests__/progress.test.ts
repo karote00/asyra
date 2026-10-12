@@ -51,6 +51,15 @@ const visibilityAction = (
 }> => ({
   description: 'Set element visibility.',
   execute,
+  revision: 1,
+  outputSchema: true,
+  effect: 'mutation',
+  resources: ['test-document'],
+  lifecycle: {
+    cancellation: 'before-dispatch',
+    retry: 'never',
+    output: 'value'
+  },
   inputSchema: {
     additionalProperties: false,
     properties: {

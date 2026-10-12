@@ -1,4 +1,5 @@
 import { mkdir, open, writeFile, type FileHandle } from 'node:fs/promises'
+import { constants } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { serializeToolPayload } from './payload.js'
@@ -8,12 +9,17 @@ import type { ExecutionRecordSink } from '../profiler/records.js'
 export const createExecutionRecordSink = (
   directory: string,
   onError: (code: string) => void = (code) =>
-    console.warn(JSON.stringify({ event: 'ai_recording_failed', code }))
+    console.warn(JSON.stringify({ event: 'ai_recording_failed', code })),
+  resumeRequestId?: string
 ): ExecutionRecordSink => {
+  if (resumeRequestId && !/^[a-zA-Z0-9_-]{1,160}$/.test(resumeRequestId))
+    throw new Error('Invalid record identity')
   let pending = Promise.resolve()
   let file: FileHandle | undefined
-  let filename: string | null = null
-  let identity: string | undefined
+  let filename: string | null = resumeRequestId
+    ? join(directory, `${resumeRequestId}.jsonl`)
+    : null
+  let identity: string | undefined = resumeRequestId
   let failed = false
   let closed = false
   let settled: ReturnType<ExecutionRecordSink['flush']> | undefined
@@ -31,6 +37,16 @@ export const createExecutionRecordSink = (
       // Diagnostic error observers are also non-authoritative.
     }
   }
+  const ensureFile = async () => {
+    if (file || !filename) return
+    await mkdir(directory, { recursive: true, mode: 0o700 })
+    // Resume never creates a missing prefix. A fresh writer never overwrites evidence.
+    file = await open(
+      filename,
+      resumeRequestId ? constants.O_WRONLY | constants.O_APPEND : 'ax',
+      0o600
+    )
+  }
   let payloadSequence = 0
   const assets = new Map<
     string,
@@ -46,7 +62,7 @@ export const createExecutionRecordSink = (
   }[] = []
   return {
     writePayload(requestId, callId, phase, value) {
-      if (closed || failed || identity !== requestId)
+      if (closed || failed || resumeRequestId || identity !== requestId)
         return { status: 'failed', path: null }
       try {
         const started = performance.now()
@@ -92,6 +108,7 @@ export const createExecutionRecordSink = (
       if (
         closed ||
         failed ||
+        resumeRequestId ||
         identity !== requestId ||
         !['image/png', 'image/jpeg', 'image/webp'].includes(mediaType)
       )
@@ -135,29 +152,47 @@ export const createExecutionRecordSink = (
         identity = record.requestId
         filename = join(directory, `${identity}.jsonl`)
         const line = JSON.stringify(record) + '\n'
-        const target = filename
         pending = pending
           .then(async () => {
             if (failed) return
-            if (!file) {
-              await mkdir(directory, { recursive: true, mode: 0o700 })
-              // A collision is an error; existing evidence is never overwritten.
-              file = await open(target, 'ax', 0o600)
-            }
-            await file.writeFile(line)
+            await ensureFile()
+            await file?.writeFile(line)
           })
           .catch(fail)
       } catch (error) {
         fail(error)
       }
     },
+    checkpoint() {
+      if (closed)
+        return settled ?? Promise.resolve({ status: 'failed', path: filename })
+      const result = pending.then(async () => {
+        try {
+          if (!failed) {
+            await ensureFile()
+            await file?.sync()
+          }
+        } catch (error) {
+          fail(error)
+        }
+        let status: 'failed' | 'saved' | 'empty' = filename ? 'saved' : 'empty'
+        if (failed) status = 'failed'
+        return { status, path: filename }
+      })
+      pending = result.then(() => undefined)
+      return result
+    },
     flush() {
       if (settled) return settled
       closed = true
       settled = pending.then(async () => {
         try {
+          if (!failed) {
+            await ensureFile()
+            await file?.sync()
+          }
           await file?.close()
-          if (identity && !failed)
+          if (identity && !failed && !resumeRequestId)
             await writeFile(
               join(directory, `${identity}.recording.json`),
               JSON.stringify({ payloads, assets: [...assets.values()] }),
