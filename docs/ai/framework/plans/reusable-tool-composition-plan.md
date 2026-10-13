@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 6 COMPLETE - review Stage 7 before its goal and implementation.
+Status: STAGE 7 COMPLETE - review Stage 8 package acceptance before its goal.
 
 ## Current authority and stop boundary
 
@@ -1856,3 +1856,95 @@ Evidence: tmp/stage6-{red,provider,presentation,tsc,lint,proof,catalog-test}.log
 Self-review confirmed authored labels, cleanup, live ancestry, terminal precedence
 and late-event refusal remain owned by the existing state machine. No other App
 uses this Design provider adapter. No live model or broad CI was run.
+
+
+## Stage 7 - Deterministic aligned image checks
+
+### Reviewed Step Execution Card
+
+Owner: inspect. Current inspection uses isolated target/subtree pixels, white
+background and target-local region receipts; it does not capture composited canvas
+occluders. Existing image owner retains immutable reference attachments and hashes.
+The common check store owns pass/fail/stale results. Use these owners directly.
+
+Add check_drawing_image for a captured native region and an explicitly aligned,
+equal-size native reference crop. Require a stable checkId, inspectionId, baseline
+attachment/region, channel tolerance and allowed changed-pixel fraction. The
+primary agent owns correspondence and suitability; tools do not estimate camera,
+warps, semantics or architectural quality. Native-region dimensions must match
+actual decoded pixels. Overview/downsampled/mismatched/invalid evidence is
+unverified, never a pass. Whole drawings may use their entire native rectangle
+when supported by the existing capture bound. Do not enlarge capture limits.
+
+Compare normalized sRGB pixels composited on the capture's white background;
+report differing pixels, fraction, maximum channel error and local difference
+bounds mapped to target coordinates. Existing Sharp dependency only. Decode has
+byte/pixel/time limits, cancellation and bounded row yields. No model, remote
+fetch, image repair, arbitrary callback, resizing or opaque AI quality score.
+
+Bind each checkId to target region, immutable baseline digest/crop and tolerances;
+reject changed semantics instead of erasing a failure. A fresh inspection may
+replace the same obligation after correction. Validate browser dependency receipts
+before reads and after asynchronous computation. Retain results in the existing
+check store with inspection dependency; reuse the current result without decoding
+or pixel work, prove work count. Default check reads must validate these image
+receipts too. Unknown currency or cancellation cannot publish a new pass. Local
+changes stale only their dependent receipt; pan/zoom and unrelated edits preserve
+valid checks. No separate acceptance ledger or implicit visual certification.
+
+Integration: register a strict input/output contract in existing operation tools;
+request inspection and numeric attachment selectors remain control-plane, as
+existing review tools. Provider supplies the real image owner's referenceImages.
+Primary-agent visual acceptance remains required, sees stored image findings via
+read_design_checks and receives compact numbers rather than pixels. Invalid input
+rejects before decode; unsupported evidence returns explicit unverified recovery;
+failed comparisons remain visible until a current passing recheck.
+
+Scope: new inspect-owned comparator module, operation/provider adapter, existing
+image/reference public owner, constants/prompt/spec/Inspector and formal operation
+tests. No renderer, other Apps, Runtime interpreter or new dependency changes.
+Cases: exact match, local defect and bounds, crop exclusion, transparent color,
+unsupported dimensions/view, changed baseline/tolerance, fresh corrected capture,
+stale/current/unrelated receipts, missing reference, decode failure, cancellation
+and repeated-call zero work. Test production output schema and actual retained
+read/invalidation path. Run operations/provider/check-store suites, types, scoped
+lint/naming, formal flow proof and generated catalog equality. Add tests to an
+already included formal suite; no local-only tests. Self-review all entry/exit and
+failure paths before push. Stage 8 runs affected package complete suites.
+
+
+### Stage 7 self-review correction
+
+A formal recovery test showed that recording an unsupported first overview also
+froze its absent region, preventing a subsequent valid native capture. Keep the
+baseline/target/tolerances bound immediately, but bind a region only after a valid
+native region exists. Once bound it cannot change. This resolves the same pending
+obligation, not a new ledger or acceptance bypass. Added formal red/green coverage
+before correcting the owner. Also separated caller checkId from store resultId so
+returned arguments continue the same check without accidental prefix duplication.
+
+
+### Stage 7 closure
+
+Formal operation tests: 138 passed, including eight regional pixel cases and
+actual decoder-spy reuse (two initial decodes, zero repeated decodes). Provider
+transport acceptance proves capture and image check within one primary turn and
+one process; no additional evaluator. Initial provider fixture omitted required
+snapshot width/height and was corrected to the actual renderer contract; production
+delivery validation was not relaxed. Invalid first overview recovery was red then
+green. Existing provider/host/check-store/prompt suites passed (348 tests plus the
+subsequently added provider and recovery cases; three original conditional skips).
+Server/browser tsc, scoped lint (existing console warnings only), naming and eight
+catalog tests passed. Candidate 5cd544a0-2930-401f-8b06-7aafe980c8d6,
+source 1673923d24feaaf462a4a5f575e9d7ad9e925870c83eafb12682769ab591c397,
+contract review b9705efbbb5972e7a1303ee7c02795de945d694617b81bf8385579399dd9603e
+accepted. Same-source proof: 30 obligations, four exact negative scenarios and
+recovery pass. Evidence: tmp/stage7-{final-operations,integrated,provider-final,
+last-tsc,proof,catalog-test}.log. Production owner is Design only; shared Runtime
+contracts/renderer and other Apps are unchanged in this stage.
+
+Review covered input validation, metadata and native dimensions, fixed criterion,
+resultId/checkId continuation, common result storage, targeted/default reads,
+final currency validation, partial/unverified paths, cancellation before publication
+and independent-region reuse. This is bounded aligned pixel evidence, not semantic
+photo matching or a speed claim for an entire model drawing. No live101.

@@ -4635,3 +4635,96 @@ it.each(['active', 'settled'] as const)(
     expect(executeBatch).toHaveBeenCalledOnce()
   }
 )
+
+it('dispatches capture then deterministic image checking in the same provider turn without another model', async () => {
+  const png = `data:image/png;base64,${(
+    await sharp({
+      create: { width: 4, height: 4, channels: 4, background: 'white' }
+    })
+      .png()
+      .toBuffer()
+  ).toString('base64')}`
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'inspect_drawing',
+    toolArguments: {
+      arguments: {
+        elementId: 'part',
+        region: { x: 0, y: 0, width: 4, height: 4 }
+      }
+    },
+    followupTool: (receipt) => ({
+      name: 'check_drawing_image',
+      args: {
+        checkId: 'surface',
+        inspectionId: (
+          receipt.actionResults as { result: { inspectionId: string } }[]
+        )[0].result.inspectionId,
+        referenceImageIndex: 0,
+        referenceRegion: { x: 0, y: 0, width: 4, height: 4 },
+        channelTolerance: 0,
+        maxDifferentFraction: 0
+      }
+    })
+  })
+  spawn.mockReturnValue(server.child)
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      metadata: {
+        imageAttachments: [{ dataUrl: png, mediaType: 'image/png', size: 100 }]
+      },
+      actions: ['inspect_drawing', 'validate_inspection_evidence'].map(
+        (name) => ({ name, description: name, inputSchema: { type: 'object' } })
+      )
+    },
+    {
+      environment,
+      executeBatch: async (request) => ({
+        context: {},
+        actionResults: request.actions.map(
+          (action): AiBatchReceipt['actionResults'][number] => ({
+            actionId: action.id,
+            actionName: action.name,
+            result:
+              action.name === 'inspect_drawing'
+                ? {
+                    available: true,
+                    image: { dataUrl: png, width: 4, height: 4 },
+                    imageScope: 'region',
+                    background: '#ffffff',
+                    evidence: {
+                      sessionId: 'images',
+                      revision: 1,
+                      receiptId: 'part'
+                    }
+                  }
+                : {
+                    current: true,
+                    validatedAt: { sessionId: 'images', revision: 1 }
+                  }
+          })
+        )
+      })
+    }
+  )
+  const packet = server.packets.find(
+    (packet) => packet.id === 100 && 'result' in packet
+  )
+  expect(packet).toBeDefined()
+  const reply = packet as unknown as {
+    result: { contentItems: { text: string }[] }
+  }
+  const result = JSON.parse(reply.result.contentItems[0].text)
+  expect(result).toMatchObject({
+    checkId: 'surface',
+    resultId: 'image:surface',
+    status: 'pass',
+    appearance: 'unverified',
+    pixelReads: 16
+  })
+  expect(
+    server.packets.filter((packet) => packet.method === 'turn/start')
+  ).toHaveLength(1)
+  expect(spawn).toHaveBeenCalledTimes(1)
+})

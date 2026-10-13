@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import type { VisualAssessmentInput } from '../local-visual-assessment'
 import { reviewPlanExample } from '../local-design-review'
 import { runInNewContext } from 'node:vm'
@@ -6671,4 +6672,339 @@ it('keeps review replies and final settlement blocked by tool findings without r
       .read({ includePassed: true })
       .items.filter((item) => item.origin === 'main-agent')
   ).toEqual(visual)
+})
+
+describe('deterministic regional image checks', () => {
+  const region = { x: 10, y: 20, width: 4, height: 4 }
+  const setup = async () => {
+    const baseline = await sharp({
+      create: { width: 8, height: 8, channels: 4, background: 'white' }
+    })
+      .png()
+      .toBuffer()
+    const exact = await sharp(baseline)
+      .extract({ left: 2, top: 2, width: 4, height: 4 })
+      .png()
+      .toBuffer()
+    let image = exact
+    let current = true
+    let revision = 1
+    let validations = 0
+    let validationHook: () => void = () => undefined
+    const invalidReceipts = new Set<string>()
+    const results = createDesignCheckResults()
+    const images = createLocalImageTools({
+      metadata: {
+        imageAttachments: [
+          { dataUrl: `data:image/png;base64,${baseline.toString('base64')}` }
+        ]
+      }
+    })
+    const tools = createLocalOperationTools(
+      [
+        AiActionNames.INSPECT_DRAWING,
+        AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (a) => a, resolveBatch: (b) => b, checkResults: results },
+      async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result:
+            action.name === AiActionNames.INSPECT_DRAWING
+              ? {
+                  available: true,
+                  background: '#ffffff',
+                  imageScope: 'region',
+                  evidence: {
+                    sessionId: 'pixel-check',
+                    revision,
+                    receiptId: `region-${revision}`
+                  },
+                  image: {
+                    dataUrl: `data:image/png;base64,${image.toString('base64')}`
+                  }
+                }
+              : {
+                  current:
+                    (++validations,
+                    validationHook(),
+                    current &&
+                      !invalidReceipts.has(
+                        String(
+                          (
+                            action.arguments as {
+                              evidence: { receiptId: string }
+                            }
+                          ).evidence.receiptId
+                        )
+                      )),
+                  validatedAt: { sessionId: 'pixel-check', revision }
+                }
+        }))
+      }),
+      {
+        validateReferences: images.validateReferences,
+        referenceImages: images.referenceImages
+      }
+    )
+    const call = async (
+      name: string,
+      args: unknown,
+      signal = new AbortController().signal
+    ) => JSON.parse(await tools.call(name, args, signal))
+    const capture = async (
+      elementId = 'third-tier',
+      captureRegion: typeof region | undefined = region
+    ) =>
+      (
+        await call(AiActionNames.INSPECT_DRAWING, {
+          arguments: { elementId, region: captureRegion }
+        })
+      ).actionResults[0].result.inspectionId as string
+    const request = {
+      checkId: 'left-windows',
+      inspectionId: await capture(),
+      referenceImageIndex: 0,
+      referenceRegion: { x: 2, y: 2, width: 4, height: 4 },
+      channelTolerance: 0,
+      maxDifferentFraction: 0
+    }
+    return {
+      tools,
+      call,
+      results,
+      request,
+      capture,
+      setImage: (value: Buffer) => {
+        image = value
+        revision++
+      },
+      setCurrent: (value: boolean) => {
+        current = value
+      },
+      validations: () => validations,
+      nextRevision: () => {
+        revision++
+      },
+      invalidate: (receipt: string) => invalidReceipts.add(receipt),
+      onValidate: (hook: () => void) => {
+        validationHook = hook
+      }
+    }
+  }
+
+  it('registers a strict check and reuses current evidence without repeating pixel work', async () => {
+    const f = await setup()
+    expect(
+      f.tools.definitions.some((tool) => tool.name === 'check_drawing_image')
+    ).toBe(true)
+    const decode = vi.spyOn(sharp.prototype, 'toBuffer')
+    const first = await f.call('check_drawing_image', f.request)
+    expect(decode).toHaveBeenCalledTimes(2)
+    expect(first).toMatchObject({
+      status: 'pass',
+      appearance: 'unverified',
+      reused: false,
+      comparedPixels: 16,
+      differentPixels: 0,
+      pixelReads: 16
+    })
+    f.nextRevision() // An unrelated document revision is not an image dependency.
+    const again = await f.call('check_drawing_image', {
+      ...f.request,
+      checkId: first.checkId
+    })
+    expect(first.resultId).toBe('image:left-windows')
+    expect(decode).toHaveBeenCalledTimes(2)
+    decode.mockRestore()
+    expect(again).toMatchObject({ status: 'pass', reused: true, pixelReads: 0 })
+    expect(f.validations()).toBeGreaterThanOrEqual(3)
+    expect(f.results.read({ includePassed: true }).items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'image:left-windows',
+          origin: 'tool',
+          status: 'pass'
+        })
+      ])
+    )
+    f.setCurrent(false)
+    const stale = await f.call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      ids: ['image:left-windows'],
+      includePassed: true
+    })
+    expect(stale.items[0].status).toBe('stale')
+    await expect(f.call('check_drawing_image', f.request)).rejects.toThrow(
+      /inspection|evidence/i
+    )
+  })
+
+  it('keeps a local defect until corrected under the same frozen baseline and tolerance', async () => {
+    const f = await setup()
+    const raw = Buffer.alloc(4 * 4 * 4, 255)
+    raw[4 * (1 + 2 * 4)] = 0
+    raw[4 * (1 + 2 * 4) + 1] = 0
+    raw[4 * (1 + 2 * 4) + 2] = 0
+    f.setImage(
+      await sharp(raw, { raw: { width: 4, height: 4, channels: 4 } })
+        .png()
+        .toBuffer()
+    )
+    f.request.inspectionId = await f.capture()
+    expect(await f.call('check_drawing_image', f.request)).toMatchObject({
+      status: 'fail',
+      differentPixels: 1,
+      differenceBounds: { x: 11, y: 22, width: 1, height: 1 }
+    })
+    await expect(
+      f.call('check_drawing_image', { ...f.request, channelTolerance: 255 })
+    ).rejects.toThrow(/baseline|tolerance|configuration/i)
+    expect(f.results.read().items[0].status).toBe('fail')
+    f.setImage(
+      await sharp({
+        create: { width: 4, height: 4, channels: 4, background: 'white' }
+      })
+        .png()
+        .toBuffer()
+    )
+    f.request.inspectionId = await f.capture()
+    expect(await f.call('check_drawing_image', f.request)).toMatchObject({
+      status: 'pass',
+      pixelReads: 16,
+      reused: false
+    })
+    expect(f.results.read().items).toHaveLength(0)
+  })
+
+  it('does not pass mismatched dimensions or publish a cancelled check', async () => {
+    const f = await setup()
+    f.setImage(
+      await sharp({
+        create: { width: 3, height: 4, channels: 4, background: 'white' }
+      })
+        .png()
+        .toBuffer()
+    )
+    f.request.inspectionId = await f.capture()
+    expect(await f.call('check_drawing_image', f.request)).toMatchObject({
+      status: 'unverified',
+      appearance: 'unverified',
+      pixelReads: 0
+    })
+    const abort = new AbortController()
+    abort.abort()
+    await expect(
+      f.call(
+        'check_drawing_image',
+        { ...f.request, checkId: 'cancelled' },
+        abort.signal
+      )
+    ).rejects.toThrow()
+    expect(f.results.read({ includePassed: true }).items).toHaveLength(1)
+  })
+
+  it('invalidates only the changed image in default retained-check reads', async () => {
+    const f = await setup()
+    await f.call('check_drawing_image', f.request)
+    f.nextRevision()
+    const other = {
+      ...f.request,
+      checkId: 'eighth-windows',
+      inspectionId: await f.capture('eighth-tier')
+    }
+    await f.call('check_drawing_image', other)
+    f.invalidate('region-1')
+    const read = await f.call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      includePassed: true
+    })
+    expect(
+      read.items.map((item: { id: string; status: string }) => [
+        item.id,
+        item.status
+      ])
+    ).toEqual(
+      expect.arrayContaining([
+        ['image:left-windows', 'stale'],
+        ['image:eighth-windows', 'pass']
+      ])
+    )
+    expect(await f.call('check_drawing_image', other)).toMatchObject({
+      reused: true,
+      pixelReads: 0
+    })
+  })
+
+  it.each(['changed', 'cancelled'] as const)(
+    'refuses a pass when evidence is %s during pixel analysis',
+    async (failure) => {
+      const f = await setup()
+      const abort = new AbortController()
+      f.onValidate(() => {
+        if (f.validations() === 2) {
+          if (failure === 'cancelled') abort.abort()
+          else f.setCurrent(false)
+        }
+      })
+      await expect(
+        f.call('check_drawing_image', f.request, abort.signal)
+      ).rejects.toThrow()
+      expect(f.results.read({ includePassed: true }).items).toHaveLength(0)
+    }
+  )
+
+  it('allows a native capture to resolve an unsupported first overview without relaxing the baseline', async () => {
+    const f = await setup()
+    const overview = await f.call(AiActionNames.INSPECT_DRAWING, {
+      arguments: { elementId: 'third-tier' }
+    })
+    const initial = {
+      ...f.request,
+      inspectionId: overview.actionResults[0].result.inspectionId
+    }
+    expect(await f.call('check_drawing_image', initial)).toMatchObject({
+      status: 'unverified'
+    })
+    expect(await f.call('check_drawing_image', f.request)).toMatchObject({
+      status: 'pass'
+    })
+  })
+
+  it('handles transparent pixels on white and reports unsupported images without visual certification', async () => {
+    const f = await setup()
+    f.setImage(
+      await sharp({
+        create: {
+          width: 4,
+          height: 4,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        }
+      })
+        .png()
+        .toBuffer()
+    )
+    f.request.inspectionId = await f.capture()
+    expect(await f.call('check_drawing_image', f.request)).toMatchObject({
+      status: 'pass',
+      appearance: 'unverified'
+    })
+    f.setImage(Buffer.from('invalid PNG'))
+    const corrupt = {
+      ...f.request,
+      checkId: 'broken-image',
+      inspectionId: await f.capture()
+    }
+    expect(await f.call('check_drawing_image', corrupt)).toMatchObject({
+      status: 'unverified',
+      pixelReads: 0
+    })
+    await expect(
+      f.call('check_drawing_image', { ...f.request, referenceImageIndex: 50 })
+    ).rejects.toThrow(/reference|attachment/i)
+    await expect(
+      f.call('check_drawing_image', { ...f.request, channelTolerance: -1 })
+    ).rejects.toThrow()
+  })
 })

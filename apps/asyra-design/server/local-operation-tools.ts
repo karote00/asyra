@@ -1,4 +1,10 @@
 import {
+  createLocalImageCheck,
+  imageCheckDefinition,
+  imageCheckResultSchema,
+  type ImageCheckInspection
+} from './local-image-check'
+import {
   embedAiToolSchema,
   type AiJsonValue as RuntimeJsonValue
 } from '@asyra/ai-agent-runtime'
@@ -472,6 +478,7 @@ export const createLocalOperationTools = (
     getNativeTools?: () => NativeToolDescriptor[]
     getNativeToolsRevision?: () => number
     resolveSources?: (sources: string[]) => string[]
+    referenceImages?: (indexes: number[]) => { dataUrl: string }[]
     validateReferences?: (
       indexes: number[],
       referenceIds?: string[]
@@ -1032,7 +1039,7 @@ export const createLocalOperationTools = (
 
   const inspectionImages = new Map<
     string,
-    VisualAssessmentInput['images'][number]
+    VisualAssessmentInput['images'][number] & ImageCheckInspection
   >()
   let reviewTargetId = options.reviewTargetId
   const reviewScope = new Set(
@@ -1327,6 +1334,21 @@ export const createLocalOperationTools = (
       )
     return true
   }
+  const imageCheck =
+    options.referenceImages && options.validateReferences && canInspect
+      ? createLocalImageCheck({
+          results: checkResults,
+          inspection: (id) => inspectionImages.get(id),
+          validate: (id, signal) => validateEvidence([id], signal, false),
+          reference: (index) => {
+            const identity = options.validateReferences?.([index])[0]
+            const image = options.referenceImages?.([index])[0]
+            if (!identity || !image)
+              throw new Error('Reference image is unavailable.')
+            return { referenceId: identity.referenceId, dataUrl: image.dataUrl }
+          }
+        })
+      : undefined
   const measure = async (elementId: string, signal?: AbortSignal) => {
     signal?.throwIfAborted()
     const actionId = randomUUID()
@@ -1477,7 +1499,11 @@ export const createLocalOperationTools = (
                   overview && !region && view !== 'detail'
                     ? 'overview'
                     : 'detail',
-                dataUrl: image.dataUrl
+                dataUrl: image.dataUrl,
+                target: elementId,
+                region,
+                imageScope: entry.result.imageScope,
+                background: entry.result.background
               })
           }
         }
@@ -1610,7 +1636,10 @@ export const createLocalOperationTools = (
         const completionIds = [
           ...new Set([
             ...designReview.evidenceEntries().map((entry) => entry.id),
-            ...designReview.reviewEvidenceIds()
+            ...designReview.reviewEvidenceIds(),
+            ...checkResults
+              .dependencyKeys('inspection:')
+              .map((key) => key.slice(11))
           ])
         ]
         await checkMeasurements(
@@ -1699,6 +1728,7 @@ export const createLocalOperationTools = (
     getStructureIssue: () => designReview.getStructureIssue(),
     actionNames: registered.map((action) => action.name),
     definitions: [
+      ...(imageCheck ? [imageCheckDefinition] : []),
       ...(registered.length ? [checkResultsDefinition] : []),
       ...(preparedReview ? [preparedReviewDefinition] : []),
       ...(registered.length
@@ -1925,6 +1955,8 @@ export const createLocalOperationTools = (
           return 'Prepared review omitted its bound evidence.'
         return
       }
+      if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE)
+        return operationInputIssue(value, imageCheckResultSchema)
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS)
         return operationInputIssue(value, designCheckResultsSchema)
       if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
@@ -2054,6 +2086,13 @@ export const createLocalOperationTools = (
       inspectionTargets?: Set<string>
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
+      if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE) {
+        if (!imageCheck)
+          throw new LocalOperationPreparationError(
+            'Image checking is unavailable.'
+          )
+        return JSON.stringify(await imageCheck.call(args, signal))
+      }
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS) {
         if (!registered.length)
           throw new LocalOperationPreparationError(
@@ -2090,7 +2129,14 @@ export const createLocalOperationTools = (
           ? [...dependencies]
               .filter((key) => key.startsWith('inspection:'))
               .map((key) => key.slice(11))
-          : designReview.reviewEvidenceIds()
+          : [
+              ...new Set([
+                ...designReview.reviewEvidenceIds(),
+                ...checkResults
+                  .dependencyKeys('inspection:')
+                  .map((key) => key.slice(11))
+              ])
+            ]
         if (
           canInspect &&
           ids.length &&

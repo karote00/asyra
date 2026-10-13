@@ -1818,3 +1818,32 @@ scope retains its existing write-stop boundary. Repeated provider call identitie
 are rejected before another dispatch; a new call identity is a new intentional
 invocation, not permission to assume prior unknown work rolled back. Failed save
 uses the successful receipt with save_tool and cannot replay product work.
+
+
+### Deterministic aligned image checks
+
+`check_drawing_image` compares a current native `inspect_drawing` region with an
+explicitly corresponding same-size crop from an immutable reference attachment.
+The primary agent declares alignment; the tool does not infer perspective,
+resample images, judge semantic appearance or call any model. Captures isolate
+the target subtree and use white, so this check does not prove external canvas
+occlusion. Whole-image checking uses the full native region within the existing
+capture limit. Missing mapping, overview scaling, mismatched dimensions, corrupt
+or unsupported images remain unverified. Animated images are unsupported.
+
+Both images are oriented and converted to sRGB on white. The result includes
+changed pixels/fraction, maximum channel error and the changed bounds in target
+coordinates. Tolerance is explicit and fixed with the baseline digest and target
+region for that checkId. Returned checkId continues the same obligation;
+resultId reads it in `read_design_checks`. A fresh capture may update that check
+after correction, but cannot relax its tolerance or change its baseline/scope.
+
+The existing request check store retains tool-origin evidence and exact image
+receipt dependencies. Before reuse and after asynchronous comparison, the browser
+validates canonical dependencies. Reuse does no decode or pixel iteration;
+default reads and final validation refresh image dependencies too. Unrelated edits
+and viewport changes preserve evidence when the canonical receipt remains valid.
+Changed evidence, decode failure or cancellation never creates a pass. Compact
+pixel results are diagnostic facts; main-agent visual acceptance remains separate.
+The input's request-local inspection and numeric attachment selectors are control
+plane values, not portable recipe literals or durable document identities.

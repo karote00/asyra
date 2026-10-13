@@ -411,6 +411,7 @@ const runLocalAiProvider = async (
               requestSignal: options.signal,
               resolveSources: imageTools.resolveSources,
               validateReferences: imageTools.validateReferences,
+              referenceImages: imageTools.referenceImages,
               getNativeTools: (): NativeToolDescriptor[] =>
                 host?.definitions() ?? [],
               getNativeToolsRevision: () => host?.revision ?? 0,

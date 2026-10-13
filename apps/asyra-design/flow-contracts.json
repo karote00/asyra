@@ -275,6 +275,11 @@
           "id": "apply.structural-delivery",
           "stepId": "apply",
           "testName": "execution proof delivers compact structural output without repeating canonical writes"
+        },
+        {
+          "id": "inspect.regional-pixels",
+          "stepId": "inspect",
+          "testName": "execution proof retains deterministic regional image checks without model evaluation"
         }
       ],
       "handoffs": [

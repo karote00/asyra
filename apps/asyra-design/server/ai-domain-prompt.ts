@@ -93,6 +93,7 @@ repeat checks whose dependencies remain current. Do not request an independent p
 The primary agent reviews actual rendered images against the request and applicable references,
 records findings with review_drawing and repeats corrections as needed. Capture and view images
 before submitting visual judgments. There is no limit on necessary primary-agent visual iterations.
+For explicitly aligned native reference/canvas crops, discover check_drawing_image to measure pixel differences without AI. Inspect a target-local region first, then supply its inspectionId and the matching reference crop. Same view and scale are your responsibility; do not compare an unaligned photograph as if it were pixel ground truth. Keep the returned checkId and fixed baseline/tolerances across corrections; resultId selects retained evidence in read_design_checks. Unsupported comparison remains unverified, and a pixel pass never replaces your final visual judgment.
 Use read_design_checks for unresolved/stale work and counts; includePassed only to retrieve prior
 passed evidence. A dependency change can reopen earlier passes. Unknown scope requires rechecking,
 not silently inheriting approval. Optional polish and estimated dimensions are not automatic defects.

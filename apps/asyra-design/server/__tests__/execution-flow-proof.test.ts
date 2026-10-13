@@ -2819,3 +2819,87 @@ it('execution proof delivers compact structural output without repeating canonic
   expect(full.value.elementIds).toEqual(ids)
   expect(group).toHaveBeenCalledOnce()
 })
+
+it('execution proof retains deterministic regional image checks without model evaluation', async () => {
+  const bytes = await sharp({
+    create: { width: 2, height: 2, channels: 4, background: 'white' }
+  })
+    .png()
+    .toBuffer()
+  const dataUrl = `data:image/png;base64,${bytes.toString('base64')}`
+  const references = createLocalImageTools({
+    metadata: { imageAttachments: [{ dataUrl }] }
+  })
+  const results = createDesignCheckResults()
+  let current = true
+  const tools = createLocalOperationTools(
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (b) => b, checkResults: results },
+    async (batch) => ({
+      context: {},
+      actionResults: batch.actions.map(
+        (action): AiBatchReceipt['actionResults'][number] => ({
+          actionId: action.id,
+          actionName: action.name,
+          result:
+            action.name === AiActionNames.INSPECT_DRAWING
+              ? {
+                  available: true,
+                  imageScope: 'region',
+                  background: '#ffffff',
+                  image: { dataUrl, width: 2, height: 2 },
+                  evidence: {
+                    sessionId: 'pixels',
+                    revision: 1,
+                    receiptId: 'local-region'
+                  }
+                }
+              : { current, validatedAt: { sessionId: 'pixels', revision: 2 } }
+        })
+      )
+    }),
+    {
+      referenceImages: references.referenceImages,
+      validateReferences: references.validateReferences
+    }
+  )
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await tools.call(name, args, new AbortController().signal))
+  const before = spawn.mock.calls.length
+  const captured = await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: {
+      elementId: 'local-part',
+      region: { x: 0, y: 0, width: 2, height: 2 }
+    }
+  })
+  const input = {
+    checkId: 'local-color',
+    inspectionId: captured.actionResults[0].result.inspectionId,
+    referenceImageIndex: 0,
+    referenceRegion: { x: 0, y: 0, width: 2, height: 2 },
+    channelTolerance: 0,
+    maxDifferentFraction: 0
+  }
+  expect(await call(AiDesignToolIds.CHECK_DRAWING_IMAGE, input)).toMatchObject({
+    status: 'pass',
+    appearance: 'unverified',
+    pixelReads: 4
+  })
+  expect(await call(AiDesignToolIds.CHECK_DRAWING_IMAGE, input)).toMatchObject({
+    reused: true,
+    pixelReads: 0
+  })
+  current = false
+  const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+  expect(retained.items).toEqual([
+    expect.objectContaining({
+      id: 'image:local-color',
+      status: 'stale',
+      origin: 'tool'
+    })
+  ])
+  expect(spawn.mock.calls.length).toBe(before)
+})

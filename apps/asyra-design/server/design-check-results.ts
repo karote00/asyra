@@ -121,6 +121,9 @@ export const createDesignCheckResults = () => {
   }
   const owner = {
     invalidate,
+    dependencyKeys(prefix: string): string[] {
+      return [...dependents.keys()].filter((key) => key.startsWith(prefix))
+    },
     summary(ids: Iterable<string>) {
       const selectedCounts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
       let firstPendingId: string | undefined

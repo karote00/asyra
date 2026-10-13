@@ -528,6 +528,7 @@
         ],
         outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Explicitly aligned native reference crops may be compared with current isolated target-region pixels on white using fixed baseline, region and tolerances. No resampling, camera inference or model call. Unsupported evidence remains unverified. Retain compact pixel findings in the common check store, validate canonical image dependencies before reuse and after asynchronous work, and reuse unchanged results without decoding. Pixel checks never certify visual meaning.',
           'Canonical canvas measurements join the same check store by exact target. Complete rechecks replace that target including removed children; incomplete work remains unresolved. Scoped browser receipt validation invalidates only actual changed units without remeasurement. All unresolved mechanical findings block completion.',
           'Mechanical passes require one exact action acknowledgement, coherent availability/completeness and a canonical stamp. Currency or explicit-check failure preserves prior evidence as unresolved and retires the reusable stamp; later coherent checks may recover. Return bounded check counts and firstPendingId, not all retained evidence. Canonical removal retires only its tool obligation, invalidates dependents and preserves monotonic revisions; explicit reads refresh only selected transitive dependencies and independent failures remain readable.',
           'Canonical deterministic review owns typed mechanical verdict and stable unresolved-state progress inside evidence capture. Only complete supported checks with no findings pass; declared mechanical findings are repairable, unknown/incomplete checks require primary-agent decision. Verdicts never certify visual acceptance.',
@@ -596,6 +597,7 @@
         implementationBoundary: [
           'apps/asyra-design/src/ai/tool-contract.ts',
           'apps/asyra-design/src/ai/runtime-input.ts',
+          'apps/asyra-design/server/local-image-check.ts',
           'apps/asyra-design/server/local-prepared-design-review.ts',
           'apps/asyra-design/server/design-check-results.ts',
           'apps/asyra-design/server/__tests__/design-check-results.test.ts',
