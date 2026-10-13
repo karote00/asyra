@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 7 COMPLETE - review Stage 8 package acceptance before its goal.
+Status: STAGE 7 COMPLETE - Stage 8 package acceptance is next.
 
 ## Current authority and stop boundary
 
@@ -1938,8 +1938,10 @@ Server/browser tsc, scoped lint (existing console warnings only), naming and eig
 catalog tests passed. Candidate 5cd544a0-2930-401f-8b06-7aafe980c8d6,
 source 1673923d24feaaf462a4a5f575e9d7ad9e925870c83eafb12682769ab591c397,
 contract review b9705efbbb5972e7a1303ee7c02795de945d694617b81bf8385579399dd9603e
-accepted. Same-source proof: 30 obligations, four exact negative scenarios and
-recovery pass. Evidence: tmp/stage7-{final-operations,integrated,provider-final,
+accepted. The initial same-source full proof failed: the stale-evidence negative
+correctly also failed the newly added regional pixel case, but its exact expected
+set omitted that case. The stage commit was pushed before this result was inspected;
+that was an execution mistake, not a passing full-proof result. Preserve that log. Evidence: tmp/stage7-{final-operations,integrated,provider-final,
 last-tsc,proof,catalog-test}.log. Production owner is Design only; shared Runtime
 contracts/renderer and other Apps are unchanged in this stage.
 
@@ -1948,3 +1950,17 @@ resultId/checkId continuation, common result storage, targeted/default reads,
 final currency validation, partial/unverified paths, cancellation before publication
 and independent-region reuse. This is bounded aligned pixel evidence, not semantic
 photo matching or a speed claim for an entire model drawing. No live101.
+
+
+Stage 7 closure correction: inspected the captured negative result and confirmed
+exactly the original three stale-evidence obligations plus inspect.regional-pixels
+failed. Add the new dependent obligation to this scenario's expected set, preserving
+all original cases and mutations. No production/test assertion relaxation. Re-run
+positive, all exact negatives and recovery before the corrective push and Stage 8.
+
+
+Corrective verification completed: tmp/stage7-negative-proof.log reports all 30
+obligations, four exact negative scenarios and recovery passing (11.699 seconds).
+Accepted review d6291bbed817cc5cf0ccf754ae06e947aabf416e7393f1cbc32ad6565df99657.
+The earlier full-proof failure remains recorded separately; it is not reused as a
+pass. This correction changes only the exact scenario expectation and plan record.

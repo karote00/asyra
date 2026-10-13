@@ -409,7 +409,8 @@
       "expectedFailedCaseIds": [
         "inspect.current-evidence",
         "inspect.scoped-dependencies",
-        "inspect.regional-units"
+        "inspect.regional-units",
+        "inspect.regional-pixels"
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
