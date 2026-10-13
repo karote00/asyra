@@ -9,6 +9,7 @@ import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
   localToolOutcome,
+  localToolFailureReply,
   localToolResultSchema,
   invokeLocalTool,
   LocalToolInputError,
@@ -29,6 +30,27 @@ const definition = {
   name: 'registered-operation',
   inputSchema: { type: 'object', additionalProperties: false }
 }
+
+it('uses the owner outcome once and avoids failure diagnostics for successful domain results', async () => {
+  const resultOutcome = vi.fn(() => ({
+    status: 'success' as const,
+    settlement: 'completed' as const
+  }))
+  const executionEvidence = vi.fn()
+  const reply = await invokeLocalTool(
+    {
+      call: async () => JSON.stringify({ status: 'unknown', available: false }),
+      resultOutcome
+    },
+    definition,
+    {},
+    signal(),
+    executionEvidence
+  )
+  expect(reply.success).toBe(true)
+  expect(resultOutcome).toHaveBeenCalledOnce()
+  expect(executionEvidence).not.toHaveBeenCalled()
+})
 
 it('reuses validation only for the exact unchanged invocation reply', async () => {
   const reply = await invokeLocalTool(
@@ -861,4 +883,21 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     }
   )
   expect(admitted).toMatchObject({ ok: true })
+})
+
+it('preserves an owner-declared terminal failure without changing retryable failures', () => {
+  const terminal = JSON.parse(
+    localToolFailureReply('Stop this request.', 'MUTATION_SCOPE_UNAVAILABLE', {
+      recoverable: false,
+      settlement: 'not-started'
+    }).text
+  )
+  expect(terminal).toMatchObject({
+    recoverable: false,
+    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  })
+  const retryable = JSON.parse(
+    localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
+  )
+  expect(retryable.recoverable).toBe(true)
 })

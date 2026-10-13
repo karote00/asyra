@@ -255,3 +255,149 @@ test.describe('real registered basic actions', () => {
     })
   }
 })
+
+test('delivers canonical mutation scope through real history-group publication', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { fillApis, transactionApis } = await import('../src/common-apis')
+    const { createBasicApiActions } =
+      await import('../src/ai/basic-api-actions')
+    const { createAiTransactionRunner } = await import('../src/ai/transaction')
+    const actions = createBasicApiActions()
+    const runner = createAiTransactionRunner()
+    const invoke = (name: string, args: Record<string, unknown>) =>
+      runner.run('Scope proof', async (runMutation) => {
+        const action = actions.find((entry) => entry.name === name)
+        if (!action) throw new Error('Missing action')
+        return action.execute(args, {
+          signal: new AbortController().signal,
+          runMutation
+        }) as Promise<{
+          value: { groupId: string }
+          mutationScope: {
+            complete: boolean
+            elementIds: string[]
+            removedElementIds: string[]
+          }
+        }>
+      })
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [0, 60, 120].map((x) => ({
+          type: 'rect',
+          x,
+          y: 0,
+          width: 40,
+          height: 30
+        })),
+        core.getCurrentWorkspaceId()
+      )
+    )
+    const [a, b, unrelated] = ids
+    const plural = await invoke('api_core_updateElementProperties', {
+      updates: [
+        { elementId: a, values: { width: 50 } },
+        { elementId: b, values: { width: 70 } }
+      ]
+    })
+    transactionApis.runTransaction(() => {
+      fillApis.addFills([a, b])
+      fillApis.shareFillAtIndex(a, [b], 0)
+    })
+    const [{ fillId }] = fillApis.getFillTargetsAtIndex([a], 0)
+    const shared = await invoke('api_core_updatePropertyComponents', {
+      updates: [{ propertyId: fillId, values: { color: '#abcdef' } }]
+    })
+    const { createRetainedDesignContext } =
+      await import('../src/common-apis/retained-design-context')
+    const { observeDesignChanges } =
+      await import('../src/common-apis/design-review')
+    const { createRetainedFillAction } =
+      await import('../src/ai/retained-fill-action')
+    const queries = createRetainedDesignContext(core, observeDesignChanges)
+    const mapped = await runner.run('Map shared fill', async (runMutation) => {
+      try {
+        return await createRetainedFillAction(queries).execute(
+          {
+            mappings: [
+              {
+                query: { scope: 'ids', elementIds: [a] },
+                coordinateSpace: 'parent-local',
+                axis: 'x',
+                domain: [0, 200],
+                index: 0,
+                outside: 'clamp',
+                stops: [
+                  { at: 0, color: '#112233' },
+                  { at: 1, color: '#112233' }
+                ]
+              }
+            ]
+          },
+          { signal: new AbortController().signal, runMutation }
+        )
+      } finally {
+        queries.dispose()
+      }
+    })
+    const group = await invoke('api_hierarchy_groupElements', {
+      elementIds: [a, b]
+    })
+    const groupId = group.value.groupId
+    const ungroup = await invoke('api_hierarchy_ungroupElement', { groupId })
+    const removed = await invoke('api_element_deleteElements', {
+      elementIds: [a]
+    })
+    const empty = await invoke('api_element_createElements', {
+      createOptions: []
+    })
+    const read = await invoke('api_core_getElementData', { elementId: b })
+    return {
+      a,
+      b,
+      unrelated,
+      groupId,
+      plural,
+      shared,
+      mapped,
+      group,
+      ungroup,
+      removed,
+      empty,
+      read
+    }
+  })
+  for (const receipt of [result.plural, result.shared]) {
+    expect(receipt.mutationScope).toEqual({
+      complete: true,
+      elementIds: expect.arrayContaining([result.a, result.b]),
+      removedElementIds: []
+    })
+    expect(receipt.mutationScope.elementIds).not.toContain(result.unrelated)
+  }
+  expect(result.mapped).toMatchObject({
+    appliedCount: 1,
+    mutationScope: {
+      complete: true,
+      elementIds: expect.arrayContaining([result.a, result.b]),
+      removedElementIds: []
+    }
+  })
+  expect(result.group.mutationScope.elementIds).toContain(result.groupId)
+  expect(result.ungroup.mutationScope).toMatchObject({
+    complete: true,
+    elementIds: expect.arrayContaining([result.a, result.b]),
+    removedElementIds: [result.groupId]
+  })
+  expect(result.removed.mutationScope.removedElementIds).toContain(result.a)
+  expect(result.empty.mutationScope).toEqual({
+    complete: true,
+    elementIds: [],
+    removedElementIds: []
+  })
+  expect(result.read).not.toHaveProperty('mutationScope')
+})

@@ -4,9 +4,12 @@ import {
 } from '@asyra/ai-agent-runtime'
 import {
   createDesignCheckResults,
-  designCheckResultsSchema
+  designCheckResultsSchema,
+  designCheckSummarySchema
 } from './design-check-results'
+import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { createLocalQueryArtifacts } from './local-query-artifacts'
+import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
   toolResultCount,
@@ -26,6 +29,8 @@ import type { VisualAssessmentInput } from './local-visual-assessment'
 import {
   LocalToolInputError,
   localToolOutcome,
+  localToolFailureReply,
+  localToolErrorMessage,
   type LocalToolDefinition
 } from './local-tool-invocation'
 import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
@@ -66,29 +71,37 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
       result
     })
   const envelope = (result: unknown) =>
-    toolResultObject({
-      actionResults: {
-        type: 'array',
-        minItems: 1,
-        prefixItems: [
-          receipt(
-            embedAiToolSchema(
-              result as RuntimeJsonValue,
-              '#/properties/actionResults/prefixItems/0/properties/result'
-            ),
-            true
-          )
-        ],
-        items: receipt(true)
-      }
-    })
+    toolResultObject(
+      {
+        actionResults: {
+          type: 'array',
+          minItems: 1,
+          prefixItems: [
+            receipt(
+              embedAiToolSchema(
+                result as RuntimeJsonValue,
+                '#/properties/actionResults/prefixItems/0/properties/result'
+              ),
+              true
+            )
+          ],
+          items: receipt(true)
+        },
+        checks: designCheckSummarySchema
+      },
+      ['actionResults']
+    )
   if (!('outputSchema' in action))
     return {
       ...actionToolSemantics(
         action.name,
-        toolResultObject({
-          actionResults: { type: 'array', items: receipt(true) }
-        })
+        toolResultObject(
+          {
+            actionResults: { type: 'array', items: receipt(true) },
+            checks: designCheckSummarySchema
+          },
+          ['actionResults']
+        )
       ),
       composition: 'control-plane' as const
     }
@@ -959,47 +972,116 @@ export const createLocalOperationTools = (
   const measuredTargets = new Map<string, InspectionEvidenceStamp | undefined>()
   let inspectionUnavailable = false
   let measurementPending = false
+  const mutationScopeId = 'mutation-scope:request'
+  const scopeRecovery =
+    'Stop this request and report its unverified writes. Read or inspect the current document if needed; continue editing only in a new request from current state. Do not replay writes.'
+  const hasUnresolvedMutationScope = () =>
+    !!checkResults.summary([mutationScopeId]).firstPendingId
+  const unknownScope = (actionId: string) => {
+    if (hasUnresolvedMutationScope()) return
+    checkResults.record({
+      id: mutationScopeId,
+      origin: 'tool',
+      status: 'unverified',
+      evidence: JSON.stringify({
+        actionId,
+        code: 'MUTATION_SCOPE_UNAVAILABLE',
+        recovery: scopeRecovery
+      }),
+      scope: [],
+      dependencies: {}
+    })
+  }
   const measurementId = (target: string) => `measurement:${target}`
-  const unresolvedMeasurements = () =>
-    checkResults.read({
-      ids: [...measuredTargets.keys()].map(measurementId)
-    }).items
+  const pendingMeasurementCount = () => {
+    const { counts } = checkResults.summary(
+      [...measuredTargets.keys()].map(measurementId)
+    )
+    return counts.fail + counts.unverified + counts.stale
+  }
   const canReview = registered.some(
     (action) => action.name === AiActionNames.REVIEW_DESIGN
   )
+  const markMeasurementUnavailable = (
+    elementId: string,
+    findings: unknown[] = []
+  ) => {
+    const id = measurementId(elementId)
+    const previous = checkResults.read({ ids: [id], includePassed: true })
+      .items[0]
+    let evidence =
+      previous?.evidence ?? JSON.stringify({ complete: false, findings: [] })
+    if (findings.length) {
+      const prior = previous ? JSON.parse(previous.evidence) : undefined
+      const retained =
+        isRecord(prior) && Array.isArray(prior.findings) ? prior.findings : []
+      evidence = JSON.stringify({
+        complete: false,
+        findings: [
+          ...new Map(
+            [...retained, ...findings].map((finding) => [
+              JSON.stringify(finding),
+              finding
+            ])
+          ).values()
+        ]
+      })
+    }
+    measuredTargets.set(elementId, undefined)
+    measurementPending = true
+    checkResults.record({
+      id,
+      origin: 'tool',
+      status: findings.length ? 'fail' : 'unverified',
+      evidence,
+      scope: [elementId],
+      dependencies: { [id]: 'unavailable' }
+    })
+  }
   const updateMeasurementState = (
     elementId: string,
-    receipt: AiBatchReceipt
+    receipt: AiBatchReceipt,
+    actionId: string
   ) => {
-    const result = receipt.actionResults.find(
-      (entry) => entry.actionName === AiActionNames.REVIEW_DESIGN
-    )?.result
+    const matching = receipt.actionResults.filter(
+      (entry) =>
+        entry.actionId === actionId &&
+        entry.actionName === AiActionNames.REVIEW_DESIGN
+    )
+    const result = matching.length === 1 ? matching[0].result : undefined
     const complete =
+      !receipt.failure &&
       isRecord(result) &&
+      result.available !== false &&
       result.complete === true &&
       result.truncated !== true &&
       Array.isArray(result.findings)
-    const findings =
-      isRecord(result) && Array.isArray(result.findings) ? result.findings : []
     const stamp =
       complete && isRecord(result)
         ? inspectionStamp(result.evidence)
         : undefined
+    if (!complete || !stamp || !isRecord(result)) {
+      markMeasurementUnavailable(
+        elementId,
+        isRecord(result) &&
+          result.available !== false &&
+          Array.isArray(result.findings)
+          ? result.findings
+          : []
+      )
+      return
+    }
+    const findings = result.findings as unknown[]
     measuredTargets.set(elementId, stamp)
-    measurementPending = !complete
-    const status = complete && stamp ? 'pass' : 'unverified'
     checkResults.record({
       id: measurementId(elementId),
       origin: 'tool',
-      status: findings.length ? 'fail' : status,
+      status: findings.length ? 'fail' : 'pass',
       evidence: JSON.stringify({ complete, findings }),
       scope: [elementId],
-      dependencies: {
-        [measurementId(elementId)]: stamp
-          ? JSON.stringify(stamp)
-          : 'unavailable'
-      }
+      dependencies: { [measurementId(elementId)]: JSON.stringify(stamp) }
     })
+    measurementPending = false
   }
   const canInspect = registered.some(
     (action) => action.name === AiActionNames.INSPECT_DRAWING
@@ -1107,20 +1189,27 @@ export const createLocalOperationTools = (
   }
   const measure = async (elementId: string, signal?: AbortSignal) => {
     signal?.throwIfAborted()
-    const receipt = await executeBatch({
-      batchId: randomUUID(),
-      actions: [
-        {
-          id: randomUUID(),
-          name: AiActionNames.REVIEW_DESIGN,
-          arguments: { elementId },
-          summary: 'Checking the layout'
-        }
-      ]
-    })
-    signal?.throwIfAborted()
-    updateMeasurementState(elementId, receipt)
-    return { context: {}, actionResults: receipt.actionResults }
+    const actionId = randomUUID()
+    try {
+      const receipt = await executeBatch({
+        batchId: randomUUID(),
+        actions: [
+          {
+            id: actionId,
+            name: AiActionNames.REVIEW_DESIGN,
+            arguments: { elementId },
+            summary: 'Checking the layout'
+          }
+        ]
+      })
+      signal?.throwIfAborted()
+      updateMeasurementState(elementId, receipt, actionId)
+      return { context: {}, actionResults: receipt.actionResults }
+    } catch (error) {
+      signal?.throwIfAborted()
+      markMeasurementUnavailable(elementId)
+      throw error
+    }
   }
 
   const measurementCurrent = async (
@@ -1128,6 +1217,7 @@ export const createLocalOperationTools = (
     signal?: AbortSignal
   ) => {
     const markStale = () => {
+      measuredTargets.set(elementId, undefined)
       checkResults.invalidate(
         [measurementId(elementId)],
         'Canonical measurement dependencies changed or are unavailable.'
@@ -1135,8 +1225,8 @@ export const createLocalOperationTools = (
       return false
     }
     const stamp = measuredTargets.get(elementId)
+    if (!stamp) return false
     if (
-      !stamp ||
       !registered.some(
         (action) => action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       )
@@ -1144,24 +1234,33 @@ export const createLocalOperationTools = (
       return markStale()
     signal?.throwIfAborted()
     const actionId = randomUUID()
-    const receipt = await executeBatch({
-      batchId: randomUUID(),
-      actions: [
-        {
-          id: actionId,
-          name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
-          arguments: { evidence: stamp },
-          summary: 'Checking layout evidence dependencies'
-        }
-      ]
-    })
-    signal?.throwIfAborted()
-    const result = receipt.actionResults.find(
-      (entry) =>
-        entry.actionId === actionId &&
-        entry.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-    )?.result
-    return isRecord(result) && result.current === true ? true : markStale()
+    try {
+      const receipt = await executeBatch({
+        batchId: randomUUID(),
+        actions: [
+          {
+            id: actionId,
+            name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+            arguments: { evidence: stamp },
+            summary: 'Checking layout evidence dependencies'
+          }
+        ]
+      })
+      signal?.throwIfAborted()
+      const matches = receipt.actionResults.filter(
+        (entry) =>
+          entry.actionId === actionId &&
+          entry.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      )
+      const result = matches.length === 1 ? matches[0].result : undefined
+      return !receipt.failure && isRecord(result) && result.current === true
+        ? true
+        : markStale()
+    } catch {
+      markStale()
+      signal?.throwIfAborted()
+      return false
+    }
   }
   const checkMeasurements = async (
     targets: readonly string[],
@@ -1203,6 +1302,7 @@ export const createLocalOperationTools = (
           }
         ]
       })
+      signal?.throwIfAborted()
       inspectionUnavailable = !receipt.actionResults.some(
         (entry) => isRecord(entry.result) && entry.result.available === true
       )
@@ -1248,7 +1348,122 @@ export const createLocalOperationTools = (
       options.onInspection?.('completed')
     }
   }
+  const finishInspection = async (
+    targets: ReadonlySet<string>,
+    captureTarget: string | undefined,
+    deferCapture: boolean,
+    signal: AbortSignal,
+    settlementUnknown = false,
+    fullResponse = false
+  ) => {
+    const actionResults: AiBatchReceipt['actionResults'][number][] = []
+    const measurementIssues: {
+      elementId?: string
+      targetCount?: number
+      message: string
+      recovery: string
+    }[] = []
+    let unavailableReason: string | undefined
+    if (settlementUnknown)
+      unavailableReason =
+        'Write settlement is unknown; reconcile acknowledged state before checking.'
+    else if (!canReview)
+      unavailableReason = 'Mechanical checking is not registered in this app.'
+    if (unavailableReason && targets.size) {
+      measurementIssues.push({
+        ...(targets.size === 1 ? { elementId: [...targets][0] } : {}),
+        targetCount: targets.size,
+        message: unavailableReason,
+        recovery: settlementUnknown
+          ? 'Reconcile unknown write settlement before checking; do not replay writes.'
+          : 'Restore review_design capability, then run review_design for affected targets. Do not replay writes.'
+      })
+    }
+    for (const elementId of targets) {
+      signal.throwIfAborted()
+      if (unavailableReason) {
+        markMeasurementUnavailable(elementId)
+        continue
+      }
+      try {
+        if (await measurementCurrent(elementId, signal)) continue
+        const measurement = await measure(elementId, signal)
+        if (!measuredTargets.get(elementId))
+          measurementIssues.push({
+            elementId,
+            message:
+              'Mechanical checking did not complete; inspect this target again.',
+            recovery:
+              'Run review_design for this target; do not replay acknowledged writes.'
+          })
+        else if (fullResponse) actionResults.push(...measurement.actionResults)
+      } catch (error) {
+        signal.throwIfAborted()
+        // A follow-up failure never changes the acknowledged mutation receipt.
+        markMeasurementUnavailable(elementId)
+        measurementIssues.push({
+          elementId,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Mechanical checking failed.',
+          recovery: settlementUnknown
+            ? 'Reconcile unknown write settlement before checking; do not replay writes.'
+            : 'Run review_design for this target; do not replay acknowledged writes.'
+        })
+      }
+    }
+    if (targets.size) measurementPending = measurementIssues.length > 0
+    const inspectionIssues: { elementId: string; message: string }[] = []
+    if (
+      !settlementUnknown &&
+      !deferCapture &&
+      captureTarget &&
+      canInspect &&
+      measurementIssues.length === 0 &&
+      !checkResults.summary([...targets].map(measurementId)).firstPendingId
+    ) {
+      try {
+        const image = await inspect(
+          captureTarget,
+          true,
+          undefined,
+          undefined,
+          signal
+        )
+        if (
+          !image.actionResults.some(
+            (entry) =>
+              entry.actionName === AiActionNames.INSPECT_DRAWING &&
+              isRecord(entry.result) &&
+              entry.result.available === true
+          )
+        )
+          throw new Error(
+            'Capture is unavailable; capture this target again without replaying its writes.'
+          )
+        actionResults.push(...image.actionResults)
+      } catch (error) {
+        signal.throwIfAborted()
+        inspectionUnavailable = true
+        inspectionIssues.push({
+          elementId: captureTarget,
+          message: error instanceof Error ? error.message : 'Capture failed.'
+        })
+      }
+    }
+    return {
+      actionResults,
+      inspectionDeferred: deferCapture,
+      measurementDeferred: false,
+      checks: checkResults.summary([...targets].map(measurementId)),
+      ...(measurementIssues.length ? { measurementIssues } : {}),
+      ...(inspectionIssues.length ? { inspectionIssues } : {})
+    }
+  }
+
   return {
+    finishInspection,
     validateCompletion: async (signal?: AbortSignal): Promise<void> => {
       if (!designReview.isAccepted()) return
       try {
@@ -1284,11 +1499,12 @@ export const createLocalOperationTools = (
           'Final response cannot contain unreviewed drawing operations'
         )
       const qualityIssue = canInspect ? designReview.getIssue() : undefined
-      const pendingMeasurements = unresolvedMeasurements()
+      const pendingMeasurements = pendingMeasurementCount()
       if (
         !inspectionUnavailable &&
         !measurementPending &&
-        pendingMeasurements.length === 0 &&
+        pendingMeasurements === 0 &&
+        !hasUnresolvedMutationScope() &&
         !qualityIssue
       )
         return batch
@@ -1297,9 +1513,10 @@ export const createLocalOperationTools = (
         : qualityIssue
       if (inspectionUnavailable)
         message = 'This app could not complete visual review of the drawing.'
-      if (!measurementPending && pendingMeasurements.length > 0)
+      if (!measurementPending && pendingMeasurements > 0)
         message =
           'Some layout checks remain unresolved or stale. Review the pending target checks before completion.'
+      if (hasUnresolvedMutationScope()) message = scopeRecovery
       const actions = [...batch.actions]
       if (
         !actions.some((action) =>
@@ -1442,19 +1659,23 @@ export const createLocalOperationTools = (
             {
               type: 'function',
               ...toolSemantics(
-                toolResultObject({
-                  actionResults: {
-                    type: 'array',
-                    items: toolResultObject({
-                      actionId: toolResultString,
-                      actionName: toolResultString,
-                      result: true
-                    })
+                toolResultObject(
+                  {
+                    actionResults: {
+                      type: 'array',
+                      items: toolResultObject({
+                        actionId: toolResultString,
+                        actionName: toolResultString,
+                        result: true
+                      })
+                    },
+                    batchSummary: toolResultObject({
+                      actionCount: toolResultCount
+                    }),
+                    checks: designCheckSummarySchema
                   },
-                  batchSummary: toolResultObject({
-                    actionCount: toolResultCount
-                  })
-                }),
+                  ['actionResults', 'batchSummary']
+                ),
                 'mutation',
                 ['document']
               ),
@@ -1542,7 +1763,7 @@ export const createLocalOperationTools = (
                 type: 'string',
                 enum: ['immediate', 'defer'],
                 description:
-                  'Default immediate. Use defer only for intermediate mutations in an already planned stage: retain validation and receipts, defer automatic measurement and image until explicit inspection of the stage. Inspect the completed stage before visual assessment or completion. Explicit inspection calls always capture.'
+                  'Default immediate. Use defer only for intermediate mutations in an already planned stage: retain validation and receipts, defer only the image; mechanical checks run before this call returns. Inspect the completed stage before visual assessment or completion. Explicit inspection calls always capture.'
               },
               message: {
                 type: 'string',
@@ -1698,7 +1919,8 @@ export const createLocalOperationTools = (
     call: async (
       name: string,
       args: unknown,
-      signal: AbortSignal
+      signal: AbortSignal,
+      inspectionTargets?: Set<string>
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS) {
@@ -1712,11 +1934,32 @@ export const createLocalOperationTools = (
         )
         if (issue) throw new LocalOperationPreparationError(issue)
         signal.throwIfAborted()
-        await preparedReview?.refresh(signal)
-        for (const target of measuredTargets.keys()) {
-          await measurementCurrent(target, signal)
-        }
-        const ids = designReview.reviewEvidenceIds()
+        const request = args as { ids?: string[]; includePassed?: boolean }
+        const selected = request.ids
+          ? checkResults.dependencyIds(request.ids)
+          : undefined
+        const selectedRecords = selected
+          ? checkResults.read({ ids: selected, includePassed: true }).items
+          : undefined
+        const dependencies = selectedRecords
+          ? new Set(
+              selectedRecords.flatMap((result) =>
+                Object.keys(result.dependencies)
+              )
+            )
+          : undefined
+        await preparedReview?.refresh(signal, dependencies)
+        const targetIds = selected
+          ? selected
+              .filter((id) => id.startsWith('measurement:'))
+              .map((id) => id.slice(12))
+          : measuredTargets.keys()
+        for (const target of targetIds) await measurementCurrent(target, signal)
+        const ids = dependencies
+          ? [...dependencies]
+              .filter((key) => key.startsWith('inspection:'))
+              .map((key) => key.slice(11))
+          : designReview.reviewEvidenceIds()
         if (canInspect && ids.length) await validateEvidence(ids, signal, false)
         return JSON.stringify(
           checkResults.read(args as { includePassed?: boolean; ids?: string[] })
@@ -2397,11 +2640,15 @@ export const createLocalOperationTools = (
             !isRecord(item) ||
             item.status !== 'complete' ||
             item.value !== null ||
+            (isRecord(item.mutationScope) &&
+              item.mutationScope.complete !== true) ||
             (item.application !== undefined &&
               item.application !== 'not-reported') ||
             Object.keys(item).some(
               (key) =>
-                !['status', 'value', 'elementId', 'application'].includes(key)
+                !['status', 'value', 'application', 'mutationScope'].includes(
+                  key
+                )
             )
           )
             return true
@@ -2452,6 +2699,21 @@ export const createLocalOperationTools = (
 
       const message =
         typeof args.message === 'string' ? args.message : 'Updating the drawing'
+      const affectsDrawingReview = batchActions.some(
+        (action) =>
+          requiresVisualReview(action.name) ||
+          action.name === AiActionNames.ORGANIZE_DESIGN
+      )
+      if (affectsDrawingReview && hasUnresolvedMutationScope())
+        return localToolFailureReply(
+          scopeRecovery,
+          'MUTATION_SCOPE_UNAVAILABLE',
+          {
+            stage: 'admission',
+            settlement: 'not-started',
+            recoverable: false
+          }
+        ).text
       let prepared: AiActionBatch
       try {
         prepared = resolvePreparedBatch({
@@ -2468,76 +2730,193 @@ export const createLocalOperationTools = (
           error instanceof Error ? error.message : undefined
         )
       }
-      const affectsDrawingReview = batchActions.some(
-        (action) =>
-          requiresVisualReview(action.name) ||
-          (action.name === AiActionNames.ORGANIZE_DESIGN && !!reviewTargetId)
-      )
-      if (affectsDrawingReview) {
-        designReview.mutate()
-        measurementPending = canReview
+      let receipt: AiBatchReceipt
+      let executionFailure: BrowserBatchExecutionError | undefined
+      try {
+        receipt = await executeBatch(prepared)
+      } catch (error) {
+        signal.throwIfAborted()
+        if (
+          name === AiActionNames.REVIEW_DESIGN &&
+          typeof operationArguments.elementId === 'string'
+        )
+          markMeasurementUnavailable(operationArguments.elementId)
+        if (
+          affectsDrawingReview &&
+          (!(error instanceof BrowserBatchExecutionError) || !error.receipt)
+        ) {
+          unknownScope(prepared.actions[0].id)
+          designReview.mutate()
+          measurementPending = true
+          return localToolFailureReply(
+            localToolErrorMessage(error),
+            'MUTATION_SCOPE_UNAVAILABLE',
+            {
+              stage: 'execution',
+              settlement: 'unknown',
+              recoverable: false,
+              recovery: scopeRecovery,
+              checks: checkResults.summary([mutationScopeId])
+            }
+          ).text
+        }
+        if (
+          !affectsDrawingReview ||
+          !(error instanceof BrowserBatchExecutionError) ||
+          !error.receipt
+        )
+          throw error
+        executionFailure = error
+        receipt = error.receipt
       }
-      const receipt = await executeBatch(prepared)
+      const deliverReceipt = <T extends AiBatchReceipt>(value: T) => {
+        if (hasUnresolvedMutationScope())
+          value = {
+            ...value,
+            checks: checkResults.summary([
+              ...[...changedTargets].map(measurementId),
+              mutationScopeId
+            ]),
+            measurementIssues: [
+              ...('measurementIssues' in value &&
+              Array.isArray(value.measurementIssues)
+                ? value.measurementIssues
+                : []),
+              {
+                message:
+                  'Mutation target coverage is unavailable for this request.',
+                recovery: scopeRecovery
+              }
+            ]
+          }
+        if (executionFailure)
+          return localToolFailureReply(
+            localToolErrorMessage(executionFailure),
+            value.failure?.code ?? executionFailure.failure.code,
+            {
+              stage: value.failure?.stage ?? 'execution',
+              settlement: value.failure?.settlement ?? 'unknown',
+              recovery:
+                'Inspect the retained write receipt and check diagnostics before continuing; do not replay acknowledged mutations.',
+              batchFailure: executionFailure.failure,
+              executionResult: JSON.parse(
+                serializeToolPayload(value).serialized
+              )
+            }
+          ).text
+        return serializeReceipt(value)
+      }
+      const changedTargets = new Set<string>()
+      let removedTargets = false
+      const retireTarget = (id: string) => {
+        removedTargets = true
+        reviewScope.delete(id)
+        changedTargets.delete(id)
+        inspectionTargets?.delete(id)
+        measuredTargets.delete(id)
+        checkResults.retire(
+          measurementId(id),
+          'The measured target was removed.'
+        )
+        if (!measuredTargets.size) measurementPending = false
+      }
       signal.throwIfAborted()
       if (
         name === AiActionNames.REVIEW_DESIGN &&
         typeof operationArguments.elementId === 'string'
       ) {
-        updateMeasurementState(operationArguments.elementId, receipt)
+        updateMeasurementState(
+          operationArguments.elementId,
+          receipt,
+          prepared.actions[0].id
+        )
       }
       if (signal.aborted) throw new Error('Backend operation cancelled')
-      if ((canInspect || canReview) && affectsDrawingReview) {
-        const submittedActions = new Map(
-          prepared.actions.map((action) => [action.id, action])
-        )
+      if (affectsDrawingReview) {
+        const acknowledgements = new Map<
+          string,
+          AiBatchReceipt['actionResults'][number][]
+        >()
         for (const entry of receipt.actionResults) {
-          const contract = getBasicApiContract(entry.actionName)
-          const method = contract?.method
-          const submitted = submittedActions.get(entry.actionId)
-          const submittedArguments = isRecord(submitted?.arguments)
+          const entries = acknowledgements.get(entry.actionId) ?? []
+          entries.push(entry)
+          acknowledgements.set(entry.actionId, entries)
+        }
+        for (const submitted of prepared.actions) {
+          const contract = getBasicApiContract(submitted.name)
+          if (contract && !['write', 'delete'].includes(contract.effect))
+            continue
+          if (
+            !contract &&
+            !requiresVisualReview(submitted.name) &&
+            submitted.name !== AiActionNames.ORGANIZE_DESIGN
+          )
+            continue
+          const matches = acknowledgements.get(submitted.id) ?? []
+          if (
+            matches.length !== 1 ||
+            matches[0].actionName !== submitted.name ||
+            !isRecord(matches[0].result)
+          ) {
+            unknownScope(submitted.id)
+            continue
+          }
+          const entry = matches[0]
+          const receiptResult = entry.result as Record<string, unknown>
+          if (contract || Object.hasOwn(receiptResult, 'mutationScope')) {
+            const scope = receiptResult.mutationScope
+            const validIds = (value: unknown): value is string[] =>
+              Array.isArray(value) &&
+              value.every((id) => typeof id === 'string' && id.length > 0)
+            if (
+              !isRecord(scope) ||
+              !validIds(scope.elementIds) ||
+              !validIds(scope.removedElementIds) ||
+              typeof scope.complete !== 'boolean'
+            ) {
+              unknownScope(submitted.id)
+              continue
+            }
+            const removed = new Set(scope.removedElementIds)
+            if (scope.elementIds.some((id) => removed.has(id))) {
+              unknownScope(submitted.id)
+              continue
+            }
+            if (!scope.complete) unknownScope(submitted.id)
+            for (const id of scope.removedElementIds) retireTarget(id)
+            for (const id of scope.elementIds) {
+              reviewScope.add(id)
+              changedTargets.add(id)
+              reviewTargetId ??= id
+            }
+            if (
+              contract?.method === 'groupElements' &&
+              isRecord(receiptResult.value)
+            ) {
+              const group = receiptResult.value
+              if (
+                typeof group.groupId === 'string' &&
+                scope.elementIds.includes(group.groupId) &&
+                Array.isArray(group.elementIds) &&
+                (!reviewTargetId || group.elementIds.includes(reviewTargetId))
+              )
+                reviewTargetId = group.groupId
+            }
+            continue
+          }
+          const submittedArguments = isRecord(submitted.arguments)
             ? submitted.arguments
             : {}
-          if (
-            method === 'deleteElement' &&
-            isRecord(entry.result) &&
-            entry.result.value === true &&
-            typeof submittedArguments.elementId === 'string'
-          )
-            reviewScope.delete(submittedArguments.elementId)
-          if (!isRecord(entry.result)) continue
-          const receiptResult = entry.result
-          const result =
-            contract && isRecord(receiptResult.value)
-              ? receiptResult.value
-              : receiptResult
-          if (
-            contract?.result.kind === 'created-items' &&
-            Array.isArray(receiptResult.appliedElementIds)
-          ) {
-            for (const id of receiptResult.appliedElementIds) {
-              if (typeof id !== 'string') continue
-              reviewScope.add(id)
-              reviewTargetId ??= id
-            }
-          }
-          if (
-            contract?.effect === 'write' &&
-            Array.isArray(receiptResult.reviewElementIds)
-          ) {
-            for (const id of receiptResult.reviewElementIds) {
-              if (typeof id !== 'string' || id.length === 0) continue
-              reviewScope.add(id)
-              reviewTargetId ??= id
-            }
-          }
+          const result = receiptResult
+          if (result.status === 'no-change' || result.changed === false)
+            continue
           let removed: unknown
           if (entry.actionName === AiActionNames.REMOVE_AI_COMPOSITION)
             removed = result.appliedElementIds
-          else if (contract?.result.kind === 'removed') removed = result.removed
           if (Array.isArray(removed)) {
             for (const item of removed) {
               const id = isRecord(item) ? item.elementId : item
-              if (typeof id === 'string') reviewScope.delete(id)
+              if (typeof id === 'string') retireTarget(id)
             }
           }
           if (
@@ -2545,11 +2924,9 @@ export const createLocalOperationTools = (
             result.status === 'complete' &&
             typeof submittedArguments.compositionId === 'string'
           )
-            reviewScope.delete(submittedArguments.compositionId)
-          const group =
-            result.operation === 'group' || method === 'groupElements'
-          const ungroup =
-            result.operation === 'ungroup' || method === 'ungroupElement'
+            retireTarget(submittedArguments.compositionId)
+          const group = result.operation === 'group'
+          const ungroup = result.operation === 'ungroup'
           if (
             typeof result.groupId === 'string' &&
             Array.isArray(result.elementIds)
@@ -2557,83 +2934,93 @@ export const createLocalOperationTools = (
             const members = result.elementIds.filter(
               (id): id is string => typeof id === 'string'
             )
-            if (group && members.some((id) => reviewScope.has(id))) {
+            if (group) {
               members.forEach((id) => reviewScope.delete(id))
               reviewScope.add(result.groupId)
-              if (reviewTargetId && members.includes(reviewTargetId))
+              changedTargets.add(result.groupId)
+              if (!reviewTargetId || members.includes(reviewTargetId))
                 reviewTargetId = result.groupId
-            } else if (
-              ungroup &&
-              result.removed === true &&
-              reviewScope.delete(result.groupId)
-            ) {
-              members.forEach((id) => reviewScope.add(id))
-              if (reviewTargetId === result.groupId)
+            } else if (ungroup && result.removed === true) {
+              retireTarget(result.groupId)
+              members.forEach((id) => {
+                reviewScope.add(id)
+                changedTargets.add(id)
+              })
+              if (!reviewTargetId || reviewTargetId === result.groupId)
                 reviewTargetId = [...reviewScope][0]
             }
           }
-          const reportedElementId = receiptResult.elementId
           if (typeof result.compositionId === 'string') {
             reviewScope.add(result.compositionId)
+            changedTargets.add(result.compositionId)
             if (
               !reviewTargetId ||
               entry.actionName !== AiActionNames.UPDATE_DESIGN_ELEMENT
             )
               reviewTargetId = result.compositionId
+          } else if (typeof result.elementId === 'string') {
+            reviewScope.add(result.elementId)
+            changedTargets.add(result.elementId)
+            reviewTargetId ??= result.elementId
           } else if (
-            contract?.effect === 'write' &&
-            typeof reportedElementId === 'string'
+            entry.actionName !== AiActionNames.REMOVE_AI_COMPOSITION &&
+            Array.isArray(result.appliedElementIds)
           ) {
-            reviewScope.add(reportedElementId)
-            reviewTargetId ??= reportedElementId
+            for (const id of result.appliedElementIds)
+              if (typeof id === 'string' && id) {
+                reviewScope.add(id)
+                changedTargets.add(id)
+                reviewTargetId ??= id
+              }
+          } else if (
+            result.operation === 'reorder' &&
+            Array.isArray(result.moves)
+          ) {
+            for (const move of result.moves)
+              if (isRecord(move) && typeof move.elementId === 'string') {
+                reviewScope.add(move.elementId)
+                changedTargets.add(move.elementId)
+                reviewTargetId ??= move.elementId
+              }
           }
         }
         if (reviewTargetId && !reviewScope.has(reviewTargetId))
           reviewTargetId = [...reviewScope][0]
-        if (!reviewTargetId) inspectionUnavailable = true
-        if (reviewTargetId) {
-          if (args.inspection === 'defer' && canInspect)
-            return serializeReceipt({
-              ...receipt,
-              inspectionDeferred: true,
-              measurementDeferred: measurementPending
-            })
-          let measurement: AiBatchReceipt | undefined
-          if (canReview && measurementPending) {
-            measurement = await measure(reviewTargetId, signal)
-            signal.throwIfAborted()
-            if (
-              unresolvedMeasurements().length > 0 ||
-              !canInspect ||
-              measurementPending
-            )
-              return serializeReceipt({
-                ...receipt,
-                actionResults: [
-                  ...receipt.actionResults,
-                  ...measurement.actionResults
-                ]
-              })
-          }
-          const inspection = await inspect(
-            reviewTargetId,
-            true,
-            undefined,
-            undefined,
-            signal
-          )
-          if (signal.aborted) throw new Error('Backend operation cancelled')
-          return serializeReceipt({
+        if (
+          changedTargets.size ||
+          removedTargets ||
+          hasUnresolvedMutationScope()
+        ) {
+          designReview.mutate()
+          if (changedTargets.size) measurementPending = canReview
+        }
+        if (inspectionTargets) {
+          for (const target of changedTargets) inspectionTargets.add(target)
+          return deliverReceipt({
             ...receipt,
-            actionResults: [
-              ...receipt.actionResults,
-              ...(measurement?.actionResults ?? []),
-              ...inspection.actionResults
-            ]
+            inspectionDeferred: true,
+            measurementDeferred: true
+          })
+        }
+        if (changedTargets.size) {
+          const followup = await finishInspection(
+            changedTargets,
+            reviewTargetId,
+            args.inspection === 'defer',
+            signal,
+            (executionFailure
+              ? (receipt.failure?.settlement ?? 'unknown')
+              : localToolOutcome(receipt).settlement) === 'unknown',
+            args.response === 'full' || operationArguments.response === 'full'
+          )
+          return deliverReceipt({
+            ...receipt,
+            ...followup,
+            actionResults: [...receipt.actionResults, ...followup.actionResults]
           })
         }
       }
-      return serializeReceipt(receipt)
+      return deliverReceipt(receipt)
     }
   }
 }

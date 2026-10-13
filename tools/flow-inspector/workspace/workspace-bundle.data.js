@@ -462,7 +462,7 @@
               "Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority",
               "Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior",
               "Reject duplicate Fill-row destination IDs before reads or writes; resolve each current row and apply aligned or uniform new patches in one batch; plural visibility reports ordered changed/unchanged/unavailable outcomes in one receipt",
-              "Status-item receipts validate input/output alignment and emit reviewElementIds only for changed or unchanged targets without additional canonical reads",
+              "Basic mutation receipts carry complete or unresolved scope from actual canonical Scene Tree and Props publications, including shared property owners, structural parents and removals. Capture begins inside admitted synchronous execution, excludes idle-boundary waits and ends after settlement; read and transient actions never contribute. Empty complete scope is no inspection work; missing or unknown scope cannot certify completion.",
               "Registered App editing actions, including delete and replace, use allow-only App policy and ordinary grouped Undo; unknown actions, invalid inputs and canonical locks retain rejection independently of model questions",
               "Overlap only proven independent access",
               "Preserve ordered writes and read-after-write dependencies",
@@ -506,6 +506,7 @@
               "apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts",
               "packages/utils/src/types/transaction.ts",
               "packages/factory/src/data-transact.ts",
+              "apps/asyra-design/src/common-apis/inspection-evidence.ts",
               "apps/asyra-design/src/ai/transaction.ts",
               "apps/asyra-design/src/ai/__tests__/transaction.test.ts",
               "packages/scene-tree/src/sceneTree.ts",
@@ -633,19 +634,22 @@
             ],
             "conditions": [
               "Canonical canvas measurements join the same check store by exact target. Complete rechecks replace that target including removed children; incomplete work remains unresolved. Scoped browser receipt validation invalidates only actual changed units without remeasurement. All unresolved mechanical findings block completion.",
+              "Mechanical passes require one exact action acknowledgement, coherent availability/completeness and a canonical stamp. Currency or explicit-check failure preserves prior evidence as unresolved and retires the reusable stamp; later coherent checks may recover. Return bounded check counts and firstPendingId, not all retained evidence. Canonical removal retires only its tool obligation, invalidates dependents and preserves monotonic revisions; explicit reads refresh only selected transitive dependencies and independent failures remain readable.",
               "Canonical deterministic review owns typed mechanical verdict and stable unresolved-state progress inside evidence capture. Only complete supported checks with no findings pass; declared mechanical findings are repairable, unknown/incomplete checks require primary-agent decision. Verdicts never certify visual acceptance.",
               "Successful artifact publication records existing compiler findings once in the same request-owned check store; explicit source review reuses that unit. An owned explicit predecessor can consolidate a correction into its original source obligation without deleting unrelated or visual obligations. Immutable source checks never prove current canvas effects or artifact availability.",
               "Prepared-content checks consume compiler-admitted source and deterministic findings with current attachment; no model request, assessor callback or fallback is permitted. Partial coverage cannot hide canonical failures; visual meaning remains unverified.",
               "Retain tool and primary-agent results with distinct provenance and dependency versions. Return unresolved or stale work by default, retain passes for explicit reads, and invalidate changed dependencies including previous passes. Unknown scope invalidates conservatively; no fabricated local scene freshness.",
               "Attachment currency uses the actual parent ancestry, editable membership, bounds and workspace basis signature. Known affected changes lazily revalidate the small signature; unchanged child geometry preserves evidence. Unknown/load/disposal invalidate. Preparation refresh validates retained receipts, never compares them to a new workspace snapshot.",
               "Capture actual attachment parent identity, local bounds and workspace basis through Core with a canonical inspection stamp; read only ancestor metadata and needed fields, include attachment context in prepared review, revalidate after assessment and retain exact parent/stamp for browser apply admission",
-              "Consume confirmed plural receipt reviewElementIds into request-owned scope, including direct edits without a prior composition; exclude unavailable targets and retain ordinary evidence requirements",
+              "Automatic mechanical checks retain full findings in the existing check store and return compact summaries by default. Direct review, exact retained reads and explicit full batch/workflow responses preserve full results. A missing or incomplete mutation scope creates one terminal request obligation in the same store, blocks subsequent document writes before dispatch and reports unsupported completion; read/check/capture remain available and ordinary mechanical failures remain retryable. No parallel scope state, invented reconciliation or write replay.",
+              "Consume only exact matching mutation acknowledgement scopes, including direct edits without a prior composition. No-change preserves existing evidence; unknown coverage remains unresolved. Consume scope before compact delivery and never derive targets from read-result field names.",
               "Expose one strict plan schema and executable guidance for standalone and composed first-write admission; allow first criteria after partial drawing while retaining the original request; lock established criteria after mutation and require current full review before approval",
               "Acknowledge plan storage with IDs and fact validity only; retain full request-local criteria and facts for review without echoing submitted narrative or implying visual acceptance",
               "Expose criteria, source-attributed facts, derived calculation notes, reference selection and drawing review through distinct registered responsibilities with strict schemas and one request-owned evidence state; reference selection returns selected indexes, change and review handoff without retransmitting facts or bindings",
               "Compare admitted facts, bindings and selected references before invalidating review; identical submissions and unrelated new unbound facts preserve acceptance, real affected changes return affected criteria and an explicit current-tool handoff",
               "Keep derived calculations diagnostic and dependency-bound without replacing source facts, rounding canonical data or certifying the drawing; judge optional numerical polish against user precision and visible scale",
-              "Coalesce intermediate checks only within a coherent stage",
+              "Coalesce intermediate checks only within one invocation-local ordered block; collect all acknowledged targets and check each distinct target on success or partial stop. Standalone writes check before returning even with deferred capture. Retire targets confirmed removed by deletion, ungrouping or replacement before the coherent boundary. Browser batch exceptions with acknowledged receipts use this same boundary while preserving the original failure; never infer writes from missing receipts. No request-global suppression or model-facing mechanical bypass.",
+              "Preserve acknowledged write receipts when follow-up checks fail; return target-specific recovery and retain unverified check state. Missing capability also remains unverified and blocks completion; no optional-capability acceptance bypass. A shared unavailable capability or unknown settlement returns one bounded diagnostic with affected count. Explicit unknown settlement blocks follow-up checking even with partial or failed execution status. Automatic capture requires current complete passing checks for affected targets, including reused results; explicit diagnostic capture stays independent. Cancellation prevents late verdict/image publication and dispatch of successors.",
               "Route explicitly declared visual criteria to image assessment; retain data criteria in ordinary numeric/canonical review; no criterion-name heuristic or pixel proof for data; preserve explicit reference selection on partial plan resubmission",
               "The primary drawing agent compares current rendered evidence and references and submits findings through the ordinary tool call. Normal review tools launch no separate model. Verify current evidence before retaining a visual judgment; allow repeated primary-agent iterations.",
               "Treat optional polish as advisory; user-requested quality and explicit acceptance govern the relevant scope, never model-authored extra requirements or reference fidelity absent a request",
@@ -742,7 +746,8 @@
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
             ],
             "specRefs": [
-              "#evidence-and-completion"
+              "#evidence-and-completion",
+              "#capture-and-deterministic-review-responsibility"
             ],
             "failureOwnerStepId": "inspect"
           },

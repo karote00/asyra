@@ -9,6 +9,7 @@ import {
   localToolOutcome,
   type LocalToolObservation
 } from './local-tool-invocation'
+import { designCheckSummarySchema } from './design-check-results'
 import { reviewPlanSchema } from './local-design-review'
 import { operationInputIssue } from './operation-input-schema'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -41,11 +42,15 @@ export const createLocalDesignWorkflow = (
   const partOutputSchema = {
     allOf: [
       preparation?.outputSchema ?? false,
-      toolResultObject({
-        applicable: { const: true },
-        actionResults: { type: 'array' },
-        completedSteps: { type: 'array', items: { type: 'string' } }
-      })
+      toolResultObject(
+        {
+          applicable: { const: true },
+          actionResults: { type: 'array' },
+          completedSteps: { type: 'array', items: { type: 'string' } },
+          checks: designCheckSummarySchema
+        },
+        ['applicable', 'actionResults', 'completedSteps']
+      )
     ]
   }
   const stoppedPartSchema = toolResultObject(
@@ -59,23 +64,31 @@ export const createLocalDesignWorkflow = (
   const stoppedOutputSchema = {
     anyOf: [
       stoppedPartSchema,
-      toolResultObject({
-        status: { enum: ['partial', 'failed', 'unknown'] },
-        parts: {
-          type: 'array',
-          items: { anyOf: [partOutputSchema, stoppedPartSchema] }
-        }
-      })
+      toolResultObject(
+        {
+          checks: designCheckSummarySchema,
+          status: { enum: ['partial', 'failed', 'unknown'] },
+          parts: {
+            type: 'array',
+            items: { anyOf: [partOutputSchema, stoppedPartSchema] }
+          }
+        },
+        ['status', 'parts']
+      )
     ]
   }
   const semantics = toolSemantics(
     {
       anyOf: [
         partOutputSchema,
-        toolResultObject({
-          status: { const: 'complete' },
-          parts: { type: 'array', minItems: 1, items: partOutputSchema }
-        })
+        toolResultObject(
+          {
+            status: { const: 'complete' },
+            parts: { type: 'array', minItems: 1, items: partOutputSchema },
+            checks: designCheckSummarySchema
+          },
+          ['status', 'parts']
+        )
       ]
     },
     'mutation',
@@ -129,7 +142,8 @@ export const createLocalDesignWorkflow = (
       name: string,
       args: unknown,
       signal: AbortSignal,
-      part?: { key: string; index: number }
+      part?: { key: string; index: number },
+      inspectionTargets?: Set<string>
     ): Promise<string> => {
       signal.throwIfAborted()
       if (
@@ -188,7 +202,13 @@ export const createLocalDesignWorkflow = (
           arguments_,
           async () => {
             const reply = await invokeLocalTool(
-              owner,
+              owner === operations && inspectionTargets
+                ? {
+                    ...operations,
+                    call: (name, args, signal) =>
+                      operations.call(name, args, signal, inspectionTargets)
+                  }
+                : owner,
               step,
               arguments_,
               signal,
@@ -466,6 +486,26 @@ export const createLocalDesignWorkflow = (
         keys.add(part.key)
       }
       const completed: Record<string, unknown>[] = []
+      const inspectionTargets = new Set<string>()
+      const finish = async (result: Record<string, unknown>) => {
+        const captureTarget = [...inspectionTargets].at(-1)
+        const followup = await operations.finishInspection(
+          inspectionTargets,
+          captureTarget,
+          input.inspection === 'defer',
+          signal,
+          result.settlement === 'unknown' || result.status === 'unknown',
+          input.response === 'full'
+        )
+        return JSON.stringify({
+          ...result,
+          ...followup,
+          parts: completed.map((part) => ({
+            ...part,
+            measurementDeferred: false
+          }))
+        })
+      }
       const parentIds = new Map<string, string>()
       for (const [index, part] of parts.entries()) {
         signal.throwIfAborted()
@@ -474,7 +514,7 @@ export const createLocalDesignWorkflow = (
             ? part.parentId
             : parentIds.get(String(part.parentPart))
         if (part.parentPart !== undefined && parentId === undefined)
-          return JSON.stringify({
+          return finish({
             status: 'partial',
             complete: false,
             parts: completed,
@@ -506,7 +546,8 @@ export const createLocalDesignWorkflow = (
                   : 'defer'
             },
             signal,
-            { key: part.key, index }
+            { key: part.key, index },
+            inspectionTargets
           )
         )
         completed.push({ key: part.key, ...receipt })
@@ -517,7 +558,7 @@ export const createLocalDesignWorkflow = (
           if (outcome.status === 'unknown') status = 'unknown'
           let settlement = index ? 'partial' : outcome.settlement
           if (outcome.settlement === 'unknown') settlement = 'unknown'
-          return JSON.stringify({
+          return finish({
             status,
             settlement,
             parts: completed,
@@ -532,7 +573,7 @@ export const createLocalDesignWorkflow = (
         if (typeof identity === 'string' && identity)
           parentIds.set(part.key, identity)
       }
-      return JSON.stringify({
+      return finish({
         status: 'complete',
         complete: true,
         parts: completed

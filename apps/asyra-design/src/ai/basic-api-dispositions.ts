@@ -25,6 +25,12 @@ const coreRenderLifecycleDisposition = {
 export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
+    owner: 'core',
+    methods: ['getPropertyOwnerElementIds'],
+    reason:
+      'Host inspection observes canonical property publications and resolves affected live or retired owners. This inverse ownership index supports mutation evidence, not an independent model operation.'
+  },
+  {
     owner: 'element',
     methods: ['deleteElement'],
     replacement: 'api_element_deleteElements',

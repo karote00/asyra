@@ -2446,3 +2446,219 @@ it('execution proof retains regional units without requiring global coverage for
   })
   expect(validations.some((args) => args.scope !== undefined)).toBe(true)
 })
+
+it('execution proof checks all acknowledged parts before returning deferred capture without another model', async () => {
+  const names = [
+    AiActionNames.APPLY_PREPARED_DESIGN,
+    AiActionNames.REVIEW_DESIGN,
+    AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+    AiActionNames.INSPECT_DRAWING
+  ]
+  const registered = names.map((name) => ({
+    name,
+    description: name,
+    inputSchema: {}
+  }))
+  const designs = createLocalDesignTools(registered)
+  const order: string[] = []
+  let writes = 0
+  const operations = createLocalOperationTools(
+    registered,
+    designs,
+    async (batch) => {
+      const action = batch.actions[0]
+      const input = action.arguments as { elementId?: string }
+      order.push(action.name)
+      let result: AiBatchReceipt['actionResults'][number]['result']
+      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+        result = { status: 'complete', compositionId: 'part-' + ++writes }
+      else if (action.name === AiActionNames.REVIEW_DESIGN)
+        result = {
+          complete: true,
+          findings: [],
+          evidence: {
+            sessionId: 'proof-stage',
+            revision: writes,
+            receiptId: String(input.elementId)
+          },
+          measuredTextIds: []
+        }
+      else {
+        expect(action.name).toBe(AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+        result = { current: true }
+      }
+      return {
+        context: {},
+        actionResults: [
+          { actionId: action.id, actionName: action.name, result }
+        ]
+      }
+    }
+  )
+  const workflow = createLocalDesignWorkflow(designs, operations)
+  const draft = {
+    type: 'group',
+    name: 'Part',
+    children: [
+      { type: 'rect', key: 'face', name: 'Face', width: 10, height: 20 }
+    ]
+  }
+  const modelCalls = spawn.mock.calls.length
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      },
+      new AbortController().signal
+    )
+  )
+  expect(result).toMatchObject({
+    status: 'complete',
+    inspectionDeferred: true,
+    measurementDeferred: false
+  })
+  expect(order).toEqual([
+    AiActionNames.APPLY_PREPARED_DESIGN,
+    AiActionNames.APPLY_PREPARED_DESIGN,
+    AiActionNames.REVIEW_DESIGN,
+    AiActionNames.REVIEW_DESIGN
+  ])
+  const checks = JSON.parse(
+    await operations.call(
+      'read_design_checks',
+      {
+        ids: ['measurement:part-1', 'measurement:part-2'],
+        includePassed: true
+      },
+      new AbortController().signal
+    )
+  )
+  expect(checks.counts).toEqual({ pass: 2, fail: 0, stale: 0, unverified: 0 })
+  expect(
+    order.filter((name) => name === AiActionNames.REVIEW_DESIGN)
+  ).toHaveLength(2)
+  expect(spawn.mock.calls.length).toBe(modelCalls)
+})
+
+it('execution proof consumes canonical mutation scope without read pollution or no-change invalidation', async () => {
+  const checked: string[] = []
+  let scopeAvailable = true
+  const signal = new AbortController().signal
+  const definitions: AiActionDescription[] = JSON.parse(
+    JSON.stringify([
+      ...basicApiContracts,
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Measure',
+        inputSchema: {}
+      }
+    ])
+  )
+  const tools = createLocalOperationTools(
+    definitions,
+    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: batch.actions.map((call) => {
+        let result: unknown
+        if (call.name === AiActionNames.REVIEW_DESIGN) {
+          const id = String((call.arguments as { elementId: string }).elementId)
+          checked.push(id)
+          result = {
+            available: true,
+            complete: true,
+            findings: [],
+            evidence: { sessionId: 'scope-proof', receiptId: id, revision: 1 }
+          }
+        } else if (call.name === 'api_core_getElementData')
+          result = {
+            value: { compositionId: 'read-only-payload' },
+            status: 'no-change'
+          }
+        else
+          result = {
+            status: 'complete',
+            value: null,
+            mutationScope: {
+              complete: scopeAvailable,
+              elementIds:
+                call.name === 'api_core_updatePropertyComponents'
+                  ? ['shared-a', 'shared-b']
+                  : [],
+              removedElementIds: []
+            }
+          }
+        return {
+          actionId: call.id,
+          actionName: call.name,
+          result: JSON.parse(JSON.stringify(result))
+        }
+      })
+    })
+  )
+  const run = (operations: unknown[]) =>
+    tools
+      .call('execute_design_batch', { operations, inspection: 'defer' }, signal)
+      .then(JSON.parse)
+  const first = await run([
+    {
+      name: 'api_core_updatePropertyComponents',
+      arguments: {
+        updates: [{ propertyId: 'shared', values: { color: '#abcdef' } }]
+      }
+    },
+    { name: 'api_core_getElementData', arguments: { elementId: 'shared-a' } }
+  ])
+  expect(checked).toEqual(['shared-a', 'shared-b'])
+  expect(first.checks.counts).toMatchObject({ pass: 2, unverified: 0 })
+  expect(
+    first.actionResults.some(
+      (entry: { actionName: string }) =>
+        entry.actionName === AiActionNames.REVIEW_DESIGN
+    )
+  ).toBe(false)
+  checked.length = 0
+  await run([
+    { name: 'api_element_createElements', arguments: { createOptions: [] } }
+  ])
+  expect(checked).toEqual([])
+  expect(
+    tools.settleOutcome({
+      batchId: 'done',
+      actions: [
+        {
+          id: 'done',
+          name: AiActionNames.REPORT_OUTCOME,
+          arguments: { outcome: 'completed' },
+          summary: 'Finish'
+        }
+      ]
+    })
+  ).toMatchObject({ actions: [{ arguments: { outcome: 'completed' } }] })
+  scopeAvailable = false
+  const broken = await run([
+    { name: 'api_element_createElements', arguments: { createOptions: [] } }
+  ])
+  const saved = JSON.parse(
+    await tools.call(
+      'read_design_checks',
+      { ids: [broken.checks.firstPendingId] },
+      signal
+    )
+  )
+  expect(saved.items[0].status).toBe('unverified')
+  expect(saved.items[0].evidence).toContain('Stop this request')
+  scopeAvailable = true
+  const blocked = await run([
+    { name: 'api_element_createElements', arguments: { createOptions: [] } }
+  ])
+  expect(blocked).toMatchObject({
+    recoverable: false,
+    toolOutcome: { settlement: 'not-started' }
+  })
+})

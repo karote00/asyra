@@ -310,10 +310,17 @@ describe('local semantic design tools', () => {
           {
             actionId: batch.actions[0].id,
             actionName: batch.actions[0].name,
-            result:
-              batch.actions[0].name === AiActionNames.INSPECT_DRAWING
-                ? { available: true }
-                : { compositionId: 'actual-root' }
+            result: [
+              AiActionNames.REVIEW_DESIGN,
+              AiActionNames.INSPECT_DRAWING
+            ].includes(batch.actions[0].name as never)
+              ? {
+                  available: true,
+                  complete: true,
+                  findings: [],
+                  evidence: { sessionId: 'semantic-root', revision: 1 }
+                }
+              : { compositionId: 'actual-root' }
           }
         ],
         context: {}
@@ -322,6 +329,11 @@ describe('local semantic design tools', () => {
     const operations = createLocalOperationTools(
       [
         ...actions,
+        {
+          name: AiActionNames.REVIEW_DESIGN,
+          description: 'Measure',
+          inputSchema: {}
+        },
         {
           name: AiActionNames.INSPECT_DRAWING,
           description: 'Review',
@@ -342,11 +354,14 @@ describe('local semantic design tools', () => {
       },
       signal()
     )
-    expect(execute).toHaveBeenCalledTimes(2)
+    expect(execute).toHaveBeenCalledTimes(3)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
       design: { version: 1, entries: expect.any(Array) }
     })
-    expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
+    expect(execute.mock.calls[1][0].actions[0].name).toBe(
+      AiActionNames.REVIEW_DESIGN
+    )
+    expect(execute.mock.calls[2][0].actions[0].arguments).toEqual({
       elementId: 'actual-root'
     })
   })

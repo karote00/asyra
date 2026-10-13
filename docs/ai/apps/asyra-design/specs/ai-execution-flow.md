@@ -234,11 +234,10 @@ unchanged owner. UI and AI use the same operation. The caller does not provide a
 current Stroke snapshot; canonical setters own before/after and Undo data.
 
 Batch visibility receipts retain statuses aligned with submitted element IDs.
-The action adapter supplies reviewElementIds for owner-confirmed changed or
-unchanged targets; unavailable targets are excluded. Malformed or misaligned
-statuses fail rather than inventing review targets. The review coordinator
-retains every confirmed target even when no composition was previously created;
-these IDs establish scope only and do not prove visual acceptance.
+Malformed or misaligned statuses fail instead of inventing success. Canonical
+mutationScope identifies actual affected owners, including shared properties;
+unchanged and unavailable input rows are not evidence of a mutation. Scope alone
+does not prove visual acceptance.
 
 Registered return contracts preserve actual owner values. Ordered creation
 receipts distinguish successful IDs, failed entries, partial outcomes and empty
@@ -319,8 +318,10 @@ criteria, source facts/bindings and explicit reference selection for subsequent
 checks; phase=facts remains the explicit fact retrieval route. Storage success
 does not approve a drawing.
 
-A coherent stage may defer intermediate automatic measurements and screenshots.
-It ends with current stage inspection before visual assessment or completion.
+A coherent stage may defer screenshots. Only intermediate parts inside one
+ordered invocation may coalesce mechanical checks until that invocation ends;
+standalone writes check before returning. Visual assessment or completion still
+requires current image evidence at its explicit decision boundary.
 Numeric admission, a successful receipt and a model assertion are not visual
 acceptance. Requested qualities, not a universal detail score, govern review.
 
@@ -1546,7 +1547,41 @@ its earlier obligation.
 ### Capture and deterministic review responsibility
 
 Capturing an image does not execute deterministic subtree checking. The explicit
-mutation coordinator may check before presenting a result; final assessment
+mutation coordinator checks acknowledged targets before returning, even when
+`inspection=defer` suppresses screenshots. Ordered parts collect targets in an
+invocation-local boundary and check each distinct target at the completed or
+partial block boundary, rather than repeatedly checking intermediate states.
+Confirmed delete, ungroup and replacement receipts retire removed targets from
+this invocation's pending checks. Browser batch errors carrying acknowledged
+receipts enter the same check boundary: settled partial writes are checked and
+the original failure is preserved; missing receipts or unknown settlement never
+become successful execution. Current measurement stamps are reused. Check failures preserve acknowledged
+writes and return separate target-specific diagnostics; missing or failed checks
+remain unverified and block completion, including missing checking capability.
+A shared unavailable capability or unknown settlement returns one diagnostic
+with affected count; each target retains its actual check state. Cancellation
+stops new checks and publishes no late verdict. Explicit unknown mutation
+settlement prevents follow-up checks even when execution status is partial or
+failed. Automatic capture waits for current complete mechanical checks without
+findings at the affected targets, including reused results. An explicit capture
+remains image-only and may be requested separately to diagnose findings.
+No model-facing capture option skips these checks. Final assessment
+consumes only an exact single matching mechanical acknowledgement with coherent
+availability, completion and a current canonical stamp. Failed freshness reads
+make that target stale, retire its reusable stamp and retain known evidence;
+failed explicit rechecks cannot leave an earlier pass current. The next coherent
+boundary may recheck once to recover. Incomplete checks retain both prior and
+newly observed findings without treating them as a complete current pass.
+Check tails return `checks` counts and an optional `firstPendingId`, readable
+through `read_design_checks`; they do not retransmit every retained finding.
+Confirmed target removal retires its tool-owned result and makes actual dependent
+checks stale, preserving unrelated and primary-agent obligations. Recreated IDs
+receive a newer check revision. Explicit result reads refresh only the requested
+checks and transitive declared dependencies. Independent preparation freshness
+failures are retained as stale results without preventing other selected reads;
+cancellation still stops the read.
+
+Final assessment
 requires a current complete deterministic result for each overview target. It
 validates retained measurement stamps through the browser owner, computes missing
 or stale results once, and returns incomplete work when checks cannot complete.
@@ -1629,3 +1664,48 @@ checks remain unresolved. Reads validate actual browser-issued scoped receipts
 without running geometry checks. Invalid receipts stale only their dependent
 units; current unrelated passes remain. Container and text findings both block
 completion. Mechanical passes cover supported rules, never visual acceptance.
+
+### Canonical mutation inspection scope
+
+Basic mutation receipts expose `mutationScope` with `complete`, `elementIds` and
+`removedElementIds`. The browser observes actual Scene Tree/Props publication
+inside the admitted synchronous execution through transaction settlement, not
+while waiting for another transaction. Shared-property owners and changed
+structural parents are included; workspace roots are not whole-scene targets.
+Only these touched identities are resolved against canonical metadata. Unknown
+publication/resolution yields incomplete scope, never an empty verified scope.
+Read, viewport and selection receipts do not create document-check obligations.
+The server consumes exact matching mutation acknowledgements before compact
+delivery; it never infers a mutation from arbitrary result field names. Empty
+complete scope creates no new check or visual invalidation. Missing or incomplete
+scope remains unresolved. Failure/cancellation keeps existing settlement authority,
+releases observation, and cannot trigger replay or fabricated completion.
+
+Retained position-to-fill mapping returns this same scope from the canonical
+shared-property inverse-owner lookup after its admitted write. Native arrangement
+and reorder retain their declared applied identities; prepared compositions retain
+their coherent root inspection unit. These paths do not guess scalar input names
+or expand a full document to find affected owners. Changed basic document-mutation
+and retained-mapping output contracts advertise revision 3; unchanged read,
+selection and viewport contracts retain revision 2. Saved recipes with replaced
+dependency identities fail admission before execution and must be corrected using
+the currently advertised contract. There is no old-output fallback.
+
+
+### Mechanical delivery and unresolved write scope
+
+Automatic checks retain complete findings in the existing request-owned check
+store and return a compact summary with the first pending result ID. Direct
+review and retained-result reads remain complete; explicit full batch/workflow
+responses may include automatic check receipts. Default delivery must not resend
+full findings, including large complete checks with known failures. Screenshot
+receipts and acknowledged product writes keep their existing output contracts.
+
+Missing, incomplete or mismatched mutation scope creates one terminal request
+obligation in that same store, not a second state collection. No geometry recheck
+can reconstruct unacknowledged write coverage. Further document writes in this
+request stop before dispatch; read/check/capture and an accurate unsupported
+outcome remain available. Preserve existing document work; never replay it or
+promise a reconciliation tool that does not exist. A subsequent request starts
+from current document state rather than replaying this request. Ordinary failed
+mechanical checks and stale evidence remain retryable through review_design.

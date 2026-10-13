@@ -436,7 +436,7 @@ describe('backend operation tools', () => {
     const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
       actionResults: [
         {
-          actionId: 'r',
+          actionId: batch.actions[0].id,
           actionName: batch.actions[0].name,
           result:
             batch.actions[0].name === AiActionNames.REVIEW_DESIGN
@@ -486,10 +486,10 @@ describe('backend operation tools', () => {
     expect(
       operations.settleOutcome(outcome).actions[0].arguments
     ).toMatchObject({ outcome: 'unsupported' })
-    executeBatch.mockImplementationOnce(async () => ({
+    executeBatch.mockImplementationOnce(async (batch) => ({
       actionResults: [
         {
-          actionId: 'other',
+          actionId: batch.actions[0].id,
           actionName: AiActionNames.REVIEW_DESIGN,
           result: {
             complete: true,
@@ -530,7 +530,7 @@ describe('backend operation tools', () => {
     const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
       actionResults: [
         {
-          actionId: 'r',
+          actionId: batch.actions[0].id,
           actionName: batch.actions[0].name,
           result:
             batch.actions[0].name === AiActionNames.REVIEW_DESIGN
@@ -643,7 +643,7 @@ describe('backend operation tools', () => {
     )
   })
 
-  it('reviews hierarchy operations from their receipt without requiring a drawing snapshot', async () => {
+  it('keeps a hierarchy operation without an acknowledgement unresolved', async () => {
     const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
     const operations = createLocalOperationTools(
       ['organize_design', AiActionNames.INSPECT_DRAWING].map((name) => ({
@@ -659,7 +659,11 @@ describe('backend operation tools', () => {
       { arguments: { operation: 'group', elementIds: ['a', 'b'] } },
       new AbortController().signal
     )
-    expect(JSON.parse(result)).toEqual({ actionResults: [], context: {} })
+    expect(JSON.parse(result)).toMatchObject({
+      actionResults: [],
+      context: {},
+      checks: { counts: { unverified: 1 } }
+    })
     expect(executeBatch).toHaveBeenCalledTimes(1)
     const batch = {
       batchId: 'organization',
@@ -671,7 +675,9 @@ describe('backend operation tools', () => {
         }
       ]
     }
-    expect(operations.settleOutcome(batch)).toBe(batch)
+    expect(
+      operations.settleOutcome(batch).actions.at(-1)?.arguments.outcome
+    ).toBe('unsupported')
   })
 
   it('prepares a referenced drawing on the backend and returns the acknowledged canonical result', async () => {
@@ -874,20 +880,34 @@ it('returns native image content without placing image bytes in text', async () 
 
 it('captures fresh evidence after each mutation using the acknowledged composition ID', async () => {
   const execute = vi.fn(async (batch: AiActionBatch) => ({
-    actionResults: batch.actions.map((action) => ({
-      actionId: action.id,
-      actionName: action.name,
-      result:
-        action.name === AiActionNames.INSPECT_DRAWING
-          ? { available: true, image: { dataUrl: png, width: 1, height: 1 } }
-          : { compositionId: 'actual-composition', status: 'complete' }
-    })),
+    actionResults: batch.actions.map((action) => {
+      if (action.name === AiActionNames.REVIEW_DESIGN)
+        return {
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            complete: true,
+            findings: [],
+            evidence: { sessionId: 'capture', revision: 1 }
+          }
+        }
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === AiActionNames.INSPECT_DRAWING
+            ? { available: true, image: { dataUrl: png, width: 1, height: 1 } }
+            : { compositionId: 'actual-composition', status: 'complete' }
+      }
+    }),
     context: {}
   }))
   const tools = createLocalOperationTools(
-    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
-      (name) => ({ name, description: name, inputSchema: {} })
-    ),
+    [
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.SET_ELEMENT_VISIBILITY
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     createLocalImageTools({}),
     execute
   )
@@ -905,8 +925,8 @@ it('captures fresh evidence after each mutation using the acknowledged compositi
       imageUrl: png
     })
   }
-  expect(execute).toHaveBeenCalledTimes(4)
-  expect(execute.mock.calls[1][0].actions[0]).toMatchObject({
+  expect(execute).toHaveBeenCalledTimes(6)
+  expect(execute.mock.calls[2][0].actions[0]).toMatchObject({
     name: AiActionNames.INSPECT_DRAWING,
     arguments: { elementId: 'actual-composition' }
   })
@@ -915,20 +935,34 @@ it('captures fresh evidence after each mutation using the acknowledged compositi
 it('continues mutations beyond six reviews and never certifies unavailable evidence', async () => {
   let available = false
   const execute = vi.fn(async (batch: AiActionBatch) => ({
-    actionResults: batch.actions.map((action) => ({
-      actionId: action.id,
-      actionName: action.name,
-      result:
-        action.name === AiActionNames.INSPECT_DRAWING
-          ? { available }
-          : { compositionId: 'drawing' }
-    })),
+    actionResults: batch.actions.map((action) => {
+      if (action.name === AiActionNames.REVIEW_DESIGN)
+        return {
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            complete: true,
+            findings: [],
+            evidence: { sessionId: 'capture', revision: 1 }
+          }
+        }
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === AiActionNames.INSPECT_DRAWING
+            ? { available }
+            : { compositionId: 'drawing' }
+      }
+    }),
     context: {}
   }))
   const tools = createLocalOperationTools(
-    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
-      (name) => ({ name, description: name, inputSchema: {} })
-    ),
+    [
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.SET_ELEMENT_VISIBILITY
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     createLocalImageTools({}),
     execute
   )
@@ -963,9 +997,9 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
     outcome: 'unsupported'
   })
   for (let index = 2; index < 6; index++) await change()
-  expect(execute).toHaveBeenCalledTimes(12)
+  expect(execute).toHaveBeenCalledTimes(18)
   await change()
-  expect(execute).toHaveBeenCalledTimes(14)
+  expect(execute).toHaveBeenCalledTimes(21)
 })
 
 it('does not admit unreviewed mutations in the final response', () => {
@@ -1067,6 +1101,12 @@ it('does not equate an available screenshot with an accepted design review', asy
 
 it('requires a frozen plan, current overview and detail evidence, and all criteria before completion', async () => {
   const results: Record<string, unknown> = {
+    [AiActionNames.REVIEW_DESIGN]: {
+      complete: true,
+      findings: [],
+      measuredTextIds: [],
+      evidence: { sessionId: 'app-session', revision: 1 }
+    },
     [AiActionNames.INSPECT_DRAWING]: {
       available: true,
       evidence: { sessionId: 'app-session', revision: 1 },
@@ -1087,6 +1127,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   }))
   const tools = createLocalOperationTools(
     [
+      AiActionNames.REVIEW_DESIGN,
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
       AiActionNames.SET_ELEMENT_VISIBILITY
@@ -1352,7 +1393,7 @@ it('follows a new group containing the current review target without switching t
     context: {},
     actionResults: [
       {
-        actionId: 'result',
+        actionId: batch.actions[0].id,
         actionName: batch.actions[0].name,
         result:
           batch.actions[0].name === AiActionNames.ORGANIZE_DESIGN
@@ -1362,14 +1403,21 @@ it('follows a new group containing the current review target without switching t
                 groupId: 'assembled',
                 elementIds: batch.actions[0].arguments.elementIds
               }
-            : { available: true }
+            : {
+                available: true,
+                complete: true,
+                findings: [],
+                evidence: { sessionId: 'group-follow', revision: 1 }
+              }
       }
     ]
   }))
   const operations = createLocalOperationTools(
-    [AiActionNames.ORGANIZE_DESIGN, AiActionNames.INSPECT_DRAWING].map(
-      (name) => ({ name, description: name, inputSchema: {} })
-    ),
+    [
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.ORGANIZE_DESIGN,
+      AiActionNames.INSPECT_DRAWING
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     { modelActions: (a) => a, resolveBatch: (v) => v },
     executeBatch,
     { reviewTargetId: 'original' }
@@ -1532,7 +1580,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
         ([batch]) => batch.actions[0].name === AiActionNames.REVIEW_DESIGN
       )
       .map(([batch]) => batch.actions[0].arguments.elementId)
-  ).toEqual(['tower'])
+  ).toEqual(['tower', 'collar', 'collar-face'])
   towerContainsDetail = false
   await tools.validateCompletion()
   const final = tools.settleOutcome({
@@ -1560,7 +1608,12 @@ it.each([
     arguments: { elementIds: ['original'] },
     result: {
       status: 'complete',
-      value: { elementId: 'original', removed: [{ elementId: 'original' }] }
+      value: { elementId: 'original', removed: [{ elementId: 'original' }] },
+      mutationScope: {
+        complete: true,
+        elementIds: [],
+        removedElementIds: ['original']
+      }
     }
   },
   {
@@ -1568,7 +1621,12 @@ it.each([
     arguments: { elementIds: ['original', 'another'] },
     result: {
       status: 'complete',
-      value: { removed: [{ elementId: 'original' }, { elementId: 'another' }] }
+      value: { removed: [{ elementId: 'original' }, { elementId: 'another' }] },
+      mutationScope: {
+        complete: true,
+        elementIds: [],
+        removedElementIds: ['original', 'another']
+      }
     }
   }
 ])('retires explicitly removed drawing roots via $name', async (removal) => {
@@ -1637,7 +1695,7 @@ it.each([
   })
 })
 
-it('captures without measurement and checks a deferred stage once at final assessment', async () => {
+it('checks each deferred mutation and reuses current measurements for capture and final assessment', async () => {
   const results: Record<string, unknown> = {
     [AiActionNames.INSPECT_DRAWING]: {
       available: true,
@@ -1729,7 +1787,7 @@ it('captures without measurement and checks a deferred stage once at final asses
   ).toHaveLength(3)
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(0)
+  ).toHaveLength(3)
   expect(
     names().filter((name) => name === AiActionNames.INSPECT_DRAWING)
   ).toHaveLength(0)
@@ -1762,7 +1820,7 @@ it('captures without measurement and checks a deferred stage once at final asses
   const inspectionId = capture.actionResults[0].result.inspectionId
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(0)
+  ).toHaveLength(3)
   expect(
     names().filter((name) => name === AiActionNames.INSPECT_DRAWING)
   ).toHaveLength(1)
@@ -1783,7 +1841,7 @@ it('captures without measurement and checks a deferred stage once at final asses
   )
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(1)
+  ).toHaveLength(3)
   expect(operations.settleOutcome(outcome)).toEqual(outcome)
   await operations.call(
     AiActionNames.INSPECT_DRAWING,
@@ -1792,8 +1850,13 @@ it('captures without measurement and checks a deferred stage once at final asses
   )
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(1)
+  ).toHaveLength(3)
 
+  results[AiActionNames.REVIEW_DESIGN] = {
+    complete: false,
+    findings: [],
+    measuredTextIds: []
+  }
   await operations.call(
     AiActionNames.APPLY_PREPARED_DESIGN,
     {
@@ -1805,11 +1868,6 @@ it('captures without measurement and checks a deferred stage once at final asses
   expect(operations.settleOutcome(outcome).actions[0].arguments.outcome).toBe(
     'unsupported'
   )
-  results[AiActionNames.REVIEW_DESIGN] = {
-    complete: false,
-    findings: [],
-    measuredTextIds: []
-  }
   const failedCapture = JSON.parse(
     await operations.call(
       AiActionNames.INSPECT_DRAWING,
@@ -1819,7 +1877,7 @@ it('captures without measurement and checks a deferred stage once at final asses
   )
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(1)
+  ).toHaveLength(4)
   await operations.call(
     AiDesignToolIds.REVIEW_DRAWING,
     {
@@ -1837,7 +1895,7 @@ it('captures without measurement and checks a deferred stage once at final asses
   )
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
-  ).toHaveLength(2)
+  ).toHaveLength(5)
   expect(operations.settleOutcome(outcome).actions[0].arguments).toMatchObject({
     outcome: 'unsupported',
     message: 'The latest drawing still needs layout measurement.'
@@ -2168,13 +2226,13 @@ it('does not reuse layout results across edits without canonical revision eviden
     execute.mock.calls
       .filter(([b]) => b.actions[0].name === AiActionNames.REVIEW_DESIGN)
       .map(([b]) => b.actions[0].arguments)
-  expect(reviews()).toEqual([])
+  expect(reviews()).toEqual([{ elementId: 'text' }])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'root' }])
+  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'root' }])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2200,13 +2258,13 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([])
+  expect(reviews()).toEqual([{ elementId: 'text' }])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'root' }])
+  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'root' }])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2238,13 +2296,17 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([])
+  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'text' }])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'root' }])
+  expect(reviews()).toEqual([
+    { elementId: 'text' },
+    { elementId: 'text' },
+    { elementId: 'root' }
+  ])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2276,13 +2338,17 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([])
+  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'text' }])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'root' }])
+  expect(reviews()).toEqual([
+    { elementId: 'text' },
+    { elementId: 'text' },
+    { elementId: 'root' }
+  ])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2301,19 +2367,19 @@ it('does not reuse layout results across edits without canonical revision eviden
 it('dispatches many registered edits once and reviews the completed batch once', async () => {
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
-    actionResults: batch.actions.map((a) => ({
-      actionId: a.id,
-      actionName: a.name,
-      result:
-        a.name === AiActionNames.REVIEW_DESIGN
-          ? {
-              complete: true,
-              evidence: { sessionId: 'doc', revision: 1 },
-              findings: [],
-              measuredTextIds: []
-            }
-          : { available: true }
-    }))
+    actionResults: batch.actions.map((a) => {
+      let result: unknown = { available: true }
+      if (a.name === AiActionNames.REVIEW_DESIGN)
+        result = {
+          complete: true,
+          evidence: { sessionId: 'doc', revision: 1 },
+          findings: [],
+          measuredTextIds: []
+        }
+      else if (a.name === AiActionNames.SET_ELEMENT_VISIBILITY)
+        result = { changed: true, elementId: a.arguments.elementId }
+      return { actionId: a.id, actionName: a.name, result }
+    })
   }))
   const action = {
     name: AiActionNames.SET_ELEMENT_VISIBILITY,
@@ -2356,7 +2422,11 @@ it('dispatches many registered edits once and reviews the completed batch once',
     },
     new AbortController().signal
   )
-  expect(execute.mock.calls.map(([b]) => b.actions.length)).toEqual([47, 1, 1])
+  expect(execute.mock.calls.map(([b]) => b.actions.length)).toEqual([
+    47,
+    ...Array(47).fill(1),
+    1
+  ])
   expect(execute.mock.calls[0][0].actions.map((a) => a.arguments)).toEqual(
     Array.from({ length: 47 }, (_, i) => ({
       elementId: `id-${i}`,
@@ -2442,9 +2512,18 @@ it('resolves identity families into one exchange with a compact batch summary an
   ).rejects.toThrow()
   expect(execute).not.toHaveBeenCalled()
   execute.mockRejectedValueOnce(new Error('Target removed or locked'))
-  await expect(
-    tools.call('execute_design_batch', input, new AbortController().signal)
-  ).rejects.toThrow('Target removed or locked')
+  const rejected = JSON.parse(
+    await tools.call(
+      'execute_design_batch',
+      input,
+      new AbortController().signal
+    )
+  )
+  expect(rejected).toMatchObject({
+    message: 'Target removed or locked',
+    recoverable: false,
+    toolOutcome: { settlement: 'unknown' }
+  })
   expect(execute).toHaveBeenCalledTimes(1)
 })
 
@@ -2780,15 +2859,15 @@ it('captures a changed canonical generation without implicitly repeating determi
     execute.mock.calls.filter(
       ([batch]) => batch.actions[0].name === AiActionNames.REVIEW_DESIGN
     ).length
-  expect(measurements()).toBe(0)
+  expect(measurements()).toBe(1)
   await operations.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'drawing' } },
     signal
   )
-  expect(measurements()).toBe(1)
+  expect(measurements()).toBe(2)
   await inspect()
-  expect(measurements()).toBe(1)
+  expect(measurements()).toBe(2)
 })
 
 it.each(['missing stamp', 'missing validation action'])(
@@ -2873,9 +2952,23 @@ it('compacts structural evidence without losing identities or modifying full and
   const values = [
     {
       status: 'complete',
-      value: { removed, rootParentChildrenAfter: ['keep'] }
+      value: { removed, rootParentChildrenAfter: ['keep'] },
+      mutationScope: {
+        complete: true,
+        elementIds: [],
+        removedElementIds: removed.map((item) => item.elementId)
+      }
     },
-    { status: 'failed', value: { removed }, message: 'retain failure evidence' }
+    {
+      status: 'failed',
+      value: { removed },
+      message: 'retain failure evidence',
+      mutationScope: {
+        complete: true,
+        elementIds: [],
+        removedElementIds: removed.map((item) => item.elementId)
+      }
+    }
   ]
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
@@ -2903,7 +2996,19 @@ it('compacts structural evidence without losing identities or modifying full and
   expect(compact.actionResults[0].result.value).toEqual({
     removed: removed.map(({ elementId }) => ({ elementId }))
   })
-  expect(JSON.stringify(compact.actionResults[0]).length).toBeLessThan(12000)
+  const { mutationScope, ...compactProductResult } =
+    compact.actionResults[0].result
+  expect(mutationScope).toEqual(values[0].mutationScope)
+  // Keep the original product-receipt budget separate from required scope IDs.
+  expect(
+    JSON.stringify({
+      ...compact.actionResults[0],
+      result: compactProductResult
+    }).length
+  ).toBeLessThan(12000)
+  expect(JSON.stringify(compact.actionResults[0]).length).toBeLessThan(
+    JSON.stringify(values[0]).length / 10
+  )
   expect(compact.actionResults[1].result).toEqual(values[1])
   const full = JSON.parse(
     await tools.call(
@@ -2922,9 +3027,22 @@ it('compacts only successful valueless basic mutation acknowledgements and retai
   const read = basicActionName('getVectorAnchorPoints')
   const count = 5000
   const values = [
-    { status: 'complete', value: 'new-id', elementId: 'new-id' },
-    { status: 'no-change', value: false, elementId: 'unchanged' },
-    { status: 'complete', value: null, finding: 'retain unknown data' },
+    {
+      status: 'complete',
+      value: 'new-id',
+      mutationScope: { complete: true, elementIds: [], removedElementIds: [] }
+    },
+    {
+      status: 'no-change',
+      value: false,
+      mutationScope: { complete: true, elementIds: [], removedElementIds: [] }
+    },
+    {
+      status: 'complete',
+      value: null,
+      finding: 'retain unknown data',
+      mutationScope: { complete: true, elementIds: [], removedElementIds: [] }
+    },
     { status: 'no-change', value: [{ x: 12, y: 34 }] }
   ]
   const execute = vi.fn(async (batch: AiActionBatch) => ({
@@ -2938,7 +3056,11 @@ it('compacts only successful valueless basic mutation acknowledgements and retai
               status: 'complete',
               value: null,
               application: 'not-reported',
-              elementId: `existing-${index}`
+              mutationScope: {
+                complete: true,
+                elementIds: [`existing-${index}`],
+                removedElementIds: []
+              }
             }
           : values[index - count]
     }))
@@ -3465,12 +3587,32 @@ it.each([
       actionResults: batch.actions.map((action) => ({
         actionId: action.id,
         actionName: action.name,
-        result: action.name === contract.name ? result : { available: true }
+        result:
+          action.name === contract.name
+            ? {
+                ...result,
+                mutationScope: {
+                  complete: true,
+                  elementIds: [expected],
+                  removedElementIds: []
+                }
+              }
+            : {
+                available: true,
+                complete: true,
+                findings: [],
+                evidence: { sessionId: 'canonical-receipt', revision: 1 }
+              }
       }))
     }))
     const tools = createLocalOperationTools(
       [
         contract,
+        {
+          name: AiActionNames.REVIEW_DESIGN,
+          description: 'Check',
+          inputSchema: {}
+        },
         {
           name: AiActionNames.INSPECT_DRAWING,
           description: 'Inspect',
@@ -3545,7 +3687,15 @@ it('keeps prepared targets and different Fill patches in one plural operation wi
     actionResults: batch.actions.map((action) => ({
       actionId: action.id,
       actionName: action.name,
-      result: { status: 'complete', value: null }
+      result: {
+        status: 'complete',
+        value: null,
+        mutationScope: {
+          complete: true,
+          elementIds: ids,
+          removedElementIds: []
+        }
+      }
     }))
   }))
   const resolveTargets = vi.fn(() => ids)
@@ -3630,7 +3780,14 @@ it.each([
         const args = action.arguments as Record<string, unknown>
         let result: unknown
         if (action.name === contract.name) {
-          result = describeBasicApiResult(contract, statuses, args.elementIds)
+          result = {
+            ...describeBasicApiResult(contract, statuses, args.elementIds),
+            mutationScope: {
+              complete: true,
+              elementIds: status === 'no-change' ? [] : ['a', 'b'],
+              removedElementIds: []
+            }
+          }
         } else if (action.name === AiActionNames.INSPECT_DRAWING) {
           result = {
             available: true,
@@ -3642,6 +3799,13 @@ it.each([
               height: 1
             }
           }
+        } else if (action.name === AiActionNames.REVIEW_DESIGN) {
+          result = {
+            complete: true,
+            findings: [],
+            measuredTextIds: [],
+            evidence: { sessionId: 'visibility', revision: 1 }
+          }
         } else {
           const scope = args.scope as {
             requiredIds: string[]
@@ -3650,9 +3814,10 @@ it.each([
           result = {
             current: true,
             coverage: {
-              complete: scope.requiredIds.every((id) =>
-                scope.overviewIds.includes(id)
-              )
+              complete:
+                scope?.requiredIds.every((id) =>
+                  scope.overviewIds.includes(id)
+                ) ?? true
             }
           }
         }
@@ -3667,6 +3832,7 @@ it.each([
       [
         contract,
         ...[
+          AiActionNames.REVIEW_DESIGN,
           AiActionNames.INSPECT_DRAWING,
           AiActionNames.VALIDATE_INSPECTION_EVIDENCE
         ].map((name) => ({ name, description: name, inputSchema: {} }))
@@ -3692,19 +3858,28 @@ it.each([
     expect(receipt.actionResults[0].result).toMatchObject({
       status,
       value: statuses,
-      reviewElementIds: ['a', 'b']
+      mutationScope: {
+        complete: true,
+        elementIds: status === 'no-change' ? [] : ['a', 'b'],
+        removedElementIds: []
+      }
     })
     expect(execute.mock.calls[0][0].actions).toHaveLength(1)
+    if (status === 'no-change') {
+      expect(execute).toHaveBeenCalledTimes(1)
+      expect(receipt).not.toHaveProperty('measurementDeferred')
+      return
+    }
     let inspected = receipt
     if (defer) {
-      expect(execute).toHaveBeenCalledTimes(1)
+      expect(execute).toHaveBeenCalledTimes(3)
       expect(receipt.inspectionDeferred).toBe(true)
       inspected = await call(AiActionNames.INSPECT_DRAWING, {
         arguments: { elementId: 'a' }
       })
     } else {
-      expect(execute).toHaveBeenCalledTimes(2)
-      expect(execute.mock.calls[1][0].actions[0]).toMatchObject({
+      expect(execute).toHaveBeenCalledTimes(4)
+      expect(execute.mock.calls[3][0].actions[0]).toMatchObject({
         name: AiActionNames.INSPECT_DRAWING,
         arguments: { elementId: 'a' }
       })
@@ -4922,8 +5097,10 @@ describe('capture-to-review handoff', () => {
     const controller = new AbortController()
     const execute = f.execute.getMockImplementation()
     if (!execute) throw new Error('Missing capture fixture')
+    let cancelledReceipt: Awaited<ReturnType<typeof execute>> | undefined
     f.execute.mockImplementation(async (batch) => {
       const result = await execute(batch)
+      cancelledReceipt = result
       controller.abort()
       return result
     })
@@ -4936,6 +5113,8 @@ describe('capture-to-review handoff', () => {
     ).rejects.toThrow()
     expect(f.execute).toHaveBeenCalledTimes(1)
     expect(f.assessVisual).not.toHaveBeenCalled()
+    for (const entry of cancelledReceipt?.actionResults ?? [])
+      expect(entry.result).not.toHaveProperty('inspectionId')
   })
 
   it('keeps stale evidence rejection after composed captures', async () => {
@@ -5545,9 +5724,9 @@ it('reuses independent measurement receipts and rechecks only an affected final 
       ]
     })
   let ids = await capture()
-  expect(measured).toEqual(['a', 'b'])
+  expect(measured).toEqual(['a', 'b', 'a'])
   await assess(ids, false)
-  expect(measured).toEqual(['a', 'b'])
+  expect(measured).toEqual(['a', 'b', 'a'])
   expect(await assess(ids)).toMatchObject({ accepted: true })
   expect(measured).toEqual(['a', 'b', 'a'])
   ids = await capture()
@@ -5557,6 +5736,7 @@ it('reuses independent measurement receipts and rechecks only an affected final 
     arguments: { elementId: 'a' },
     inspection: 'defer'
   })
+  versions.a++
   ids = await capture()
   changeDuringMeasurement = true
   expect(await assess(ids)).toMatchObject({
@@ -5564,7 +5744,7 @@ it('reuses independent measurement receipts and rechecks only an affected final 
     status: 'partial',
     evidenceValidation: { current: false }
   })
-  expect(measured).toEqual(['a', 'b', 'a', 'a'])
+  expect(measured).toEqual(['a', 'b', 'a', 'a', 'a'])
 })
 
 it('reads compiler source checks from the actual preparation owner without another review invocation', async () => {
@@ -6021,3 +6201,271 @@ it('refreshes upstream measurement currency when only a downstream check is requ
   expect(result.items).toHaveLength(1)
   expect(result.items[0]).toMatchObject({ id: 'dependent', status: 'stale' })
 })
+
+it('checks only surviving targets after creation and deletion in the same batch', async () => {
+  const checked: string[] = []
+  const operations = createLocalOperationTools(
+    [
+      ...basicApiContracts,
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Check',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    async (batch) => ({
+      context: {},
+      actionResults: batch.actions.map((action) => {
+        let result: AiJsonValue
+        if (action.name === basicActionName('createElements'))
+          result = {
+            status: 'complete',
+            value: ['temporary', 'keep'],
+            appliedElementIds: ['temporary', 'keep'],
+            mutationScope: {
+              complete: true,
+              elementIds: ['temporary', 'keep'],
+              removedElementIds: []
+            }
+          }
+        else if (action.name === basicActionName('deleteElements'))
+          result = {
+            status: 'complete',
+            value: { removed: [{ elementId: 'temporary' }] },
+            mutationScope: {
+              complete: true,
+              elementIds: [],
+              removedElementIds: ['temporary']
+            }
+          }
+        else {
+          checked.push(String(action.arguments.elementId))
+          result = {
+            complete: true,
+            findings: [],
+            evidence: { sessionId: 'surviving-targets', revision: 1 }
+          }
+        }
+        return { actionId: action.id, actionName: action.name, result }
+      })
+    })
+  )
+  await operations.call(
+    'execute_design_batch',
+    {
+      inspection: 'defer',
+      operations: [
+        {
+          name: basicActionName('createElements'),
+          arguments: {
+            createOptions: [{ type: 'rectangle' }, { type: 'rectangle' }]
+          }
+        },
+        {
+          name: basicActionName('deleteElements'),
+          arguments: { elementIds: ['temporary'] }
+        }
+      ]
+    },
+    new AbortController().signal
+  )
+  expect(checked).toEqual(['keep'])
+})
+
+it.each([false, true])(
+  'retires the removed group from pending checks with ordered=%s',
+  async (ordered) => {
+    const checked: string[] = []
+    const pending = ordered ? new Set<string>(['temporary']) : undefined
+    const operations = createOwner(
+      [
+        ...basicApiContracts,
+        {
+          name: AiActionNames.REVIEW_DESIGN,
+          description: 'Check',
+          inputSchema: {}
+        }
+      ],
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map((action) => {
+          let result: AiJsonValue
+          if (action.name === basicActionName('createElements'))
+            result = {
+              status: 'complete',
+              value: ['temporary'],
+              appliedElementIds: ['temporary'],
+              mutationScope: {
+                complete: true,
+                elementIds: ['temporary'],
+                removedElementIds: []
+              }
+            }
+          else if (action.name === basicActionName('ungroupElement')) {
+            const contract = basicApiContracts.find(
+              (entry) => entry.name === action.name
+            )
+            if (!contract) throw new Error('Missing ungroup contract')
+            result = {
+              ...describeBasicApiResult(contract, {
+                groupId: 'temporary',
+                elementIds: ['child'],
+                removed: true
+              }),
+              mutationScope: {
+                complete: true,
+                elementIds: ['child'],
+                removedElementIds: ['temporary']
+              }
+            }
+          } else {
+            checked.push(String(action.arguments.elementId))
+            result = {
+              complete: true,
+              findings: [],
+              evidence: { sessionId: 'ungroup-target', revision: 1 }
+            }
+          }
+          return { actionId: action.id, actionName: action.name, result }
+        })
+      })
+    )
+    const signal = new AbortController().signal
+    await operations.call(
+      'execute_design_batch',
+      {
+        inspection: 'defer',
+        operations: [
+          {
+            name: basicActionName('createElements'),
+            arguments: { createOptions: [{ type: 'group' }] }
+          },
+          {
+            name: basicActionName('ungroupElement'),
+            arguments: { groupId: 'temporary' }
+          }
+        ]
+      },
+      signal,
+      pending
+    )
+    if (pending)
+      await operations.finishInspection(pending, undefined, true, signal)
+    expect(checked).toEqual(['child'])
+  }
+)
+
+it.each(['complete', 'partial'])(
+  'retires a replaced composition only on confirmed completion: %s',
+  async (status) => {
+    const checked: string[] = []
+    const pending = new Set<string>()
+    const operations = createOwner(
+      [
+        AiActionNames.APPLY_PREPARED_DESIGN,
+        AiActionNames.REPLACE_VECTOR_COMPOSITION,
+        AiActionNames.REVIEW_DESIGN
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map((action) => {
+          if (action.name === AiActionNames.REVIEW_DESIGN) {
+            checked.push(String(action.arguments.elementId))
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result: {
+                complete: true,
+                findings: [],
+                evidence: { sessionId: 'replacement', revision: 1 }
+              }
+            }
+          }
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              status,
+              compositionId:
+                action.name === AiActionNames.APPLY_PREPARED_DESIGN
+                  ? 'old'
+                  : 'new'
+            }
+          }
+        })
+      })
+    )
+    const signal = new AbortController().signal
+    await operations.call(
+      AiActionNames.APPLY_PREPARED_DESIGN,
+      { arguments: {} },
+      signal,
+      pending
+    )
+    await operations.call(
+      AiActionNames.REPLACE_VECTOR_COMPOSITION,
+      { arguments: { compositionId: 'old' } },
+      signal,
+      pending
+    )
+    await operations.finishInspection(pending, undefined, true, signal)
+    expect(checked).toEqual(status === 'complete' ? ['new'] : ['old', 'new'])
+  }
+)
+
+it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
+  'checks the native applied identities from %s without a previous drawing',
+  async (name) => {
+    const checked: string[] = []
+    const tools = createLocalOperationTools(
+      [name, AiActionNames.REVIEW_DESIGN].map((name) => ({
+        name,
+        description: name,
+        inputSchema: {}
+      })),
+      { modelActions: (value) => value, resolveBatch: (value) => value },
+      async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map((action) => {
+          if (action.name === name)
+            return {
+              actionId: action.id,
+              actionName: name,
+              result:
+                name === AiActionNames.MAP_RETAINED_FILLS
+                  ? {
+                      status: 'complete',
+                      appliedCount: 2,
+                      mutationScope: {
+                        complete: true,
+                        elementIds: ['a', 'b'],
+                        removedElementIds: []
+                      }
+                    }
+                  : { status: 'complete', appliedElementIds: ['a', 'b'] }
+            }
+          checked.push(String(action.arguments.elementId))
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              available: true,
+              complete: true,
+              findings: [],
+              evidence: { sessionId: 'native-applied', revision: 1 }
+            }
+          }
+        })
+      })
+    )
+    await tools.call(
+      'execute_design_batch',
+      { inspection: 'defer', operations: [{ name, arguments: {} }] },
+      new AbortController().signal
+    )
+    expect(checked).toEqual(['a', 'b'])
+  }
+)

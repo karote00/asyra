@@ -54,9 +54,19 @@ export interface DesignCheckResult {
   revision: number
 }
 
+export const designCheckSummarySchema = toolResultObject(
+  {
+    counts: designCheckResultsSchema.properties.counts,
+    visitedResults: toolResultCount,
+    firstPendingId: toolResultString
+  },
+  ['counts', 'visitedResults']
+)
+
 /** Request-owned evidence, not document state or an authority to replay writes. */
 export const createDesignCheckResults = () => {
   const results = new Map<string, DesignCheckResult>()
+  const retiredRevisions = new Map<string, number>()
   const preparedLineages = new Map<string, string>()
   const latestPrepared = new Map<string, string>()
   const counts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
@@ -96,6 +106,49 @@ export const createDesignCheckResults = () => {
   }
   const owner = {
     invalidate,
+    summary(ids: Iterable<string>) {
+      const selectedCounts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
+      let firstPendingId: string | undefined
+      let visitedResults = 0
+      for (const id of ids) {
+        visitedResults++
+        const result = results.get(id)
+        if (!result) continue
+        selectedCounts[result.status]++
+        if (result.status !== 'pass') firstPendingId ??= id
+      }
+      return {
+        counts: selectedCounts,
+        visitedResults,
+        ...(firstPendingId ? { firstPendingId } : {})
+      }
+    },
+    dependencyIds(ids: readonly string[]): string[] {
+      const selected = new Set(ids)
+      for (const id of selected)
+        for (const dependency of Object.keys(
+          results.get(id)?.dependencies ?? {}
+        ))
+          if (dependency.startsWith('check:')) selected.add(dependency.slice(6))
+      return [...selected]
+    },
+    /** Canonical target removal retires tool work, never a visual obligation. */
+    retire(id: string, reason: string) {
+      const result = results.get(id)
+      if (!result) return
+      if (result.origin !== 'tool')
+        throw new Error('Only tool results can be retired.')
+      invalidate([`check:${id}`], reason)
+      retiredRevisions.set(id, result.revision)
+      counts[result.status]--
+      pendingIds.delete(id)
+      results.delete(id)
+      for (const key of Object.keys(result.dependencies)) {
+        const ids = dependents.get(key)
+        ids?.delete(id)
+        if (!ids?.size) dependents.delete(key)
+      }
+    },
     recordPreparedSource(input: {
       artifactId: string
       recipeRevision: string
@@ -216,7 +269,9 @@ export const createDesignCheckResults = () => {
       counts[value.status]++
       if (value.status === 'pass') pendingIds.delete(value.id)
       else pendingIds.add(value.id)
-      const revision = (previous?.revision ?? 0) + 1
+      const revision =
+        (previous?.revision ?? retiredRevisions.get(value.id) ?? 0) + 1
+      retiredRevisions.delete(value.id)
       results.set(value.id, { ...structuredClone(value), revision })
       for (const key of Object.keys(value.dependencies)) {
         const ids = dependents.get(key) ?? new Set<string>()

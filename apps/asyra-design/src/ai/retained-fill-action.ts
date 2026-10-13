@@ -1,5 +1,6 @@
 import {
   toolResultCount,
+  toolMutationScope,
   toolResultIds,
   toolRequestReference,
   toolResultObject,
@@ -40,10 +41,12 @@ export const createRetainedFillAction = (
   apis: {
     metadata: (id: string) => { lock?: boolean; parentId?: string } | undefined
     targets: typeof fillApis.getFillTargetsAtIndex
+    owners: (propertyIds: string[]) => string[]
     update: typeof fillApis.updateFillFieldsBatch
   } = {
     metadata: (id: string) => core.getElementMetadata(id),
     targets: fillApis.getFillTargetsAtIndex,
+    owners: (ids) => core.getPropertyOwnerElementIds(ids),
     update: fillApis.updateFillFieldsBatch
   }
 ): AiActionDefinition<{ mappings: FillMapping[] }> => ({
@@ -51,11 +54,13 @@ export const createRetainedFillAction = (
     AiActionNames.MAP_RETAINED_FILLS,
     toolResultObject({
       status: toolResultStatus,
+      mutationScope: toolMutationScope,
       appliedCount: toolResultCount,
       snapshots: toolResultIds,
       coordinateSpace: { const: 'parent-local' }
     })
   ),
+  revision: 3,
   composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
@@ -305,7 +310,13 @@ export const createRetainedFillAction = (
           return { ...target, patch }
         })
         apis.update(updates)
+        const affected = new Set(apis.owners([...sharedValues.keys()]))
         return {
+          mutationScope: {
+            complete: ids.every((id) => affected.has(id)),
+            elementIds: [...affected],
+            removedElementIds: []
+          },
           status: 'complete',
           appliedCount: ids.length,
           snapshots: mappings.flatMap((mapping) =>

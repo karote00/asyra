@@ -165,10 +165,12 @@ export const createPreparedDesignReview = (options: {
   const evidence = () => options.context()
   return {
     read: results.read,
-    async refresh(signal: AbortSignal) {
+    async refresh(signal: AbortSignal, dependencyKeys?: ReadonlySet<string>) {
       if (!latestArtifacts.size) return
       const validations = new Map<string, boolean>()
       for (const [lineage, artifactId] of latestArtifacts) {
+        if (dependencyKeys && !dependencyKeys.has(`attachment:${lineage}`))
+          continue
         signal.throwIfAborted()
         const reviewed = artifactReviews.get(artifactId)
         if (!reviewed) continue
@@ -185,12 +187,12 @@ export const createPreparedDesignReview = (options: {
               [`attachment:${lineage}`],
               'Canonical attachment dependencies changed.'
             )
-        } catch (error) {
+        } catch {
           results.invalidate(
             [`attachment:${lineage}`],
             'Canonical attachment currency could not be established.'
           )
-          throw error
+          signal.throwIfAborted()
         }
       }
     },

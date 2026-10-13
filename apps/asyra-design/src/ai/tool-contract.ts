@@ -38,6 +38,13 @@ export const toolResultObject = (
   additionalProperties: true
 })
 
+/** Canonical write coverage, independent from product values or visual acceptance. */
+export const toolMutationScope = toolResultObject({
+  complete: { type: 'boolean' },
+  elementIds: toolDocumentReferences,
+  removedElementIds: toolDocumentReferences
+})
+
 /** Metadata belongs to the definition owner, never a parallel name-based catalog. */
 export const toolSemantics = (
   outputSchema: unknown,

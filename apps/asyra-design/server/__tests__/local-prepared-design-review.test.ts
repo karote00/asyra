@@ -240,8 +240,21 @@ it('refreshes each retained parent receipt without replacing it with workspace e
   expect(
     attachmentCurrent.mock.calls.map(([attachment]) => attachment.parentId)
   ).toEqual(['tier-a', 'tier-b'])
-  invalid.add('tier-a')
+  attachmentCurrent.mockClear()
+  await owner.refresh(signal(), new Set(['attachment:b']))
+  expect(
+    attachmentCurrent.mock.calls.map(([attachment]) => attachment.parentId)
+  ).toEqual(['tier-b'])
+  attachmentCurrent.mockClear()
+  attachmentCurrent.mockImplementation(async (attachment) => {
+    if (attachment.parentId === 'tier-a')
+      throw new Error('One receipt unavailable')
+    return true
+  })
   await owner.refresh(signal())
+  expect(
+    attachmentCurrent.mock.calls.map(([attachment]) => attachment.parentId)
+  ).toEqual(['tier-a', 'tier-b'])
   expect(owner.read().items.map((item) => item.id)).toEqual([
     'prepared:a:attachment'
   ])
@@ -264,9 +277,7 @@ it('does not retain a current attachment claim when its validity check fails', a
   })
   await owner.review({ artifactId: 'a' }, signal())
   fail = true
-  await expect(owner.refresh(signal())).rejects.toThrow(
-    'Evidence transport failed'
-  )
+  await expect(owner.refresh(signal())).resolves.toBeUndefined()
   expect(owner.read().items).toEqual([
     expect.objectContaining({ id: 'prepared:a:attachment', status: 'stale' })
   ])

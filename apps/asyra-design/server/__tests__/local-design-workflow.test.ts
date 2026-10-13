@@ -1,6 +1,7 @@
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
 import { invokeLocalTool } from '../local-tool-invocation'
+import { requireBatchSuccess } from '../batch-exchange'
 import {
   nativeToolInputSchema,
   operationInputIssue
@@ -58,11 +59,11 @@ const setup = () => {
     createDesignPreparationSession(prepareDesign, compile)
   )
   const execute = vi.fn(
-    async (_batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
       context: { selection: ['root'] },
       actionResults: [
         {
-          actionId: 'a',
+          actionId: batch.actions[0].id,
           actionName: AiActionNames.APPLY_PREPARED_DESIGN,
           result: {
             compositionId: 'root',
@@ -99,16 +100,16 @@ it('does not admit a stopped receipt as a successful compound result', () => {
 
 it('preserves unknown application settlement across an ordered part boundary without replay', async () => {
   const { workflow, execute } = setup()
-  execute.mockResolvedValueOnce({
+  execute.mockImplementationOnce(async (batch) => ({
     context: {},
     actionResults: [
       {
-        actionId: 'first',
+        actionId: batch.actions[0].id,
         actionName: AiActionNames.APPLY_PREPARED_DESIGN,
         result: { status: 'complete', compositionId: 'first-root' }
       }
     ]
-  })
+  }))
   execute.mockRejectedValueOnce(new Error('Application acknowledgement lost'))
   const reply = await invokeLocalTool(
     workflow,
@@ -292,16 +293,16 @@ describe('ordered ready parts', () => {
 
   it('preserves partial canonical failure and current parent admission without replay', async () => {
     const { workflow, compile, execute } = setup()
-    execute.mockResolvedValueOnce({
+    execute.mockImplementationOnce(async (batch) => ({
       context: {},
       actionResults: [
         {
-          actionId: 'first',
+          actionId: batch.actions[0].id,
           actionName: AiActionNames.APPLY_PREPARED_DESIGN,
           result: { status: 'complete', compositionId: 'actual-parent' }
         }
       ]
-    })
+    }))
     execute.mockImplementationOnce(async (batch) => {
       expect(batch.actions[0].arguments).toMatchObject({
         parentId: 'actual-parent'
@@ -310,7 +311,7 @@ describe('ordered ready parts', () => {
         context: {},
         actionResults: [
           {
-            actionId: 'second',
+            actionId: batch.actions[0].id,
             actionName: AiActionNames.APPLY_PREPARED_DESIGN,
             result: {
               status: 'failed',
@@ -364,7 +365,7 @@ describe('ordered ready parts', () => {
         context: {},
         actionResults: [
           {
-            actionId: 'a',
+            actionId: batch.actions[0].id,
             actionName: AiActionNames.APPLY_PREPARED_DESIGN,
             result: {
               status: 'complete',
@@ -703,7 +704,12 @@ it('retains existing measurement and inspection when combined preparation applie
         appliedElementIds: ['root']
       }
       if (action.name === AiActionNames.REVIEW_DESIGN)
-        result = { complete: true, findings: [], measuredTextIds: [] }
+        result = {
+          complete: true,
+          findings: [],
+          measuredTextIds: [],
+          evidence: { sessionId: 'combined', revision: 1 }
+        }
       if (action.name === AiActionNames.INSPECT_DRAWING)
         result = {
           available: true,
@@ -720,7 +726,11 @@ it('retains existing measurement and inspection when combined preparation applie
   )
   const workflow = createLocalDesignWorkflow(designs, operations)
   const result = JSON.parse(
-    await workflow.call('prepare_and_apply_design', { draft }, signal())
+    await workflow.call(
+      'prepare_and_apply_design',
+      { draft, response: 'full' },
+      signal()
+    )
   )
   expect(calls).toEqual([
     AiActionNames.APPLY_PREPARED_DESIGN,
@@ -741,6 +751,7 @@ it('applies and reviews ready batches while later requirements and geometry rema
   const registered = [
     ...actions,
     ...[
+      AiActionNames.REVIEW_DESIGN,
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} }))
@@ -762,6 +773,12 @@ it('applies and reviews ready batches while later requirements and geometry rema
             status: 'complete',
             compositionId: prepared.rootId,
             appliedElementIds: [prepared.rootId]
+          }
+        } else if (action.name === AiActionNames.REVIEW_DESIGN) {
+          result = {
+            complete: true,
+            findings: [],
+            evidence: { sessionId: 'stages', revision }
           }
         } else if (action.name === AiActionNames.INSPECT_DRAWING) {
           result = {
@@ -1174,3 +1191,721 @@ it('recovers only the failed public part after an acknowledged earlier mutation'
     parentId: 'root'
   })
 })
+
+// Exercise the real preparation, operation and workflow owners together.
+const inspectionBoundaryFixture = (
+  options: {
+    failCheck?: string
+    incompleteCheck?: string
+    missingCheckEvidence?: boolean
+    finding?: string
+    stopApply?: number
+    cancelCheck?: AbortController
+    canReview?: boolean
+    unknownApply?: number
+    uncertainApply?: number
+    lostApply?: number
+    captureUnavailable?: boolean
+    repeatedTarget?: boolean
+    browserFailure?: 'partial' | 'unknown'
+    browserFailureAt?: number
+    observeReceipts?: boolean
+  } = {}
+) => {
+  const registered = [
+    ...actions,
+    ...[
+      ...(options.canReview === false ? [] : [AiActionNames.REVIEW_DESIGN]),
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+      AiActionNames.INSPECT_DRAWING
+    ].map((name) => ({ name, description: name, inputSchema: {} }))
+  ]
+  const designs = createLocalDesignTools(registered)
+  const events: string[] = []
+  const observedBatches: AiBatchReceipt[] = []
+  const publishReceipt = (...args: Parameters<typeof requireBatchSuccess>) => {
+    observedBatches.push(args[1])
+    return requireBatchSuccess(...args)
+  }
+  let applied = 0
+  const operations = createLocalOperationTools(
+    registered,
+    designs,
+    async (batch) => {
+      const action = batch.actions[0]
+      const target = String(
+        (action.arguments as { elementId?: string }).elementId
+      )
+      events.push(action.name + ':' + target)
+      let result: AiBatchReceipt['actionResults'][number]['result']
+      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+        applied++
+        if (options.lostApply === applied)
+          throw new Error('Application acknowledgement lost')
+        if (options.uncertainApply === applied)
+          result = {
+            status: 'partial',
+            settlement: 'unknown',
+            compositionId: 'part-' + applied
+          }
+        else if (options.unknownApply === applied)
+          result = { status: 'unknown', compositionId: 'part-' + applied }
+        else if (options.stopApply === applied)
+          result = {
+            status: 'partial',
+            compositionId: 'part-' + applied,
+            appliedElementIds: ['part-' + applied],
+            complete: false
+          }
+        else
+          result = {
+            status: 'complete',
+            compositionId: 'part-' + (options.repeatedTarget ? 1 : applied),
+            appliedElementIds: [
+              'part-' + (options.repeatedTarget ? 1 : applied)
+            ]
+          }
+      } else if (action.name === AiActionNames.REVIEW_DESIGN) {
+        if (options.failCheck === target)
+          throw new Error('Measurement transport failed')
+        options.cancelCheck?.abort()
+        result = {
+          complete: options.incompleteCheck !== target,
+          findings:
+            options.finding === target
+              ? [{ kind: 'container-overflow', elementId: target }]
+              : [],
+          ...(options.missingCheckEvidence
+            ? {}
+            : { evidence: { sessionId: 'stage1', revision: applied } }),
+          measuredTextIds: []
+        }
+      } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
+        result = { current: true, coverage: { complete: true } }
+      } else {
+        result = {
+          available: !options.captureUnavailable,
+          imageScope: 'overview',
+          evidence: { sessionId: 'stage1', revision: applied },
+          image: { dataUrl: 'data:image/png;base64,AA==', width: 1, height: 1 }
+        }
+      }
+      return publishReceipt(
+        batch,
+        {
+          context: {},
+          actionResults: [
+            { actionId: action.id, actionName: action.name, result }
+          ],
+          ...(action.name === AiActionNames.APPLY_PREPARED_DESIGN &&
+          options.browserFailure &&
+          applied === (options.browserFailureAt ?? 2)
+            ? {
+                failure: {
+                  code: 'ACTION_FAILED',
+                  message: 'A later action failed',
+                  stage: 'execution',
+                  actionName: action.name,
+                  actionId: action.id,
+                  actionExecutionMs: 1,
+                  settlement: options.browserFailure,
+                  contextFresh: true
+                }
+              }
+            : {})
+        },
+        1
+      )
+    }
+  )
+  const workflow = createLocalDesignWorkflow(
+    designs,
+    operations,
+    undefined,
+    options.observeReceipts ? () => ({ batches: observedBatches }) : undefined
+  )
+  return { workflow, operations, events }
+}
+
+it('checks a deferred standalone write before returning without capturing or rechecking on read', async () => {
+  const { workflow, operations, events } = inspectionBoundaryFixture()
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      { draft, inspection: 'defer' },
+      signal()
+    )
+  )
+  expect(result.actionResults[0].result.compositionId).toBe('part-1')
+  expect(result.inspectionDeferred).toBe(true)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toEqual([AiActionNames.REVIEW_DESIGN + ':part-1'])
+  expect(
+    events.some((entry) =>
+      entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+    )
+  ).toBe(false)
+  const checks = JSON.parse(
+    await operations.call(
+      'read_design_checks',
+      {
+        includePassed: true,
+        ids: ['measurement:part-1', 'measurement:part-2']
+      },
+      signal()
+    )
+  )
+  expect(checks.counts.pass).toBe(1)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toHaveLength(1)
+})
+
+it.each(['defer', 'immediate'])(
+  'checks every ordered part once after all writes with %s capture',
+  async (inspection) => {
+    const { workflow, events } = inspectionBoundaryFixture()
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'base', draft },
+            { key: 'top', draft }
+          ],
+          inspection
+        },
+        signal()
+      )
+    )
+    expect(result.status).toBe('complete')
+    const work = events.filter(
+      (entry) =>
+        !entry.startsWith(AiActionNames.VALIDATE_INSPECTION_EVIDENCE + ':')
+    )
+    expect(work.slice(0, 4)).toEqual([
+      AiActionNames.APPLY_PREPARED_DESIGN + ':undefined',
+      AiActionNames.APPLY_PREPARED_DESIGN + ':undefined',
+      AiActionNames.REVIEW_DESIGN + ':part-1',
+      AiActionNames.REVIEW_DESIGN + ':part-2'
+    ])
+    expect(
+      work.filter((entry) =>
+        entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+      )
+    ).toHaveLength(inspection === 'defer' ? 0 : 1)
+  }
+)
+
+it('preserves writes and exposes failed checks without replaying or losing other part checks', async () => {
+  const { workflow, operations, events } = inspectionBoundaryFixture({
+    failCheck: 'part-1'
+  })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      },
+      signal()
+    )
+  )
+  expect(result.status).toBe('complete')
+  expect(result.parts).toHaveLength(2)
+  expect(result.measurementIssues).toEqual([
+    expect.objectContaining({
+      elementId: 'part-1',
+      message: 'Measurement transport failed'
+    })
+  ])
+  expect(result.measurementDeferred).toBe(false)
+  const checks = JSON.parse(
+    await operations.call(
+      'read_design_checks',
+      {
+        includePassed: true,
+        ids: ['measurement:part-1', 'measurement:part-2']
+      },
+      signal()
+    )
+  )
+  expect(checks.counts).toMatchObject({ pass: 1, unverified: 1 })
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+    )
+  ).toHaveLength(2)
+})
+
+it('checks acknowledged partial parts and stops the suffix', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({ stopApply: 2 })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft },
+          { key: 'c', draft }
+        ],
+        inspection: 'defer'
+      },
+      signal()
+    )
+  )
+  expect(result.status).toBe('partial')
+  expect(result.remainingParts).toEqual(['c'])
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toEqual([
+    AiActionNames.REVIEW_DESIGN + ':part-1',
+    AiActionNames.REVIEW_DESIGN + ':part-2'
+  ])
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+    )
+  ).toHaveLength(2)
+})
+
+it('does not publish a late check or dispatch another check after cancellation', async () => {
+  const controller = new AbortController()
+  const { workflow, operations, events } = inspectionBoundaryFixture({
+    cancelCheck: controller
+  })
+  await expect(
+    workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      },
+      controller.signal
+    )
+  ).rejects.toThrow()
+  const checks = JSON.parse(
+    await operations.call(
+      'read_design_checks',
+      {
+        includePassed: true,
+        ids: ['measurement:part-1', 'measurement:part-2']
+      },
+      signal()
+    )
+  )
+  expect(checks.counts.pass).toBe(0)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toHaveLength(1)
+})
+
+it('retains known findings when a deferred mechanical check is incomplete', async () => {
+  const { workflow, operations } = inspectionBoundaryFixture({
+    incompleteCheck: 'part-1',
+    finding: 'part-1'
+  })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      { draft, inspection: 'defer' },
+      signal()
+    )
+  )
+  expect(result.actionResults[0].result.status).toBe('complete')
+  expect(result.measurementIssues).toHaveLength(1)
+  const checks = JSON.parse(
+    await operations.call(
+      'read_design_checks',
+      { includePassed: true, ids: ['measurement:part-1'] },
+      signal()
+    )
+  )
+  expect(checks.items[0]).toMatchObject({
+    status: 'fail',
+    evidence: expect.stringContaining('container-overflow')
+  })
+})
+
+it('does not certify mechanical results after unknown write settlement', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({ unknownApply: 2 })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft },
+          { key: 'c', draft }
+        ],
+        inspection: 'defer'
+      },
+      signal()
+    )
+  )
+  expect(result.status).toBe('unknown')
+  expect(result.measurementIssues.length).toBeGreaterThan(0)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toHaveLength(0)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+    )
+  ).toHaveLength(2)
+})
+
+it('preserves the acknowledged write when automatic capture is unavailable', async () => {
+  const { workflow } = inspectionBoundaryFixture({ captureUnavailable: true })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ]
+      },
+      signal()
+    )
+  )
+  expect(result.status).toBe('complete')
+  expect(result.parts).toHaveLength(2)
+  expect(result.inspectionIssues).toHaveLength(1)
+  expect(result.failedPart).toBeUndefined()
+})
+
+it('coalesces repeated acknowledged targets without retaining deferred flags after block completion', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({
+    repeatedTarget: true
+  })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      },
+      signal()
+    )
+  )
+  expect(
+    result.parts.map(
+      (part: { measurementDeferred: boolean }) => part.measurementDeferred
+    )
+  ).toEqual([false, false])
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toEqual([AiActionNames.REVIEW_DESIGN + ':part-1'])
+})
+
+it.each([
+  { incompleteCheck: 'part-1' },
+  { canReview: false },
+  { missingCheckEvidence: true }
+])(
+  'reports unavailable mechanical checks without replay or a fabricated pass: %o',
+  async (options) => {
+    const { workflow, operations, events } = inspectionBoundaryFixture(options)
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        { draft, inspection: 'defer' },
+        signal()
+      )
+    )
+    expect(result.measurementIssues).toHaveLength(1)
+    expect(result.actionResults[0].result.status).toBe('complete')
+    const checks = JSON.parse(
+      await operations.call(
+        'read_design_checks',
+        { includePassed: true, ids: ['measurement:part-1'] },
+        signal()
+      )
+    )
+    expect(checks.counts.pass).toBe(0)
+    expect(checks.counts.unverified).toBe(1)
+    expect(
+      events.filter((entry) =>
+        entry.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+      )
+    ).toHaveLength(1)
+  }
+)
+
+it.each([false, true])(
+  'does not check partial writes with unknown settlement at the ordered=%s boundary',
+  async (ordered) => {
+    const { workflow, operations, events } = inspectionBoundaryFixture({
+      uncertainApply: ordered ? 2 : 1
+    })
+    const input = ordered
+      ? {
+          parts: [
+            { key: 'a', draft },
+            { key: 'b', draft },
+            { key: 'c', draft }
+          ]
+        }
+      : { draft }
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        { ...input, inspection: 'immediate' },
+        signal()
+      )
+    )
+    expect(result.measurementIssues).toEqual([
+      expect.objectContaining({
+        message: expect.stringContaining('settlement is unknown')
+      })
+    ])
+    expect(
+      events.filter((entry) =>
+        entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+      )
+    ).toEqual([])
+    expect(
+      events.filter((entry) =>
+        entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+      )
+    ).toEqual([])
+    if (ordered) expect(result.remainingParts).toEqual(['c'])
+    const checks = JSON.parse(
+      await operations.call(
+        'read_design_checks',
+        {
+          includePassed: true,
+          ids: ['measurement:part-1', 'measurement:part-2']
+        },
+        signal()
+      )
+    )
+    expect(checks.counts.pass).toBe(0)
+  }
+)
+
+it('does not check prior parts after a later application acknowledgement is lost', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({ lostApply: 2 })
+  const result = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft },
+          { key: 'c', draft }
+        ]
+      },
+      signal()
+    )
+  )
+  expect(result.settlement).toBe('unknown')
+  expect(result.remainingParts).toEqual(['c'])
+  expect(result.measurementIssues).toEqual([
+    expect.objectContaining({
+      message: expect.stringContaining('settlement is unknown')
+    })
+  ])
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toEqual([])
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+    )
+  ).toEqual([])
+})
+
+it.each([
+  { incompleteCheck: 'part-1' },
+  { failCheck: 'part-1' },
+  { canReview: false }
+])(
+  'preserves acknowledged writes without automatic capture when checking is unresolved: %o',
+  async (options) => {
+    const { workflow, events } = inspectionBoundaryFixture(options)
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          draft,
+          inspection: 'immediate'
+        },
+        signal()
+      )
+    )
+    expect(result.actionResults[0].result.status).toBe('complete')
+    expect(result.measurementIssues).toHaveLength(1)
+    expect(
+      events.filter((entry) =>
+        entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+      )
+    ).toEqual([])
+  }
+)
+
+it('reuses a current failing check without treating omitted check output as a pass for capture', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({
+    finding: 'part-1',
+    repeatedTarget: true
+  })
+  await workflow.call(
+    'prepare_and_apply_design',
+    { draft, inspection: 'defer' },
+    signal()
+  )
+  await workflow.call(
+    'prepare_and_apply_design',
+    { draft, inspection: 'immediate' },
+    signal()
+  )
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+  ).toHaveLength(1)
+  expect(
+    events.filter((entry) =>
+      entry.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+    )
+  ).toEqual([])
+})
+
+it.each([
+  { ordered: false, failCheck: undefined },
+  { ordered: true, failCheck: undefined },
+  { ordered: false, failCheck: 'part-1' },
+  { ordered: true, failCheck: 'part-1' },
+  { ordered: false, failCheck: 'part-1', observeReceipts: true },
+  { ordered: true, failCheck: 'part-1', observeReceipts: true }
+])(
+  'preserves browser failure receipts and checks only settled acknowledged targets with ordered=$ordered, check failure=$failCheck and observer=$observeReceipts',
+  async ({ ordered, failCheck, observeReceipts }) => {
+    for (const settlement of ['partial', 'unknown'] as const) {
+      const { workflow, events } = inspectionBoundaryFixture({
+        browserFailure: settlement,
+        failCheck,
+        observeReceipts,
+        browserFailureAt: ordered ? 2 : 1
+      })
+      const reply = await invokeLocalTool(
+        workflow,
+        workflow.definitions[0],
+        {
+          ...(ordered
+            ? {
+                parts: [
+                  { key: 'a', draft },
+                  { key: 'b', draft },
+                  { key: 'c', draft }
+                ]
+              }
+            : { draft }),
+          inspection: 'defer'
+        },
+        signal()
+      )
+      expect(reply.success).toBe(false)
+      const result = JSON.parse(reply.text)
+      expect(result.toolOutcome.settlement).toBe(settlement)
+      expect(reply.text).toContain('ACTION_FAILED')
+      if (failCheck && settlement !== 'unknown')
+        expect(reply.text).toContain('Measurement transport failed')
+      expect(
+        events.filter((event) =>
+          event.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+        )
+      ).toHaveLength(ordered ? 2 : 1)
+      expect(
+        events.filter((event) =>
+          event.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+        )
+      ).toEqual(
+        settlement === 'unknown'
+          ? []
+          : [
+              AiActionNames.REVIEW_DESIGN + ':part-1',
+              ...(ordered ? [AiActionNames.REVIEW_DESIGN + ':part-2'] : [])
+            ]
+      )
+      expect(
+        events.some((event) =>
+          event.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+        )
+      ).toBe(false)
+    }
+  }
+)
+
+it.each(['compact', 'full'] as const)(
+  'delivers ordered automatic measurements only for explicit %s output',
+  async (response) => {
+    const { workflow, operations, events } = inspectionBoundaryFixture({
+      finding: 'part-1'
+    })
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'a', draft },
+            { key: 'b', draft }
+          ],
+          inspection: 'defer',
+          response
+        },
+        signal()
+      )
+    )
+    expect(result.parts).toHaveLength(2)
+    expect(result.checks.counts).toMatchObject({ fail: 1, pass: 1 })
+    expect(
+      result.actionResults.filter(
+        (entry: { actionName: string }) =>
+          entry.actionName === AiActionNames.REVIEW_DESIGN
+      )
+    ).toHaveLength(response === 'full' ? 2 : 0)
+    const checked = events.filter((event) =>
+      event.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+    )
+    expect(checked).toHaveLength(2)
+    const retained = JSON.parse(
+      await operations.call(
+        'read_design_checks',
+        { ids: ['measurement:part-1'] },
+        signal()
+      )
+    )
+    expect(JSON.parse(retained.items[0].evidence).findings).toHaveLength(1)
+    expect(
+      events.filter((event) =>
+        event.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+      )
+    ).toHaveLength(2)
+  }
+)

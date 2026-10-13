@@ -192,7 +192,7 @@ export const localToolFailureReply = (
     available: false,
     code,
     ...details,
-    recoverable: true,
+    recoverable: details.recoverable !== false,
     message,
     toolOutcome: {
       status: hasAcknowledgedActions(details.executionResult)
@@ -256,12 +256,31 @@ export const invokeLocalTool = async (
     signal.throwIfAborted()
     stage = 'decoding'
     reportPhase()
-    const value = JSON.parse(text)
+    let value = JSON.parse(text)
     decodedResult = value
     const resultIssue = owner.resultIssue?.(definition.name, value)
     if (resultIssue) throw new Error(resultIssue)
-    const toolOutcome =
+    let toolOutcome =
       owner.resultOutcome?.(definition.name, value) ?? localToolOutcome(value)
+    if (
+      toolOutcome.status !== 'success' &&
+      toolOutcome.settlement === 'unknown' &&
+      !hasAcknowledgedActions(value.executionResult)
+    ) {
+      let observed: unknown
+      try {
+        observed = executionEvidence?.()
+      } catch {
+        // Unavailable diagnostics cannot replace the owner's failure.
+      }
+      if (hasAcknowledgedActions(observed)) {
+        value = { ...value, executionResult: observed }
+        decodedResult = value
+        toolOutcome =
+          owner.resultOutcome?.(definition.name, value) ??
+          localToolOutcome(value)
+      }
+    }
     const inspected = inspectAiToolResult(contract, value, {
       outcome: toolOutcome,
       validate: operationInputIssue

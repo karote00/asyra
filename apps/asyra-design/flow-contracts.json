@@ -6,7 +6,9 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": ["compose.registered-tools"],
+  "negativeCaseIds": [
+    "compose.registered-tools"
+  ],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -15,7 +17,13 @@
     "artifact:inspection-evidence"
   ],
   "workspaceSources": [
-    { "name": "@asyra/core", "inputs": ["src/**"], "entry": "src/index.ts" },
+    {
+      "name": "@asyra/core",
+      "inputs": [
+        "src/**"
+      ],
+      "entry": "src/index.ts"
+    },
     {
       "name": "@asyra/asyra-design",
       "inputs": [
@@ -28,7 +36,9 @@
     },
     {
       "name": "@asyra/design-system",
-      "inputs": ["src/**"],
+      "inputs": [
+        "src/**"
+      ],
       "entry": "src/index.tsx"
     }
   ],
@@ -127,6 +137,11 @@
           "id": "inspect.scoped-dependencies",
           "stepId": "inspect",
           "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers"
+        },
+        {
+          "id": "inspect.deferred-measurement",
+          "stepId": "inspect",
+          "testName": "execution proof checks all acknowledged parts before returning deferred capture without another model"
         },
         {
           "id": "inspect.current-evidence",
@@ -250,68 +265,99 @@
             "packages/ai-agent-runtime/src/profiler/record-delivery.ts",
             "packages/ai-agent-runtime/src/node/record-collector.ts"
           ]
+        },
+        {
+          "id": "apply.canonical-inspection-scope",
+          "stepId": "apply",
+          "testName": "execution proof consumes canonical mutation scope without read pollution or no-change invalidation"
         }
       ],
       "handoffs": [
         {
           "routeId": "request-to-compose",
           "decision": "required",
-          "caseIds": ["compose.registered-tools"]
+          "caseIds": [
+            "compose.registered-tools"
+          ]
         },
         {
           "routeId": "compose-to-prepare",
           "decision": "required",
-          "caseIds": ["prepare.lifetime", "compose.resource-export"]
+          "caseIds": [
+            "prepare.lifetime",
+            "compose.resource-export"
+          ]
         },
         {
           "routeId": "compose-to-apply",
           "decision": "required",
-          "caseIds": ["apply.composition"]
+          "caseIds": [
+            "apply.composition"
+          ]
         },
         {
           "routeId": "prepare-to-apply",
           "decision": "required",
-          "caseIds": ["apply.composition"]
+          "caseIds": [
+            "apply.composition"
+          ]
         },
         {
           "routeId": "apply-to-compose",
           "decision": "required",
-          "caseIds": ["request.continuity", "apply.region-removal"]
+          "caseIds": [
+            "request.continuity",
+            "apply.region-removal"
+          ]
         },
         {
           "routeId": "apply-to-inspect",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence"
+          ]
         },
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": ["settle.partial"]
+          "caseIds": [
+            "settle.partial"
+          ]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence"
+          ]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence"
+          ]
         },
         {
           "routeId": "prepare-to-inspect",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         },
         {
           "routeId": "prepared-review-to-apply",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         },
         {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         }
       ]
     }
@@ -326,7 +372,9 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": ["compose.registered-tools"],
+      "expectedFailedCaseIds": [
+        "compose.registered-tools"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -336,7 +384,9 @@
     {
       "id": "misclassify-combined-tool",
       "title": "Run a canvas workflow as independent preparation",
-      "expectedFailedCaseIds": ["apply.composition"],
+      "expectedFailedCaseIds": [
+        "apply.composition"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
         "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",

@@ -327,3 +327,79 @@ it('rejects adoption of a superseded source before disturbing either lineage', (
   ).toThrow(/superseded/)
   expect(store.read({ includePassed: true })).toEqual(before)
 })
+
+it('retires a removed tool target, preserves dependent obligations and never reuses its revision', () => {
+  const store = createDesignCheckResults()
+  const revision = store.record({
+    id: 'measurement:removed',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Measured',
+    dependencies: { 'measurement:removed': 'stamp' }
+  })
+  store.record({
+    id: 'visual',
+    origin: 'main-agent',
+    status: 'pass',
+    evidence: 'Compared',
+    dependencies: { 'check:measurement:removed': String(revision) }
+  })
+  store.retire('measurement:removed', 'Target was removed')
+  expect(store.read()).toMatchObject({
+    counts: { pass: 0, stale: 1 },
+    items: [{ id: 'visual', status: 'stale' }]
+  })
+  expect(() => store.retire('visual', 'Not a tool target')).toThrow(/tool/)
+  expect(
+    store.record({
+      id: 'measurement:removed',
+      origin: 'tool',
+      status: 'pass',
+      evidence: 'Recreated',
+      dependencies: { 'measurement:removed': 'new-stamp' }
+    })
+  ).toBeGreaterThan(revision)
+  expect(store.read().items[0].status).toBe('stale')
+})
+
+it('selects transitive check dependencies without enumerating unrelated result payloads', () => {
+  const store = createDesignCheckResults()
+  const record = (id: string, dependencies: Record<string, string> = {}) =>
+    store.record({
+      id,
+      origin: 'tool',
+      status: 'pass',
+      evidence: id,
+      dependencies
+    })
+  record('root')
+  record('middle', { 'check:root': '1' })
+  record('leaf', { 'check:middle': '1' })
+  for (let index = 0; index < 100; index++) record(`other-${index}`)
+  expect(store.dependencyIds(['leaf'])).toEqual(['leaf', 'middle', 'root'])
+  expect(store.dependencyIds(['missing'])).toEqual(['missing'])
+})
+
+it('summarizes large retained failures without retransmitting their evidence', () => {
+  const store = createDesignCheckResults()
+  const ids = Array.from({ length: 5000 }, (_, index) => `measurement:${index}`)
+  for (const id of ids)
+    store.record({
+      id,
+      origin: 'tool',
+      status: 'unverified',
+      evidence: 'retained detail '.repeat(100),
+      dependencies: { [id]: 'unknown' }
+    })
+  const summary = store.summary(ids)
+  expect(summary).toEqual({
+    counts: { pass: 0, fail: 0, unverified: 5000, stale: 0 },
+    visitedResults: 5000,
+    firstPendingId: ids[0]
+  })
+  expect(JSON.stringify(summary).length).toBeLessThan(200)
+  if (!summary.firstPendingId) throw new Error('Missing pending check identity')
+  expect(store.read({ ids: [summary.firstPendingId] }).items[0].evidence).toBe(
+    'retained detail '.repeat(100)
+  )
+})

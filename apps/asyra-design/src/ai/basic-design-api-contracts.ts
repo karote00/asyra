@@ -196,7 +196,7 @@ const setElementLockApi = defineBasicApi({
 
 const setElementsVisibleApi = defineBasicApi({
   description:
-    'Set visibility on all supplied elements in one canonical batch. Returns ordered changed/unchanged/unavailable statuses and reviewElementIds for confirmed available targets. Review scope is not visual acceptance. Use elementIds target references; no per-element action expansion.',
+    'Set visibility on all supplied elements in one canonical batch. Returns ordered changed/unchanged/unavailable statuses. Canonical mutationScope identifies actual changes and is not visual acceptance. Use elementIds target references; no per-element action expansion.',
   owner: 'element',
   method: 'setElementsVisible',
   effect: 'write',

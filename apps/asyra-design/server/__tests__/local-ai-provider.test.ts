@@ -3620,7 +3620,7 @@ it('exposes review planning to the model and traces the operation without certif
         operations: [
           {
             name: 'set_element_visibility',
-            arguments: { elementIds: ['drawing'], visible: true }
+            arguments: { elementId: 'drawing', visible: true }
           }
         ]
       }
@@ -3634,6 +3634,7 @@ it('exposes review planning to the model and traces the operation without certif
       actions: [
         'set_element_visibility',
         'inspect_drawing',
+        'review_design',
         'report_outcome'
       ].map((name) => ({ name, description: name, inputSchema: {} }))
     },
@@ -3656,7 +3657,14 @@ it('exposes review planning to the model and traces the operation without certif
                         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
                     }
                   }
-                : { compositionId: 'drawing' }
+                : {
+                    changed: true,
+                    elementId: 'drawing',
+                    available: true,
+                    complete: true,
+                    findings: [],
+                    evidence: { sessionId: 'planning-proof', revision: 1 }
+                  }
           })
         )
       })

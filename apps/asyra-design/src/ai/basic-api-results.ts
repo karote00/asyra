@@ -1,5 +1,6 @@
 import {
   toolResultObject,
+  toolMutationScope,
   toolResultStatus,
   toolDocumentReference,
   toolDocumentReferences
@@ -78,12 +79,6 @@ export const describeBasicApiResult = (
         message:
           'The owner returned invalid target statuses or target alignment.'
       }
-    // Confirmed identity is review scope, not proof that a value changed or looks correct.
-    const reviewElementIds = [
-      ...new Set(
-        targetElementIds.filter((_, index) => value[index] !== 'unavailable')
-      )
-    ]
     const unavailable = value.filter((item) => item === 'unavailable').length
     const changed = value.filter((item) => item === 'changed').length
     let status = changed ? 'complete' : 'no-change'
@@ -92,7 +87,6 @@ export const describeBasicApiResult = (
     return {
       ...raw,
       status,
-      reviewElementIds,
       ...(unavailable
         ? {
             message: `${unavailable} targets were unavailable; see ordered target statuses.`
@@ -180,6 +174,8 @@ export const basicApiResultSchema = (contract: BasicApiContract) => {
     status: toolResultStatus,
     value: valueSchema
   }
+  if (['write', 'delete'].includes(contract.effect))
+    fields.mutationScope = toolMutationScope
   if (kind === 'created-items')
     fields.appliedElementIds = toolDocumentReferences
   if (kind === 'created-items' || kind === 'boolean-items')
@@ -194,7 +190,6 @@ export const basicApiResultSchema = (contract: BasicApiContract) => {
             : { type: 'boolean' }
       })
     }
-  if (kind === 'status-items') fields.reviewElementIds = toolDocumentReferences
   if (kind === 'transient' || kind === 'value') {
     fields.execution = { const: 'complete' }
     fields.application = { const: kind === 'value' ? 'read-only' : 'transient' }
