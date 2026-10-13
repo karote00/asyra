@@ -20,6 +20,8 @@
     "server/__tests__/local-ai-provider.test.ts",
     "server/__tests__/local-ai-admission.test.ts",
     "server/ai-status.ts",
+    "server/local-tool-management.ts",
+    "server/__tests__/local-tool-management.test.ts",
     "server/__tests__/ai-status.test.ts",
     "server/__tests__/local-image-tools.test.ts",
     "server/__tests__/local-ai-live.test.ts",

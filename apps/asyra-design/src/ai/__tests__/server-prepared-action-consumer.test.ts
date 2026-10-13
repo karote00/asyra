@@ -117,10 +117,13 @@ describe('server-prepared Asyra Design action consumers', () => {
         'lifecycle',
         'name',
         'outputSchema',
+        'partialOutputSchema',
         'resources',
         'revision'
       ])
       expect(action.inputSchema).toEqual(expect.any(Object))
+      expect(action.outputSchema).toEqual(expect.any(Object))
+      expect(action.partialOutputSchema).toEqual(expect.any(Object))
       expect(action).not.toHaveProperty('schema')
       expect(action).not.toHaveProperty('prepare')
     })

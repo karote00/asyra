@@ -98,12 +98,15 @@ const targetPath = (
 const assignTarget = (
   input: Record<string, unknown>,
   path: string[],
-  value: unknown
+  value: unknown,
+  fullPath = path
 ): Record<string, unknown> => {
   const [key, ...rest] = path
   if (!rest.length) {
     if (Object.hasOwn(input, key))
-      throw new Error('Invalid or conflicting target reference.')
+      throw new Error(
+        `A conflicting target binding supplies arguments ${JSON.stringify(fullPath)}. Omit that argument, including empty arrays, null or placeholders; the target supplies this slot.`
+      )
     return { ...input, [key]: value }
   }
   const child = Object.hasOwn(input, key) ? input[key] : {}
@@ -119,12 +122,12 @@ const assignTarget = (
     )
       throw new Error('Target path requires an existing object array slot.')
     const items = [...child]
-    items[index] = assignTarget(child[index], nested, value)
+    items[index] = assignTarget(child[index], nested, value, fullPath)
     return { ...input, [key]: items }
   }
   if (!record(child))
     throw new Error('Target reference ancestor must be an object.')
-  return { ...input, [key]: assignTarget(child, rest, value) }
+  return { ...input, [key]: assignTarget(child, rest, value, fullPath) }
 }
 
 /** Expand request-owned identity references; canonical actions still admit every write. */
@@ -136,7 +139,7 @@ export const prepareOperationBatch = (
   if (!Array.isArray(operations) || !operations.length)
     throw new Error('A nonempty operations array is required.')
   const actions: AiActionBatch['actions'][number][] = []
-  for (const operation of operations) {
+  for (const [operationIndex, operation] of operations.entries()) {
     if (
       !record(operation) ||
       Object.keys(operation).some(
@@ -156,25 +159,44 @@ export const prepareOperationBatch = (
         ? operation.target
         : [operation.target]
       if (!targets.length) throw new Error('Target references cannot be empty.')
-      for (const target of targets) {
-        if (
-          !record(target) ||
-          !['elementId', 'elementIds'].includes(String(target.field)) ||
-          (targets.length > 1 && target.field !== 'elementIds')
-        )
-          throw new Error(
-            'Invalid or conflicting target reference; multiple bindings require plural elementIds.'
+      const bindings: {
+        field: string
+        path: string[]
+        reference: Record<string, unknown>
+      }[] = []
+      const issues: string[] = []
+      let reserved = input
+      for (const [targetIndex, target] of targets.entries()) {
+        try {
+          if (
+            !record(target) ||
+            !['elementId', 'elementIds'].includes(String(target.field)) ||
+            (targets.length > 1 && target.field !== 'elementIds')
           )
-        const { field, path: requested, ...reference } = target
-        const path = targetPath(
-          definition.inputSchema,
-          String(field),
-          input,
-          requested
-        )
-        for (const current of inputs) assignTarget(current, path, undefined)
-        if (!resolveTargets)
-          throw new Error('Artifact references are unavailable.')
+            throw new Error(
+              'Invalid or conflicting target reference; multiple bindings require plural elementIds.'
+            )
+          const { field, path: requested, ...reference } = target
+          const path = targetPath(
+            definition.inputSchema,
+            String(field),
+            input,
+            requested
+          )
+          // Reserve every destination before any retained-source lookup. This
+          // also catches duplicate bindings without changing caller arguments.
+          reserved = assignTarget(reserved, path, undefined)
+          bindings.push({ field: String(field), path, reference })
+        } catch (error) {
+          issues.push(
+            `operations[${operationIndex}].target[${targetIndex}]: ${error instanceof Error ? error.message : String(error)}`
+          )
+        }
+      }
+      if (issues.length) throw new Error(issues.join('\n'))
+      if (!resolveTargets)
+        throw new Error('Artifact references are unavailable.')
+      for (const { field, path, reference } of bindings) {
         const ids = resolveTargets(reference)
         inputs = inputs.flatMap((current) =>
           field === 'elementIds'

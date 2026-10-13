@@ -67,6 +67,40 @@ const request = (artifactId: string) => ({
 })
 
 describe('local semantic design tools', () => {
+  it('declares composable preparation with exact request reference lifetimes', () => {
+    const tools = createLocalDesignTools(actions)
+    const prepare = tools.definitions.find(
+      (item) => item.name === 'prepare_design'
+    )
+    const retain = tools.definitions.find(
+      (item) => item.name === 'retain_design_targets'
+    )
+    const release = tools.definitions.find(
+      (item) => item.name === 'release_design_artifacts'
+    )
+    expect(prepare).toMatchObject({
+      composition: 'allowed',
+      outputSchema: {
+        properties: {
+          artifactId: { 'x-runtime-value': 'request' }
+        }
+      }
+    })
+    expect(retain).toMatchObject({
+      composition: 'allowed',
+      inputSchema: {
+        properties: {
+          targets: {
+            items: {
+              properties: { artifactId: { 'x-runtime-value': 'request' } }
+            }
+          }
+        }
+      }
+    })
+    expect(release).toMatchObject({ composition: 'control-plane' })
+  })
+
   it('reports duplicate source paths and repairs retained source without resending it', async () => {
     const tools = createLocalDesignTools(actions)
     const source = {
@@ -1302,6 +1336,10 @@ it('retains a large exact target subset once and reuses opaque handles in source
 it('blocks a contradicted reviewed artifact through both native and batch apply routes without writes', async () => {
   const registered = [
     ...actions,
+    ...[
+      AiActionNames.READ_DESIGN_ATTACHMENT,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
     {
       name: AiActionNames.INSPECT_DRAWING,
       description: 'Inspect',
@@ -1310,21 +1348,44 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
   ]
   const session = createDesignPreparationSession()
   const tools = createLocalDesignTools(registered, session)
-  const prepared = session.prepare(draft())
-  const execute = vi.fn()
-  const operations = createLocalOperationTools(registered, tools, execute, {
-    assessPrepared: async (packet) => ({
-      overall: {
-        status: 'fail',
-        evidence: 'The source recipe adds unrequested content.'
-      },
-      checks: Object.keys(packet.criteria).map((criterionId) => ({
-        criterionId,
-        status: 'fail',
-        evidence: 'Unrequested content in recipe.'
-      }))
-    })
+  const input = draft()
+  const prepared = session.prepare({
+    ...input,
+    brief: {
+      intent: 'Exact width',
+      viewpoint: 'Front',
+      sources: ['User'],
+      assumptions: [],
+      checks: [
+        { key: 'heading', property: 'width', expected: 999, tolerance: 0 }
+      ]
+    }
   })
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    batchId: batch.batchId,
+    context: {},
+    actionResults: batch.actions.map(
+      (action): AiBatchReceipt['actionResults'][number] => ({
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === AiActionNames.READ_DESIGN_ATTACHMENT
+            ? {
+                available: true,
+                parentId: 'workspace',
+                workspaceId: 'workspace',
+                evidence: { sessionId: 'scene', revision: 0 },
+                basis: [
+                  { x: 0, y: 0 },
+                  { x: 1, y: 0 },
+                  { x: 0, y: 1 }
+                ]
+              }
+            : { current: true }
+      })
+    )
+  }))
+  const operations = createLocalOperationTools(registered, tools, execute)
   const signal = new AbortController().signal
   await operations.call(
     'define_design_criteria',
@@ -1372,5 +1433,12 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
       signal
     )
   ).rejects.toThrow(/correction/i)
-  expect(execute).not.toHaveBeenCalled()
+  expect(
+    execute.mock.calls.flatMap(([batch]) =>
+      batch.actions.map((action) => action.name)
+    )
+  ).toEqual([
+    AiActionNames.READ_DESIGN_ATTACHMENT,
+    AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+  ])
 })

@@ -43,7 +43,9 @@
         ],
         outputs: ['artifact:admitted-recipe'],
         conditions: [
-          'Prove finite typed bindings and exact eligible dependencies without executing operations.'
+          'Prove finite typed bindings and exact eligible dependencies without executing operations.',
+          'Admit optional bounded repair iteration only with owner-declared read/prepare verification paths, required typed status/progress, closed state and guaranteed final receipt. Prove every possible repair dependency and worst-case step budget; reject forward/internal-output escape and captured state before writes.',
+          'Project only guaranteed registered output fields; unused opaque siblings do not invalidate known fields. Preserve open-object, union discriminator, ordered prefixItems with minItems presence, uniqueness and runtime-value constraints; reject ambiguous or opaque used bindings before writes. Intersect common object constraints and every closed property set; resolve local $defs lazily within one schema graph, preserve strict bounds and patterns, and reject uncertain recursive proofs. Undeclared fields of open registered objects require fresh typed input; they cannot hide captured literal runtime state.'
         ],
         bypasses: ['Invalid proposals return bounded repair issues.'],
         allowedContributors: [
@@ -84,7 +86,8 @@
         ],
         outputs: ['artifact:registered-recipe'],
         conditions: [
-          'Register immutable revisions in the same registry; expose candidates only to their owner and saved eligible entries to other requests.'
+          'Register immutable revisions in the same registry; expose candidates only to their owner and saved eligible entries to other requests.',
+          'Use the canonical weighted recipe inventory to inspect all initial/check/repair dependencies and nested worst-case expansion before publication.'
         ],
         bypasses: [
           'Identical replay returns the original receipt; conflicting content does not overwrite.'
@@ -102,6 +105,7 @@
           'packages/ai-agent-runtime/src/action-registry.ts',
           'packages/ai-agent-runtime/src/types.ts',
           'packages/ai-agent-runtime/src/tool-library.ts',
+          'packages/ai-agent-runtime/src/recipe-format.ts',
           'packages/ai-agent-runtime/src/index.ts',
           'packages/ai-agent-runtime/src/__tests__/tool-library.test.ts',
           'packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts',
@@ -117,7 +121,7 @@
         title: 'Pinned recipe invocation',
         ownerPackage: '@asyra/ai-agent-runtime',
         purpose:
-          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup.',
+          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup. Supply pinned input and selected output schemas to host lease ownership; never infer references by field names.',
         inputs: [
           'artifact:registered-recipe',
           'fresh arguments and request context',
@@ -125,7 +129,11 @@
         ],
         outputs: ['artifact:recipe-receipt'],
         conditions: [
-          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup.'
+          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup. Supply pinned input and selected output schemas to host lease ownership; never infer references by field names.',
+          'Execute admitted bounded repair with initial writes once, typed current state, owner check verdict and actual iteration provenance. Count nested worst-case work before writes; stop on decision, repeated progress, budget, cancellation or non-success, exporting actual validated recovery without replay or eligibility.',
+          'Observe pinned tool revision and admitted parent recipe name/revision/step ID on child lifecycle events. Do not invent admitted provenance for a rejected root; diagnostic metadata does not change execution authority.',
+          'Validate successful output only against outputSchema; partial uses declared partialOutputSchema or the same shape. Host outcome selects the schema; partial validation never rescues malformed success and partial results never feed successor bindings.',
+          'Failed/unknown results export resources only through a validated declared recoveryOutputSchema. Preserve exact outcome and settlement; nested recovery receipts transfer pinned references before ancestor cleanup without feeding successful bindings or granting save eligibility.'
         ],
         bypasses: [
           'Cancellation or non-success settlement stops successors without replaying progress.'
@@ -142,6 +150,7 @@
         cacheDimensions: [],
         implementationBoundary: [
           'packages/ai-agent-runtime/src/recipe-execution.ts',
+          'packages/ai-agent-runtime/src/recipe-format.ts',
           'packages/ai-agent-runtime/src/tool-contract.ts',
           'packages/ai-agent-runtime/src/__tests__/tool-contract.test.ts',
           'packages/ai-agent-runtime/src/recipe-types.ts',
@@ -169,7 +178,9 @@
         ],
         outputs: ['artifact:saved-recipe'],
         conditions: [
-          'Save exact immutable definition and eligibility atomically; validate reload through admission and isolate corrupt entries.'
+          'Save exact immutable definition and eligibility atomically; validate reload through admission and isolate corrupt entries.',
+          'Persist and compare the full optional iteration body with steps/output; reload and resume re-enter canonical bounded admission, and only verified success can grant eligibility. Save-only recovery never executes the graph.',
+          'Host management projects compact canonical stored metadata without registration or execution. State-only suspend/retire uses the observed storage version, preserves immutable definitions and rejects stale writes; runtime availability changes only after exact durable acknowledgement.'
         ],
         bypasses: [
           'Save-only retry never repeats product work; missing evidence retains candidate state.'
@@ -188,6 +199,7 @@
           'packages/ai-agent-runtime/src/action-registry.ts',
           'packages/ai-agent-runtime/src/types.ts',
           'packages/ai-agent-runtime/src/tool-library.ts',
+          'packages/ai-agent-runtime/src/recipe-format.ts',
           'packages/ai-agent-runtime/src/index.ts',
           'packages/ai-agent-runtime/src/__tests__/tool-store.test.ts',
           'packages/ai-agent-runtime/src/__tests__/fixtures/recipe-host.ts',
@@ -216,7 +228,7 @@
         title: 'registered-recipe',
         channel: 'Runtime',
         description:
-          'Register immutable revisions in the same registry; expose candidates only to their owner and saved eligible entries to other requests.'
+          'Register immutable revisions after finite graph admission; expose candidates only to their owner and saved eligible entries to other requests.'
       },
       {
         id: 'artifact:recipe-receipt',
@@ -226,7 +238,7 @@
         title: 'recipe-receipt',
         channel: 'Runtime',
         description:
-          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup.'
+          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup. Supply pinned input and selected output schemas to host lease ownership; never infer references by field names.'
       },
       {
         id: 'artifact:saved-recipe',
@@ -265,7 +277,7 @@
         kind: 'handoff',
         producedArtifacts: ['artifact:registered-recipe'],
         predicate:
-          'Register immutable revisions in the same registry; expose candidates only to their owner and saved eligible entries to other requests.'
+          'Register immutable revisions after finite graph admission; expose candidates only to their owner and saved eligible entries to other requests.'
       },
       {
         id: 'register-to-persist',
@@ -274,7 +286,7 @@
         kind: 'handoff',
         producedArtifacts: ['artifact:registered-recipe'],
         predicate:
-          'Register immutable revisions in the same registry; expose candidates only to their owner and saved eligible entries to other requests.'
+          'Register immutable revisions after finite graph admission; expose candidates only to their owner and saved eligible entries to other requests.'
       },
       {
         id: 'invoke-to-persist',
@@ -283,7 +295,7 @@
         kind: 'handoff',
         producedArtifacts: ['artifact:recipe-receipt'],
         predicate:
-          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup.'
+          'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup. Supply pinned input and selected output schemas to host lease ownership; never infer references by field names.'
       },
       {
         id: 'persist-to-admit',

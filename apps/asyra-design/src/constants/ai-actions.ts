@@ -5,6 +5,8 @@ export const AiActionNames = Object.freeze({
   ORGANIZE_DESIGN: 'organize_design',
   UPDATE_DESIGN_ELEMENT: 'update_design_element',
   READ_DESIGN_CONTEXT: 'read_design_context',
+  READ_DESIGN_ATTACHMENT: 'read_design_attachment',
+  RELEASE_DESIGN_CONTEXT: 'release_design_context',
   MAP_RETAINED_FILLS: 'map_retained_fills',
   INSPECT_DRAWING: 'inspect_drawing',
   VALIDATE_INSPECTION_EVIDENCE: 'validate_inspection_evidence',

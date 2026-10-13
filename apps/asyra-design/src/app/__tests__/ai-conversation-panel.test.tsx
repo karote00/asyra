@@ -83,6 +83,23 @@ describe('AI Agent conversation panel intent boundary', () => {
       '正在刪除被覆蓋物件',
       '正在調整屋頂顏色'
     ]) {
+      if (sequence) {
+        const completedId = `work-${sequence}`
+        await act(async () => {
+          request.progressObserver({
+            attempt: 1,
+            phase: 'provider',
+            summary: 'Tool completed',
+            toolStatus: 'completed',
+            activity: {
+              kind: 'system',
+              callId: completedId,
+              sequence: ++sequence,
+              phase: 'provider'
+            }
+          })
+        })
+      }
       await act(async () =>
         request.progressObserver({
           phase: 'provider',
@@ -123,6 +140,55 @@ describe('AI Agent conversation panel intent boundary', () => {
         .getByText('正在調整屋頂顏色')
         .hasAttribute('aria-current')
     ).toBe(false)
+  })
+
+  it('shows the original task after a concrete operation completes', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      void harness.conversation.submit('Refine the tower')
+    })
+    const request = harness.feature.execute.mock
+      .calls[0][0] as AiConversationFeatureRequest
+    await act(async () => {
+      request.progressObserver({
+        attempt: 1,
+        phase: 'provider',
+        summary: 'Tool running',
+        message: 'Adjust the roof',
+        toolStatus: 'running',
+        activity: {
+          kind: 'work',
+          callId: 'roof',
+          sequence: 1,
+          phase: 'applying'
+        }
+      })
+      request.progressObserver({
+        attempt: 1,
+        phase: 'provider',
+        summary: 'Tool complete',
+        toolStatus: 'completed',
+        activity: {
+          kind: 'system',
+          callId: 'roof',
+          sequence: 2,
+          phase: 'applying'
+        }
+      })
+    })
+    expect(
+      screen.getByRole('status', { name: 'Current activity' }).textContent
+    ).toBe('AI processingRefine the tower')
+    await act(async () => {
+      harness.pending.resolve({ status: 'success' })
+    })
   })
 
   it('does not show a redundant canvas or selection context caption', () => {

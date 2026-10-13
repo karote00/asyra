@@ -178,3 +178,60 @@ describe('Core canonical element property APIs', () => {
     expect(requests.applyPreparedPropertyMutationBatch).not.toHaveBeenCalled()
   })
 })
+
+it('resolves nested shared property owners through canonical indexes without scanning elements', async () => {
+  const { Core } = await import('../core.js')
+  const resolvePropertyAncestorIds = vi.fn(() => ['color', 'fill', 'fills'])
+  const getElementPropertyRelations = vi.fn((id: string) => {
+    if (id === 'fills')
+      return [{ ownerElementId: 'tier-3' }, { ownerElementId: 'tier-5' }]
+    if (id === 'fill') return [{ ownerElementId: 'tier-3' }]
+    return []
+  })
+  const host = {
+    deps: {
+      props: { resolvePropertyAncestorIds, getPropertyById: () => ({}) },
+      sceneTree: { getElementPropertyRelations }
+    }
+  }
+  expect(
+    Core.prototype.getPropertyOwnerElementIds.call(host as never, ['color'])
+  ).toEqual(['tier-3', 'tier-5'])
+  expect(resolvePropertyAncestorIds).toHaveBeenCalledExactlyOnceWith(['color'])
+  expect(getElementPropertyRelations.mock.calls.map(([id]) => id)).toEqual([
+    'color',
+    'fill',
+    'fills'
+  ])
+})
+
+it('does not treat retired property cleanup as an unknown document mutation', async () => {
+  const { Core } = await import('../core.js')
+  const resolvePropertyAncestorIds = vi.fn((ids: readonly string[]) => {
+    if (ids.includes('retired')) throw new Error('Property is retired')
+    return ids
+  })
+  const getElementPropertyRelations = vi.fn((id: string) =>
+    id === 'active' ? [{ ownerElementId: 'tier-3' }] : []
+  )
+  const host = {
+    deps: {
+      props: {
+        getPropertyById: (id: string) => (id === 'active' ? {} : undefined),
+        resolvePropertyAncestorIds
+      },
+      sceneTree: { getElementPropertyRelations }
+    }
+  }
+  expect(
+    Core.prototype.getPropertyOwnerElementIds.call(
+      host as never,
+      ['retired', 'active'],
+      { includeRetired: true }
+    )
+  ).toEqual(['tier-3'])
+  expect(resolvePropertyAncestorIds).toHaveBeenCalledExactlyOnceWith(['active'])
+  expect(() =>
+    Core.prototype.getPropertyOwnerElementIds.call(host as never, ['retired'])
+  ).toThrow('Property is retired')
+})

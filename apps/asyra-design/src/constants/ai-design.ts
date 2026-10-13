@@ -1,4 +1,8 @@
 export const AiDesignToolIds = Object.freeze({
+  SUBMIT_TOOL: 'submit_tool',
+  INVOKE_TOOL: 'invoke_tool',
+  SAVE_TOOL: 'save_tool',
+  MANAGE_TOOL: 'manage_tool',
   DESCRIBE_DESIGN_APIS: 'describe_design_apis',
   EXECUTE_DESIGN_BATCH: 'execute_design_batch',
   RETAIN_DESIGN_TARGETS: 'retain_design_targets',
@@ -10,5 +14,6 @@ export const AiDesignToolIds = Object.freeze({
   RECORD_DESIGN_CALCULATIONS: 'record_design_calculations',
   SELECT_DESIGN_REFERENCES: 'select_design_references',
   REVIEW_PREPARED_DESIGN: 'review_prepared_design',
+  READ_DESIGN_CHECKS: 'read_design_checks',
   REVIEW_DRAWING: 'review_drawing'
 } as const)

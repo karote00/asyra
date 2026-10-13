@@ -47,6 +47,7 @@ export interface AiConversationFeature {
 }
 
 export interface AiActiveTurn {
+  readonly originalIntent: string
   readonly waitingSinceMs?: number
   readonly waitingDurationMs?: number
   readonly startedAtMs?: number
@@ -144,6 +145,7 @@ export class AiConversationError extends Error {
 }
 
 interface MutableActiveTurn {
+  readonly originalIntent: string
   waitingSinceMs?: number
   waitingDurationMs: number
   readonly replyToTurnId?: string
@@ -462,6 +464,7 @@ export const createAiConversationController = (
               attachments: activeTurn.attachments,
               conversationId: activeTurn.conversationId,
               intent: activeTurn.intent,
+              originalIntent: activeTurn.originalIntent,
               progress: Object.freeze([...activeTurn.progress]),
               turnId: activeTurn.turnId
             }),
@@ -633,6 +636,7 @@ export const createAiConversationController = (
       const startedAtMs = now()
       turnIndex += 1
       const currentTurn: MutableActiveTurn = {
+        originalIntent,
         waitingDurationMs: 0,
         attachments,
         replyToTurnId,
@@ -650,7 +654,9 @@ export const createAiConversationController = (
       const aiTargets = revalidateTargetHints()
       notify()
 
-      const activityProjection = createAiActivityProjection()
+      const activityProjection = createAiActivityProjection({
+        purpose: originalIntent
+      })
       const progressObserver: AiRuntimeProgressObserver = (update) => {
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
           return

@@ -1,4 +1,6 @@
 import core from '../contexts'
+import { observeInspectionChanges } from './inspection-evidence'
+import type { InspectionDependencyChange } from './inspection-dependencies'
 import {
   yieldToCooperativeHost,
   subscribeToFileLoadComplete
@@ -11,7 +13,9 @@ interface Bounds {
   height: number
 }
 interface ReviewApis {
-  observeChanges?(listener: () => void): () => void
+  observeChanges?(
+    listener: (change?: InspectionDependencyChange) => void
+  ): () => void
   read(id: string):
     | {
         type?: string
@@ -48,7 +52,7 @@ export const observeDesignChanges = (listener: () => void): (() => void) => {
   }
 }
 const defaultApis: ReviewApis = {
-  observeChanges: observeDesignChanges,
+  observeChanges: observeInspectionChanges,
   read: (id) => core.getElementData(id),
   computed: (id, fields) => core.getElementComputedData(id, fields),
   measure: (ids) => core.measureElementContentBounds(ids)
@@ -61,31 +65,88 @@ const overflow = (bounds: Bounds, width: number, height: number) => ({
   right: Math.max(0, bounds.x + bounds.width - width),
   bottom: Math.max(0, bounds.y + bounds.height - height)
 })
-export const createDesignReviewer =
-  (
-    apis: ReviewApis = defaultApis,
-    yieldToHost: () => Promise<void> = yieldToCooperativeHost
-  ) =>
-  async (rootId: string, signal?: AbortSignal) => {
+interface NodeVerdict {
+  inherited: boolean
+  parentWidth?: number
+  parentHeight?: number
+  children: readonly string[]
+  visible: boolean
+  bounds?: Bounds
+  complete: boolean
+  findings: ReviewFinding[]
+  text?: { layout: Bounds; measured: boolean; findings: ReviewFinding[] }
+}
+
+export const createDesignReviewer = (
+  apis: ReviewApis = defaultApis,
+  yieldToHost: () => Promise<void> = yieldToCooperativeHost,
+  retain = false
+) => {
+  const cache = new Map<string, NodeVerdict>()
+  const parents = new Map<string, Set<string>>()
+  const dirty = new Set<string>()
+  const enabled = retain && !!apis.observeChanges
+  let stop: (() => void) | undefined
+  let generation = 0
+  let disposed = false
+  const clear = () => {
+    cache.clear()
+    parents.clear()
+    dirty.clear()
+  }
+  const change = (value?: InspectionDependencyChange) => {
+    generation++
+    if (!value) {
+      clear()
+      return
+    }
+    const pending = [...value.elementIds, ...(value.parentIds ?? [])]
+    const seen = new Set<string>()
+    for (const id of pending) {
+      if (seen.has(id)) continue
+      seen.add(id)
+      dirty.add(id)
+      pending.push(...(parents.get(id) ?? []))
+    }
+  }
+  const review = async (rootId: string, signal?: AbortSignal) => {
+    const assertActive = () => {
+      signal?.throwIfAborted()
+      if (disposed) throw new Error('Design reviewer is disposed.')
+    }
+    assertActive()
     if (typeof rootId !== 'string' || !rootId.length || rootId.length > 256)
       throw new Error('Invalid review target.')
-    signal?.throwIfAborted()
+    if (enabled) stop ??= apis.observeChanges?.(change)
+    const start = generation
     let documentChanged = false
-    const stopObserving = apis.observeChanges?.(() => {
-      documentChanged = true
-    })
+    const stopObserving = enabled
+      ? undefined
+      : apis.observeChanges?.(() => {
+          documentChanged = true
+        })
+    const work = {
+      aggregatedNodes: 0,
+      evaluatedNodes: 0,
+      reusedNodes: 0,
+      metadataReads: 0,
+      computedReads: 0,
+      textMeasurements: 0
+    }
     try {
       const findings: ReviewFinding[] = []
       const measuredTextIds: string[] = []
       const queue: { id: string; visible: boolean; parent?: Bounds }[] = [
         { id: rootId, visible: true }
       ]
-      const visited = new Set<string>(),
-        text = new Map<string, Bounds>()
+      const visited = new Set<string>()
+      const pending = new Map<string, NodeVerdict>()
+      const texts = new Map<string, NonNullable<NodeVerdict['text']>>()
+      const measureIds: string[] = []
       let complete = true
       for (let index = 0; index < queue.length; index++) {
         if (index > 0 && index % reviewChunkSize === 0) await yieldToHost()
-        signal?.throwIfAborted()
+        assertActive()
         const { id, visible: inherited, parent } = queue[index]
         if (visited.has(id)) {
           complete = false
@@ -93,89 +154,180 @@ export const createDesignReviewer =
           continue
         }
         visited.add(id)
-        const data = apis.read(id)
-        if (!data) {
-          complete = false
-          findings.push({ kind: 'missing-element', elementId: id })
-          continue
-        }
-        const visible = inherited && data.visible !== false
-        const computed = apis.computed(id, fields)
-        const valid =
-          computed &&
-          ['x', 'y', 'width', 'height'].every(
-            (key) =>
-              typeof computed[key] === 'number' &&
-              Number.isFinite(computed[key])
-          ) &&
-          Number(computed.width) >= 0 &&
-          Number(computed.height) >= 0
-        const bounds = valid
-          ? {
-              x: Number(computed.x),
-              y: Number(computed.y),
-              width: Number(computed.width),
-              height: Number(computed.height)
-            }
-          : undefined
-        if (visible && !bounds) {
-          complete = false
-          findings.push({ kind: 'geometry-unavailable', elementId: id })
-        }
-        if (visible && bounds && parent) {
-          if (computed?.rotation !== undefined && computed.rotation !== 0) {
+        work.aggregatedNodes++
+        let node = enabled && !dirty.has(id) ? cache.get(id) : undefined
+        if (
+          node &&
+          (node.inherited !== inherited ||
+            node.parentWidth !== parent?.width ||
+            node.parentHeight !== parent?.height)
+        )
+          node = undefined
+        if (node) work.reusedNodes++
+        else {
+          work.evaluatedNodes++
+          work.metadataReads++
+          const data = apis.read(id)
+          if (!data) {
             complete = false
-            findings.push({ kind: 'rotated-bounds-unchecked', elementId: id })
-          } else {
-            const excess = overflow(bounds, parent.width, parent.height)
-            if (Object.values(excess).some((value) => value > 0.5))
-              findings.push({
-                kind: 'container-overflow',
-                elementId: id,
-                ...excess
-              })
+            findings.push({ kind: 'missing-element', elementId: id })
+            continue
           }
+          const visible = inherited && data.visible !== false
+          work.computedReads++
+          const computed = apis.computed(id, fields)
+          const valid =
+            computed &&
+            ['x', 'y', 'width', 'height'].every(
+              (key) =>
+                typeof computed[key] === 'number' &&
+                Number.isFinite(computed[key])
+            ) &&
+            Number(computed.width) >= 0 &&
+            Number(computed.height) >= 0
+          const bounds = valid
+            ? {
+                x: Number(computed.x),
+                y: Number(computed.y),
+                width: Number(computed.width),
+                height: Number(computed.height)
+              }
+            : undefined
+          node = {
+            inherited,
+            parentWidth: parent?.width,
+            parentHeight: parent?.height,
+            children: Array.isArray(data.children) ? [...data.children] : [],
+            visible,
+            bounds,
+            complete: true,
+            findings: []
+          }
+          if (visible && !bounds) {
+            node.complete = false
+            node.findings.push({ kind: 'geometry-unavailable', elementId: id })
+          }
+          if (visible && bounds && parent) {
+            if (computed?.rotation !== undefined && computed.rotation !== 0) {
+              node.complete = false
+              node.findings.push({
+                kind: 'rotated-bounds-unchecked',
+                elementId: id
+              })
+            } else {
+              const excess = overflow(bounds, parent.width, parent.height)
+              if (Object.values(excess).some((value) => value > 0.5))
+                node.findings.push({
+                  kind: 'container-overflow',
+                  elementId: id,
+                  ...excess
+                })
+            }
+          }
+          if (visible && bounds && data.type === 'text') {
+            node.text = { layout: bounds, measured: false, findings: [] }
+            measureIds.push(id)
+          }
+          pending.set(id, node)
         }
-        if (visible && bounds && data.type === 'text') text.set(id, bounds)
-        if (Array.isArray(data.children)) {
-          for (const child of data.children)
-            queue.push({ id: child, visible, parent: bounds })
-        }
+        complete &&= node.complete
+        findings.push(...node.findings.map((finding) => ({ ...finding })))
+        if (node.text) texts.set(id, node.text)
+        for (const child of node.children)
+          queue.push({ id: child, visible: node.visible, parent: node.bounds })
       }
-      if (text.size) {
-        const measured: ReturnType<ReviewApis['measure']>[number][] = []
+      const measured: ReturnType<ReviewApis['measure']>[number][] = []
+      if (measureIds.length) {
         try {
-          const ids = [...text.keys()]
-          for (let offset = 0; offset < ids.length; offset += reviewChunkSize) {
+          for (
+            let offset = 0;
+            offset < measureIds.length;
+            offset += reviewChunkSize
+          ) {
             if (offset > 0) await yieldToHost()
-            signal?.throwIfAborted()
-            measured.push(
-              ...apis.measure(ids.slice(offset, offset + reviewChunkSize))
-            )
+            assertActive()
+            const batch = measureIds.slice(offset, offset + reviewChunkSize)
+            work.textMeasurements += batch.length
+            measured.push(...apis.measure(batch))
           }
         } catch {
-          signal?.throwIfAborted()
+          assertActive()
           complete = false
         }
         const byId = new Map(
           measured.map((entry) => [entry.elementId, entry.bounds])
         )
-        for (const [id, layout] of text) {
+        for (const id of measureIds) {
+          const text = texts.get(id)
+          if (!text) continue
           const content = byId.get(id)
           if (!content || !Object.values(content).every(Number.isFinite)) {
             complete = false
-            findings.push({ kind: 'measurement-unavailable', elementId: id })
-            continue
+            text.findings.push({
+              kind: 'measurement-unavailable',
+              elementId: id
+            })
+          } else {
+            text.measured = true
+            const excess = overflow(
+              content,
+              text.layout.width,
+              text.layout.height
+            )
+            if (Object.values(excess).some((value) => value > 0.5))
+              text.findings.push({
+                kind: 'text-overflow',
+                elementId: id,
+                ...excess
+              })
           }
-          measuredTextIds.push(id)
-          const excess = overflow(content, layout.width, layout.height)
-          if (Object.values(excess).some((value) => value > 0.5))
-            findings.push({ kind: 'text-overflow', elementId: id, ...excess })
         }
       }
+      for (const [id, text] of texts) {
+        if (text.measured) measuredTextIds.push(id)
+        findings.push(...text.findings.map((finding) => ({ ...finding })))
+      }
+      assertActive()
+      documentChanged ||= enabled && start !== generation
       if (documentChanged) {
         complete = false
         findings.push({ kind: 'document-changed', elementId: rootId })
+      } else if (
+        enabled &&
+        !findings.some((finding) => finding.kind === 'invalid-hierarchy')
+      ) {
+        const removed = new Set<string>()
+        for (const [id, node] of pending) {
+          if (!node.complete || (node.text && !node.text.measured)) continue
+          for (const child of cache.get(id)?.children ?? []) {
+            const owners = parents.get(child)
+            owners?.delete(id)
+            if (!owners?.size) {
+              parents.delete(child)
+              removed.add(child)
+            }
+          }
+          cache.set(id, node)
+          dirty.delete(id)
+          for (const child of node.children) {
+            const owners = parents.get(child) ?? new Set<string>()
+            owners.add(id)
+            parents.set(child, owners)
+          }
+        }
+        for (const id of removed) {
+          if (parents.has(id) || visited.has(id)) continue
+          for (const child of cache.get(id)?.children ?? []) {
+            const owners = parents.get(child)
+            owners?.delete(id)
+            if (!owners?.size) {
+              parents.delete(child)
+              removed.add(child)
+            }
+          }
+          cache.delete(id)
+          dirty.delete(id)
+        }
       }
       return {
         complete,
@@ -183,10 +335,20 @@ export const createDesignReviewer =
         checkedElements: visited.size,
         measuredTextCount: measuredTextIds.length,
         measuredTextIds,
-        findings
+        findings,
+        observation: work
       }
     } finally {
       stopObserving?.()
     }
   }
+  return Object.assign(review, {
+    dispose: () => {
+      disposed = true
+      stop?.()
+      stop = undefined
+      clear()
+    }
+  })
+}
 export const reviewDesign = createDesignReviewer()

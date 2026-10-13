@@ -1,8 +1,4 @@
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
-import {
-  preparedAssessmentInstructions,
-  type PreparedRecipePacket
-} from './local-prepared-design-review'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 import { createAiInvoker } from '@asyra/ai-agent-runtime'
 import { nativeToolInputSchema } from './operation-input-schema'
@@ -17,11 +13,18 @@ import {
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { observeActionBatch } from './local-action-observation'
 import {
-  invokeLocalTool,
   localToolFailureReply,
   localToolErrorMessage
 } from './local-tool-invocation'
-import { createLocalToolScheduler } from './local-tool-scheduler'
+import { createLocalToolHost, type LocalToolGroup } from './local-tool-host'
+import {
+  createLocalToolStore,
+  DEFAULT_TOOL_LIBRARY_DIRECTORY,
+  createLocalToolStoreSession
+} from './local-tool-store'
+import { LocalToolLibraryLimits } from './local-tool-library-limits'
+import { createDesignPreparationSession } from './design-preparation'
+import type { LocalToolOwnership } from './local-tool-leases'
 import { createLocalDesignWorkflow } from './local-design-workflow'
 import { createLocalDesignTools } from './local-design-tools'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -214,7 +217,15 @@ const turnInput = (input: AiProviderInput): Record<string, unknown>[] => {
     {
       type: 'text',
       text: JSON.stringify({
-        input: { ...input, metadata },
+        input: {
+          ...input,
+          actions: input.actions.map(({ name, description, inputSchema }) => ({
+            name,
+            description,
+            inputSchema
+          })),
+          metadata
+        },
         protocolVersion: 1
       })
     },
@@ -238,7 +249,7 @@ const runLocalAiProvider = async (
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly visualAssessmentOnly?: boolean
-    readonly preparedAssessmentOnly?: boolean
+    readonly toolLibraryDirectory?: string
     readonly recordDirectory?: string
     readonly sourceRevision?: string
     readonly sourceFingerprint?: string
@@ -251,10 +262,12 @@ const runLocalAiProvider = async (
     event: AiToolProgress,
     purposeSource = 'public-authored'
   ) => {
+    let kind = event.activity?.kind ?? ('system' as const)
+    if (purposeSource === 'registered-operation') kind = 'system'
     const activity = {
       ...event.activity,
       phase: event.activity?.phase ?? ('executing' as const),
-      kind: event.activity?.kind ?? ('system' as const),
+      kind,
       callId: event.activity?.callId ?? event.tool,
       sequence: ++progressSequence
     }
@@ -311,274 +324,306 @@ const runLocalAiProvider = async (
       evidence: Record<string, unknown>
     ) => usage?.trace(stage, evidence)
   }
-  const imageTools = createLocalImageTools(input)
-  const references = createLocalReferenceTools(
-    (image) => {
-      const index = imageTools.addReference(image)
-      options.retainReference?.(image, index)
-      return index
-    },
-    undefined,
-    ownerObservation
-  )
-  const designs = createLocalDesignTools(input.actions)
-  const preparation: LocalActionPreparation = {
-    resolveTargets: designs.resolveTargets,
-    resolveRecipe: designs.resolveRecipe,
-    modelActions: (actions) =>
-      designs.modelActions(imageTools.modelActions(actions)),
-    resolveBatch: (value) =>
-      designs.resolveBatch(imageTools.resolveBatch(value))
-  }
+  const toolController = new AbortController()
+  let host: ReturnType<typeof createLocalToolHost> | undefined
   const notificationCounts = new Map<string, number>()
-  const executeBatch = options.executeBatch
-  const executeObservedBatch: ExecuteAiBatch | undefined = executeBatch
-    ? async (batch) => {
-        const started = performance.now()
-        const receipt = await observeActionBatch(
-          batch,
-          async (batch) => {
-            const parentCallId = callContext.getStore()?.id
-            const activity = {
-              kind: 'system' as const,
-              callId: batch.batchId,
-              parentCallId,
-              sequence: 0,
-              phase: batch.actions.some(
-                (action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN
-              )
-                ? ('applying' as const)
-                : ('executing' as const)
-            }
-            reportProgress({ tool: 'app-batch', status: 'running', activity })
-            try {
-              const receipt = await executeBatch(batch)
-              callContext.getStore()?.receipts.push(receipt)
-              return receipt
-            } finally {
-              reportProgress({
-                tool: 'app-batch',
-                status: 'completed',
-                activity
-              })
-            }
-          },
-          input.actions,
-          callContext.getStore()?.id,
-          (stage, evidence) => usage?.trace(stage, evidence)
-        )
-        return requireBatchSuccess(
-          batch,
-          receipt,
-          Math.max(0, performance.now() - started)
-        )
-      }
-    : undefined
-  const operations: ReturnType<typeof createLocalOperationTools> | undefined =
-    executeObservedBatch
-      ? createLocalOperationTools(
-          input.actions,
-          preparation,
-          executeObservedBatch,
-          {
-            resolveSources: imageTools.resolveSources,
-            validateReferences: imageTools.validateReferences,
-            getNativeTools: (): NativeToolDescriptor[] =>
-              activeToolGroups.flatMap((group) =>
-                (group.owner?.definitions ?? []).map((definition) => ({
-                  ...definition,
-                  namespace: group.name
-                }))
-              ),
-            assessPrepared: async (packet, signal) => {
-              const sourceSpanId = randomUUID()
+  let libraryUnavailable = false
+  const buildGroups = (ownership?: LocalToolOwnership) => {
+    const imageTools = createLocalImageTools(input, undefined, ownership)
+    const references = createLocalReferenceTools(
+      (image) => {
+        const index = imageTools.addReference(image)
+        options.retainReference?.(image, index)
+        return index
+      },
+      undefined,
+      ownerObservation
+    )
+    const designs = createLocalDesignTools(
+      input.actions,
+      createDesignPreparationSession(undefined, undefined, ownership)
+    )
+    const preparation: LocalActionPreparation = {
+      resolveTargets: designs.resolveTargets,
+      resolveRecipe: designs.resolveRecipe,
+      modelActions: (actions) =>
+        designs.modelActions(imageTools.modelActions(actions)),
+      resolveBatch: (value) =>
+        designs.resolveBatch(imageTools.resolveBatch(value))
+    }
+    const executeBatch = options.executeBatch
+    const executeObservedBatch: ExecuteAiBatch | undefined = executeBatch
+      ? async (batch) => {
+          const started = performance.now()
+          const receipt = await observeActionBatch(
+            batch,
+            async (batch) => {
               const parentCallId = callContext.getStore()?.id
               const activity = {
-                kind: 'work' as const,
-                callId: sourceSpanId,
+                kind: 'system' as const,
+                callId: batch.batchId,
                 parentCallId,
                 sequence: 0,
-                phase: 'inspecting' as const
+                phase: batch.actions.some(
+                  (action) =>
+                    action.name === AiActionNames.APPLY_PREPARED_DESIGN
+                )
+                  ? ('applying' as const)
+                  : ('executing' as const)
               }
-              reportProgress(
-                {
-                  tool: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
-                  status: 'running',
-                  message:
-                    'Prepared composition and detail recipes against the selected references',
+              reportProgress({ tool: 'app-batch', status: 'running', activity })
+              try {
+                const receipt = await executeBatch(batch)
+                callContext.getStore()?.receipts.push(receipt)
+                return receipt
+              } finally {
+                reportProgress({
+                  tool: 'app-batch',
+                  status: 'completed',
                   activity
-                },
-                'registered-operation'
-              )
-              const finish = usage?.span({
-                callId: sourceSpanId,
-                owner: 'provider',
-                purpose: 'Assess retained source recipe before application',
-                parentCallId
-              })
-              try {
-                return await requestLocalPreparedAssessment(
-                  input.intent,
-                  packet,
-                  imageTools.referenceImages(packet.referenceImageIndexes),
-                  {
-                    model: options.model,
-                    executable: options.executable,
-                    recordDirectory: options.recordDirectory,
-                    sourceRevision: options.sourceRevision,
-                    sourceFingerprint: options.sourceFingerprint,
-                    sourceIdentityStatus: options.sourceIdentityStatus,
-                    sourceRequestId: usage?.requestId,
-                    parentCallId,
-                    sourceSpanId,
-                    signal
-                  }
-                )
-              } finally {
-                reportProgress(
-                  {
-                    tool: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
-                    status: 'completed',
-                    activity
-                  },
-                  'registered-operation'
-                )
-                finish?.()
+                })
               }
             },
-            assessVisual: async (comparison, signal) => {
-              const sourceSpanId = randomUUID()
-              const parentCallId = callContext.getStore()?.id
-              const reviewActivity = {
-                kind: 'work' as const,
-                callId: sourceSpanId,
-                parentCallId,
-                sequence: 0,
-                phase: 'inspecting' as const
-              }
-              reportProgress(
-                {
-                  tool: AiDesignToolIds.REVIEW_DRAWING,
-                  status: 'running',
-                  message:
-                    'Current drawing against the selected references and requirements',
-                  activity: reviewActivity
-                },
-                'registered-operation'
-              )
-              const finish = usage?.span({
-                callId: sourceSpanId,
-                owner: 'provider',
-                purpose: 'Await independent visual assessment',
-                parentCallId
-              })
-              try {
-                return await requestLocalVisualAssessment(
-                  {
-                    request: input.intent,
-                    ...comparison,
-                    images: [
-                      ...imageTools.referenceImages(
-                        comparison.referenceImageIndexes
-                      ),
-                      ...comparison.images
-                    ]
-                  },
-                  {
-                    model: options.model,
-                    executable: options.executable,
-                    recordDirectory: options.recordDirectory,
-                    sourceRevision: options.sourceRevision,
-                    sourceFingerprint: options.sourceFingerprint,
-                    sourceIdentityStatus: options.sourceIdentityStatus,
-                    sourceRequestId: usage?.requestId,
-                    parentCallId,
-                    sourceSpanId,
-                    signal
+            input.actions,
+            callContext.getStore()?.id,
+            (stage, evidence) => usage?.trace(stage, evidence)
+          )
+          return requireBatchSuccess(
+            batch,
+            receipt,
+            Math.max(0, performance.now() - started)
+          )
+        }
+      : undefined
+    const operations: ReturnType<typeof createLocalOperationTools> | undefined =
+      executeObservedBatch
+        ? createLocalOperationTools(
+            input.actions,
+            preparation,
+            executeObservedBatch,
+            {
+              ownership,
+              requestSignal: options.signal,
+              resolveSources: imageTools.resolveSources,
+              validateReferences: imageTools.validateReferences,
+              getNativeTools: (): NativeToolDescriptor[] =>
+                host?.definitions() ?? [],
+              getNativeToolsRevision: () => host?.revision ?? 0,
+              reviewTargetId:
+                isRecord(input.metadata) &&
+                isRecord(input.metadata.aiTargets) &&
+                typeof input.metadata.aiTargets.compositionId === 'string'
+                  ? input.metadata.aiTargets.compositionId
+                  : undefined,
+              onInspection: (status) => {
+                const context = callContext.getStore()
+                if (!context) return
+                if (status === 'running') context.inspectionId = randomUUID()
+                if (!context.inspectionId) return
+                reportProgress({
+                  tool: AiActionNames.INSPECT_DRAWING,
+                  status,
+                  activity: {
+                    kind: 'system',
+                    callId: context.inspectionId,
+                    parentCallId: context.id,
+                    sequence: 0,
+                    phase: 'inspecting'
                   }
-                )
-              } finally {
-                reportProgress(
-                  {
-                    tool: AiDesignToolIds.REVIEW_DRAWING,
-                    status: 'completed',
-                    activity: reviewActivity
-                  },
-                  'registered-operation'
-                )
-                finish?.()
+                })
+                if (status === 'completed') delete context.inspectionId
               }
-            },
-            reviewTargetId:
-              isRecord(input.metadata) &&
-              isRecord(input.metadata.aiTargets) &&
-              typeof input.metadata.aiTargets.compositionId === 'string'
-                ? input.metadata.aiTargets.compositionId
-                : undefined,
-            onInspection: (status) => {
-              const context = callContext.getStore()
-              if (!context) return
-              if (status === 'running') context.inspectionId = randomUUID()
-              if (!context.inspectionId) return
-              reportProgress({
-                tool: AiActionNames.INSPECT_DRAWING,
-                status,
-                activity: {
-                  kind: 'system',
-                  callId: context.inspectionId,
-                  parentCallId: context.id,
-                  sequence: 0,
-                  phase: 'inspecting'
-                }
-              })
-              if (status === 'completed') delete context.inspectionId
             }
-          }
+          )
+        : undefined
+    const workflow = operations
+      ? createLocalDesignWorkflow(
+          designs,
+          operations,
+          ownerObservation,
+          () => ({
+            batches: callContext.getStore()?.receipts ?? []
+          })
         )
       : undefined
-  const workflow = operations
-    ? createLocalDesignWorkflow(designs, operations, ownerObservation, () => ({
-        batches: callContext.getStore()?.receipts ?? []
-      }))
-    : undefined
-  const toolGroups = [
-    {
-      name: 'image_analysis',
-      description:
-        'Vectorize reference images and inspect or refine their contours and components.',
-      owner: imageTools
-    },
-    {
-      name: 'design_references',
-      description:
-        'Import public reference images found through native web research.',
-      owner: references
-    },
-    {
-      name: 'design_preparation',
-      description:
-        'Prepare reusable editable design artifacts, layouts and repeated geometry.',
-      owner: designs
-    },
-    {
-      name: 'design_workflow',
-      description:
-        'Compose preparation, application and inspection of a coherent design stage.',
-      owner: workflow
-    },
-    {
-      name: 'design_operations',
-      description:
-        'Discover basic design APIs; create, edit, organize and inspect the current canvas through registered operations.',
-      owner: operations
+    const toolGroups = [
+      {
+        name: 'image_analysis',
+        description:
+          'Vectorize reference images and inspect or refine their contours and components.',
+        owner: imageTools
+      },
+      {
+        name: 'design_references',
+        description:
+          'Import public reference images found through native web research.',
+        owner: references
+      },
+      {
+        name: 'design_preparation',
+        description:
+          'Prepare reusable editable design artifacts, layouts and repeated geometry.',
+        owner: designs
+      },
+      {
+        name: 'design_workflow',
+        description:
+          'Compose preparation, application and inspection of a coherent design stage.',
+        owner: workflow
+      },
+      {
+        name: 'design_operations',
+        description:
+          'Discover basic design APIs; create, edit, organize and inspect the current canvas through registered operations.',
+        owner: operations
+      }
+    ]
+    return {
+      preparation,
+      operations,
+      groups: toolGroups.flatMap(({ owner, ...group }) =>
+        owner ? [{ ...group, owner }] : []
+      ) as LocalToolGroup[]
     }
-  ]
+  }
+  let localTools: ReturnType<typeof buildGroups> | undefined
+  const storage = createLocalToolStoreSession(() =>
+    createLocalToolStore({
+      directory: options.toolLibraryDirectory ?? DEFAULT_TOOL_LIBRARY_DIRECTORY,
+      capacity: LocalToolLibraryLimits.entries,
+      recordBytes: LocalToolLibraryLimits.recordBytes,
+      totalBytes: LocalToolLibraryLimits.totalBytes
+    })
+  )
+  const executionStarted = new Map<string, number>()
+  const queuedAt = new Map<string, number>()
+  if (!options.assessmentOnly && !options.checkOnly) {
+    host = createLocalToolHost({
+      requestId: usage?.requestId ?? randomUUID(),
+      signal: toolController.signal,
+      store: storage,
+      capacity: LocalToolLibraryLimits.entries,
+      receiptCapacity: LocalToolLibraryLimits.receipts,
+      artifactCapacity: LocalToolLibraryLimits.artifacts,
+      limits: LocalToolLibraryLimits.recipe,
+      createGroups: (ownership) => {
+        localTools = buildGroups(ownership)
+        return localTools.groups
+      },
+      execute: (call, work) => {
+        const started = performance.now()
+        if (!call.parentCallId) executionStarted.set(call.callId, started)
+        usage?.trace('tool_execution_started', {
+          tool: toolBindings.get(call.name)?.definition.name ?? call.name,
+          callId: call.callId,
+          parentCallId: call.parentCallId,
+          queueMs: Math.max(0, started - (queuedAt.get(call.callId) ?? started))
+        })
+        queuedAt.delete(call.callId)
+        return callContext.run({ id: call.callId, receipts: [] }, work)
+      },
+      executionEvidence: () => ({
+        batches: callContext.getStore()?.receipts ?? []
+      }),
+      onPhase: (call, phase) => {
+        let observedPhase: 'admission' | 'preparing' | 'executing' = 'executing'
+        if (phase === 'admission') observedPhase = 'admission'
+        else if (
+          toolBindings.get(call.name)?.definition.name ===
+            AiDesignToolIds.PREPARE_DESIGN &&
+          phase === 'execution'
+        )
+          observedPhase = 'preparing'
+        reportProgress({
+          tool: toolBindings.get(call.name)?.definition.name ?? call.name,
+          status: 'running',
+          activity: {
+            kind: 'system',
+            callId: call.callId,
+            parentCallId: call.parentCallId,
+            sequence: 0,
+            phase: observedPhase
+          }
+        })
+      },
+      observe: (event) => {
+        // Top-level transport already records provider input and delivered output.
+        // Recipe children have their own causal IDs and complete owner outcomes.
+        if (!event.call.parentCallId) return
+        const { call } = event
+        if (event.phase === 'started')
+          queuedAt.set(call.callId, performance.now())
+        else queuedAt.delete(call.callId)
+        const evidence = {
+          tool: call.name,
+          callId: call.callId,
+          parentCallId: call.parentCallId,
+          revision: event.revision,
+          recipeStep: event.recipeStep,
+          actor: call.actor,
+          executor: 'app-server',
+          purpose: call.purpose,
+          purposeSource: call.purposeSource,
+          arguments: call.input,
+          durationMs: event.durationMs,
+          ...(event.phase === 'completed' ? { result: event.output } : {}),
+          ...(event.error ? { reason: localToolErrorMessage(event.error) } : {})
+        }
+        let stage: 'tool_started' | 'tool_completed' | 'tool_failed' =
+          'tool_started'
+        if (event.phase === 'completed') stage = 'tool_completed'
+        else if (event.phase !== 'started') stage = 'tool_failed'
+        usage?.trace(stage, evidence)
+        if (event.phase !== 'started')
+          reportProgress({
+            tool: toolBindings.get(call.name)?.definition.name ?? call.name,
+            status: 'completed',
+            activity: {
+              kind: 'system',
+              callId: call.callId,
+              parentCallId: call.parentCallId,
+              sequence: 0
+            }
+          })
+      }
+    })
+    const started = performance.now()
+    usage?.trace('action_started', {
+      tool: 'tool-library-load',
+      callId: 'tool-library-load',
+      actor: 'app-server',
+      executor: 'app-server',
+      purpose: 'Load and revalidate saved reusable tools'
+    })
+    try {
+      const loaded = await host.load()
+      usage?.trace('action_completed', {
+        tool: 'tool-library-load',
+        callId: 'tool-library-load',
+        result: loaded,
+        durationMs: performance.now() - started
+      })
+    } catch (error) {
+      libraryUnavailable = true
+      usage?.trace('action_failed', {
+        tool: 'tool-library-load',
+        callId: 'tool-library-load',
+        reason: localToolErrorMessage(error),
+        durationMs: performance.now() - started
+      })
+    }
+  } else localTools = buildGroups()
+  if (options.signal?.aborted) {
+    await host?.dispose()
+    await storage.close()
+    throw failure('AI_MODEL_BACKEND_ABORTED')
+  }
+  if (!localTools) throw new Error('Native tool owners were not initialized')
+  const { preparation, operations } = localTools
+  const activeToolGroups = host?.groups ?? []
   let isolatedInstructions = assessmentInstructions
   if (options.visualAssessmentOnly)
     isolatedInstructions = visualAssessmentInstructions
-  if (options.preparedAssessmentOnly)
-    isolatedInstructions = preparedAssessmentInstructions
-  const activeToolGroups = options.assessmentOnly ? [] : toolGroups
   const nativeDefinitions = activeToolGroups.flatMap(
     ({ name, description, owner }) =>
       owner && owner.definitions.length
@@ -587,15 +632,17 @@ const runLocalAiProvider = async (
               type: 'namespace',
               name,
               description,
-              tools: owner.definitions.map(
-                ({ type, name, description, inputSchema }) => ({
-                  type,
+              tools: owner.definitions
+                .filter(
+                  (definition) => definition.providerExposure !== 'registry'
+                )
+                .map(({ name, description, inputSchema }) => ({
+                  type: 'function',
                   name,
                   description,
                   inputSchema: nativeToolInputSchema(inputSchema),
                   deferLoading: true
-                })
-              )
+                }))
             }
           ]
         : []
@@ -611,23 +658,23 @@ const runLocalAiProvider = async (
       )
     )
   )
-  const toolBindings = new Map(
+  const toolBindings = new Map<
+    string,
+    { definition: ReturnType<typeof createAiToolContract> }
+  >(
     activeToolGroups.flatMap(({ name, owner }) =>
       owner
-        ? owner.definitions.map(
-            (definition) =>
-              [
-                `${name}.${definition.name}`,
-                {
-                  owner,
-                  definition: createAiToolContract(definition),
-                  access:
-                    'executionAccess' in definition
-                      ? definition.executionAccess
-                      : undefined
-                }
-              ] as const
-          )
+        ? owner.definitions
+            .filter((definition) => definition.providerExposure !== 'registry')
+            .map(
+              (definition) =>
+                [
+                  `${name}.${definition.name}`,
+                  {
+                    definition: createAiToolContract(definition)
+                  }
+                ] as const
+            )
         : []
     )
   )
@@ -638,8 +685,6 @@ const runLocalAiProvider = async (
       .modelActions(input.actions)
       .filter((action) => !operationNames.has(action.name))
   })
-  const toolController = new AbortController()
-  const schedule = createLocalToolScheduler(toolController.signal)
   const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()
   let child: ChildProcessWithoutNullStreams
@@ -661,6 +706,8 @@ const runLocalAiProvider = async (
       }
     )
   } catch {
+    await host?.dispose()
+    await storage.close()
     throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
   }
   const writeProtocol = (
@@ -826,112 +873,80 @@ const runLocalAiProvider = async (
       )
       toolCalls.add(params.callId)
       const toolStartedAt = performance.now()
+      queuedAt.set(params.callId as string, toolStartedAt)
       let executionStartedAt: number | undefined
 
-      const selectedOwner = binding.owner
       const task = createAiInvoker({
-        execute: () =>
-          schedule(binding.access, async () => {
-            reportProgress({
-              tool: toolName,
-              status: 'running',
-              activity: {
-                kind: 'system',
+        execute: async () => {
+          try {
+            if (!host) throw new Error('Tool host is unavailable')
+            const reply = await host
+              .invoke({
+                name: `${params.namespace}.${binding.definition.name}`,
+                input: params.arguments,
                 callId: params.callId as string,
-                sequence: 0,
-                phase:
-                  toolName === AiDesignToolIds.PREPARE_DESIGN
-                    ? 'preparing'
-                    : 'executing'
-              }
-            })
-            executionStartedAt = performance.now()
-            usage?.trace('tool_execution_started', {
-              tool: toolName,
-              callId: params.callId,
-              queueMs: executionStartedAt - toolStartedAt
-            })
-            try {
-              const reply = await callContext.run(
-                { id: params.callId as string, receipts: [] },
-                () =>
-                  invokeLocalTool(
-                    selectedOwner,
-                    binding.definition,
-                    params.arguments,
-                    toolController.signal,
-                    () => ({ batches: callContext.getStore()?.receipts ?? [] }),
-                    (phase) => {
-                      let observedPhase:
-                        'admission' | 'preparing' | 'executing' = 'executing'
-                      if (phase === 'admission') observedPhase = 'admission'
-                      else if (
-                        phase === 'execution' &&
-                        toolName === AiDesignToolIds.PREPARE_DESIGN
-                      )
-                        observedPhase = 'preparing'
-                      reportProgress({
-                        tool: toolName,
-                        status: 'running',
-                        activity: {
-                          kind: 'system',
-                          callId: params.callId as string,
-                          sequence: 0,
-                          phase: observedPhase
-                        }
-                      })
-                    }
-                  )
-              )
-              try {
-                return {
-                  ...reply,
-                  contentItems: await localToolContent(reply.text)
-                }
-              } catch (error) {
-                toolController.signal.throwIfAborted()
-                const reason = localToolErrorMessage(error)
-                usage?.trace('tool_delivery_failed', {
-                  tool: toolName,
-                  callId: params.callId,
-                  code: 'TOOL_RESULT_DELIVERY_FAILED',
-                  reason,
-                  durationMs: performance.now() - toolStartedAt
-                })
-                const rejected = localToolFailureReply(
-                  `${reason}. The tool returned an execution result but its content could not be delivered. This does not undo completed work. Do not replay mutations; inspect current state or use another acquisition method.`,
-                  'TOOL_RESULT_DELIVERY_FAILED',
-                  {
-                    stage: 'delivery',
-                    settlement: 'unknown',
-                    executionResult: JSON.parse(
-                      serializeToolPayload(JSON.parse(reply.text)).serialized
-                    )
-                  }
+                signal: toolController.signal,
+                actor: 'provider',
+                ...(authoredMessage
+                  ? { purpose: authoredMessage, purposeSource: 'model-message' }
+                  : {})
+              })
+              .finally(() => {
+                executionStartedAt = executionStarted.get(
+                  params.callId as string
                 )
-                return {
-                  ...rejected,
-                  contentItems: [
-                    {
-                      type: 'inputText' as const,
-                      text: rejected.text
-                    }
-                  ]
-                }
+                executionStarted.delete(params.callId as string)
+                queuedAt.delete(params.callId as string)
+              })
+            try {
+              return {
+                ...reply,
+                contentItems: await localToolContent(reply.text)
               }
             } catch (error) {
               toolController.signal.throwIfAborted()
-              const reply = localToolFailureReply(
-                localToolErrorMessage(error),
-                'TOOL_EXECUTION_FAILED',
-                { stage: 'delivery', settlement: 'unknown' }
+              const reason = localToolErrorMessage(error)
+              usage?.trace('tool_delivery_failed', {
+                tool: toolName,
+                callId: params.callId,
+                code: 'TOOL_RESULT_DELIVERY_FAILED',
+                reason,
+                durationMs: performance.now() - toolStartedAt
+              })
+              const rejected = localToolFailureReply(
+                `${reason}. The tool returned an execution result but its content could not be delivered. This does not undo completed work. Do not replay mutations; inspect current state or use another acquisition method.`,
+                'TOOL_RESULT_DELIVERY_FAILED',
+                {
+                  stage: 'delivery',
+                  settlement: 'unknown',
+                  executionResult: JSON.parse(
+                    serializeToolPayload(JSON.parse(reply.text)).serialized
+                  )
+                }
               )
               return {
-                ...reply,
-                contentItems: [{ type: 'inputText' as const, text: reply.text }]
+                ...rejected,
+                contentItems: [
+                  {
+                    type: 'inputText' as const,
+                    text: rejected.text
+                  }
+                ]
               }
             }
-          }),
+          } catch (error) {
+            toolController.signal.throwIfAborted()
+            const reply = localToolFailureReply(
+              localToolErrorMessage(error),
+              'TOOL_EXECUTION_FAILED',
+              { stage: 'delivery', settlement: 'unknown' }
+            )
+            return {
+              ...reply,
+              contentItems: [{ type: 'inputText' as const, text: reply.text }]
+            }
+          }
+        },
         observe: (event) => {
           if (event.phase === 'started') {
             usage?.trace('tool_started', {
@@ -1485,7 +1500,7 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` Available App tool namespaces: ${nativeDefinitions.map(({ name, tools }) => `${name} (${tools.map(({ name }) => name).join(', ')})`).join('; ')}. Native discovery provides callable declarations. When nested fields appear as unknown or a constraint is unclear, describe_design_apis with names returns the complete registered inputSchema and definitions; retain that result and follow it rather than guessing. Keep large query values and intermediate geometry inside Code Mode, compute the next tool inputs there, and return only the findings or counts needed for the next decision. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Discover the relevant tools before composing calls; use their exact namespace and schema. ${localToolResultInstructions}`,
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Available App tool namespaces: ${nativeDefinitions.map(({ name, tools }) => `${name} (${tools.map(({ name }) => name).join(', ')})`).join('; ')}. Native discovery provides callable declarations. When nested fields appear as unknown or a constraint is unclear, describe_design_apis with names returns the complete registered inputSchema and definitions; retain that result and follow it rather than guessing. Keep large query values and intermediate geometry inside Code Mode, compute the next tool inputs there, and return only the findings or counts needed for the next decision. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Discover the relevant tools before composing calls; use their exact namespace and schema. ${localToolResultInstructions}`,
         config: {
           model_reasoning_effort: 'medium',
           ...localProviderIsolationConfig,
@@ -1583,10 +1598,47 @@ const runLocalAiProvider = async (
       finishClose?.()
     }
     await Promise.allSettled(toolTasks.keys())
+    const finishCleanup = usage?.span({
+      callId: 'provider-cleanup',
+      owner: 'app',
+      purpose: 'Release request artifacts and close the tool store'
+    })
+    try {
+      for (const [component, cleanup] of [
+        ['tool-host', () => host?.dispose()],
+        ['tool-store', () => storage.close()]
+      ] as const) {
+        const started = performance.now()
+        try {
+          await cleanup()
+          usage?.trace('host_observation', {
+            callId: 'provider-cleanup',
+            phase: 'cleanup',
+            executor: component,
+            status: 'completed',
+            durationMs: performance.now() - started
+          })
+        } catch (error) {
+          // Teardown evidence cannot replace a settled product result or error.
+          usage?.trace('host_observation', {
+            callId: 'provider-cleanup',
+            phase: 'cleanup',
+            executor: component,
+            status: 'failed',
+            code: 'TOOL_CLEANUP_FAILED',
+            durationMs: performance.now() - started,
+            error: localToolErrorMessage(error)
+          })
+        }
+      }
+    } finally {
+      finishCleanup?.()
+    }
   }
 }
 
 interface LocalAiProviderOptions {
+  readonly toolLibraryDirectory?: string
   readonly model: string
   readonly executable: string
   readonly recordDirectory?: string
@@ -1605,11 +1657,10 @@ const requestRecordedLocalAi = async (
   options: LocalAiProviderOptions & {
     assessmentOnly?: boolean
     visualAssessmentOnly?: boolean
-    preparedAssessmentOnly?: boolean
   }
 ) => {
   let purpose = options.assessmentOnly ? 'execution-assessment' : 'drawing'
-  if (options.preparedAssessmentOnly) purpose = 'prepared-assessment'
+  if (options.visualAssessmentOnly) purpose = 'visual-assessment'
   const sink = createExecutionRecordSink(
     options.recordDirectory ?? 'tmp/ai-executions'
   )
@@ -1742,33 +1793,6 @@ export const requestLocalAiAssessment = (
     },
     { ...options, executeBatch: undefined, assessmentOnly: true }
   )
-
-export const requestLocalPreparedAssessment = async (
-  request: string,
-  packet: PreparedRecipePacket,
-  images: { role: string; dataUrl: string }[],
-  options: Omit<LocalAiProviderOptions, 'executeBatch' | 'onProgress'> & {
-    sourceRequestId?: string
-  }
-) => {
-  const result = await requestRecordedLocalAi(
-    {
-      intent: request,
-      context: { ...packet, imageRoles: images.map(({ role }) => role) },
-      actions: [],
-      attempt: 1,
-      metadata: {
-        purpose: 'prepared-assessment',
-        ...(options.sourceRequestId
-          ? { sourceRequestId: options.sourceRequestId }
-          : {}),
-        imageAttachments: images.map(({ dataUrl }) => ({ dataUrl }))
-      }
-    },
-    { ...options, assessmentOnly: true, preparedAssessmentOnly: true }
-  )
-  return validateVisualAssessment(result.value, packet.criteria)
-}
 
 export const requestLocalVisualAssessment = async (
   assessment: VisualAssessmentInput,

@@ -49,13 +49,27 @@ description and input schema. Obtaining that projection does not grant execution
 The host classifies an observed result as success, partial, failed or unknown and
 reports settlement separately as not-started, completed, partial or unknown.
 The installed middleware or native invocation adapter validates successful and
-partial values against the declared output schema using the host validator.
+partial values using the host validator. Successful values use `outputSchema`;
+partial values use `partialOutputSchema` when declared, otherwise `outputSchema`.
+The optional partial schema belongs to the same immutable, revisioned descriptor
+and its persisted dependency fingerprint. Schema selection follows the host's
+explicit outcome; success never falls back to the partial schema. Compositions
+forward only successful settled values, so partial receipts do not weaken typed
+successful handoffs.
 An invalid output preserves the actual value and settlement, reports the precise
 validation issue and is never silently reclassified as a successful tool result.
 A thrown host validator is also an explicit validation failure. Classification is
 not inferred from truthiness, HTTP success or an empty object. Runtime does not
 retry execution during validation. Failed and unknown receipts remain actionable
 without pretending they satisfy the successful-result schema.
+
+Tools exporting usable repair data on failed or unknown outcomes declare an
+optional `recoveryOutputSchema` on the same immutable descriptor. This shape is
+validated independently of successful and partial results; it cannot promote an
+outcome or change settlement. Only validated declared references transfer to the
+caller before cleanup. Undeclared failure diagnostics export no resources.
+Composition stops successors and preserves typed recovery separately from normal
+output bindings. Recovery is not successful-execution or persistence eligibility.
 
 Registration rejects empty identity/description, invalid revision, non-JSON schemas,
 unknown effects or lifecycle values and invalid resource names. Descriptors are
@@ -203,24 +217,64 @@ after child completion, shared lease isolation and terminal request cleanup.
 
 ## Typed recipe admission
 
-The PR 2 implementation target is a version-1 finite ordered recipe. Public
+A version-1 recipe contains finite ordered steps and an optional bounded repair iteration. Public
 parameters/results use JSON Schema. Bindings are literal JSON, a JSON Pointer into
 public input or an earlier step result, or an explicitly constructed object/array.
-There are no expressions, branches, loops, callbacks or dynamic dependency names.
+There are no arbitrary expressions, unbounded loops, callbacks or dynamic dependency names.
 A proposal names exact registered dependency revisions. Host limits bound encoded
 size, step count, nesting, expansion and repair issues; exceeding them rejects the
 proposal without partial registration or execution.
+
+An optional `iteration` declares `id`, `stateSchema`, `state` (initial binding),
+`check` (one ordinary step), `repairs` (ordered steps), `next` (state binding), and
+`maxIterations` (positive maximum repair rounds). A `state` binding is available
+only inside that iteration. Initial steps execute once. Check executes first and
+after each acknowledged repair round. Final output may bind the iteration ID,
+whose result contains `state`, `result` (checker output), and `iterations` (repair
+round count); it cannot bind optional internal repair results. All IDs are unique.
+
+A registered read/prepare checker owns `verification: {statusPath, progressPath}`.
+Admission requires guaranteed output paths: status is restricted to `pass`,
+`repairable`, or `decision-required`, and progress is a nonempty string identifying
+the unresolved semantic state. The checker must not use fresh invocation IDs as
+progress. Only `pass` completes mechanical iteration. Decision-required, repeated
+progress (including cycles), exhausted rounds, cancellation or unacknowledged
+work stops without replay or save eligibility. Domain checks do not imply visual
+acceptance. Runtime validates every dependency and the worst-case step expansion
+before execution; each leaf still uses the same secured invocation and leases.
 
 Only dependencies explicitly marked composition-eligible by their host can enter
 a recipe. Control-plane tools remain ineligible. This is shared contract metadata,
 not a tool-name list. Metadata derives from the actual dependency graph; a model
 cannot downgrade mutation/external effects or grant resource access.
 
-Static binding proof supports closed objects, homogeneous arrays and primitive
-schemas with required fields, enums and numeric/string/array bounds. Unsupported
-keywords, opaque leaves, optional source paths and uncertain assignability reject
-with the path and an actionable reason; actual invocation still uses the host's
-full validator. This deliberately does not claim general JSON Schema implication.
+Recipe-authored public schemas use the closed structural subset: objects,
+homogeneous arrays, primitives, required fields, enums and finite bounds. Registered
+dependencies may also use open objects, omitted optional `required`, primitive
+`const`, homogeneous untyped enums, and disjoint union variants. Dependency fields
+are projected by declared required paths. Unused opaque siblings do not prevent
+that projection; opaque values cannot be bound, constructed or silently narrowed.
+A path through a union must exist in every branch. Object construction selects a
+union branch only when declared literal or bound discriminators exclude every
+other branch; ambiguous variants reject before execution. Open source objects
+cannot satisfy a closed destination without an explicit field mapping. Array
+uniqueness is preserved, never inferred for arbitrary bound items. Registered
+arrays can describe ordered receipt prefixes with `prefixItems`; an index still
+requires `minItems` to guarantee presence. Each prefix retains its own schema and
+runtime-value lifetime. Whole-array bindings check all reachable prefix positions
+and the remaining item schema. Common object constraints on unions intersect
+with each alternative, including forbidden properties and each closed property
+set. Local `$defs` references resolve lazily and once per schema graph; recursive
+schemas do not expand into repeated trees. Unknown, cyclic-only or unsupported
+references remain unusable. Strict numeric endpoints and string patterns remain
+part of implication checks; literals use the original host schema with its local
+reference scope. Proof recursion is bounded and fails closed. The public recipe
+schema subset remains unchanged.
+
+All constraints on the selected value remain enforced. Unsupported keywords on a
+used value, optional source paths and uncertain assignability return actionable
+issues. Invocation still uses the host's complete original schema. This does not
+claim general JSON Schema implication or infer structure from live product data.
 The `x-runtime-value` schema annotation identifies `request`, `document` and
 `secret` values. A binding may forward a compatible typed value from fresh input
 or a prior output; a recipe may not persist a literal or default of that type.
@@ -278,6 +332,56 @@ composition; retire durable entries first when permanent removal is intended.
 Pinned active runs keep their captured definitions and finish normally unless the
 host revokes a capability or the caller cancels.
 
+The lease adapter receives the pinned `inputSchema` at `open`, and the selected
+success or declared partial `outputSchema` at `retain`. It resolves annotated
+references through host-owned stores; field-name guesses or a later registry
+lookup are not reference authority. Schema metadata contains no executor.
+
 The lease adapter's `release` is idempotent for its exact call scope and accepts
 absent or partly initialized scopes after `open` fails. It must never release
 borrowed inputs or sibling scopes.
+
+Registered open objects preserve host admission, but their undeclared fields are
+not evidence that a saved literal is independent of runtime state. Bind such
+values from fresh typed input; known declared ordinary fields can remain literals.
+This constraint applies to recipe capture only, not direct native invocation.
+
+
+### Host library management
+
+`createAiToolStoreManagement({ store, capacity })` uses the same saved-record
+contract as persistence. `list()` returns compact identity, description,
+availability and storage version, plus isolated invalid entries and a truncation
+flag. This is saved metadata, not dependency admission or invocation eligibility.
+It neither creates a registry nor executes a recipe. `read(name, revision)` returns
+the same metadata for one exact current entry without scanning the inventory;
+invalid data rejects, and absence returns undefined.
+
+`setState({ name, revision, expectedVersion, availability })` permits only
+`suspended` or `retired`. Pass the version observed by the user; stale versions
+reject even if the requested state happens to match. Writes preserve the recipe
+and execution evidence, require the exact durable acknowledgement, and never
+revive retired entries. Runtime persistence delegates its state writes to the
+same owner and updates request registry availability only after acknowledgement.
+
+
+### Diagnostic outbox control contract
+
+Hosts implementing `ExecutionRecordOutbox` reserve bounded per-request control
+capacity through `reserve`, persist an `ExecutionRecordGap` through `recordGap`,
+and return that metadata through `gap`. Gaps describe an enclosing missing range
+and capture/storage/mixed cause; they do not reconstruct discarded records.
+The host merges ranges without an unbounded list and keeps control discoverable
+through `requests` and removable with `remove`. Normal `read` returns payloads
+only. Runtime coalesces capture-refusal bursts, reports failed control writes and
+refuses complete recovery when a retained gap exists. A host cannot guarantee
+lossless evidence if both normal and reserved storage fail.
+
+### Invocation provenance
+
+Recipe invocation observations include the actual pinned tool revision and, for
+each dispatched child, its admitted parent recipe name, revision and step ID.
+Repeated use of a leaf retains distinct causal call IDs and recipe steps. Root
+admission failures do not fabricate a pinned revision or recipe step. The host
+forwards these fields with its existing input/output and lifecycle records; they
+do not grant execution authority or change scheduling, retries or settlement.

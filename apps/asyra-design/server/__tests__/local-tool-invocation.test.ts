@@ -1,9 +1,15 @@
 import { toolSemantics } from '../../src/ai/tool-contract'
-import { createAiToolContract } from '@asyra/ai-agent-runtime'
+import {
+  createAiToolContract,
+  inspectAiToolResult,
+  admitAiRecipe
+} from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '../operation-input-schema'
 import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
   localToolOutcome,
+  localToolResultSchema,
   invokeLocalTool,
   LocalToolInputError,
   observeLocalToolExecution
@@ -23,6 +29,19 @@ const definition = {
   name: 'registered-operation',
   inputSchema: { type: 'object', additionalProperties: false }
 }
+
+it('reuses validation only for the exact unchanged invocation reply', async () => {
+  const reply = await invokeLocalTool(
+    { call: async () => JSON.stringify({ ready: true }) },
+    definition,
+    {},
+    signal()
+  )
+  expect(localToolResultSchema(reply)).toEqual(definition.outputSchema)
+  expect(localToolResultSchema({ ...reply })).toBeUndefined()
+  reply.text = JSON.stringify({ ready: false })
+  expect(localToolResultSchema(reply)).toBeUndefined()
+})
 
 it('preserves an unknown child result and settlement through the native wrapper', async () => {
   const result = {
@@ -744,7 +763,11 @@ it.each([false, true])(
       },
       {
         ...definition,
-        outputSchema: { type: 'object', required: ['requiredReceipt'] }
+        ...toolSemantics(
+          { type: 'object', required: ['requiredReceipt'] },
+          'prepare',
+          ['request-artifacts']
+        )
       },
       {},
       signal()
@@ -758,3 +781,84 @@ it.each([false, true])(
     expect(call).toHaveBeenCalledOnce()
   }
 )
+
+it('exposes only successful domain fields to recipe proof and keeps partial evidence separate', () => {
+  const schema = {
+    type: 'object',
+    properties: { count: { type: 'integer' } },
+    required: ['count'],
+    additionalProperties: true
+  }
+  const contract = createAiToolContract({
+    ...definition,
+    ...toolSemantics(schema, 'mutation', ['document']),
+    composition: 'allowed'
+  })
+  expect(contract.outputSchema).toEqual(schema)
+  const interrupted = {
+    available: false,
+    recoverable: true,
+    code: 'INTERRUPTED',
+    message: 'Stopped after one write',
+    settlement: 'partial',
+    executionResult: { actionResults: [{}] }
+  }
+  expect(
+    inspectAiToolResult(contract, interrupted, {
+      outcome: { status: 'partial', settlement: 'partial' },
+      validate: operationInputIssue
+    }).status
+  ).toBe('partial')
+  expect(
+    inspectAiToolResult(
+      contract,
+      { count: 1, status: 'partial' },
+      {
+        outcome: { status: 'partial', settlement: 'partial' },
+        validate: operationInputIssue
+      }
+    ).status
+  ).toBe('partial')
+  expect(
+    inspectAiToolResult(contract, interrupted, {
+      outcome: { status: 'success', settlement: 'completed' },
+      validate: operationInputIssue
+    })
+  ).toMatchObject({ status: 'invalid', settlement: 'completed' })
+  const admitted = admitAiRecipe(
+    {
+      format: 1,
+      name: 'count-result',
+      revision: 1,
+      description: 'Return the count from the registered result.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: [],
+        additionalProperties: false
+      },
+      outputSchema: { type: 'integer' },
+      steps: [
+        {
+          id: 'write',
+          tool: contract.name,
+          revision: contract.revision,
+          input: { kind: 'object', fields: {} }
+        }
+      ],
+      output: { kind: 'step', step: 'write', path: '/count' }
+    },
+    {
+      resolve: () => contract,
+      validate: operationInputIssue,
+      limits: {
+        bytes: 10000,
+        steps: 4,
+        bindings: 20,
+        bindingDepth: 8,
+        issues: 4
+      }
+    }
+  )
+  expect(admitted).toMatchObject({ ok: true })
+})

@@ -1,6 +1,7 @@
 import {
   toolResultCount,
   toolResultIds,
+  toolRequestReference,
   toolResultObject,
   toolResultStatus,
   actionToolSemantics
@@ -55,9 +56,10 @@ export const createRetainedFillAction = (
       coordinateSpace: { const: 'parent-local' }
     })
   ),
+  composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
-    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; consumption releases the lease. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
+    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -91,8 +93,8 @@ export const createRetainedFillAction = (
                 filter: documentContextSchema.properties.filter
               }
             },
-            leaseId: { type: 'string', minLength: 1, maxLength: 160 },
-            snapshotId: { type: 'string', minLength: 1, maxLength: 160 },
+            leaseId: toolRequestReference,
+            snapshotId: toolRequestReference,
             coordinateSpace: { type: 'string', enum: ['parent-local'] },
             axis: { type: 'string', enum: ['x', 'y'] },
             domain: {
@@ -216,11 +218,11 @@ export const createRetainedFillAction = (
             )
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId
+            if (leaseId) consumedLeases.add(leaseId)
           }
-          if (leaseId) consumedLeases.add(leaseId)
           if (!snapshotId)
             throw new Error('Mapping has no retained snapshot identity')
-          const snapshot = queries.get(snapshotId, leaseId)
+          const snapshot = queries.get(snapshotId, leaseId, context.signal)
           if (
             snapshot.coordinateSpace !== mapping.coordinateSpace ||
             !snapshot.fields.includes(mapping.axis) ||
@@ -281,8 +283,8 @@ export const createRetainedFillAction = (
             unique.add(element.id)
             ids.push(element.id)
           }
-          if (leaseId) {
-            queries.releaseLease(leaseId)
+          if (leaseId && consumedLeases.has(leaseId)) {
+            queries.releaseLease(leaseId, context.signal)
             consumedLeases.delete(leaseId)
           }
         }
@@ -318,7 +320,8 @@ export const createRetainedFillAction = (
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )
     } finally {
-      for (const leaseId of consumedLeases) queries.releaseLease(leaseId)
+      for (const leaseId of consumedLeases)
+        queries.releaseLease(leaseId, context.signal)
     }
   }
 })

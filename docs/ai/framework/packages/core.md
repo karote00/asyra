@@ -470,3 +470,16 @@ surviving elements remain active. Canonical before/after evidence and tombstones
 stay with their owners for Undo/Redo and collaboration; callers supply no old
 values. `removeSubtree` remains the compatible scalar UI/facade path. Design AI
 uses the registered `api_element_deleteElements` batch action.
+
+
+### Property owner lookup
+
+`core.getPropertyOwnerElementIds(propertyIds)` returns unique current element IDs
+through the canonical nested-property ancestor and element-owner indexes. It
+includes all consumers of a shared property, reads no unrelated elements and
+returns no copied property payload. Unknown IDs fail through canonical property
+validation by default. Removal observers may explicitly pass
+`{ includeRetired: true }`: retired IDs have no active ancestor traversal, while
+remaining direct owner relations are still included. Canonical hierarchy and
+parent-property changes own removal invalidation. Inspection dependency tracking uses this
+public facade rather than guessing owners from the initiating tool target.

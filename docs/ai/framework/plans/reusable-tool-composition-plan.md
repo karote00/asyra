@@ -1,1161 +1,160 @@
-# Reusable Tool Composition
-
-Status: IN PROGRESS - PR 1 merged; PR 2 implemented and under bounded verification; PR 3 pending.
-
-## Planning task contract
-
-The initial planning task was to produce an implementation-ready design for
-composing registered basic capabilities into reusable high-level tools, including the unresolved observations from the
-last complete Taipei 101 run. This task changes only this plan, its Framework
-plan-index entry, and the user-requested proposed Runtime tool specification.
-It does not implement capabilities, change current product or
-Inspector contracts, run another live drawing, change model/effort, or push.
-
-- Worktree: `.worktrees/ai-reusable-tools-plan`.
-- Branch: `codex/ai-reusable-tools-plan`.
-- Base: `origin/main`, `d81fbc3419f357da9159abad045ce462614ec48f`.
-- Accepted predecessor: merged PR #316. Its partial live acceptance remains partial.
-- Association: this plan, this section; closeout owner: the current conversation.
-- Discovery: current Runtime invocation/registry/profiler, Design discovery,
-  preparation/review/workflow, retained context, activity reducer, their direct
-  contracts/tests and the previous plan's recorded live evidence. No repository-wide
-  cleanup, renderer redesign, dependency additions, or unrelated app changes.
-- Planning gates: source/owner review, failure-scenario review, internal link and
-  bounded diff checks. Runtime feasibility remains subject to the proofs below.
-- Stop after the briefing so the user can decide implementation model and effort.
-
-Implementation authorization is recorded in the current delivery contract below.
-The existing profiler plan is not closed by creating this plan. Its specific
-follow-up findings are associated here; unrelated unfinished work remains there.
-
-### Documentation review delivery - 2026-10-11
-
-The user subsequently authorized committing and pushing these planning documents
-and creating a documentation-only PR, without running tests. This supersedes the
-planning task's no-push checkpoint for these documents only. Implementation, model
-selection, runtime tests and merge remain outside this delivery. Review the three
-document paths, links and whitespace; do not claim runtime or Inspector admission.
-
-### Sequential delivery authorization - 2026-10-12
-
-The user authorized implementation, scoped validation, push and merge of the
-complete plan, one PR at a time. This supersedes the initial briefing/model and
-no-implementation/no-merge checkpoints. Keep the App model `gpt-6-astra` with
-`medium` effort unchanged. Do not start a successor until its predecessor merges.
-
-First repair the two planning-review gaps in PR #317: scheduler acquisition for
-nested invocation and returned-reference ownership. This documentation slice is
-limited to the three original document paths, their linked owner contracts and
-these handoffs. It does not change production or Inspector semantics. Its gates
-are source/owner and bounded diff review, document links, formatting and applicable
-metadata/changeset checks. Merge only after latest-head applicable CI passes.
-
-Every subsequent PR requires a bounded implementation contract, exact current
-Inspector flow, applicable tests, self-review and correction before push. Recheck
-latest-head CI and head identity before merging. After all three implementation
-PRs merge, review every acceptance case and carry-over against main. Correct any
-remaining mismatch in a new worktree through implementation, self-review,
-iteration, applicable validation, PR and CI-gated merge. Do not close the plan
-merely because its initially planned PR count has been reached.
-
-## Evidence and diagnosis
-
-Authority: [current Design execution contract](../../apps/asyra-design/specs/ai-execution-flow.md),
-[Runtime package contract](../packages/ai-agent-runtime.md), and
-[previous plan](ai-runtime-profiler-plan.md), section
-`Complete live acceptance result - 2026-10-11`.
-
-The retained evidence is under the predecessor worktree's
-`tmp/full-101-large-document-20261011/`. The primary request is
-`99b74684-88c2-49e3-bba2-c575ee04545c`; the browser record is
-`c91b45ca-45ca-492c-96de-007f8db25f34`. Evidence is read in place.
-
-| Observation                                                                                                | Consequence for this plan                                                                                                                                             |
-| ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion 2269.476 s; first visible content 244.600 s; 46,763 objects                                     | Measure the complete delivery path, not only a faster apply function. Earlier runs contain different generated workloads and are not controlled speed comparisons.    |
-| 19 prepared applications: 77.333 s; UI scene-tree projection 24.252 s within 36.227 s synchronous creation | Preserve incremental membership. Profile repeated projection work separately; nested durations must not be summed.                                                    |
-| 19 recipe assessments: 592.956 s, ten failures; three final canvas assessments still needed                | A model review per artifact is not established as beneficial. Structured review needs current attachment context and narrower admission.                              |
-| One batch input: 2,324,430 bytes of expanded target keys; 23 distinct key-list groups                      | Fix producer-to-consumer references. Identical list retransmission was not demonstrated in this run; large payload and repeated serialization are separate questions. |
-| No live use of `retain_design_targets`                                                                     | Exposing a capability does not establish that the normal workflow uses it.                                                                                            |
-| Child completion restores stale parent wording                                                             | Purpose freshness and observed execution phase are different contracts.                                                                                               |
-| 69/70 records complete; browser record ends at 1827.215 s                                                  | Missing final evidence prevents exact browser settlement timing. The failed live batch was not retained, so the triggering condition is unproven.                     |
-| Recording probes: 82.103 s over 2,091 observations                                                         | Harness overhead must be measured separately and reduced at its owner. It is not product idle time or guaranteed removable wall time.                                 |
-
-Current code establishes these constraints:
-
-- `packages/ai-agent-runtime/src/types.ts` exposes input schema and an unknown
-  result, without a universal executable output contract. A recipe validator
-  cannot currently prove every tool-to-tool handoff.
-- `src/invocation.ts` in that package already supplies middleware and causal
-  observation. It accepts the host's secured executor; it grants no authority.
-- Design `server/local-ai-provider.ts` binds actual tool namespaces and uses a
-  host scheduler. Native provider Code Mode already supports request-local
-  composition; there is no verified cross-request recipe lifecycle.
-- `server/local-prepared-design-review.ts` reviews retained source and evidence;
-  it does not render the proposed result or establish its fit with current canvas.
-- `src/ai/activity-state.ts` inherits previous/parent/request wording. Closing a
-  child can expose an older parent description even when phase is accurate.
-- Runtime `src/profiler/record-delivery.ts` permanently fails after overflow or
-  exhausted sends and discards pending records. Recovery needs a delivery design,
-  not a larger memory limit.
-
-These paths are implementation evidence, not parallel behavior authorities.
-During implementation, reconcile the older integration overview in the Runtime
-package document with the current Design contract; do not restore superseded
-transaction/catalog behavior from that overview.
-
-## Product outcome and boundaries
-
-An AI can reuse a compatible high-level tool, or propose a composition when no
-appropriate registered operation exists. The system validates that composition,
-executes it through existing owners, and stores its reusable definition locally.
-A subsequent request can discover it and supply new inputs without regenerating
-its internal orchestration or transferring intermediate object lists to the model.
-
-Reuse means reusing verified operation logic. It does not mean reusing old object
-IDs, document snapshots, permissions, reference-image judgments, or successful
-results against new documents. A missing primitive capability remains missing;
-composition cannot manufacture an unsupported operation.
-
-Supported initial compositions are ordered, finite calls with typed value or
-artifact bindings. They may reference an existing verified composition, expanded
-and cycle-checked at admission. Bulk work uses an existing plural/domain operation
-whose owner performs bounded chunks. There is no generic per-object tool loop.
-
-Not included: evaluating model-supplied JavaScript in the App, arbitrary callback
-execution, recursive/unbounded workflows, arbitrary filesystem/network access,
-automatic package installation, a public marketplace, cloud synchronization, or
-automatic execution on importing a recipe. Existing native Code Mode remains a
-provider capability; it is not persisted as an executable App program.
-
-## Ownership and API shape
-
-Names below express proposed responsibilities, not newly available APIs.
-
-| Owner                                    | Responsibility                                                                                                                                           | Forbidden responsibility                                                             |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `@asyra/ai-agent-runtime`                | Recipe format/validation, operation references, composition lifecycle, invocation causality, generic storage interface and diagnostics delivery protocol | Design geometry, concrete App selection, renderer access, granting permissions       |
-| Design tool registry and server adapters | Current operation schemas, outcome decoding, effect/resource metadata, operation search, preparation and semantic assessment                             | A second generic recipe interpreter or parallel capability catalog                   |
-| Design Feature/common APIs/Core          | Current document resolution, retained target ownership, finite writes, recovery, grouped Undo and persistence                                            | Executing arbitrary generated code or trusting saved IDs as current authority        |
-| Host persistence adapter                 | Private durable recipe store and diagnostic outbox using existing host facilities                                                                        | Automatically loading recipes into document content or copying credentials into them |
-| Design UI                                | Project current purpose/phase and library management into the existing panel                                                                             | Inferring execution state from a timer or inventing a successful outcome             |
-
-Use the existing invoker's `invoke` boundary for both a composition and every
-leaf operation. Distinguish primitive/composition identities by registry kind,
-not by ambiguous names or a second dispatch mechanism. A composition expands to
-calls passed to the existing host scheduler and secured executor. The outer
-composition coordinator must not hold a scheduler barrier while awaiting its
-children: doing so would make a scheduled child wait for its own parent. Only
-leaf/domain operations acquire and release host scheduling resources. Both parent
-and leaf still traverse validation and causal invocation; derived parent effect
-metadata does not bypass live leaf authorization. Nested compositions follow the
-same rule. Runtime does not acquire a competing mutation queue or open a long
-physical transaction. Cancellation stops further dispatch; queued and running
-leaves retain the host's cancellation and settlement rules.
-
-### Tool contracts required for composition
-
-All primitive and composed tools use one canonical registration contract and
-registry. Their shared identity, description, schemas and execution semantics
-must not be duplicated in a recipe-only catalog. A composition adds an execution
-recipe and dependency evidence; it does not add a second common descriptor.
-The user-requested package-owned proposed specification is
-[Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md).
-It must remain explicitly proposed until implementation and executable contracts
-are delivered. Current package guides will link to its accepted contract then.
-
-Extend the canonical registration contract with composable output and execution
-metadata, derived from the existing owner where possible:
-
-- Canonical operation identity and contract revision, input schema, successful
-  output schema, and explicit failure/partial/unknown-settlement receipt.
-- Effect: read, prepare, document mutation, or external effect; actual resource
-  access and permission checks remain the host owner's decision.
-- Cancellation/settlement behavior; explicit retry-safe or reconciliation support
-  only where the owner can prove it. Absence means no automatic write retry.
-- Output kind: bounded value or retained artifact, with an owner-resolved schema
-  and lifetime. A receipt is not necessarily the tool's complete underlying data.
-
-Inventory every currently advertised Design tool and its outcome variants. Use
-existing decoding/admission to produce one normalized result at the invocation
-boundary. Do not maintain a second JSON schema catalog or silently reinterpret a
-string as a successful JSON object. A tool with no verified result adapter remains
-directly invokable under its current contract but is explicitly ineligible as a
-typed composition producer until its contract is completed. This is a staged
-implementation boundary, not a permanent second class of incomplete tools: final
-acceptance requires all currently advertised Design tools to use the common
-contract and have formally checked outcome variants.
-
-Provider declarations, compact discovery, full usage/schema retrieval, saved recipe
-manifests and documentation examples derive from the same canonical definitions.
-Keep host-only dependencies, validation history and recovery bookkeeping out of
-routine model context. Provider adapters may change wire field names and supported
-schema representation, but never silently weaken host validation or invent fields
-unsupported by that provider. Output validation remains host-owned even where the
-provider protocol accepts arbitrary tool-result text.
-
-Static validation resolves literal and referenced inputs, required fields, all
-branches, cycles, effects and budgets. JSON Schema assignability is not assumed
-solvable for arbitrary schemas: support a defined structural subset, require an
-explicit registered adapter for other mappings, and perform actual downstream
-input validation before every call. No unsafe cast or model-generated transform
-stands in for a proof.
-
-### Saved recipe and per-run state
-
-A saved definition contains stable identity/version, purpose, applicability and
-limitations, parameter/result schemas, immutable ordered steps, exact dependency
-identities/revisions, effect summary and validation evidence. Each step binds
-constants, input paths or an earlier step's declared output path. No executable
-expressions or dynamic tool names are accepted.
-
-Parameterize document targets, regions, reference inputs and meaningful style or
-geometry choices. Constants are permitted for genuine algorithm defaults; host
-handles, credentials, local paths, private source payloads and captured selections
-are not reusable constants. Reject captured runtime identities at admission using
-their declared types, not string-pattern guesses.
-
-Per-run state contains invocation identity, current resolved parameters, graph
-revision, receipts, actual handles/leases, completed steps, settlement and causal
-records. It is not stored as the reusable definition. A receipt can be retained
-for diagnosis without authorizing its targets in a later run.
-
-Example composition, expressed as intent rather than new executable syntax:
-
-1. Inputs: current workspace, a world-space region, new fill values.
-2. Resolve matching editable objects through the existing region query owner.
-3. Pass its retained target handle directly to one plural fill operation.
-4. Return changed count, affected region, completion/partial receipt and optional
-   inspection reference. Return no expanded target list unless explicitly asked.
-
-This works for a new region in another document. It is not a saved command to
-modify the IDs from the previous Taipei 101. If an existing combined operation
-already meets this purpose, use it rather than create a redundant recipe.
-
-## Complete execution and reuse flow
-
-1. **Discover:** search canonical operation identities and compact reusable-tool
-   summaries together. Return applicability, required inputs, effects, revision
-   and availability. Fetch detailed schemas only for selected candidates.
-2. **Select or compose:** the model selects an applicable tool. If none fits,
-   distinguish an orchestration gap from a missing primitive. For the former it
-   submits a typed recipe through one admission tool; the latter returns the
-   unsupported requirement and available alternatives without inventing execution.
-3. **Admit:** Runtime checks structure, exact dependencies, bindings, bounded
-   expansion and effects through host capabilities. Failure returns step/path,
-   expected contract, actual issue and supported recovery; no document writes.
-   Success registers an immutable candidate in the shared registry for explicit
-   invocation and may persist it as a candidate; neither action runs its steps.
-4. **Preflight:** resolve current inputs and deterministic domain checks. Request
-   semantic review only for the uncertainty described below. Read-only preflight
-   is not a promise that arbitrary mutations can be simulated or rolled back.
-5. **Invoke:** run through existing middleware/scheduler, validate each actual
-   handoff, check current permissions and freshness, then perform finite batches.
-   Stream phase/progress and compact receipts while the model need not orchestrate
-   every internal step. Stop/failure preserves acknowledged progress.
-6. **Evaluate:** combine actual receipts with explicitly scoped checks. Successful
-   execution is distinct from satisfying visual criteria. Final visual assessment
-   still belongs to the current Design workflow.
-7. **Retain:** attach execution evidence to the exact candidate revision and promote
-   to reusable eligibility only after complete successful execution and applicable
-   checks. Persist the definition and eligibility atomically; persistence failure
-   is distinct from execution failure. Keep scope and evidence, not a universal
-   correctness claim.
-8. **Reuse:** discover the saved immutable version in a later request, validate its
-   dependencies and new inputs, acquire fresh document handles and invoke. Reuse
-   does not require another model to approve unchanged orchestration.
-
-The candidate-to-eligible transition must not execute the task twice. Extraction
-from an already completed run verifies its typed steps/receipts; it does not replay
-them for promotion. A model-native code program cannot be promoted merely because
-the provider ran it successfully; it must become a validated declarative recipe.
-
-### How the embedded AI obtains and uses the contract
-
-The model does not read a repository Markdown file or require a locally installed
-skill. The package specification teaches developers the contract. The executable
-registration schemas supply the model-facing discovery, usage and validation
-surfaces. A developer skill could teach authoring later, but is not an App runtime
-dependency or a second source of tool rules.
-
-Keep one short bootstrap instruction: reuse an applicable registered operation;
-for an orchestration gap, discover the composition submission capability and its
-current schema; submit a declarative recipe and repair reported contract errors;
-do not invent missing primitives. Full construction instructions are deferred to
-the registered submission tool's description and exact schema.
-
-The submission capability is an ordinary registered tool governed by the same
-input/output contracts as all other tools. Its structured input identifies:
-
-- New submission or an explicit revision of a named candidate, with a retry-safe
-  submission identity; revisions also carry the expected prior revision.
-- Desired purpose, applicability/limitations, and public parameter declarations.
-- Ordered steps referencing discovered exact operation identities, input bindings
-  and public result bindings. Step references are local recipe identifiers, not
-  document element IDs or guessed executor names.
-- The contract revision the model used when composing, so stale definitions yield
-  a precise refresh response rather than an unrelated format error.
-
-AI-authored input is a proposal, not a second tool-definition format. Admission
-produces the common registered descriptor from it. The model supplies desired
-semantics and choices; the system derives what the existing registry already knows.
-
-| Information                                                           | Producer and validation                                                                                                                                                                                                  |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Purpose, meaningful parameter names, desired bindings and limitations | AI proposes; host validates format and representability without pretending to prove design quality.                                                                                                                      |
-| Required fields and input/output shapes of existing steps             | Canonical registry supplies them through scoped schema retrieval; AI references rather than copies them.                                                                                                                 |
-| Public input and output schema                                        | AI chooses the public interface and result bindings; Runtime derives referenced field schemas where possible and verifies declared constraints. New constants/parameters need explicit valid schemas, not guessed types. |
-| Stable registered identity and immutable revision                     | Registry assigns/resolves them under existing naming rules, checking collisions and expected prior revision. Display wording is not authority to overwrite another tool.                                                 |
-| Dependency revisions, effects, permissions and artifact lifetimes     | Host derives and checks them from canonical dependencies. AI cannot self-certify them or reduce leaf restrictions.                                                                                                       |
-| Validation and execution evidence                                     | Actual validator/executor records, bound to the candidate revision; never accepted as model-authored proof.                                                                                                              |
-
-### Handoff receipts and repair loop
-
-The following names describe required receipt meanings, not finalized wire names.
-Every response uses the common outcome contract and a bounded payload.
-
-| Handoff                        | Consumer receives                                                                                                                  | Failure and recovery owner                                                                                       |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Discover to schema retrieval   | Exact identity, applicability, availability and current contract revision, with a scoped retrieval route                           | Registry reports unavailable/ambiguous choices; no silent name substitution.                                     |
-| Schema retrieval to submission | Required fields, typed binding grammar, applicable input/output schemas and exact revision; one bounded valid example where useful | Definition delivery distinguishes already delivered from missing; explicit scoped refresh recovers lost context. |
-| Submission to admission        | Proposed interface/steps and submission identity, with referenced revisions                                                        | Runtime returns structured issues before registering executable behavior.                                        |
-| Admission to registry          | Immutable validated descriptor/recipe, dependency digest, candidate identity/revision and invocation route                         | Registration conflict leaves existing entries unchanged and returns the current revision or exact collision.     |
-| Registry to execution          | Candidate reference plus fresh arguments and current run context                                                                   | Existing invocation/host checks enforce freshness, resources, permission and actual input/output validity.       |
-| Execution to promotion         | Settled receipts and applicable assessments for that exact recipe revision                                                         | Runtime keeps partial, failed or unknown runs as evidence without marking reusable eligibility.                  |
-| Promotion to persistence       | Descriptor, recipe, dependency evidence and eligible state                                                                         | Store returns durable acknowledgement or explicit save failure; retry saves only, never reruns steps.            |
-| Next request to reuse          | Revalidated eligible descriptor from the local library, retrieved through ordinary discovery                                       | Changed/missing dependencies suspend that entry; return why and the supported repair route.                      |
-
-A rejection includes stage, candidate/submission revision where available, issue
-code, affected step and binding/schema path, expected type or constraint, a bounded
-actual-value summary, and supported recovery. Independent issues should be returned
-together within a bounded response; omitted issues are explicitly counted rather
-than presented as a complete list. Validation never creates placeholder canvas
-objects or executes a write just to see whether the binding works.
-
-Example: step `recolor` binds its target collection to `locate.count`. Admission
-returns that binding path, expected target-handle schema and actual integer schema.
-If the registered result has a suitable handle field, the issue can identify that
-exact field as a candidate correction. It must not invent a field or choose among
-semantically ambiguous outputs. AI changes the binding and resubmits the proposal;
-the validator checks the complete resulting recipe, including previously valid
-steps whose dependencies changed.
-
-Same submission identity plus same content returns the same candidate receipt;
-same identity with changed content is a conflict, not an overwrite. A corrected
-proposal uses a new submission identity and explicit prior candidate revision if
-it updates an accepted candidate. Invalid new proposals need no registry entry.
-Previous valid revisions remain immutable. Limit repeated unchanged invalid
-submissions and expose no-progress feedback within the existing request budget;
-stop that composition attempt or select another legitimate route without a generic
-retry loop or aborting unrelated valid work. Cancellation ends the attempt promptly.
-
-### Registration, first use and durable availability
-
-Registration, execution, promotion and saving are separate transitions:
-
-- A validated candidate is visible to its creating request and explicitly invokable
-  there; it is not advertised as a previously proven tool to other requests.
-- A candidate saved before execution reloads as a candidate, not an eligible tool.
-  It can be inspected or explicitly resumed after current dependency validation.
-- Only actual complete execution and applicable checks make a revision eligible.
-  Its applicability remains scoped to the supported parameter domain and evidence;
-  one successful input does not certify all possible inputs or visual results.
-- If execution succeeds but saving fails, report completed product work and an
-  unsaved tool separately. The current registry entry can remain session-local;
-  cross-request availability is promised only after durable acknowledgement.
-- A restart between success and promotion must not trigger another mutation run.
-  Reconcile durable receipts for that exact revision, or retain candidate status
-  when evidence is incomplete. An explicit new invocation is a separate action.
-
-A tool registered during a model turn may not be present in that turn's native
-provider declarations. The submission receipt therefore returns an invocation
-route through the already advertised generic registered-operation dispatcher.
-That dispatcher resolves primitive and composition identities in the same registry
-and uses the same host checks. Later discovery refreshes its registry revision;
-do not assume provider-side hot registration or create a hidden parallel executor.
-The composition contract remains retrievable through ordinary exact lookup.
-Extending the existing dispatcher to resolve composed entries is a prerequisite
-implementation step, not a capability claimed to exist today. Enable submission
-discovery only after exact lookup and this invocation path pass together.
-
-Recipe submission, registry mutation, promotion and library administration are
-control-plane operations and cannot themselves be recipe steps. Mark this through
-canonical composition eligibility metadata, not a tool-name blacklist. Otherwise
-a nominally finite recipe could register or invoke an unvalidated dynamic graph.
-Basic tools and compositions still share one contract; eligibility is a capability
-of the actual operation, not an exemption from that contract.
-
-Use the same admission pipeline for stored definitions on load, without interpreting
-load as execution. Check manifest integrity, format, dependencies and eligibility
-evidence. Registry publication follows successful validation; one malformed entry
-is reported and isolated without blocking valid library entries or built-in tools.
-
-### Library lifecycle and compatibility
-
-Use one host-private store, shared across that host's Design requests/documents.
-Runtime exposes a storage interface without automatic I/O; the local host adapter
-uses existing persistence infrastructure. Version manifests and evidence separately,
-write atomically, deduplicate identical canonical recipes and bound storage. Do not
-start by adding a database dependency.
-
-States: candidate, eligible, suspended, retired. Suspended means a dependency or
-contract is unavailable/changed, not deleted evidence. A changed dependency digest
-requires revalidation; no silent alias to an API with similar wording. Unknown
-format versions remain unavailable with an explicit error. No compatibility shim
-or migration implementation is assumed.
-
-One run pins an immutable expanded recipe and dependencies; editing its library
-entry affects future invocations. A host capability/security revocation still
-stops new leaf calls immediately. Delete/disable operations do not silently abort
-an already authorized run; Stop is explicit. Preserve referenced versions until
-active runs finish, then apply retention policy.
-
-Saving an eligible local recipe can be automatic and separately removable. It
-does not pollute canvas Undo. Imported definitions never auto-run. External
-effects inside a saved tool retain the same authorization checks as direct calls;
-a familiar recipe name cannot confer authority or grant new access.
-
-## Carry-over corrections integrated with composition
-
-### 1. Retained data and producer-consumer handoff
-
-Change the ordinary producer result to include a consumable typed target/artifact
-handle and compact coverage/count. Consumers accept that handle directly at the
-registered input path. Do not require AI to discover and call a separate retention
-operation after it has already received thousands of keys. Keep explicit narrow
-columns/full recovery for legitimate inspection or lost-context cases.
-
-Reuse current query owners and leases. Bind query artifacts to document/workspace
-generation, canonical revision and query identity. Pin through the last dependent
-consumer. Separate borrowed input references, owned intermediate leases and public
-returned references. Before a child composition finishes, transfer or retain its
-returned-reference ownership for the calling parent/request; local completion
-must not invalidate the next consumer's input. Release only locally owned,
-unreturned intermediates with no remaining consumers, never a borrowed or sibling
-lease. Explicit caller release or request termination releases exported request
-artifacts. Partial/failure receipts may preserve useful returned artifacts under
-the same ownership rule; unreturned intermediates are cleaned up on failure or
-cancellation. Capacity pressure rejects a new handoff recoverably rather than
-evicting a live dependency. Prevent cross-request handle reuse even when two
-requests happen to use the same workspace. Ownership retention never overrides
-revision invalidation, permission changes or reference freshness.
-
-Not all artifacts have the same invalidation: an immutable prepared source is
-different from a current-scene query. After a mutation, do not reuse a stale query
-under a new revision. Use acknowledged mutation outputs for subsequent targets,
-or explicitly resolve a fresh query when its semantics are required. Do not
-silently reselect different objects for a pending edit.
-
-Record producer identity, handle resolution, hit/miss/invalidation reason, sizes
-at each actual transport boundary, and expansion/serialization counts. Store large
-payloads once in the diagnostic artifact store and reference their hashes in events;
-hash references require retained bytes and cannot conceal missing input/output.
-
-### 2. Preparation and pre-drawing review
-
-Always run deterministic input, coordinates, limits, references, target existence
-and structural checks. Use current world/local contracts; do not reopen the already
-fixed Group coordinate implementation. Resolve actual attachment parent transform,
-relevant bounds, unit/projection facts and local scene context through public APIs.
-Avoid reading the entire scene to answer an attachment question.
-
-Separate review of a reusable algorithm from review of one design instance. Code
-or schema success cannot certify proportions, source interpretation or appearance.
-Request model semantic review for a new reference-dependent construction decision,
-unresolved contradiction, missing attachment evidence, or materially changed
-criterion/evidence. Repeated instances of an already reviewed construction within
-its declared valid domain need deterministic checks, not another identical model
-review. Direct known-value edits bypass semantic design review.
-
-Retain review scope, findings and dependencies: source hash, named criteria,
-reference versions, attachment context and relevant scene revision. Reuse only
-when those dependencies match. Changes outside a proved dependency scope need not
-invalidate it; absent such a proof, invalidate conservatively. Findings distinguish
-blocking contradictions, unknown evidence and optional polish. Do not convert
-unknown into pass, or unfinished unrelated parts into failure.
-
-Prepare/review/apply one coherent ready part; do not assemble the complete building
-before its first visible part. Final reference/canvas review remains necessary.
-Keep original request and retained verified facts authoritative, including no
-unrequested backgrounds or arbitrary changes to verified dimensions.
-
-### 3. Current activity and causal records
-
-Extend the existing state machine with purpose identity/revision and a validity
-scope tied to the active step, rather than another precedence chain of strings.
-Step entry emits its purpose and actual phase; terminal child events cannot restore
-an obsolete parent subtask. A parent may resume only its still-valid orchestration
-purpose, not an old child-specific sentence. Out-of-order events are ignored by
-the existing attempt/sequence/closed-call rules.
-
-Present purpose and phase distinctly: preparing geometry for the roof, applying
-roof geometry, checking the roof. Only actual mutation application claims canvas
-updating. During provider work use the current request/step purpose with an honest
-processing phase; no invented next step, generic waiting message, extra model call
-just to update status, or forced language. Coalesce identical observable state,
-not genuine task transitions. Concurrent reads expose a coherent active purpose
-and counts without allowing the last unrelated response to rename the task.
-
-Record recipe/version/step and parent-child spans, actor, purpose source, expected
-result, input/output artifacts, admission/queue/execution/delivery, outcome, retry
-link and settlement. Provider waits are observed provider-boundary elapsed time,
-not hidden internal reasoning. Report wall time, critical path, inclusive nested
-time and exclusive owner time separately; never sum overlapping spans.
-
-### 4. Reliable diagnostic delivery
-
-Introduce a bounded durable outbox behind the existing Runtime sink abstraction.
-Browser host persistence retains unacknowledged records; the receiving local
-collector acknowledges sequences only after its durable write. Record batches
-have stream identity, sequence ranges and content identity. Retry duplicate sends
-safely; collector verifies content and reports acknowledged ranges.
-
-Keep failed payloads and typed transport/HTTP/storage causes. Resume from the last
-acknowledged sequence after reconnect/reload without rerunning product operations.
-Use backoff and a separate diagnostic lifecycle; no unbounded memory, hot retry
-loop, blocking product operation, or infinite final-saving spinner. Product done
-and diagnostics saved are independent states. A terminal marker is complete only
-with contiguous required evidence, acknowledged persisted payloads and closed spans.
-
-Disk/browser quota failure cannot guarantee lossless recording. Preserve compact
-gap metadata through a reserved control budget where possible, mark incomplete,
-and provide an explicit persistence error; after storage recovery retain the gap
-rather than claim reconstruction of unavailable data. This limitation must be
-tested and reported, not described as zero-loss logging. Host transport accepts
-only validated local diagnostic payloads and introduces no external collection.
-
-### 5. Large-document application and recording overhead
-
-Preserve incremental membership, single immutable preparation snapshot and bounded
-application. Prove whether UI projection repeats for the same canonical changes;
-if so, aggregate at the existing batch publication boundary and update affected
-branches rather than rebuilding the entire tree per insertion. Preserve final
-ordering, selection, Group dirty bounds, Undo/Redo, remote updates and save/load.
-Do not add a second scene tree, global rollback snapshot or render-frame delay.
-
-If remaining cost is legitimate work, report it; composition does not make object
-creation free. Use fixed synthetic workloads plus the saved large document to
-compare work counts without model-generated workload differences.
-
-For recording only, observe authoritative overall-bounds changes instead of
-rescanning all objects on a polling loop. Fit on first content, real overall-size
-changes and final completion, then retain the final ten seconds. Keep any recording
-harness changes local if that is its existing ownership; do not add automatic fit
-to normal App use or publish local-only recording fixtures.
-
-## Failure, cancellation and resource contract
-
-- Validate all known graph structure before execution; validate data-dependent
-  inputs immediately before their leaf call. Static approval never disables live
-  permission, resource, schema or reference checks.
-- Reuse the existing host scheduler's resource ordering. Initially execute recipe
-  steps in declared order; do not introduce a second parallel executor. Independent
-  direct read calls keep their existing scheduling behavior. Composition coordinators
-  await leaves without acquiring a parent barrier, including nested compositions.
-- Budget expanded steps, composition depth, retained bytes, actual item expansion
-  and work per domain operation. Reject cycles and unbounded expansion. A rejected
-  admission returns the limiting dimension and a supported partition boundary;
-  it does not merely recommend a larger cap.
-- Chunk only at owner-declared coherent boundaries with cancellation and publish
-  checkpoints. A chunk must not expose invalid partially linked canonical state.
-  Keep one intended user-request Undo group, excluding intervening user/remote edits.
-- On known partial failure, preserve acknowledged completed steps and exact remaining
-  scope. A downstream failure never causes automatic replay of successful writes.
-  On unknown mutation settlement, require owner reconciliation or explicit recovery;
-  an invocation key alone cannot provide exactly-once execution after a crash.
-- Do not restore whole-scene ACID snapshots. Local canonical cleanup and valid
-  partial progress remain the existing owner's responsibility. Cleanup failure is
-  explicit and does not prevent unrelated safe work where the owner permits it.
-- No automatic full-run resume after App restart in the first version. Persist
-  diagnostics and known receipts, then re-resolve current state for an explicit
-  continuation. Durable recipe storage is not a durable mutation workflow engine.
-
-## Implementation sequence and verification
-
-### PR 1 - Common contracts and recording foundation
-
-Authorized on 2026-10-11. Worktree `.worktrees/ai-tool-contract-foundation`,
-branch `codex/ai-tool-contract-foundation`, based on the PR #317 documentation
-head `435f4918c99b124e59810267ac6cb63cea39bfbb` (which contains the fetched main).
-PR #317 is merged as `04a5e07e3e241d7af0d65fc75c6266cde34b9843`.
-Delivery now targets main. The user's sequential-delivery authorization covers
-push and merge after current-head applicable CI passes.
-
-The bounded objective is Stage A: one executable tool descriptor and normalized
-outcome boundary, reliable diagnostic delivery with explicit incompleteness, and
-current-purpose freshness. Generated public API documentation and the bundled
-AI action guide must be regenerated with their source contracts; the documentation
-bundle version changes, but no installed plugin or runtime dependency is upgraded.
-Scope is Runtime registry/types/invocation/profiler,
-Design's direct registration, provider/result adapters, activity and host recording
-storage, plus their public exports, current specifications, Inspector contracts,
-formal tests and release metadata. Discovery is limited to those owners, direct
-callers, existing tests and the retained live evidence above.
-
-Preserve secured dispatch, actual resource scheduling, recoverable tool failures,
-finite mutation settlement, grouped Undo, authored language, existing model and
-effort, and compact provider declarations. Do not implement recipe execution,
-recipe storage, target-lifetime redesign, semantic review redesign, scene-tree
-optimization, rendering changes or a new live 101 run in this PR.
-
-Prove immutable contract registration and exact output/error/partial classification;
-invalid outputs must not trigger replay. Prove ordered durable diagnostic delivery,
-reconnect, duplicate receipt, restart, quota failure and terminal completeness.
-Prove child closure, sibling/retry/stale events and saving retain only current
-purposes. Run focused tests per owner, naming, affected lint/build/tests, current
-flow proof and applicable pre-push checks after integration. Self-review the diff
-and direct consumers. Push and create a PR for user review only after those gates;
-merge only after latest-head applicable CI passes; do not close the whole plan.
-
-First execution card - Runtime registry contract:
-
-- Owner/route: Runtime `describe-action-registry` into Design `compose`.
-- Input: host-registered tool definitions; output: immutable canonical descriptors
-  and verified invocation contracts, with compact provider projections.
-- Invariants: no shared mutable schema, no executor in discovery, no granted
-  permissions, no second catalog, no automatic retry of a completed/uncertain write.
-- Cases: descriptor mutation isolation, malformed output, outcome preservation,
-  provider projection size, all advertised tools with a declared result contract.
-- Boundary: Runtime registry/types/invocation and direct Design definition adapters,
-  public exports, current tool spec, matching Inspector routes and formal tests.
-- Failure owner: registration rejects malformed descriptors; invocation reports
-  invalid output with the original settlement evidence and never repeats execution.
-- Gate: formal registry/invocation tests and Design adapter contract tests, then
-  affected type/lint checks and naming before advancing to recording delivery.
-
-Direct-consumer correction - Runtime Atlas registered action:
-
-- The existing six-case browser gate fails at the AI case after required tool
-  metadata becomes mandatory. Its isolated canonical test reproduces the same
-  registration failure before this correction.
-- Add the real output, revision, effect, resource and lifecycle fields to the
-  existing `set_visibility` definition in the website Runtime Atlas harness.
-  Preserve its public Runtime dispatch, one transaction and actual visibility
-  result; do not change the website interaction or introduce a legacy fallback.
-- Boundary: `apps/asyra-framework-site/lib/runtime-atlas/runtime.mjs` and its
-  canonical regression test. This is a direct consumer of the changed contract.
-- Gate: isolated canonical case and the existing six-case browser acceptance,
-  followed by affected website validation. The current Atlas harness ownership
-  and detached-evidence flow remain unchanged.
-
-Activity execution card - Design `settle`:
-
-- Evidence: live status at 10:45:25.426Z restores the earlier bamboo commentary
-  immediately after the spire operation. This is stale request-level purpose, not
-  evidence that the spire's canonical application continues.
-- Input: ordered authored request/call messages and observed owner phases. Output:
-  current phase with a still-valid purpose; no language inference or model request.
-- Distinguish stable request objective, transient request commentary, and explicit
-  call purpose. New authored call work supersedes earlier transient commentary.
-  Inherited purposes resolve from active ancestors at projection time, rather than
-  becoming fabricated call-authored copies. Closing a call cannot revive superseded
-  commentary. Existing genuinely authored live parent/sibling purposes remain valid.
-- Boundary: activity-state.ts, presentation tests, current execution spec and settle
-  Inspector conditions. Preserve lifecycle precedence, ordering, retry and loop
-  deduplication. Do not change producer language or infer freshness from wording.
-- Cases: exact bamboo/spire event ordering, inherited parent after request update,
-  authored parent/sibling retention, stale/retry events and saving/terminal state.
-- Gate: presentation suite, then direct conversation consumers and execution proof.
-
-Recording execution card - Runtime `observe`:
-
-- Input: immutable ordered records, a host-owned durable outbox and collector
-  acknowledgements; output: complete durable receipt or explicit incomplete evidence.
-- Persist before sending. Keep admitted records until the matching terminal
-  acknowledgement. Network failure suspends delivery, not capture; a bounded retry
-  or host reconnect resumes the retained stream without repeating product work.
-- Outbox recovery is independent from the product AbortSignal. Memory capacity
-  bounds pending persistence, not all historical records. Quota/write failure is
-  explicit and cannot certify completeness. No unbounded retry timer is added.
-- Node collection acknowledges durable checkpoints, validates matching duplicate
-  sequences and reopens persisted streams after process restart. Terminal receipt
-  requires the contiguous terminal record and a successful durable checkpoint.
-- Boundary: Runtime profiler delivery/records and Node collector/sink, Design host
-  IndexedDB adapter/startup/HTTP route, their existing tests and current contracts.
-- Cases: offline capture, reconnect, lost/foreign acknowledgement, sink and process
-  restart, quota exhaustion, missing sequence, terminal-before-data and disposal.
-- Gate: permanent delivery/collector/storage tests, App integration and flow proof.
-
-PR 1 verification and review - 2026-10-12:
-
-PR #319 follow-up execution card - Design `compose`:
-
-- Review the current registered browser/native definitions, their owner result
-  adapters and direct handoffs. Preserve the bounded PR 1 exclusions above.
-- Contract: the `compose` Inspector requires exact advertised admission and
-  preservation of acknowledged/unknown settlement at one recoverable boundary;
-  the Tool Specification separates result usability from mutation settlement.
-- Inputs are registered schemas, owner receipts and optional diagnostic evidence.
-  Output is an accurately classified receipt or recoverable failure, never replay.
-- Check empty edit properties against their declared minimum, explicit settlement
-  across browser/native wrappers and ordered parts, nested unknown receipts and
-  diagnostic exceptions. Result usability and mutation settlement remain independent;
-  incomplete parent work cannot be overwritten by successful child receipts.
-- Implementation boundary: Design tool-schema/tool-contract/local-tool-invocation,
-  local-design-workflow ordered receipt aggregation and their formal tests. No scheduling, rendering, model, recipe or
-  retained-data redesign. Existing compose routes and bypasses remain authoritative.
-- Add failing regressions before implementation. Then run owner and direct-consumer
-  tests, affected lint/type/build and current flow proof; review the bounded diff.
-  Stop for a genuine new owner or contract change outside this PR's scope.
-
-Follow-up direct-consumer and mutation-proof cards:
-
-- The compose regressions pass. Its real owner fixtures now check successful and
-  partial results against their advertised input/output contracts. This exposed
-  a missing inspection identity list on the source-changed review branch; preserve
-  that list rather than weakening the output schema.
-- The existing release consumer typecheck fails on the new required registration
-  fields (CI job 114526707578). Update only its registered `set_counter` example
-  with real contract metadata, then run the packed clean-consumer gate. This is
-  a direct consumer correction, not a release or dependency change.
-- Mutation proof: the current `mutate` Inspector owns the basic-api-cases fixture
-  and requires exact declared receipts and ordinary Undo. Add output-schema checks
-  to its existing per-API real-browser scenarios, retaining every semantic oracle
-  and cancellation assertion. No production mutation or scheduling changes.
-- Gate: all registered basic API scenarios, affected App checks, naming and current
-  flow proof. Stop if an unrelated product behavior would need changing.
-
-PR #319 follow-up verification:
-
-- Fixed declared object property-count admission, explicit settlement propagation
-  through browser/native and ordered-part boundaries, diagnostic exception isolation,
-  source-change review inspection identities and the packed-consumer registration.
-- Permanent regressions failed before each behavior fix. The final source-verified
-  scoped run passed dependency/shared checks, full Design lint/build/tests (478 AI
-  browser, 907 server, 463 other Vitest and 162 Node cases), 152 real basic-API
-  input/output scenarios within functional E2E (392 passed / 19 conditional skips),
-  collaboration (14 / 3), rendering contracts (3) and the 19-package clean consumer.
-  No flaky pass. Evidence: `tmp/local-validation/pr319-review-verified/result.json`.
-- The standalone packed-consumer fixture has no workspace selector; its exact
-  `release:consumer` gate ran explicitly alongside the affected-owner local runner.
-  Earlier canceled/failed validation records are retained, not counted as passes.
-- All 23 current flow cases passed; the source assessment is eligible. Bounded
-  review found no remaining mismatch in the reviewed contracts and direct handoffs.
-  Opaque result leaves retain the limitations in the Tool Specification.
-
-- Runtime: 202 tests passed, with affected lint/build and public export checks.
-  Design: 474 AI browser tests, 885 server tests, 463 other Vitest cases and
-  162 Node tests passed; eight server cases retain their explicit opt-in skips.
-- Browser acceptance: Design functional 392 passed / 19 conditional skips,
-  collaboration 14 passed / three conditional skips, rendering contracts three
-  passed; website 102 passed / five conditional skips. No flaky pass was reported.
-- Current flow: all 23 owner cases passed on source candidate
-  `3eabec6b-63a1-4c8d-ad52-68164787e7f2`; integration assessment
-  `df493fd5-48c0-410f-8562-885e33273364` is current and eligible.
-- Shared checks, dependency/declaration checks, Runtime, Design, website and
-  Inspector validation passed. Source-verified evidence is retained under
-  `tmp/local-validation/3f11f420-17e3-43c5-87f0-185bd6049aaa`,
-  `tmp/local-validation/delivery-remaining`, `tmp/local-validation/delivery-final`
-  and `tmp/local-validation/delivery-e2e`. Failed checks remain in their original
-  runs; their corrected replacements passed. Unchanged owner results were reused
-  only after input hashes matched. The final E2E source check passed.
-- Bounded review corrected classified-output error wrapping, explicit native and
-  browser settlement preservation, recovery admission races and the Runtime Atlas
-  direct consumer. Permanent tests reproduced the contract failures before fixes.
-  The partial-refinement E2E now asserts the precise schema error as well as
-  retained drawing and one Undo/Redo; no assertion or validation was removed.
-- Generated public documentation, bundled action guidance and the Inspector
-  workspace projection are synchronized. Opaque result leaves, storage quota and
-  corrupt/incomplete streams remain explicit limitations rather than success.
-- The App model and effort are unchanged. No recipe execution/library, rendering
-  optimization or new live drawing run is included. PR 2 and PR 3 remain planned;
-  this verification does not close the overall reusable-tool composition plan.
-
-Before production edits, promote the approved product behavior into current specs
-and update the applicable Runtime/Design Inspector steps with exact owners, inputs,
-outputs, conditions, bypasses, failure owners, direct contributors and boundaries.
-Use existing supported Inspector admission paths and executable cases. This plan
-does not claim Inspector admission or runtime verification has already happened.
-
-### Ordered PR boundaries
-
-| Delivery                                                | Included stages and closure boundary                                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PR 1 - Common contracts and recording foundation (#319) | Stage A: shared registration/output/outcome contracts, invocation diagnostics and durable delivery, current-purpose freshness. Retain its existing validated implementation and review corrections.                                                                                                               |
-| PR 2 - Runtime composition and durable library          | Stage C and generic Stage D: typed finite recipes, admission/repair, registry dispatch, nested invocation, host-store interface, eligibility and save/reload. Prove with neutral hosts; no Design-specific geometry or alternate scheduler.                                                                       |
-| PR 3 - Design integration and complete acceptance       | Stage B, Design-specific Stage D, Stage E and Stage F: normal query handles, preparation/review reuse, embedded authoring/discovery/storage/management, recorded repeated-work corrections and complete integration acceptance. Every remaining acceptance case must be accounted for before whole-plan closeout. |
-
-Promote current specs and the exact Inspector steps with each implementation PR;
-this sequence is not permission to publish unimplemented capabilities. PR 2 starts
-from merged PR 1; PR 3 starts from merged PR 2. The final review includes preserved
-primitive operation behavior, not only successful composition examples. The user
-has authorized the complete plan's final recorded 101 acceptance; it follows the
-deterministic integration gates and retains the existing final-reference report.
-
-| Stage                                      | Implementation boundary and completion evidence                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A - Observability and invocation contracts | Runtime invocation/profiler/types, Design result adapters/collector/activity. Test-first lost delivery, typed results and stale purpose; retain complete observable causality before judging later speed.                                                                                                                                                                         |
-| B - Current handoffs and review            | Design operation/workflow/preparation/review/retained-context owners and direct tests. Default producer handles, narrow attachment context, scoped review reuse. Prove genuine bounds queries do not expand unrelated siblings or return large lists to AI.                                                                                                                       |
-| C - Generic composition                    | Runtime format/validator/interpreter through existing invoke and host scheduler; direct package tests. Ordered typed graph, dependency revisions, partial outcomes, cancellation and finite budgets. Extend existing exact lookup/dispatch to composed entries before exposing submission. Prove portability with a second neutral test host, not another product implementation. |
-| D - Durable library and discovery          | Runtime host-store interface, existing Design local host persistence and discovery adapters. Registered submission schema, bounded repair, candidate publication, save, reload, compact search, version eligibility, disable/remove, no captured state or double execution. Add minimal management within existing panel, no separate catalog product.                            |
-| E - Large-document integration             | Canonical creation publication and Design scene-tree projection only where recorded repeated work is proved; direct affected tests. Compose domain bulk operations, preserve selection/Undo/remote interleaving and observed drawing updates.                                                                                                                                     |
-| F - End-to-end acceptance                  | Deterministic direct-versus-composed equivalence, new-request reuse, failures and the authorized complete recorded 101 run. Report limitations and final references. Full local CI belongs to a later explicitly requested release checkpoint.                                                                                                                                    |
-
-For each stage, run focused existing owner tests plus new formal regressions that
-fail before the fix. Naming validation precedes identifier-bearing implementation.
-Expand lint/build/type checks to affected direct consumers; do not substitute a
-live AI drawing for deterministic contracts, or run full local CI per small change.
-
-Required behavioral cases:
-
-1. Discover an existing suitable operation without unnecessary composition; report
-   a genuinely unsupported primitive without inventing it.
-2. Assemble a valid multi-step tool; run once, save, reload in a new request and
-   use different targets. Same inputs through direct primitives and composition
-   produce equivalent canonical data, effects, Undo and permission decisions.
-3. Reject missing fields, invalid actual outputs, mismatched bindings, unsafe
-   expressions, cycles, unknown versions and excessive expansion before affected
-   writes; preserve already acknowledged unrelated progress.
-4. Every registered tool has tested output/outcome classification. Every declared
-   binding kind has valid/empty/invalid/partial coverage; real Design preparation,
-   query, mutation and inspection exercise cross-owner chains. Do not claim every
-   possible graph is tested from one generated drawing.
-5. A changed contract suspends reuse; a captured target ID cannot masquerade as a
-   reusable constant; imported content cannot execute instructions or gain authority.
-6. Cancellation inside a chunk, user/remote edits between chunks, Undo/Redo during
-   an open group, downstream failure and uncertain settlement preserve host rules.
-7. Live lease survives cache pressure; stale query fails explicitly; using mutation
-   receipts avoids illegal stale-query reuse. A child returns a handle, completes,
-   then its outer consumer resolves it successfully. Borrowed/sibling leases survive
-   unrelated cleanup; cancellation and request termination release the correct
-   ownership without leaks or cross-request reuse.
-8. Repeated motifs within reviewed scope avoid redundant model review; new source,
-   parent transform, relevant scene change or requirement invalidates it. Final
-   appearance remains unverified until actual canvas assessment.
-9. Child completion, retry, concurrent read, late event and saving show the correct
-   current purpose/phase, without stale wording or per-loop flicker.
-10. Diagnostic offline/reconnect, repeated batch, HTTP rejection, quota exhaustion,
-    terminal-before-data, reload and disposal yield complete durable evidence or
-    explicit incompleteness. Neither path duplicates a product operation.
-11. Count target expansion, source compilation, serialization and scene-tree
-    projection across small and large fixtures; test invalidation as well as reuse.
-12. A full drawing preserves user constraints, editable output and final visual
-    review; recording includes reference assets, current status and final ten seconds.
-13. An embedded-model protocol fixture starts with bootstrap guidance and the tool
-    discovery surface only, retrieves the submission schema, submits an invalid
-    binding, receives a precise issue, corrects it, registers and invokes through
-    the already advertised dispatcher. It requires no filesystem skill or manual
-    insertion of the new tool into the provider request. A real-provider acceptance
-    case later verifies discoverability beyond the deterministic protocol fixture.
-14. Repeat a submission after a lost response; prove one immutable registration
-    and no execution. Test conflicting revisions, newly changed dependencies and
-    bounded no-progress repair. Actual invocation still requires fresh admission.
-15. Prove execution-success/save-failure separation, save-only retry, candidate
-    reload, malformed-entry isolation, and a new request discovering the durably
-    saved eligible tool. Missing execution evidence must not silently promote it.
-16. Reject control-plane operations nested in recipes through capability metadata;
-    verify that submission is not discoverable before its returned invocation and
-    schema-retrieval routes are operational.
-17. A nested composition with ordered mutations completes through the real host
-    scheduler without holding a parent barrier. Direct authorized operations can
-    interleave at host boundaries. Cancellation while a leaf is queued prevents
-    subsequent dispatch and preserves the queued/current leaf settlement contract.
-
-DoD is the above behavior with bounded work and correct handoffs, not a promised
-model duration. Report AI boundary waits, tool work, App apply/projection, queues,
-transport and final persistence separately. Include first visible change, total
-UI completion, object/geometry workload, model review counts, bytes per boundary,
-recipe reuse/admission failures and recording overhead. Full logs remain local;
-the user receives a concise table and links to the evidence and actual references.
-
-## Model and effort decision checkpoint
-
-Keep the current App model/effort and coding-session configuration unchanged during
-planning. Coding capability and the App's executing model are separate decisions.
-This design must work through provider-independent Runtime contracts rather than
-depending on a particular model to avoid malformed input.
-
-The implementation authorization keeps the current model/effort. If an App
-model comparison is authorized, compare fixed operation selection, typed recipe
-construction, repair and reuse cases first, with identical tool definitions,
-document fixtures, reference evidence and budgets. Track correctness, unnecessary
-calls, recoveries, transferred bytes and completion time; do not decide from a
-single randomly generated 101 or assume a larger effort is faster. A complete 101
-run then tests product behavior, not a statistically reliable speed claim.
-
-## Self-review and resolved design gaps
-
-- **Unknown outputs:** added normalized producer contracts and runtime downstream
-  validation. Static graph shape alone is insufficient.
-- **Hidden arbitrary programming:** constrained the first version to ordered typed
-  bindings and domain bulk calls, with no general expression or loop language.
-- **Duplicate execution on promotion:** candidate promotion consumes existing
-  receipts; validation is not a second mutation run.
-- **Stale saved data:** separated recipe storage from run handles; defined fresh
-  resolution, leases and dependency revisions, including invalidation after writes.
-- **Permission laundering:** each leaf retains current host checks; compound labels
-  and previous approval never enlarge authority.
-- **Review bottleneck:** separated deterministic checks, conditional semantic
-  review and final visual proof; reusable algorithm success does not certify new art.
-- **Retry corruption:** no automatic replay of uncertain writes, no new whole-scene
-  rollback requirement, and no implicit durable workflow-resume promise.
-- **False recording completeness:** durable acknowledgement and explicit storage
-  failure replace assumptions of zero-loss logging; product completion is independent.
-- **Misleading performance claims:** preserved differing workload counts and nested
-  timing semantics; application work and harness probes have distinct owners.
-- **Governance drift:** future specs/Inspector must describe the new implemented
-  contract; this proposal neither changes current authority nor closes old partial
-  acceptance. Review remains limited to the named owners and acceptance cases.
-- **Two competing tool formats:** following user review, primitive and composed
-  tools now explicitly share the entire common registration contract. The package
-  specification defines both; provider projections and persisted manifests reuse
-  it without copying common metadata into a separate recipe catalog.
-- **Unreachable authoring specification:** added the embedded discovery-to-schema
-  path and a registered submission capability. Markdown and developer skills are
-  not required model inputs; they do not replace executable contracts.
-- **Registration mistaken for successful reuse:** separated candidate admission,
-  explicit execution, evidence-based promotion and durable availability, including
-  save failure after successful work and reload without automatic mutation replay.
-- **Provider catalog timing gap:** a new candidate is invokable through an existing
-  advertised dispatcher; the design does not assume native tool hot registration.
-- **Repair race and metadata invention:** specified immutable submission/revision
-  receipts, exact binding errors and host-derived identity/dependency/effect data.
-- **Unbounded control-plane nesting:** exclude registry/library management from
-  recipe steps through canonical eligibility metadata. Integrate the existing
-  dispatcher before advertising authoring so a successful submission is usable.
-
-Remaining implementation proofs are real gates: canonical output normalization,
-host outbox acknowledgement across reload, no stale handles across mutations,
-preserved Undo/interleaving, and demonstrated use of saved tools in a later request.
-The plan is approved for sequential execution, not a claim that those proofs already pass.
-
-PR 1 CI consumer-input correction - 2026-10-12:
-
-- CI run 38161848080 and the local scope CLI both reject the standalone packed
-  consumer fixture as an unknown input. The consumer suite itself already passed.
-- Bounded owner: the existing release-readiness input relationship and classifier,
-  its permanent classification test, and this plan evidence. Recognize the exact
-  consumer fixture family, select its release gate, and preserve fail-closed
-  handling of unrelated unknown paths. No runtime, Inspector semantics, new
-  scheduler or repository-wide CI redesign is included.
-- Test first: fixture test/source/manifest changes select release readiness with
-  no unrelated workspace, Design E2E or FieldScope profile selection. Then run
-  classification/local-selector regressions, actual-head classification, naming,
-  scoped shared checks, and retain the already-passed packed consumer evidence
-  only if its complete source inputs remain unchanged.
-
-- Verification: the new classification regression failed before the fix; all
-  89 classification/local-selector/runner cases passed afterward, as did focused
-  ESLint and naming. `yarn validate:local --base HEAD --run` selected only shared
-  checks and passed with source verification (evidence
-  `tmp/local-validation/c9cbabf6-eaad-4474-9ccf-3a8a30437c39/result.json`).
-  Actual PR inputs now select Runtime, Design, the website and Inspector, with
-  no unknown paths or FieldScope heavy profiles. Runtime and consumer source
-  remain identical to the prior validated commit. Main integration and new-head
-  CI remain required before merge.
-
-User-authorized Git policy correction - 2026-10-12:
-
-The user reaffirmed standing authorization for necessary fetch/rebase and safe
-source-branch updates within an authorized delivery task. Remove the redundant
-approval checkpoint from the canonical Git policy and its AGENTS summary. Preserve
-exact remote-commit leases, unrelated work, no-push requests, and separate merge
-and release authority. This is a documentation-only scope addition; verify the
-policy references and shared workflow checks without changing runtime contracts.
-
-PR 1 CI functional-suite deadline correction - 2026-10-12:
-
-- Run 38202123199 on 5f6f235ee reached test 385 of 411 with continued progress
-  and no unexpected assertion failure when the 30-minute job deadline canceled
-  it. Browser execution began at 04:05:13Z; test 385 began at 04:32:56Z and the
-  job was canceled at 04:33:01Z. The prior CI suite completed in about 24 minutes;
-  the same local inventory passed with 392 tests and 19 conditional skips in
-  16.4 minutes. These are observations, not product performance thresholds.
-- Bounded correction: allow 45 minutes for the functional E2E job, including
-  setup, the serial suite, result collection and cleanup. Preserve test-level
-  timeouts, single-worker isolation, fail-fast, zero ordinary retries, all
-  assertions, report identity and process cleanup. Other job deadlines and
-  runtime behavior remain unchanged. The failed CI run supplies the regression
-  evidence; workflow/runner contract tests and scoped shared validation check
-  the correction before pushing. Exact-head CI must complete before merge.
-
-### PR 2 bounded implementation - 2026-10-12
-
-PR 1 merged as `d3ee5d410de92ec8a4f161f4142ffeadc7e0132f` after its
-latest-head applicable CI passed. PR 2 starts from that main revision in
-`.worktrees/ai-reusable-tool-runtime`. The selected task is Ordered PR boundaries,
-PR 2; this conversation retains final closeout ownership.
-
-Scope: Runtime typed admission, same-registry composition invocation, revisioned
-request visibility, host-injected artifact lifetime and durable library adapters;
-their direct tests, exports, current specification, package guide and dedicated
-Inspector contract. Discovery is limited to those owners, existing invocation,
-registry and schema authorities, direct Design consumers (read-only), and the
-required repository gates. No Design implementation, provider change, geometry,
-arbitrary code execution, dependency addition or new scheduler belongs to PR 2.
-
-The new recipe wire format starts at version 1; it has no legacy migration path.
-Tool names remain canonical registry identities. Revisions, request ownership and
-submission identities are separate. Composition eligibility is canonical host
-metadata, defaulting to unavailable until the host explicitly opts a tool in.
-Schema annotations classify request/document references and secrets; the validator
-rejects saved literals of these types instead of guessing from ID-shaped strings.
-
-Owner order: admit -> register -> invoke -> persist. Admission resolves exact
-contracts and validates finite bindings without execution. Registration owns
-idempotent submissions and visibility; invocation pins the graph and uses the
-existing invoker around every parent and leaf. Persistence consumes exact receipts
-and atomic host acknowledgements; it never runs a recipe. Load returns through
-admission. Hosts retain security, permissions, resource scheduling and storage IO.
-
-Required gates: focused owner tests, Runtime complete tests/build/lint, naming,
-current Inspector source proof and negative proof, public-doc generation/check,
-packed consumer and directly affected consumer checks, then selected local
-validation before push. Do not repeat unrelated live drawings in PR 2. Review
-includes cycles/expansion, non-JSON input, unknown schemas, partial/uncertain
-settlement, parent scheduling, reference lifetime, cancellation, concurrent
-revision conflicts, lost responses, save-only retry and isolated corrupt reload.
-
-#### Step execution card - admit
-
-- Authority: Tool Specification - Typed recipe admission; Inspector `admit`.
-- Inputs: JSON proposal, host limits/validator and current registered contracts.
-- Output: immutable admitted recipe/derived contract or bounded path-specific
-  repair issues; no registration, scheduling, storage or product writes.
-- Conditions: finite ordered steps, exact revisions, opt-in dependencies, proven
-  structural bindings. Bypass: invalid input returns issues before execution.
-- Contributors: canonical contract descriptors, JSON detachment, host validator.
-  Forbidden: model-supplied permissions, string-ID heuristics, JS evaluation.
-- Boundary: recipe types/schema/admission, common contract eligibility metadata,
-  their formal tests and public exports as listed in the Inspector.
-- Cases: valid neutral-host chain, empty/malformed proposals, unsupported schema,
-  optional/path/type mismatch, captured reference, future output, stale revision,
-  control-plane dependency, oversized expansion and bounded independent issues.
-- DoD: formal tests and package build/lint/naming pass; downstream registered
-  candidate consumes the immutable result without re-deriving its semantics.
-- Stop: an unresolved contract contradiction or a need for an out-of-scope owner.
-
-Self-review: the parent does not enter the host scheduler; child-output ownership
-is transferred before cleanup; no success receipt implies durable publication;
-unsupported structural proof fails explicitly while ordinary primitive invocation
-keeps the host's existing full-schema validator. These handoffs cover the reviewed
-PR 1 preservation requirements. Production implementation has not started yet.
-
-Admission slice evidence: 29 new admission cases and all 231 Runtime tests passed;
-package build, focused lint and naming passed. The initial missing-module failure
-proved the feature was absent, not an existing bug reproduction. Static proof
-preserves bounds, required paths, escaped pointers and inherited reference types;
-ordinary primitive contracts remain unchanged. The new Inspector manifest was
-admitted through `loadContract` with all four owner handoffs. Runtime source proof
-runs after the remaining owner cases exist; contract admission is not completion.
-
-#### Step execution card - register
-
-- Authority: Tool Specification - Embedded AI authoring lifecycle; Inspector
-  `register`, including all incoming/outgoing artifact routes.
-- Inputs: admitted immutable recipe, creating request, submission identity,
-  explicit expected revision. Outputs: scoped canonical registry entry and receipt.
-- Conditions: identical submission replay is inert; revisions are immutable;
-  candidates cannot escape the creating request. A rejected revision preserves
-  existing tools. Saved eligibility is a separate persistence-owned transition.
-- Allowed: existing registry, admitted descriptors, host-created executors.
-  Forbidden: a parallel capability catalog, native provider hot-registration
-  assumptions, execution during registration, candidate publication before ack.
-- Files: `action-registry.ts`, `types.ts`, `tool-library.ts`, their tests and
-  exports; exact implementation boundary in the Inspector.
-- Cases/gates: existing registry behavior; scoped discovery/lookup parity,
-  expected-revision conflict, immutable older revisions, suspended/retired lookup,
-  retry-safe submission; focused tests, build, lint, naming.
-- Stop: scope ambiguity or a required out-of-owner mutation. Invocation and storage
-  internals remain separate subsequent segments.
-
-Registration slice evidence: all 241 Runtime tests, build, focused lint and naming
-passed. New cases prove same-registry private lookup/discovery, immutable revisions,
-explicit conflicts, suspension without silent old-version fallback, inert retry,
-request cleanup, and expanded-step admission before registration. Scope review
-found no new scheduler or execution during submission. Durable publication is not
-yet implemented; its future adapter alone will request the eligible transition.
-
-#### Step execution card - invoke
-
-- Authority: Tool Specification - Execution variants and What the model sees;
-  Inspector `invoke` and `register-to-invoke`.
-- Inputs: exact registered revision, fresh request/input/signal, pinned admitted
-  recipes, secured host executor, host schema classifier and lease adapter.
-- Outputs: classified receipt with independent settlement and causal child spans;
-  exported values retain caller ownership before local cleanup.
-- Conditions: pin the full finite graph before writes; common invocation and
-  schema middleware surround parents and leaves. Only the host leaf executor
-  acquires scheduling resources. Partial/unknown/error stops successors.
-- Bypass: cancellation before dispatch produces not-started; a failed invocation
-  never automatically retries. No body of a recipe is executable JavaScript.
-- Allowed: registered descriptors, typed bindings, existing invoker/middleware,
-  host permissions/scheduler and artifact-lifetime adapters.
-- Forbidden: parent barriers, second queue, global mutable execution state,
-  release of borrowed inputs, inferred successful settlement after a host throw.
-- Boundary: recipe execution/types, invocation/common middleware value projection,
-  their direct tests and exports. The common middleware extension selects a value
-  from an explicit host receipt while preserving the default primitive behavior.
-- Cases/gates: neutral host nested scheduler, direct equivalence, exact graph pin,
-  invalid output, failed/partial/unknown receipt, cancellation between steps,
-  returned/borrowed/sibling handles and cleanup errors; Runtime tests/build/lint.
-- Stop: an unresolved lifecycle or downstream schema mismatch; no Design edits.
-
-Invocation slice: the focused 12 cases include a real lease-owner map proving
-intermediate release, surviving final/borrowed/sibling handles, and request-end
-cleanup. Common middleware now accepts an explicit host-result value projection;
-its ordinary behavior is preserved. Completion follows retention and cleanup,
-including an already-aborted call's causal identity. Build and focused lint pass.
-
-#### Step execution card - persist
-
-- Authority: Tool Specification - What is saved, Embedded AI authoring lifecycle;
-  Inspector `persist`, admitted/registered/execution inputs and reload route.
-- Inputs: exact admitted definition, trusted execution receipt, host applicability
-  check, bounded store enumeration and atomic compare-and-swap acknowledgement.
-- Outputs: durable saved state or explicit unsaved failure; validated reload into
-  the same registry; unavailable/candidate entries remain explicit.
-- Conditions: only the Runtime-produced complete receipt for this exact recipe
-  plus host checks can establish eligible state. The store writes descriptor,
-  recipe payload, dependency fingerprints and evidence together. Save-only retries
-  never invoke leaves. Restart never executes a definition.
-- Bypass: candidates can be saved without evidence but do not auto-publish;
-  corrupt/unknown-format/stale-dependency entries are isolated on reload.
-- Allowed: same admission/library/registry, immutable definitions and host IO.
-  Forbidden: automatic IO at import, captured request data, fabricated success,
-  upgrading stale definitions or falling back to an older eligible revision.
-- Boundary: `tool-store.ts`, library lifecycle handoff, exports and store tests;
-  current specification/Inspector routes. Host storage owns atomic durable writes.
-- Gates: saved candidate, successful run/save failure/save-only retry, fabricated
-  receipt rejection, fresh-request reuse, dependency invalidation, corruption,
-  optimistic conflict and suspension/retirement; full Runtime build/tests/lint.
-- Stop: a required storage security boundary outside host-injected IO or an
-  unresolved contract conflict. No new database or package is introduced.
-
-Persistence slice evidence: full Runtime 268 tests pass, including ten storage
-cases and four captured-flow handoff cases. Generic source proof passed on source
-`39f6bbb1ec0e7c68ce39bb662f2ed0799e991896fe59ee7985f47c02aa3055db`;
-`prove` rejected exactly `admit.handoff` when control-plane eligibility enforcement
-was deliberately removed, then recovered on the same source. Evidence:
-`tmp/runtime-proof.log`. This is scoped package evidence, not PR 2 completion.
-
-Bounded review is now limited to the new Runtime diff, existing registry/invocation
-consumers, the four lifecycle handoffs and fixed gates. The captured proof keeps
-its small neutral host fixture inline because source verification captures the
-explicit proof file/config, not arbitrary test helpers. Ordinary storage tests
-reuse their separate fixture. No Inspector production behavior was changed.
-
-Lifecycle review: two formal regressions first failed for private-candidate
-retirement and partially opened artifact scopes. Persistence now reads the host
-registry's lifecycle metadata without relying on model-visible discovery; the
-invoker cleans the exact call scope even when opening throws. Host release is
-idempotent and must tolerate an absent or partly initialized local scope. The
-registry metadata API exposes no candidate descriptor or executable body. These
-changes remain within persist/invoke ownership and direct registry handoff.
-
-Final owner review also completed the canonical machine-readable proposal schema,
-explicit saved-candidate resume and local composition removal. Reload rejects an
-incomplete inventory and avoids silently restoring an older corrupt tool family.
-Formal regressions cover these handoffs; no model calls or product mutations run
-during save/load/resume. The host adapter and model-facing authoring operations
-remain PR 3 work, as planned.
-
-Final validation sequence: build declarations before generating the public API
-index, then run the selected local gates. The first shared gate correctly rejected
-an index generated before the latest declarations. A final idempotency review
-also reproduced a second candidate-resume attempt being mistaken for a changed
-submission; resume and load now share the exact-definition restore path. Review
-is closed to these lifecycle corrections and the fixed gates, with no further
-unrelated discovery. Runtime regression coverage now includes repeat resume and
-removed-submission refusal. The earlier partial local validation was cancelled
-before final E2E to verify the corrected source consistently.
+# Reusable Tool Composition - Staged Corrections
+
+Status: STAGED - historical implementation checkpoint, Stage 1 authorized only.
+
+## Current authority and stop boundary
+
+The user cancelled the whole-program goal. This plan replaces all previous
+sequential-PR, automatic merge, broad delivery, monitoring and continuation
+instructions. Historical implementation and evidence remain in
+[the superseded history](reusable-tool-composition-history.md); they do not
+authorize new work or certify current whole-flow correctness.
+
+Worktree: `.worktrees/ai-reusable-tool-design`.
+Branch: `codex/ai-reusable-tool-design`.
+Closeout owner: current conversation.
+
+The current request explicitly authorizes one checkpoint commit/push of the
+existing task work and this plan cleanup without running tests or waiting for CI.
+This is preservation of unverified work, not a green delivery or merge request.
+Preserve local .env, documents, recordings and ignored diagnostics; never publish
+private configuration or local-only recordings. Do not create a PR or merge.
+After the checkpoint, implement only Stage 1, self-review and run applicable
+focused tests. Do not push Stage 1, start Stage 2, run full local CI, run another
+live 101, create a new whole-program goal or restart monitoring.
+
+## Direction
+
+- The primary AI owns intent, design choices, recipe proposals and visual judgment.
+- Tools own deterministic checks and explicitly permitted repairs; no extra AI
+  evaluator may be invoked by checking or repair iteration.
+- Reuse the common registry, invocation contracts, canonical document and existing
+  check store. Do not create another execution interpreter or acceptance ledger.
+- Retain valid passes and invalidate actual dependencies, including prior passes.
+- Transfer retained data directly between tools; deliver compact, usable summaries
+  and evidence to the model. Full owner data remains available when required.
+- Publish ready work promptly. Status and diagnostics describe actual work.
+- Preserve real mutation outcomes, document integrity and Undo. Never replay an
+  uncertain or completed write to recover delivery, cleanup or saving.
+
+## Stages
+
+Only Stage 1 is executable now. Later stages are backlog outcomes, not an
+implementation-ready architecture or permission to expand the active slice.
+
+| Stage | Outcome | Required evidence |
+| --- | --- | --- |
+| 0 - Baseline | Remove stale execution instructions and preserve existing work. | Unverified checkpoint pushed; clean tracked worktree before Stage 1. |
+| 1 - Check timing | Deferring images does not skip mechanical checks. | A coherent write boundary publishes first, then checks without a model or screenshot; results reach the existing store and consumer. |
+| 2 - Local acceptance | Regional passes satisfy explicit required coverage. | Change one of eight regions; preserve unrelated passes and reopen actual cross-region dependencies without dropping required units. |
+| 3 - Direct delivery | Structural outputs transfer usable retained sets. | Group-to-edit uses a handle without model-side ID expansion; full outcomes, ownership, stale recovery and Undo remain intact. |
+| 4 - Mechanical repair | One real defect is repaired through an admitted finite recipe. | Check/repair/recheck succeeds without replay; decision-required, no progress, cancellation and partial outcomes stop correctly. |
+| 5 - Model handoff | The primary AI selects capabilities and continues unresolved work. | Discovery, recipe reuse/creation, decision return and a new execution segment work together; saving does not replay writes. |
+| 6 - Activity | Purpose, phase and recorded classification agree. | Cleanup cannot replace design purpose; late events cannot revive closed work; UI and profiler consume normalized facts. |
+| 7 - Image checks | Comparable local evidence receives deterministic analysis. | Explicit coordinate mapping, scope and baseline; meaningful defects detected, unsupported comparisons reported, valid results reused. |
+| 8 - Live acceptance | Verify actual end-to-end adoption on Taipei 101. | Recorded first frame, stage timings, reuse/work counts, payloads, current status and final references; separate deterministic failure tests remain mandatory. |
+
+## Cross-stage handoff and failure rules
+
+Each stage reviews the affected specification, canonical schemas, producer,
+consumer and formal tests together. Existing unrelated owners are not redesigned.
+Execution success, mutation settlement, mechanical findings, visual acceptance
+and durable tool saving are distinct facts. A check finding is not a failed write.
+
+- Invalid input before dispatch stops that call with actionable field issues.
+- Stale/missing evidence stops its dependent work; reacquire only necessary data.
+- A known finding stops acceptance of that obligation, not acknowledged drawing.
+- Decision-required/no-progress/exhaustion stops automatic iteration and returns
+  unresolved work to the primary AI; it must not replay completed preparation.
+- Partial writes stop the dependent suffix and preserve exact completed receipts.
+- Unknown settlement stops relevant writes until reconciled; never infer rollback.
+- Save or cleanup failure does not erase acknowledged mutation results. Unavailable
+  resources remain unavailable and cannot be consumed as valid output.
+- Cancellation stops new dispatch and prevents publishing a new pass from a late
+  result; preserve existing document work under its actual owner semantics.
+- Document replacement invalidates old authority. Do not write into its successor.
+
+Fix only Stage 1 manifestations now. Provider-wide failure classification,
+cleanup semantics and generic continuation remain explicitly later work.
+
+## Reviewed architectural constraints for later stages
+
+Design owns task intent, required coverage and execution-segment association.
+Runtime owns finite recipe execution and contracts. Host owns scheduling and
+leases. Canonical operations own writes and Undo. Check results remain in the
+existing store; profiler records are not execution recovery authority.
+
+Task continuation means a new explicitly admitted segment consuming acknowledged
+results. The current library resume restores recipe availability, not an execution
+program counter. Do not reinvoke initial writes or invent arbitrary DAG resume.
+A coordinator returns before requesting primary-AI judgment and holds neither a
+leaf scheduler barrier nor a transaction while awaiting that judgment.
+
+References must be exported through declared success/partial/recovery schemas and
+retained before child cleanup. Request-scoped evidence is not durable recipe data.
+Repeated segment delivery, concurrent continuation, unknown acknowledgement and
+request teardown need real host tests before any continuation claim.
+
+Regional required units and cross-region requirements determine completion;
+omission and scope shrink cannot erase failures. Image scope distinguishes an
+isolated object from composited canvas pixels. Use Core/renderer public APIs,
+explicit coordinate mapping, dependency versions and stable task tolerances.
+Pan/zoom is not a semantic change. Unsupported comparison cannot fabricate pass.
+
+## Stage 1 - Deferred capture preserves mechanical checking
+
+### Frozen task contract
+
+Objective: make delayed image capture independent of deterministic canvas checks
+at the existing coherent operation/workflow boundaries. Do not introduce a new
+task coordinator as a prerequisite for this correction.
+
+Authority: Design execution spec sections Capture and deterministic review
+responsibility and retained canonical measurements; Inspector inspect owner and
+compose-to-apply/apply-to-inspect direct workflow routes. The current defer early
+return also postpones measurement; the current live run used defer for all nine
+prepare/apply and nine edit calls. Non-final capture could then deliver images
+before layout checks, leaving checks until final judgment.
+
+Scope: local-operation-tools and local-design-workflow, their maintained tests,
+exact Design spec/Inspector conditions, flow manifest/proofs and generated
+Inspector catalog only when required by changed contracts. Prompt/descriptions
+may clarify only this timing contract. Preserve model and all canonical write,
+review algorithm, dependency invalidation, selection and Undo behavior.
+
+Discovery: current owner source, direct call sites, formal operation/workflow/
+execution-proof tests and existing recorded run. No repository-wide audit.
+
+### Step Execution Card - inspect timing
+
+Owner: inspect, with compose boundary verification for ordered workflows.
+Inputs: acknowledged write receipts, actual review targets, existing current
+measurement stamps and caller capture preference.
+Outputs: unchanged write outcomes, retained deterministic check results and
+truthful capture-deferred/measurement state. A screenshot is optional; a required
+mechanical check is not silently omitted because capture was deferred.
+Conditions: check after a coherent acknowledged write boundary; ordered workflow
+intermediate parts may defer checks to the explicit block boundary without
+checking every part repeatedly. Required targets must not be lost. Already-current
+checks are reused; check-result reads do not remeasure. No check-only model call.
+Failure owner: inspect for checking, original apply owner for writes. Inspection
+failure must not erase or replay completed writes. Cancellation publishes no late
+check result. Missing/failed measurement stays unresolved with a bounded recovery
+handoff. Partial ordered blocks preserve completed output and do not run successors.
+Allowed contributors: current workflow, operation, measurement and evidence owners.
+Forbidden: new task engine, automatic repairs, image-analysis tools, broad error
+refactor, raised limits, extra AI, concrete renderer access or new dependencies.
+Cases: single creation/edit with deferred screenshot; ordered multi-part block;
+read-after-check reuse; known findings; unavailable/failed check; cancellation;
+partial write; direct capture boundary; existing immediate path.
+Gates: permanent red/green regressions, focused operation/workflow/proof tests,
+server typecheck, focused lint, naming, exact Inspector admission/evidence and
+bounded diff/self-review. No full local CI or live-model drawing.
+Stop: report Stage 1 outcomes and limitations with no Stage 2 work and no push.
+
+### Review status
+
+Stage direction and failure handoffs reviewed. Detailed Stage 1 boundary design
+must resolve the existing ordered workflow before production edits. No tests
+have been run for the preservation checkpoint. Earlier evidence in the history
+is not a claim that this checkpoint or Stage 1 has passed.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createAiToolStoreManagement } from '../tool-store.js'
 import { memoryStore, setup } from './fixtures/recipe-host.js'
 describe('durable recipe reuse', () => {
   it('separates completed execution from save failure and retries storage only', async () => {
@@ -426,4 +427,125 @@ it('repeats candidate resume without registering again or changing its submissio
   expect(result.ok).toBe(true)
   expect(await next.persistence.resume(input)).toEqual(result)
   expect(next.writes).toEqual([])
+})
+
+describe('stored tool management', () => {
+  const savedCandidate = async () => {
+    const memory = memoryStore()
+    const host = setup(memory.store)
+    host.register()
+    await host.persistence.save({
+      name: 'reusable',
+      revision: 1,
+      requestId: 'author'
+    })
+    const management = createAiToolStoreManagement({
+      store: memory.store,
+      capacity: 32
+    })
+    return { ...memory, host, management }
+  }
+
+  it('lists only canonical compact metadata without registering or executing tools', async () => {
+    const { management, host } = await savedCandidate()
+    const result = await management.list()
+    expect(result).toEqual({
+      entries: [
+        {
+          name: 'reusable',
+          revision: 1,
+          description: 'Apply a fresh number.',
+          availability: 'candidate',
+          version: '1'
+        }
+      ],
+      unavailable: [],
+      truncated: false
+    })
+    expect(host.registry.get('reusable')).toBeUndefined()
+    expect(host.writes).toEqual([])
+  })
+
+  it('reads the current exact revision without listing and rejects corrupt saved data', async () => {
+    const { management, entries, store } = await savedCandidate()
+    store.list = async () => {
+      throw new Error('No inventory scan expected')
+    }
+    expect(await management.read('reusable', 1)).toMatchObject({
+      availability: 'candidate',
+      version: '1'
+    })
+    expect(await management.read('missing', 1)).toBeUndefined()
+    const key = JSON.stringify(['reusable', 1])
+    entries.set(key, { key, version: '2', record: {} })
+    await expect(management.read('reusable', 1)).rejects.toThrow(
+      'invalid saved recipe'
+    )
+  })
+
+  it('rejects a stale observed version even when the requested state already matches', async () => {
+    const { management, host } = await savedCandidate()
+    expect(
+      await management.setState({
+        name: 'reusable',
+        revision: 1,
+        expectedVersion: '1',
+        availability: 'suspended'
+      })
+    ).toMatchObject({ status: 'saved', version: '2' })
+    expect(
+      await management.setState({
+        name: 'reusable',
+        revision: 1,
+        expectedVersion: '1',
+        availability: 'suspended'
+      })
+    ).toMatchObject({ status: 'unsaved' })
+    expect(
+      await management.setState({
+        name: 'reusable',
+        revision: 1,
+        expectedVersion: '2',
+        availability: 'retired'
+      })
+    ).toMatchObject({ status: 'saved', availability: 'retired' })
+    expect(
+      await management.setState({
+        name: 'reusable',
+        revision: 1,
+        expectedVersion: '3',
+        availability: 'suspended'
+      })
+    ).toMatchObject({ status: 'unsaved' })
+    expect(host.writes).toEqual([])
+  })
+
+  it('isolates corrupt records and reports incomplete inventories without exposing recipes', async () => {
+    const { store, entries, management } = await savedCandidate()
+    entries.set('corrupt', { key: 'corrupt', version: '1', record: {} })
+    expect(await management.list()).toMatchObject({
+      entries: [{ name: 'reusable' }],
+      unavailable: [{ key: 'corrupt', reason: expect.any(String) }],
+      truncated: false
+    })
+    const bounded = createAiToolStoreManagement({ store, capacity: 1 })
+    expect(await bounded.list()).toMatchObject({ truncated: true })
+  })
+
+  it('rejects a forged durable acknowledgement and never claims the state changed', async () => {
+    const { store, management } = await savedCandidate()
+    store.write = async ({ key, record }) => ({
+      key,
+      version: '2',
+      record: { ...(record as object), availability: 'candidate' }
+    })
+    expect(
+      await management.setState({
+        name: 'reusable',
+        revision: 1,
+        expectedVersion: '1',
+        availability: 'suspended'
+      })
+    ).toMatchObject({ status: 'unsaved' })
+  })
 })

@@ -344,3 +344,37 @@ it('resolves all identity-only region matches once for backend mutation handoff'
     })
   ).toThrow()
 })
+
+it('combines literal name predicates before paging and enforces the complete match count', () => {
+  const { read, records, source } = fixture()
+  records.a.name = 'tier-3-left-window'
+  records.b.name = 'tier-3-right-window'
+  const query = {
+    scope: 'region' as const,
+    result: 'ids' as const,
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    filter: {
+      name: {
+        prefix: 'tier-3-left',
+        suffix: '-window',
+        equals: 'tier-3-left-window'
+      }
+    },
+    expectedCount: 1
+  }
+  expect(read(query).elementIds).toEqual(['a'])
+  expect(() => read({ ...query, expectedCount: 2 })).toThrow(/count/)
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  expect(
+    read({
+      ...query,
+      filter: { name: { equals: 'unknown' } },
+      expectedCount: 0
+    }).total
+  ).toBe(0)
+  source.getElementMetadata.mockClear()
+  expect(() =>
+    read({ ...query, filter: { name: { regex: '.*' } } } as never)
+  ).toThrow(/name filter/)
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
+})

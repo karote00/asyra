@@ -1,3 +1,4 @@
+import { AiToolLibraryPanel } from './ai-tool-library-panel'
 import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
@@ -348,6 +349,7 @@ const AiConversationPanelLayout = ({
           conversation={conversation}
           onNavigate={navigateConversation}
         />
+        <AiToolLibraryPanel />
         <button
           aria-label="Close Agent panel"
           className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
@@ -616,6 +618,7 @@ const AiConversationFeed = ({
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
           const activity = projectAiActivity(turn.progress, {
+            purpose: turn.originalIntent ?? turn.intent,
             outcome: settled?.outcome,
             awaitingAnswer: Boolean(question),
             stopping: Boolean(stopping),
@@ -702,7 +705,12 @@ const AiConversationFeed = ({
                   >
                     <span>{activity.current.label}</span>
                     {activity.current.message ? (
-                      <span className="block">{activity.current.message}</span>
+                      <span
+                        className="line-clamp-3"
+                        title={activity.current.message}
+                      >
+                        {activity.current.message}
+                      </span>
                     ) : null}
                   </div>
                 ) : null}

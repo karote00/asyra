@@ -4,6 +4,7 @@ import {
   createAiToolContract,
   createAiToolMiddleware,
   describeAiTool,
+  embedAiToolSchema,
   inspectAiToolResult,
   type AiToolContractInput
 } from '../tool-contract.js'
@@ -21,6 +22,105 @@ const definition = (): AiToolContractInput => ({
 })
 
 describe('common tool contracts', () => {
+  it('relocates schema references without rewriting user literals or mutating the descriptor', () => {
+    const schema = {
+      type: 'object',
+      $defs: { handle: { type: 'string' } },
+      properties: {
+        handle: { $ref: '#/$defs/handle' },
+        literal: { const: { $ref: '#/user-authored' } },
+        options: { anyOf: [{ $ref: '#/$defs/handle' }, { type: 'number' }] }
+      }
+    } as const
+    expect(embedAiToolSchema(schema, '#/properties/value')).toMatchObject({
+      properties: {
+        handle: { $ref: '#/properties/value/$defs/handle' },
+        literal: { const: { $ref: '#/user-authored' } },
+        options: {
+          anyOf: [
+            { $ref: '#/properties/value/$defs/handle' },
+            { type: 'number' }
+          ]
+        }
+      }
+    })
+    expect(schema.properties.handle.$ref).toBe('#/$defs/handle')
+  })
+
+  it.each(['failed', 'unknown'] as const)(
+    'validates declared %s recovery without promoting its outcome',
+    (status) => {
+      const recoveryOutputSchema = { type: 'string' }
+      const contract = createAiToolContract({
+        ...definition(),
+        recoveryOutputSchema
+      })
+      const inspect = (value: unknown) =>
+        inspectAiToolResult(contract, value, {
+          outcome: { status, settlement: 'unknown' },
+          validate: (value, schema) =>
+            typeof value === (schema as { type: string }).type
+              ? undefined
+              : 'Wrong recovery type'
+        })
+      expect(inspect('repair-reference')).toMatchObject({
+        status,
+        settlement: 'unknown'
+      })
+      expect(inspect(false)).toMatchObject({
+        status: 'invalid',
+        reportedStatus: status,
+        settlement: 'unknown'
+      })
+      recoveryOutputSchema.type = 'number'
+      expect(contract.recoveryOutputSchema).toEqual({ type: 'string' })
+      expect(Object.isFrozen(contract.recoveryOutputSchema)).toBe(true)
+    }
+  )
+
+  it('selects a declared partial schema without weakening successful output', () => {
+    const partialOutputSchema = { type: 'string' }
+    const contract = createAiToolContract({
+      ...definition(),
+      partialOutputSchema
+    })
+    const validate = (value: unknown, schema: unknown) => {
+      const type = (schema as { type: string }).type
+      return typeof value === type ? undefined : `Expected ${type}`
+    }
+    const inspect = (status: 'success' | 'partial', value: unknown) =>
+      inspectAiToolResult(contract, value, {
+        outcome: { status, settlement: 'partial' },
+        validate
+      })
+    expect(inspect('partial', 'Three writes completed')).toMatchObject({
+      status: 'partial',
+      settlement: 'partial'
+    })
+    expect(inspect('success', 'Three writes completed')).toMatchObject({
+      status: 'invalid',
+      reportedStatus: 'success',
+      settlement: 'partial'
+    })
+    expect(inspect('partial', false)).toMatchObject({
+      status: 'invalid',
+      reportedStatus: 'partial'
+    })
+    expect(inspect('success', false)).toMatchObject({ status: 'success' })
+    partialOutputSchema.type = 'number'
+    expect(contract.partialOutputSchema).toEqual({ type: 'string' })
+    expect(Object.isFrozen(contract.partialOutputSchema)).toBe(true)
+  })
+
+  it('rejects executable partial schemas during registration', () => {
+    expect(() =>
+      createAiToolContract({
+        ...definition(),
+        partialOutputSchema: { validate: () => true }
+      })
+    ).toThrow()
+  })
+
   it('validates both sides through the existing invoker without replaying a write', async () => {
     const contract = createAiToolContract(definition())
     const execute = vi.fn(async () => ({ unexpected: true }))
@@ -288,4 +388,34 @@ it('validates the explicit value projection of a host receipt without changing i
   })
   expect(await invoker.invoke({ name: contract.name, input: {} })).toBe(receipt)
   expect(validate).toHaveBeenLastCalledWith(7, contract.outputSchema)
+})
+
+it('retains immutable domain verification metadata and rejects non-check owners', () => {
+  const verification = { statusPath: '/status', progressPath: '/progress' }
+  const contract = createAiToolContract({
+    ...definition(),
+    effect: 'read',
+    verification
+  })
+  verification.statusPath = '/changed'
+  expect(contract.verification).toEqual({
+    statusPath: '/status',
+    progressPath: '/progress'
+  })
+  expect(Object.isFrozen(contract.verification)).toBe(true)
+  for (const value of [
+    { statusPath: '', progressPath: '/progress' },
+    { statusPath: '/bad~2', progressPath: '/progress' },
+    { statusPath: '/same', progressPath: '/same' }
+  ])
+    expect(() =>
+      createAiToolContract({
+        ...definition(),
+        effect: 'read',
+        verification: value
+      })
+    ).toThrow()
+  expect(() =>
+    createAiToolContract({ ...definition(), verification })
+  ).toThrow()
 })

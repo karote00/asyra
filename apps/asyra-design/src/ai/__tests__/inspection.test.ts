@@ -1,5 +1,6 @@
 const core = vi.hoisted(() => ({
   getElementData: vi.fn(),
+  getElementMetadata: vi.fn(() => ({ parentId: undefined })),
   getElementComputedData: vi.fn(),
   captureElementSnapshot: vi.fn()
 }))

@@ -1,3 +1,4 @@
+import { recipeExecutionSteps } from './recipe-format.js'
 import type { AiToolContract } from './tool-contract.js'
 import { detachAiJsonValue } from './json-value.js'
 import { admitAiRecipe } from './recipe-admission.js'
@@ -194,7 +195,8 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
           let expandedSteps = 0
           const inspectGraph = (
             current: AdmittedAiRecipe,
-            ancestors: ReadonlySet<string>
+            ancestors: ReadonlySet<string>,
+            multiplier = 1
           ) => {
             const identity = key(
               current.contract.name,
@@ -203,8 +205,15 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
             if (ancestors.has(identity))
               throw new Error('Composition dependency cycle is not allowed.')
             const next = new Set([...ancestors, identity])
-            for (const step of current.recipe.steps) {
-              if (++expandedSteps > options.limits.steps)
+            for (const { step, weight } of recipeExecutionSteps(
+              current.recipe
+            )) {
+              const count = multiplier * weight
+              expandedSteps += count
+              if (
+                !Number.isSafeInteger(expandedSteps) ||
+                expandedSteps > options.limits.steps
+              )
                 throw new Error('Expanded composition exceeds the step budget.')
               const dependency = options.registry.registration(step.tool, {
                 requestId: input.requestId,
@@ -218,7 +227,7 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
                   throw new Error(
                     'Composition implementation is not admitted by this library.'
                   )
-                inspectGraph(nested.admitted, next)
+                inspectGraph(nested.admitted, next, count)
               }
             }
           }

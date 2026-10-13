@@ -1,7 +1,7 @@
 import {
   toolSemantics,
   toolResultObject,
-  toolResultStatus
+  toolRequestReference
 } from '../src/ai/tool-contract'
 import {
   invokeLocalTool,
@@ -36,6 +36,52 @@ export const createLocalDesignWorkflow = (
   const review = operations.definitions.find(
     (tool) => tool.name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA
   )
+  // The wrapper exports child resources as well as their execution receipts.
+  // Keep the preparation contract intact so call cleanup can transfer ownership.
+  const partOutputSchema = {
+    allOf: [
+      preparation?.outputSchema ?? false,
+      toolResultObject({
+        applicable: { const: true },
+        actionResults: { type: 'array' },
+        completedSteps: { type: 'array', items: { type: 'string' } }
+      })
+    ]
+  }
+  const stoppedPartSchema = toolResultObject(
+    {
+      failedStep: { type: 'string' },
+      completedSteps: { type: 'array', items: { type: 'string' } },
+      artifactId: toolRequestReference
+    },
+    ['failedStep', 'completedSteps']
+  )
+  const stoppedOutputSchema = {
+    anyOf: [
+      stoppedPartSchema,
+      toolResultObject({
+        status: { enum: ['partial', 'failed', 'unknown'] },
+        parts: {
+          type: 'array',
+          items: { anyOf: [partOutputSchema, stoppedPartSchema] }
+        }
+      })
+    ]
+  }
+  const semantics = toolSemantics(
+    {
+      anyOf: [
+        partOutputSchema,
+        toolResultObject({
+          status: { const: 'complete' },
+          parts: { type: 'array', minItems: 1, items: partOutputSchema }
+        })
+      ]
+    },
+    'mutation',
+    ['document', 'request-artifacts'],
+    'request-artifact'
+  )
   const single = {
     rejectInput: (name: string, args: unknown) =>
       name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
@@ -50,26 +96,15 @@ export const createLocalDesignWorkflow = (
         ? [
             {
               ...preparation,
-              ...toolSemantics(
-                {
-                  anyOf: [
-                    toolResultObject({
-                      actionResults: { type: 'array' },
-                      completedSteps: { type: 'array' }
-                    }),
-                    toolResultObject({
-                      status: toolResultStatus,
-                      parts: { type: 'array', items: { type: 'object' } }
-                    })
-                  ]
-                },
-                'mutation',
-                ['document', 'request-artifacts']
-              ),
+              ...semantics,
+              partialOutputSchema: {
+                anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
+              },
+              recoveryOutputSchema: stoppedOutputSchema,
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before semantic review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 preparation.description,
               inputSchema: {
                 ...preparation.inputSchema,

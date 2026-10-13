@@ -723,3 +723,78 @@ it.each([false, true])(
     }
   }
 )
+
+it('rejects changed reviewed attachment evidence at browser admission before any mutation', async () => {
+  const api = apis()
+  const attachmentEvidence = {
+    parentId: 'workspace',
+    workspaceId: 'workspace',
+    evidence: { sessionId: 'scene', revision: 4 }
+  }
+  const evidence = { isCurrent: vi.fn(() => false) }
+  const action = createPreparedDesignAction(
+    api,
+    async () => undefined,
+    () => 0,
+    evidence
+  )
+  await expect(
+    action.execute({ design: fixture(), attachmentEvidence }, context())
+  ).rejects.toThrow(/evidence/i)
+  expect(api.create).not.toHaveBeenCalled()
+  evidence.isCurrent.mockReturnValue(true)
+  await expect(
+    action.execute(
+      { design: fixture(), parentId: 'existing', attachmentEvidence },
+      context()
+    )
+  ).rejects.toThrow(/parent/i)
+  expect(api.create).not.toHaveBeenCalled()
+  await expect(
+    createPreparedDesignAction(api).execute(
+      { design: fixture(), attachmentEvidence },
+      context()
+    )
+  ).rejects.toThrow(/evidence/i)
+  expect(api.create).not.toHaveBeenCalled()
+  api.create = vi.fn((entries) => {
+    evidence.isCurrent.mockReturnValue(false)
+    return entries.map((entry) => entry.id)
+  })
+  evidence.isCurrent.mockReturnValue(true)
+  expect(
+    await action.execute({ design: fixture(), attachmentEvidence }, context())
+  ).toMatchObject({ status: 'complete' })
+  expect(api.create).toHaveBeenCalled()
+})
+
+it('checks reviewed evidence inside the mutation callback after queue admission', async () => {
+  const api = apis()
+  let current = true
+  const action = createPreparedDesignAction(
+    api,
+    async () => undefined,
+    () => 0,
+    { isCurrent: () => current }
+  )
+  await expect(
+    action.execute(
+      {
+        design: fixture(),
+        attachmentEvidence: {
+          parentId: 'workspace',
+          workspaceId: 'workspace',
+          evidence: { sessionId: 'scene', revision: 0 }
+        }
+      },
+      {
+        signal: new AbortController().signal,
+        runMutation: async (mutate) => {
+          current = false
+          return mutate()
+        }
+      }
+    )
+  ).rejects.toThrow(/evidence/i)
+  expect(api.create).not.toHaveBeenCalled()
+})

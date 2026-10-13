@@ -21,6 +21,10 @@ import {
 import { AiActionNames } from '../constants'
 import core from '../contexts'
 import { admitPreparedDesign } from './prepared-design-admission'
+import {
+  inspectionEvidenceSchema,
+  type PreparedAttachmentEvidence
+} from './inspection-evidence'
 import type { PreparedDesign } from './prepared-design'
 import {
   PREPARED_DRAWING_SLICE_ELEMENT_BUDGET,
@@ -58,11 +62,13 @@ const defaultApis: PreparedDesignApis = {
 export const createPreparedDesignAction = (
   apis: PreparedDesignApis = defaultApis,
   yieldToHost: () => Promise<void> = yieldToCooperativeHost,
-  now: () => number = () => performance.now()
+  now: () => number = () => performance.now(),
+  evidence?: { isCurrent(stamp: unknown): boolean }
 ): AiActionDefinition<{
   design: PreparedDesign
   parentId?: string
   response?: 'compact' | 'full'
+  attachmentEvidence?: PreparedAttachmentEvidence
 }> => ({
   ...actionToolSemantics(AiActionNames.APPLY_PREPARED_DESIGN, {
     allOf: [
@@ -104,6 +110,17 @@ export const createPreparedDesignAction = (
     required: ['design'],
     properties: {
       design: { type: 'object' },
+      attachmentEvidence: {
+        type: 'object',
+        'x-runtime-value': 'request',
+        additionalProperties: false,
+        required: ['parentId', 'workspaceId', 'evidence'],
+        properties: {
+          parentId: { type: 'string', minLength: 1 },
+          workspaceId: { type: 'string', minLength: 1 },
+          evidence: inspectionEvidenceSchema
+        }
+      },
       parentId: { type: 'string', minLength: 1 },
       response: { type: 'string', enum: ['compact', 'full'] }
     }
@@ -204,6 +221,20 @@ export const createPreparedDesignAction = (
       const ids = await runAiMutation(context, () => {
         const callbackStartedAt = now()
         checkCurrent(parentId)
+        if (appliedElementCount === 0 && args.attachmentEvidence) {
+          const attachment = args.attachmentEvidence
+          if (
+            attachment.workspaceId !== workspaceId ||
+            attachment.parentId !== targetParentId
+          )
+            throw new Error(
+              'Reviewed attachment parent or workspace changed before application.'
+            )
+          if (!evidence?.isCurrent(attachment.evidence))
+            throw new Error(
+              'Reviewed attachment evidence expired before application; review current dependencies.'
+            )
+        }
         if (
           descriptors.some(
             (descriptor) => apis.getElementType(descriptor.id) !== undefined

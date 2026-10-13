@@ -1549,6 +1549,20 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
     ]
   })
   expect(review.isAccepted()).toBe(false)
+  expect(review.readChecks().items).toHaveLength(2)
+  expect(
+    review.readChecks().items.every((item) => item.status === 'stale')
+  ).toBe(true)
+  const inspectionIds = inspect(review)
+  review.record({
+    phase: 'visual',
+    final: false,
+    inspectionIds,
+    checks: [check('Finish')]
+  })
+  expect(() =>
+    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+  ).toThrow(/every planned criterion/)
 })
 
 it('corrects derived calculation notes without changing source facts or approved geometry', () => {
@@ -2137,4 +2151,349 @@ describe('reference applicability and fact evidence', () => {
       [{ freshness: 'stale' }]
     )
   })
+})
+
+it('retains primary-agent passes, pending work and scene invalidation without erasing evidence', () => {
+  const review = createLocalDesignReview()
+  review.record(plan)
+  review.mutate()
+  review.record({
+    phase: 'visual',
+    inspectionIds: inspect(review),
+    checks: [check('Viewpoint'), check('Finish', 'fail')]
+  })
+  expect(review.readChecks().counts).toEqual({
+    pass: 1,
+    fail: 1,
+    unverified: 0,
+    stale: 0
+  })
+  expect(review.readChecks().items.map((item) => item.id)).toEqual([
+    'visual:Finish'
+  ])
+  expect(() =>
+    review.record({
+      phase: 'visual',
+      inspectionIds: inspect(review),
+      checks: [check('Unknown')]
+    })
+  ).toThrow()
+  expect(review.readChecks().counts.fail).toBe(1)
+  review.mutate()
+  expect(review.readChecks().counts.stale).toBe(2)
+  expect(
+    review.readChecks().items.find((item) => item.id === 'visual:Viewpoint')
+      ?.evidence
+  ).toBe('Observed Viewpoint pass')
+  review.record({
+    phase: 'visual',
+    inspectionIds: inspect(review),
+    checks: [check('Viewpoint'), check('Finish')]
+  })
+  expect(review.readChecks().items).toEqual([])
+  expect(review.readChecks({ includePassed: true }).items).toHaveLength(2)
+})
+
+it('rechecks only unresolved criteria when the scene and passed dependencies are unchanged', () => {
+  const review = createLocalDesignReview()
+  review.record(plan)
+  review.mutate()
+  const inspectionIds = inspect(review)
+  review.record({
+    phase: 'visual',
+    inspectionIds,
+    checks: [check('Viewpoint'), check('Finish', 'fail')]
+  })
+  const before = review
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.id === 'visual:Viewpoint')
+  expect(
+    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+  ).toMatchObject({ accepted: true })
+  const after = review
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.id === 'visual:Viewpoint')
+  expect(after).toEqual(before)
+})
+
+it('does not revive stale passes when only another criterion is reviewed after a scene edit', () => {
+  const review = createLocalDesignReview()
+  review.record(plan)
+  review.mutate()
+  review.record({
+    phase: 'visual',
+    inspectionIds: inspect(review),
+    checks: [check('Viewpoint'), check('Finish')]
+  })
+  review.mutate()
+  const inspectionIds = inspect(review)
+  review.record({
+    phase: 'visual',
+    final: false,
+    inspectionIds,
+    checks: [check('Finish')]
+  })
+  expect(() =>
+    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+  ).toThrow(/every planned criterion/)
+  expect(review.readChecks().items).toContainEqual(
+    expect.objectContaining({ id: 'visual:Viewpoint', status: 'stale' })
+  )
+})
+
+describe('criterion inspection dependencies', () => {
+  const scoped = () => {
+    const review = createLocalDesignReview()
+    const names = Array.from({ length: 8 }, (_, i) => `tier-${i + 1}`)
+    review.record({
+      ...plan,
+      criteria: reviewCriteria(names),
+      structureCriteria: [],
+      detailRequired: false
+    })
+    const ids = names.map(
+      (name, i) =>
+        review.inspect(name, true, true, undefined, false, {
+          sessionId: 'browser',
+          revision: i,
+          receiptId: name
+        })?.inspectionId
+    )
+    review.record({
+      phase: 'visual',
+      inspectionIds: ids,
+      checks: names.map((name, i) => ({
+        ...check(name),
+        inspectionIds: [ids[i]]
+      }))
+    })
+    return { review, names, ids }
+  }
+  it('reopens only the changed tier while preserving other passed evidence and mixed current capture ages', () => {
+    const { review, names, ids } = scoped()
+    const prior = review.readChecks({ includePassed: true }).items
+    review.mutate()
+    expect(review.isAccepted()).toBe(false)
+    expect(review.readChecks().counts.pass).toBe(8)
+    review.invalidateInspections([String(ids[2])], 'Third-tier windows changed')
+    expect(review.readChecks().items.map((item) => item.id)).toEqual([
+      'visual:tier-3'
+    ])
+    expect(
+      review.readChecks({ ids: ['visual:tier-1'], includePassed: true })
+        .items[0]
+    ).toEqual(prior.find((item) => item.id === 'visual:tier-1'))
+    const fresh = review.inspect('tier-3', true, true, undefined, false, {
+      sessionId: 'browser',
+      revision: 9,
+      receiptId: 'tier-3-new'
+    })?.inspectionId
+    const current = ids.map((id, i) => (i === 2 ? fresh : id))
+    expect(review.evidenceFor(current)).toBeDefined()
+    expect(
+      review.record({
+        phase: 'visual',
+        inspectionIds: current,
+        checks: [{ ...check(names[2]), inspectionIds: [fresh] }]
+      }).accepted
+    ).toBe(true)
+    expect(review.readChecks().counts.pass).toBe(8)
+  })
+  it('rejects criterion dependencies not delivered in this review and retains whole-image dependencies by default', () => {
+    const { review, ids } = scoped()
+    expect(() =>
+      review.record({
+        phase: 'visual',
+        final: false,
+        inspectionIds: [ids[0]],
+        checks: [{ ...check('tier-1'), inspectionIds: [ids[1]] }]
+      })
+    ).toThrow(/inspection/i)
+    review.record({
+      phase: 'visual',
+      final: false,
+      inspectionIds: [ids[0], ids[1]],
+      checks: [check('tier-1')]
+    })
+    review.invalidateInspections([String(ids[1])], 'Shared comparison changed')
+    expect(
+      review
+        .readChecks()
+        .items.map((item) => item.id)
+        .sort()
+    ).toEqual(['visual:tier-1', 'visual:tier-2'])
+  })
+})
+
+it('retains eight regional units under one criterion and repairs only the invalid unit', () => {
+  const review = createLocalDesignReview()
+  review.record({
+    ...plan,
+    criteria: reviewCriteria(['Finish']),
+    structureCriteria: [],
+    detailRequired: false
+  })
+  review.mutate()
+  const crop = { x: 0, y: 0, width: 20, height: 20 }
+  const images = Array.from(
+    { length: 8 },
+    (_, index) =>
+      review.inspect(`tier-${index}`, true, false, crop, true, {
+        sessionId: 'app',
+        revision: index,
+        receiptId: `tier-${index}`
+      })?.inspectionId as string
+  )
+  const unit = (index: number, image = images[index]) => ({
+    ...check('Finish'),
+    unitId: `tier-${index}`,
+    inspectionIds: [image]
+  })
+  const stage = {
+    phase: 'visual',
+    final: false,
+    inspectionIds: images,
+    checks: images.map((_, index) => unit(index))
+  }
+  expect(operationInputIssue(stage, designEvidenceSchema)).toBeUndefined()
+  expect(review.record(stage)).toMatchObject({ accepted: false })
+  const before = review.readChecks({ includePassed: true })
+  expect(before.counts).toEqual({ pass: 8, fail: 0, stale: 1, unverified: 0 })
+  review.invalidateInspections([images[2]], 'Third tier changed')
+  expect(review.readChecks().counts).toEqual({
+    pass: 7,
+    fail: 0,
+    stale: 2,
+    unverified: 0
+  })
+  const overview = review.inspect('root', true, true, undefined, false, {
+    sessionId: 'app',
+    revision: 9,
+    receiptId: 'overview'
+  })?.inspectionId as string
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+  ).toMatchObject({ accepted: false })
+  const repaired = review.inspect('tier-2', true, false, crop, true, {
+    sessionId: 'app',
+    revision: 10,
+    receiptId: 'repaired'
+  })?.inspectionId as string
+  const repair = {
+    phase: 'visual',
+    final: false,
+    inspectionIds: [repaired],
+    checks: [unit(2, repaired)]
+  }
+  review.record(repair)
+  const after = review.readChecks({ includePassed: true })
+  for (const index of [0, 1, 3, 4, 5, 6, 7]) {
+    expect(after.items.find((item) => item.unitId === `tier-${index}`)).toEqual(
+      before.items.find((item) => item.unitId === `tier-${index}`)
+    )
+  }
+  review.record(repair)
+  expect(review.readChecks({ includePassed: true })).toEqual(after)
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+  ).toMatchObject({ accepted: true })
+  const repeatedView = review.inspect('tier-2', true, false, crop, true, {
+    sessionId: 'app',
+    revision: 10,
+    receiptId: 'same-scope-again'
+  })?.inspectionId as string
+  expect(() =>
+    review.record({
+      ...repair,
+      inspectionIds: [repaired, repeatedView],
+      checks: [
+        { ...unit(2, repaired), inspectionIds: [repaired, repeatedView] }
+      ]
+    })
+  ).not.toThrow()
+  const foreign = review.inspect('other-tier', true, false, crop)
+    ?.inspectionId as string
+  expect(() =>
+    review.record({
+      ...repair,
+      inspectionIds: [foreign],
+      checks: [unit(2, foreign)]
+    })
+  ).toThrow(/scope/)
+  const current = review
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.unitId === 'tier-2')
+  if (!current) throw new Error('Expected retained third-tier result')
+  const unchanged = review
+    .readChecks({ includePassed: true })
+    .items.filter((item) => item.unitId !== 'tier-2')
+  const replacement = {
+    ...repair,
+    inspectionIds: [foreign],
+    checks: [
+      {
+        ...unit(2, foreign),
+        status: 'unverified',
+        supersedes: {
+          revision: current.revision,
+          reason: 'The third tier was redesigned at this replacement target.'
+        }
+      }
+    ]
+  }
+  expect(operationInputIssue(replacement, designEvidenceSchema)).toBeUndefined()
+  expect(review.record(replacement)).toMatchObject({ accepted: false })
+  const updated = review
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.unitId === 'tier-2')
+  if (!updated) throw new Error('Expected replacement third-tier result')
+  expect(updated).toMatchObject({
+    status: 'unverified',
+    revision: current.revision + 1,
+    supersedes: replacement.checks[0].supersedes
+  })
+  expect(
+    review
+      .readChecks({ includePassed: true })
+      .items.filter((item) => item.unitId !== 'tier-2')
+  ).toEqual(unchanged)
+  review.record(replacement)
+  expect(
+    review
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.unitId === 'tier-2')
+  ).toEqual(updated)
+  expect(() =>
+    review.record({
+      ...replacement,
+      checks: [{ ...replacement.checks[0], status: 'pass' }]
+    })
+  ).toThrow(/revision/)
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+  ).toMatchObject({ accepted: false })
+  review.record({
+    ...repair,
+    inspectionIds: [foreign],
+    checks: [unit(2, foreign)]
+  })
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+  ).toMatchObject({ accepted: true })
 })

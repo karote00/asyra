@@ -464,3 +464,20 @@ it('preserves composed capture inputs and strict target validation through nativ
     }
   }
 })
+
+it('validates positional receipt schemas without retyping the diagnostic tail', () => {
+  const schema = {
+    type: 'array',
+    minItems: 1,
+    prefixItems: [{ type: 'number' }],
+    items: { type: 'string' }
+  }
+  expect(operationInputIssue([1, 'ok'], schema)).toBeUndefined()
+  expect(operationInputIssue(['bad', 'ok'], schema)).toContain('[0]')
+  expect(operationInputIssue([1, 2], schema)).toContain('[1]')
+  expect(operationInputIssue([], schema)).toContain('too few')
+  expect(operationInputIssue([1], { ...schema, items: false })).toBeUndefined()
+  expect(
+    operationInputIssue([1, 'extra'], { ...schema, items: false })
+  ).toBeDefined()
+})

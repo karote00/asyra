@@ -1,7 +1,18 @@
 import type { ExecutionRecord } from './records.js'
 
+/** An enclosing lost range, never a reconstruction or exact missing-record count. */
+export interface ExecutionRecordGap {
+  readonly requestId: string
+  readonly fromSequence: number
+  readonly throughSequence: number
+  readonly stage: 'capture' | 'storage' | 'mixed'
+}
+
 /** The host supplies durable storage. Transport never owns document state. */
 export interface ExecutionRecordOutbox {
+  reserve(requestId: string): Promise<void>
+  recordGap(gap: ExecutionRecordGap): Promise<void>
+  gap(requestId: string): Promise<ExecutionRecordGap | undefined>
   append(record: ExecutionRecord): Promise<void>
   read(
     requestId: string,
@@ -62,6 +73,27 @@ export const deliverRecordOutbox = async (
   nextSequence: number
   interrupted: boolean
 }> => {
+  try {
+    const gap = await options.outbox.gap(requestId)
+    if (gap) {
+      reportRecordDeliveryIssue(options, {
+        requestId,
+        stage: gap.stage === 'capture' ? 'capture' : 'storage',
+        reason:
+          'Persisted recording gap; missing records cannot be reconstructed',
+        fromSequence: gap.fromSequence,
+        throughSequence: gap.throughSequence
+      })
+      return { complete: false, nextSequence: fromSequence, interrupted: true }
+    }
+  } catch (error) {
+    reportRecordDeliveryIssue(options, {
+      requestId,
+      stage: 'storage',
+      reason: recordDeliveryReason(error)
+    })
+    return { complete: false, nextSequence: fromSequence, interrupted: true }
+  }
   let nextSequence = fromSequence
   for (;;) {
     let batch: readonly ExecutionRecord[]

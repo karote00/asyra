@@ -1,6 +1,7 @@
 import {
   defineBasicApi,
   apiString,
+  apiId,
   apiNumber,
   apiPosition,
   apiObject,
@@ -10,7 +11,7 @@ import {
 } from './basic-api-contracts'
 
 const elementPropertyUpdatesSchema = apiArray(
-  apiObject({ elementId: apiString, values: apiRecord })
+  apiObject({ elementId: apiId, values: apiRecord })
 )
 
 const elementCreationDataSchema = {
@@ -147,7 +148,7 @@ const getElementMetadataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementMetadata',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiId }],
   description:
     'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
 })
@@ -157,7 +158,7 @@ const getElementChildrenApi = defineBasicApi({
   method: 'getElementChildren',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
     { name: 'limit', schema: { type: 'integer', minimum: 1 }, optional: true }
   ],
@@ -169,7 +170,7 @@ const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiId }],
   description:
     'Returns detached canonical element data; property references are not resolved geometry.'
 })
@@ -179,8 +180,8 @@ const getElementComputedDataApi = defineBasicApi({
   method: 'getElementComputedData',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fields', schema: apiIds, optional: true }
+    { name: 'elementId', schema: apiId },
+    { name: 'fields', schema: apiArray(apiString), optional: true }
   ],
   description:
     'Read only requested fields when possible. This is a computed projection, not a canonical write payload: linked records such as fills/strokes are expanded objects. Keep their IDs and use patchElementProperties records to edit them; do not write expanded records back through updateElementProperties.'
@@ -227,7 +228,7 @@ const hasProjectedElementApi = defineBasicApi({
   owner: 'core',
   method: 'hasProjectedElement',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const getElementIdAtClientPosApi = defineBasicApi({
@@ -269,7 +270,7 @@ const workspaceToElementLocalApi = defineBasicApi({
   method: 'workspaceToElementLocal',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -281,7 +282,7 @@ const elementLocalToWorkspaceApi = defineBasicApi({
   method: 'elementLocalToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'localPosition', schema: apiPosition }
   ]
 })
@@ -293,7 +294,7 @@ const elementSourceToWorkspaceApi = defineBasicApi({
   method: 'elementSourceToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'sourcePosition', schema: apiPosition }
   ]
 })
@@ -305,7 +306,7 @@ const workspaceToElementSourceApi = defineBasicApi({
   method: 'workspaceToElementSource',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -361,7 +362,7 @@ const createElementsInParentApi = defineBasicApi({
   effect: 'write',
   parameters: [
     { name: 'data', schema: apiArray(elementCreationDataSchema) },
-    { name: 'parentId', schema: apiString },
+    { name: 'parentId', schema: apiId },
     { name: 'index', schema: { type: 'integer' }, optional: true }
   ],
   description: 'Creates the supplied batch in order; returns stable IDs.'
@@ -386,12 +387,13 @@ const patchElementPropertiesApi = defineBasicApi({
       schema: apiArray(
         apiObject(
           {
-            elementId: apiString,
+            elementId: apiId,
             values: apiRecord,
             records: apiArray(
-              apiObject({ key: apiString, set: apiRecord, remove: apiIds }, [
-                'key'
-              ])
+              apiObject(
+                { key: apiId, set: apiRecord, remove: apiArray(apiString) },
+                ['key']
+              )
             )
           },
           ['elementId']
@@ -410,7 +412,7 @@ const updatePropertyComponentsApi = defineBasicApi({
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ propertyId: apiString, values: apiRecord }))
+      schema: apiArray(apiObject({ propertyId: apiId, values: apiRecord }))
     }
   ],
   description:
@@ -422,7 +424,7 @@ const updateElementDataApi = defineBasicApi({
   method: 'updateElementData',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     {
       name: 'values',
       schema: apiObject(
@@ -526,7 +528,7 @@ const moveElementsApi = defineBasicApi({
       name: 'request',
       schema: apiObject({
         elementIds: apiIds,
-        targetParentId: apiString,
+        targetParentId: apiId,
         targetIndex: { type: 'integer' }
       })
     }

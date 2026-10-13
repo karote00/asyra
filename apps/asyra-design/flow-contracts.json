@@ -15,6 +15,7 @@
     "artifact:inspection-evidence"
   ],
   "workspaceSources": [
+    { "name": "@asyra/core", "inputs": ["src/**"], "entry": "src/index.ts" },
     {
       "name": "@asyra/asyra-design",
       "inputs": [
@@ -104,6 +105,11 @@
           ]
         },
         {
+          "id": "compose.resource-export",
+          "stepId": "compose",
+          "testName": "execution proof exports compound resources before cleanup"
+        },
+        {
           "id": "apply.composition",
           "stepId": "apply",
           "testName": "execution proof composes preparation and canonical dispatch without repeated work",
@@ -111,6 +117,16 @@
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-tool-scheduler.ts"
           ]
+        },
+        {
+          "id": "inspect.regional-units",
+          "stepId": "inspect",
+          "testName": "execution proof retains regional units without requiring global coverage for local review"
+        },
+        {
+          "id": "inspect.scoped-dependencies",
+          "stepId": "inspect",
+          "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers"
         },
         {
           "id": "inspect.current-evidence",
@@ -245,7 +261,7 @@
         {
           "routeId": "compose-to-prepare",
           "decision": "required",
-          "caseIds": ["prepare.lifetime"]
+          "caseIds": ["prepare.lifetime", "compose.resource-export"]
         },
         {
           "routeId": "compose-to-apply",
@@ -288,6 +304,11 @@
           "caseIds": ["inspect.prepared-recipe"]
         },
         {
+          "routeId": "prepared-review-to-apply",
+          "decision": "required",
+          "caseIds": ["inspect.prepared-recipe"]
+        },
+        {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
           "caseIds": ["inspect.prepared-recipe"]
@@ -325,11 +346,15 @@
     {
       "id": "ignore-canonical-evidence",
       "title": "Ignore a stale App inspection verdict",
-      "expectedFailedCaseIds": ["inspect.current-evidence"],
+      "expectedFailedCaseIds": [
+        "inspect.current-evidence",
+        "inspect.scoped-dependencies",
+        "inspect.regional-units"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
-        "from": "entry.result.current === true",
-        "to": "true"
+        "from": "if (!isRecord(result) || result.current !== true)",
+        "to": "if (!isRecord(result))"
       }
     }
   ]

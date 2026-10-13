@@ -2,7 +2,9 @@ import {
   toolResultBoolean,
   toolResultCount,
   toolResultObject,
-  toolResultString,
+  toolRequestReference,
+  toolDocumentReference,
+  toolDocumentReferences,
   actionToolSemantics
 } from './tool-contract'
 import {
@@ -14,7 +16,6 @@ import {
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
 import {
-  readDesignContext,
   designContextFields,
   designContextPageLimit
 } from '../common-apis/design-context'
@@ -25,6 +26,7 @@ export const documentContextSchema = {
   additionalProperties: false,
   required: ['scope'],
   properties: {
+    expectedCount: { type: 'integer', minimum: 0 },
     delivery: { type: 'string', enum: ['page', 'reference', 'columns'] },
     allMatches: {
       type: 'boolean',
@@ -56,9 +58,19 @@ export const documentContextSchema = {
       type: 'object',
       additionalProperties: false,
       properties: {
+        name: {
+          type: 'object',
+          additionalProperties: false,
+          minProperties: 1,
+          properties: {
+            equals: { type: 'string', minLength: 1, maxLength: 256 },
+            prefix: { type: 'string', minLength: 1, maxLength: 256 },
+            suffix: { type: 'string', minLength: 1, maxLength: 256 }
+          }
+        },
         type: { type: 'string', minLength: 1, maxLength: 256 },
-        parentId: { type: 'string', minLength: 1, maxLength: 256 },
-        ancestorId: { type: 'string', minLength: 1, maxLength: 256 },
+        parentId: { ...toolDocumentReference, maxLength: 256 },
+        ancestorId: { ...toolDocumentReference, maxLength: 256 },
         locked: { type: 'boolean' }
       }
     },
@@ -66,14 +78,14 @@ export const documentContextSchema = {
       type: 'array',
       minItems: 1,
       uniqueItems: true,
-      items: { type: 'string', minLength: 1, maxLength: 256 }
+      items: { ...toolDocumentReference, maxLength: 256 }
     },
     fields: {
       type: 'array',
       uniqueItems: true,
       items: { type: 'string', enum: [...designContextFields] }
     },
-    parentId: { type: 'string', minLength: 1, maxLength: 256 },
+    parentId: { ...toolDocumentReference, maxLength: 256 },
     offset: { type: 'integer', minimum: 0 },
     limit: {
       type: 'integer',
@@ -89,8 +101,9 @@ const retainedContextSchema = {
   required: ['scope', 'snapshotId'],
   properties: {
     scope: { type: 'string', enum: ['snapshot'] },
-    snapshotId: { type: 'string', minLength: 1, maxLength: 160 },
-    release: { type: 'boolean' },
+    snapshotId: toolRequestReference,
+    filter: documentContextSchema.properties.filter,
+    expectedCount: documentContextSchema.properties.expectedCount,
     delivery: documentContextSchema.properties.delivery,
     offset: documentContextSchema.properties.offset,
     limit: documentContextSchema.properties.limit
@@ -98,37 +111,86 @@ const retainedContextSchema = {
 }
 
 export const createDocumentContextAction = (
-  read: (query: RetainedContextQuery, signal?: AbortSignal) => unknown = (
-    query
-  ) => {
-    if (query.scope === 'snapshot')
-      throw new Error('Retained context is unavailable.')
-    return readDesignContext(query)
+  read: (query: RetainedContextQuery, signal?: AbortSignal) => unknown = () => {
+    throw new Error('Retained context is unavailable.')
   }
 ): AiActionDefinition<RetainedContextQuery> => ({
   ...actionToolSemantics(AiActionNames.READ_DESIGN_CONTEXT, {
-    anyOf: [
-      toolResultObject({
-        available: toolResultBoolean,
-        snapshotId: toolResultString,
+    ...toolResultObject(
+      {
+        available: { const: true },
+        snapshotId: toolRequestReference,
+        leaseId: toolRequestReference,
         total: toolResultCount,
+        coordinateSpace: { const: 'parent-local' },
+        elementIds: toolDocumentReferences,
+        missingIds: toolDocumentReferences,
         elements: { type: 'array', items: { type: 'object' } }
-      }),
-      toolResultObject({ released: toolResultBoolean })
-    ]
+      },
+      [
+        'available',
+        'snapshotId',
+        'leaseId',
+        'total',
+        'coordinateSpace',
+        'missingIds',
+        'elements'
+      ]
+    )
   }),
+  composition: 'allowed',
   name: AiActionNames.READ_DESIGN_CONTEXT,
   description:
-    'Results include an opaque snapshotId bound to the current document revision. Continue with scope=snapshot and snapshotId; delivery=reference returns a capacity-admitted leaseId with the receipt for map_retained_fills. Pass both IDs when consuming it. Pending leases cannot be evicted; consume/release them on capacity refusal or pass a query directly to the mapping action. Consumption, cancellation and request settlement release leases. columns returns only IDs and requested fields. x/y columns are parent-local. release=true on a snapshot page releases it. Stale or evicted references require a new read. For a localized correction, use scope=region with workspace bounds even when its parent spans a larger area. Spatial candidates use projected bounds, not exact contours or occlusion; optional type/parentId/ancestorId/locked filters apply before pagination. For an edit on the entire matching region, pass target={field:"elementIds",query:{scope:"region",bounds,filter}} to execute_design_batch; the backend resolves a complete identity snapshot and submits one plural operation. Use result=ids when you actually need to inspect target identities. Use scope=ids for known IDs, selection for selected objects, and children for hierarchy questions. Prefer retained artifact references and known IDs over another lookup. Default result=elements and fields=[] returns metadata; request only needed property fields, never vector points. Known IDs without limit are returned together. Continue with nextOffset and the same selectors; restart after hierarchy changes. Truncated text is only a preview. Read only when target identities or needed values are unknown.',
+    'Default delivery=reference returns snapshotId, leaseId and count without rows. Bind those handles to later consumers; do not copy object lists into model text. Request delivery=page or columns only when inspecting actual values. All delivered snapshots remain pinned until explicit release_design_context, request settlement or cancellation; new capacity admission never evicts pending consumers. Borrowed consumers do not release caller-owned leases. Current canonical revision checks reject stale values; read again after a relevant change. Use scope=region with workspace bounds for a local correction, even under a broad parent. Candidates use bounds, not exact contours or occlusion; type, parentId, ancestorId, locked and literal name equals/prefix/suffix filters precede paging. Refine an existing current snapshot with scope=snapshot and filter without returning its rows; expectedCount rejects unintended match counts. Prefer execute_design_batch target.query for a whole-region edit resolved internally. Use scope=ids for known IDs, selection for selected objects, children only for hierarchy questions. fields lists the needed computed columns; x/y are parent-local. Explicit pages continue with nextOffset and the same selectors. No vector-point expansion or hierarchy reread for already known targets.',
   inputSchema: { oneOf: [documentContextSchema, retainedContextSchema] },
   execute: async (query, { signal }) => {
     if (signal.aborted) throw new Error('Document context read cancelled.')
     try {
-      return read(query, signal)
+      return read({ ...query, delivery: query.delivery ?? 'reference' }, signal)
     } catch (error) {
       if (error instanceof RetainedQueryError)
         throw new AiActionExecutionError(error.message)
       throw error
     }
+  }
+})
+
+/** Releasing retained state is a control operation, not a query producer. */
+export const createDocumentContextReleaseAction = (
+  read: (query: RetainedContextQuery, signal?: AbortSignal) => unknown
+): AiActionDefinition<{ snapshotId: string }> => ({
+  ...actionToolSemantics(
+    AiActionNames.RELEASE_DESIGN_CONTEXT,
+    toolResultObject({
+      snapshotId: { type: 'string' },
+      released: toolResultBoolean
+    })
+  ),
+  name: AiActionNames.RELEASE_DESIGN_CONTEXT,
+  composition: 'control-plane',
+  description:
+    'Release a retained query after its consumers finish. Returns release evidence, not a live query handle. Never releases another request or an actively borrowed query.',
+  inputSchema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['snapshotId'],
+    properties: { snapshotId: toolRequestReference }
+  },
+  execute: async ({ snapshotId }, { signal }) => {
+    signal.throwIfAborted()
+    const result = read(
+      { scope: 'snapshot', snapshotId, release: true },
+      signal
+    )
+    if (
+      !result ||
+      typeof result !== 'object' ||
+      !('released' in result) ||
+      typeof result.released !== 'boolean'
+    )
+      throw new AiActionExecutionError(
+        'Retained query release was not acknowledged.'
+      )
+    return { snapshotId, released: result.released }
   }
 })

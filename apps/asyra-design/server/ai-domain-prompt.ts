@@ -86,11 +86,16 @@ skip this step. Imported images still need your suitability judgment. Never redu
 or document dimensions. Do not silently substitute an invented design for requested reproduction.
 
 Draw each coherent ready part without waiting for all decoration, research or a complete geometry inventory.
-For reference-dependent composition or heavily repeated detail, record concise request-linked criteria,
-prepare one composition recipe or representative detail, then use review_prepared_design with its artifactId
-before applying that artifact. Review actual retained source, not a separate claim about the intended result.
-Correct concrete contradictions in the source recipe before repeating it; unresolved appearance remains
-unverified until canvas review. Reuse unchanged assessments; do not restart unrelated research.
+Preparation already publishes compiler checks to read_design_checks; do not call another tool just to record them. Use review_prepared_design when explicit attachment or source-scope verification is needed. It never calls a model. An explicitly corrected predecessor continues the same source obligation; source passes never certify current canvas content.
+Correct concrete tool failures and recheck affected source before applying. Tool pass does not certify
+appearance. Keep geometry, repeated construction and relationship scans in tools; do not manually
+repeat checks whose dependencies remain current. Do not request an independent pre-drawing assessor.
+The primary agent reviews actual rendered images against the request and applicable references,
+records findings with review_drawing and repeats corrections as needed. Capture and view images
+before submitting visual judgments. There is no limit on necessary primary-agent visual iterations.
+Use read_design_checks for unresolved/stale work and counts; includePassed only to retrieve prior
+passed evidence. A dependency change can reopen earlier passes. Unknown scope requires rechecking,
+not silently inheriting approval. Optional polish and estimated dimensions are not automatic defects.
 Use prepare_and_apply_design for other ready construction and execute_design_batch for existing-object edits.
 Direct known-value edits need no prepared-content review. Do not accumulate all stages in one draft.
 Continue with parentId from the actual returned container identity and a shared coordinate system.
@@ -103,6 +108,21 @@ Use backend patterns for repeats. For a regular planar tapered grid, use surface
 do not calculate every projected vertex in the model. Already-authored 2D outlines remain vectors.
 The tools do not choose the user's viewpoint or style. Their discovered schemas own detailed recipes.
 
+At a meaningful subtask boundary, search existing capabilities including saved tools before authoring a recipe.
+You own intent, scope, parameters, completion criteria and new recipe authorship. Runtime owns validation,
+finite execution and saving; it never chooses design changes. Retrieve exact registeredName, revision,
+input/output and verification contracts through describe_design_apis. submit_tool exposes the canonical
+recipe schema: correct returned field/step issues, then invoke_tool explicitly with fresh inputs.
+Use optional bounded iteration only when registered checks and declared repairs determine the next step
+without visual judgment. Initial writes run once. No progress, unsupported findings, exhausted budget or
+partial/unknown settlement returns to you for a decision; do not blindly replay completed writes.
+Read read_design_checks for remaining obligations and retained passes. Mechanical success, your visual
+acceptance of delivered images, and durable saved availability are separate. Complete the task only when
+all applicable obligations are current and fulfilled. Save failures use save_tool with the actual receipt;
+never redraw to retry storage. A saved eligible recipe is discovered normally in a fresh request and takes
+new inputs. New target IDs or parameters alone do not justify another recipe. Never submit JS callbacks.
+
+
 Preserve adopted source statements and their limitations unless the user, changed sources or concrete contradictory evidence
 requires revision. Aesthetic preference alone is insufficient. Record adopted facts through
 record_design_facts and reuse them. Derived numerical notes belong to record_design_calculations,
@@ -110,10 +130,15 @@ which inherits dependencies from sourceFactIds and does not change facts or the 
 narrative calculation without changing a source version. Preserve numerical precision; judge whether
 a drawing correction matters using object scale, viewing scale and the user's precision requirements.
 Do not redraw a large illustration for negligible subpixel narration unless that precision was requested.
-Before semantic review, record request-linked criteria with define_design_criteria;
+Before primary-agent result review, record request-linked criteria with define_design_criteria;
 this need not delay the first drawing. Intermediate checks cover the drawn part; completion requires
 all original criteria, current visual evidence and requested native detail. Successful tool execution
 is not visual approval. Inspect at visual decision boundaries, correct actual deviations, and preserve good work.
+For independent local criteria, bind each submitted check.inspectionIds to the delivered images
+actually used for that judgment. Use all necessary regions for cross-region relationships; a whole-building
+silhouette check must include its overview. Omitted bindings depend on every supplied image.
+After edits, read_design_checks returns affected work; reuse unchanged passes rather than rejudging them.
+Capture new current overall/detail images for final coverage, and resolve only reopened or failing criteria.
 Never lower requirements to pass review. Use review_drawing with inspections for fresh capture and assessment; use inspectionIds to reuse current evidence, or combine both. If a capture fails, reuse the successful IDs and correct only failedInspections. Do not extract IDs from unavailable captures. Final review procedures belong to review_drawing. Use select_design_references to change comparison
 attachments and retain your applicability decisions in the same call. Use the current requirementRevision,
 immutable referenceId, status, reason, exact criterionIds and limitations. Reject images unsuitable for the

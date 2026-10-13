@@ -40,9 +40,13 @@
 
 ## Backend Boundary
 
-- The App backend and socket server depend only on App-owned HTTP, WebSocket,
-  document, and Agent protocols. They must not import any `@asyra/*` package,
-  including type-only imports or `@asyra/core/contracts`.
+- The App backend and socket server use App-owned HTTP, WebSocket, document,
+  and Agent protocols. The executable boundary guard admits the independently
+  composable public entries `@asyra/ai-agent-runtime`,
+  `@asyra/ai-agent-runtime/node` and `@asyra/preset/group-bounds` only.
+  Other `@asyra/*` imports, including type-only imports and
+  `@asyra/core/contracts`, remain prohibited. These entries do not create Core,
+  Factory, rendering or framework lifecycle instances in the backend.
 - The frontend is the sole adapter between those App protocols and the
   framework. It subscribes to Core-provided publication/event surfaces and
   submits validated remote data only through Core facades.

@@ -28,7 +28,10 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiActionNames.REVIEW_DESIGN]: 'Checking the layout',
     [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'Refining the design',
     [AiActionNames.READ_DESIGN_CONTEXT]: 'Reading the design',
+    [AiActionNames.RELEASE_DESIGN_CONTEXT]: 'Releasing query results',
     [AiActionNames.INSPECT_DRAWING]: 'Reviewing the drawing',
+    [AiActionNames.READ_DESIGN_ATTACHMENT]: 'Reading the target container',
+    [AiDesignToolIds.REVIEW_PREPARED_DESIGN]: 'Checking the prepared design',
     [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]:
       'Checking inspection freshness',
     [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
@@ -137,10 +140,17 @@ interface ActivityEntry {
   readonly message?: string
 }
 
+interface ActivityPurpose {
+  readonly id: string
+  readonly revision: number
+  readonly scope: 'request' | 'call'
+  readonly message: string
+}
+
 interface ActiveCall {
-  readonly entry: ActivityEntry
+  readonly label: string
+  readonly purpose?: ActivityPurpose
   readonly parentCallId?: string
-  readonly sequence: number
 }
 
 const ownerPhaseLabels = {
@@ -161,7 +171,8 @@ interface ActivityState {
   readonly attempt: number
   readonly sequence: number
   readonly objective?: string
-  readonly requestPurpose?: string
+  readonly requestPurpose?: ActivityPurpose
+  readonly segmentPurpose?: ActivityPurpose
   readonly closedCalls?: Readonly<Record<string, true>>
   readonly calls: Readonly<Record<string, ActiveCall>>
   readonly failed: boolean
@@ -199,24 +210,68 @@ const initialActivityState = (purpose?: string): ActivityState => ({
   failed: false
 })
 
+/** Phase-only updates retain the identity of genuinely authored work. */
+const authorPurpose = (
+  previous: ActivityPurpose | undefined,
+  message: string | undefined,
+  id: string,
+  scope: ActivityPurpose['scope'],
+  sequence: number
+): ActivityPurpose | undefined => {
+  if (!message || previous?.message === message) return previous
+  return { id, scope, revision: sequence, message }
+}
+
 /** Inheritance is a projection, never a new authored purpose on the receiving call. */
-const projectCallEntry = (
-  current: ActiveCall | undefined,
-  calls: Readonly<Record<string, ActiveCall>>,
-  fallback: ActivityEntry
-): ActivityEntry => {
-  if (!current) return fallback
-  const visited = new Set<ActiveCall>()
-  let source: ActiveCall | undefined = current
-  while (source && !visited.has(source)) {
-    if (source.entry.message)
-      return { label: current.entry.label, message: source.entry.message }
-    visited.add(source)
-    source = source.parentCallId ? calls[source.parentCallId] : undefined
+const callAncestry = (
+  id: string,
+  calls: Readonly<Record<string, ActiveCall>>
+): string[] => {
+  const result: string[] = []
+  const visited = new Set<string>()
+  let current: string | undefined = id
+  while (current && calls[current] && !visited.has(current)) {
+    result.push(current)
+    visited.add(current)
+    current = calls[current].parentCallId
   }
+  return result
+}
+
+const livePurpose = (
+  calls: Readonly<Record<string, ActiveCall>>
+): ActivityPurpose | undefined => {
+  const entries = Object.entries(calls)
+  const parents = new Set(entries.map(([, call]) => call.parentCallId))
+  const leaves = entries.filter(([id]) => !parents.has(id))
+  if (!leaves.length) return
+  const paths = leaves.map(([id]) => callAncestry(id, calls))
+  const common = paths[0].find(
+    (id) => calls[id].purpose && paths.every((path) => path.includes(id))
+  )
+  return common ? calls[common].purpose : undefined
+}
+
+const projectCallEntry = (
+  calls: Readonly<Record<string, ActiveCall>>,
+  fallback: ActivityEntry,
+  parallelPurpose?: string
+): ActivityEntry => {
+  const entries = Object.entries(calls)
+  if (!entries.length) return fallback
+  const parents = new Set(entries.map(([, call]) => call.parentCallId))
+  const leaves = entries.filter(([id]) => !parents.has(id))
+  // Invalid ancestry cannot make one sibling's purpose represent all work.
+  if (!leaves.length) return fallback
+  const message =
+    livePurpose(calls)?.message ??
+    (leaves.length > 1 ? parallelPurpose : fallback.message)
   return {
-    label: current.entry.label,
-    ...(fallback.message ? { message: fallback.message } : {})
+    label:
+      leaves.length === 1
+        ? leaves[0][1].label
+        : `Running ${leaves.length} operations`,
+    ...(message ? { message } : {})
   }
 }
 
@@ -247,10 +302,49 @@ export const reduceAiActivity = (
     next: ActivityState,
     status: 'accepted' | 'retained' | 'rejected',
     reason: string
-  ) => ({
-    state: next,
-    decision: { status, reason }
-  })
+  ) => {
+    const live = livePurpose(next.calls)
+    const activeCallCount = Object.keys(next.calls).length
+    const parentIds = new Set(
+      Object.values(next.calls).map((call) => call.parentCallId)
+    )
+    const activeLeafCount = Object.keys(next.calls).filter(
+      (id) => !parentIds.has(id)
+    ).length
+    let selected: ActivityPurpose | undefined
+    let purposeSource = 'none'
+    if (next.lifecycle === 'running') {
+      if (live) {
+        selected = live
+        purposeSource = 'live-call'
+      } else if (next.requestPurpose) {
+        selected = next.requestPurpose
+        purposeSource = 'request'
+      } else if (activeLeafCount <= 1 && next.segmentPurpose) {
+        selected = next.segmentPurpose
+        purposeSource = 'retained-segment'
+      } else if (next.objective) purposeSource = 'objective'
+    }
+    return {
+      state: next,
+      decision: {
+        status,
+        reason,
+        phaseLabel: next.entry.label,
+        activeCallCount,
+        purposeSource,
+        ...(selected
+          ? {
+              purpose: {
+                id: selected.id,
+                scope: selected.scope,
+                revision: selected.revision
+              }
+            }
+          : {})
+      }
+    }
+  }
   if (event.type === 'conversation') {
     const snapshot = event.snapshot
     // The conversation is authoritative. A question is not a completed drawing.
@@ -314,6 +408,8 @@ export const reduceAiActivity = (
     sequence,
     requestPurpose:
       update.attempt > state.attempt ? undefined : state.requestPurpose,
+    segmentPurpose:
+      update.attempt > state.attempt ? undefined : state.segmentPurpose,
     calls: update.attempt > state.attempt ? {} : state.calls,
     closedCalls: update.attempt > state.attempt ? {} : state.closedCalls
   }
@@ -352,14 +448,23 @@ export const reduceAiActivity = (
       update.attempt > state.attempt ? {} : { ...state.calls }
     const closedCalls: Record<string, true> = { ...ordered.closedCalls }
     let requestPurpose = ordered.requestPurpose
+    let segmentPurpose = ordered.segmentPurpose
     const authored =
       activity.kind === 'work'
         ? (boundedActivityMessage(update.message) ??
           executionActivityMessage(update))
         : undefined
     if (activity.scope === 'request') {
-      if (authored) requestPurpose = authored
+      requestPurpose = authorPurpose(
+        requestPurpose,
+        authored,
+        activity.callId,
+        'request',
+        activity.sequence
+      )
+      if (authored) segmentPurpose = requestPurpose
     } else if (update.toolStatus === 'completed') {
+      segmentPurpose = calls[activity.callId]?.purpose ?? segmentPurpose
       closedCalls[activity.callId] = true
       Reflect.deleteProperty(calls, activity.callId)
       let changed = true
@@ -382,32 +487,38 @@ export const reduceAiActivity = (
       const previous = calls[activity.callId]
       // A later concrete operation supersedes earlier stage commentary. The
       // stable request objective and genuine live call purposes remain valid.
-      if (authored && authored !== previous?.entry.message)
+      if (authored && authored !== previous?.purpose?.message)
         requestPurpose = undefined
-      const message = authored ?? previous?.entry.message
       calls[activity.callId] = {
-        entry: {
-          label: ownerPhaseLabels[activity.phase ?? 'provider'],
-          ...(message ? { message } : {})
-        },
-        parentCallId: activity.parentCallId,
-        sequence: activity.sequence
+        label: ownerPhaseLabels[activity.phase ?? 'provider'],
+        purpose: authorPurpose(
+          previous?.purpose,
+          authored,
+          activity.callId,
+          'call',
+          activity.sequence
+        ),
+        parentCallId: activity.parentCallId ?? previous?.parentCallId
       }
     }
-    const current = Object.values(calls).sort(
-      (a, b) => b.sequence - a.sequence
-    )[0]
-    const purpose = requestPurpose ?? ordered.objective
-    const entry = projectCallEntry(current, calls, {
-      label: ownerPhaseLabels.provider,
-      ...(purpose ? { message: purpose } : {})
-    })
+    segmentPurpose = livePurpose(calls) ?? segmentPurpose
+    const purpose =
+      requestPurpose?.message ?? segmentPurpose?.message ?? ordered.objective
+    const entry = projectCallEntry(
+      calls,
+      {
+        label: ownerPhaseLabels.provider,
+        ...(purpose ? { message: purpose } : {})
+      },
+      requestPurpose?.message ?? ordered.objective
+    )
     const next = {
       ...ordered,
       lifecycle,
       calls,
       closedCalls,
       requestPurpose,
+      segmentPurpose,
       entry,
       work: undefined,
       loop: undefined
@@ -421,17 +532,22 @@ export const reduceAiActivity = (
   if (
     Object.keys(ordered.calls).length ||
     ordered.requestPurpose ||
+    ordered.segmentPurpose ||
     ordered.objective
   ) {
-    const current = Object.values(ordered.calls).sort(
-      (a, b) => b.sequence - a.sequence
-    )[0]
-    const entry = projectCallEntry(current, ordered.calls, {
-      label: ['provider', 'execution'].includes(update.phase)
-        ? ownerPhaseLabels.provider
-        : activityLabel(update),
-      message: ordered.requestPurpose ?? ordered.objective
-    })
+    const entry = projectCallEntry(
+      ordered.calls,
+      {
+        label: ['provider', 'execution'].includes(update.phase)
+          ? ownerPhaseLabels.provider
+          : activityLabel(update),
+        message:
+          ordered.requestPurpose?.message ??
+          ordered.segmentPurpose?.message ??
+          ordered.objective
+      },
+      ordered.requestPurpose?.message ?? ordered.objective
+    )
     return transition(
       { ...ordered, lifecycle, entry },
       sameActivity(state.entry, entry) ? 'retained' : 'accepted',

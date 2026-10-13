@@ -12,6 +12,7 @@ import { STROKE_PATCH_KEYS } from '../constants/strokes'
 import {
   defineBasicApi,
   apiString,
+  apiId,
   apiNumber,
   apiBoolean,
   apiPosition,
@@ -38,7 +39,7 @@ const elementCreationOptionsSchema = apiObject(
     type: apiString,
     clientPosition: apiPosition,
     workspacePosition: apiPosition,
-    parentId: apiString,
+    parentId: apiId,
     parentWorkspaceOrigin: apiPosition,
     width: apiNumber,
     height: apiNumber,
@@ -54,7 +55,7 @@ const elementCreationOptionsSchema = apiObject(
 
 const elementMoveRequestSchema = apiObject({
   elementIds: apiIds,
-  targetParentId: apiString,
+  targetParentId: apiId,
   targetIndex: { type: 'integer', minimum: 0 }
 })
 
@@ -64,7 +65,7 @@ const getElementTypeApi = defineBasicApi({
   owner: 'element',
   method: 'getElementType',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const isElementLockedApi = defineBasicApi({
@@ -73,7 +74,7 @@ const isElementLockedApi = defineBasicApi({
   owner: 'element',
   method: 'isElementLocked',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const isElementVisibleApi = defineBasicApi({
@@ -82,7 +83,7 @@ const isElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'isElementVisible',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const getElementBoundsApi = defineBasicApi({
@@ -91,7 +92,7 @@ const getElementBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementBounds',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const getElementClientBoundsApi = defineBasicApi({
@@ -100,7 +101,7 @@ const getElementClientBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementClientBounds',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const getElementPositionApi = defineBasicApi({
@@ -109,7 +110,7 @@ const getElementPositionApi = defineBasicApi({
   owner: 'element',
   method: 'getElementPosition',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const getElementIdAtWorkspacePosApi = defineBasicApi({
@@ -164,7 +165,7 @@ const isPointInsideElementApi = defineBasicApi({
   method: 'isPointInsideElement',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'point', schema: apiPosition }
   ]
 })
@@ -176,7 +177,7 @@ const getPositionInParentApi = defineBasicApi({
   method: 'getPositionInParent',
   effect: 'read',
   parameters: [
-    { name: 'parentId', schema: apiString },
+    { name: 'parentId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -188,7 +189,7 @@ const setElementLockApi = defineBasicApi({
   method: 'setElementLock',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'lock', schema: apiBoolean }
   ]
 })
@@ -212,7 +213,7 @@ const toggleElementLockApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementLock',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const toggleElementVisibleApi = defineBasicApi({
@@ -221,7 +222,7 @@ const toggleElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementVisible',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const resetElementSizeApi = defineBasicApi({
@@ -230,7 +231,7 @@ const resetElementSizeApi = defineBasicApi({
   owner: 'element',
   method: 'resetElementSize',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const changeElementGeometryApi = defineBasicApi({
@@ -240,7 +241,7 @@ const changeElementGeometryApi = defineBasicApi({
   method: 'changeElementGeometry',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'geometry', schema: elementGeometrySchema }
   ]
 })
@@ -283,12 +284,13 @@ const patchElementPropertiesApi = defineBasicApi({
       schema: apiArray(
         apiObject(
           {
-            elementId: apiString,
+            elementId: apiId,
             values: apiRecord,
             records: apiArray(
-              apiObject({ key: apiString, set: apiRecord, remove: apiIds }, [
-                'key'
-              ])
+              apiObject(
+                { key: apiId, set: apiRecord, remove: apiArray(apiString) },
+                ['key']
+              )
             )
           },
           ['elementId', 'records']
@@ -323,7 +325,7 @@ const createElementsInParentApi = defineBasicApi({
       schema: apiArray({
         ...apiObject(
           {
-            id: apiString,
+            id: apiId,
             name: apiString,
             type: apiString,
             x: apiNumber,
@@ -337,7 +339,7 @@ const createElementsInParentApi = defineBasicApi({
         additionalProperties: true
       })
     },
-    { name: 'parentId', schema: apiString }
+    { name: 'parentId', schema: apiId }
   ]
 })
 
@@ -350,7 +352,7 @@ const createVectorElementsInParentApi = defineBasicApi({
   effect: 'write',
   parameters: [
     { name: 'createOptions', schema: apiArray(elementCreationOptionsSchema) },
-    { name: 'parentId', schema: apiString }
+    { name: 'parentId', schema: apiId }
   ]
 })
 
@@ -406,7 +408,7 @@ const ungroupElementApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'ungroupElement',
   effect: 'write',
-  parameters: [{ name: 'groupId', schema: apiString }]
+  parameters: [{ name: 'groupId', schema: apiId }]
 })
 
 const moveElementsApi = defineBasicApi({
@@ -429,7 +431,7 @@ const moveElementsRelativeApi = defineBasicApi({
       name: 'request',
       schema: apiObject({
         elementIds: apiIds,
-        anchorId: apiString,
+        anchorId: apiId,
         placement: { type: 'string', enum: ['before', 'after'] }
       })
     }
@@ -488,7 +490,7 @@ const toggleSelectionApi = defineBasicApi({
   owner: 'selection',
   method: 'toggleSelection',
   effect: 'selection',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const selectElementsApi = defineBasicApi({
@@ -528,8 +530,8 @@ const selectVectorPointApi = defineBasicApi({
     {
       name: 'point',
       schema: apiObject({
-        elementId: apiString,
-        pointId: apiString,
+        elementId: apiId,
+        pointId: apiId,
         target: { enum: Object.values(VECTOR_TOKENS.POINT.TARGET) }
       })
     }
@@ -545,7 +547,7 @@ const selectVectorSegmentApi = defineBasicApi({
   parameters: [
     {
       name: 'segment',
-      schema: apiObject({ elementId: apiString, segmentId: apiString })
+      schema: apiObject({ elementId: apiId, segmentId: apiId })
     }
   ]
 })
@@ -617,8 +619,8 @@ const getFillByIdApi = defineBasicApi({
   method: 'getFillById',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId }
   ]
 })
 
@@ -628,7 +630,7 @@ const getPrimaryFillColorApi = defineBasicApi({
   owner: 'fill',
   method: 'getPrimaryFillColor',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const updatePrimaryFillColorsApi = defineBasicApi({
@@ -641,7 +643,7 @@ const updatePrimaryFillColorsApi = defineBasicApi({
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ elementId: apiString, color: apiString }))
+      schema: apiArray(apiObject({ elementId: apiId, color: apiString }))
     }
   ]
 })
@@ -678,7 +680,7 @@ const fillPatchProperties = {
 
 const fillPatchSchema = apiObject(fillPatchProperties, [])
 
-const fillTargetSchema = apiObject({ elementId: apiString, fillId: apiString })
+const fillTargetSchema = apiObject({ elementId: apiId, fillId: apiId })
 
 const getFillTargetsAtIndexApi = defineBasicApi({
   owner: 'fill',
@@ -731,7 +733,7 @@ const shareFillAtIndexApi = defineBasicApi({
   method: 'shareFillAtIndex',
   effect: 'write',
   parameters: [
-    { name: 'sourceElementId', schema: apiString },
+    { name: 'sourceElementId', schema: apiId },
     { name: 'elementIds', schema: fillRowTargetsSchema },
     { name: 'index', schema: fillRowIndexSchema }
   ],
@@ -759,8 +761,8 @@ const updateFillFieldsBatchApi = defineBasicApi({
       name: 'updates',
       schema: apiArray(
         apiObject({
-          elementId: apiString,
-          fillId: apiString,
+          elementId: apiId,
+          fillId: apiId,
           patch: fillPatchSchema
         })
       )
@@ -775,8 +777,8 @@ const getGradientHandleHitAtClientPosApi = defineBasicApi({
   method: 'getGradientHandleHitAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -789,8 +791,8 @@ const getGradientStopHitAtClientPosApi = defineBasicApi({
   method: 'getGradientStopHitAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitSize', schema: apiNumber, optional: true }
   ],
@@ -823,8 +825,8 @@ const getGradientHandleGeometryApi = defineBasicApi({
   method: 'getGradientHandleGeometry',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId }
   ]
 })
 
@@ -835,8 +837,8 @@ const getNextGradientForHandleAtClientPositionApi = defineBasicApi({
   method: 'getNextGradientForHandleAtClientPosition',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId },
     { name: 'handleIndex', schema: { enum: [0, 1] } },
     { name: 'clientPos', schema: apiPosition }
   ]
@@ -849,8 +851,8 @@ const updateGradientHandleAtClientPositionApi = defineBasicApi({
   method: 'updateGradientHandleAtClientPosition',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'fillId', schema: apiId },
     { name: 'handleIndex', schema: { enum: [0, 1] } },
     { name: 'clientPos', schema: apiPosition }
   ]
@@ -862,7 +864,7 @@ const addStrokeApi = defineBasicApi({
   owner: 'stroke',
   method: 'addStroke',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const removeStrokeApi = defineBasicApi({
@@ -872,8 +874,8 @@ const removeStrokeApi = defineBasicApi({
   method: 'removeStroke',
   effect: 'delete',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'strokeId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'strokeId', schema: apiId }
   ]
 })
 
@@ -883,7 +885,7 @@ const getPrimaryStrokeColorApi = defineBasicApi({
   owner: 'stroke',
   method: 'getPrimaryStrokeColor',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const updatePrimaryStrokeColorsApi = defineBasicApi({
@@ -896,7 +898,7 @@ const updatePrimaryStrokeColorsApi = defineBasicApi({
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ elementId: apiString, color: apiString }))
+      schema: apiArray(apiObject({ elementId: apiId, color: apiString }))
     }
   ]
 })
@@ -922,8 +924,8 @@ const updateStrokeFieldsBatchApi = defineBasicApi({
       name: 'updates',
       schema: apiArray(
         apiObject({
-          elementId: apiString,
-          strokeId: apiString,
+          elementId: apiId,
+          strokeId: apiId,
           patch: apiObject(strokePatchProperties, [])
         })
       )

@@ -69,6 +69,9 @@ it('keeps inherited reference images out of text replies while retaining provide
   })
   const answer = controller.submit('That is fine')
   expect(controller.getSnapshot().activeTurn?.attachments).toEqual([])
+  expect(controller.getSnapshot().activeTurn?.originalIntent).toBe(
+    'Draw the reference at 240 by 240'
+  )
   expect(feature.execute).toHaveBeenLastCalledWith(
     expect.objectContaining({
       metadata: expect.objectContaining({ imageAttachments: [attachment] })
@@ -892,4 +895,70 @@ it('uses the same lifecycle decisions for recorded progress and the visible turn
     projectAiActivity(turn.progress, { outcome: turn.outcome }).current.label
   ).toBe('Finished')
   await controller.dispose()
+})
+
+it('retains the original activity objective through a failed clarification and retry', async () => {
+  const question = executed(
+    {
+      action: 'request_drawing_detail_choice',
+      clarification: {
+        kind: 'drawing-detail',
+        optionIds: ['balanced', 'maximum']
+      },
+      status: 'no-change'
+    },
+    'request_drawing_detail_choice'
+  )
+  const activePurposes: string[] = []
+  const continueRequest: AiConversationFeature['execute'] = async ({
+    progressObserver
+  }) => {
+    const initial = controller.getSnapshot().activeTurn
+    if (!initial) throw new Error('Missing active continuation')
+    activePurposes.push(initial.originalIntent)
+    progressObserver({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Active',
+      message: 'Build the roof',
+      activity: { kind: 'work', callId: 'roof', sequence: 1, phase: 'applying' }
+    })
+    progressObserver({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Completed',
+      toolStatus: 'completed',
+      activity: {
+        kind: 'system',
+        callId: 'roof',
+        sequence: 2,
+        phase: 'applying'
+      }
+    })
+    const active = controller.getSnapshot().activeTurn
+    if (!active) throw new Error('Missing active continuation')
+    expect(
+      projectAiActivity(active.progress, { purpose: active.originalIntent })
+        .current
+    ).toEqual({ label: 'AI processing', message: 'Build the roof' })
+    return {
+      status: 'failed',
+      stage: 'provider',
+      code: 'AI_PROVIDER_TRANSPORT_FAILED'
+    }
+  }
+  const feature = createFeature(
+    vi.fn().mockResolvedValueOnce(question).mockImplementation(continueRequest)
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit('Draw a detailed tower')
+  const failed = await controller.submit('Maximum detail, please')
+  await controller.retry(failed.turnId)
+  expect(activePurposes).toEqual([
+    'Draw a detailed tower',
+    'Draw a detailed tower'
+  ])
 })

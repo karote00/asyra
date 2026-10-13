@@ -1,13 +1,26 @@
 import { describe, expect, it, vi } from 'vitest'
 const observed = vi.hoisted(() => ({
-  channels: new Map<string, () => void>(),
+  channels: new Map<string, (change?: unknown) => void>(),
   loaded: () => undefined as unknown,
   stopped: vi.fn(),
-  getElementData: vi.fn()
+  getElementData: vi.fn(),
+  getElementMetadata: vi.fn(),
+  getCurrentWorkspaceId: vi.fn(() => 'workspace'),
+  getElementComputedData: vi.fn(() => ({ x: 0, y: 0, width: 40, height: 20 })),
+  isContainerType: vi.fn((type) => type === 'group'),
+  elementLocalToWorkspace: vi.fn((_id, point) => ({
+    x: 100 - point.y,
+    y: 200 + point.x
+  }))
 }))
 vi.mock('../../contexts', () => ({
   default: {
     getElementData: observed.getElementData,
+    getElementMetadata: observed.getElementMetadata,
+    getCurrentWorkspaceId: observed.getCurrentWorkspaceId,
+    getElementComputedData: observed.getElementComputedData,
+    isContainerType: observed.isContainerType,
+    elementLocalToWorkspace: observed.elementLocalToWorkspace,
     observeSharedDataChannel: (channel: string, listener: () => void) => {
       observed.channels.set(channel, listener)
       return () => {
@@ -26,7 +39,7 @@ vi.mock('@asyra/core', () => ({
     return { unsubscribe: observed.stopped }
   }
 }))
-import { SharedDataChannelNames } from '@asyra/utils'
+import { SharedDataChannelNames, SCENE_TREE_ACTIONS } from '@asyra/utils'
 import { createInspectionEvidence } from '../inspection-evidence'
 import { createInspectionValidationAction } from '../../ai/inspection'
 
@@ -216,4 +229,157 @@ describe('canonical inspection scope coverage', () => {
       })
     }
   )
+})
+
+it('captures only the canonical parent chain and transformed local basis for preparation review', async () => {
+  const { evidence, change } = setup()
+  observed.getElementMetadata.mockImplementation(
+    (id) =>
+      ({
+        group: { type: 'group', parentId: 'outer' },
+        outer: { type: 'group', parentId: 'workspace' }
+      })[id]
+  )
+  observed.getElementMetadata.mockClear()
+  const result = await evidence.attachment('group')
+  expect(result).toMatchObject({
+    available: true,
+    parentId: 'group',
+    workspaceId: 'workspace',
+    bounds: { width: 40, height: 20 },
+    basis: [
+      { x: 100, y: 200 },
+      { x: 100, y: 201 },
+      { x: 99, y: 200 }
+    ]
+  })
+  expect(observed.getElementMetadata.mock.calls.map(([id]) => id)).toEqual([
+    'group',
+    'outer'
+  ])
+  expect(evidence.isCurrent(result.evidence)).toBe(true)
+  change()
+  expect(evidence.isCurrent(result.evidence)).toBe(false)
+  observed.elementLocalToWorkspace.mockClear()
+  expect(await evidence.attachment()).toMatchObject({
+    parentId: 'workspace',
+    basis: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 }
+    ]
+  })
+  expect(observed.elementLocalToWorkspace).not.toHaveBeenCalled()
+  observed.getElementMetadata.mockReturnValue({
+    type: 'group',
+    parentId: 'group'
+  })
+  await expect(evidence.attachment('group')).rejects.toThrow(/parent/i)
+  observed.getElementMetadata.mockReturnValue(undefined)
+  await expect(evidence.attachment('missing')).rejects.toThrow(/parent/i)
+  evidence.dispose()
+})
+
+it('keeps a target capture current across an unrelated canonical edit', async () => {
+  observed.getElementMetadata.mockImplementation((id) => ({
+    id,
+    type: 'group',
+    parentId: id === 'workspace' ? undefined : 'workspace'
+  }))
+  const owner = createInspectionEvidence()
+  const captured = await owner.capture(() => ({ available: true }), {
+    elementId: 'tier-1'
+  })
+  observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+    action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+    id: 'tier-3',
+    changes: [{ key: 'visible', before: true, after: false }]
+  } as never)
+  expect(owner.isCurrent(captured.evidence)).toBe(true)
+  owner.dispose()
+})
+
+it('retains attachment checks by actual parent geometry and reads changed signatures only once', async () => {
+  let width = 40
+  observed.getElementMetadata.mockImplementation((id: string) => {
+    if (id === 'workspace') return { id, type: 'group' }
+    return { id, type: 'group', parentId: id === 'child-a' ? 'a' : 'workspace' }
+  })
+  observed.getElementComputedData.mockImplementation((...args: unknown[]) => ({
+    x: 0,
+    y: 0,
+    width: args[0] === 'a' ? width : 40,
+    height: 20
+  }))
+  let changed: (change?: { elementIds: string[] }) => void = () => undefined
+  const evidence = createInspectionEvidence((listener) => {
+    changed = listener
+    return () => undefined
+  })
+  const a = await evidence.attachment('a')
+  const b = await evidence.attachment('b')
+  observed.getElementComputedData.mockClear()
+  observed.getElementData.mockClear()
+  changed({ elementIds: ['child-a'] })
+  expect(evidence.isCurrent(a.evidence)).toBe(true)
+  expect(evidence.isCurrent(b.evidence)).toBe(true)
+  const reads = observed.getElementComputedData.mock.calls.length
+  expect(reads).toBe(1)
+  for (let i = 0; i < 10; i++) expect(evidence.isCurrent(a.evidence)).toBe(true)
+  expect(observed.getElementComputedData).toHaveBeenCalledTimes(reads)
+  expect(observed.getElementData).not.toHaveBeenCalled()
+  width = 60
+  changed({ elementIds: ['child-a'] })
+  expect(evidence.isCurrent(a.evidence)).toBe(false)
+  expect(evidence.isCurrent(b.evidence)).toBe(true)
+  changed()
+  expect(evidence.isCurrent(b.evidence)).toBe(false)
+  evidence.dispose()
+})
+
+it('invalidates attachment editability without invalidating unchanged rendered pixels', async () => {
+  let locked = false
+  let scale = 1
+  observed.getElementMetadata.mockImplementation((id: string) => ({
+    id,
+    type: 'group',
+    lock: id === 'a' && locked,
+    parentId: id === 'workspace' ? undefined : 'workspace'
+  }))
+  observed.getElementComputedData.mockImplementation(() => ({
+    x: 0,
+    y: 0,
+    width: 40,
+    height: 20
+  }))
+  observed.elementLocalToWorkspace.mockImplementation((_id, point) => ({
+    x: point.x * scale,
+    y: point.y * scale
+  }))
+  const owner = createInspectionEvidence()
+  const a = await owner.attachment('a')
+  const b = await owner.attachment('b')
+  const image = await owner.capture(() => ({ available: true }), {
+    elementId: 'a'
+  })
+  locked = true
+  observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+    action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+    id: 'a',
+    changes: [{ key: 'lock', before: false, after: true }]
+  })
+  expect(owner.isCurrent(a.evidence)).toBe(false)
+  expect(owner.isCurrent(b.evidence)).toBe(true)
+  expect(owner.isCurrent(image.evidence)).toBe(true)
+  locked = false
+  const fresh = await owner.attachment('a')
+  scale = 2
+  observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+    action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+    id: 'workspace',
+    changes: [{ key: 'transform', before: 1, after: 2 }]
+  })
+  expect(owner.isCurrent(fresh.evidence)).toBe(false)
+  expect(owner.isCurrent(b.evidence)).toBe(false)
+  owner.dispose()
 })

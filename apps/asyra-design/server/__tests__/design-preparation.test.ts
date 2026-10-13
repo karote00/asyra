@@ -11,6 +11,39 @@ import {
   createDesignPreparationSession
 } from '../design-preparation'
 
+it('publishes failed draft diagnostics for request repair and releases their actual source', () => {
+  const published: {
+    handle: string
+    release: () => void
+    validate: () => void
+    lifetime?: string
+  }[] = []
+  const assertOwned = vi.fn()
+  const session = createDesignPreparationSession(undefined, undefined, {
+    publish: (handle, release, validate, lifetime) => {
+      published.push({ handle, release, validate, lifetime })
+    },
+    publishAliases: vi.fn(),
+    assertOwned,
+    borrow: vi.fn(),
+    assertRelease: vi.fn(),
+    retire: vi.fn()
+  })
+  const handle = session.retainRejectedDraft({ name: 'Original' })
+  expect(published).toHaveLength(1)
+  expect(published[0]).toMatchObject({ handle, lifetime: 'request' })
+  expect(
+    session.repairDraft({
+      draftId: handle,
+      replacements: [{ path: '/name', value: 'Corrected' }]
+    })
+  ).toEqual({ name: 'Corrected' })
+  expect(assertOwned).toHaveBeenCalledWith(handle)
+  published[0].release()
+  expect(published[0].validate).toThrow(/unavailable/)
+  expect(session.describeRejectedDraft(handle as string)).toBeUndefined()
+})
+
 const draft = () => ({
   type: 'frame',
   name: 'Product overview',
@@ -1396,4 +1429,142 @@ it('reuses immutable fill template compilation while keeping independent propert
   expect((fills[0].gradient as typeof gradient).gradientStops[0].color).toBe(
     '#123456'
   )
+})
+
+describe('prepared artifact host ownership', () => {
+  it('keeps the real prepared source and its target alias through child completion', async () => {
+    const { createLocalToolLeases } = await import('../local-tool-leases')
+    const leases = createLocalToolLeases({ requestId: 'r', capacity: 12 })
+    let callId: string | undefined = 'child'
+    const session = createDesignPreparationSession(undefined, undefined, {
+      publish: (handle, release, validate) =>
+        leases.publish({ handle, callId, release, validate }),
+      publishAliases: leases.publishAliases,
+      assertOwned: (handle) => leases.assertOwned(handle, callId),
+      borrow: (handle) => leases.borrow(handle, callId),
+      assertRelease: (handle) => leases.assertRelease(handle, callId),
+      retire: (handle) => leases.retire(handle, callId)
+    })
+    const open = (
+      id: string,
+      parentCallId?: string,
+      input: unknown = 0,
+      inputSchema: unknown = { type: 'number' }
+    ) =>
+      leases.open({
+        requestId: 'r',
+        callId: id,
+        parentCallId,
+        input,
+        inputSchema: inputSchema as never
+      })
+    const reference = { type: 'string', 'x-runtime-value': 'request' } as const
+    await open('parent')
+    await open('child', 'parent')
+    const prepared = session.prepare(draft())
+    const compiled = session.resolve(prepared.artifactId)
+    const [target] = session.retainTargetSets([
+      {
+        artifactId: prepared.artifactId,
+        ids: [compiled.entries[0].descriptor.id]
+      }
+    ])
+    await leases.retain({
+      requestId: 'r',
+      fromCallId: 'child',
+      toCallId: 'parent',
+      value: target.targetSetId,
+      outputSchema: reference
+    })
+    await leases.release({ requestId: 'r', callId: 'child' })
+    callId = 'parent'
+    expect(
+      session.resolveTargetSet(prepared.artifactId, target.targetSetId)
+    ).toEqual([compiled.entries[0].descriptor.id])
+    await open('consumer', 'parent', target.targetSetId, reference)
+    expect(() => session.release([prepared.artifactId])).toThrow('borrowed')
+    await leases.release({ requestId: 'r', callId: 'consumer' })
+    await leases.retain({
+      requestId: 'r',
+      fromCallId: 'parent',
+      value: prepared.artifactId,
+      outputSchema: reference
+    })
+    await leases.release({ requestId: 'r', callId: 'parent' })
+    callId = undefined
+    expect(session.resolve(prepared.artifactId)).toBe(compiled)
+    await leases.dispose()
+    expect(() => session.resolve(prepared.artifactId)).toThrow()
+  })
+
+  it('removes newly compiled source when ownership publication is refused', () => {
+    let rejectedId = ''
+    const session = createDesignPreparationSession(undefined, undefined, {
+      publish: (handle) => {
+        rejectedId = handle
+        throw new Error('ownership capacity')
+      },
+      publishAliases: vi.fn(),
+      assertOwned: vi.fn(),
+      borrow: vi.fn(),
+      assertRelease: vi.fn(),
+      retire: vi.fn()
+    })
+    expect(() => session.prepare(draft())).toThrow('ownership capacity')
+    expect(rejectedId).not.toBe('')
+    expect(() => session.resolve(rejectedId)).toThrow('unavailable')
+    expect(() => session.recipe(rejectedId)).toThrow('unavailable')
+  })
+})
+
+it('publishes compiler findings automatically only after a retained source is available', () => {
+  const session = createDesignPreparationSession()
+  const source = session.prepare({
+    type: 'frame',
+    name: 'Small frame',
+    width: 10,
+    height: 10,
+    children: [
+      {
+        type: 'rect',
+        key: 'overflow',
+        name: 'Overflow',
+        x: 20,
+        width: 10,
+        height: 10
+      }
+    ]
+  })
+  expect(source.applicable).toBe(false)
+  expect(session.checkResults.read().items).toEqual([
+    expect.objectContaining({
+      id: `prepared:${source.artifactId}:data`,
+      status: 'fail'
+    })
+  ])
+  const before = session.checkResults.read({ includePassed: true })
+  expect(() => session.prepare({ type: 'invalid' })).toThrow()
+  expect(session.checkResults.read({ includePassed: true })).toEqual(before)
+})
+
+it('keeps cancellation and failed artifact publication out of retained source passes', async () => {
+  const session = createDesignPreparationSession()
+  const controller = new AbortController()
+  controller.abort()
+  await expect(
+    session.prepareAsync(draft(), controller.signal)
+  ).rejects.toThrow()
+  expect(session.checkResults.read({ includePassed: true }).items).toEqual([])
+  const failed = createDesignPreparationSession(undefined, undefined, {
+    publish: () => {
+      throw new Error('Publication unavailable')
+    },
+    publishAliases: vi.fn(),
+    assertOwned: vi.fn(),
+    borrow: vi.fn(),
+    assertRelease: vi.fn(),
+    retire: vi.fn()
+  })
+  expect(() => failed.prepare(draft())).toThrow('Publication unavailable')
+  expect(failed.checkResults.read({ includePassed: true }).items).toEqual([])
 })

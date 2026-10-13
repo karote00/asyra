@@ -5,11 +5,15 @@ export type AiJsonValue =
   | readonly AiJsonValue[]
   | { readonly [key: string]: AiJsonValue }
 
-export interface AiActionDescription {
+interface CompactAiActionDescription {
   readonly name: string
   readonly description: string
   readonly inputSchema: AiJsonValue
 }
+
+/** Host transport may carry the canonical descriptor; model discovery stays compact. */
+export type AiActionDescription =
+  CompactAiActionDescription | import('@asyra/ai-agent-runtime').AiToolContract
 
 // Progress identity and phase are owned by the Runtime contract.
 import type { ExecutionActivity } from '@asyra/ai-agent-runtime'

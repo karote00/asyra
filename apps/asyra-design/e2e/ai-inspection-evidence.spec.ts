@@ -896,3 +896,134 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
     expect(difference.maximumChannelDelta, name).toBeLessThanOrEqual(32)
   }
 })
+
+test('scoped inspection preserves other tiers and regions through canonical edits and Undo', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, historyApis, viewportApis, fillApis } =
+      await import('../src/common-apis')
+    const { createInspectionEvidence } =
+      await import('../src/common-apis/inspection-evidence')
+    const { createAiInspectionAction } = await import('../src/ai/inspection')
+    const tower = transactionApis.runTransaction(() =>
+      core.createElementInParent(
+        { type: 'frame', x: 0, y: 0, width: 800, height: 800 },
+        core.getCurrentWorkspaceId()
+      )
+    )
+    const tiers = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        Array.from({ length: 8 }, (_, i) => ({
+          type: 'group',
+          x: 20,
+          y: 20 + i * 90,
+          width: 50,
+          height: 50
+        })),
+        tower
+      )
+    )
+    const windows = transactionApis.runTransaction(() =>
+      tiers.map((tier) =>
+        core.createElementInParent(
+          { type: 'rect', x: 0, y: 0, width: 50, height: 50 },
+          tier
+        )
+      )
+    )
+    const owner = createInspectionEvidence()
+    const action = createAiInspectionAction(undefined, owner)
+    const signal = new AbortController().signal
+    const capture = async (
+      elementId: string,
+      region?: { x: number; y: number; width: number; height: number }
+    ) => {
+      const value = (await action.execute({ elementId, region }, {
+        signal
+      } as never)) as { available: boolean; evidence?: unknown }
+      if (!value.available || !value.evidence)
+        throw new Error('Actual rendered capture failed')
+      return value.evidence
+    }
+    try {
+      const stamps = await Promise.all(tiers.map((id) => capture(id)))
+      const whole = await capture(tower)
+      const firstRegion = await capture(tower, {
+        x: 10,
+        y: 10,
+        width: 80,
+        height: 70
+      })
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([
+          { elementId: windows[2], values: { width: 60 } }
+        ])
+      )
+      const afterThird = stamps.map((stamp) => owner.isCurrent(stamp))
+      const wholeAfterThird = owner.isCurrent(whole)
+      const regionAfterThird = owner.isCurrent(firstRegion)
+      // Enter an existing crop from outside, without naming any old crop member.
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([
+          { elementId: tiers[2], values: { y: 30 } }
+        ])
+      )
+      const afterEntry = owner.isCurrent(firstRegion)
+      const entered = await capture(tower, {
+        x: 10,
+        y: 10,
+        width: 80,
+        height: 70
+      })
+      await historyApis.undo()
+      const afterUndo = owner.isCurrent(entered)
+      const afterUndoStamp = await capture(tiers[0])
+      fillApis.updatePrimaryFillColor(windows[0], '#ff0000')
+      const afterFill = owner.isCurrent(afterUndoStamp)
+      const otherAfterFill = owner.isCurrent(stamps[7])
+      const freshFirst = await capture(tiers[0])
+      viewportApis.panTo(900, 900)
+      viewportApis.zoomToCenter(0.25, 0, 0)
+      const afterViewport = owner.isCurrent(freshFirst)
+      const deletedTier = await capture(tiers[2])
+      transactionApis.runTransaction(() => core.removeSubtrees([tiers[2]]))
+      const afterDelete = owner.isCurrent(deletedTier)
+      const otherAfterDelete = owner.isCurrent(freshFirst)
+      const saved = await core.save()
+      core.load(saved)
+      const afterLoad = owner.isCurrent(freshFirst)
+      return {
+        afterFill,
+        otherAfterFill,
+        afterThird,
+        wholeAfterThird,
+        regionAfterThird,
+        afterEntry,
+        afterUndo,
+        afterViewport,
+        afterDelete,
+        otherAfterDelete,
+        afterLoad
+      }
+    } finally {
+      owner.dispose()
+    }
+  })
+  expect(result).toEqual({
+    afterFill: false,
+    otherAfterFill: true,
+    afterThird: [true, true, false, true, true, true, true, true],
+    wholeAfterThird: false,
+    regionAfterThird: true,
+    afterEntry: false,
+    afterUndo: false,
+    afterViewport: true,
+    afterDelete: false,
+    otherAfterDelete: true,
+    afterLoad: false
+  })
+})

@@ -227,3 +227,166 @@ it('can explicitly release a stale lease without returning a newly invalid consu
   expect(() => store.get(receipt.snapshotId, receipt.leaseId)).toThrow(/lease/)
   store.dispose()
 })
+
+it('rejects another request reading, releasing or consuming a same-workspace snapshot', () => {
+  const { store, query } = fixture()
+  const first = new AbortController().signal,
+    second = new AbortController().signal
+  const receipt = store.read({ ...query, delivery: 'reference' }, first)
+  expect(() =>
+    store.read({ scope: 'snapshot', snapshotId: receipt.snapshotId }, second)
+  ).toThrow('request')
+  expect(() =>
+    store.read(
+      { scope: 'snapshot', snapshotId: receipt.snapshotId, release: true },
+      second
+    )
+  ).toThrow('request')
+  expect(() => store.get(receipt.snapshotId, receipt.leaseId, second)).toThrow(
+    'request'
+  )
+  expect(
+    store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
+  ).toHaveLength(3)
+  const independent = store.read({ ...query, delivery: 'reference' }, second)
+  expect(independent.snapshotId).not.toBe(receipt.snapshotId)
+  expect(
+    store.read({ ...query, delivery: 'reference' }, first).snapshotId
+  ).toBe(receipt.snapshotId)
+  store.releaseFor(first)
+  expect(() => store.get(receipt.snapshotId)).toThrow('missing')
+  expect(
+    store.get(independent.snapshotId, independent.leaseId, second).orderedIds
+  ).toHaveLength(3)
+  store.dispose()
+})
+
+it('checks request identity before releasing an individual lease', () => {
+  const { store, query } = fixture()
+  const first = new AbortController().signal,
+    second = new AbortController().signal
+  const receipt = store.read({ ...query, delivery: 'reference' }, first)
+  if (!receipt.leaseId) throw new Error('Expected a retained lease')
+  expect(() => store.releaseLease(receipt.leaseId, second)).toThrow('request')
+  expect(
+    store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
+  ).toHaveLength(3)
+  store.releaseLease(receipt.leaseId, first)
+  expect(() => store.get(receipt.snapshotId, receipt.leaseId, first)).toThrow(
+    'lease'
+  )
+  store.dispose()
+})
+
+it.each(['page', 'columns'] as const)(
+  'keeps delivered %s snapshots pinned instead of evicting future consumers',
+  (delivery) => {
+    const { store, source } = fixture()
+    const signal = new AbortController().signal
+    const receipts = Array.from({ length: 8 }, (_, index) =>
+      store.read(
+        {
+          scope: 'ids',
+          elementIds: [String(index)],
+          fields: ['x'],
+          delivery
+        },
+        signal
+      )
+    )
+    expect(() =>
+      store.read({ scope: 'ids', elementIds: ['new'], delivery }, signal)
+    ).toThrow(/capacity/)
+    for (const receipt of receipts) {
+      expect(receipt.leaseId).toEqual(expect.any(String))
+      expect(
+        store.get(receipt.snapshotId, receipt.leaseId, signal).orderedIds
+      ).toHaveLength(1)
+    }
+    expect(source.getElementComputedData).toHaveBeenCalledTimes(8)
+    store.read(
+      { scope: 'snapshot', snapshotId: receipts[0].snapshotId, release: true },
+      signal
+    )
+    expect(() =>
+      store.read({ scope: 'ids', elementIds: ['new'], delivery }, signal)
+    ).not.toThrow()
+    store.releaseFor(signal)
+    for (const receipt of receipts)
+      expect(() => store.get(receipt.snapshotId)).toThrow(/missing/)
+    store.dispose()
+  }
+)
+
+it('refines 2736 retained candidates to 24 targets without another spatial query or row transfer', () => {
+  const { store, source, query, change } = fixture()
+  const ids = Array.from({ length: 2736 }, (_, index) => `part-${index}`)
+  source.getElementIdsInBounds.mockReturnValue(ids)
+  source.getElementMetadata.mockImplementation((id) => ({
+    name: `crown-${Number(id.slice(5)) < 24 ? 'roof' : 'window'}-edge`,
+    type: 'rectangle',
+    parentId: 'workspace',
+    lock: false
+  }))
+  const request = new AbortController()
+  const first = store.read({ ...query, delivery: 'reference' }, request.signal)
+  source.getElementMetadata.mockClear()
+  source.getElementComputedData.mockClear()
+  const refine = {
+    scope: 'snapshot' as const,
+    snapshotId: first.snapshotId,
+    filter: { name: { prefix: 'crown-roof', suffix: '-edge' } },
+    expectedCount: 24,
+    delivery: 'reference' as const
+  }
+  const result = store.read(refine, request.signal)
+  expect(result).toMatchObject({
+    total: 24,
+    elements: [],
+    elementIds: [],
+    observation: {
+      selectionExecutions: 0,
+      refinementExecutions: 1,
+      candidateCount: 2736
+    }
+  })
+  expect(store.get(result.snapshotId).orderedIds).toEqual(ids.slice(0, 24))
+  expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(1)
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(2736)
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  const again = store.read(refine, request.signal)
+  expect(again.snapshotId).toBe(result.snapshotId)
+  expect(again.observation).toMatchObject({
+    refinementExecutions: 0,
+    metadataReadCount: 0
+  })
+  expect(source.getElementMetadata).toHaveBeenCalledTimes(2736)
+  expect(() =>
+    store.read({ ...refine, expectedCount: 25 }, request.signal)
+  ).toThrow(/count/i)
+  expect(() => store.read(refine, new AbortController().signal)).toThrow(
+    /another request/
+  )
+  const empty = store.read(
+    { ...refine, filter: { name: { equals: 'missing' } }, expectedCount: 0 },
+    request.signal
+  )
+  expect(store.get(empty.snapshotId).orderedIds).toEqual([])
+  store.release(first.snapshotId)
+  expect(
+    store
+      .read(
+        {
+          scope: 'snapshot',
+          snapshotId: result.snapshotId,
+          delivery: 'page',
+          limit: 2
+        },
+        request.signal
+      )
+      .elements.map((row) => row.id)
+  ).toEqual(ids.slice(0, 2))
+  change()
+  expect(() => store.get(result.snapshotId)).toThrow(/stale/)
+  store.dispose()
+})

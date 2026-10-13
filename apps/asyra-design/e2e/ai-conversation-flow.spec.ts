@@ -139,6 +139,15 @@ for (const count of [16, 320, 1280]) {
         .reduce((total, counter) => total + counter.value, 0)
     expect(totalCounter('computed-mirror-seed')).toBe(count + 1)
     expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
+    // Complete flat identities are still delivered; prior rows are not decoded
+    // again for each prepared member publication.
+    expect(totalCounter('ui-context-membership-prepare')).toBe(1)
+    expect(totalCounter('ui-context-membership-row-read')).toBeLessThan(
+      count * 2 + 8
+    )
+    expect(
+      totalCounter('ui-context-flattened-identity-output')
+    ).toBeGreaterThanOrEqual(count + 1)
     const names = new Set(result.snapshot.phases.map((phase) => phase.name))
     expect(names.has('scene-tree:element-batch:materialize')).toBe(true)
     expect(names.has('scene-tree:element-batch:commit-scene')).toBe(true)
@@ -526,7 +535,13 @@ for (const width of [360, 1280]) {
     expect(await getActiveTool(page)).toBe('select')
     await page.getByLabel('Message Agent').fill('')
     await expect(message.getByLabel('Your message')).toContainText(intent)
-    await expect(message.getByLabel('Agent response')).not.toContainText(intent)
+    await expect(message.getByLabel('Current activity')).toContainText(intent)
+    await expect(message.getByLabel('Current activity')).not.toContainText(
+      'Draw a blue reference shape'
+    )
+    await expect(
+      message.getByLabel('Agent response').locator(':scope > p')
+    ).toHaveCount(0)
     const bounds = await message.getByLabel('Your message').boundingBox()
     const panelBounds = await page.getByTestId('ai-agent-panel').boundingBox()
     if (!bounds || !panelBounds)
@@ -546,7 +561,12 @@ for (const width of [360, 1280]) {
       'datetime',
       /.+/
     )
-    await expect(message).toContainText('timed out')
+    await expect(message.getByLabel('Current activity')).toHaveCount(0)
+    const explanation = message
+      .getByLabel('Agent response')
+      .locator(':scope > p')
+    await expect(explanation).toContainText('timed out')
+    await expect(explanation).not.toContainText(intent)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
     await page
@@ -931,97 +951,132 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByLabel('Design context', { exact: true })
       ).toHaveCount(0)
+      const objective = 'Trace the reference, then change visibility'
       const events = [
         {
           tool: 'research_design_context',
+          callId: 'research-1',
+          phase: 'executing',
           status: 'running',
-          label: 'Researching design context'
+          label: 'Running an operation',
+          expected: objective
         },
         {
           tool: 'research_design_context',
+          callId: 'research-1',
+          phase: 'executing',
           status: 'completed',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'search_reference_images',
-          status: 'running',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'search_reference_images',
-          status: 'completed',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'import_reference_image',
-          status: 'running',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'vtracer',
-          status: 'running',
-          label: 'Converting artwork to vectors'
-        },
-        {
-          tool: 'vtracer',
-          status: 'completed',
-          label: 'Converting artwork to vectors'
-        },
-        {
-          tool: 'analyze_vector',
-          status: 'completed',
-          label: 'Converting artwork to vectors'
+          label: 'AI processing',
+          expected: objective
         },
         {
           tool: 'prepare_design',
+          callId: 'prepare-1',
+          phase: 'preparing',
           status: 'running',
-          label: 'Drawing and refining'
+          label: 'Preparing geometry',
+          expected: objective
         },
         {
           tool: 'prepare_design',
+          callId: 'prepare-1',
+          phase: 'preparing',
           status: 'completed',
-          label: 'Drawing and refining'
+          label: 'AI processing',
+          expected: objective
         },
         {
-          tool: 'inspect_drawing',
+          tool: 'provider',
+          callId: 'stage-1',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Drawing and refining'
-        },
-        {
-          tool: 'update_design_element',
-          status: 'running',
-          label: 'Drawing and refining'
-        },
-        {
-          tool: 'update_design_element',
-          status: 'running',
-          label: 'Drawing and refining',
+          label: 'AI processing',
           message: '正在加入窗戶光影反射效果'
         },
         {
-          tool: 'update_design_element',
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'preparing',
           status: 'running',
-          label: 'Drawing and refining',
+          label: 'Preparing geometry',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
+          status: 'running',
+          label: 'Updating the canvas',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
+          status: 'completed',
+          label: 'AI processing',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'apply_prepared_design',
+          callId: 'base-status',
+          phase: 'applying',
+          status: 'running',
+          label: 'Updating the canvas',
+          message: 'Base surfaces'
+        },
+        {
+          tool: 'apply_prepared_design',
+          callId: 'base-status',
+          phase: 'applying',
+          status: 'completed',
+          label: 'AI processing',
+          expected: 'Base surfaces'
+        },
+        {
+          tool: 'provider',
+          callId: 'provider-gap',
+          scope: 'request',
+          phase: 'provider',
+          status: 'running',
+          label: 'AI processing',
+          expected: 'Base surfaces'
+        },
+        {
+          tool: 'provider',
+          callId: 'stage-2',
+          scope: 'request',
+          phase: 'provider',
+          status: 'running',
+          label: 'AI processing',
           message: '正在調整屋頂顏色'
         },
         {
-          tool: 'execute_design_batch',
+          tool: 'provider',
+          callId: 'stage-3',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Planning the drawing',
+          label: 'AI processing',
           message: '正在刪除被覆蓋物件'
         },
         {
-          tool: 'update_design_element',
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
           status: 'completed',
-          label: 'Drawing and refining',
+          label: 'AI processing',
           message: '正在加入窗戶光影反射效果',
-          expected: '正在刪除被覆蓋物件',
-          expectedLabel: 'Planning the drawing'
+          expected: '正在刪除被覆蓋物件'
         },
         {
-          tool: 'set_element_visibility',
+          tool: 'provider',
+          callId: 'stage-4',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Adjusting element visibility',
+          label: 'AI processing',
           message: '正在隱藏右下角的標記。'
         }
       ]
@@ -1050,19 +1105,27 @@ for (const width of [360, 1280]) {
             message: event.message,
             activity: {
               kind: event.message ? 'work' : 'system',
-              callId: event.tool,
+              callId: event.callId,
+              phase: event.phase,
+              scope: event.scope,
               sequence: ++activitySequence
             }
           }) + '\n'
         )
         const workMessage = event.expected ?? event.message
         await expect(status.locator(':scope > span')).toHaveText([
-          event.expectedLabel ?? event.label,
+          event.label,
           ...(workMessage ? [workMessage] : [])
         ])
+        if (event.callId === 'provider-gap') {
+          await expect(status).not.toContainText('Updating the canvas')
+          await page.getByTestId('ai-agent-panel').screenshot({
+            path: testInfo.outputPath('completed-call-purpose.png')
+          })
+        }
         await expect(current).toHaveCount(1)
         await expect(current).toHaveText(
-          event.expected ?? event.message ?? event.label
+          event.expected ?? event.message ?? objective
         )
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
@@ -1079,16 +1142,12 @@ for (const width of [360, 1280]) {
           page.getByText('Running a tool', { exact: true })
         ).toHaveCount(0)
       }
-      await expect(
-        page
-          .getByLabel('Operational progress')
-          .getByText('Researching design context', { exact: true })
-      ).toHaveCount(1)
-      await expect(
-        page
-          .getByLabel('Operational progress')
-          .getByText('Drawing and refining', { exact: true })
-      ).toHaveCount(3)
+      await expect(page.getByLabel('Operational progress')).toContainText(
+        '正在調整屋頂顏色'
+      )
+      await expect(page.getByLabel('Operational progress')).toContainText(
+        '正在刪除被覆蓋物件'
+      )
       const rowGaps = await page
         .getByLabel('Operational progress')
         .locator('li')
@@ -1123,6 +1182,8 @@ for (const width of [360, 1280]) {
             activity: {
               kind: 'work',
               callId: 'work',
+              scope: 'request',
+              phase: 'provider',
               sequence: ++activitySequence
             }
           }) + '\n'
@@ -1134,29 +1195,32 @@ for (const width of [360, 1280]) {
         'inspect_drawing',
         'describe_design_apis'
       ]) {
-        response.write(
-          JSON.stringify({
-            type: 'activity',
-            tool,
-            status: 'running',
-            message: 'Checking the requested details',
-            activity: {
-              kind: 'system',
-              callId: tool,
-              sequence: ++activitySequence
-            }
-          }) + '\n'
-        )
-        await expect(status.locator(':scope > span')).toHaveText([
-          'Adjusting element visibility',
-          '正在隱藏右下角的標記。'
-        ])
-        await expect(current).toHaveText('正在隱藏右下角的標記。')
+        for (const toolStatus of ['running', 'completed']) {
+          response.write(
+            JSON.stringify({
+              type: 'activity',
+              tool,
+              status: toolStatus,
+              message: 'Checking the requested details',
+              activity: {
+                kind: 'system',
+                callId: tool,
+                phase: 'inspecting',
+                sequence: ++activitySequence
+              }
+            }) + '\n'
+          )
+          await expect(status.locator(':scope > span')).toHaveText([
+            toolStatus === 'running' ? 'Checking the drawing' : 'AI processing',
+            '正在隱藏右下角的標記。'
+          ])
+          await expect(current).toHaveText('正在隱藏右下角的標記。')
+        }
       }
-      const longDescription = `Adjusting reflections on ${'window-'.repeat(28)}panes`
+      const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
-        'Converting artwork to vectors',
+        'AI processing',
         longDescription
       ])
       expect(
@@ -1164,6 +1228,15 @@ for (const width of [360, 1280]) {
           (element) => element.scrollWidth <= element.clientWidth
         )
       ).toBe(true)
+      const purpose = status.locator(':scope > span').last()
+      const dimensions = await purpose.evaluate((element) => ({
+        height: element.getBoundingClientRect().height,
+        lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight)
+      }))
+      expect(dimensions.height).toBeLessThanOrEqual(
+        dimensions.lineHeight * 3 + 1
+      )
+      await expect(purpose).toHaveAttribute('title', longDescription)
       await page.getByTestId('ai-agent-panel').screenshot({
         path: testInfo.outputPath('wrapped-current-activity.png')
       })
@@ -1367,9 +1440,12 @@ for (const width of [360, 1280]) {
     const create = header.getByRole('button', { name: 'New conversation' })
     const close = header.getByRole('button', { name: 'Close Agent panel' })
     await expect(header.locator('select')).toHaveCount(0)
-    await expect(header).toHaveText('')
+    await expect(
+      header.getByRole('button', { name: 'Saved tools', exact: true })
+    ).toBeVisible()
     const positions = []
     for (const button of [toggle, create, close]) {
+      await expect(button).toHaveText('')
       const bounds = await button.boundingBox()
       if (!bounds) throw new Error('Missing navigation icon')
       expect(bounds.width).toBe(24)

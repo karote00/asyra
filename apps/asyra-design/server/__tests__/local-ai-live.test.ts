@@ -1,6 +1,11 @@
 import sharp from 'sharp'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, writeFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { createLocalToolStore } from '../local-tool-store'
+import { parseExecutionRecord } from '@asyra/ai-agent-runtime'
+import { prepareDesign } from '../design-preparation'
 import * as referenceTools from '../local-reference-tools'
 import { readFile } from 'node:fs/promises'
 import * as childProcess from 'node:child_process'
@@ -14,6 +19,183 @@ vi.mock('node:child_process', async (importOriginal) => {
   return { ...actual, spawn: vi.fn(actual.spawn) }
 })
 afterEach(() => vi.restoreAllMocks())
+
+it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
+  'authors and durably reuses a parameterized preparation tool with the real provider',
+  async () => {
+    const directory = fileURLToPath(
+      new URL(`../../tmp/reusable-tool-live/${Date.now()}/`, import.meta.url)
+    )
+    const records = join(directory, 'records')
+    const library = join(directory, 'library')
+    await mkdir(records, { recursive: true })
+    const browser = vi.fn(async () => {
+      throw new Error('This preparation-only case must not mutate the canvas')
+    })
+    const run = async (intent: string) => {
+      const previous = new Set(await readdir(records))
+      await requestLocalAiActionBatch(
+        {
+          intent,
+          context: { workspaceId: 'workspace', elementCount: 0 },
+          actions: [
+            {
+              name: AiActionNames.APPLY_PREPARED_DESIGN,
+              description:
+                'Canvas application is unavailable in this preparation-only session.',
+              inputSchema: false
+            }
+          ],
+          attempt: 1
+        },
+        {
+          model: 'gpt-6-astra',
+          executable: process.env.AI_PROVIDER_EXECUTABLE || 'codex',
+          toolLibraryDirectory: library,
+          recordDirectory: records,
+          signal: AbortSignal.timeout(360_000),
+          executeBatch: browser
+        }
+      )
+      const files = (await readdir(records)).filter(
+        (name) => name.endsWith('.jsonl') && !previous.has(name)
+      )
+      const parsed = await Promise.all(
+        files.map(async (name) =>
+          parseExecutionRecord(await readFile(join(records, name), 'utf8'))
+        )
+      )
+      const drawing = parsed.find(
+        (value) => value.metadata.purpose === 'drawing'
+      )
+      expect(drawing).toBeDefined()
+      if (!drawing) throw new Error('Missing recorded provider request')
+      return {
+        ...drawing,
+        records: drawing.records.map((entry) => ({
+          ...entry,
+          stage: entry.stage,
+          diagnostic: entry.diagnostic as
+            | {
+                input?: { payload?: { path?: string } }
+                output?: { payload?: { path?: string } }
+              }
+            | undefined,
+          evidence: entry.evidence as Record<string, unknown> | undefined
+        }))
+      }
+    }
+    const name = 'prepare-paired-parts'
+    const first = await run(
+      `Create and save a reusable tool named ${name} for future requests. Discover the current authoring specification and exact dependency contracts. The tool takes one numeric width from 10 to 100 and prepares two separate editable rectangular parts, both with that width and height 20. Return both prepared artifact references with their declared lifetimes. Use a finite recipe with two preparation steps, not JavaScript or callbacks. Invoke the new tool with width 17 and confirm durable saving. Preparation only: do not apply, review, render, research or modify the canvas. Finish when saved; do not just describe a proposal.`
+    )
+    const store = await createLocalToolStore({
+      directory: library,
+      capacity: 100,
+      recordBytes: 1_000_000,
+      totalBytes: 10_000_000
+    })
+    let saved: Awaited<ReturnType<typeof store.list>>
+    try {
+      saved = await store.list(100)
+    } finally {
+      store.close()
+    }
+    expect(saved).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          record: expect.objectContaining({
+            availability: 'eligible',
+            contract: expect.objectContaining({ name })
+          })
+        })
+      ])
+    )
+    const second = await run(
+      `Discover the saved reusable tool ${name} and invoke its saved revision with width 23. Do not submit or replace a recipe. Return its two preparation references. Preparation only: do not apply, review, research, render or modify the canvas.`
+    )
+    const handles = new Set<string>()
+    const revisions = new Set<unknown>()
+    for (const [record, width] of [
+      [first, 17],
+      [second, 23]
+    ] as const) {
+      const calls = record.records.filter(
+        (entry) =>
+          entry.stage === 'tool_started' &&
+          entry.evidence?.tool === 'design_preparation.prepare_design' &&
+          entry.evidence?.parentCallId
+      )
+      expect(calls).toHaveLength(2)
+      for (const call of calls) {
+        expect(call.evidence).toMatchObject({
+          recipeStep: { name }
+        })
+        const path = call.diagnostic?.input?.payload?.path
+        if (!path) throw new Error('Missing exact preparation input')
+        const input = JSON.parse(await readFile(join(records, path), 'utf8'))
+        // The model may choose a group or frame. Check canonical geometry,
+        // not an assumed root type or a bounded log summary.
+        const prepared = prepareDesign(input.draft)
+        const rectangles = prepared.entries.filter(
+          (entry) => entry.descriptor.type === 'rect'
+        )
+        expect(rectangles).toHaveLength(1)
+        expect(rectangles[0].descriptor).toMatchObject({ width, height: 20 })
+        const completed = record.records.find(
+          (entry) =>
+            entry.stage === 'tool_completed' &&
+            entry.evidence?.callId === call.evidence?.callId
+        )
+        expect(completed?.evidence?.result).toMatchObject({
+          status: 'success',
+          settlement: 'completed',
+          value: { artifactId: expect.any(String) }
+        })
+        const result = completed?.evidence?.result as {
+          value: { artifactId: string }
+        }
+        expect(handles.has(result.value.artifactId)).toBe(false)
+        handles.add(result.value.artifactId)
+        const recipeStep = call.evidence?.recipeStep as { revision: number }
+        revisions.add(recipeStep.revision)
+      }
+      expect(
+        record.records.some(
+          (entry) =>
+            entry.stage === 'tool_started' &&
+            entry.evidence?.tool === 'invoke_tool'
+        )
+      ).toBe(true)
+    }
+    expect(handles.size).toBe(4)
+    expect(revisions.size).toBe(1)
+    expect(
+      second.records.some(
+        (entry) =>
+          entry.stage === 'tool_started' &&
+          entry.evidence?.tool === 'submit_tool'
+      )
+    ).toBe(false)
+    expect(browser).not.toHaveBeenCalled()
+    await writeFile(
+      join(directory, 'acceptance.json'),
+      JSON.stringify(
+        {
+          first: first.requestId,
+          second: second.requestId,
+          saved,
+          complete: [first.complete, second.complete],
+          issues: [first.issues, second.issues]
+        },
+        null,
+        2
+      )
+    )
+  },
+  750_000
+)
+
 it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
   'runs the real subscription VTracer protocol without environment tools',
   async () => {

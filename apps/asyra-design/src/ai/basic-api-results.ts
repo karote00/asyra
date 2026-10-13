@@ -1,7 +1,8 @@
 import {
   toolResultObject,
   toolResultStatus,
-  toolResultIds
+  toolDocumentReference,
+  toolDocumentReferences
 } from './tool-contract'
 import type { BasicApiContract } from './basic-api-contracts'
 
@@ -164,7 +165,7 @@ export const basicApiResultSchema = (contract: BasicApiContract) => {
   if (kind === 'created-items')
     valueSchema = {
       type: 'array',
-      items: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] }
+      items: { anyOf: [toolDocumentReference, { type: 'null' }] }
     }
   else if (kind === 'boolean-items')
     valueSchema = { type: 'array', items: { type: 'boolean' } }
@@ -179,17 +180,21 @@ export const basicApiResultSchema = (contract: BasicApiContract) => {
     status: toolResultStatus,
     value: valueSchema
   }
-  if (kind === 'created-items') fields.appliedElementIds = toolResultIds
+  if (kind === 'created-items')
+    fields.appliedElementIds = toolDocumentReferences
   if (kind === 'created-items' || kind === 'boolean-items')
     fields.items = {
       type: 'array',
       items: toolResultObject({
         index: { type: 'integer', minimum: 0 },
         status: toolResultStatus,
-        value: true
+        value:
+          kind === 'created-items'
+            ? { anyOf: [toolDocumentReference, { type: 'null' }] }
+            : { type: 'boolean' }
       })
     }
-  if (kind === 'status-items') fields.reviewElementIds = toolResultIds
+  if (kind === 'status-items') fields.reviewElementIds = toolDocumentReferences
   if (kind === 'transient' || kind === 'value') {
     fields.execution = { const: 'complete' }
     fields.application = { const: kind === 'value' ? 'read-only' : 'transient' }

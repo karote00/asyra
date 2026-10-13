@@ -42,6 +42,7 @@ export const createBasicApiActions = (
         ? [contract.effect]
         : ['document']
     ),
+    composition: 'allowed',
     name: contract.name,
     description: contract.description,
     inputSchema: contract.inputSchema,

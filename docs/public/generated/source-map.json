@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "8a84d4e4092e561520cd5eca11c3ace7e2546bd17ab2d1d19684d83606c294bb"
+          "sha256": "e40c4302589f4cec3a218d22edc9de6342339ba284c782475a1660b079b0803e"
         }
       ]
     },
@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         }
       ]
     },
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -256,7 +256,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "bfd8d5127882ce8e4871c69fd4e3ad29a805841ec6320391185fc069bd2086e1"
+          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
         },
         {
           "path": "packages/core/package.json",
@@ -438,7 +438,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "8a84d4e4092e561520cd5eca11c3ace7e2546bd17ab2d1d19684d83606c294bb"
+          "sha256": "e40c4302589f4cec3a218d22edc9de6342339ba284c782475a1660b079b0803e"
         },
         {
           "path": "packages/preset/package.json",

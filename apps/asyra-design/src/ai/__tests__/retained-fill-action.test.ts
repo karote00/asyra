@@ -224,3 +224,189 @@ it.each([false, true])(
     }
   }
 )
+
+it('rejects foreign retained inputs before writing and preserves the owning request lease', async () => {
+  const queries = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => ({
+        available: true,
+        elementIds: [],
+        total: 0,
+        nextOffset: null
+      }),
+      getElementIdsInBounds: () => [],
+      getElementMetadata: (id) => ({
+        name: id,
+        type: 'rectangle',
+        lock: false
+      }),
+      getElementComputedData: () => ({ x: 10 })
+    },
+    () => vi.fn()
+  )
+  const owner = new AbortController().signal,
+    foreign = new AbortController().signal
+  const receipt = queries.read(
+    { scope: 'ids', elementIds: ['a'], fields: ['x'], delivery: 'reference' },
+    owner
+  )
+  const update = vi.fn()
+  const action = createRetainedFillAction(queries, {
+    targets,
+    metadata: () => ({ lock: false }),
+    update
+  })
+  await expect(
+    action.execute(
+      {
+        mappings: [
+          {
+            ...input.mappings[0],
+            snapshotId: receipt.snapshotId,
+            leaseId: receipt.leaseId
+          }
+        ]
+      },
+      { signal: foreign, runMutation: async (write) => write() }
+    )
+  ).rejects.toThrow('request')
+  expect(update).not.toHaveBeenCalled()
+  expect(
+    queries.get(receipt.snapshotId, receipt.leaseId, owner).orderedIds
+  ).toEqual(['a'])
+  queries.dispose()
+})
+
+it.each([false, true])(
+  'preserves borrowed query ownership with lock=%s',
+  async (locked) => {
+    const releaseLease = vi.fn()
+    const get = vi.fn(() => snapshot)
+    const action = createRetainedFillAction({ get, releaseLease } as never, {
+      targets,
+      metadata: () => ({ lock: locked }),
+      update: vi.fn()
+    })
+    const pending = action.execute(
+      { mappings: [{ ...input.mappings[0], leaseId: 'caller-lease' }] },
+      {
+        signal: new AbortController().signal
+      }
+    )
+    if (locked) await expect(pending).rejects.toThrow(/lock/)
+    else await expect(pending).resolves.toMatchObject({ appliedCount: 3 })
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(releaseLease).not.toHaveBeenCalled()
+  }
+)
+
+it('refines retained candidates into one canonical plural edit', async () => {
+  const ids = Array.from({ length: 2736 }, (_, index) => `candidate-${index}`)
+  let changed: () => void = () => {
+    throw new Error('Observer is not installed')
+  }
+  const spatial = vi.fn(() => ids)
+  const computed = vi.fn(() => ({ x: 50 }))
+  const queries = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => {
+        throw new Error('Unexpected subtree enumeration')
+      },
+      getElementIdsInBounds: spatial,
+      getElementMetadata: (id) => ({
+        name: Number(id.slice(10)) < 24 ? 'crown-roof' : 'crown-window',
+        type: 'vector'
+      }),
+      getElementComputedData: computed
+    },
+    (listener) => {
+      changed = listener
+      return () => {
+        changed = () => undefined
+      }
+    }
+  )
+  const signal = new AbortController().signal
+  try {
+    const candidate = queries.read(
+      {
+        scope: 'region',
+        bounds: { x: 0, y: 0, width: 100, height: 100 },
+        fields: ['x'],
+        delivery: 'reference'
+      },
+      signal
+    )
+    const selected = queries.read(
+      {
+        scope: 'snapshot',
+        snapshotId: candidate.snapshotId,
+        filter: { name: { equals: 'crown-roof' } },
+        expectedCount: 24,
+        delivery: 'reference'
+      },
+      signal
+    )
+    expect(selected).toMatchObject({
+      total: 24,
+      elements: [],
+      elementIds: [],
+      observation: { selectionExecutions: 0, refinementExecutions: 1 }
+    })
+    const released = vi.spyOn(queries, 'releaseLease')
+    const update = vi.fn()
+    const edit = createRetainedFillAction(queries, {
+      targets: (selectedIds) =>
+        selectedIds.map((elementId) => ({
+          elementId,
+          fillId: `fill-${elementId}`
+        })),
+      metadata: () => ({ lock: false }),
+      update
+    })
+    const args = {
+      mappings: [
+        {
+          snapshotId: selected.snapshotId,
+          leaseId: selected.leaseId,
+          coordinateSpace: 'parent-local' as const,
+          axis: 'x' as const,
+          domain: [0, 100],
+          index: 0,
+          outside: 'clamp' as const,
+          stops: [
+            { at: 0, color: '#000000' },
+            { at: 1, color: '#ffffff' }
+          ]
+        }
+      ]
+    }
+    await edit.execute(args, { signal, runMutation: async (write) => write() })
+    expect(released).not.toHaveBeenCalled()
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(
+      update.mock.calls[0][0].map(
+        (entry: { elementId: string }) => entry.elementId
+      )
+    ).toEqual(ids.slice(0, 24))
+    expect(spatial).toHaveBeenCalledTimes(1)
+    expect(computed).toHaveBeenCalledTimes(2736)
+    expect(
+      queries.get(selected.snapshotId, selected.leaseId, signal).orderedIds
+    ).toHaveLength(24)
+    changed()
+    expect(() =>
+      queries.get(selected.snapshotId, selected.leaseId, signal)
+    ).toThrow(/stale/)
+    await expect(
+      edit.execute(args, { signal, runMutation: async (write) => write() })
+    ).rejects.toThrow(/stale/)
+    expect(update).toHaveBeenCalledTimes(1)
+  } finally {
+    queries.dispose()
+  }
+})

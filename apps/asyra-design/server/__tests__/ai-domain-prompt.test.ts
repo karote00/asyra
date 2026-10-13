@@ -35,6 +35,8 @@ describe('stage-owned App guidance', () => {
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
     expect(general).toContain('Draw each coherent ready part')
     expect(general).toContain('review_prepared_design')
+    expect(general).toContain('It never calls a model')
+    expect(general).toContain('primary agent reviews actual rendered images')
     expect(general).toContain(
       'Direct known-value edits need no prepared-content review'
     )

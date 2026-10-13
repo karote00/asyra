@@ -1,3 +1,4 @@
+import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
 import { reduceAiActivity } from '../activity-state'
 import { describe, expect, it } from 'vitest'
 import { projectAiActivity, createAiActivityProjection } from '../presentation'
@@ -777,6 +778,7 @@ describe('explicit activity state machine guards', () => {
     entry: { label: 'Starting request' },
     attempt: 0,
     sequence: 0,
+    calls: {},
     failed: false
   })
 
@@ -869,6 +871,7 @@ it('does not restore approval after the user has started stopping', () => {
       entry: { label: 'Adding windows' },
       attempt: 1,
       sequence: 1,
+      calls: {},
       failed: false
     },
     { type: 'conversation', snapshot: { stopping: true } }
@@ -881,7 +884,7 @@ it('does not restore approval after the user has started stopping', () => {
   expect(lateApproval.state.entry.label).toBe('Stopping…')
 })
 
-it('shows the parent purpose after a drawing child completes instead of claiming continuous drawing', () => {
+it('retains the work subject after drawing completes with an honest processing phase', () => {
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })
@@ -945,7 +948,7 @@ it('shows the parent purpose after a drawing child completes instead of claiming
   })
   expect(projection.result().current).toEqual({
     label: 'AI processing',
-    message: 'Draw the entire building'
+    message: 'Base surfaces'
   })
 })
 
@@ -983,7 +986,7 @@ it('closes child phases with their parent and keeps an independent concurrent pu
   send('independent', undefined, true)
   expect(projection.result().current).toEqual({
     label: 'AI processing',
-    message: 'Building details'
+    message: 'Roof colors'
   })
 })
 
@@ -1028,7 +1031,7 @@ it('does not revive superseded stage commentary after a later authored operation
   })
   expect(projection.result().current).toEqual({
     label: 'AI processing',
-    message: 'Draw the entire building'
+    message: 'Building the crown and spire'
   })
 })
 
@@ -1127,5 +1130,234 @@ it('keeps newer commentary when an unchanged call purpose repeats during a phase
   expect(projection.result().current).toEqual({
     label: 'AI processing',
     message: 'Inspect the crown proportions'
+  })
+})
+
+it('keeps live child work visible when its coordinator emits a later system phase', () => {
+  const projection = createAiActivityProjection({ purpose: 'Build the tower' })
+  const send = (
+    callId: string,
+    sequence: number,
+    parentCallId?: string,
+    message?: string,
+    phase: NonNullable<
+      AiRuntimeProgressUpdate['activity']
+    >['phase'] = 'executing'
+  ) =>
+    projection.append({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Owner activity',
+      tool: 'operation',
+      toolStatus: 'running',
+      message,
+      activity: {
+        kind: message ? 'work' : 'system',
+        callId,
+        parentCallId,
+        sequence,
+        phase
+      }
+    })
+  send('parent', 1, undefined, 'Construct the building')
+  send('child', 2, 'parent', 'Window reflections', 'applying')
+  send('parent', 3)
+  expect(projection.result().current).toEqual({
+    label: 'Updating the canvas',
+    message: 'Window reflections'
+  })
+  send('child', 4, undefined, undefined, 'applying')
+  send('parent', 5)
+  expect(projection.result().current).toEqual({
+    label: 'Updating the canvas',
+    message: 'Window reflections'
+  })
+})
+
+it('shows shared purpose and a count for concurrent work without adopting the last sibling text', () => {
+  const projection = createAiActivityProjection({
+    purpose: 'Refine the building'
+  })
+  for (const [index, message] of [
+    'Check the roof',
+    'Read the windows'
+  ].entries())
+    projection.append({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Owner activity',
+      message,
+      tool: 'operation',
+      toolStatus: 'running',
+      activity: {
+        kind: 'work',
+        callId: `read-${index}`,
+        sequence: index + 1,
+        phase: 'inspecting'
+      }
+    })
+  expect(projection.result().current).toEqual({
+    label: 'Running 2 operations',
+    message: 'Refine the building'
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Completed',
+    toolStatus: 'completed',
+    activity: {
+      kind: 'system',
+      callId: 'read-1',
+      sequence: 3,
+      phase: 'inspecting'
+    }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'Checking the drawing',
+    message: 'Check the roof'
+  })
+})
+
+it('uses a common live coordinator purpose for parallel children and preserves authored revisions', () => {
+  const initial = {
+    lifecycle: 'running' as const,
+    entry: { label: 'Starting request' },
+    attempt: 0,
+    sequence: 0,
+    objective: 'Build tower',
+    calls: {},
+    failed: false
+  }
+  let state = reduceAiActivity(initial, {
+    type: 'progress',
+    update: {
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Running',
+      message: 'Build the crown',
+      activity: {
+        kind: 'work',
+        callId: 'crown',
+        sequence: 1,
+        phase: 'executing'
+      }
+    }
+  }).state
+  const purpose = state.calls.crown.purpose
+  for (const [index, id] of ['roof', 'spire'].entries()) {
+    state = reduceAiActivity(state, {
+      type: 'progress',
+      update: {
+        attempt: 1,
+        phase: 'provider',
+        summary: 'Running',
+        message: `Prepare ${id}`,
+        activity: {
+          kind: 'work',
+          callId: id,
+          parentCallId: 'crown',
+          sequence: index + 2,
+          phase: 'preparing'
+        }
+      }
+    }).state
+  }
+  expect(state.entry).toEqual({
+    label: 'Running 2 operations',
+    message: 'Build the crown'
+  })
+  state = reduceAiActivity(state, {
+    type: 'progress',
+    update: {
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Running',
+      activity: {
+        kind: 'system',
+        callId: 'crown',
+        sequence: 4,
+        phase: 'executing'
+      }
+    }
+  }).state
+  expect(state.calls.crown.purpose).toBe(purpose)
+  expect(purpose).toEqual({
+    id: 'crown',
+    scope: 'call',
+    revision: 1,
+    message: 'Build the crown'
+  })
+  expect(state.entry).toEqual({
+    label: 'Running 2 operations',
+    message: 'Build the crown'
+  })
+})
+
+it('records retained purpose separately from active execution and resets it on retry', () => {
+  const projection = createAiActivityProjection({ purpose: 'Draw a tower' })
+  const work = {
+    attempt: 1,
+    phase: 'provider' as const,
+    summary: 'Observed phase',
+    tool: 'apply_prepared_design',
+    message: 'Window reflections',
+    toolStatus: 'running' as const,
+    activity: {
+      kind: 'work' as const,
+      callId: 'windows',
+      sequence: 1,
+      phase: 'applying' as const
+    }
+  }
+  projection.append(work)
+  const decision = projection.append({
+    ...work,
+    message: undefined,
+    toolStatus: 'completed',
+    activity: { ...work.activity, kind: 'system', sequence: 2 }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Window reflections'
+  })
+  expect(decision).toMatchObject({
+    phaseLabel: 'AI processing',
+    activeCallCount: 0,
+    purposeSource: 'retained-segment',
+    purpose: { id: 'windows', revision: 1, scope: 'call' }
+  })
+  projection.append({
+    attempt: 1,
+    phase: 'provider',
+    summary: 'Provider processing'
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Window reflections'
+  })
+  projection.append({
+    ...work,
+    message: 'Late wrong subject',
+    activity: { ...work.activity, sequence: 3 }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Window reflections'
+  })
+  projection.append({
+    attempt: 2,
+    phase: 'provider',
+    summary: 'Retrying',
+    activity: {
+      kind: 'system',
+      callId: 'retry',
+      scope: 'request',
+      sequence: 4,
+      phase: 'provider'
+    }
+  })
+  expect(projection.result().current).toEqual({
+    label: 'AI processing',
+    message: 'Draw a tower'
   })
 })

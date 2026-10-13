@@ -3,10 +3,12 @@ import type { Rect } from '@asyra/utils'
 
 export interface DesignContextQuery {
   scope: 'selection' | 'children' | 'ids' | 'region'
+  expectedCount?: number
   allMatches?: boolean
   result?: 'elements' | 'ids'
   bounds?: Rect
   filter?: {
+    name?: { equals?: string; prefix?: string; suffix?: string }
     type?: string
     parentId?: string
     ancestorId?: string
@@ -47,6 +49,85 @@ export interface DesignContextSource {
     fields: readonly string[]
   ): Record<string, unknown> | undefined
 }
+export const validateDesignContextFilter = (
+  filter: DesignContextQuery['filter']
+) => {
+  if (filter === undefined) return
+  if (!filter || typeof filter !== 'object' || Array.isArray(filter))
+    throw new Error('Invalid context filter.')
+  for (const [key, value] of Object.entries(filter)) {
+    if (key === 'name') {
+      if (
+        !value ||
+        typeof value !== 'object' ||
+        Array.isArray(value) ||
+        !Object.keys(value).length ||
+        Object.entries(value).some(
+          ([field, text]) =>
+            !['equals', 'prefix', 'suffix'].includes(field) ||
+            typeof text !== 'string' ||
+            !text.length ||
+            text.length > 256
+        )
+      )
+        throw new Error('Invalid name filter.')
+    } else if (
+      key === 'locked'
+        ? typeof value !== 'boolean'
+        : !['type', 'parentId', 'ancestorId'].includes(key) ||
+          typeof value !== 'string' ||
+          !value.length ||
+          value.length > 256
+    )
+      throw new Error('Invalid context filter.')
+  }
+}
+
+export const assertDesignContextCount = (actual: number, expected?: number) => {
+  if (
+    expected !== undefined &&
+    (!Number.isSafeInteger(expected) || expected < 0 || actual !== expected)
+  )
+    throw new Error(
+      `Context match count ${actual} does not satisfy expectedCount ${expected}.`
+    )
+}
+
+/** Canonical metadata predicates shared by spatial queries and retained refinements. */
+export const matchesDesignContextFilter = (
+  id: string,
+  filter: DesignContextQuery['filter'],
+  readMetadata: DesignContextSource['getElementMetadata']
+) => {
+  const data = readMetadata(id)
+  if (!data) return false
+  if (filter?.type !== undefined && data.type !== filter.type) return false
+  if (filter?.parentId !== undefined && data.parentId !== filter.parentId)
+    return false
+  if (filter?.locked !== undefined && (data.lock === true) !== filter.locked)
+    return false
+  const name = filter?.name
+  if (
+    name &&
+    (typeof data.name !== 'string' ||
+      (name.equals !== undefined && data.name !== name.equals) ||
+      (name.prefix !== undefined && !data.name.startsWith(name.prefix)) ||
+      (name.suffix !== undefined && !data.name.endsWith(name.suffix)))
+  )
+    return false
+  if (filter?.ancestorId !== undefined) {
+    let parent = data.parentId
+    const visited = new Set<string>()
+    while (typeof parent === 'string' && parent && !visited.has(parent)) {
+      if (parent === filter.ancestorId) return true
+      visited.add(parent)
+      parent = readMetadata(parent)?.parentId
+    }
+    return false
+  }
+  return true
+}
+
 export const designContextPageLimit = 200
 
 export const designContextFields = Object.freeze([
@@ -85,7 +166,8 @@ export const createDesignContextReader =
             'bounds',
             'filter',
             'result',
-            'allMatches'
+            'allMatches',
+            'expectedCount'
           ].includes(key)
       ) ||
       !['selection', 'children', 'ids', 'region'].includes(query.scope) ||
@@ -144,21 +226,7 @@ export const createDesignContextReader =
         throw new Error(
           'Region requires finite workspace bounds with nonnegative dimensions.'
         )
-      if (
-        query.filter !== undefined &&
-        (!query.filter ||
-          typeof query.filter !== 'object' ||
-          Array.isArray(query.filter) ||
-          Object.entries(query.filter).some(([key, value]) =>
-            key === 'locked'
-              ? typeof value !== 'boolean'
-              : !['type', 'parentId', 'ancestorId'].includes(key) ||
-                typeof value !== 'string' ||
-                !value.length ||
-                value.length > 256
-          ))
-      )
-        throw new Error('Invalid region filter.')
+      validateDesignContextFilter(query.filter)
     } else if (query.bounds !== undefined || query.filter !== undefined)
       throw new Error('Region bounds and filters require scope=region.')
     const metadata = new Map<
@@ -197,33 +265,14 @@ export const createDesignContextReader =
     else if (query.scope === 'selection') ids = source.getSelectedElementIds()
     else if (query.scope === 'children') ids = childPage?.elementIds ?? []
     else
-      ids = source.getElementIdsInBounds(query.bounds as Rect).filter((id) => {
-        const data = readMetadata(id)
-        if (!data) return false
-        const filter = query.filter
-        if (filter?.type !== undefined && data.type !== filter.type)
-          return false
-        if (filter?.parentId !== undefined && data.parentId !== filter.parentId)
-          return false
-        if (
-          filter?.locked !== undefined &&
-          (data.lock === true) !== filter.locked
+      ids = source
+        .getElementIdsInBounds(query.bounds as Rect)
+        .filter((id) =>
+          matchesDesignContextFilter(id, query.filter, readMetadata)
         )
-          return false
-        if (filter?.ancestorId !== undefined) {
-          let parent = data.parentId
-          const visited = new Set<string>()
-          while (typeof parent === 'string' && parent && !visited.has(parent)) {
-            if (parent === filter.ancestorId) return true
-            visited.add(parent)
-            parent = readMetadata(parent)?.parentId
-          }
-          return false
-        }
-        return true
-      })
     if (query.allMatches === true) limit = Math.max(ids.length, 1)
     const total = childPage?.total ?? ids.length
+    assertDesignContextCount(total, query.expectedCount)
     const pageIds =
       query.scope === 'children' ? ids : ids.slice(offset, offset + limit)
     const missingIds: string[] = []

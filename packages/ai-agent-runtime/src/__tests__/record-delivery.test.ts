@@ -35,7 +35,29 @@ const harness = () => {
 
 const memoryOutbox = () => {
   const entries = new Map<string, ExecutionRecord[]>()
+  const gaps = new Map<
+    string,
+    | {
+        requestId: string
+        fromSequence: number
+        throughSequence: number
+        stage: 'capture' | 'storage' | 'mixed'
+      }
+    | undefined
+  >()
   return {
+    reserve: async (requestId: string) => {
+      if (!gaps.has(requestId)) gaps.set(requestId, undefined)
+    },
+    recordGap: async (gap: {
+      requestId: string
+      fromSequence: number
+      throughSequence: number
+      stage: 'capture' | 'storage' | 'mixed'
+    }) => {
+      gaps.set(gap.requestId, gap)
+    },
+    gap: async (requestId: string) => gaps.get(requestId),
     append: async (value: ExecutionRecord) => {
       const records = entries.get(value.requestId) ?? []
       records[value.sequence] = structuredClone(value)
@@ -45,8 +67,9 @@ const memoryOutbox = () => {
       structuredClone((entries.get(requestId) ?? []).slice(from, from + limit)),
     remove: async (requestId: string) => {
       entries.delete(requestId)
+      gaps.delete(requestId)
     },
-    requests: async () => [...entries.keys()]
+    requests: async () => [...new Set([...entries.keys(), ...gaps.keys()])]
   }
 }
 
@@ -356,3 +379,107 @@ it('does not recover a producer admitted while persisted requests are being enum
   expect(sent).toEqual([0])
   await host.dispose()
 })
+
+it('retains a durable storage gap and refuses completion after restarting delivery', async () => {
+  const outbox = memoryOutbox()
+  const append = outbox.append
+  outbox.append = async (value) => {
+    if (value.sequence === 1) throw new Error('quota exceeded')
+    await append(value)
+  }
+  const send = vi.fn(async () => ({
+    requestId: 'request-a',
+    acknowledgedSequence: 2,
+    complete: true
+  }))
+  const sink = createRecordDeliverySink({ outbox, send })
+  sink.write(record(0, 'ai_request_started'))
+  sink.write(record(1))
+  sink.write(record(2, 'ai_request_usage'))
+  expect(await sink.flush()).toMatchObject({ status: 'failed' })
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 1,
+    throughSequence: 1,
+    stage: 'storage'
+  })
+  const onIssue = vi.fn()
+  expect(await recoverRecordDelivery({ outbox, send, onIssue })).toEqual({
+    complete: false
+  })
+  expect(onIssue).toHaveBeenCalledWith(
+    expect.objectContaining({
+      fromSequence: 1,
+      throughSequence: 1,
+      reason: expect.stringContaining('gap')
+    })
+  )
+  expect(send).not.toHaveBeenCalled()
+})
+
+it('reserves control capacity for a first-record capture refusal', async () => {
+  const outbox = memoryOutbox()
+  const sink = createRecordDeliverySink({
+    outbox,
+    maxPendingBytes: 1,
+    send: async () => {
+      throw new Error('No send')
+    }
+  })
+  expect(() => sink.write(record(0, 'ai_request_started'))).toThrow('capacity')
+  expect(await sink.flush()).toMatchObject({ status: 'failed' })
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 0,
+    throughSequence: 0,
+    stage: 'capture'
+  })
+  expect(await outbox.requests()).toEqual(['request-a'])
+})
+
+it('coalesces a burst of refused captures into bounded control work', async () => {
+  const outbox = memoryOutbox()
+  outbox.reserve = vi.fn(outbox.reserve)
+  outbox.recordGap = vi.fn(outbox.recordGap)
+  const sink = createRecordDeliverySink({
+    outbox,
+    maxPendingBytes: 1,
+    send: async () => {
+      throw new Error('No send')
+    }
+  })
+  for (let sequence = 0; sequence < 100; sequence++)
+    expect(() => sink.write(record(sequence))).toThrow('capacity')
+  await sink.flush()
+  expect(outbox.reserve).toHaveBeenCalledOnce()
+  expect(outbox.recordGap).toHaveBeenCalledOnce()
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 0,
+    throughSequence: 99
+  })
+})
+
+it.each(['reserve', 'recordGap'] as const)(
+  'reports failure of %s without claiming lossless recovery',
+  async (method) => {
+    const outbox = memoryOutbox()
+    outbox[method] = async () => {
+      throw new Error('Quota exceeded')
+    }
+    const onIssue = vi.fn()
+    const sink = createRecordDeliverySink({
+      outbox,
+      onIssue,
+      maxPendingBytes: 1,
+      send: async () => {
+        throw new Error('No send')
+      }
+    })
+    expect(() => sink.write(record(0))).toThrow('capacity')
+    expect(await sink.flush()).toMatchObject({ status: 'failed' })
+    expect(onIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stage: 'storage',
+        reason: expect.stringContaining('Gap metadata could not be persisted')
+      })
+    )
+  }
+)

@@ -3,6 +3,7 @@ import {
   deliverRecordOutbox,
   recordDeliveryReason,
   reportRecordDeliveryIssue,
+  type ExecutionRecordGap,
   type ExecutionRecordDeliveryOptions
 } from './record-outbox.js'
 
@@ -25,12 +26,62 @@ export const createRecordDeliverySink = (
   let storage = Promise.resolve()
   let delivery = Promise.resolve()
   let scheduled = false
+  let reservation: Promise<void> | undefined
+  const reserve = (id: string) => (reservation ??= options.outbox.reserve(id))
+  let lost: ExecutionRecordGap | undefined
+  let savingGap = false
+  const drainStorage = async () => {
+    for (;;) {
+      const current = storage
+      await current
+      if (current === storage) return
+    }
+  }
+  const retainGap = (record: ExecutionRecord, stage: 'capture' | 'storage') => {
+    if (requestId && record.requestId !== requestId) return
+    requestId ??= record.requestId
+    lost = {
+      requestId,
+      fromSequence: Math.min(
+        lost?.fromSequence ?? record.sequence,
+        record.sequence
+      ),
+      throughSequence: Math.max(
+        lost?.throughSequence ?? record.sequence,
+        record.sequence
+      ),
+      stage: lost && lost.stage !== stage ? 'mixed' : stage
+    }
+    if (savingGap) return
+    savingGap = true
+    storage = storage.then(async () => {
+      try {
+        for (;;) {
+          const gap = lost
+          if (!gap) return
+          await reserve(gap.requestId)
+          await options.outbox.recordGap(gap)
+          if (gap === lost) return
+        }
+      } catch (error) {
+        reportRecordDeliveryIssue(options, {
+          requestId,
+          stage: 'storage',
+          reason: `Gap metadata could not be persisted: ${recordDeliveryReason(error)}`,
+          fromSequence: lost?.fromSequence,
+          throughSequence: lost?.throughSequence
+        })
+      } finally {
+        savingGap = false
+      }
+    })
+  }
   const schedule = () => {
     if (scheduled || suspended || complete) return
     scheduled = true
     delivery = delivery.then(async () => {
       try {
-        await storage
+        await drainStorage()
         if (!requestId || captureFailed) return
         const receipt = await deliverRecordOutbox(
           options,
@@ -46,7 +97,7 @@ export const createRecordDeliverySink = (
     })
   }
   const resume = async () => {
-    await storage
+    await drainStorage()
     await delivery
     if (!complete && !captureFailed && requestId) {
       suspended = false
@@ -70,6 +121,7 @@ export const createRecordDeliverySink = (
         (requestId && requestId !== record.requestId)
       ) {
         captureFailed = true
+        retainGap(record, 'capture')
         reportRecordDeliveryIssue(options, {
           requestId,
           stage: 'capture',
@@ -84,9 +136,11 @@ export const createRecordDeliverySink = (
       const snapshot = JSON.parse(serialized) as ExecutionRecord
       storage = storage.then(async () => {
         try {
+          await reserve(snapshot.requestId)
           await options.outbox.append(snapshot)
         } catch (error) {
           captureFailed = true
+          retainGap(snapshot, 'storage')
           reportRecordDeliveryIssue(options, {
             requestId,
             stage: 'storage',

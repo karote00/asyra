@@ -1,11 +1,25 @@
-import { AiToolContractError } from '@asyra/ai-agent-runtime'
+import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
+  AiJsonValue,
   AiToolContractInput,
   AiToolOutcome
 } from '@asyra/ai-agent-runtime'
 
 export const toolResultString = { type: 'string', minLength: 1 }
+export const toolRequestReference = {
+  ...toolResultString,
+  maxLength: 160,
+  'x-runtime-value': 'request'
+}
+export const toolDocumentReference = {
+  ...toolResultString,
+  'x-runtime-value': 'document'
+}
+export const toolDocumentReferences = {
+  type: 'array',
+  items: toolDocumentReference
+}
 export const toolResultIds = { type: 'array', items: toolResultString }
 export const toolResultCount = { type: 'integer', minimum: 0 }
 export const toolResultBoolean = { type: 'boolean' }
@@ -32,12 +46,18 @@ export const toolSemantics = (
   output: AiToolContractInput['lifecycle']['output'] = 'value'
 ): Pick<
   AiToolContractInput,
-  'revision' | 'outputSchema' | 'effect' | 'resources' | 'lifecycle'
+  | 'revision'
+  | 'outputSchema'
+  | 'partialOutputSchema'
+  | 'effect'
+  | 'resources'
+  | 'lifecycle'
 > => ({
-  revision: 1,
-  outputSchema: {
+  revision: 2,
+  outputSchema,
+  partialOutputSchema: {
     anyOf: [
-      outputSchema,
+      embedAiToolSchema(outputSchema as AiJsonValue, '#/anyOf/0'),
       toolResultObject({
         available: { const: false },
         recoverable: { const: true },
@@ -150,6 +170,10 @@ const actionEffects: Record<
     resources: ['document']
   },
   [AiActionNames.REVIEW_DESIGN]: { effect: 'read', resources: ['document'] },
+  [AiActionNames.READ_DESIGN_ATTACHMENT]: {
+    effect: 'read',
+    resources: ['document']
+  },
   [AiActionNames.READ_DESIGN_CONTEXT]: {
     effect: 'read',
     resources: ['document']
@@ -157,6 +181,10 @@ const actionEffects: Record<
   [AiActionNames.APPLY_PREPARED_DESIGN]: {
     effect: 'mutation',
     resources: ['document']
+  },
+  [AiActionNames.RELEASE_DESIGN_CONTEXT]: {
+    effect: 'prepare',
+    resources: ['request']
   },
   [AiActionNames.MAP_RETAINED_FILLS]: {
     effect: 'mutation',

@@ -10,7 +10,9 @@
     "admit.handoff",
     "register.handoff",
     "invoke.handoff",
-    "persist.handoff"
+    "persist.handoff",
+    "invoke.iteration",
+    "persist.iteration"
   ],
   "externalInputs": [],
   "flows": [
@@ -18,7 +20,12 @@
       "id": "reusable-tool-lifecycle",
       "title": "Reusable tool lifecycle",
       "goal": "Verify typed admission, same-registry request visibility, secured invocation and durable reuse.",
-      "stepIds": ["admit", "register", "invoke", "persist"],
+      "stepIds": [
+        "admit",
+        "register",
+        "invoke",
+        "persist"
+      ],
       "cases": [
         {
           "id": "admit.handoff",
@@ -58,38 +65,76 @@
             "packages/ai-agent-runtime/src/tool-library.ts",
             "packages/ai-agent-runtime/src/action-registry.ts"
           ]
+        },
+        {
+          "id": "admit.iteration",
+          "stepId": "admit",
+          "testName": "recipe proof admits bounded state repair only from domain verification contracts"
+        },
+        {
+          "id": "invoke.iteration",
+          "stepId": "invoke",
+          "testName": "recipe proof repairs once per unresolved state and returns actual stopped progress"
+        },
+        {
+          "id": "register.iteration",
+          "stepId": "register",
+          "testName": "recipe proof refuses nested repair expansion before publishing the candidate"
+        },
+        {
+          "id": "persist.iteration",
+          "stepId": "persist",
+          "testName": "recipe proof saves and reloads the complete bounded iteration without replay"
+        },
+        {
+          "id": "persist.iteration-resume",
+          "stepId": "persist",
+          "testName": "resumes a bounded candidate privately without executing or losing its iteration"
         }
       ],
       "handoffs": [
         {
           "routeId": "admit-to-register",
           "decision": "required",
-          "caseIds": ["register.handoff"]
+          "caseIds": [
+            "register.handoff"
+          ]
         },
         {
           "routeId": "admit-to-persist",
           "decision": "required",
-          "caseIds": ["persist.handoff"]
+          "caseIds": [
+            "persist.handoff"
+          ]
         },
         {
           "routeId": "register-to-invoke",
           "decision": "required",
-          "caseIds": ["invoke.handoff"]
+          "caseIds": [
+            "invoke.handoff"
+          ]
         },
         {
           "routeId": "register-to-persist",
           "decision": "required",
-          "caseIds": ["persist.handoff"]
+          "caseIds": [
+            "persist.handoff"
+          ]
         },
         {
           "routeId": "invoke-to-persist",
           "decision": "required",
-          "caseIds": ["persist.handoff"]
+          "caseIds": [
+            "persist.handoff"
+          ]
         },
         {
           "routeId": "persist-to-admit",
           "decision": "required",
-          "caseIds": ["persist.handoff"]
+          "caseIds": [
+            "persist.handoff",
+            "persist.iteration-resume"
+          ]
         }
       ]
     }
@@ -104,7 +149,9 @@
     {
       "id": "allow-control-plane",
       "title": "Allow a control-plane dependency",
-      "expectedFailedCaseIds": ["admit.handoff"],
+      "expectedFailedCaseIds": [
+        "admit.handoff"
+      ],
       "mutation": {
         "file": "packages/ai-agent-runtime/src/recipe-admission.ts",
         "from": "contract.composition !== 'allowed'",
@@ -112,33 +159,16 @@
       }
     },
     {
-      "id": "copy-registration-receipt",
-      "title": "Lose registration receipt identity",
-      "expectedFailedCaseIds": ["register.handoff"],
-      "mutation": {
-        "file": "packages/ai-agent-runtime/src/tool-library.ts",
-        "from": "return previous.result",
-        "to": "return { ...previous.result }"
-      }
-    },
-    {
-      "id": "omit-invocation-calls",
-      "title": "Omit invocation call inventory",
-      "expectedFailedCaseIds": ["invoke.handoff"],
+      "id": "ignore-repair-budget",
+      "title": "Ignore bounded repair round limit",
+      "expectedFailedCaseIds": [
+        "invoke.iteration",
+        "persist.iteration"
+      ],
       "mutation": {
         "file": "packages/ai-agent-runtime/src/recipe-execution.ts",
-        "from": "calls: Object.freeze(records.slice(start))",
-        "to": "calls: Object.freeze([])"
-      }
-    },
-    {
-      "id": "omit-reload-name",
-      "title": "Omit reloaded tool identity",
-      "expectedFailedCaseIds": ["persist.handoff"],
-      "mutation": {
-        "file": "packages/ai-agent-runtime/src/tool-store.ts",
-        "from": "loaded.push(record.contract.name)",
-        "to": "loaded.push('')"
+        "from": "if (round >= iteration.maxIterations)",
+        "to": "if (false)"
       }
     }
   ]

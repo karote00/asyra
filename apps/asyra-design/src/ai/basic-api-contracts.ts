@@ -1,3 +1,4 @@
+import { toolDocumentReference } from './tool-contract'
 /** Data-only contracts shared by native tool admission and browser API adapters.
  * Names identify existing public methods; no geometry implementation lives here.
  */
@@ -51,6 +52,7 @@ export interface BasicApiContract {
   inputSchema: Record<string, unknown>
 }
 export const apiString = { type: 'string', minLength: 1 }
+export const apiId = toolDocumentReference
 export const apiNumber = { type: 'number' }
 export const apiBoolean = { type: 'boolean' }
 export const apiObject = (
@@ -64,7 +66,7 @@ export const apiObject = (
 })
 export const apiArray = (items: unknown) => ({ type: 'array', items })
 export const apiPosition = apiObject({ x: apiNumber, y: apiNumber })
-export const apiIds = apiArray(apiString)
+export const apiIds = apiArray(apiId)
 export const apiRecord = { type: 'object', additionalProperties: true }
 /** Declaration order is the public method's positional argument order. */
 export interface BasicApiParameterDefinition {

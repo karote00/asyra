@@ -1,8 +1,54 @@
-import type { ExecutionRecordOutbox } from '@asyra/ai-agent-runtime'
+import type {
+  ExecutionRecordGap,
+  ExecutionRecordOutbox
+} from '@asyra/ai-agent-runtime'
 
 const databaseName = 'execution-record-outbox'
 const recordsStore = 'records'
 const requestIndex = 'request-id'
+
+const controlSequence = -1
+const controlReserveBytes = 512
+type StoredGap = Omit<ExecutionRecordGap, 'requestId'>
+interface RecordControl {
+  requestId: string
+  sequence: typeof controlSequence
+  control: 'recording-gap'
+  gap: StoredGap | null
+  padding: string
+}
+const validGap = (gap: StoredGap): boolean =>
+  !!gap &&
+  Number.isSafeInteger(gap.fromSequence) &&
+  gap.fromSequence >= 0 &&
+  Number.isSafeInteger(gap.throughSequence) &&
+  gap.throughSequence >= gap.fromSequence &&
+  ['capture', 'storage', 'mixed'].includes(gap.stage)
+const controlRecord = (
+  requestId: string,
+  gap: StoredGap | null
+): RecordControl => ({
+  requestId,
+  sequence: controlSequence,
+  control: 'recording-gap',
+  gap,
+  padding: ' '.repeat(controlReserveBytes - JSON.stringify(gap).length)
+})
+const readControl = (
+  value: RecordControl | undefined,
+  requestId: string
+): RecordControl | undefined => {
+  if (
+    value &&
+    (value.control !== 'recording-gap' ||
+      value.requestId !== requestId ||
+      value.sequence !== controlSequence ||
+      typeof value.padding !== 'string' ||
+      (value.gap !== null && !validGap(value.gap)))
+  )
+    throw new Error('Invalid recording control')
+  return value
+}
 
 /** Diagnostics use their own database and never enter document persistence. */
 export const createBrowserRecordOutbox = (
@@ -91,16 +137,71 @@ export const createBrowserRecordOutbox = (
       [requestId, fromSequence],
       [requestId, Number.MAX_SAFE_INTEGER]
     )
+  const control = <T>(
+    requestId: string,
+    mode: IDBTransactionMode,
+    work: (
+      value: RecordControl | undefined,
+      store: IDBObjectStore,
+      set: (value: T) => void
+    ) => void
+  ) =>
+    transact<T>(mode, (store, set) => {
+      const request = store.get([requestId, controlSequence])
+      request.onsuccess = () => {
+        try {
+          work(readControl(request.result, requestId), store, set)
+        } catch {
+          store.transaction.abort()
+        }
+      }
+    })
   return {
-    append: (record) =>
-      transact<undefined>('readwrite', (store) => {
-        store.add(record)
+    reserve: (requestId) =>
+      control<undefined>(requestId, 'readwrite', (value, store) => {
+        if (!value) store.add(controlRecord(requestId, null))
       }),
-    read: (requestId, fromSequence, limit) =>
-      transact('readonly', (store, set) => {
+    recordGap: ({ requestId, ...gap }) =>
+      control<undefined>(requestId, 'readwrite', (value, store) => {
+        if (!value || !validGap(gap))
+          throw new Error('Missing reservation or invalid gap')
+        const previous = value.gap
+        const merged: StoredGap = previous
+          ? {
+              fromSequence: Math.min(previous.fromSequence, gap.fromSequence),
+              throughSequence: Math.max(
+                previous.throughSequence,
+                gap.throughSequence
+              ),
+              stage: previous.stage === gap.stage ? gap.stage : 'mixed'
+            }
+          : gap
+        store.put(controlRecord(requestId, merged))
+      }),
+    gap: (requestId) =>
+      control(requestId, 'readonly', (value, _store, set) => {
+        set(value?.gap ? { requestId, ...value.gap } : undefined)
+      }),
+    append: (record) => {
+      if (!Number.isSafeInteger(record.sequence) || record.sequence < 0)
+        return Promise.reject(new Error('Invalid payload sequence'))
+      return transact<undefined>('readwrite', (store) => {
+        store.add(record)
+      })
+    },
+    read: (requestId, fromSequence, limit) => {
+      if (
+        !Number.isSafeInteger(fromSequence) ||
+        fromSequence < 0 ||
+        !Number.isSafeInteger(limit) ||
+        limit < 1
+      )
+        return Promise.reject(new Error('Invalid payload sequence or limit'))
+      return transact('readonly', (store, set) => {
         const request = store.getAll(range(requestId, fromSequence), limit)
         request.onsuccess = () => set(request.result)
-      }),
+      })
+    },
     requests: () =>
       transact('readonly', (store, set) => {
         const ids: string[] = []
@@ -120,6 +221,7 @@ export const createBrowserRecordOutbox = (
     remove: (requestId) =>
       transact<undefined>('readwrite', (store) => {
         store.delete(range(requestId))
+        store.delete([requestId, controlSequence])
       }),
     async close() {
       closed = true

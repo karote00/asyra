@@ -1343,6 +1343,8 @@ it('retains owner phase correlation, source work and definition delivery scope w
     usage.trace('tool_completed', {
       tool: 'prepare_design',
       callId: 'prepare',
+      revision: 2,
+      recipeStep: { name: 'facade', revision: 3, id: 'windows', iteration: 2 },
       result: {
         sourceWork: {
           batches: 4,
@@ -1364,6 +1366,10 @@ it('retains owner phase correlation, source work and definition delivery scope w
     })
     const result = records.find((entry) => entry.stage === 'tool_completed')
       ?.evidence as Record<string, unknown>
+    expect(result).toMatchObject({
+      revision: 2,
+      recipeStep: { name: 'facade', revision: 3, id: 'windows', iteration: 2 }
+    })
     expect(result.result).toMatchObject({
       sourceWork: { projectionCalls: 4, pathCommands: 20, batches: 4 },
       definition: { requestedCoverage: 'partial', availableInResponse: false }

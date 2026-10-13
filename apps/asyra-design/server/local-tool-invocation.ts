@@ -2,6 +2,8 @@ import {
   createAiInvoker,
   createAiToolContract,
   inspectAiToolResult,
+  selectAiToolResultSchema,
+  type AiJsonValue,
   type AiToolContractInput,
   type AiToolOutcome
 } from '@asyra/ai-agent-runtime'
@@ -10,11 +12,39 @@ import { BrowserBatchExecutionError } from './batch-exchange'
 import { operationInputIssue } from './operation-input-schema'
 import { designActionOutcome } from '../src/ai/tool-contract'
 
-export interface LocalToolDefinition extends AiToolContractInput {}
+export interface LocalToolDefinition extends AiToolContractInput {
+  /** Registry-only operations remain available to typed recipes without native function expansion. */
+  readonly providerExposure?: 'registry'
+}
+
+const validatedOutputSchemas = new WeakMap<
+  object,
+  { schema: AiJsonValue; text: string }
+>()
+/** Reuse completed boundary validation without trusting reconstructed JSON receipts. */
+export const localToolResultSchema = (reply: {
+  text: string
+}): AiJsonValue | undefined => {
+  const validated = validatedOutputSchemas.get(reply)
+  return validated?.text === reply.text ? validated.schema : undefined
+}
 
 /** All owners share the same invocation and failure policy. */
 export interface LocalToolOwner {
   call(name: string, args: unknown, signal: AbortSignal): Promise<string>
+  /** Control wrappers project the pinned selected contract for reference ownership. */
+  invocationSchemas?(
+    name: string,
+    args: unknown
+  ):
+    | Pick<
+        LocalToolDefinition,
+        | 'inputSchema'
+        | 'outputSchema'
+        | 'partialOutputSchema'
+        | 'recoveryOutputSchema'
+      >
+    | undefined
   /** Bounded diagnostics only; called after rejection, never executes a tool. */
   rejectInput?(name: string, args: unknown): Record<string, unknown> | undefined
   /** Validate successful domain output, including required retained identities. */
@@ -237,10 +267,17 @@ export const invokeLocalTool = async (
       validate: operationInputIssue
     })
     if (inspected.status === 'invalid') throw new Error(inspected.issue)
-    return {
+    const reply = {
       success: toolOutcome.status === 'success',
       text: JSON.stringify({ ...value, toolOutcome })
     }
+    const outputSchema = selectAiToolResultSchema(contract, toolOutcome.status)
+    if (outputSchema !== undefined)
+      validatedOutputSchemas.set(reply, {
+        schema: outputSchema,
+        text: reply.text
+      })
+    return reply
   } catch (error) {
     signal.throwIfAborted()
     const inputFailure = error instanceof LocalToolInputError

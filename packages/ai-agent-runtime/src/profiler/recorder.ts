@@ -63,6 +63,8 @@ const evidenceKeys = new Set([
   'targetSequence',
   'snapshotId',
   'revision',
+  'recipeStep',
+  'iteration',
   'reused',
   'coordinateSpace',
   'selectionExecutions',

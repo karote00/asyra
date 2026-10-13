@@ -83,6 +83,20 @@ const setup = () => {
   }
 }
 
+it('does not admit a stopped receipt as a successful compound result', () => {
+  const { workflow } = setup()
+  expect(
+    operationInputIssue(
+      {
+        failedStep: 'prepare_design',
+        completedSteps: [],
+        artifactId: 'repair'
+      },
+      workflow.definitions[0].outputSchema
+    )
+  ).toBeDefined()
+})
+
 it('preserves unknown application settlement across an ordered part boundary without replay', async () => {
   const { workflow, execute } = setup()
   execute.mockResolvedValueOnce({
