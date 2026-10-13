@@ -1,5 +1,6 @@
 import {
   toolResultBoolean,
+  toolDocumentReference,
   toolResultCount,
   toolResultIds,
   toolResultObject,
@@ -60,7 +61,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 3,
+  revision: 4,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -73,7 +74,7 @@ export const createDesignReviewAction = (
     type: 'object',
     additionalProperties: false,
     required: ['elementId'],
-    properties: { elementId: { type: 'string', minLength: 1, maxLength: 256 } }
+    properties: { elementId: { ...toolDocumentReference, maxLength: 256 } }
   },
   execute: async ({ elementId }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')

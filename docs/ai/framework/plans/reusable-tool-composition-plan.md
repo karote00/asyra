@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 3 COMPLETE - review Stage 4 before its goal and implementation.
+Status: STAGE 4 COMPLETE - review Stage 5 before its goal and implementation.
 
 ## Current authority and stop boundary
 
@@ -1666,3 +1666,89 @@ recovery (29 obligations), source digest
 `a437fe64b93c6d3c684419d889874cf000ba921f1f30fef9ec69802fb4b0d229`,
 `tmp/stage3-closure-proof.log`. Negative scenario failures are expected proof,
 not failing ordinary tests. Stage 3 is ready for its authorized push.
+
+## Stage 4 - admitted mechanical repair
+
+### Plan review and owner execution card
+
+Owner: compose-to-inspect route in `ai-execution-flow-inspector.data.cjs`, using
+Runtime's existing admitted finite iteration. Product contract: Mechanical
+verification in reusable tasks and Canonical mutation inspection scope. Inspect
+owns geometry findings; canonical position operations own writes; Runtime owns
+bounded execution; the primary agent supplies the explicit permitted correction.
+
+The mechanism already exists. The missing proof is a real domain finding passing
+through its actual action schema, host registration, recipe admission, invocation
+and recheck. Begin with a child extending beyond an unrotated container. Use
+`createDesignReviewer` and `createDesignReviewAction`, the registered position
+operation, the real common host/library and its ordinary dispatcher. A minimal
+in-memory geometry owner supplies positions; do not stub the verification verdict
+or implement another checker/interpreter. The explicitly authored repair moves the
+child inside the container. Check that initial preparation is never replayed.
+
+Inputs: current target ID, explicit allowed position and finite recipe. Outputs:
+existing Runtime success/partial/recovery envelope, acknowledged calls and actual
+mechanical verdict. A mechanical pass does not authorize visual completion.
+Unsupported geometry returns decision-required; repeated findings stop without
+another write; cancellation stops successors; partial mutation does not become a
+pass or eligible save. The coordinator holds no leaf barrier while awaiting a
+child. No model/provider is constructed by the harness or check owner.
+
+Allowed slice: existing `local-tool-operation-composition.test.ts`, review action,
+reviewer and their immediate contract adapters only if the new proof exposes a
+mismatch. Runtime iteration changes require their own bounded owner card and
+regression first. No automatic geometry guessing, extra evaluator, new registry,
+state machine, retry, persistence format or larger limit.
+
+Self-review: Stage 1 automatic checks may run after the repair before the explicit
+iteration recheck; this is supported and must not be confused with repeated
+mutation. Stage 2 store retains dependency-current results. Stage 3 receipt and
+scope rules remain authoritative. No-continuation outcomes return to Stage 5;
+Stage 4 does not implement a program counter or replay initial steps. Add permanent
+integration cases, run focused Runtime iteration/admission tests plus affected
+App tests, production tsc and lint/naming. Review actual calls, not only status.
+When those pass, push and close this stage before starting Stage 5.
+
+### Stage 4 admission audit correction
+
+Before changing production, repeated fixture admission failures were separated
+from the owner defect. Saved recipes must use closed portable input schemas and
+current input bindings for document data; open property maps are passed as typed
+input values, not undeclared object-construction keys. Those safeguards remain.
+The corrected input then exposed a real contract mismatch: review_design's target
+was declared as an ordinary string, while its upstream document identity is a
+`document` runtime value. Runtime correctly refuses the lost lifetime annotation.
+The inspect action must declare the existing document-reference schema, preserving
+its length bound, and bump its revision. Add the failing real-host admission test
+as the regression; update direct current-contract consumers, never accept both
+old and new revisions. This is the first incorrect canonical owner boundary;
+Runtime compatibility and admission rules stay unchanged.
+
+### Stage 4 closure
+
+The actual reviewer finds container overflow, and the explicit canonical property
+operation corrects the position through the real host and finite interpreter.
+The recipe obtains metadata once, checks, repairs once and rechecks; it never
+replays the initial step. Current document identities and property values are
+invocation inputs, not captured recipe literals. A revision-4 review action fixes
+the missing document-reference annotation; admission and Runtime are unchanged.
+
+Five real-domain host cases cover repair, no progress, unsupported geometry,
+cancellation and acknowledged partial completion. Unsupported checks return their
+retained decision-required finding without saving eligibility. Cancellation uses
+the real AbortSignal and cannot dispatch another call. Failed executions retain
+candidate metadata only, never successful execution evidence. This is distinct
+from losing the candidate or silently retrying its work.
+
+Validation: 177 host/operation tests (`tmp/stage4-host-closed.log`), 109 Runtime
+iteration/admission tests (`tmp/stage4-runtime-tests.log`) and 20 browser review
+tests (`tmp/stage4-review-tests.log`) passed. Design production tsc, scoped lint
+and naming passed. The same-source proof passed 29 obligations with four exact
+negatives and recovery. Early invalid fixture schemas and stale fixture outcome
+assumptions were corrected to the authoritative current contract; they were not
+production regressions. The binding rejection for the correctly typed document
+input was the production regression and passed only after the owner fix.
+
+Self-review: no additional model, algorithm, interpreter, compatibility branch or
+automatic design choice. Existing complete/unsupported verdicts and mutation-scope
+protection remain. Stage 5 owns resuming unresolved intent in a new segment.

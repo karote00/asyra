@@ -951,3 +951,344 @@ it('delivers terminal scope recovery on the first lost mutation acknowledgement'
   })
   expect(f.calls).toHaveLength(1)
 })
+
+it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
+  'runs a real container check through an admitted repair recipe and stops correctly for %s',
+  async (mode) => {
+    const { createDesignReviewer } =
+      await import('../../src/common-apis/design-review')
+    const { createDesignReviewAction } =
+      await import('../../src/ai/review-action')
+    const controller = new AbortController()
+    const geometry: Record<string, Record<string, number>> = {
+      frame: { x: 0, y: 0, width: 100, height: 100, rotation: 0 },
+      child: {
+        x: 90,
+        y: 10,
+        width: 30,
+        height: 20,
+        rotation: mode === 'decision' ? 30 : 0
+      }
+    }
+    let changed: ((change: { elementIds: string[] }) => void) | undefined
+    const positions = vi.fn(
+      (_ids: string[], values: { x: number; y: number }) => {
+        if (mode !== 'stuck') {
+          Object.assign(geometry.child, values)
+          changed?.({ elementIds: ['child'] })
+        }
+        if (mode === 'cancel') controller.abort()
+      }
+    )
+    const review = createDesignReviewer({
+      read: (id) =>
+        id === 'frame'
+          ? { type: 'frame', children: ['child'] }
+          : { type: 'rect', parentId: 'frame' },
+      computed: (id) => geometry[id],
+      measure: () => []
+    })
+    const measured = vi.fn(review)
+    const actions = [
+      createDesignReviewAction(measured),
+      ...createBasicApiActions(
+        () => ({
+          core: {
+            getElementMetadata: (id: string) => ({
+              id,
+              type: id === 'frame' ? 'frame' : 'rect'
+            })
+          },
+          element: { updateElementProperties: positions },
+          selection: {},
+          fill: {},
+          stroke: {},
+          hierarchy: {},
+          viewport: {}
+        }),
+        {
+          observe: (listener) => {
+            changed = listener
+            return () => {
+              changed = undefined
+            }
+          },
+          resolve: () => 'live'
+        }
+      ).filter((action) =>
+        [
+          'api_element_updateElementProperties',
+          'api_core_getElementMetadata'
+        ].includes(action.name)
+      )
+    ]
+    const entries = new Map<string, AiToolStoreEntry>()
+    const calls: string[] = []
+    const host = createLocalToolHost({
+      requestId: 'mechanical-repair',
+      signal: controller.signal,
+      capacity: 10,
+      receiptCapacity: 20,
+      artifactCapacity: 20,
+      limits: {
+        bytes: 24000,
+        steps: 20,
+        bindings: 200,
+        bindingDepth: 32,
+        issues: 10
+      },
+      store: {
+        read: async (key) => entries.get(key),
+        list: async () => [...entries.values()],
+        write: async (input) => {
+          if (entries.get(input.key)?.version !== input.expectedVersion)
+            throw new Error('Conflict')
+          const entry = {
+            key: input.key,
+            record: input.record,
+            version: crypto.randomUUID()
+          }
+          entries.set(input.key, entry)
+          return entry
+        }
+      },
+      createGroups: () => [
+        {
+          name: 'design_operations',
+          description:
+            'Canonical mechanical review and explicit position repair',
+          owner: createLocalOperationTools(
+            actions.map(createAiToolContract),
+            {
+              modelActions: (value) => value,
+              resolveBatch: (value) => value
+            },
+            async (batch) => {
+              const receipt: import('../../src/ai/action-batch-protocol').AiBatchReceipt =
+                { context: null, actionResults: [] }
+              for (const call of batch.actions) {
+                const action = actions.find((item) => item.name === call.name)
+                if (!action) throw new Error('Unknown action')
+                calls.push(call.name)
+                const result = await action.execute(call.arguments as never, {
+                  signal: controller.signal,
+                  runMutation: async (work, settled) => {
+                    const value = work()
+                    settled?.(value)
+                    return value
+                  }
+                })
+                receipt.actionResults.push({
+                  actionId: call.id,
+                  actionName: call.name,
+                  result: JSON.parse(JSON.stringify(result))
+                })
+                if (
+                  mode === 'partial' &&
+                  call.name === 'api_element_updateElementProperties'
+                )
+                  return requireBatchSuccess(
+                    batch,
+                    {
+                      ...receipt,
+                      failure: {
+                        code: 'ACTION_FAILED',
+                        stage: 'execution',
+                        message: 'Stopped after acknowledged position update',
+                        actionId: call.id,
+                        actionName: call.name,
+                        settlement: 'partial',
+                        actionExecutionMs: 1,
+                        contextFresh: true
+                      }
+                    },
+                    1
+                  )
+              }
+              return receipt
+            },
+            { requestSignal: controller.signal }
+          )
+        }
+      ]
+    })
+    const invoke = async (name: string, input: unknown) =>
+      JSON.parse((await host.invoke({ name, input })).text)
+    const initial = await measured('frame')
+    expect(initial.findings).toContainEqual(
+      expect.objectContaining({
+        kind:
+          mode === 'decision'
+            ? 'rotated-bounds-unchecked'
+            : 'container-overflow'
+      })
+    )
+    const checker = host
+      .definitions()
+      .find((tool) => tool.name === AiActionNames.REVIEW_DESIGN)
+    const repair = host
+      .definitions()
+      .find((tool) => tool.name === 'api_element_updateElementProperties')
+    const initialRead = host
+      .definitions()
+      .find((tool) => tool.name === 'api_core_getElementMetadata')
+    if (!checker || !repair || !initialRead)
+      throw new Error('Missing registered mechanical tools')
+    const checkInput = {
+      kind: 'object',
+      fields: {
+        arguments: {
+          kind: 'object',
+          fields: { elementId: { kind: 'input', path: '/target' } }
+        }
+      }
+    }
+    const recipe = {
+      format: 1,
+      name: 'repair-container',
+      revision: 1,
+      description:
+        'Check child bounds and apply an explicitly authorized position.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['target', 'elementIds', 'values'],
+        properties: {
+          target: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 256,
+            'x-runtime-value': 'document'
+          },
+          elementIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+              minLength: 1,
+              'x-runtime-value': 'document'
+            }
+          },
+          values: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['x', 'y'],
+            properties: { x: { type: 'number' }, y: { type: 'number' } }
+          }
+        }
+      },
+      outputSchema: { type: 'string' },
+      steps: [
+        {
+          id: 'initial',
+          tool: initialRead.registeredName,
+          revision: initialRead.revision,
+          input: checkInput
+        }
+      ],
+      iteration: {
+        id: 'verified',
+        stateSchema: { type: 'null' },
+        state: literal(null),
+        check: {
+          id: 'check',
+          tool: checker.registeredName,
+          revision: checker.revision,
+          input: checkInput
+        },
+        repairs: [
+          {
+            id: 'repair',
+            tool: repair.registeredName,
+            revision: repair.revision,
+            input: {
+              kind: 'object',
+              fields: {
+                inspection: literal('defer'),
+                arguments: {
+                  kind: 'object',
+                  fields: {
+                    elementIds: { kind: 'input', path: '/elementIds' },
+                    values: { kind: 'input', path: '/values' }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        next: { kind: 'state', path: '' },
+        maxIterations: 2
+      },
+      output: {
+        kind: 'step',
+        step: 'verified',
+        path: '/result/actionResults/0/result/verification/status'
+      }
+    }
+    try {
+      const admitted = await invoke('tool_library.submit_tool', {
+        submissionId: 'repair-container',
+        proposal: recipe
+      })
+      expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
+      const execution = invoke('tool_library.invoke_tool', {
+        name: recipe.name,
+        revision: 1,
+        input: {
+          target: 'frame',
+          elementIds: ['child'],
+          values: { x: 50, y: 10 }
+        }
+      })
+      if (mode === 'cancel') {
+        await expect(execution).rejects.toMatchObject({ name: 'AbortError' })
+        expect(positions).toHaveBeenCalledOnce()
+        expect(calls.at(-1)).toBe('api_element_updateElementProperties')
+        expect([...entries.values()].map((entry) => entry.record)).toEqual([
+          expect.objectContaining({ availability: 'candidate', evidence: null })
+        ])
+        return
+      }
+      const result = await execution
+      expect(
+        calls.filter((name) => name === 'api_core_getElementMetadata')
+      ).toHaveLength(1)
+      if (mode === 'repair') {
+        expect(result, JSON.stringify(result)).toMatchObject({
+          execution: { status: 'success', value: 'pass' },
+          storage: { status: 'saved' }
+        })
+        expect((await review('frame')).findings).toEqual([])
+        expect(geometry.child.x).toBe(50)
+      } else {
+        expect(result.execution.status, JSON.stringify(result)).not.toBe(
+          'success'
+        )
+        expect(result.storage).toBeUndefined()
+        expect([...entries.values()].map((entry) => entry.record)).toEqual([
+          expect.objectContaining({ availability: 'candidate', evidence: null })
+        ])
+      }
+      expect(positions).toHaveBeenCalledTimes(mode === 'decision' ? 0 : 1)
+      if (mode === 'stuck')
+        expect(result.execution.issues.join(' ')).toContain(
+          'Repeated verification progress'
+        )
+      if (mode === 'decision') {
+        expect(result.execution.status).toBe('failed')
+        expect(JSON.stringify(result.execution.recovery)).toContain(
+          'decision-required'
+        )
+        expect(JSON.stringify(result.execution.recovery)).toContain(
+          'rotated-bounds-unchecked'
+        )
+      }
+      expect(
+        result.execution.calls.filter(
+          (call: { name: string }) => call.name === repair.registeredName
+        )
+      ).toHaveLength(mode === 'decision' ? 0 : 1)
+    } finally {
+      await host.dispose()
+    }
+  }
+)

@@ -5897,7 +5897,10 @@ it.each([false, true])(
       inputSchema: {
         type: 'object',
         properties: {
-          elementIds: { type: 'array', items: { type: 'string' } }
+          elementIds: {
+            type: 'array',
+            items: { type: 'string', 'x-runtime-value': 'document' }
+          }
         },
         required: ['elementIds'],
         additionalProperties: false
@@ -5985,8 +5988,18 @@ it.each([false, true])(
       name: 'verify-selected-part',
       revision: 1,
       description: 'Verify a selected target without inventing repairs.',
-      inputSchema: { type: 'string', minLength: 1, maxLength: 256 },
-      outputSchema: { type: 'string', minLength: 1, maxLength: 256 },
+      inputSchema: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 256,
+        'x-runtime-value': 'document'
+      },
+      outputSchema: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 256,
+        'x-runtime-value': 'document'
+      },
       steps: [
         {
           id: 'select',
@@ -5997,7 +6010,12 @@ it.each([false, true])(
       ],
       iteration: {
         id: 'verified',
-        stateSchema: { type: 'string', minLength: 1, maxLength: 256 },
+        stateSchema: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 256,
+          'x-runtime-value': 'document'
+        },
         state: { kind: 'input', path: '' },
         check: {
           id: 'check',

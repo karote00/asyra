@@ -1664,7 +1664,9 @@ and active-call count. Preserve authored language without inferring new intent.
 ### Mechanical verification in reusable tasks
 
 The registered deterministic review action publishes domain-owned verification
-paths. Its mechanical verdict is pass only when supported checks are complete and
+paths. Its revision 4 target is a document runtime reference, supplied by current
+input or acknowledged output when composing; saved recipes cannot capture a
+request-specific target as a literal. Its mechanical verdict is pass only when supported checks are complete and
 no findings remain; known text/container overflow may enter an explicitly declared
 repair recipe. Incomplete or unsupported checks require primary-agent judgment.
 The verdict never certifies appearance or request satisfaction. Stable progress
