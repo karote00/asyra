@@ -24,6 +24,18 @@ Injected providers and app adapters are borrowed by default. `dispose()` aborts
 and awaits active invocations, disposes the instance-local registry, and
 disposes only resources listed in `ownedResources`.
 
+### Synchronous mutation settlement observation
+
+`runAiMutation(context, mutate, settled?)` delegates to the existing
+`AiMutationExecutor`. When an observer is supplied, that owner calls it exactly
+once with the result after successful canonical publication, before yielding to
+another task. The direct execution path calls it synchronously after `mutate`.
+Failed mutation execution has no successful settlement callback. The observer is
+for capturing receipts and revision-bound artifacts, never another transaction or
+a retry. Domain artifact capture must report its own failures without discarding
+an acknowledged mutation. Cancellation before admission prevents mutation; later
+cancellation cannot turn an acknowledged write into a not-started operation.
+
 ## Invocation Flow
 
 ```text

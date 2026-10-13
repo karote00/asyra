@@ -196,10 +196,12 @@ export type CanonicalChange =
     }>
   | Readonly<{
       kind: 'element-creation'
-      elements: readonly ElementRawData[]
+      entries: readonly Readonly<{
+        data: ElementRawData
+        parentId: string
+        index: number
+      }>[]
       properties: readonly PropertyComponentRawData[]
-      parentId: string
-      index: number
     }>
   | Readonly<{
       kind: 'element-removal'

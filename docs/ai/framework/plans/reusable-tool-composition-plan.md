@@ -1,36 +1,26 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 2 CORRECTION COMPLETE - comprehensive bounded audit, repairs and local verification complete; awaiting user review. Stage 1 pushed at 62127de41. Stage 2 remains uncommitted and unpushed. No later stage is authorized.
+Status: STAGE 3 COMPLETE - review Stage 4 before its goal and implementation.
 
 ## Current authority and stop boundary
 
-The user cancelled the whole-program goal. This plan replaces all previous
-sequential-PR, automatic merge, broad delivery, monitoring and continuation
-instructions. Historical implementation and evidence remain in
-[the superseded history](reusable-tool-composition-history.md); they do not
-authorize new work or certify current whole-flow correctness.
+The user authorizes completion of every remaining stage in this worktree,
+`.worktrees/ai-reusable-tool-design`, branch `codex/ai-reusable-tool-design`.
+The current conversation owns closeout. Stage 1 was pushed at `62127de41` and
+Stage 2 at `d7890d8a6`. Stage 3 and its persistence follow-up are complete, including the three review
+corrections documented below.
 
-Worktree: `.worktrees/ai-reusable-tool-design`.
-Branch: `codex/ai-reusable-tool-design`.
-Closeout owner: current conversation.
-
-The one-time checkpoint commit/push is complete at
-`ea7e15532a775380a59a2069bb4da47be8335325`, without tests or CI inspection as
-requested. That authorization is consumed; it cannot authorize another push.
-The checkpoint preserves unverified accumulated work, not a green delivery or
-merge request.
-Preserve local .env, documents, recordings and ignored diagnostics; never publish
-private configuration or local-only recordings. Do not create a PR or merge.
-Stage 1 was validated, reviewed and pushed at `62127de41` on explicit user
-instruction without rerunning tests or monitoring CI. That push authorization is
-consumed. The user now authorizes Stage 2 only in this same worktree, with its own
-goal. Finish its applicable local tests and review, then report. Do not push Stage
-2, create a PR, merge, monitor CI, run full local CI/live101 or start Stage 3.
-Each later stage requires a separate authorized goal.
-The Stage 2 plan-review checkpoint, implementation and subsequent comprehensive
-audit are complete. The correction evidence at the end of this plan supersedes the
-initial Stage 2 completion claim. Earlier cards are execution history, including
-their now-consumed instructions; they do not authorize additional work.
+For each stage: review its complete plan and handoffs before setting a dedicated
+goal; implement, self-review and iterate; run applicable local tests, lint and
+TypeScript checks; then commit and push. Complete the preceding stage before
+advancing. Finally review all stage connections and run the affected packages'
+existing complete test suites, fixing regressions until those gates pass.
+No PR monitoring, PR creation, merge, extra model evaluator or full Taipei 101
+run is authorized. Stage 8 therefore uses deterministic integrated acceptance
+and the existing package suites instead of a new live drawing/recording run.
+Preserve .env, user documents, recordings and ignored evidence. Do not publish
+private configuration or local-only diagnostics. Historical cards below record
+past evidence; their old stop/push instructions do not override this authority.
 
 ## Direction
 
@@ -48,8 +38,8 @@ their now-consumed instructions; they do not authorize additional work.
 
 ## Stages
 
-Stage 2 is complete and stopped for user review. Subsequent stages are backlog
-outcomes, not an implementation-ready architecture or permission to expand the slice.
+Stages 1 and 2 are pushed. Close the Stage 3 findings first, then review and
+complete Stages 4 through 8 in order; each stage has a separate goal.
 
 | Stage | Outcome | Required evidence |
 | --- | --- | --- |
@@ -61,7 +51,7 @@ outcomes, not an implementation-ready architecture or permission to expand the s
 | 5 - Model handoff | The primary AI selects capabilities and continues unresolved work. | Discovery, recipe reuse/creation, decision return and a new execution segment work together; saving does not replay writes. |
 | 6 - Activity | Purpose, phase and recorded classification agree. | Cleanup cannot replace design purpose; late events cannot revive closed work; UI and profiler consume normalized facts. |
 | 7 - Image checks | Comparable local evidence receives deterministic analysis. | Explicit coordinate mapping, scope and baseline; meaningful defects detected, unsupported comparisons reported, valid results reused. |
-| 8 - Live acceptance | Verify actual end-to-end adoption on Taipei 101. | Recorded first frame, stage timings, reuse/work counts, payloads, current status and final references; separate deterministic failure tests remain mandatory. |
+| 8 - Integrated acceptance | Verify the complete staged contract through existing package tests. | Cross-stage success, partial failure, cancellation, dependency invalidation, ownership and reuse; all affected package suites pass. No new live101. |
 
 ## Cross-stage handoff and failure rules
 
@@ -83,8 +73,8 @@ and durable tool saving are distinct facts. A check finding is not a failed writ
   result; preserve existing document work under its actual owner semantics.
 - Document replacement invalidates old authority. Do not write into its successor.
 
-Fix only Stage 2 manifestations now. Provider-wide failure classification,
-cleanup semantics and generic continuation remain explicitly later work.
+Fix one reviewed stage at a time. Provider-wide continuation and activity work
+belong to their later stages; they cannot silently expand the active correction.
 
 ## Reviewed architectural constraints for later stages
 
@@ -1209,3 +1199,470 @@ Final evidence:
 No service, live model or recording was started. No full CI, push, PR, monitoring
 or next-stage implementation occurred. Work remains in the original worktree,
 uncommitted and unpushed. The stage goal is ready to close; the whole plan is not.
+
+
+## Stage 3 - Direct structural delivery
+
+### Frozen contract and reviewed design
+
+Baseline: d7890d8a6. Objective: group, ungroup and move outputs supply a usable
+ordered retained element set to the next registered operation without sending
+IDs through model text. Preserve full immutable receipts, canonical write and
+Undo authority, partial outcomes and existing Stage 1/2 checking. Deletion has
+no editable target set; removed IDs never become live targets.
+
+Discovery is fixed to basic API declarations/adapters/results, retained context,
+its browser runtime wiring, operation delivery/ownership and direct consumers,
+current execution spec/Inspector and their formal tests. No generic Runtime
+redesign, new tool interpreter/store, rendering, query invalidation redesign,
+model/limit changes, compatibility route or later-stage repair orchestration.
+
+Review resolved these gaps before implementation:
+1. Group/ungroup currently have opaque owner receipts; explicitly declare their
+   result kinds and exact ordered live target semantics. Moves use acknowledged
+   moved IDs, grouping uses grouped children, ungroup uses released children.
+2. A server-expanded list can become stale in the mutation queue. Registered
+   element-list argument schemas admit a retained reference; only the browser
+   adapter resolves it inside synchronous mutation admission. Point/segment lists
+   remain distinct. Resolve all references before the first canonical call.
+3. Reuse the existing bounded retained context owner for ordered membership and
+   immutable structural receipt. Publication copies no hierarchy or geometry;
+   it uses the actual completed receipt, not a post-hoc selection query. Existing
+   document revision, workspace, request leases, capacity and disposal apply.
+4. Full data recovery is an explicit read of the retained immutable receipt,
+   not another mutation invocation. Reading old receipt evidence may report stale
+   target authority; stale evidence cannot authorize a write. Missing/expired
+   references return actionable recovery and never automatically reselect/replay.
+5. Admission/retention can fail after a real mutation. Preserve the original
+   outcome and return unavailable delivery separately; no false target handle,
+   rollback claim or second write. Host publication failure similarly preserves
+   the acknowledged receipt while refusing dependent execution.
+6. Compact delivery omits large structural values and mutation-scope lists only
+   after the existing checking owner consumes the original receipt. Preserve
+   counts, operation/root identity, outcome and a typed retained reference.
+   Uncertain/failed receipts retain their diagnostics. Full response remains an
+   initial-call option; later recovery uses the explicit read.
+7. Successful and partial schemas export owned handles before child cleanup.
+   Native batches and registered recipe calls use the same browser contracts.
+   Existing caller/sibling pins and explicit release protection remain authoritative.
+
+Names belong to existing App contracts: `retained` for structural output,
+`snapshotId`/`leaseId`/`total` for its request-owned reference, and `delivery=receipt`
+for exact readback. Element-list reference admission is explicitly declared by
+its schema owner, not inferred from names. These are current unreleased wire
+contracts; bump affected action revisions, no old aliases or dual contracts.
+
+### Step Execution Card - apply direct delivery
+
+Authority: execution spec structural receipts and retained query consumption;
+Inspector apply and apply-to-compose, with compose ownership bridge verification.
+Input: admitted registered operation, actual canonical result, request signal,
+current retained context and actual mutation publication scope.
+Output: truthful original outcome; declared ordered element membership/receipt
+retained once; compact reference for downstream consumers; explicit unavailable
+delivery when post-write retention fails. Deleted objects are evidence only.
+Failure owner: apply owns write outcome; retained context owns availability and
+freshness; host ownership owns publication and cleanup. Never replay a write.
+Allowed files: basic-api contracts/actions/results, context-action/runtime-input,
+retained-design-context, local-operation-tools/local-query-artifacts and their
+formal tests; exact spec/Inspector/manifest/generated catalog. If necessary, the
+shared App outcome adapter changes only to classify this delivery failure.
+Forbidden contributors: model checks, callback JS, another canonical store or
+scheduler, silent readback fallback, inferred live IDs, widened resource limits.
+
+Prove first with permanent tests: large group-to-edit through actual adapter and
+store with no hierarchy reread/ID expansion; native compact and full/readback
+parity; declared input/output schemas; fresh recipe handoff and intermediate
+cleanup; request/sibling isolation; stale queue admission, Undo/Redo/load and
+released references; cancellation, capacity/publication failure after success,
+empty/failed/partial receipts and no dependent replay. Retain Stage 1/2 focused
+proofs. Work counts include retained publication, queries and canonical writes;
+payload scaling compares equivalent small and large structural outputs.
+
+Gates: focused browser and server owner/direct consumer suites, production types,
+focused lint, naming before/after identifiers, generated catalog and same-source
+positive/exact negative/recovery proof including the new handoff. No new live
+model, complete local CI or unrelated package gates. Canonical geometry/Undo
+implementation stays unchanged; use a real Core/Factory integration for the
+consumer boundary when the existing harness supports it.
+
+### Plan self-review conclusion
+
+The flow is producer -> existing retained owner -> common ownership export ->
+compact reference -> admitted browser consumer -> canonical API. Full readback
+is separate and cannot authorize stale targets. Every failure has one owner,
+post-write failures preserve settlement, and downstream work cannot manufacture
+success or restart the producer. No unresolved design choice remains within this
+stage; tests may expose corrections inside these boundaries. Finish local review
+and required evidence, report limitations, then stop before Stage 4 or push.
+
+### Stage 3 settlement boundary review
+
+Integration exposed two handoff defects: batch output did not declare its retained
+references, and a host publication failure could leave the browser success outcome
+in control. Formal native-host and publication-failure tests reproduce both; the
+current corrections export declared references and classify delivery separately
+from acknowledged writes.
+
+The final race review identifies another boundary: creating a snapshot after an
+await can capture a later document revision. Freeze the receipt at synchronous
+mutation settlement, after canonical publication and before yielding. Extend the
+existing mutation executor with an optional settled observer, implemented by the
+existing App transaction runner and the Runtime's direct-execution path. This is
+a synchronous observation hook, not a scheduler, transaction or retry system.
+The observer never throws from retention failure: the original result remains
+acknowledged with unavailable delivery. A supplied executor that does not honor
+the requested observer cannot publish a current reference. Add exact tests for
+late mutations, cancellation and unavailable delivery, plus actual Factory
+publication/Undo. Extend this apply card boundary only to Runtime types/helper
+and its tests, App transaction adapter/tests and the existing basic-API E2E.
+No independent generic Runtime change or Stage 4 work is authorized by this card.
+
+### Stage 3 local closeout
+
+The scoped self-review and implementation iterations are complete. Structural
+outputs expose ordered live targets through the existing retained owner and
+common lease bridge. Full immutable receipts remain explicitly readable; stale
+receipt evidence cannot authorize new mutations. Compact delivery preserves
+typed root identity and references after the checking owner consumes the full
+result. No new store, registry, interpreter, model call or compatibility route
+was introduced.
+
+The reviewed corrections include standard-schema element-reference admission,
+typed group identity for recipes, native-batch reference lifetime, truthful
+post-publication failure outcomes, and synchronous receipt capture at canonical
+mutation settlement. Tests detect stale queued references, later document
+changes, foreign/released references, count mismatches, cancellation and
+post-write capacity/publication failure without replaying acknowledged writes.
+An equivalent 4,000-child compact response stays below 2,500 characters while
+full receipt readback preserves all children. Direct handoff performs no
+hierarchy or metadata reread. This is payload/work-count evidence, not a model
+latency claim.
+
+Verification on the final production source:
+- Browser owners and consumers: 79 tests passed (`tmp/stage3-browser-final.log`).
+- Server ownership, dispatch and recipe consumers: 242 tests passed
+  (`tmp/stage3-server-final.log`).
+- Runtime execution and multi-batch boundaries: 19 tests passed
+  (`tmp/stage3-runtime-final.log`).
+- Real Core/Factory registered and direct-canonical controls: two E2E cases
+  passed; the existing scope E2E also passed. See
+  `tmp/stage3-real-core-control.log` and
+  `tmp/stage3-preexisting-scope-e2e.log`.
+- Production browser/server types, Runtime build, scoped lint, naming (15 tests),
+  generated catalog (8 tests), and diff whitespace checks passed. Scoped lint
+  retains one existing no-console warning; no new lint error was introduced.
+- Same-source proof passed 29 obligations, four exact negative scenarios and
+  recovery (`tmp/stage3-final-same-source.log`). Candidate
+  `fd4c6a57-6d7c-4d71-81bd-43e7c2285c91`, accepted review
+  `f916f08fee4432925e9fe74a924a71e57c013d6e66f524b3412bb48684b99aed`,
+  captured source
+  `3d074d60ba0a09795b309fa6f455a229e3c9880c8c7477293be3af5dc9fec97c`,
+  mapping revision 68. Baseline run
+  `99f9e99e-b40f-4ff9-820c-010bd928c109` and recovery run
+  `9c019fec-945a-4c9c-a96b-76916b1fe255` passed. Injected failures matched
+  their exact expected cases; earlier failed iterations remain failed evidence.
+
+Historical Stage 3 limitation (resolved by the persistence correction below):
+both the registered-tool E2E and a direct canonical-API
+control reproduced a collaboration persistence rejection (409,
+`unsupported canonical publication batch evidence at batch 3 props/removeProperty`).
+The control bypasses the new structural adapters. Local canvas membership and
+Undo/Redo assertions pass, but durable saving is not certified by these tests.
+No collaboration/persistence implementation was changed. Preserve this formal
+control and evidence for a separately bounded persistence correction; do not
+describe the entire App as error-free or silently expand this stage into that
+owner.
+
+No known unresolved finding remains in the Stage 3 direct-delivery contract.
+This closes only that contract, not the independent persistence issue or later
+stages. No full local CI, live101, remote push or monitoring was run for Stage 3.
+Stop here; Stage 4 requires a new user instruction and its own reviewed goal.
+
+
+## Persistence 409 correction - diagnosis and bounded contract
+
+User authority: diagnose and repair the observed real group/edit/Undo/Redo
+persistence failure, then prove saving and reload. Preserve all Stage 3 work;
+no push, monitoring, Stage 4, full local CI or live model test.
+Discovery roots: the actual publication capture, App collaboration classifier,
+its document materializer/reducer consumers, Factory publication contract and
+real history replay. Determine batch shape versus order/content from captured
+publications before choosing a production change. Do not infer historical onset
+from a current-version canonical control.
+
+### Diagnosis Step Execution Card
+
+Owner route: `apply-remote-publication` in the canonical projection and
+collaboration Inspector; persistence consumes the same App classification.
+Inputs: actual canonical SharedPublication slices, batches and deliveries.
+Outputs: retained full test evidence and exact rejected publication; no production
+mutation in this diagnostic slice. Canonical source order and source-slice
+boundaries remain authoritative. Invalid evidence must remain rejected.
+Allowed edits: this plan and existing basic-API E2E to capture actual publications
+and fail on decode/save defects. Read direct source/consumer contracts; no
+framework batching change or synthetic success. Next implementation card and
+goal follow confirmed cause and reviewed solution. Completion requires formal
+red/green regression, actual durable acknowledgement and a fresh reload equality
+check, plus adjacent malformed-input, ownership, retry and typed-source gates.
+
+
+### Confirmed cause and implementation plan review
+
+Actual canonical-path evidence is retained by `basic-api-actions.spec.ts` as
+`structural-publications.json`. Both undo and redo fail decoding: undo separates
+scene move/removal and property removal into distinct slices; redo separates
+property creation and scene creation. Event order remains correct. This is not
+the earlier hypothesis of several property batches within one source slice.
+
+The first incorrect boundary is Factory `createGroupedHistory`: it promotes
+atomic member internal channel batch slice IDs into a progressive history
+sequence. The App factory adapter collapses atomic publications, but a grouped
+replay is progressive, exposing these internal IDs as independently applicable
+boundaries. The App classifier correctly requires creation/removal dependencies
+to be in the same applicable slice. Relaxing that condition alone would leave
+live per-slice application and publication-window splitting unsafe. Preserve
+complete atomic transaction-end member boundaries at the History owner instead.
+Explicit progressive boundaries and immediate-delivery boundaries stay intact.
+This identifies the mechanism on current source, not the historical first commit.
+
+### Correction Step Execution Card - Factory history boundary
+
+Inspector: transaction flow `finalize-transaction-state` / history grouping and
+its `settle-local-shared-projection` consumer; preserve the canonical collaboration
+`record-and-deliver-transaction-batch` and App `apply-remote-publication` routes.
+Input: successful member journals, existing progressive delivery sequence and
+ordered source batches. Output: grouped history retaining semantic boundaries,
+not one publication slice per internal atomic channel batch. Normalize only a
+member without an explicit progressive sequence, and only its contiguous
+transaction-end batches; immediate boundaries remain ordered and independent.
+Reuse immutable source batches and existing sequence representation. No payload
+cloning, new journal, asynchronous scheduler or App-only replay exception.
+Allowed source: Factory grouped-history assembly; tests in Factory history-groups
+and flow-proof; Factory spec and transaction Inspector. Existing App E2E and
+collaboration decoder/materializer tests prove the direct consumers. Production
+App classifier, reducer, transport and persistence queue remain unchanged unless
+new formal evidence requires a bounded replan of this same defect.
+
+Self-review: grouping complete transaction-end runs does not merge separate
+members, explicit progressive slices or immediate publications. Inverse replay
+reverses those boundaries while preserving complete property/scene dependencies.
+Same-document sequences/idempotency and malformed-source refusal remain the
+existing backend owners. Do not remove same-slice validation or ignore failures.
+
+Gates: fail-first mixed-channel atomic member replay, immediate/progressive
+preservation; full Factory unit suite/types/build/lint and naming; existing App
+collaboration classifier/reducer/materializer/queue tests; real canonical and
+registered operations, save acknowledgement and exact fresh-page reload after
+action, Undo and Redo; positive and exact-negative same-source Factory proof.
+Include publication work-count assertions and retained evidence. No full CI,
+performance mega-suite, model invocation, monitoring, remote operation or Stage4.
+
+
+### Persistence correction re-review - restore sequence completeness
+
+The new end-to-end oracle rejects a successful backend acknowledgement whose
+checkpoint differs from the live canonical document after undoing ungroup.
+The App decoder's whole-publication restore shortcut consumes only the first
+restore and drops later hierarchy/property changes. This is inside the requested
+real-operation persistence/reload guarantee. Extend the next owner slice to
+App `operations.ts` and `publication-processor.ts`: classify restore operations
+in the ordered stream, keep every prefix/suffix and source-slice boundary,
+reject malformed/mixed property evidence, and retain existing canonical apply.
+Add permanent decoder regressions for restore with preceding/following work and
+multiple restores. No new protocol, arbitrary cross-slice merge, full-document
+fallback or backend special case. The original real E2E remains the integration
+oracle; compare actual document values, not only successful status.
+
+### Persistence correction replan - exact insertion evidence
+
+The real nine-transition test now passes grouped/ungrouped action, Undo and Redo
+checkpoint/reload equality, but undoing a two-leaf deletion fails sequence 10
+with `element creation index is invalid`. Local replay retains every original
+`{data,parentId,index}` and Scene Tree prepares exact insertion entries. The
+App's canonical creation translation instead reduces the batch to one parent
+and the first index, treating replay order as a contiguous insertion range.
+This loses evidence even if the input order is valid. Sorting that single range
+would still fail for nonadjacent siblings or different parents.
+
+Re-reviewed bounded solution: retain exact entries in the existing
+`element-creation` CanonicalChange and both its Core and backend consumers.
+Use Scene Tree's existing prepared canonical insertion owner and the same Props
+exact-graph preparation; the ordinary contiguous creation convenience delegates
+to that owner. No new recovery API, old-shape compatibility, index clamping or
+per-element public writes. Transport still carries unchanged Factory evidence.
+The backend groups entries by parent and applies their recorded indexes in
+ascending index order while rejecting duplicate/out-of-range indexes. Document
+cloning and atomic acceptance remain unchanged. Formal cases cover reverse wire
+order, nonadjacent slots, multiple parents, and invalid indexes, followed by the
+unchanged real operation/save/reload sequence.
+
+Step owners: `coordinate-canonical-owner-preparations` for Core type/coordination,
+then `apply-remote-publication` for App decoding/live apply and persistence's
+direct canonical reducer. Explicit files are Core canonical-changes/create-apis
+and canonical-owner-coordination tests; App app-protocol-types/operations and
+its existing unit tests, backend reducer/tests and basic-API E2E. Update those
+exact Inspector boundaries and the current document-session spec. Extend scoped
+checks to Core unit/build and direct consumers; retain all previous negative
+and exact-equality requirements. This is the same observed persistence defect,
+not authorization for any unrelated framework redesign.
+
+### Direct live-consumer check - raw-data evidence metadata
+
+The same nine-transition test now retains an independent live peer in addition
+to durable and fresh-load oracles. It exposes a raw visibility publication that
+the backend materializes correctly while the live peer retains the old value.
+The captured canonical event includes its declared `options.undoable` metadata.
+Scene's exact raw-data preflight regenerates only semantic evidence and compares
+that entire value against incoming evidence, including options. Extend this
+owner slice only to Scene Tree's existing canonical raw-data preflight: exclude
+only declared mutation options from semantic equality; keep every before/after,
+identity, field, order and unknown-field mismatch rejection. Options remain the
+caller's Factory/remote transaction policy and cannot create local Undo or echo.
+Prove the existing stale-prefix regression still fails correctly with options
+present, and rerun the real live/durable/reload oracle. No transport rewrite,
+new actor mode or save fallback is authorized by this finding.
+
+
+### Persistence correction closeout - reviewed local evidence
+
+The confirmed failures were representational handoff defects, not arbitrary
+reordering of the original actions:
+
+1. Grouped History replay promoted internal atomic channel batches to separate
+   applicable progressive slices. Factory now retains complete atomic members.
+2. App decoding treated a restore as the entire publication, dropping subsequent
+   moves and property updates. Ordered source-slice decoding now consumes all
+   evidence and rejects unsupported tails.
+3. Canonical creation collapsed exact per-element locations into one parent and
+   starting index. Core/live/backend now retain exact insertion entries and reuse
+   the existing prepared Scene and Props owners. Reverse order, nonadjacent
+   siblings and multiple parents are covered without index clamping.
+4. Live raw-data preflight compared declared mutation options against semantic
+   evidence that does not contain options. Scene excludes only those options;
+   stale before/after rejection remains verified with and without options.
+
+Final bounded review checked producer/consumer types, slice boundaries, ordered
+restore prefixes/suffixes, multiple parents and sparse indexes, malformed and
+stale input refusal, property ownership, remote application, Undo/Redo, durable
+acknowledgements, fresh loads, failed-save retry tests, generated contracts and
+unchanged Stage 3 behavior. No old CanonicalChange shape, compatibility adapter,
+new persistence protocol, journal, scheduler, retry loop or fallback document was
+introduced. The ordinary contiguous creation convenience still has its ordinary
+public use; it shares the exact insertion owner rather than preserving a retired
+wire representation. Historical onset was not established and is not claimed.
+
+Final gates:
+
+- Factory: 289 tests / 15 files, build and scoped lint passed
+  (`tmp/persistence-factory-verified.log`, `tmp/persistence-factory-final-build.log`).
+- Core: 268 tests / 26 files and build passed
+  (`tmp/persistence-core-final-tests.log`, `tmp/persistence-core-build.log`).
+- Scene raw/canonical mutations: 68 tests, build and scoped lint passed
+  (`tmp/persistence-scene-options-green.log`, `tmp/persistence-scene-build.log`).
+  The options-bearing case first failed its stale-evidence assertion on original
+  production source (`tmp/persistence-scene-options-red.log`).
+- App classifier/Factory adapter/backend materializer/queue/reset: 79 tests;
+  collaboration lifecycle: 20 tests passed in its declared browser environment
+  (`tmp/persistence-consumer-verified.log`, `tmp/persistence-lifecycle-final.log`).
+- Final real E2E: 3 passed in 54.4 seconds (`tmp/persistence-final-verified.log`).
+  Registered and direct canonical paths pass. The nine-transition case checks
+  group/edit, Undo, Redo, ungroup, Undo, Redo, cross-parent nonadjacent deletion,
+  Undo and Redo. At every transition the full local document equals the backend
+  checkpoint, an independent live peer and a fresh loaded page. Durable sequence
+  equals accepted sequence 4 through 12. All nine checkpoint/publication captures
+  are retained in `tmp/persistence-final-verified/`. No persistence rejection
+  occurs in this final run. This is a correctness test, not a performance claim.
+  Its 120-second whole-test watchdog covers nine real three-second flush windows
+  and fresh loads; each persistence wait retains its 10-second deadline.
+- Browser/server production types, final scoped lint and naming passed
+  (`tmp/persistence-{browser,server}-types.log`, `tmp/persistence-final-lint.log`,
+  `tmp/persistence-final-naming.log`). Inspector contract/catalog tests: 38 passed;
+  generated public documentation check passed for 41 pages / 19 packages.
+- Factory same-source proof: 10 obligations, six exact negative scenarios and
+  recovery passed (`tmp/persistence-factory-same-source.log`); source digest
+  `d3633e1b1f42b6e24803b105c2a71414592901fe631f0a52521a380054bfe651`,
+  accepted review `3ca922527f7ca28d1a890aeeeecc6f87a23c146dd7ca47e0d300c6bff74bfd39`.
+- Final Design same-source preservation: 29 obligations, four exact negative
+  scenarios and recovery passed (`tmp/persistence-design-final-same-source.log`);
+  source digest `152fefce1239f1ba40e3aef1e9677c76fd4fb18fef2056ab25716b82fec2a79b`,
+  candidate `0d06f08a-99e8-4d57-9bea-ccec9a256a9b`, mapping revision 68. Earlier
+  failed gates remain failed evidence; none is relabeled successful.
+
+Test-owned ports 3300/3401/4401 are closed. Local .env and prior Stage 3 changes
+are preserved. No push, monitoring, live model run, full local CI or Stage 4 was
+performed. Stop at this completed local correction for user review.
+
+
+## Stage 3 review correction - complete direct consumers and partial delivery
+
+### Reviewed bounded plan and execution cards
+
+The previous review found three concrete failures, not a reason to redesign the
+registry or add compatibility. The existing apply-to-compose contract requires
+acknowledged structural references to survive partial batch failure. Canonical
+creation now requires exact entries; every current direct consumer must use it.
+
+1. Apply-to-compose owner: accept acknowledged batch artifacts on both resolved
+   receipts and BrowserBatchExecutionError receipts. Preserve the original
+   failure, settlement and order; never replay dispatch. Export partial envelope
+   references through the same typed schema before child cleanup. Tests cover a
+   successful group followed by a failed operation, explicit later read/edit,
+   eventual release, publication failure, and no automatic failed suffix retry.
+   Allowed files are existing operation tools, query bridge, result contracts,
+   ownership tests and their spec/Inspector. No new artifact store or retry loop.
+2. Canonical publication consumer: update Sim's existing publication-journal
+   producer to current exact-entry creation, with real publication/reload
+   regression and typecheck. Preserve its storage owner, sparse insertion order
+   and existing public Core API. This is a direct consumer correction caused by
+   the current Core contract change; no Sim analysis or UI redesign.
+3. Formal gate wiring: add structural-delivery.test.ts to the existing Design
+   test:ai command, with a permanent package-script assertion. The current
+   targeted tests must remain in ordinary package validation, not only manual
+   commands or Inspector source inventories.
+
+Review: success, partial, recovery and teardown all consume acknowledged data;
+failed writes are not made successful. Freshness still belongs to the browser,
+request leases to the host, exact insertion to Core. No old creation wire shape
+is retained. Focused failing tests precede changes. Close with local focused
+regressions, affected production typechecks, scoped lint/naming and contract
+checks; retain unchanged earlier gate evidence only for unchanged sources.
+Then push this stage before reviewing Stage 4. Final package-wide tests remain
+required at Stage 8, as explicitly requested by the user.
+
+### Stage 3 closure review evidence
+
+The final correction uses the existing partial outcome schema and adds optional
+resource annotations to it, rather than accepting a second, weaker envelope.
+Local schema references retain their original roots. An ordered group/selection
+failure test verifies the acknowledged prefix is exported, the suffix is not
+executed, the exact retained receipt can be read and used by a later edit, and
+request cleanup releases it. Unknown mutation scope remains write-blocking.
+No retry or compatibility path was added.
+
+- Design owner/lease/composition tests: 198 passed
+  (`tmp/stage3-partial-ordered2.log`).
+- Browser structural, Basic API, transaction and collaboration tests: 86 passed
+  (`tmp/stage3-closure-browser.log`); ordinary test-command contract: 11 passed
+  (`tmp/stage3-closure-script.log`).
+- Sim storage and actual runtime save/reload lifecycle: 27 passed
+  (`tmp/stage3-sim-lifecycle.log`). The new sparse creation regression proves
+  exact entries survive IndexedDB reopening; the existing lifecycle exercises
+  normal editing, Undo/Redo, journal replay through Core and full snapshot equality.
+- Design browser/server and Sim TypeScript checks passed. Scoped lint has zero
+  errors and the existing proof logger warning. Naming passed.
+- Direct current canonical-creation producers/consumers were searched in App and
+  package sources: Design and Sim use the current entry contract; no additional
+  App producer of the removed shape was found. Shared History behavior remains
+  covered by the prior Factory/Core/Scene proofs and actual Design save/reload.
+
+Earlier failed test runs remain failed evidence. Full affected package suites
+will run at the final integrated stage; these focused checks do not claim that
+final milestone. Remote main and task branch were fetched and contained no
+unintegrated or unexpected commits.
+
+Design same-source proof passed baseline, four exact negative scenarios and
+recovery (29 obligations), source digest
+`a437fe64b93c6d3c684419d889874cf000ba921f1f30fef9ec69802fb4b0d229`,
+`tmp/stage3-closure-proof.log`. Negative scenario failures are expected proof,
+not failing ordinary tests. Stage 3 is ready for its authorized push.

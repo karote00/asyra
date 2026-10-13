@@ -9,7 +9,11 @@ export type AiJsonValue =
     }
 
 /** Host-owned finite mutation boundary; asynchronous preparation stays outside. */
-export type AiMutationExecutor = <T>(mutate: () => T) => Promise<T>
+/** Publish canonical mutation settlement synchronously before yielding to another caller. */
+export type AiMutationExecutor = <T>(
+  mutate: () => T,
+  settled?: (value: T) => void
+) => Promise<T>
 
 export interface AiExecutionContext {
   signal: AbortSignal

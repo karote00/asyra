@@ -19,7 +19,7 @@ export type RetainedContextQuery = (
       limit?: number
       release?: boolean
     }
-) & { delivery?: 'page' | 'reference' | 'columns' }
+) & { delivery?: 'page' | 'reference' | 'columns' | 'receipt' }
 
 export class RetainedQueryError extends Error {}
 
@@ -32,6 +32,7 @@ export interface RetainedDesignContext {
   orderedIds: readonly string[]
   fields: readonly string[]
   result: ContextResult
+  receipt?: unknown
 }
 
 /** Request-host lifetime, canonical invalidation. Retains query output, never another document model. */
@@ -301,6 +302,37 @@ export const createRetainedDesignContext = (
           }
         }
       }
+      if (input.delivery === 'receipt') {
+        if (
+          input.filter !== undefined ||
+          input.expectedCount !== undefined ||
+          input.offset !== undefined ||
+          input.limit !== undefined
+        )
+          throw new RetainedQueryError(
+            'Receipt recovery accepts only the snapshot identity and delivery.'
+          )
+        const entry = entries.get(input.snapshotId)
+        if (!entry || entry.value.receipt === undefined)
+          throw new RetainedQueryError(
+            'Retained structural receipt unavailable; never replay a mutation for readback.'
+          )
+        const value = entry.value
+        return {
+          available: true,
+          scope: 'snapshot',
+          snapshotId: value.snapshotId,
+          leaseId: acquire(value.snapshotId, signal),
+          total: value.result.total,
+          coordinateSpace: value.coordinateSpace,
+          elements: [],
+          missingIds: [],
+          current:
+            value.revision === revision &&
+            value.workspaceId === source.getCurrentWorkspaceId(),
+          receipt: structuredClone(value.receipt)
+        }
+      }
       if (input.filter !== undefined) return refine(input, signal)
       assertDesignContextCount(
         get(input.snapshotId, undefined, signal).result.total,
@@ -325,6 +357,8 @@ export const createRetainedDesignContext = (
         }
       }
     }
+    if (input.delivery === 'receipt')
+      throw new RetainedQueryError('Receipt recovery requires scope=snapshot.')
     const { delivery, ...query } = input
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
@@ -569,7 +603,59 @@ export const createRetainedDesignContext = (
       }
     return result
   }
+  const retainReceipt = (
+    ids: readonly string[],
+    receipt: unknown,
+    signal: AbortSignal
+  ) => {
+    signal.throwIfAborted()
+    if (disposed)
+      throw new RetainedQueryError('Retained query owner is disposed.')
+    stop ??= observe(() => {
+      revision++
+      keys.clear()
+    })
+    if (
+      ids.some((id) => typeof id !== 'string' || !id) ||
+      new Set(ids).size !== ids.length
+    )
+      throw new RetainedQueryError(
+        'Structural targets require unique ordered identities.'
+      )
+    const snapshotId = crypto.randomUUID()
+    retain(
+      {
+        snapshotId,
+        revision,
+        workspaceId: source.getCurrentWorkspaceId(),
+        coordinateSpace: 'parent-local',
+        orderedIds: [...ids],
+        fields: [],
+        receipt: structuredClone(receipt),
+        result: {
+          available: true,
+          scope: 'ids',
+          parentId: null,
+          offset: 0,
+          limit: ids.length,
+          total: ids.length,
+          nextOffset: null,
+          elements: [],
+          elementIds: [...ids],
+          missingIds: []
+        }
+      },
+      snapshotId,
+      signal
+    )
+    return {
+      snapshotId,
+      leaseId: acquire(snapshotId, signal),
+      total: ids.length
+    }
+  }
   return {
+    retainReceipt,
     read,
     page,
     get,

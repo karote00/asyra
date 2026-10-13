@@ -4,7 +4,8 @@
     "cancel.outcome",
     "cancel.delivery",
     "history-group.ordered-replay",
-    "history-group.snapshot"
+    "history-group.snapshot",
+    "history-group.atomic-boundary"
   ],
   "targetId": "transaction-atomicity",
   "architecturePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs",
@@ -160,6 +161,11 @@
           "id": "history-group.delivery",
           "stepId": "settle-local-shared-projection",
           "testName": "Factory flow proof history group member delivery"
+        },
+        {
+          "id": "history-group.atomic-boundary",
+          "stepId": "finalize-transaction-state",
+          "testName": "Factory flow proof history group atomic member boundaries"
         }
       ],
       "handoffs": [
@@ -231,7 +237,10 @@
     {
       "id": "premature-publication",
       "title": "Premature publication demo",
-      "expectedFailedCaseIds": ["deferred.delivery"],
+      "expectedFailedCaseIds": [
+        "deferred.delivery",
+        "history-group.atomic-boundary"
+      ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
         "from": "sharedDelivery: event.options?.sharedDelivery ?? 'transaction-end',",
@@ -256,6 +265,16 @@
         "file": "packages/factory/src/data-transact.ts",
         "from": "...this.rollbackJournal(),\n      ...this.compensateImmediateSharedChanges()",
         "to": "...this.rollbackJournal()"
+      }
+    },
+    {
+      "id": "split-atomic-member",
+      "title": "Split atomic member into channel boundaries",
+      "expectedFailedCaseIds": ["history-group.atomic-boundary"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "const sliceId = atomicSliceId ?? sourceSliceId",
+        "to": "const sliceId = sourceSliceId"
       }
     }
   ]

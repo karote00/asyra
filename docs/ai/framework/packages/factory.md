@@ -464,6 +464,10 @@ reload, forced target resurrection or new conflict-resolution policy.
 
 Sealed group Undo replays all member inverses in reverse order; Redo applies
 members forward. Their recorded source publication boundaries remain ordered.
+An atomic member's contiguous transaction-end batches remain one complete replay
+slice even when they span multiple channels. Internal batch slice IDs are not
+independent progressive boundaries. Explicit progressive slices and immediate
+source-delivery boundaries remain separate; neither can be merged across members.
 A replay failure restores already-applied replay through canonical rollback,
 leaves the source history entry available, and closes the boundary it opened.
 One group replay is one history transition, including progressive replay.

@@ -171,20 +171,23 @@ export function canonicalPublicationSlices(
               { data: value.data, parentId: value.parentId, index: value.index }
             ]
           if (!entries.length) throw new Error('Missing created elements')
-          for (const entry of entries) {
+          const insertions = entries.map((entry) => {
             if (
               typeof entry.parentId !== 'string' ||
               !Number.isInteger(entry.index)
             )
               throw new Error('Missing canonical insertion location')
-            changes.push({
-              kind: 'element-creation',
-              elements: [entry.data],
-              properties: takeProperties([entry.data]),
+            return {
+              data: entry.data,
               parentId: entry.parentId,
               index: entry.index as number
-            })
-          }
+            }
+          })
+          changes.push({
+            kind: 'element-creation',
+            entries: insertions,
+            properties: takeProperties(insertions.map(({ data }) => data))
+          })
           break
         }
         case SCENE_TREE_ACTIONS.REMOVE_ELEMENT:

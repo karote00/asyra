@@ -110,6 +110,17 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
   ].includes(String(result.settlement))
     ? (result.settlement as AiToolOutcome['settlement'])
     : undefined
+  if (
+    result.delivery &&
+    typeof result.delivery === 'object' &&
+    (result.delivery as Record<string, unknown>).status === 'unavailable'
+  )
+    return {
+      status: 'partial',
+      settlement: ['complete', 'no-change'].includes(String(result.status))
+        ? 'completed'
+        : (reportedSettlement ?? 'unknown')
+    }
   if (result.status === 'unknown')
     return { status: 'unknown', settlement: reportedSettlement ?? 'unknown' }
   if (result.status === 'partial' || result.complete === false)

@@ -270,6 +270,11 @@
           "id": "apply.canonical-inspection-scope",
           "stepId": "apply",
           "testName": "execution proof consumes canonical mutation scope without read pollution or no-change invalidation"
+        },
+        {
+          "id": "apply.structural-delivery",
+          "stepId": "apply",
+          "testName": "execution proof delivers compact structural output without repeating canonical writes"
         }
       ],
       "handoffs": [
@@ -405,6 +410,19 @@
         "file": "apps/asyra-design/server/local-operation-tools.ts",
         "from": "if (isRecord(result) && result.current === false)\n            invalidIds.push(...group.ids)",
         "to": "if (false)\n            invalidIds.push(...group.ids)"
+      }
+    },
+    {
+      "id": "omit-structural-handoff",
+      "title": "Bypass structural receipt projection",
+      "expectedFailedCaseIds": [
+        "apply.region-removal",
+        "apply.structural-delivery"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/server/local-operation-tools.ts",
+        "from": "isRecord(result.retained) &&",
+        "to": "false &&"
       }
     }
   ]

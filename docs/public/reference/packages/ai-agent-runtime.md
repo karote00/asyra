@@ -47,6 +47,12 @@ apply no canonical prefix. Executor failure reaches the app transaction's
 rollback. `dispose()` aborts active work and disposes only explicitly owned
 resources.
 
+When actions need revision-bound receipt capture, the App mutation executor
+honors `runAiMutation(context, mutate, settled?)`: call `settled(result)` once,
+synchronously after successful canonical publication and before yielding. Keep
+capture failure separate from the completed mutation; never replay a write to
+recover its receipt.
+
 ## Relationships
 
 Feature System owns the invocation session. App executors call Core/common APIs.

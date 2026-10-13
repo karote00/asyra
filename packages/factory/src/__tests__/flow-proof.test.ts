@@ -218,6 +218,45 @@ describe('Factory flow proof history group', () => {
     expect(factory.getUndoHistoryDepth()).toBe(1)
   })
 
+  it('atomic member boundaries', () => {
+    const factory = new Factory()
+    const props = SharedDataChannelNames.PROPS
+    const scene = SharedDataChannelNames.SCENE_TREE
+    for (const channel of [props, scene])
+      factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      () => true
+    )
+    const publications: SharedPublication[] = []
+    factory.subscribeToSharedPublication((value) => publications.push(value))
+    const group = factory.startHistoryGroup()
+    factory.updateHistoryGroup(group, () => {
+      for (const [index, channel] of [props, scene, props].entries())
+        factory.updateTransaction({
+          type: EventTypes.UPDATE_TRANSACTION,
+          eventName: EventTypes.UPDATE_PROPERTY,
+          payload: { id: `entry-${index}`, before: 0, after: 1 },
+          options: { shared: channel }
+        })
+    })
+    factory.endHistoryGroup(group)
+    publications.length = 0
+    factory.undo()
+    expect(
+      publications.flatMap(({ slices }) =>
+        slices.map(({ batches }) => batches.map(({ channel }) => channel))
+      )
+    ).toEqual([[props, scene, props]])
+    publications.length = 0
+    factory.redo()
+    expect(
+      publications.flatMap(({ slices }) =>
+        slices.map(({ batches }) => batches.map(({ channel }) => channel))
+      )
+    ).toEqual([[props, scene, props]])
+  })
+
   it('pending and ordered replay', () => {
     const factory = new Factory()
     let value = 0

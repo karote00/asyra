@@ -63,7 +63,7 @@ const proposal = {
     {
       id: 'select',
       tool: 'design_operations.api_selection_selectElements',
-      revision: 2,
+      revision: 4,
       input: {
         kind: 'object',
         fields: {

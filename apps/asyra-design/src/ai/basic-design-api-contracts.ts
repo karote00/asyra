@@ -19,6 +19,8 @@ import {
   apiObject,
   apiArray,
   apiIds,
+  apiElementIds,
+  apiUniqueElementIds,
   apiRecord
 } from './basic-api-contracts'
 
@@ -54,7 +56,7 @@ const elementCreationOptionsSchema = apiObject(
 )
 
 const elementMoveRequestSchema = apiObject({
-  elementIds: apiIds,
+  elementIds: apiElementIds,
   targetParentId: apiId,
   targetIndex: { type: 'integer', minimum: 0 }
 })
@@ -202,7 +204,7 @@ const setElementsVisibleApi = defineBasicApi({
   effect: 'write',
   resultKind: 'status-items',
   parameters: [
-    { name: 'elementIds', schema: apiIds },
+    { name: 'elementIds', schema: apiElementIds },
     { name: 'visible', schema: apiBoolean }
   ]
 })
@@ -267,7 +269,7 @@ const updateElementPropertiesApi = defineBasicApi({
   method: 'updateElementProperties',
   effect: 'write',
   parameters: [
-    { name: 'elementIds', schema: apiIds },
+    { name: 'elementIds', schema: apiElementIds },
     { name: 'values', schema: apiRecord }
   ]
 })
@@ -363,7 +365,7 @@ const deleteElementsApi = defineBasicApi({
   method: 'deleteElements',
   effect: 'delete',
   resultKind: 'removed',
-  parameters: [{ name: 'elementIds', schema: { ...apiIds, uniqueItems: true } }]
+  parameters: [{ name: 'elementIds', schema: apiUniqueElementIds }]
 })
 
 const getWorkspaceIdApi = defineBasicApi({
@@ -398,8 +400,9 @@ const groupElementsApi = defineBasicApi({
     'Group the supplied element IDs with App geometry preservation; returns grouping details.',
   owner: 'hierarchy',
   method: 'groupElements',
+  resultKind: 'grouped',
   effect: 'write',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const ungroupElementApi = defineBasicApi({
@@ -407,6 +410,7 @@ const ungroupElementApi = defineBasicApi({
     'Ungroup a container while preserving App child geometry; returns the resulting identities and removal result.',
   owner: 'hierarchy',
   method: 'ungroupElement',
+  resultKind: 'ungrouped',
   effect: 'write',
   parameters: [{ name: 'groupId', schema: apiId }]
 })
@@ -430,7 +434,7 @@ const moveElementsRelativeApi = defineBasicApi({
     {
       name: 'request',
       schema: apiObject({
-        elementIds: apiIds,
+        elementIds: apiElementIds,
         anchorId: apiId,
         placement: { type: 'string', enum: ['before', 'after'] }
       })
@@ -499,7 +503,7 @@ const selectElementsApi = defineBasicApi({
   owner: 'selection',
   method: 'selectElements',
   effect: 'selection',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const selectVectorPointsApi = defineBasicApi({
@@ -687,7 +691,7 @@ const getFillTargetsAtIndexApi = defineBasicApi({
   method: 'getFillTargetsAtIndex',
   effect: 'read',
   parameters: [
-    { name: 'elementIds', schema: apiIds },
+    { name: 'elementIds', schema: apiElementIds },
     { name: 'index', schema: { type: 'integer', minimum: 0 } }
   ],
   description:
@@ -698,7 +702,7 @@ const addFillsApi = defineBasicApi({
   owner: 'fill',
   method: 'addFills',
   effect: 'write',
-  parameters: [{ name: 'elementIds', schema: apiIds }],
+  parameters: [{ name: 'elementIds', schema: apiElementIds }],
   description:
     'Add one default Fill to each element in one canonical batch; returns the new Fill IDs in element order.'
 })
@@ -712,7 +716,7 @@ const removeFillsApi = defineBasicApi({
 })
 
 const fillRowIndexSchema = { type: 'integer', minimum: 0 }
-const fillRowTargetsSchema = { ...apiIds, uniqueItems: true }
+const fillRowTargetsSchema = apiUniqueElementIds
 const updateFillsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'updateFillsAtIndex',

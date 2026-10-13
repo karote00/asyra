@@ -104,7 +104,7 @@ const retainedContextSchema = {
     snapshotId: toolRequestReference,
     filter: documentContextSchema.properties.filter,
     expectedCount: documentContextSchema.properties.expectedCount,
-    delivery: documentContextSchema.properties.delivery,
+    delivery: { enum: ['page', 'reference', 'columns', 'receipt'] },
     offset: documentContextSchema.properties.offset,
     limit: documentContextSchema.properties.limit
   }
@@ -125,7 +125,9 @@ export const createDocumentContextAction = (
         coordinateSpace: { const: 'parent-local' },
         elementIds: toolDocumentReferences,
         missingIds: toolDocumentReferences,
-        elements: { type: 'array', items: { type: 'object' } }
+        elements: { type: 'array', items: { type: 'object' } },
+        receipt: { type: 'object' },
+        current: { type: 'boolean' }
       },
       [
         'available',
@@ -138,10 +140,11 @@ export const createDocumentContextAction = (
       ]
     )
   }),
+  revision: 3,
   composition: 'allowed',
   name: AiActionNames.READ_DESIGN_CONTEXT,
   description:
-    'Default delivery=reference returns snapshotId, leaseId and count without rows. Bind those handles to later consumers; do not copy object lists into model text. Request delivery=page or columns only when inspecting actual values. All delivered snapshots remain pinned until explicit release_design_context, request settlement or cancellation; new capacity admission never evicts pending consumers. Borrowed consumers do not release caller-owned leases. Current canonical revision checks reject stale values; read again after a relevant change. Use scope=region with workspace bounds for a local correction, even under a broad parent. Candidates use bounds, not exact contours or occlusion; type, parentId, ancestorId, locked and literal name equals/prefix/suffix filters precede paging. Refine an existing current snapshot with scope=snapshot and filter without returning its rows; expectedCount rejects unintended match counts. Prefer execute_design_batch target.query for a whole-region edit resolved internally. Use scope=ids for known IDs, selection for selected objects, children only for hierarchy questions. fields lists the needed computed columns; x/y are parent-local. Explicit pages continue with nextOffset and the same selectors. No vector-point expansion or hierarchy reread for already known targets.',
+    'For a structural retained output, scope=snapshot and delivery=receipt reads its original full receipt without re-executing writes; current=false means historical evidence only, not permission to edit. Default delivery=reference returns snapshotId, leaseId and count without rows. Bind those handles to later consumers; do not copy object lists into model text. Request delivery=page or columns only when inspecting actual values. All delivered snapshots remain pinned until explicit release_design_context, request settlement or cancellation; new capacity admission never evicts pending consumers. Borrowed consumers do not release caller-owned leases. Current canonical revision checks reject stale values; read again after a relevant change. Use scope=region with workspace bounds for a local correction, even under a broad parent. Candidates use bounds, not exact contours or occlusion; type, parentId, ancestorId, locked and literal name equals/prefix/suffix filters precede paging. Refine an existing current snapshot with scope=snapshot and filter without returning its rows; expectedCount rejects unintended match counts. Prefer execute_design_batch target.query for a whole-region edit resolved internally. Use scope=ids for known IDs, selection for selected objects, children only for hierarchy questions. fields lists the needed computed columns; x/y are parent-local. Explicit pages continue with nextOffset and the same selectors. No vector-point expansion or hierarchy reread for already known targets.',
   inputSchema: { oneOf: [documentContextSchema, retainedContextSchema] },
   execute: async (query, { signal }) => {
     if (signal.aborted) throw new Error('Document context read cancelled.')

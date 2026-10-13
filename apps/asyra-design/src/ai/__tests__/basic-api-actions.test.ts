@@ -31,7 +31,10 @@ it('delegates every contract in parameter order without copying inputs or inject
     )
     if (!action) throw new Error('Missing action')
     const args = Object.fromEntries(
-      contract.parameters.map((p) => [p, { input: p }])
+      contract.parameters.map((p) => [
+        p,
+        p === 'elementIds' ? ['first', 'second'] : { input: p }
+      ])
     )
     await action.execute(args, {
       signal: new AbortController().signal,
@@ -263,7 +266,13 @@ it('advertises unique Fill row mutation targets without changing sharing identit
     expect(
       basicApiContracts.find((api) => api.method === method)?.inputSchema
     ).toMatchObject({
-      properties: { elementIds: { uniqueItems: true } }
+      properties: {
+        elementIds: {
+          anyOf: expect.arrayContaining([
+            { type: 'array', items: expect.any(Object), uniqueItems: true }
+          ])
+        }
+      }
     })
   }
 })

@@ -1384,6 +1384,11 @@ it('execution proof hands a region identity set into one compact plural removal'
                 }
               : {
                   status: 'complete',
+                  retained: {
+                    snapshotId: 'removal-receipt',
+                    leaseId: 'removal-lease',
+                    total: 0
+                  },
                   value: {
                     removed: ids.map((elementId) => ({
                       elementId,
@@ -1438,9 +1443,7 @@ it('execution proof hands a region identity set into one compact plural removal'
     elementIds: ids
   })
   expect(receipt.actionResults).toHaveLength(1)
-  expect(receipt.actionResults[0].result.value.removed).toEqual(
-    ids.map((elementId) => ({ elementId }))
-  )
+  expect(receipt.actionResults[0].result.value).toEqual({ count: ids.length })
   expect(JSON.stringify(receipt)).not.toContain('privateHistory')
 })
 
@@ -2748,4 +2751,71 @@ it('execution proof consumes canonical mutation scope without read pollution or 
     recoverable: false,
     toolOutcome: { settlement: 'not-started' }
   })
+})
+
+it('execution proof delivers compact structural output without repeating canonical writes', async () => {
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { basicApiResultSchema } =
+    await import('../../src/ai/basic-api-results')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const ids = Array.from({ length: 300 }, (_, index) => `child-${index}`)
+  const signal = new AbortController().signal
+  const contract = basicApiContracts.find(
+    (action) => action.name === 'api_hierarchy_groupElements'
+  )
+  if (!contract) throw new Error('Missing structural contract')
+  const full = {
+    status: 'complete',
+    value: { groupId: 'group', elementIds: ids },
+    mutationScope: { complete: true, elementIds: [], removedElementIds: [] }
+  }
+  const group = vi.fn(() => ({
+    ...full,
+    retained: {
+      snapshotId: 'browser-structural-snapshot',
+      leaseId: 'browser-structural-lease',
+      total: ids.length
+    }
+  }))
+  const tools = createLocalOperationTools(
+    [
+      createAiToolContract({
+        ...toolSemantics(basicApiResultSchema(contract), 'mutation', [
+          'document'
+        ]),
+        name: contract.name,
+        description: contract.description,
+        inputSchema: contract.inputSchema
+      })
+    ],
+    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    async (batch) => ({
+      context: null,
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result: group()
+      }))
+    })
+  )
+  const result = JSON.parse(
+    await tools.call(
+      'execute_design_batch',
+      {
+        operations: [{ name: contract.name, arguments: { elementIds: ids } }],
+        inspection: 'defer'
+      },
+      signal
+    )
+  )
+  expect(JSON.stringify(result).length).toBeLessThan(2500)
+  const delivered = result.actionResults[0].result
+  expect(delivered.value).toEqual({ count: 300, groupId: 'group' })
+  expect(delivered.retained).toEqual({
+    snapshotId: 'browser-structural-snapshot',
+    leaseId: 'browser-structural-lease',
+    total: ids.length
+  })
+  expect(full.value.elementIds).toEqual(ids)
+  expect(group).toHaveBeenCalledOnce()
 })

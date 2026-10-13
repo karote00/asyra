@@ -3008,6 +3008,11 @@ it('compacts structural evidence without losing identities or modifying full and
     {
       status: 'complete',
       value: { removed, rootParentChildrenAfter: ['keep'] },
+      retained: {
+        snapshotId: 'structural-receipt',
+        leaseId: 'structural-lease',
+        total: 0
+      },
       mutationScope: {
         complete: true,
         elementIds: [],
@@ -3049,12 +3054,16 @@ it('compacts structural evidence without losing identities or modifying full and
     await tools.call('execute_design_batch', args, new AbortController().signal)
   )
   expect(compact.actionResults[0].result.value).toEqual({
-    removed: removed.map(({ elementId }) => ({ elementId }))
+    count: removed.length
   })
   const { mutationScope, ...compactProductResult } =
     compact.actionResults[0].result
-  expect(mutationScope).toEqual(values[0].mutationScope)
-  // Keep the original product-receipt budget separate from required scope IDs.
+  expect(mutationScope).toEqual({
+    complete: true,
+    elementCount: 0,
+    removedElementCount: removed.length
+  })
+  // Model delivery has bounded counts; full immutable evidence stays with the owner.
   expect(
     JSON.stringify({
       ...compact.actionResults[0],

@@ -307,3 +307,10 @@ for (const configFileName of [
     )
   })
 }
+
+test('ordinary AI validation includes structural delivery regressions', () => {
+  assert.match(
+    packageJson.scripts['test:ai'],
+    /src\/ai\/__tests__\/structural-delivery\.test\.ts(?:\s|$)/
+  )
+})

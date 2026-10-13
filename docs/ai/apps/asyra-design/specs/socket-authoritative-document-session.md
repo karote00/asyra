@@ -215,6 +215,17 @@ document-change unit:
 - rollback after an already published immediate change publishes the existing
   compensation publication.
 
+Both live apply and persistence decode every source slice in order. Each
+atomic History member retains its complete transaction-end dependencies;
+explicit progressive and immediate boundaries remain separate. A subtree
+restore consumes only its own property/Scene evidence, preserving preceding
+and following operations. Canonical creation retains every recorded
+`{data,parentId,index}` entry, including reverse replay order, nonadjacent
+siblings and multiple parents. No consumer derives a single insertion range
+from the first entry. Unknown or incomplete evidence remains a failure; a
+successful durable acknowledgement must materialize the same document as local
+canonical operations and a fresh load.
+
 The server never receives or reconstructs the private undo History entry.
 History `before`/`after`, inverter evidence, and replace-latest staging metadata
 remain client-local.

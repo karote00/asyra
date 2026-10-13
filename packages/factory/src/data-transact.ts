@@ -629,8 +629,15 @@ class DataTransact {
         this.historySourceBatches(this.deliveredHistoryRecords(member))
       )
       const memberSlices = new Map<string, string[]>()
+      let atomicSliceId: string | undefined
       batches.forEach((batch) => {
-        const sliceId = `${memberIndex}:${batch.sliceId}`
+        const sourceSliceId = `${memberIndex}:${batch.sliceId}`
+        const isAtomicMemberBatch =
+          !member.progressiveDeliverySequence &&
+          batch.sharedDelivery === 'transaction-end'
+        if (isAtomicMemberBatch) atomicSliceId ??= sourceSliceId
+        else atomicSliceId = undefined
+        const sliceId = atomicSliceId ?? sourceSliceId
         sourceSliceIds.set(batch.batchId, sliceId)
         const ids = memberSlices.get(sliceId) ?? []
         ids.push(...batch.deliveries.map(({ deliveryId }) => deliveryId))

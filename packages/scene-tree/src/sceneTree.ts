@@ -1425,7 +1425,12 @@ class SceneTree {
       }
     })
     const preparedMutation = this.prepareElementDataMutation(requests)
-    if (!isEqual(preparedMutation.evidence, changes)) {
+    const semanticChanges = changes.map((change) => {
+      const semanticChange = { ...change }
+      delete semanticChange.options
+      return semanticChange
+    })
+    if (!isEqual(preparedMutation.evidence, semanticChanges)) {
       throw new Error(
         '[SceneTree] Cannot prepare stale canonical element data evidence'
       )

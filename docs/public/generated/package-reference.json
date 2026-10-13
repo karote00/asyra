@@ -14,8 +14,8 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "63fe0fc3b9acfcdefb99a5e6edeacb98f7387db9d36172dc71c608e5d1aa6208",
-        "guide": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
+        "contract": "a7d564354a9fff4edc98b4149c901269db9b0d454905aa59fa7401b810ef5143",
+        "guide": "dc0e514e272c38a1227c5c2127d8ea4bcf24ed2664c7784d7fe84049269f5183",
         "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
       },
       "version": "0.5.1"
@@ -71,7 +71,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517",
+        "contract": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
         "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
       },
@@ -115,7 +115,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "cee24b2b6ec345049c56b40a895d0f53fa98b93134686d9dd03784f85cd3e0e2",
+        "contract": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b",
         "guide": "f3135c07050bec8d0c4949166149dff46755e6c4daf7254480044ed3ac6d77a2",
         "manifest": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
       },
@@ -344,7 +344,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "d8a327db128788d403d1488f041f6a66d086e5e11ffe84b759a8d2d0aa896c7f",
+        "contract": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
       },

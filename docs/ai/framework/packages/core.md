@@ -409,7 +409,11 @@ The exact implementation boundary is Inspector step
   ordered `CanonicalChange[]` through `applyCanonicalChanges(...)`. The closed
   union covers property components, raw element data, hierarchy moves,
   subtree removal/restore, and canonical element creation/removal. Core
-  preserves order and delegates to the existing owner APIs. One
+  preserves order and delegates to the existing owner APIs. Canonical element
+  creation carries exact `{data,parentId,index}` entries, including nonadjacent
+  siblings and multiple parents; it never infers a contiguous range from replay
+  order. Scene preflights these entries and Props preflights the exact graph
+  before either owner applies. One
   `property-components` change may combine ordered structural records and
   value updates in one Props-owned mutation batch. For `subtree-restore`, Core
   first requests Scene Tree's `pending-restore` preflight, then preflights and

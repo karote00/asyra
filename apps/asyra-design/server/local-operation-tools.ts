@@ -8,6 +8,7 @@ import {
   designCheckSummarySchema
 } from './design-check-results'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
+import { retainedElementSetSchema } from '../src/ai/basic-api-contracts'
 import { createLocalQueryArtifacts } from './local-query-artifacts'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
@@ -63,6 +64,52 @@ import type {
   AiProviderInput,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
+/** Structural resources are exported equally from successful and partial batches. */
+const structuralActionResults = {
+  type: 'array',
+  items: {
+    anyOf: [
+      toolResultObject({
+        actionId: toolResultString,
+        actionName: {
+          enum: basicApiContracts
+            .filter((contract) =>
+              ['grouped', 'ungrouped', 'moves', 'removed'].includes(
+                contract.result.kind
+              )
+            )
+            .map((contract) => contract.name)
+        },
+        result: toolResultObject({ retained: retainedElementSetSchema }, [])
+      }),
+      toolResultObject({
+        actionId: toolResultString,
+        actionName: toolResultString,
+        result: true
+      })
+    ]
+  }
+}
+const partialBatchResources = toolResultObject(
+  {
+    executionResult: toolResultObject(
+      { actionResults: structuralActionResults },
+      []
+    )
+  },
+  []
+)
+const batchToolSemantics = (outputSchema: unknown) => {
+  const semantics = toolSemantics(outputSchema, 'mutation', ['document'])
+  return {
+    ...semantics,
+    partialOutputSchema: {
+      ...(semantics.partialOutputSchema as Record<string, unknown>),
+      ...partialBatchResources
+    }
+  }
+}
+
 /** Browser success is the first receipt; automatic inspection is a separate tail. */
 const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
   const receipt = (result: unknown, primary = false) =>
@@ -132,6 +179,7 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
           recoveryOutputSchema: envelope(action.recoveryOutputSchema)
         }),
     partialOutputSchema: {
+      ...partialBatchResources,
       anyOf: [
         embedAiToolSchema(
           semantics.partialOutputSchema as RuntimeJsonValue,
@@ -205,42 +253,50 @@ const compactStructuralResult = (
 ): unknown => {
   const kind = getBasicApiContract(actionName)?.result.kind
   if (
-    (kind !== 'moves' && kind !== 'removed') ||
-    !isRecord(result) ||
-    result.status !== 'complete' ||
-    !isRecord(result.value)
-  )
-    return result
-  const value = result.value
-  const entries = value[kind]
-  const allowed =
-    kind === 'moves'
-      ? ['moves', 'elementIds']
-      : ['removed', 'elementId', 'rootParentChildrenAfter']
-  if (
-    Object.keys(value).some((key) => !allowed.includes(key)) ||
-    !Array.isArray(entries) ||
-    entries.some(
-      (entry) =>
-        !isRecord(entry) ||
-        typeof entry.elementId !== 'string' ||
-        !entry.elementId
-    )
-  )
-    return result
-  const identities = entries.map((entry) => ({ elementId: entry.elementId }))
-  return {
-    ...result,
-    value: {
-      [kind]: identities,
-      ...(typeof value.elementId === 'string'
-        ? { elementId: value.elementId }
-        : {}),
-      ...(Array.isArray(value.elementIds)
-        ? { elementIds: value.elementIds }
+    kind &&
+    ['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) &&
+    isRecord(result) &&
+    ['complete', 'no-change'].includes(String(result.status)) &&
+    !result.delivery &&
+    isRecord(result.retained) &&
+    isRecord(result.value)
+  ) {
+    const value = result.value
+    const count =
+      kind === 'removed' && Array.isArray(value.removed)
+        ? value.removed.length
+        : result.retained.total
+    const scope = isRecord(result.mutationScope)
+      ? result.mutationScope
+      : undefined
+    return {
+      ...result,
+      value: {
+        count,
+        ...(typeof value.groupId === 'string'
+          ? { groupId: value.groupId }
+          : {}),
+        ...(typeof value.elementId === 'string'
+          ? { elementId: value.elementId }
+          : {}),
+        ...(typeof value.removed === 'boolean'
+          ? { removed: value.removed }
+          : {})
+      },
+      ...(scope &&
+      Array.isArray(scope.elementIds) &&
+      Array.isArray(scope.removedElementIds)
+        ? {
+            mutationScope: {
+              complete: scope.complete,
+              elementCount: scope.elementIds.length,
+              removedElementCount: scope.removedElementIds.length
+            }
+          }
         : {})
     }
   }
+  return result
 }
 
 // Paths address the registered schema, not an inferred argument shape. A partial
@@ -457,9 +513,20 @@ export const createLocalOperationTools = (
     : undefined
   const executeBatch = async (batch: AiActionBatch) => {
     queryArtifacts?.admit(batch)
-    const receipt = await dispatchBatch(batch)
-    await queryArtifacts?.accept(batch, receipt)
-    return receipt
+    let receipt: AiBatchReceipt
+    try {
+      receipt = await dispatchBatch(batch)
+    } catch (error) {
+      if (!(error instanceof BrowserBatchExecutionError) || !error.receipt)
+        throw error
+      const partial = queryArtifacts
+        ? await queryArtifacts.accept(batch, error.receipt)
+        : error.receipt
+      throw new BrowserBatchExecutionError(error.failure, partial)
+    }
+    return queryArtifacts
+      ? await queryArtifacts.accept(batch, receipt)
+      : receipt
   }
   const allowed = new Set<string>([
     ...Object.values(AiActionNames),
@@ -1731,30 +1798,21 @@ export const createLocalOperationTools = (
         ? [
             {
               type: 'function',
-              ...toolSemantics(
+              ...batchToolSemantics(
                 toolResultObject(
                   {
-                    actionResults: {
-                      type: 'array',
-                      items: toolResultObject({
-                        actionId: toolResultString,
-                        actionName: toolResultString,
-                        result: true
-                      })
-                    },
+                    actionResults: structuralActionResults,
                     batchSummary: toolResultObject({
                       actionCount: toolResultCount
                     }),
                     checks: designCheckSummarySchema
                   },
                   ['actionResults', 'batchSummary']
-                ),
-                'mutation',
-                ['document']
+                )
               ),
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
-                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. Omit target-supplied argument slots entirely, including empty arrays, null or placeholders. Multiple target bindings require plural elementIds; other scalar arguments use ordinary explicit values. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
+                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. Omit target-supplied argument slots entirely, including empty arrays, null or placeholders. Multiple target bindings require plural elementIds; other scalar arguments use ordinary explicit values. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Structural receipts provide retained={snapshotId,leaseId,total}; pass that object directly in a declared elementIds slot for the next edit. Read read_design_context with scope=snapshot and delivery=receipt for the original full receipt without repeating a mutation. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -1801,7 +1859,7 @@ export const createLocalOperationTools = (
                     enum: ['compact', 'full'],
                     default: 'compact',
                     description:
-                      'Compact aggregates successful valueless basic mutation acknowledgements by action name. Query values, returned identities and uncertain outcomes remain complete. Use full for every individual acknowledgement.'
+                      'Compact aggregates successful valueless basic mutation acknowledgements by action name. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Use full at initial invocation for every original acknowledgement. Uncertain outcomes remain complete.'
                   },
                   message: { type: 'string', minLength: 1, maxLength: 1000 }
                 }
@@ -2746,7 +2804,14 @@ export const createLocalOperationTools = (
         )
       }
       const serializeReceipt = <T extends AiBatchReceipt>(value: T) => {
-        if (!batchMode) return JSON.stringify(value)
+        if (!batchMode)
+          return JSON.stringify({
+            ...value,
+            actionResults: value.actionResults.map((entry) => ({
+              ...entry,
+              result: compactStructuralResult(entry.actionName, entry.result)
+            }))
+          })
         const { context: _context, ...result } = value
         const submittedIds = new Set(batchActions.map((action) => action.id))
         const followupActionCount = result.actionResults.filter(

@@ -589,10 +589,14 @@ const assertExecutionNotAborted = (signal: AbortSignal): void => {
 
 export const runAiMutation = async <T>(
   context: AiExecutionContext,
-  mutate: () => T
+  mutate: () => T,
+  settled?: (value: T) => void
 ): Promise<T> => {
   assertExecutionNotAborted(context.signal)
-  return context.runMutation ? context.runMutation(mutate) : mutate()
+  if (context.runMutation) return context.runMutation(mutate, settled)
+  const value = mutate()
+  settled?.(value)
+  return value
 }
 
 export const executeAiActions = async (

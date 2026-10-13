@@ -1,9 +1,15 @@
+import { designActionOutcome } from '../src/ai/tool-contract'
+import type { AiJsonValue } from '@asyra/ai-agent-runtime'
 import type {
   AiActionBatch,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
-import type { LocalToolOwnership } from './local-tool-leases'
+import {
+  localToolReferences,
+  type LocalToolOwnership
+} from './local-tool-leases'
+import { getBasicApiContract } from '../src/ai/basic-api-catalog'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -17,6 +23,13 @@ export const createLocalQueryArtifacts = (options: {
   return {
     admit(batch: AiActionBatch) {
       for (const action of batch.actions) {
+        const contract = getBasicApiContract(action.name)
+        if (contract)
+          for (const handle of localToolReferences(
+            action.arguments,
+            contract.inputSchema
+          ))
+            options.ownership.assertOwned(handle)
         if (
           ![
             AiActionNames.READ_DESIGN_CONTEXT,
@@ -38,97 +51,140 @@ export const createLocalQueryArtifacts = (options: {
       }
     },
     async accept(batch: AiActionBatch, receipt: AiBatchReceipt) {
+      const deliveryFailures = new Map<
+        string,
+        AiBatchReceipt['actionResults'][number]['result']
+      >()
       const submitted = new Map(
         batch.actions.map((action) => [action.id, action])
       )
       for (const entry of receipt.actionResults) {
         const action = submitted.get(entry.actionId)
+        const structural =
+          action &&
+          ['grouped', 'ungrouped', 'moves', 'removed'].includes(
+            getBasicApiContract(action.name)?.result.kind ?? ''
+          )
         if (
           !action ||
-          ![
-            AiActionNames.READ_DESIGN_CONTEXT,
-            AiActionNames.RELEASE_DESIGN_CONTEXT
-          ].includes(action.name as never) ||
+          (!structural &&
+            ![
+              AiActionNames.READ_DESIGN_CONTEXT,
+              AiActionNames.RELEASE_DESIGN_CONTEXT
+            ].includes(action.name as never)) ||
           entry.actionName !== action.name ||
           !record(action.arguments) ||
           !record(entry.result)
         )
           continue
-        const result = entry.result
-        if (
-          action.name === AiActionNames.RELEASE_DESIGN_CONTEXT &&
-          typeof result.released === 'boolean'
-        ) {
-          const id = action.arguments.snapshotId
-          if (typeof id === 'string') {
-            if (result.snapshotId !== id)
-              throw new Error('Query release receipt identity mismatch')
-            options.ownership.retire(id)
-            snapshots.delete(id)
-          }
-          continue
-        }
-        if (
-          typeof result.snapshotId !== 'string' ||
-          typeof result.leaseId !== 'string'
-        )
-          continue
-        const id = result.snapshotId
-        let aliases = snapshots.get(id)
-        const fresh = !aliases
-        if (aliases) options.ownership.borrow(id)
-        else {
-          aliases = new Set()
-          snapshots.set(id, aliases)
-          try {
-            options.ownership.publish(
-              id,
-              async () => {
-                await options.release(id)
-                snapshots.delete(id)
-              },
-              () => {
-                if (!snapshots.has(id))
-                  throw new Error('Query reference has been released')
-              }
-            )
-          } catch (error) {
-            snapshots.delete(id)
-            try {
-              await options.release(id)
-            } catch (cleanup) {
-              throw new AggregateError(
-                [error, cleanup],
-                'Query publication and browser cleanup failed'
-              )
+        const original = entry.result
+        const result = structural ? original.retained : original
+        if (!record(result)) continue
+        try {
+          if (
+            action.name === AiActionNames.RELEASE_DESIGN_CONTEXT &&
+            typeof result.released === 'boolean'
+          ) {
+            const id = action.arguments.snapshotId
+            if (typeof id === 'string') {
+              if (result.snapshotId !== id)
+                throw new Error('Query release receipt identity mismatch')
+              options.ownership.retire(id)
+              snapshots.delete(id)
             }
-            throw error
+            continue
           }
-        }
-        if (!aliases.has(result.leaseId)) {
-          try {
-            options.ownership.publishAliases([
-              { handle: result.leaseId, ownerHandle: id }
-            ])
-            aliases.add(result.leaseId)
-          } catch (error) {
-            // An existing shared query belongs to its original consumers.
-            if (fresh) {
+          if (
+            typeof result.snapshotId !== 'string' ||
+            typeof result.leaseId !== 'string'
+          )
+            continue
+          const id = result.snapshotId
+          let aliases = snapshots.get(id)
+          const fresh = !aliases
+          if (aliases) options.ownership.borrow(id)
+          else {
+            aliases = new Set()
+            snapshots.set(id, aliases)
+            try {
+              options.ownership.publish(
+                id,
+                async () => {
+                  await options.release(id)
+                  snapshots.delete(id)
+                },
+                () => {
+                  if (!snapshots.has(id))
+                    throw new Error('Query reference has been released')
+                }
+              )
+            } catch (error) {
+              snapshots.delete(id)
               try {
                 await options.release(id)
-                options.ownership.retire(id)
-                snapshots.delete(id)
               } catch (cleanup) {
                 throw new AggregateError(
                   [error, cleanup],
-                  'Query alias publication and cleanup failed'
+                  'Query publication and browser cleanup failed'
                 )
               }
+              throw error
             }
-            throw error
           }
+          if (!aliases.has(result.leaseId)) {
+            try {
+              options.ownership.publishAliases([
+                { handle: result.leaseId, ownerHandle: id }
+              ])
+              aliases.add(result.leaseId)
+            } catch (error) {
+              // An existing shared query belongs to its original consumers.
+              if (fresh) {
+                try {
+                  await options.release(id)
+                  options.ownership.retire(id)
+                  snapshots.delete(id)
+                } catch (cleanup) {
+                  throw new AggregateError(
+                    [error, cleanup],
+                    'Query alias publication and cleanup failed'
+                  )
+                }
+              }
+              throw error
+            }
+          }
+        } catch (error) {
+          if (!structural) throw error
+          const { retained: _retained, ...receipt } = original
+          const failedDelivery = {
+            ...(receipt as Record<string, AiJsonValue>),
+            delivery: {
+              status: 'unavailable',
+              message: `${error instanceof Error ? error.message : 'Host publication failed.'} The acknowledged mutation must not be replayed.`
+            }
+          }
+          deliveryFailures.set(entry.actionId, {
+            ...failedDelivery,
+            toolOutcome: designActionOutcome(
+              failedDelivery
+            ) as unknown as AiJsonValue
+          })
         }
       }
+      return deliveryFailures.size
+        ? {
+            ...receipt,
+            actionResults: receipt.actionResults.map((entry) =>
+              deliveryFailures.has(entry.actionId)
+                ? {
+                    ...entry,
+                    result: deliveryFailures.get(entry.actionId) ?? entry.result
+                  }
+                : entry
+            )
+          }
+        : receipt
     }
   }
 }

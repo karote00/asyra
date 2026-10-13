@@ -341,6 +341,8 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'The existing mutation executor reports settlement synchronously after canonical publication and before yielding. Structural group/ungroup/move results publish ordered live membership and immutable full receipts through the existing retained-context owner. Compact delivery exports typed snapshot/lease/count references only after original receipt checking; declared element-list consumers resolve inside synchronous mutation admission. Historical receipt reads do not refresh target authority. Post-write retention/publication failure preserves settlement and cannot replay or authorize a dependent write.',
+
           'Reviewed attachment parent, workspace and canonical inspection stamp are checked inside the first synchronous mutation callback, after queue admission; reject expired or missing evidence before writes. Own admitted later slices may advance the stamp and retain ordinary per-slice canonical checks; never recheck review after successful mutation or replay it.',
           'Every delivered reusable query snapshot is pinned until explicit release, request settlement, cancellation or disposal. Page and column delivery preserve the same ownership as reference delivery; capacity backpressure preserves accepted consumers. Borrowed leases remain with their caller, locally acquired query mappings release their own leases, and revision checks remain authoritative before one plural write',
           'AI query delivery defaults to references; explicit page and column reads remain available. Separate control-plane release from query production so successful reads guarantee live handle schemas. The host publishes actual browser snapshot and lease identities, refuses borrowed release and acknowledges terminal remote cleanup; browser request-finally owns cleanup on cancellation.',
@@ -386,6 +388,15 @@
           'Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only'
         ],
         implementationBoundary: [
+          'apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts',
+          'packages/ai-agent-runtime/src/types.ts',
+          'apps/asyra-design/server/local-query-artifacts.ts',
+          'apps/asyra-design/server/__tests__/local-query-artifacts.test.ts',
+          'apps/asyra-design/src/ai/basic-api-contracts.ts',
+          'apps/asyra-design/src/ai/basic-design-api-contracts.ts',
+          'apps/asyra-design/src/ai/basic-core-api-contracts.ts',
+          'apps/asyra-design/src/ai/tool-contract.ts',
+
           'apps/asyra-design/src/ai/inspection-evidence.ts',
           'apps/asyra-design/src/ai/runtime-input.ts',
           'packages/preset/src/subscriptions/data-channel.ts',
@@ -413,8 +424,6 @@
           'packages/core/src/__tests__/hierarchy-transaction.test.ts',
           'apps/asyra-design/src/common-apis/element/apis.ts',
           'apps/asyra-design/src/common-apis/element/__tests__/subtree-delete.test.ts',
-          'apps/asyra-design/src/ai/basic-design-api-contracts.ts',
-          'apps/asyra-design/src/ai/basic-core-api-contracts.ts',
           'apps/asyra-design/src/ai/basic-api-dispositions.ts',
           'apps/asyra-design/src/ai/startup.ts',
           'apps/asyra-design/src/ai/basic-api-catalog.ts',

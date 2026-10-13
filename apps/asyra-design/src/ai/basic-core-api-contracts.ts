@@ -7,6 +7,7 @@ import {
   apiObject,
   apiArray,
   apiIds,
+  apiElementIds,
   apiRecord
 } from './basic-api-contracts'
 
@@ -495,7 +496,7 @@ const measureElementContentBoundsApi = defineBasicApi({
   owner: 'core',
   method: 'measureElementContentBounds',
   effect: 'read',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const getRegistrationApi = defineBasicApi({
@@ -527,7 +528,7 @@ const moveElementsApi = defineBasicApi({
     {
       name: 'request',
       schema: apiObject({
-        elementIds: apiIds,
+        elementIds: apiElementIds,
         targetParentId: apiId,
         targetIndex: { type: 'integer' }
       })

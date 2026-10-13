@@ -110,7 +110,7 @@ export const createAiRuntimeInput = (
   const transactionRunner =
     options.transactionRunner ?? createAiTransactionRunner()
   const actionDefinitions = [
-    ...createBasicApiActions(),
+    ...createBasicApiActions(undefined, undefined, queries),
     ...createAiActions(undefined, {
       confirmPersistence: async (signal) => {
         const session = getActiveCollaborationHandle()

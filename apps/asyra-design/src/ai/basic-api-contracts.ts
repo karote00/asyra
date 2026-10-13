@@ -1,4 +1,4 @@
-import { toolDocumentReference } from './tool-contract'
+import { toolDocumentReference, toolRequestReference } from './tool-contract'
 /** Data-only contracts shared by native tool admission and browser API adapters.
  * Names identify existing public methods; no geometry implementation lives here.
  */
@@ -21,6 +21,8 @@ export type BasicApiResultKind =
   | 'status-items'
   | 'moves'
   | 'removed'
+  | 'grouped'
+  | 'ungrouped'
 const resultDescriptions: Record<BasicApiResultKind, string> = {
   transient:
     'Selection or viewport execution only. value preserves the owner result; this is not a document change.',
@@ -34,6 +36,10 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
     'Ordered changed/unchanged/unavailable values preserve each target outcome without per-item action envelopes. Unavailable targets make the operation partial or failed.',
   'boolean-items':
     'Ordered booleans report each application. false means unchanged or unavailable, not proof of a valid target. Items preserve that distinction; empty input is no-change.',
+  grouped:
+    'A group and its ordered child identities, with a retained target set and full receipt.',
+  ungrouped:
+    'Removed group and released child identities, with a retained target set and full receipt.',
   moves:
     'value contains the owner movement receipt; an empty moves list is no-change.',
   removed:
@@ -67,6 +73,32 @@ export const apiObject = (
 export const apiArray = (items: unknown) => ({ type: 'array', items })
 export const apiPosition = apiObject({ x: apiNumber, y: apiNumber })
 export const apiIds = apiArray(apiId)
+export const retainedElementSetSchema = apiObject({
+  snapshotId: toolRequestReference,
+  leaseId: toolRequestReference,
+  total: { type: 'integer', minimum: 0 }
+})
+/** Element membership only; point/segment identity lists remain explicit. */
+export const apiElementIds = {
+  anyOf: [apiIds, retainedElementSetSchema]
+}
+export const apiUniqueElementIds = {
+  anyOf: [{ ...apiIds, uniqueItems: true }, retainedElementSetSchema]
+}
+/** These canonical declaration objects identify element membership at the App boundary. */
+export const isElementTargetSchema = (schema: unknown): boolean =>
+  schema === apiElementIds || schema === apiUniqueElementIds
+export const hasElementTargetSchema = (schema: unknown): boolean => {
+  if (isElementTargetSchema(schema)) return true
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema))
+    return false
+  const properties = (schema as Record<string, unknown>).properties
+  return (
+    !!properties &&
+    typeof properties === 'object' &&
+    Object.values(properties).some(hasElementTargetSchema)
+  )
+}
 export const apiRecord = { type: 'object', additionalProperties: true }
 /** Declaration order is the public method's positional argument order. */
 export interface BasicApiParameterDefinition {

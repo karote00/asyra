@@ -151,14 +151,72 @@ describe('backend canonical document reducer', () => {
     expect(document.sceneTree.elements.element.name).toBe('Before')
   })
 
+  it('restores exact nonadjacent slots across parents independently of replay order', () => {
+    const document = initialDocument()
+    const element = (id: string, parentId: string) => ({
+      id,
+      name: id,
+      type: 'rectangle' as never,
+      parentId,
+      visible: true,
+      lock: false
+    })
+    document.sceneTree.elements.workspace.children = ['kept', 'other']
+    document.sceneTree.elements.kept = element('kept', 'workspace')
+    document.sceneTree.elements.other = {
+      ...element('other', 'workspace'),
+      type: 'group' as never,
+      children: []
+    }
+    const entries = [
+      { data: element('right', 'workspace'), parentId: 'workspace', index: 2 },
+      { data: element('nested', 'other'), parentId: 'other', index: 0 },
+      { data: element('left', 'workspace'), parentId: 'workspace', index: 0 }
+    ]
+    const [right, , left] = entries
+    if (!right || !left) throw new Error('Missing exact insertion fixture')
+    const restored = apply(document, [
+      { kind: 'element-creation', entries, properties: [] }
+    ])
+    expect(restored.sceneTree.elements.workspace.children).toEqual([
+      'left',
+      'kept',
+      'right',
+      'other'
+    ])
+    expect(restored.sceneTree.elements.other.children).toEqual(['nested'])
+    expect(document.sceneTree.elements.workspace.children).toEqual([
+      'kept',
+      'other'
+    ])
+    for (const index of [-1, 0.5, 99]) {
+      expect(() =>
+        apply(document, [
+          {
+            kind: 'element-creation',
+            entries: [{ ...right, index }],
+            properties: []
+          }
+        ])
+      ).toThrow(/index/)
+    }
+    expect(() =>
+      apply(document, [
+        {
+          kind: 'element-creation',
+          entries: [{ ...right, index: 0 }, left],
+          properties: []
+        }
+      ])
+    ).toThrow(/index/)
+  })
+
   it('creates, moves, and removes exact canonical elements with their owned properties', () => {
     const document = initialDocument()
     const created = apply(document, [
       {
         kind: 'element-creation',
-        parentId: 'workspace',
-        index: 0,
-        elements: [
+        entries: [
           {
             id: 'group',
             name: 'Group',
@@ -177,7 +235,7 @@ describe('backend canonical document reducer', () => {
             lock: false,
             props: { position: 'position' }
           }
-        ],
+        ].map((data, index) => ({ data, parentId: 'workspace', index })),
         properties: [
           {
             id: 'position',

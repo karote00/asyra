@@ -447,6 +447,98 @@ describe('explicit history groups', () => {
     }
   )
 
+  it.each(['atomic', 'progressive'] as const)(
+    'keeps an atomic mixed-channel member indivisible during %s grouped replay',
+    async (replayMode) => {
+      const { factory, write } = setup()
+      const props = SharedDataChannelNames.PROPS
+      const scene = SharedDataChannelNames.SCENE_TREE
+      for (const channel of [props, scene])
+        factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+      const publications: import('..').SharedPublication[] = []
+      factory.subscribeToSharedPublication((value) => publications.push(value))
+      const group = factory.startHistoryGroup()
+      factory.updateHistoryGroup(group, () => {
+        write('property', 1, { shared: props })
+        write('element', 1, { shared: scene })
+        write('position', 1, { shared: props })
+      })
+      factory.updateHistoryGroup(group, () =>
+        write('visible', 1, { shared: scene })
+      )
+      factory.endHistoryGroup(group)
+      publications.length = 0
+      const replay = async (direction: 'undo' | 'redo') => {
+        if (replayMode === 'atomic') factory[direction]()
+        else {
+          factory.startTransaction()
+          await factory
+            .getTransactionOwner()
+            [`${direction}Progressively`](async () => undefined)
+          factory.endTransaction()
+        }
+        return publications
+          .splice(0)
+          .flatMap(({ slices }) =>
+            slices.map(({ batches }) => batches.map(({ channel }) => channel))
+          )
+      }
+      expect(await replay('undo')).toEqual([[scene], [props, scene, props]])
+      expect(await replay('redo')).toEqual([[props, scene, props], [scene]])
+    }
+  )
+
+  it('preserves immediate boundaries between atomic runs in one history member', () => {
+    const { factory } = setup()
+    const props = SharedDataChannelNames.PROPS
+    const scene = SharedDataChannelNames.SCENE_TREE
+    for (const channel of [props, scene])
+      factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    const publications: import('..').SharedPublication[] = []
+    factory.subscribeToSharedPublication((value) => publications.push(value))
+    const write = (id: string, options: UpdateTransactionEvent['options']) =>
+      factory.updateTransactionBatch([
+        {
+          type: EventTypes.UPDATE_TRANSACTION,
+          eventName: EventTypes.UPDATE_PROPERTY,
+          payload: { id, before: 0, after: 1 },
+          options
+        }
+      ])
+    const group = factory.startHistoryGroup()
+    factory.updateHistoryGroup(group, () => {
+      write('first-property', { shared: props })
+      write('first-element', { shared: scene })
+      write('immediate', { shared: props, sharedDelivery: 'immediate' })
+      write('last-property', { shared: props })
+      write('last-element', { shared: scene })
+    })
+    factory.endHistoryGroup(group)
+    publications.length = 0
+    const takeIds = () =>
+      publications
+        .splice(0)
+        .flatMap(({ slices }) =>
+          slices.map(({ batches }) =>
+            batches.flatMap(({ deliveries }) =>
+              deliveries.map(({ payload }) => (payload as { id: string }).id)
+            )
+          )
+        )
+    factory.undo()
+    expect(takeIds()).toEqual([
+      ['last-element', 'last-property'],
+      ['immediate'],
+      ['first-element', 'first-property']
+    ])
+    factory.redo()
+    expect(takeIds()).toEqual([
+      ['first-property', 'first-element'],
+      ['immediate'],
+      ['last-property', 'last-element']
+    ])
+  })
+
   it('replays shared publications from separate members without losing delivery evidence', () => {
     const { factory, write } = setup()
     const channel = SharedDataChannelNames.SCENE_TREE

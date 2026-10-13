@@ -1,6 +1,7 @@
 import type { AiToolStoreEntry } from '@asyra/ai-agent-runtime'
 import { expect, it, vi } from 'vitest'
 vi.mock('../../src/contexts', () => ({ default: {} }))
+vi.mock('../../src/common-apis', () => ({}))
 vi.mock('../../src/common-apis/fills', () => ({ fillApis: {} }))
 import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import {
@@ -234,6 +235,7 @@ it('composes a real browser query and fill consumer without exporting rows, then
       targets: (ids) =>
         ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
       metadata: () => ({ lock: false }),
+      owners: () => ['part'],
       update
     })
   ]
@@ -290,7 +292,11 @@ it('composes a real browser query and fill consumer without exporting rows, then
                     JSON.stringify(
                       await action.execute(call.arguments as never, {
                         signal: app.signal,
-                        runMutation: async (write) => write()
+                        runMutation: async (write, settled) => {
+                          const value = write()
+                          settled?.(value)
+                          return value
+                        }
                       })
                     )
                   )
@@ -321,7 +327,7 @@ it('composes a real browser query and fill consumer without exporting rows, then
       {
         id: 'query',
         tool: 'design_operations.read_design_context',
-        revision: 2,
+        revision: 3,
         input: {
           kind: 'object',
           fields: { arguments: literal({ scope: 'selection', fields: ['x'] }) }
@@ -330,7 +336,7 @@ it('composes a real browser query and fill consumer without exporting rows, then
       {
         id: 'map',
         tool: 'design_operations.map_retained_fills',
-        revision: 2,
+        revision: 3,
         input: {
           kind: 'object',
           fields: {
@@ -425,6 +431,406 @@ it.each(['page', 'columns', 'reference'] as const)(
       )
       expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
     } finally {
+      app.queries.dispose()
+    }
+  }
+)
+
+it.each(['recipe', 'native', 'partial'] as const)(
+  'hands structural children through real %s ownership and releases only finished leases',
+  async (mode) => {
+    const app = fixture()
+    const { createLocalToolHost } = await import('../local-tool-host')
+    const { createLocalOperationTools } =
+      await import('../local-operation-tools')
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const { createDocumentContextReleaseAction, createDocumentContextAction } =
+      await import('../../src/ai/context-action')
+    const { createBasicApiActions } =
+      await import('../../src/ai/basic-api-actions')
+    const { requireBatchSuccess } = await import('../batch-exchange')
+    const update = vi.fn((ids: string[]) => ids.map(() => 'changed'))
+    const select = vi.fn(() => {
+      throw new Error('The dependent selection failed after grouping.')
+    })
+    const group = vi.fn((ids: string[]) => ({
+      groupId: 'container',
+      elementIds: ids,
+      bounds: { x: 0, y: 0, width: 1, height: 1 }
+    }))
+    let deliveredId = ''
+    const actions = [
+      ...createBasicApiActions(
+        () => ({
+          core: {},
+          element: { setElementsVisible: update },
+          hierarchy: { groupElements: group },
+          fill: {},
+          stroke: {},
+          selection: { selectElements: select },
+          viewport: {}
+        }),
+        { observe: () => () => undefined, resolve: () => 'live' },
+        app.queries
+      ).filter((a) =>
+        [
+          'api_hierarchy_groupElements',
+          'api_element_setElementsVisible',
+          'api_selection_selectElements'
+        ].includes(a.name)
+      ),
+      createDocumentContextReleaseAction(app.queries.read),
+      createDocumentContextAction(app.queries.read)
+    ]
+    const stored = new Map<string, AiToolStoreEntry>()
+    let storeVersion = 0
+    const host = createLocalToolHost({
+      requestId: 'query-composition',
+      signal: app.signal,
+      capacity: 10,
+      receiptCapacity: 10,
+      artifactCapacity: 20,
+      limits: {
+        bytes: 24000,
+        steps: 10,
+        bindings: 200,
+        bindingDepth: 32,
+        issues: 10
+      },
+      store: {
+        read: async (key) => stored.get(key),
+        list: async () => [...stored.values()],
+        write: async (input) => {
+          if (stored.get(input.key)?.version !== input.expectedVersion)
+            throw new Error('Store conflict')
+          const entry = {
+            key: input.key,
+            record: input.record,
+            version: String(++storeVersion)
+          }
+          stored.set(input.key, entry)
+          return entry
+        }
+      },
+      createGroups: (ownership) => [
+        {
+          name: 'design_operations',
+          description: 'Canonical query and mapping owners',
+          owner: createLocalOperationTools(
+            actions.map(createAiToolContract),
+            {
+              modelActions: (actions) => actions,
+              resolveBatch: (batch) => batch
+            },
+            async (batch) => {
+              const receipt: import('../../src/ai/action-batch-protocol').AiBatchReceipt =
+                {
+                  context: null,
+                  actionResults: []
+                }
+              for (const call of batch.actions) {
+                const action = actions.find((item) => item.name === call.name)
+                if (!action) throw new Error('Unknown action')
+                try {
+                  const actual = (await action.execute(
+                    call.arguments as never,
+                    {
+                      signal: app.signal,
+                      runMutation: async (write, settled) => {
+                        const value = write()
+                        settled?.(value)
+                        return value
+                      }
+                    }
+                  )) as { retained?: { snapshotId: string } }
+                  if (actual.retained) deliveredId = actual.retained.snapshotId
+                  receipt.actionResults.push({
+                    actionId: call.id,
+                    actionName: call.name,
+                    result: JSON.parse(JSON.stringify(actual))
+                  })
+                } catch (error) {
+                  return requireBatchSuccess(
+                    batch,
+                    {
+                      ...receipt,
+                      failure: {
+                        code: 'ACTION_FAILED',
+                        stage: 'execution',
+                        message: (error as Error).message,
+                        actionName: call.name,
+                        settlement: receipt.actionResults.length
+                          ? 'partial'
+                          : 'not-started',
+                        actionId: call.id,
+                        actionExecutionMs: 1,
+                        contextFresh: true
+                      }
+                    },
+                    1
+                  )
+                }
+              }
+              return receipt
+            },
+            { ownership, requestSignal: app.signal }
+          )
+        }
+      ]
+    })
+    const literal = (value: unknown) => ({ kind: 'literal', value })
+    const proposal = {
+      format: 1,
+      name: 'group-and-hide',
+      revision: 1,
+      description:
+        'Group supplied document identities and edit their exact retained children.',
+      inputSchema: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, 'x-runtime-value': 'document' }
+      },
+      outputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['status', 'groupId'],
+        properties: {
+          status: { type: 'string' },
+          groupId: {
+            type: 'string',
+            minLength: 1,
+            'x-runtime-value': 'document'
+          }
+        }
+      },
+      steps: [
+        {
+          id: 'group',
+          tool: 'design_operations.api_hierarchy_groupElements',
+          revision: 4,
+          input: {
+            kind: 'object',
+            fields: {
+              arguments: {
+                kind: 'object',
+                fields: { elementIds: { kind: 'input', path: '' } }
+              },
+              inspection: literal('defer')
+            }
+          }
+        },
+        {
+          id: 'edit',
+          tool: 'design_operations.api_element_setElementsVisible',
+          revision: 4,
+          input: {
+            kind: 'object',
+            fields: {
+              arguments: {
+                kind: 'object',
+                fields: {
+                  elementIds: {
+                    kind: 'step',
+                    step: 'group',
+                    path: '/actionResults/0/result/retained'
+                  },
+                  visible: literal(false)
+                }
+              },
+              inspection: literal('defer')
+            }
+          }
+        }
+      ],
+      output: {
+        kind: 'object',
+        fields: {
+          status: {
+            kind: 'step',
+            step: 'edit',
+            path: '/actionResults/0/result/status'
+          },
+          groupId: {
+            kind: 'step',
+            step: 'group',
+            path: '/actionResults/0/result/value/groupId'
+          }
+        }
+      }
+    }
+    try {
+      if (mode !== 'recipe') {
+        const invoke = async (name: string, args: unknown) =>
+          JSON.parse(
+            (
+              await host.invoke({
+                name: 'design_operations.execute_design_batch',
+                input: {
+                  operations: [
+                    { name, arguments: args },
+                    ...(mode === 'partial' &&
+                    name === 'api_hierarchy_groupElements'
+                      ? [
+                          {
+                            name: 'api_selection_selectElements',
+                            arguments: { elementIds: ['part'] }
+                          },
+                          {
+                            name: 'api_selection_selectElements',
+                            arguments: { elementIds: ['part'] }
+                          }
+                        ]
+                      : [])
+                  ],
+                  inspection: 'defer'
+                }
+              })
+            ).text
+          )
+        const produced = await invoke('api_hierarchy_groupElements', {
+          elementIds: ['part']
+        })
+        expect(produced.toolOutcome, JSON.stringify(produced)).toMatchObject({
+          status: mode === 'partial' ? 'partial' : 'success'
+        })
+        if (mode === 'partial') {
+          expect(select).toHaveBeenCalledOnce()
+          expect(update).not.toHaveBeenCalled()
+          expect(produced.executionResult.actionResults).toHaveLength(1)
+        }
+        const delivered =
+          mode === 'partial' ? produced.executionResult : produced
+        const reference = delivered.actionResults[0].result.retained
+        const read = JSON.parse(
+          (
+            await host.invoke({
+              name: 'design_operations.read_design_context',
+              input: {
+                arguments: {
+                  scope: 'snapshot',
+                  snapshotId: reference.snapshotId,
+                  delivery: 'receipt'
+                }
+              }
+            })
+          ).text
+        )
+        expect(read.toolOutcome, JSON.stringify(read)).toMatchObject({
+          status: 'success'
+        })
+        expect(read.actionResults[0].result.receipt.value.elementIds).toEqual([
+          'part'
+        ])
+        const edited = await invoke('api_element_setElementsVisible', {
+          elementIds: reference,
+          visible: false
+        })
+        expect(edited.toolOutcome, JSON.stringify(edited)).toMatchObject({
+          status: 'success'
+        })
+        expect(group).toHaveBeenCalledOnce()
+        expect(update).toHaveBeenCalledExactlyOnceWith(['part'], false)
+        expect(app.queries.get(deliveredId).orderedIds).toEqual(['part'])
+        await host.dispose()
+        expect(() => app.queries.get(deliveredId)).toThrow(/missing/)
+        return
+      }
+      const submitted = JSON.parse(
+        (
+          await host.invoke({
+            name: 'tool_library.submit_tool',
+            input: { submissionId: 'shading', proposal }
+          })
+        ).text
+      )
+      expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
+      const result = JSON.parse(
+        (
+          await host.invoke({
+            name: 'tool_library.invoke_tool',
+            input: { name: proposal.name, revision: 1, input: ['part'] }
+          })
+        ).text
+      )
+      expect(result, JSON.stringify(result)).toMatchObject({
+        execution: {
+          status: 'success',
+          value: { status: 'complete', groupId: 'container' }
+        },
+        storage: { status: 'saved' }
+      })
+      expect(group).toHaveBeenCalledExactlyOnceWith(['part'])
+      expect(update).toHaveBeenCalledExactlyOnceWith(['part'], false)
+      expect(deliveredId).not.toBe('')
+      expect(() => app.queries.get(deliveredId)).toThrow(/missing/)
+    } finally {
+      await host.dispose()
+      app.queries.dispose()
+    }
+  }
+)
+
+it.each(['publish', 'publishAliases'] as const)(
+  'preserves acknowledged writes after %s failure and reports unusable delivery even with a browser success outcome',
+  async (method) => {
+    const { localToolOutcome } = await import('../local-tool-invocation')
+    const app = fixture()
+    await app.leases.open({
+      requestId: 'request',
+      callId: 'producer',
+      input: null,
+      inputSchema: { type: 'null' }
+    })
+    const retained = app.queries.retainReceipt(
+      ['part'],
+      { value: { elementIds: ['part'] } },
+      app.signal
+    )
+    app.ownership[method] = vi.fn(() => {
+      throw new Error('Injected publication failure')
+    })
+    try {
+      const receipt = await app.bridge.accept(
+        {
+          batchId: 'batch',
+          actions: [
+            {
+              id: 'group',
+              name: 'api_hierarchy_groupElements',
+              arguments: { elementIds: ['part'] },
+              summary: 'Group'
+            }
+          ]
+        },
+        {
+          context: null,
+          actionResults: [
+            {
+              actionId: 'group',
+              actionName: 'api_hierarchy_groupElements',
+              result: {
+                status: 'complete',
+                value: { groupId: 'container', elementIds: ['part'] },
+                retained,
+                toolOutcome: { status: 'success', settlement: 'completed' }
+              }
+            }
+          ]
+        }
+      )
+      expect(receipt.actionResults[0].result).toMatchObject({
+        status: 'complete',
+        value: { groupId: 'container' },
+        delivery: { status: 'unavailable' }
+      })
+      expect(receipt.actionResults[0].result).not.toHaveProperty('retained')
+      expect(localToolOutcome(receipt)).toMatchObject({
+        status: 'partial',
+        settlement: 'completed'
+      })
+      expect(app.release).toHaveBeenCalledExactlyOnceWith(retained.snapshotId)
+    } finally {
+      await app.leases.release({ requestId: 'request', callId: 'producer' })
+      await app.leases.dispose()
       app.queries.dispose()
     }
   }

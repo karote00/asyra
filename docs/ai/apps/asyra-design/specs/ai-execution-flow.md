@@ -252,6 +252,23 @@ settlement; mixed successful writes and failure are partial. Compact replies may
 aggregate successful valueless acknowledgements, retaining their unmeasured
 application meaning, without dropping identities, reads or failure evidence.
 
+Structural direct delivery retains group/ungroup child identities and acknowledged
+move identities in the existing request-owned context store. The immutable full
+receipt is stored with that membership at synchronous mutation settlement, after canonical publication and before yielding. A later document change invalidates the reference instead of recertifying old output. Compact output returns `retained` with
+`snapshotId`, `leaseId` and `total`, plus outcome/count/root identity; no expanded
+structural or mutation-scope lists enter the model reply. Internal checking and
+history consume the unchanged receipt first. A deletion has no live target set.
+Only declared element-list arguments accept these references; point/segment IDs
+remain ordinary explicit arrays. Resolve all references and validate their exact
+request, lease, workspace and revision inside synchronous mutation admission.
+Stale/released references reject before writes; no automatic reselection or replay.
+`read_design_context` with `scope=snapshot, delivery=receipt` retrieves immutable
+historical evidence and explicitly reports whether its targets are current. It
+cannot refresh stale target authority. Normal page/reference reads still require
+current data. Capacity/cancellation/publication failure after acknowledged writes
+preserves the receipt with an unavailable delivery diagnostic; successors cannot
+consume a missing handle. Unknown and failed owner results are not compacted.
+
 Preparation consumes validated parameters or existing immutable handles and
 returns prepared handles, concise findings and semantic target references.
 Existing owner APIs compute layout, projection and repetition. Downstream tools

@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -82,7 +82,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "010edb78b56af4edd6cf4145e7e9499f19f96012d5be508c84f34da922d518bc"
+          "sha256": "636836707e686d347b7e46dd948b1d9ff1e22cd9d8628c36d18aa1f635c47dc2"
         }
       ]
     },
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "cee24b2b6ec345049c56b40a895d0f53fa98b93134686d9dd03784f85cd3e0e2"
+          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -214,7 +214,7 @@
         },
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "d8a327db128788d403d1488f041f6a66d086e5e11ffe84b759a8d2d0aa896c7f"
+          "sha256": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028"
         }
       ]
     },
@@ -228,7 +228,7 @@
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "cee24b2b6ec345049c56b40a895d0f53fa98b93134686d9dd03784f85cd3e0e2"
+          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
         }
       ]
     },
@@ -252,11 +252,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "d8a327db128788d403d1488f041f6a66d086e5e11ffe84b759a8d2d0aa896c7f"
+          "sha256": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "63fe0fc3b9acfcdefb99a5e6edeacb98f7387db9d36172dc71c608e5d1aa6208"
+          "sha256": "a7d564354a9fff4edc98b4149c901269db9b0d454905aa59fa7401b810ef5143"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "63fe0fc3b9acfcdefb99a5e6edeacb98f7387db9d36172dc71c608e5d1aa6208"
+          "sha256": "a7d564354a9fff4edc98b4149c901269db9b0d454905aa59fa7401b810ef5143"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -322,11 +322,11 @@
     },
     {
       "id": "reference/packages/ai-agent-runtime",
-      "pageSha256": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
+      "pageSha256": "dc0e514e272c38a1227c5c2127d8ea4bcf24ed2664c7784d7fe84049269f5183",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "63fe0fc3b9acfcdefb99a5e6edeacb98f7387db9d36172dc71c608e5d1aa6208"
+          "sha256": "a7d564354a9fff4edc98b4149c901269db9b0d454905aa59fa7401b810ef5143"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "7b9e155c27208519fcdfdca6e81b8cd26387002a2c86a3ba4a31780a68486517"
+          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
         },
         {
           "path": "packages/core/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "cee24b2b6ec345049c56b40a895d0f53fa98b93134686d9dd03784f85cd3e0e2"
+          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
         },
         {
           "path": "packages/factory/package.json",
@@ -522,7 +522,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/scene-tree.md",
-          "sha256": "d8a327db128788d403d1488f041f6a66d086e5e11ffe84b759a8d2d0aa896c7f"
+          "sha256": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028"
         },
         {
           "path": "packages/scene-tree/package.json",
