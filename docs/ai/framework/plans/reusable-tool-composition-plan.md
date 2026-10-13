@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 5 COMPLETE - review Stage 6 before its goal and implementation.
+Status: STAGE 6 COMPLETE - review Stage 7 before its goal and implementation.
 
 ## Current authority and stop boundary
 
@@ -1806,3 +1806,53 @@ Validation: 248 tests passed, three pre-existing conditional skips
 A prompt test still expecting old final=false wording was aligned to current
 accumulation/completion wording while preserving the local-work-retention check.
 No production executor changed and no AI was launched.
+
+
+## Stage 6 - Normalized activity evidence
+
+### Reviewed Step Execution Card
+
+Owner: settle activity projection and observe provider adapter. Review covered
+current specification Purpose lifetime, exact Inspector settle/observe conditions,
+provider progress normalization, the existing activity reducer, profiler evidence
+schema and their direct formal tests. No new state machine or event store.
+
+The provider already normalizes registered operation labels to system activity
+for the UI, but computes recorded purpose from the pre-normalized work kind.
+Use the normalized kind for both consumers. Preserve registered diagnostic text
+as expectedResult with expectationSource, not as authored purpose. Use existing
+profiler fields; do not infer a model purpose from tool names or cleanup.
+
+Inputs: actual public progress, producer order and ancestry, authored commentary,
+registered descriptions. Outputs: normalized UI events and equivalent trace facts.
+Preserve current request purpose and live-parent/sibling resolution. Failure:
+observer exceptions remain diagnostic only; closed/settled calls cannot revive.
+Cancellation, retry and saving retain existing lifecycle precedence.
+
+Scope: provider progress adapter, provider/presentation tests, spec and matching
+Inspector condition. Cases: registered review and preparation, authored work,
+cleanup, late closed-call events, concurrent siblings, phase transitions and
+recorded/UI agreement. Run provider and complete presentation suites, server and
+browser tsc, scoped lint/naming and same-source flow proof. No live model, new
+coordinator, language change or whole-repository discovery. Review found existing
+state machine owns the required lifetimes; only the inconsistent producer and its
+contract need correction. Push after these gates and bounded self-review.
+
+
+### Stage 6 closure
+
+Actual provider/UI regression failed before the fix: kind was system while trace
+purpose contained the registered label. After normalization the trace has null
+purpose/inherited source, with the unchanged registered text in expectedResult
+and explicit expectationSource. No fallback old schema or duplicate reducer.
+Provider 174 passed/3 existing conditional skips, presentation 52 passed, server
+and browser TypeScript passed, lint zero errors (existing console warnings),
+naming and eight catalog contract tests passed. Same-source proof passed all 29
+obligations, four exact negative cases and recovery. Candidate
+28b5292a-4f2f-4e5e-ba1d-78ca5da65538 and contract review
+f1cf188c5c8fdd65258bada79bd4d940a951d9bfe3d33d7f8057f0e53fdddc86
+were accepted; source 1282c6edee18304fdff555fdc5f1d19e2d7c4b646de0d9729e23e17a47d3c01f.
+Evidence: tmp/stage6-{red,provider,presentation,tsc,lint,proof,catalog-test}.log.
+Self-review confirmed authored labels, cleanup, live ancestry, terminal precedence
+and late-event refusal remain owned by the existing state machine. No other App
+uses this Design provider adapter. No live model or broad CI was run.

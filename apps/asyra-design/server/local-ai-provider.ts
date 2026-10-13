@@ -276,9 +276,14 @@ const runLocalAiProvider = async (
       tool: event.tool,
       status: event.status,
       activity,
-      purpose: event.activity?.kind === 'work' ? event.message : null,
-      purposeSource:
-        event.activity?.kind === 'work' ? purposeSource : 'inherited'
+      purpose: activity.kind === 'work' ? event.message : null,
+      purposeSource: activity.kind === 'work' ? purposeSource : 'inherited',
+      ...(purposeSource === 'registered-operation'
+        ? {
+            expectedResult: event.message,
+            expectationSource: purposeSource
+          }
+        : {})
     })
     try {
       options.onProgress?.({ ...event, activity })

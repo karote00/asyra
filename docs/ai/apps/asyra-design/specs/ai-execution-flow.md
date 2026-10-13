@@ -1371,7 +1371,9 @@ preserves genuine live parent and independent sibling purposes. Observed phase,
 ordering and stopping/saving/terminal lifecycle take precedence independently.
 Registered operation descriptions are system activity, not model-authored stage
 changes. The provider must publish their existing `kind: system` classification;
-their diagnostic intent/provenance remains recorded. They update observed phases
+their diagnostic intent/provenance remains recorded as expectedResult and
+expectationSource. Recorded purpose uses the same normalized kind as the UI;
+system activity cannot become authored purpose in the trace. They update observed phases
 without retiring current authored commentary. Genuine new authored work continues
 to supersede an old stage; the consumer must not revive it after call completion.
 

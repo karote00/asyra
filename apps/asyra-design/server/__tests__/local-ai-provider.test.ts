@@ -4560,17 +4560,22 @@ it('records registered review intent without declaring a new authored stage', as
     activity: { kind: 'system' },
     message: 'Checking the requested details'
   })
-  expect(
-    retainedRecords.some((value) => {
-      const record = value as {
-        evidence?: { purposeSource?: string; tool?: string }
-      }
-      return (
-        record.evidence?.purposeSource === 'registered-operation' &&
-        record.evidence?.tool === 'review_drawing'
-      )
-    })
-  ).toBe(true)
+  const records = retainedRecords as {
+    evidence?: Record<string, unknown>
+  }[]
+  const recorded = records.find(
+    (record) =>
+      record.evidence?.method === 'app/activity' &&
+      record.evidence?.tool === 'review_drawing' &&
+      (record.evidence?.activity as { phase?: string })?.phase === 'queued'
+  )?.evidence
+  expect(recorded).toMatchObject({
+    activity: review.activity,
+    purpose: null,
+    purposeSource: 'inherited',
+    expectedResult: 'Checking the requested details',
+    expectationSource: 'registered-operation'
+  })
 })
 
 it.each(['active', 'settled'] as const)(
