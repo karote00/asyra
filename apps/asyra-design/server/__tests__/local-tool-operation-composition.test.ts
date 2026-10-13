@@ -389,7 +389,10 @@ const inspectionHandoffFixture = () => {
           validated.push(evidence.receiptId)
           if (state.validationFailure)
             throw new Error('Validation transport unavailable')
-          result = { current: state.current }
+          result = {
+            current: state.current,
+            validatedAt: { sessionId: 'consumer-validation', revision: 1 }
+          }
         } else {
           const action = actions.find((action) => action.name === call.name)
           if (!action) throw new Error('Unknown canonical action')

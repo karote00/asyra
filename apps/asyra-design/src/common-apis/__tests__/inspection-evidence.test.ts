@@ -5,6 +5,7 @@ const observed = vi.hoisted(() => ({
   stopped: vi.fn(),
   getElementData: vi.fn(),
   getElementMetadata: vi.fn(),
+  getElementIdsInBounds: vi.fn(),
   getCurrentWorkspaceId: vi.fn(() => 'workspace'),
   getElementComputedData: vi.fn(() => ({ x: 0, y: 0, width: 40, height: 20 })),
   isContainerType: vi.fn((type) => type === 'group'),
@@ -17,6 +18,7 @@ vi.mock('../../contexts', () => ({
   default: {
     getElementData: observed.getElementData,
     getElementMetadata: observed.getElementMetadata,
+    getElementIdsInBounds: observed.getElementIdsInBounds,
     getCurrentWorkspaceId: observed.getCurrentWorkspaceId,
     getElementComputedData: observed.getElementComputedData,
     isContainerType: observed.isContainerType,
@@ -32,7 +34,8 @@ vi.mock('../../contexts', () => ({
 }))
 vi.mock('../../constants', async () => import('../../constants/ai-actions'))
 vi.mock('../index', () => ({ inspectionApis: { inspect: vi.fn() } }))
-vi.mock('@asyra/core', () => ({
+vi.mock('@asyra/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@asyra/core')>()),
   yieldToCooperativeHost: async () => undefined,
   subscribeToFileLoadComplete: (listener: () => void) => {
     observed.loaded = listener
@@ -383,3 +386,334 @@ it('invalidates attachment editability without invalidating unchanged rendered p
   expect(owner.isCurrent(b.evidence)).toBe(false)
   owner.dispose()
 })
+
+it.each([
+  { regionCount: 8, drift: false },
+  { regionCount: 32, drift: false },
+  { regionCount: 32, drift: true },
+  ...[
+    'duplicate',
+    'missing',
+    'wrong-name',
+    'missing-version',
+    'invalid-without-version',
+    'extra',
+    'cancel',
+    'failure',
+    'throw'
+  ].map((fault) => ({ regionCount: 32, drift: false, fault }))
+])(
+  'accumulates $regionCount regional reviews with validation drift=$drift fault=$fault',
+  async ({ regionCount, drift, fault }) => {
+    const { createLocalOperationTools } =
+      await import('../../../server/local-operation-tools')
+    const { AiActionNames } = await import('../../constants/ai-actions')
+    const { AiDesignToolIds } = await import('../../constants/ai-design')
+    const units = Array.from(
+      { length: regionCount },
+      (_, index) => `tier-${index}`
+    )
+    const parents: Record<string, string | undefined> = {
+      workspace: undefined,
+      building: 'workspace'
+    }
+    for (const [index, unit] of units.entries()) {
+      parents[unit] = 'building'
+      parents[`window-${index}`] = unit
+    }
+    const metadata = (id: string) =>
+      Object.hasOwn(parents, id)
+        ? { id, type: 'group', parentId: parents[id] }
+        : undefined
+    observed.getElementData.mockImplementation(metadata)
+    observed.getElementMetadata.mockImplementation(metadata)
+    observed.elementLocalToWorkspace.mockImplementation((id, point) => ({
+      x: point.x,
+      y: point.y + Number(id.split('-')[1] ?? 0) * 100
+    }))
+    observed.getElementIdsInBounds.mockImplementation((bounds) => [
+      `window-${Math.floor(bounds.y / 100)}`
+    ])
+    const evidence = createInspectionEvidence()
+    const captureTargets: string[] = []
+    const validations: unknown[] = []
+    const batchSizes: number[] = []
+    let changeDuringValidation = false
+    const controller = new AbortController()
+    const signal = controller.signal
+    let validationFault: string | undefined
+    const tools = createLocalOperationTools(
+      [
+        AiActionNames.INSPECT_DRAWING,
+        AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      async (batch) => {
+        batchSizes.push(batch.actions.length)
+        if (changeDuringValidation && batch.actions.length < 24) {
+          changeDuringValidation = false
+          observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+            id: 'window-2',
+            changes: [{ key: 'visible', before: true, after: false }]
+          })
+        }
+        const reply = {
+          context: {},
+          actionResults: await Promise.all(
+            batch.actions.map(async (action) => {
+              const args = action.arguments as {
+                evidence: unknown
+                scope?: Parameters<typeof evidence.validate>[1]
+                elementId: string
+                region?: { x: number; y: number; width: number; height: number }
+              }
+              let result
+              if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
+                result = evidence.validate(args.evidence, args.scope)
+                validations.push(result)
+              } else {
+                expect(action.name).toBe(AiActionNames.INSPECT_DRAWING)
+                captureTargets.push(args.elementId)
+                result = await evidence.capture(
+                  () => ({
+                    available: true,
+                    image: { dataUrl: 'data:image/png;base64,AA==' }
+                  }),
+                  { elementId: args.elementId, region: args.region }
+                )
+              }
+              return { actionId: action.id, actionName: action.name, result }
+            })
+          )
+        }
+        const currentFault = validationFault
+        validationFault = undefined
+        if (currentFault === 'duplicate')
+          reply.actionResults.push(reply.actionResults[0])
+        if (currentFault === 'missing') reply.actionResults.shift()
+        if (currentFault === 'wrong-name')
+          reply.actionResults[0].actionName = 'wrong'
+        if (currentFault === 'invalid-without-version')
+          (reply.actionResults[0].result as Record<string, unknown>).current =
+            false
+        if (
+          currentFault === 'missing-version' ||
+          currentFault === 'invalid-without-version'
+        )
+          delete (reply.actionResults[0].result as Record<string, unknown>)
+            .validatedAt
+        if (currentFault === 'extra')
+          reply.actionResults.push({
+            ...reply.actionResults[0],
+            actionId: 'unexpected'
+          })
+        if (currentFault === 'cancel') controller.abort()
+        if (currentFault === 'throw')
+          throw new Error('Validation transport unavailable')
+        if (currentFault === 'failure')
+          return {
+            ...reply,
+            failure: {
+              code: 'validation-failed',
+              message: 'Validation unavailable',
+              stage: 'execute',
+              actionId: null,
+              actionName: null,
+              actionExecutionMs: null,
+              settlement: 'not-started' as const,
+              contextFresh: false
+            }
+          }
+        return reply
+      },
+      { reviewTargetId: 'building' }
+    )
+    const call = async (name: string, args: Record<string, unknown>) =>
+      JSON.parse(await tools.call(name, args, signal))
+    try {
+      await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+        method: 'Draw the requested building',
+        references: [],
+        structureCriteria: [],
+        detailRequired: false,
+        criteria: {
+          Overall: {
+            requirement: 'Complete building',
+            description: 'Whole-view agreement',
+            verification: 'visual'
+          },
+          Facade: {
+            requirement: 'Detailed facade',
+            description: 'Local windows and neighboring alignment',
+            verification: 'visual',
+            requiredUnits: [...units.slice(0, 16), 'alignment']
+          },
+          ...(units.length > 16
+            ? {
+                Additional: {
+                  requirement: 'Remaining facade',
+                  description: 'Remaining local windows',
+                  verification: 'visual',
+                  requiredUnits: units.slice(16)
+                }
+              }
+            : {})
+        }
+      })
+      const capture = async (elementId: string, regional = true) => {
+        const reply = await call(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          inspections: [
+            {
+              elementId,
+              ...(regional
+                ? { region: { x: 0, y: 0, width: 40, height: 60 } }
+                : {})
+            }
+          ]
+        })
+        expect(reply).not.toHaveProperty('status', 'partial')
+        expect(reply.message).toContain('submit primary-agent findings')
+        return reply.inspectionIds[0] as string
+      }
+      const submit = (unitId: string, inspectionIds: string[]) =>
+        call(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          inspectionIds,
+          checks: [
+            {
+              criterionId:
+                Number(unitId.split('-')[1]) >= 16 ? 'Additional' : 'Facade',
+              unitId,
+              status: 'pass',
+              evidence: `Observed ${unitId}`,
+              inspectionIds
+            }
+          ]
+        })
+      const images: string[] = []
+      for (const unit of units) {
+        const image = await capture(unit)
+        images.push(image)
+        expect((await submit(unit, [image])).accepted).toBe(false)
+      }
+      expect((await submit('alignment', [images[2], images[3]])).accepted).toBe(
+        false
+      )
+      const whole = await capture('building', false)
+      const overall = (image: string) =>
+        call(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          inspectionIds: [image],
+          checks: [
+            {
+              criterionId: 'Overall',
+              status: 'pass',
+              evidence: 'Whole building agrees'
+            }
+          ]
+        })
+      const retainedBefore = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        includePassed: true
+      })
+      changeDuringValidation = drift
+      validationFault = fault
+      const dispatchCount = batchSizes.length
+      if (fault === 'cancel' || fault === 'throw') {
+        await expect(overall(whole)).rejects.toThrow()
+        expect(batchSizes.length - dispatchCount).toBe(1)
+        const retained = JSON.parse(
+          await tools.call(
+            AiDesignToolIds.READ_DESIGN_CHECKS,
+            { includePassed: true },
+            new AbortController().signal
+          )
+        )
+        expect(retained.items).toEqual(retainedBefore.items)
+        return
+      }
+      const initial = await overall(whole)
+      if (fault) {
+        expect(initial).toMatchObject({ accepted: false, status: 'partial' })
+        expect(batchSizes.length - dispatchCount).toBe(1)
+        const retainedAfter = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          includePassed: true
+        })
+        expect(retainedAfter.items).toEqual(retainedBefore.items)
+        expect((await overall(whole)).accepted).toBe(true)
+        expect(captureTargets).toHaveLength(regionCount + 1)
+        return
+      }
+      if (drift) {
+        expect(initial).toMatchObject({ accepted: false, status: 'partial' })
+        const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+        expect(
+          pending.items
+            .map(
+              (item: { unitId?: string; criterionId: string }) =>
+                item.unitId ?? item.criterionId
+            )
+            .sort()
+        ).toEqual(['Overall', 'alignment', 'tier-2'])
+        expect(captureTargets).toHaveLength(regionCount + 1)
+        return
+      }
+      expect(initial.accepted).toBe(true)
+      const before = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        includePassed: true
+      })
+      const memberships = observed.getElementIdsInBounds.mock.calls.length
+      observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+        action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+        id: 'window-2',
+        changes: [{ key: 'visible', before: true, after: false }]
+      })
+      const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+      expect(
+        pending.items
+          .map(
+            (item: { unitId?: string; criterionId: string }) =>
+              item.unitId ?? item.criterionId
+          )
+          .sort()
+      ).toEqual(['Overall', 'alignment', 'tier-2'])
+      const fresh = await capture('tier-2')
+      expect((await submit('tier-2', [fresh])).accepted).toBe(false)
+      expect((await submit('alignment', [fresh, images[3]])).accepted).toBe(
+        false
+      )
+      expect((await overall(await capture('building', false))).accepted).toBe(
+        true
+      )
+      await tools.validateCompletion(signal)
+      const after = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        includePassed: true
+      })
+      for (const unit of units.filter((unit) => unit !== 'tier-2')) {
+        expect(
+          after.items.find((item: { unitId?: string }) => item.unitId === unit)
+        ).toEqual(
+          before.items.find((item: { unitId?: string }) => item.unitId === unit)
+        )
+        expect(captureTargets.filter((id) => id === unit)).toHaveLength(1)
+      }
+      expect(captureTargets.filter((id) => id === 'tier-2')).toHaveLength(2)
+      expect(captureTargets.filter((id) => id === 'building')).toHaveLength(2)
+      expect(
+        observed.getElementIdsInBounds.mock.calls.length - memberships
+      ).toBe(1)
+      expect(Math.max(...batchSizes)).toBeLessThanOrEqual(24)
+      expect(validations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            current: true,
+            coverage: expect.objectContaining({ complete: true })
+          })
+        ])
+      )
+    } finally {
+      evidence.dispose()
+    }
+  }
+)

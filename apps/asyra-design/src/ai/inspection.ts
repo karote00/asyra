@@ -62,8 +62,12 @@ export const createInspectionValidationAction = (
 }> => ({
   ...actionToolSemantics(
     AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
-    toolResultObject({ current: toolResultBoolean })
+    toolResultObject({
+      current: toolResultBoolean,
+      validatedAt: inspectionEvidenceSchema
+    })
   ),
+  revision: 3,
   name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
   description:
     'Check whether an App-issued stamp still has current canonical dependencies. Scoped visual receipts may survive unrelated document edits; unscoped stamps require the original document revision. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Unchanged stamp checks take constant work; pending regions recheck spatial membership. Missing, retired or changed evidence is not current.',

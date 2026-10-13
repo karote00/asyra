@@ -291,7 +291,8 @@ export const createInspectionEvidence = (
     },
     validate: (stamp: unknown, scope?: InspectionScopeQuery) => {
       const current = isCurrent(stamp)
-      if (!scope) return { current }
+      const validatedAt = { sessionId, revision }
+      if (!scope) return { current, validatedAt }
       const missingIds = new Set<string>()
       const parents = new Map<string, string | undefined>()
       const readParent = (id: string) => {
@@ -330,6 +331,7 @@ export const createInspectionEvidence = (
       } else uncoveredIds.push(...scope.requiredIds)
       return {
         current,
+        validatedAt,
         coverage: {
           complete:
             current &&

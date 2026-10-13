@@ -403,8 +403,8 @@
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
-        "from": "if (!isRecord(result) || result.current !== true)",
-        "to": "if (!isRecord(result))"
+        "from": "if (isRecord(result) && result.current === false)\n            invalidIds.push(...group.ids)",
+        "to": "if (false)\n            invalidIds.push(...group.ids)"
       }
     }
   ]

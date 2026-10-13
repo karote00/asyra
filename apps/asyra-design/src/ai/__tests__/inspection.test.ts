@@ -171,11 +171,17 @@ it('binds action output to canonical evidence and validates it without another s
   }
   expect(
     await validate.execute({ evidence: result.evidence }, context)
-  ).toEqual({ current: true })
+  ).toEqual({
+    current: true,
+    validatedAt: { sessionId: result.evidence.sessionId, revision: 0 }
+  })
   changed()
   expect(
     await validate.execute({ evidence: result.evidence }, context)
-  ).toEqual({ current: false })
+  ).toEqual({
+    current: false,
+    validatedAt: { sessionId: result.evidence.sessionId, revision: 1 }
+  })
   expect(inspect).toHaveBeenCalledOnce()
   evidence.dispose()
   expect(stop).toHaveBeenCalledOnce()

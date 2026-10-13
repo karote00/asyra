@@ -788,7 +788,11 @@ it('applies and reviews ready batches while later requirements and geometry rema
             image: { dataUrl: 'data:image/png;base64,AA==' }
           }
         } else {
-          result = { current: true, coverage: { complete: true } }
+          result = {
+            current: true,
+            validatedAt: { sessionId: 'consumer-validation', revision: 1 },
+            coverage: { complete: true }
+          }
         }
         return { actionId: action.id, actionName: action.name, result }
       })
@@ -931,7 +935,10 @@ it('accepts first-write criteria through the advertised combined tool and real r
   const late = await invokeLocalTool(
     workflow,
     workflow.definitions[0],
-    { draft, plan: reviewPlanExample },
+    {
+      draft,
+      plan: { ...reviewPlanExample, method: 'A changed retrospective plan' }
+    },
     signal()
   )
   expect(late.success).toBe(false)
@@ -1281,7 +1288,11 @@ const inspectionBoundaryFixture = (
           measuredTextIds: []
         }
       } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-        result = { current: true, coverage: { complete: true } }
+        result = {
+          current: true,
+          validatedAt: { sessionId: 'consumer-validation', revision: 1 },
+          coverage: { complete: true }
+        }
       } else {
         result = {
           available: !options.captureUnavailable,

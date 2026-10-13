@@ -3493,7 +3493,10 @@ it('runs prepared checks through the provider without opening another model requ
                   { x: 0, y: 1 }
                 ]
               }
-            : { current: true }
+            : {
+                current: true,
+                validatedAt: { sessionId: 'consumer-validation', revision: 1 }
+              }
       })
     )
   }))

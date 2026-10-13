@@ -1,4 +1,5 @@
 import { createLocalImageTools } from '../local-image-tools'
+import { createDesignCheckResults } from '../design-check-results'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -14,7 +15,10 @@ import {
   reviewPlanSchema,
   reviewPlanExample
 } from '../local-design-review'
-import { operationInputIssue } from '../operation-input-schema'
+import {
+  operationInputIssue,
+  nativeToolInputSchema
+} from '../operation-input-schema'
 const plan = {
   phase: 'plan',
   method: 'Construct a requested view',
@@ -712,7 +716,14 @@ it('allows a focused intermediate assessment without certifying unfinished final
     checks: [check('Viewpoint')]
   })
   expect(review.getIssue()).toBeTruthy()
-  expect(() => review.record({ ...stage, final: true })).toThrow()
+  expect(review.record({ ...stage, final: true })).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'Finish' })
+      ])
+    }
+  })
   expect(
     review.record({
       phase: 'visual',
@@ -841,7 +852,7 @@ it('retains observable structure checks linked to the original request by stable
       ]
     })
   ).toMatchObject({ readyForDetail: true, accepted: false })
-  expect(() =>
+  expect(
     review.record({
       phase: 'visual',
       inspectionIds,
@@ -853,7 +864,14 @@ it('retains observable structure checks linked to the original request by stable
         }
       ]
     })
-  ).toThrow(/every planned criterion/)
+  ).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'finish' })
+      ])
+    }
+  })
   expect(
     review.record({
       phase: 'visual',
@@ -1070,7 +1088,7 @@ it('requires independent final evidence and never upgrades the drawing agent’s
         status: 'pass',
         evidence: 'The requested whole form is present.'
       },
-      checks: [check('Viewpoint'), check('Finish')]
+      checks: [check('Viewpoint')]
     })
   ).toMatchObject({ accepted: true })
 })
@@ -1560,9 +1578,16 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
     inspectionIds,
     checks: [check('Finish')]
   })
-  expect(() =>
+  expect(
     review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
-  ).toThrow(/every planned criterion/)
+  ).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'Viewpoint' })
+      ])
+    }
+  })
 })
 
 it('corrects derived calculation notes without changing source facts or approved geometry', () => {
@@ -1693,7 +1718,7 @@ it('rechecks only affected data criteria after a source correction while retaini
     review.record({ phase: 'visual', inspectionIds, checks: [check('scale')] })
   ).toMatchObject({ accepted: true })
   review.mutate()
-  expect(() =>
+  expect(
     review.record({
       phase: 'visual',
       inspectionIds: [
@@ -1701,7 +1726,14 @@ it('rechecks only affected data criteria after a source correction while retaini
       ],
       checks: [check('scale')]
     })
-  ).toThrow(/every planned criterion/)
+  ).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'appearance' })
+      ])
+    }
+  })
 })
 
 it('expands independent comparison when a scoped recheck introduces deferred work', () => {
@@ -2233,9 +2265,16 @@ it('does not revive stale passes when only another criterion is reviewed after a
     inspectionIds,
     checks: [check('Finish')]
   })
-  expect(() =>
+  expect(
     review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
-  ).toThrow(/every planned criterion/)
+  ).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'Viewpoint' })
+      ])
+    }
+  })
   expect(review.readChecks().items).toContainEqual(
     expect.objectContaining({ id: 'visual:Viewpoint', status: 'stale' })
   )
@@ -2496,4 +2535,581 @@ it('retains eight regional units under one criterion and repairs only the invali
       checks: [check('Finish')]
     })
   ).toMatchObject({ accepted: true })
+})
+
+it('replays unchanged criteria with the retained source-fact acknowledgement', () => {
+  const review = createLocalDesignReview()
+  const declaration = { ...plan, facts: [sourceFact] }
+  const first = review.record(declaration)
+  review.mutate()
+  expect(review.record(declaration)).toEqual(first)
+})
+
+describe('declared regional acceptance', () => {
+  const units = Array.from({ length: 8 }, (_, i) => `tier-${i}`)
+  const specification = {
+    ...plan,
+    criteria: {
+      ...reviewCriteria(['Overview']),
+      Facade: {
+        ...reviewCriteria(['Facade']).Facade,
+        requiredUnits: [...units, 'alignment']
+      }
+    },
+    structureCriteria: [],
+    detailRequired: false
+  }
+  it('keeps regional declarations and sparse judgments aligned in canonical and native contracts', () => {
+    const declaration = requireTestValue(
+      designEvidenceDefinitions.find(
+        (tool) => tool.name === 'define_design_criteria'
+      )
+    )
+    const inspection = requireTestValue(
+      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
+    )
+    expect(declaration.revision).toBe(3)
+    expect(inspection.revision).toBe(3)
+    const local = {
+      phase: 'visual',
+      inspectionIds: ['image'],
+      checks: [
+        {
+          criterionId: 'Facade',
+          unitId: 'tier-2',
+          status: 'pass',
+          evidence: 'Observed the requested region',
+          inspectionIds: ['image']
+        }
+      ]
+    }
+    for (const [definition, input] of [
+      [declaration, specification],
+      [inspection, local]
+    ] as const) {
+      const schema = nativeToolInputSchema(definition.inputSchema)
+      expect(operationInputIssue(input, definition.inputSchema)).toBeUndefined()
+      expect(operationInputIssue(input, schema)).toBeUndefined()
+    }
+    const duplicate = {
+      ...specification,
+      criteria: {
+        ...specification.criteria,
+        Facade: {
+          ...specification.criteria.Facade,
+          requiredUnits: ['tier-2', 'tier-2']
+        }
+      }
+    }
+    expect(
+      operationInputIssue(duplicate, declaration.inputSchema)
+    ).toBeDefined()
+    expect(
+      operationInputIssue(
+        duplicate,
+        nativeToolInputSchema(declaration.inputSchema)
+      )
+    ).toBeDefined()
+    expect(inspection.description).toContain(
+      'Do not resend unrelated passed checks'
+    )
+  })
+
+  const setup = () => {
+    const review = createLocalDesignReview()
+    review.record(specification)
+    review.mutate()
+    const capture = (id: string, revision = 1, overview = false) =>
+      requireTestValue(
+        review.inspect(
+          id,
+          true,
+          overview,
+          overview ? undefined : { x: 0, y: 0, width: 40, height: 60 },
+          !overview,
+          { sessionId: 'regional', revision, receiptId: `${id}:${revision}` }
+        )
+      ).inspectionId
+    const submit = (unitId: string, inspectionIds: string[], final = false) =>
+      review.record({
+        phase: 'visual',
+        final,
+        inspectionIds,
+        checks: [
+          {
+            criterionId: 'Facade',
+            unitId,
+            inspectionIds,
+            status: 'pass',
+            evidence: `Observed ${unitId}`
+          }
+        ]
+      })
+    const overall = (id: string) =>
+      review.record({
+        phase: 'visual',
+        inspectionIds: [id],
+        checks: [check('Overview')]
+      })
+    return { review, capture, submit, overall }
+  }
+
+  it('accumulates regional judgments while preserving a separate whole-view obligation', () => {
+    expect(operationInputIssue(specification, reviewPlanSchema)).toBeUndefined()
+    const { review, capture, submit, overall } = setup()
+    const images = units.map((id) => capture(id))
+    for (let i = 0; i < 7; i++) submit(units[i], [images[i]])
+    const incomplete = submit('alignment', [images[2], images[3]], true)
+    expect(incomplete).toMatchObject({
+      accepted: false,
+      coverage: {
+        required: 10,
+        passed: 8,
+        pending: expect.arrayContaining([
+          expect.objectContaining({
+            criterionId: 'Facade',
+            unitId: 'tier-7',
+            status: 'unverified'
+          }),
+          expect.objectContaining({ criterionId: 'Overview', status: 'stale' })
+        ])
+      }
+    })
+    expect(submit('tier-7', [images[7]], true).accepted).toBe(false)
+    const whole = capture('building', 1, true)
+    expect(overall(whole).accepted).toBe(true)
+    const before = review.readChecks({ includePassed: true }).items
+    review.mutate()
+    review.invalidateInspections(
+      [images[2], whole],
+      'Tier 3 and whole view changed'
+    )
+    const replacement = capture(units[2], 2)
+    const partial = submit(units[2], [replacement], true)
+    expect(partial).toMatchObject({
+      accepted: false,
+      coverage: {
+        passed: 8,
+        pending: expect.arrayContaining([
+          expect.objectContaining({
+            criterionId: 'Facade',
+            unitId: 'alignment',
+            status: 'stale'
+          }),
+          expect.objectContaining({ criterionId: 'Overview', status: 'stale' })
+        ])
+      }
+    })
+    expect(submit('alignment', [replacement, images[3]], true).accepted).toBe(
+      false
+    )
+    expect(overall(capture('building', 2, true)).accepted).toBe(true)
+    const after = review.readChecks({ includePassed: true }).items
+    for (const unitId of units.filter((id) => id !== units[2]))
+      expect(after.find((item) => item.unitId === unitId)).toEqual(
+        before.find((item) => item.unitId === unitId)
+      )
+    expect(review.evidenceEntries().map((entry) => entry.id)).not.toContain(
+      whole
+    )
+    expect(review.evidenceEntries().map((entry) => entry.id)).toContain(
+      images[0]
+    )
+    expect(() =>
+      review.record({
+        ...specification,
+        criteria: {
+          ...specification.criteria,
+          Facade: {
+            ...specification.criteria.Facade,
+            requiredUnits: ['tier-2']
+          }
+        }
+      })
+    ).toThrow(/cannot be rewritten/)
+    expect(() => submit('foreign', [replacement])).toThrow(/declared/)
+    expect(() =>
+      review.record({
+        phase: 'visual',
+        inspectionIds: [replacement],
+        checks: [check('Facade')]
+      })
+    ).toThrow(/unit/)
+  })
+
+  it('cannot use a regional judgment overview to approve a whole criterion judged only from a crop', () => {
+    const { capture, submit, overall } = setup()
+    const whole = capture('building', 1, true)
+    for (const unit of [...units, 'alignment']) submit(unit, [whole])
+    const crop = capture('small-detail')
+    const result = overall(crop)
+    expect(result.accepted).toBe(false)
+    expect(result.coverage.pending).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          criterionId: 'Overview',
+          reason: 'whole-view-required'
+        })
+      ])
+    )
+    expect(overall(whole).accepted).toBe(true)
+  })
+
+  it('rejects invalid declarations before recording any obligations', () => {
+    const invalid = [
+      { ...specification, criteria: { Facade: specification.criteria.Facade } },
+      { ...specification, structureCriteria: ['Facade'] },
+      ...[
+        [],
+        ['tier-0', 'tier-0'],
+        [''],
+        Array.from({ length: 25 }, (_, i) => String(i))
+      ].map((requiredUnits) => ({
+        ...specification,
+        criteria: {
+          ...specification.criteria,
+          Facade: { ...specification.criteria.Facade, requiredUnits }
+        }
+      })),
+      {
+        ...specification,
+        criteria: {
+          ...specification.criteria,
+          Facade: { ...specification.criteria.Facade, verification: 'data' }
+        }
+      }
+    ]
+    for (const value of invalid) {
+      const review = createLocalDesignReview()
+      expect(() => review.record(value)).toThrow()
+      expect(review.readChecks({ includePassed: true }).items).toEqual([])
+    }
+  })
+
+  it('replaces only unjudged pre-drawing obligations without retaining phantom pending results', () => {
+    const review = createLocalDesignReview()
+    review.record(specification)
+    review.record({
+      ...plan,
+      criteria: reviewCriteria(['Construction']),
+      structureCriteria: []
+    })
+    expect(
+      review
+        .readChecks({ includePassed: true })
+        .items.map((item) => item.criterionId)
+    ).toEqual(['Construction'])
+    expect(Object.keys(review.comparisonContext('visual').criteria)).toEqual([
+      'Construction'
+    ])
+  })
+
+  it('allows the first declaration after drawing and cannot reset existing judgments', () => {
+    const review = createLocalDesignReview()
+    review.mutate()
+    review.record(specification)
+    const before = review.readChecks({ includePassed: true })
+    review.record(specification)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    const first = createLocalDesignReview()
+    first.record(specification)
+    const id = requireTestValue(
+      first.inspect('tier', true, false, undefined, true)
+    ).inspectionId
+    first.record({
+      phase: 'visual',
+      final: false,
+      inspectionIds: [id],
+      checks: [
+        {
+          ...check('Facade'),
+          unitId: 'tier-0'
+        }
+      ]
+    })
+    const after = first.readChecks({ includePassed: true })
+    first.record(specification)
+    expect(first.readChecks({ includePassed: true })).toEqual(after)
+    expect(() =>
+      first.record({
+        ...specification,
+        criteria: {
+          ...specification.criteria,
+          Facade: {
+            ...specification.criteria.Facade,
+            requiredUnits: ['tier-0']
+          }
+        }
+      })
+    ).toThrow(/cannot be rewritten/)
+  })
+
+  it('locks declarations after structure judgments before changing reference requirements', () => {
+    const review = createLocalDesignReview()
+    review.record(plan)
+    const id = requireTestValue(
+      review.inspect('building', true, true)
+    ).inspectionId
+    review.record({
+      phase: 'structure',
+      inspectionIds: [id],
+      checks: [check('Viewpoint')]
+    })
+    const before = review.readChecks({ includePassed: true })
+    const context = review.comparisonContext('structure')
+    expect(() =>
+      review.record({
+        ...plan,
+        criteria: reviewCriteria(['Changed']),
+        structureCriteria: ['Changed']
+      })
+    ).toThrow(/cannot be rewritten/)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    expect(review.comparisonContext('structure')).toEqual(context)
+  })
+
+  it('records valid local work without detail but rejects a malformed submission atomically', () => {
+    const { review, capture, submit } = setup()
+    const id = capture('tier-0')
+    submit('tier-0', [id], true)
+    const before = review.readChecks({ includePassed: true })
+    expect(() =>
+      review.record({
+        phase: 'visual',
+        final: true,
+        inspectionIds: [id],
+        checks: [
+          { ...check('Facade'), unitId: 'tier-1' },
+          { ...check('Facade'), unitId: 'foreign' }
+        ]
+      })
+    ).toThrow(/declared/)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    const detailed = createLocalDesignReview()
+    detailed.record({ ...plan, structureCriteria: [] })
+    detailed.mutate()
+    const overview = requireTestValue(
+      detailed.inspect('building', true, true)
+    ).inspectionId
+    const result = detailed.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+    expect(result.accepted).toBe(false)
+    expect(detailed.readChecks({ includePassed: true }).items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'Finish', status: 'pass' })
+      ])
+    )
+  })
+})
+
+it('accumulates deferred decisions before completion and reopens only changed dependencies', () => {
+  const r = createLocalDesignReview()
+  r.record({
+    ...plan,
+    detailRequired: false,
+    structureCriteria: [],
+    criteria: {
+      ...reviewCriteria(['Viewpoint']),
+      Finish: {
+        ...reviewCriteria(['Finish']).Finish,
+        requiredUnits: ['rear', 'roof']
+      }
+    },
+    deferredDetails: [
+      { id: 'rear', description: 'Rear windows', reason: 'Possibly hidden' },
+      { id: 'roof', description: 'Roof railing', reason: 'Check visibility' }
+    ]
+  })
+  const capture = (target: string, revision = 1) =>
+    requireTestValue(
+      r.inspect(target, true, target === 'root', undefined, target !== 'root', {
+        sessionId: 'deferred',
+        revision,
+        receiptId: `${target}:${revision}`
+      })
+    ).inspectionId
+  const rear = capture('rear')
+  const roof = capture('roof')
+  const root = capture('root')
+  const submit = (id: string, criterionId: string, extra = {}) =>
+    r.record({
+      phase: 'visual',
+      inspectionIds: [id],
+      checks: [
+        {
+          ...check(criterionId),
+          ...(criterionId === 'Finish'
+            ? { unitId: id === roof ? 'roof' : 'rear' }
+            : {})
+        }
+      ],
+      ...extra
+    })
+  expect(
+    submit(rear, 'Finish', {
+      final: false,
+      deferredChecks: [
+        { id: 'rear', status: 'omit', evidence: 'Rear windows are hidden' }
+      ]
+    })
+  ).toMatchObject({ accepted: false, pendingDetails: ['roof'] })
+  expect(
+    submit(roof, 'Finish', {
+      final: false,
+      deferredChecks: [
+        { id: 'roof', status: 'restored', evidence: 'Railing is visible' }
+      ]
+    })
+  ).toMatchObject({ accepted: false, pendingDetails: [] })
+  expect(submit(root, 'Viewpoint')).toMatchObject({
+    accepted: true,
+    pendingDetails: []
+  })
+  const before = r.readChecks({ includePassed: true }).items
+  r.mutate()
+  r.invalidateInspections(
+    [rear, root],
+    'Only the rear and overall image changed'
+  )
+  const newRoot = capture('root', 2)
+  expect(submit(newRoot, 'Viewpoint')).toMatchObject({
+    accepted: false,
+    pendingDetails: ['rear']
+  })
+  expect(
+    r
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.id === 'deferred:roof')
+  ).toEqual(before.find((item) => item.id === 'deferred:roof'))
+  expect(
+    submit(capture('rear', 2), 'Finish', {
+      deferredChecks: [
+        {
+          id: 'rear',
+          status: 'restored',
+          evidence: 'Rear now visible and restored'
+        }
+      ]
+    })
+  ).toMatchObject({ accepted: true, pendingDetails: [] })
+})
+
+it('never reports accepted with unresolved mechanical evidence and preserves visual work for recovery', () => {
+  const results = createDesignCheckResults()
+  const r = createLocalDesignReview({ results })
+  r.record({ ...plan, detailRequired: false, structureCriteria: [] })
+  const id = requireTestValue(r.inspect('root', true, true)).inspectionId
+  const mechanical = {
+    id: 'measurement:root',
+    origin: 'tool' as const,
+    status: 'fail' as const,
+    evidence: 'Overlapping windows',
+    dependencies: { target: '1' }
+  }
+  results.record(mechanical)
+  const review = {
+    phase: 'visual',
+    inspectionIds: [id],
+    checks: [check('Viewpoint'), check('Finish')]
+  }
+  expect(r.record(review)).toMatchObject({ accepted: false })
+  expect(r.isAccepted()).toBe(false)
+  const before = results
+    .read({ includePassed: true })
+    .items.filter((item) => item.origin === 'main-agent')
+  results.record({ ...mechanical, status: 'pass', evidence: 'No overlap' })
+  expect(r.isAccepted()).toBe(true)
+  expect(
+    results
+      .read({ includePassed: true })
+      .items.filter((item) => item.origin === 'main-agent')
+  ).toEqual(before)
+  results.invalidate(['target'], 'Target changed')
+  expect(r.isAccepted()).toBe(false)
+  expect(r.getIssue()).toBeDefined()
+})
+
+it('reopens changed deferred definitions without dropping other decisions or publishing invalid candidates', () => {
+  const r = createLocalDesignReview()
+  r.record({
+    ...plan,
+    detailRequired: false,
+    structureCriteria: [],
+    deferredDetails: [
+      { id: 'rear', description: 'Rear windows', reason: 'Check visibility' }
+    ]
+  })
+  const id = requireTestValue(
+    r.inspect('root', true, true, undefined, false, {
+      sessionId: 'deferred',
+      revision: 1,
+      receiptId: 'root'
+    })
+  ).inspectionId
+  const review = {
+    phase: 'visual',
+    inspectionIds: [id],
+    checks: [check('Viewpoint'), check('Finish')]
+  }
+  const decision = {
+    id: 'rear',
+    status: 'omit',
+    evidence: 'Current view excludes rear'
+  }
+  expect(r.record({ ...review, deferredChecks: [decision] }).accepted).toBe(
+    true
+  )
+  const before = r.readChecks({ includePassed: true })
+  r.record({ ...review, deferredChecks: [decision] })
+  expect(r.readChecks({ includePassed: true })).toEqual(before)
+  expect(() =>
+    r.record({
+      ...review,
+      deferredChecks: [decision, { ...decision, id: 'unknown' }]
+    })
+  ).toThrow()
+  expect(r.readChecks({ includePassed: true })).toEqual(before)
+  const changed = {
+    id: 'rear',
+    description: 'Rear windows and ledge',
+    reason: 'Also check the ledge'
+  }
+  expect(
+    r.validateReview({ ...review, deferredDetails: [changed] })
+  ).toMatchObject({ readyForCompletion: false })
+  expect(r.readChecks({ includePassed: true })).toEqual(before)
+  expect(r.record({ ...review, deferredDetails: [changed] })).toMatchObject({
+    accepted: false,
+    pendingDetails: ['rear']
+  })
+  expect(r.readChecks().items).toContainEqual(
+    expect.objectContaining({ id: 'deferred:rear', status: 'stale' })
+  )
+  expect(
+    r.record({
+      ...review,
+      deferredChecks: [{ ...decision, status: 'pending' }]
+    })
+  ).toMatchObject({ accepted: false, pendingDetails: ['rear'] })
+  expect(
+    r.record({
+      ...review,
+      deferredChecks: [{ ...decision, status: 'restored' }]
+    }).accepted
+  ).toBe(true)
+  const restored = r
+    .readChecks({ includePassed: true })
+    .items.find((item) => item.id === 'deferred:rear')
+  r.record({ ...review, deferredChecks: [decision] })
+  expect(
+    r
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.id === 'deferred:rear')
+  ).toMatchObject({
+    deferredDecision: 'omit',
+    revision: requireTestValue(restored).revision + 1
+  })
 })

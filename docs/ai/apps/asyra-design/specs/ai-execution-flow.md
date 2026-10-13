@@ -1709,3 +1709,79 @@ outcome remain available. Preserve existing document work; never replay it or
 promise a reconciliation tool that does not exist. A subsequent request starts
 from current document state rather than replaying this request. Ordinary failed
 mechanical checks and stale evidence remain retryable through review_design.
+
+
+### Declared regional acceptance coverage
+
+A visual criterion may declare nonempty unique `requiredUnits`, within the existing
+24-item bound. These are stable regional or cross-region judgment identities, not
+geometry or a new tool. A criterion without requiredUnits remains a whole-criterion
+obligation. Partitioned criteria cannot be data criteria or structure checkpoint
+criteria. The first declaration may follow the first ready drawing. Once judgments
+exist, obligations cannot be rewritten; an established plan also retains its lock
+after a drawing mutation. Identical declaration must not reset findings.
+The primary agent submits findings for delivered images; tools do not call an
+additional model or infer visual correctness.
+
+The existing check store accumulates current passes across calls. Final acceptance
+requires every declared unit (including never-submitted units), all whole criteria
+and all retained unresolved findings. The same derivation governs review replies,
+correction instructions and completion settlement. Omission or a whole-criterion pass cannot
+substitute for missing regional work. Sparse reviews may supply only changed units;
+unchanged passes retain result revisions and image dependencies. A cross-region
+check names every required image, so editing either dependency invalidates it.
+
+Required unit coverage, image extent and evidence currency are separate facts.
+A regional plan retains an explicit whole-view visual criterion for whole-request
+agreement and canonical requested-target coverage. Unit names and local passes
+cannot establish that crops cover the whole drawing. Local acquisition and recording
+valid local judgments do not require that whole-view condition to be complete yet.
+Incomplete acceptance saves valid judgments with accepted=false; malformed candidate
+submissions overwrite no prior judgments. Requested native detail, source facts,
+references, deferred decisions and mechanical conditions remain independently required.
+
+Evidence validation uses submitted images plus relevant retained results through
+the existing browser owner. Whole-view containment is required for the whole-view
+criterion, not each regional judgment. A genuine change in a whole-view image can
+reopen that judgment without reopening independent local passes. Criterion-scoped
+source/reference changes affect that criterion's units; no finer scope is guessed.
+Pan, zoom and selection are not semantic edits. Final settlement validates the same
+effective accepted evidence, not every historical or superseded inspection.
+
+Unit scope changes require exact revision/reason supersession and never remove the
+required identity. The reason is an explicit primary-agent redesign decision, not
+tool proof of semantic or geometric equivalence. Known findings must be addressed
+with fresh evidence; actual dependent checks reopen and unrelated passes retain
+their revisions. Identical replay does not create a new result revision.
+
+Replies expose derived coverage counts and pending criterion/unit identities and
+statuses; full evidence remains in the existing check store. Capture and partial
+capture replies retain their own output requirements. Accumulating more than one
+call's image limit does not require model-side retransmission or a limit increase;
+the host validates retained receipts in bounded batches. Stale, unavailable or
+incompletely validated evidence stays unresolved. Cancellation cannot publish a late
+pass; review recovery never replays drawing writes. Request teardown expires evidence.
+
+
+Accumulated inspection validation includes the browser owner's `validatedAt`
+session/revision. A host validation sequence must use one observation version;
+version drift prevents publication of new judgments and reports partial validation.
+It does not invalidate independent checks: later receipt validation identifies
+actual affected dependencies. Missing, duplicate, failed or malformed validation
+acknowledgements cannot establish currency. Cancellation publishes no new judgment.
+
+
+Sparse deferred-detail decisions use the same check store as regional judgments,
+including their explicit omit/restored/pending disposition and the submitted image
+dependencies. Valid decisions survive incomplete global acceptance. A changed detail
+definition or actual image dependency reopens only that decision; source/reference
+changes remain conservatively dependent on all criteria because deferred decisions
+have no narrower source binding. Missing decisions remain pending. Redefinition
+cannot silently reuse an earlier pass. Whole-view judgment may be deferred until
+the final candidate without discarding current regional or deferred decisions.
+
+Review acceptance and settlement both remain false while any tool-origin result is
+unresolved. Resolving mechanical work alone preserves and reuses current primary-agent
+judgments. A malformed negative validation response is unavailable evidence, not
+authority to delete retained receipts; only an admitted current=false acknowledgement
+may retire its dependencies. Recovery validates again without replay or recapture.

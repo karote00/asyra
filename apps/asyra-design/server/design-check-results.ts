@@ -23,6 +23,7 @@ export const designCheckResultsSchema = toolResultObject({
           revision: { type: 'integer', minimum: 1 },
           reason: toolResultString
         }),
+        deferredDecision: { enum: ['omit', 'restored', 'pending'] },
         origin: { enum: ['tool', 'main-agent'] },
         status: { enum: ['pass', 'fail', 'unverified', 'stale'] },
         evidence: toolResultString,
@@ -45,6 +46,7 @@ export interface DesignCheckResult {
   criterionId?: string
   unitId?: string
   supersedes?: { revision: number; reason: string }
+  deferredDecision?: 'omit' | 'restored' | 'pending'
   origin: 'tool' | 'main-agent'
   status: 'pass' | 'fail' | 'unverified' | 'stale'
   evidence: string
@@ -104,6 +106,19 @@ export const createDesignCheckResults = () => {
       }
     }
   }
+  const remove = (result: DesignCheckResult, reason: string) => {
+    const id = result.id
+    invalidate([`check:${id}`], reason)
+    retiredRevisions.set(id, result.revision)
+    counts[result.status]--
+    pendingIds.delete(id)
+    results.delete(id)
+    for (const key of Object.keys(result.dependencies)) {
+      const ids = dependents.get(key)
+      ids?.delete(id)
+      if (!ids?.size) dependents.delete(key)
+    }
+  }
   const owner = {
     invalidate,
     summary(ids: Iterable<string>) {
@@ -132,22 +147,35 @@ export const createDesignCheckResults = () => {
           if (dependency.startsWith('check:')) selected.add(dependency.slice(6))
       return [...selected]
     },
+    /** Only the pre-drawing plan owner may replace unjudged declarations. */
+    discardDeclarations(ids: readonly string[]): void {
+      const selected = [...new Set(ids)].flatMap((id) => {
+        const result = results.get(id)
+        if (!result) return []
+        if (
+          result.origin !== 'main-agent' ||
+          !['unverified', 'stale'].includes(result.status) ||
+          result.scope !== undefined ||
+          result.supersedes !== undefined ||
+          Object.keys(result.dependencies).some(
+            (key) => key !== 'scene' && !key.startsWith('criterion:')
+          )
+        )
+          throw new Error(
+            'Only untouched declaration placeholders can be discarded.'
+          )
+        return [result]
+      })
+      for (const result of selected)
+        remove(result, 'The unjudged declaration was replaced.')
+    },
     /** Canonical target removal retires tool work, never a visual obligation. */
     retire(id: string, reason: string) {
       const result = results.get(id)
       if (!result) return
       if (result.origin !== 'tool')
         throw new Error('Only tool results can be retired.')
-      invalidate([`check:${id}`], reason)
-      retiredRevisions.set(id, result.revision)
-      counts[result.status]--
-      pendingIds.delete(id)
-      results.delete(id)
-      for (const key of Object.keys(result.dependencies)) {
-        const ids = dependents.get(key)
-        ids?.delete(id)
-        if (!ids?.size) dependents.delete(key)
-      }
+      remove(result, reason)
     },
     recordPreparedSource(input: {
       artifactId: string
@@ -252,6 +280,7 @@ export const createDesignCheckResults = () => {
         previous &&
         previous.status === value.status &&
         previous.evidence === value.evidence &&
+        previous.deferredDecision === value.deferredDecision &&
         JSON.stringify(previous.supersedes) ===
           JSON.stringify(value.supersedes) &&
         JSON.stringify(previous.dependencies) ===

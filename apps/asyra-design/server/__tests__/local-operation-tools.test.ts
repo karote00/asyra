@@ -13,6 +13,7 @@ const reviewCriteria = (names: readonly string[]) =>
   )
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createLocalDesignReview } from '../local-design-review'
+import { createDesignCheckResults } from '../design-check-results'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import type {
   AiActionBatch,
@@ -1114,6 +1115,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
     },
     [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: {
       current: true,
+      validatedAt: { sessionId: 'validation-fixture', revision: 1 },
       coverage: { complete: true }
     }
   }
@@ -1177,9 +1179,10 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
         'Compared the rendered outline and repeated window structure with the reference.'
     }))
   }
-  await expect(call(AiDesignToolIds.REVIEW_DRAWING, report)).rejects.toThrow(
-    'separate detail'
-  )
+  await expect(
+    call(AiDesignToolIds.REVIEW_DRAWING, report)
+  ).resolves.toMatchObject({ accepted: false })
+
   const detailId = getId(
     await call(AiActionNames.INSPECT_DRAWING, {
       arguments: { elementId: 'windows', view: 'detail' }
@@ -1191,7 +1194,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       ...report,
       checks: report.checks.slice(0, 1)
     })
-  ).rejects.toThrow('every planned criterion')
+  ).resolves.toMatchObject({ accepted: true })
   const completed = {
     batchId: 'done',
     actions: [
@@ -1227,6 +1230,12 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   )
   await expect(
     call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, plan)
+  ).resolves.toMatchObject({ recorded: true })
+  await expect(
+    call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+      ...plan,
+      criteria: reviewCriteria(['Reduced requirement'])
+    })
   ).rejects.toThrow('cannot be rewritten')
   // Inspection must not turn a detail target into the automatic composition target.
   expect(execute.mock.calls.at(-1)?.[0].actions[0].arguments).toEqual({
@@ -1364,13 +1373,18 @@ it('accepts regional detail on the composition but never promotes it to overview
       evidence: 'Whole silhouette and native window detail match.'
     }
   ]
-  expect(() =>
+  expect(
     review.record({
       phase: 'visual',
       inspectionIds: [detail.inspectionId],
       checks
     })
-  ).toThrow('full drawing')
+  ).toMatchObject({
+    accepted: false,
+    coverage: {
+      pending: [expect.objectContaining({ reason: 'whole-view-required' })]
+    }
+  })
   expect(
     review.record({
       phase: 'visual',
@@ -1473,11 +1487,22 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
           { overviewIds?: string[] } | undefined
         result = {
           current: true,
+          validatedAt: { sessionId: 'validation-fixture', revision: 1 },
           coverage: {
             complete:
               towerContainsDetail && scope?.overviewIds?.includes('tower'),
             missingIds: [],
             uncoveredIds: []
+          }
+        }
+      } else if (action.name === moveName) {
+        result = {
+          status: 'complete',
+          value: null,
+          mutationScope: {
+            complete: true,
+            elementIds: ['collar-face', 'tower'],
+            removedElementIds: []
           }
         }
       } else if (action.name === AiActionNames.REVIEW_DESIGN) {
@@ -1569,7 +1594,8 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   ).resolves.toMatchObject({ accepted: true })
   const validation = execute.mock.calls.findLast(
     ([batch]) =>
-      batch.actions[0].name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      batch.actions[0].name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
+      'scope' in batch.actions[0].arguments
   )?.[0]
   expect(validation?.actions[0].arguments).toMatchObject({
     scope: { requiredIds: ['tower', 'collar-face'], overviewIds: ['tower'] }
@@ -1646,7 +1672,11 @@ it.each([
         }
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         capturedScope = action.arguments.scope
-        result = { current: true, coverage: { complete: true } }
+        result = {
+          current: true,
+          validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+          coverage: { complete: true }
+        }
       }
       return { actionId: action.id, actionName: action.name, result }
     })
@@ -1705,6 +1735,7 @@ it('checks each deferred mutation and reuses current measurements for capture an
     },
     [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: {
       current: true,
+      validatedAt: { sessionId: 'validation-fixture', revision: 1 },
       coverage: { complete: true }
     },
     [AiActionNames.REVIEW_DESIGN]: {
@@ -2053,7 +2084,26 @@ it('retains the whole drawing review target after a child refinement', async () 
           {
             actionId: action.id,
             actionName: action.name,
-            result: { current: true, coverage: { complete: true } }
+            result: {
+              current: true,
+              validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+              coverage: { complete: true }
+            }
+          }
+        ]
+      }
+    if (action.name === AiActionNames.REVIEW_DESIGN)
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              complete: true,
+              findings: [],
+              evidence: { sessionId: 'app-session', revision: 1 }
+            }
           }
         ]
       }
@@ -2081,6 +2131,7 @@ it('retains the whole drawing review target after a child refinement', async () 
   const operations = createLocalOperationTools(
     [
       AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.REVIEW_DESIGN,
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
@@ -2698,7 +2749,11 @@ it.each(['assessment', 'completion'])(
         actionName: action.name,
         result:
           action.name === validateName
-            ? { current, coverage: { complete: current } }
+            ? {
+                current,
+                validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+                coverage: { complete: current }
+              }
             : {
                 available: true,
                 image: { dataUrl: 'data:image/png;base64,AA==' },
@@ -3159,7 +3214,11 @@ it('includes bound fact targets in one canonical coverage check before visual ac
                 height: 1
               }
             }
-          : { current: true, coverage: { complete: covered } }
+          : {
+              current: true,
+              validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+              coverage: { complete: covered }
+            }
     }))
   }))
   const tools = createLocalOperationTools(
@@ -3353,7 +3412,11 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
                   evidence: { sessionId: 'test', revision: 1 },
                   image: { dataUrl: png }
                 }
-              : { current, coverage: { complete: completeCoverage } }
+              : {
+                  current,
+                  validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+                  coverage: { complete: completeCoverage }
+                }
         }))
       }),
       {
@@ -3813,6 +3876,7 @@ it.each([
           }
           result = {
             current: true,
+            validatedAt: { sessionId: 'validation-fixture', revision: 1 },
             coverage: {
               complete:
                 scope?.requiredIds.every((id) =>
@@ -4907,7 +4971,11 @@ describe('capture-to-review handoff', () => {
         if (action.name !== AiActionNames.INSPECT_DRAWING)
           return {
             ...base,
-            result: { current: state.current, coverage: { complete: true } }
+            result: {
+              current: state.current,
+              validatedAt: { sessionId: 'validation-fixture', revision: 1 },
+              coverage: { complete: true }
+            }
           }
         if (unavailable.has(String(action.arguments.elementId)))
           return {
@@ -5407,7 +5475,10 @@ it('carries canonical attachment evidence from prepared review to the exact brow
       ],
       evidence: stamp
     },
-    [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: { current: true }
+    [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: {
+      current: true,
+      validatedAt: { sessionId: 'validation-fixture', revision: 1 }
+    }
   }
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     batchId: batch.batchId,
@@ -5638,6 +5709,7 @@ it('reuses independent measurement receipts and rechecks only an affected final 
         const owner = stamp.receiptId.split(':')[1]
         result = {
           current: stamp.revision === versions[owner],
+          validatedAt: { sessionId: 'validation-fixture', revision: 1 },
           coverage: { complete: true }
         }
       } else if (action.name === AiActionNames.REVIEW_DESIGN) {
@@ -6128,7 +6200,14 @@ it.each([AiActionNames.REVIEW_DESIGN, AiActionNames.UPDATE_DESIGN_ELEMENT])(
                     measuredTextIds: [],
                     evidence: { sessionId: 'doc', revision: 1 }
                   }
-                : { current: true, compositionId: 'part' }
+                : {
+                    current: true,
+                    validatedAt: {
+                      sessionId: 'validation-fixture',
+                      revision: 1
+                    },
+                    compositionId: 'part'
+                  }
           }
         })
       })
@@ -6469,3 +6548,100 @@ it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
     expect(checked).toEqual(['a', 'b'])
   }
 )
+
+it('keeps review replies and final settlement blocked by tool findings without repeating visual judgments', async () => {
+  const checkResults = createDesignCheckResults()
+  const tools = createLocalOperationTools(
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (b) => b, checkResults },
+    async (batch) => ({
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === AiActionNames.INSPECT_DRAWING
+            ? {
+                available: true,
+                imageScope: 'overview',
+                evidence: {
+                  sessionId: 'mechanical',
+                  revision: 1,
+                  receiptId: 'root'
+                },
+                image: { dataUrl: png }
+              }
+            : {
+                current: true,
+                validatedAt: { sessionId: 'mechanical', revision: 1 },
+                coverage: { complete: true }
+              }
+      }))
+    }),
+    { reviewTargetId: 'root' }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await tools.call(name, args, signal))
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+    method: 'Match',
+    references: [],
+    criteria: reviewCriteria(['Appearance']),
+    detailRequired: false
+  })
+  const image = await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: { elementId: 'root' }
+  })
+  const failed = {
+    id: 'prepared:source:data',
+    origin: 'tool' as const,
+    status: 'fail' as const,
+    evidence: 'Invalid polygon',
+    dependencies: { source: '1' }
+  }
+  checkResults.record(failed)
+  const result = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    inspectionIds: [image.actionResults[0].result.inspectionId],
+    checks: [
+      {
+        criterionId: 'Appearance',
+        status: 'pass',
+        evidence: 'Observed the requested drawing'
+      }
+    ]
+  })
+  expect(result.accepted).toBe(false)
+  const final = {
+    batchId: 'done',
+    actions: [
+      {
+        id: 'done',
+        name: AiActionNames.REPORT_OUTCOME,
+        arguments: { outcome: 'completed', message: 'Done' },
+        summary: 'Done'
+      }
+    ]
+  }
+  expect(tools.settleOutcome(final).actions[0].arguments).toMatchObject({
+    outcome: 'unsupported'
+  })
+  const visual = checkResults
+    .read({ includePassed: true })
+    .items.filter((item) => item.origin === 'main-agent')
+  checkResults.record({
+    ...failed,
+    status: 'pass',
+    evidence: 'Source corrected'
+  })
+  await tools.validateCompletion(signal)
+  expect(tools.settleOutcome(final)).toEqual(final)
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.filter((item) => item.origin === 'main-agent')
+  ).toEqual(visual)
+})

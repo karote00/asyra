@@ -47,7 +47,8 @@ import { prepareOperationBatch } from './local-operation-batch'
 import {
   createLocalDesignReview,
   designEvidenceDefinitions,
-  designEvidenceInput
+  designEvidenceInput,
+  reviewVisualSchema
 } from './local-design-review'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
@@ -385,6 +386,7 @@ const checkResultsDefinition = {
   type: 'function',
   name: AiDesignToolIds.READ_DESIGN_CHECKS,
   ...toolSemantics(designCheckResultsSchema, 'read', ['request-artifacts']),
+  revision: 3,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
     'Read retained tool and primary-agent checks for this request. Default returns unresolved/stale work and status counts; includePassed retrieves stored pass evidence. Results never substitute for current canonical inspection. No model is invoked.',
@@ -1104,8 +1106,14 @@ export const createLocalOperationTools = (
         (action) => action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       )
     ) {
+      const invalidInspectionIds = entries.map((entry) => entry.id)
+      latestEvidenceValidation = {
+        current: false,
+        invalidInspectionIds,
+        reason: 'Canonical evidence validation is unavailable.'
+      }
       designReview.invalidateInspections(
-        entries.map((entry) => entry.id),
+        invalidInspectionIds,
         'Canonical evidence validation is unavailable.'
       )
       return false
@@ -1148,30 +1156,95 @@ export const createLocalOperationTools = (
       },
       summary: 'Checking inspection dependencies'
     }))
-    const receipt = actions.length
-      ? await executeBatch({ batchId: randomUUID(), actions })
-      : undefined
-    signal?.throwIfAborted()
-    const validations = [...groups.values()].map((group) => {
-      const result = receipt?.actionResults.find(
-        (entry) =>
-          entry.actionId === group.actionId &&
-          entry.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-      )?.result
-      if (!isRecord(result) || result.current !== true)
-        invalidIds.push(...group.ids)
-      return result
-    })
+    const validations: unknown[] = []
+    let validatedAt: { sessionId: string; revision: number } | undefined
+    let coherent = true
+    const unavailableIds: string[] = []
+    const groupEntries = [...groups.values()]
+    const batchSize = reviewVisualSchema.properties.inspectionIds.maxItems
+    for (let offset = 0; offset < actions.length; offset += batchSize) {
+      signal?.throwIfAborted()
+      const batchActions = actions.slice(offset, offset + batchSize)
+      const receipt = await executeBatch({
+        batchId: randomUUID(),
+        actions: batchActions
+      })
+      signal?.throwIfAborted()
+      const exactBatch =
+        !receipt.failure &&
+        receipt.actionResults.length === batchActions.length &&
+        receipt.actionResults.every((entry) =>
+          batchActions.some((action) => action.id === entry.actionId)
+        )
+      for (const group of groupEntries.slice(offset, offset + batchSize)) {
+        const matches = receipt.actionResults.filter(
+          (entry) => entry.actionId === group.actionId
+        )
+        const result =
+          exactBatch &&
+          matches.length === 1 &&
+          matches[0].actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+            ? matches[0].result
+            : undefined
+        if (!isRecord(result) || typeof result.current !== 'boolean') {
+          coherent = false
+          unavailableIds.push(...group.ids)
+        }
+        const stamp =
+          isRecord(result) && isRecord(result.validatedAt)
+            ? result.validatedAt
+            : undefined
+        if (
+          !stamp ||
+          typeof stamp.sessionId !== 'string' ||
+          !stamp.sessionId ||
+          !Number.isSafeInteger(stamp.revision) ||
+          Number(stamp.revision) < 0
+        )
+          coherent = false
+        else {
+          if (isRecord(result) && result.current === false)
+            invalidIds.push(...group.ids)
+          if (!validatedAt)
+            validatedAt = {
+              sessionId: stamp.sessionId,
+              revision: Number(stamp.revision)
+            }
+          else if (
+            validatedAt.sessionId !== stamp.sessionId ||
+            validatedAt.revision !== stamp.revision
+          )
+            coherent = false
+        }
+        validations.push(result)
+      }
+      if (!coherent) {
+        unavailableIds.push(
+          ...groupEntries
+            .slice(offset + batchSize)
+            .flatMap((group) => group.ids)
+        )
+        break
+      }
+    }
     latestEvidenceValidation = {
       ...(isRecord(validations[0]) ? validations[0] : {}),
-      current: invalidIds.length === 0,
-      invalidInspectionIds: invalidIds
+      current: invalidIds.length === 0 && coherent,
+      coherent,
+      invalidInspectionIds: invalidIds,
+      unavailableInspectionIds: unavailableIds
     }
     if (invalidIds.length) {
       for (const id of invalidIds) inspectionImages.delete(id)
       designReview.invalidateInspections(
         invalidIds,
         'These inspection dependencies changed or could not be established.'
+      )
+      return false
+    }
+    if (!coherent) {
+      designReview.requireReview(
+        'Inspection validation crossed a document change or lacked the browser validation version. Retry validation; retained judgments were not cleared.'
       )
       return false
     }
@@ -1483,7 +1556,7 @@ export const createLocalOperationTools = (
           )
       } catch (error) {
         if (!(error instanceof LocalOperationPreparationError)) throw error
-        designReview.requireReview(error.message)
+        designReview.invalidateWholeView(error.message)
       }
     },
     settleOutcome: (batch: AiActionBatch): AiActionBatch => {
@@ -1960,7 +2033,20 @@ export const createLocalOperationTools = (
               .filter((key) => key.startsWith('inspection:'))
               .map((key) => key.slice(11))
           : designReview.reviewEvidenceIds()
-        if (canInspect && ids.length) await validateEvidence(ids, signal, false)
+        if (
+          canInspect &&
+          ids.length &&
+          !(await validateEvidence(ids, signal, false)) &&
+          isRecord(latestEvidenceValidation) &&
+          latestEvidenceValidation.coherent === false
+        )
+          return JSON.stringify({
+            ...checkResults.read(
+              args as { includePassed?: boolean; ids?: string[] }
+            ),
+            status: 'partial',
+            evidenceValidation: latestEvidenceValidation
+          })
         return JSON.stringify(
           checkResults.read(args as { includePassed?: boolean; ids?: string[] })
         )
@@ -2404,11 +2490,7 @@ export const createLocalOperationTools = (
           throw new LocalOperationPreparationError(
             'Review accepts at most 24 reusable IDs and capture targets combined.'
           )
-        if (
-          targets?.length &&
-          inspectionIds.length &&
-          !designReview.evidenceFor(inspectionIds)
-        ) {
+        if (inspectionIds.length && !designReview.evidenceFor(inspectionIds)) {
           const message =
             'Reusable inspection IDs do not identify available evidence in this runtime. Capture current evidence before review; no new captures or assessment ran.'
           designReview.requireReview(message)
@@ -2418,6 +2500,13 @@ export const createLocalOperationTools = (
             accepted: false,
             readyForDetail: false,
             inspectionIds,
+            evidenceValidation: {
+              current: false,
+              invalidInspectionIds: designReview
+                .evidenceEntries(inspectionIds)
+                .filter((entry) => !entry.source)
+                .map((entry) => entry.id)
+            },
             message
           })
         }
@@ -2493,45 +2582,26 @@ export const createLocalOperationTools = (
             message
           })
         }
-        const retainedIds = designReview
-          .reviewEvidenceIds()
-          .filter((id) => !inspectionIds.includes(id))
-        if (retainedIds.length)
-          await validateEvidence(retainedIds, signal, false)
-        const evidenceResult = async () => {
-          let message =
-            'Inspection evidence changed. Inspect the current drawing again; earlier findings cannot approve completion.'
-          try {
-            if (
-              await validateEvidence(
-                reviewArgs.inspectionIds,
-                signal,
-                reviewArgs.phase !== 'visual' || reviewArgs.final !== false
-              )
-            )
-              return undefined
-          } catch (error) {
-            if (!(error instanceof LocalOperationPreparationError)) throw error
-            message = error.message
-          }
+        const unavailableEvidence = () => {
+          const message =
+            'Validation is incomplete; prior findings remain retained. Retry validation with the same IDs when coherent=false or evidence is unavailable. Reacquire only IDs explicitly reported as invalid, then submit the affected judgments.'
           designReview.requireReview(message)
           return {
             status: 'partial',
             phase: reviewArgs.phase,
             accepted: false,
             readyForDetail: false,
-            inspectionIds: reviewArgs.inspectionIds,
+            inspectionIds,
             evidenceValidation: latestEvidenceValidation,
             message
           }
         }
-        const unavailable = await evidenceResult()
-        if (unavailable)
-          return JSON.stringify({
-            ...unavailable,
-            actionResults: capturedResults
-          })
-        if (targets?.length)
+        if (targets?.length) {
+          if (!(await validateEvidence(inspectionIds, signal, false)))
+            return JSON.stringify({
+              ...unavailableEvidence(),
+              actionResults: capturedResults
+            })
           return JSON.stringify({
             phase: reviewArgs.phase,
             accepted: false,
@@ -2541,37 +2611,97 @@ export const createLocalOperationTools = (
             message:
               'Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.'
           })
+        }
+        let candidateReview
         try {
-          designReview.validateReview(reviewArgs)
+          candidateReview = designReview.validateReview(reviewArgs)
         } catch (error) {
           throw new LocalOperationPreparationError(
             error instanceof Error ? error.message : 'Invalid review evidence'
           )
         }
-
+        const effectiveIds = [
+          ...new Set([
+            ...(Array.isArray(candidateReview.inspectionIds)
+              ? (candidateReview.inspectionIds as string[])
+              : []),
+            ...inspectionIds
+          ])
+        ]
+        const requireCoverage =
+          reviewArgs.phase === 'structure' ||
+          candidateReview.readyForCompletion === true
+        let coverageIssue: string | undefined
+        let current = false
+        try {
+          current = await validateEvidence(
+            effectiveIds,
+            signal,
+            requireCoverage
+          )
+        } catch (error) {
+          if (!(error instanceof LocalOperationPreparationError)) throw error
+          coverageIssue = error.message
+        }
+        const submittedChanged = () =>
+          isRecord(latestEvidenceValidation) &&
+          Array.isArray(latestEvidenceValidation.invalidInspectionIds) &&
+          latestEvidenceValidation.invalidInspectionIds.some((id) =>
+            inspectionIds.includes(String(id))
+          )
         if (
+          submittedChanged() ||
+          (isRecord(latestEvidenceValidation) &&
+            latestEvidenceValidation.coherent === false)
+        )
+          return JSON.stringify(unavailableEvidence())
+        let pendingMeasurement = false
+        if (
+          current &&
           canReview &&
-          reviewArgs.phase === 'visual' &&
-          reviewArgs.final !== false
+          candidateReview.readyForCompletion === true
         ) {
           await checkMeasurements(
-            designReview.overviewTargets(reviewArgs.inspectionIds),
+            designReview.overviewTargets(effectiveIds),
             signal,
             true
           )
-          if (measurementPending)
-            return JSON.stringify({
-              status: 'partial',
-              phase: reviewArgs.phase,
-              accepted: false,
-              readyForDetail: false,
-              inspectionIds: reviewArgs.inspectionIds,
-              message: 'The latest drawing still needs layout measurement.'
-            })
-          const changed = await evidenceResult()
-          if (changed) return JSON.stringify(changed)
+          pendingMeasurement = measurementPending
+          // Measurement can yield to external edits; never commit a mixed-source judgment.
+          await validateEvidence(effectiveIds, signal, false)
+          if (
+            submittedChanged() ||
+            (isRecord(latestEvidenceValidation) &&
+              latestEvidenceValidation.coherent === false)
+          )
+            return JSON.stringify(unavailableEvidence())
         }
-        return JSON.stringify(recordReview())
+        signal.throwIfAborted()
+        const result = recordReview()
+        if (coverageIssue) {
+          designReview.invalidateWholeView(coverageIssue)
+          return JSON.stringify({
+            ...result,
+            accepted: false,
+            readyForDetail: false,
+            status: 'partial',
+            results: designReview.readChecks(),
+            coverage: designReview.coverage(),
+            evidenceValidation: latestEvidenceValidation,
+            message: coverageIssue
+          })
+        }
+        if (pendingMeasurement) {
+          const message = 'The latest drawing still needs layout measurement.'
+          designReview.requireReview(message)
+          return JSON.stringify({
+            ...result,
+            accepted: false,
+            status: 'partial',
+            message
+          })
+        }
+        return JSON.stringify(result)
       }
       const batchMode = name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
       const definition = registered.find((action) => action.name === name)

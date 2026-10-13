@@ -1,4 +1,5 @@
 import { reviewPlanExample } from '../local-design-review'
+import { createDesignCheckResults } from '../design-check-results'
 import type { ExecutionRecordGap } from '@asyra/ai-agent-runtime'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -1017,6 +1018,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
             action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
               ? {
                   current,
+                  validatedAt: { sessionId: 'proof-validation', revision: 1 },
                   coverage: {
                     complete:
                       (
@@ -1842,7 +1844,11 @@ it('execution proof composes capture and assessment without dropping unavailable
           return {
             actionId: action.id,
             actionName: action.name,
-            result: { current: true, coverage: { complete: true } }
+            result: {
+              current: true,
+              validatedAt: { sessionId: 'proof-validation', revision: 1 },
+              coverage: { complete: true }
+            }
           }
         }
       )
@@ -1963,7 +1969,10 @@ it('execution proof binds prepared recipe assessment to immutable source before 
             return {
               actionId: action.id,
               actionName: action.name,
-              result: { current: true }
+              result: {
+                current: true,
+                validatedAt: { sessionId: 'proof-validation', revision: 1 }
+              }
             }
           expect(action.arguments).toMatchObject({
             attachmentEvidence: {
@@ -2226,6 +2235,7 @@ it('execution proof reconciles scoped criterion results after external edits wit
             action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
               ? {
                   current: !invalid.has(args.evidence?.receiptId ?? ''),
+                  validatedAt: { sessionId: 'proof-validation', revision: 1 },
                   ...(args.scope ? { coverage: { complete: true } } : {})
                 }
               : {
@@ -2337,6 +2347,7 @@ it('execution proof retains regional units without requiring global coverage for
           validations.push(args)
           result = {
             current: !invalid.has(args.evidence?.receiptId ?? ''),
+            validatedAt: { sessionId: 'proof-validation', revision: 1 },
             coverage: { complete: args.scope !== undefined }
           }
         } else {
@@ -2355,12 +2366,17 @@ it('execution proof retains regional units without requiring global coverage for
       })
     })
   )
+  const checkResults = createDesignCheckResults()
   const tools = createLocalOperationTools(
     [
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (actions) => actions, resolveBatch: (value) => value },
+    {
+      modelActions: (actions) => actions,
+      resolveBatch: (value) => value,
+      checkResults
+    },
     execute,
     { reviewTargetId: 'root' }
   )
@@ -2369,7 +2385,13 @@ it('execution proof retains regional units without requiring global coverage for
     JSON.parse(await tools.call(name, args, signal))
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     ...reviewPlanExample,
-    criteria: reviewCriteria(['windows']),
+    criteria: {
+      ...reviewCriteria(['Overall']),
+      windows: {
+        ...reviewCriteria(['windows']).windows,
+        requiredUnits: Array.from({ length: 8 }, (_, index) => `tier-${index}`)
+      }
+    },
     structureCriteria: [],
     detailRequired: false
   })
@@ -2396,6 +2418,11 @@ it('execution proof retains regional units without requiring global coverage for
   })
   expect(stage).toMatchObject({
     accepted: false,
+    coverage: {
+      required: 9,
+      passed: 8,
+      pending: [{ criterionId: 'Overall', status: 'unverified' }]
+    },
     results: { counts: { pass: 8, unverified: 1 } }
   })
   expect(validations.every((args) => args.scope === undefined)).toBe(true)
@@ -2433,7 +2460,7 @@ it('execution proof retains regional units without requiring global coverage for
     inspectionIds: [overview.actionResults[0].result.inspectionId],
     checks: [
       {
-        criterionId: 'windows',
+        criterionId: 'Overall',
         status: 'pass',
         evidence:
           'Overall drawing agrees with the retained regional findings and requested result'
@@ -2445,6 +2472,63 @@ it('execution proof retains regional units without requiring global coverage for
     results: { counts: { pass: 9, stale: 0, unverified: 0 } }
   })
   expect(validations.some((args) => args.scope !== undefined)).toBe(true)
+  const finalInput = {
+    phase: 'visual',
+    inspectionIds: [overview.actionResults[0].result.inspectionId],
+    checks: [
+      {
+        criterionId: 'Overall',
+        status: 'pass',
+        evidence: 'Current whole view agrees'
+      }
+    ]
+  }
+  expect(
+    await call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...finalInput,
+      final: false,
+      deferredDetails: [
+        { id: 'rear', description: 'Hidden rear', reason: 'Check visibility' }
+      ],
+      deferredChecks: [
+        { id: 'rear', status: 'omit', evidence: 'Occluded from this view' }
+      ]
+    })
+  ).toMatchObject({ accepted: false, pendingDetails: [] })
+  const failed = {
+    id: 'prepared:source:data',
+    origin: 'tool' as const,
+    status: 'fail' as const,
+    evidence: 'Source needs correction',
+    dependencies: { source: '1' }
+  }
+  checkResults.record(failed)
+  expect(await call(AiDesignToolIds.REVIEW_DRAWING, finalInput)).toMatchObject({
+    accepted: false,
+    pendingDetails: []
+  })
+  const beforeRecovery = checkResults
+    .read({ includePassed: true })
+    .items.filter((item) => item.origin === 'main-agent')
+  checkResults.record({ ...failed, status: 'pass', evidence: 'Corrected' })
+  await tools.validateCompletion(signal)
+  const outcome = {
+    batchId: 'done',
+    actions: [
+      {
+        id: 'done',
+        name: AiActionNames.REPORT_OUTCOME,
+        arguments: { outcome: 'completed', message: 'Done' },
+        summary: 'Done'
+      }
+    ]
+  }
+  expect(tools.settleOutcome(outcome)).toEqual(outcome)
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.filter((item) => item.origin === 'main-agent')
+  ).toEqual(beforeRecovery)
 })
 
 it('execution proof checks all acknowledged parts before returning deferred capture without another model', async () => {
@@ -2485,7 +2569,10 @@ it('execution proof checks all acknowledged parts before returning deferred capt
         }
       else {
         expect(action.name).toBe(AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
-        result = { current: true }
+        result = {
+          current: true,
+          validatedAt: { sessionId: 'proof-validation', revision: 1 }
+        }
       }
       return {
         context: {},

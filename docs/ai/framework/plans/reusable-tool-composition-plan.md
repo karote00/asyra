@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 1 COMPLETE LOCALLY - terminal scope handoff and compact automatic-check delivery verified; later stages inactive.
+Status: STAGE 2 CORRECTION COMPLETE - comprehensive bounded audit, repairs and local verification complete; awaiting user review. Stage 1 pushed at 62127de41. Stage 2 remains uncommitted and unpushed. No later stage is authorized.
 
 ## Current authority and stop boundary
 
@@ -21,12 +21,16 @@ The checkpoint preserves unverified accumulated work, not a green delivery or
 merge request.
 Preserve local .env, documents, recordings and ignored diagnostics; never publish
 private configuration or local-only recordings. Do not create a PR or merge.
-After the checkpoint, implement only Stage 1, self-review and run applicable
-focused tests. Do not push Stage 1, start Stage 2, run full local CI, run another
-live 101, create a new whole-program goal or restart monitoring.
-Each authorized stage has its own bounded goal; close it at that stage's report.
-The Stage 1 goal closes with the local completion report and cannot authorize
-the next stage. A later stage requires its own authorized, bounded goal.
+Stage 1 was validated, reviewed and pushed at `62127de41` on explicit user
+instruction without rerunning tests or monitoring CI. That push authorization is
+consumed. The user now authorizes Stage 2 only in this same worktree, with its own
+goal. Finish its applicable local tests and review, then report. Do not push Stage
+2, create a PR, merge, monitor CI, run full local CI/live101 or start Stage 3.
+Each later stage requires a separate authorized goal.
+The Stage 2 plan-review checkpoint, implementation and subsequent comprehensive
+audit are complete. The correction evidence at the end of this plan supersedes the
+initial Stage 2 completion claim. Earlier cards are execution history, including
+their now-consumed instructions; they do not authorize additional work.
 
 ## Direction
 
@@ -44,8 +48,8 @@ the next stage. A later stage requires its own authorized, bounded goal.
 
 ## Stages
 
-Only Stage 1 is executable now. Later stages are backlog outcomes, not an
-implementation-ready architecture or permission to expand the active slice.
+Stage 2 is complete and stopped for user review. Subsequent stages are backlog
+outcomes, not an implementation-ready architecture or permission to expand the slice.
 
 | Stage | Outcome | Required evidence |
 | --- | --- | --- |
@@ -79,7 +83,7 @@ and durable tool saving are distinct facts. A check finding is not a failed writ
   result; preserve existing document work under its actual owner semantics.
 - Document replacement invalidates old authority. Do not write into its successor.
 
-Fix only Stage 1 manifestations now. Provider-wide failure classification,
+Fix only Stage 2 manifestations now. Provider-wide failure classification,
 cleanup semantics and generic continuation remain explicitly later work.
 
 ## Reviewed architectural constraints for later stages
@@ -806,4 +810,402 @@ Final review covered compact/full/direct/ordered/native/composed handoffs, retai
 findings, acknowledged-prefix preservation, cancellation and failure boundaries.
 No second state owner, new tool, execution interpreter, model call, compatibility
 layer or limit increase was added. No performance timing claim follows from these
-tests. Changes remain local and uncommitted; no push, monitoring or next stage.
+tests. That review preceded the separately authorized push at `62127de41`;
+it does not authorize another push or monitoring.
+
+
+## Stage 2 - Cumulative regional acceptance
+
+### Frozen task contract and Step Execution Card - inspect
+
+Objective: declared regional checks accumulate across primary-agent reviews and
+satisfy exact required coverage. Editing tier 3 preserves the other seven passes;
+only tier 3 and actual cross-region dependencies reopen. Neither omission, scope
+shrink nor a whole-criterion pass may erase an outstanding regional obligation.
+Owner: inspect (`local-design-review`), with its direct operation validation and
+existing check-store consumers. Upstream: admitted criteria, delivered inspection
+IDs and browser-issued dependency receipts. Downstream: correction handoff and
+final settlement. Keep Stage 1 mechanical checking and mutation receipts intact.
+
+Current defect: unit results are retained, but final admission requires a separate
+whole-criterion check and supplied overview on each call; pendingCriteria ignores
+unit passes. Thus storage granularity and completion authority disagree.
+
+Design: optional criterion.requiredUnits declares nonempty, unique stable regional
+or cross-region judgment identities for visual criteria. It uses the existing
+24-item request bound, not a larger limit. Whole criteria remain an intentional
+current contract, not a legacy fallback. Structure checkpoints retain their whole
+criteria; reject partitioned structure/data declarations at plan admission rather
+than failing them later. Use existing result IDs, scopes and dependency edges.
+There is no second ledger, cache or general dependency language.
+
+The initial criteria may still be defined after the first ready drawing. Freeze
+their obligations once judgments exist, and preserve the existing prohibition on
+rewriting an established plan after a drawing mutation. Initial declaration must
+not introduce a new pre-drawing delay. Identical declaration is not permission to
+reset findings. Required identities cannot be dropped by later sparse submissions.
+
+Separate required judgments, actual image scope, evidence currency and whole-request
+agreement. Unit names cannot prove that crops cover a drawing. Preserve the current
+whole-request agreement/containment requirement as an explicit whole-view visual
+criterion when declaring regional criteria. Reject a regional-only plan that would
+silently remove that obligation. Regional checks do not each need an overview.
+The whole-view criterion alone owns its whole-view judgment and canonical coverage;
+requested native detail, facts, references and deferred decisions remain required.
+Tools prove the declared obligations and evidence currency, not semantic completeness
+of an AI-authored plan or visual correctness. No extra model is invoked.
+
+Important limit: an edit inside a whole-drawing image really invalidates that image
+and its whole-view judgment. Stage 2 preserves the other seven regional judgments;
+it does not promise that a whole-view judgment remains valid after its pixels change.
+Do not hide this by removing the criterion, relabeling crops as overviews or claiming
+a crop-union algorithm exists. Semantic image comparison belongs to Stage 7.
+
+Failure/cancellation: validate candidates before store writes; stale/missing images
+cannot pass, invalidating a source reopens its dependent units, and failed refresh
+never clears findings. Prior successful unrelated evidence survives. Existing
+unknown-write terminal policy and cancellation semantics remain authoritative.
+
+Mutation scope: local-design-review.ts, local-operation-tools.ts, existing
+check-result owner only if needed, their formal design-review-stages/operation/
+execution-flow proof tests, direct tool-definition tests, current spec, Inspector
+inspect contract/proof manifest and generated catalog. Read/reuse existing browser
+currency owners and their maintained tests; do not rewrite them. No Framework,
+canonical write, renderer, viewport, UI, activity or recipe-engine changes.
+Discovery is current source/direct call sites plus those maintained tests.
+
+Proof cases: eight declared units accumulated across calls; one changed unit plus
+one cross-unit relationship invalidated; seven unchanged units retain exact result
+revisions and require no new capture/judgment/geometry work; missing unit blocks;
+whole-pass omission cannot bypass; explicit redesign preserves required identity;
+unknown unit/duplicate/malformed declaration rejected; no-plan rewrite after edits;
+missing/stale/cancelled validation preserves prior results; whole criteria and
+requested detail still block; native schema, host response and settlement agree.
+Focused unit/integration/types/lint/naming/catalog and same-source proof only.
+
+### Full plan review - corrected handoffs
+
+Source review includes the actual plan schema and tool descriptions, review record
+and invalidation paths, canonical browser receipts/containment, retained check store,
+operation capture/assessment routes and provider completion settlement. The current
+red test proves schema rejection only; it is not an implementation or whole-flow
+proof. Its regional-only acceptance expectation must be corrected before using it
+as an oracle, retaining the regional accumulation regression.
+
+1. **One completion authority.** Derive obligations from admitted criteria and
+   existing results. Seed each required visual unit as unverified in that store;
+   do not leave a competing whole-criterion placeholder for a partitioned criterion.
+   Missing records still count as unresolved. Pending lists, correction handoff,
+   accepted evidence and final settlement use this same derivation. Historical
+   previousChecks is diagnostic only; pendingCriteria is not another acceptance
+   authority. All mechanical failures remain independently blocking.
+2. **Save valid local work before considering completion.** Validate the entire
+   submitted candidate before committing any of its judgments. Invalid IDs, scope,
+   revisions or malformed declarations reject that submission without overwriting
+   prior results. A valid sparse submission with other obligations missing is a
+   successful recorded judgment with accepted=false, not a failed drawing or an
+   instruction to resend every pass. Stale retained evidence marks only its actual
+   dependents unresolved and must not discard unrelated new valid judgments.
+3. **Capture and judgment stay separate.** Capture returns delivered image IDs;
+   it neither records supplied judgments nor requires unrelated whole-view coverage.
+   Only the later primary-agent submission can create a visual verdict. Preserve
+   successful captures on partial failure and the exact failed-target recovery.
+4. **Refresh exactly the required evidence.** Validate candidate receipts and
+   relevant retained receipts through the browser owner. Reuse completed canonical
+   measurements; do not perform a geometry scan because a visual unit is submitted.
+   Do not use all historical inspections, superseded scopes or failed diagnostic
+   evidence as acceptedIds. Before publishing completion, validate the effective
+   accepted set, whole-view containment and all existing blocking conditions.
+   validateCompletion must consume that same set rather than restoring the old
+   all-supplied-images requirement.
+5. **Bounded transport does not bound lifetime accumulation.** The 24-image input
+   limit stays per call. The host can validate accumulated receipts in bounded
+   batches using the existing per-call image budget, deduplicating identical stamps. The
+   primary AI is not required to resend every image or passed result. No new cache,
+   raised cap, or unbounded browser action batch. Cancellation or an incomplete
+   acknowledgement never certifies the unchecked suffix. Revalidate source currency
+   at the existing final publication/settlement boundary; evidence describes that
+   observation point, not permanent immunity to subsequent document edits.
+6. **Actual invalidation and redesign.** A unit depends on its exact image receipts;
+   a cross-region judgment includes every image it actually uses. Entering/leaving
+   a crop, deletion, reparenting, contributing ancestor changes and shared properties
+   use existing canonical invalidation. Pan/zoom/selection do not. Unknown effects
+   and document replacement remain conservative. Current reference/fact bindings
+   are criterion-scoped: a changed shared source can correctly reopen every unit
+   of that criterion; do not invent unit-level source precision. Scope replacement
+   preserves the obligation, exact predecessor revision and explicit redesign reason.
+   A reason string is not geometric/visual proof: the primary AI must address the
+   retained finding using newly delivered evidence. Affected check dependents reopen;
+   unrelated results keep their exact revisions. Identical replay is idempotent.
+7. **Failure and concurrency.** Distinguish malformed submission, known finding,
+   unavailable/stale evidence and cancelled validation. Validate before writes,
+   commit locally without intervening asynchronous work, and do not publish a late
+   pass after cancellation or replace a newer superseded result. Completed writes
+   are never retried for review recovery. Failed refresh keeps the prior evidence
+   as unresolved; teardown/new request cannot consume old request-owned receipts.
+8. **Public contract through the final consumer.** Update canonical phase schemas,
+   exact runtime validation, native conversion, descriptions, output/partial schemas
+   and correction instructions together. Return derived coverage counts and pending
+   criterion/unit IDs with statuses; provide retained-result lookup for evidence.
+   Define optionality for capture/partial versus recorded-review responses rather
+   than making coverage mandatory on a response that cannot yet provide it. Changed
+   semantic tool contracts receive owner-specific revision updates; saved old recipes
+   fail current admission rather than receiving compatibility repair. No global
+   toolSemantics revision bump or second result envelope.
+
+### Implementation order and bounded proof
+
+All segments stay within inspect; reread its contract before advancing each segment.
+
+1. Declaration and result authority: correct the permanent red test; cover an eight
+   region plan plus its whole-view criterion, missing/duplicate/foreign units,
+   data/structure misuse, initial declaration after first drawing, locked obligations
+   and idempotent replay. Implement only admission and cumulative result derivation.
+2. Real operation handoffs: prove local captures and partial valid judgments survive
+   missing global coverage; repair tier 3 and its explicit relationship without
+   changing the other seven stored passes. Refresh only the stale whole-view judgment
+   when genuinely needed. Exercise canonical browser currency, not only a mock that
+   always returns coverage.complete=true. Verify the completion consumer, retained
+   measurements, references/facts/detail and unresolved mechanical conditions.
+3. Failure and delivery closure: prove more than 24 retained images through legal
+   calls, malformed/duplicate/missing acknowledgements, source change during refresh,
+   cancellation, changed supersession, scope redesign and teardown. Invalid candidate
+   writes no judgments; incomplete acceptance preserves all valid recorded work.
+   Verify native and common invocation success/partial outputs and changed contract
+   admission. Do not add a new recovery engine to pass these cases.
+
+Work-count oracles separate receipt validation, region-membership lookup, geometry
+evaluation, image capture and AI judgment. Seven unchanged regions require zero new
+captures, judgments or geometry evaluation and unchanged result revisions. Cheap
+canonical currency checks may still occur; do not claim zero work or measured speed
+from output-only tests. A genuinely invalid global judgment is counted explicitly.
+
+Run only affected formal tests, declared types, focused lint/naming, catalog and
+same-source flow proof after the corresponding implementation slice. Finish with
+diff plus direct-consumer review for requirements, failures and over-design. Stop
+and replan this slice if it needs a crop-union engine, semantic image equivalence,
+new browser evidence format or a different owner; do not expand silently.
+
+Plan-review outcome: the initial proposal was not ready because it conflated unit
+completion with pixel coverage and omitted downstream settlement and partial-save
+semantics. Those contracts are now explicit. At that historical checkpoint implementation had not started and no Stage 2 gate
+was green. The checkpoint was reported before implementation. Later execution and
+verification are recorded below; no performance improvement is claimed. No push, CI monitoring, full local CI, live101 or next-stage work.
+
+
+### Stage 2 declaration slice - bounded iteration
+
+The reviewed plan was reported before implementation resumed under the active goal.
+New formal cases reproduce unsupported requiredUnits and absent cumulative acceptance.
+The owner suite also exposed a direct regression in pre-drawing plan replacement:
+placeholder obligations from the former declaration must not remain pending, while
+observed judgments may never be discarded. Keep the existing check store and its
+revision accounting; permit only the plan owner to discard unjudged placeholders
+before any mutation/judgment, validating the complete discard before changes.
+Reference invalidation may have made those unjudged placeholders stale already;
+an observed scope, known fail/pass or non-declaration dependency forbids discard.
+No generalized visual-result deletion or new lifecycle store is authorized.
+
+Existing all-or-nothing review assertions are revised to prove accepted=false,
+exact unresolved criteria and retention of valid local work. Independent supplied
+assessment tests retain exact criterion coverage, following current pending scope;
+no additional model invocation is introduced. Work remains in the first inspect
+slice; operation transport, final settlement and public handoff closure are pending.
+
+
+### Stage 2 operation handoff card - inspect
+
+The declaration/result segment passes 108 formal cases, server types, focused lint
+and naming (tmp/stage2-owner-{verified,types-final,lint-final,naming-final}.log).
+Original red logs remain failed evidence. Whole-view evidence cannot be borrowed
+from a different regional judgment to approve an unrelated whole criterion.
+Pre-drawing replacement discards only unjudged declarations; observed structure
+judgments lock the plan before source/reference mutation. Idempotent declaration
+and supersession preserve result revisions. No overall Stage 2 completion claim.
+
+Next segment: the same inspect step's operation route. Inputs are delivered scoped
+images, admitted unit judgments and canonical validation acknowledgements. Outputs
+preserve capture, partial recording and final acceptance distinctions. Reuse actual
+createInspectionEvidence in the maintained inspection-evidence.test.ts integration
+fixture (Core reads/capture are controlled fixtures, currency/containment and server
+review are production owners). This adds an end-to-end consumer case to that test;
+browser production behavior is not rewritten. Extend existing operation/proof tests
+for transport failures and bounded accumulation, then update exact public contracts.
+No extra model, scene copy, geometry evaluator or new result store is permitted.
+
+
+### Stage 2 bounded iteration - coherent accumulated validation
+
+The real 32-region integration regression `stage2-source-drift-red.log` changes
+window 2 between two validation batches and incorrectly accepts the drawing.
+Individual `current` booleans cannot establish a coherent publication boundary.
+The existing browser inspection owner already owns the observation revision;
+return its session/revision as `validatedAt` with each validation. The host requires
+one unchanged observation version across the batch sequence before publishing
+new judgments. This is a read-only fence, not a dependency key: version drift
+must preserve unrelated passes and request a fresh validation, never globally
+invalidate receipts or re-render. Exact changed receipts still own invalidation.
+No automatic retry loop or revision cache is added.
+
+This supersedes the preceding no-browser-edit restriction only for the existing
+validation response metadata in common-apis/inspection-evidence.ts, its action
+schema in ai/inspection.ts, and their direct formal fixtures. No capture,
+observation, dependency algorithm or canonical write behavior changes. The inspect
+step already owns these files. Validate cancellation, malformed acknowledgements,
+missing fence, drift and stable >24 accumulation, then recheck exact schemas and
+same-source proof. The red case is a correctness failure, not a performance result.
+
+
+Consumer closure review: the runtime-input completeness fixture assumed a shared
+revision 2 for nearly every browser action. Current basic mutation wrappers and
+retained-fill tools already publish owner revision 3. Re-audit confirmed no runtime
+regression or reason to change those owners. The completeness test now requires a
+positive safe integer and successful common registry admission for every action,
+plus exact revision 3 for this changed validation action. Exact declaration/review
+versions and canonical/native schemas have their own direct contract test. Do not
+keep extending an unrelated tool-name list or downgrade current contracts to make
+the old assertion pass. Consumer fixture changes are inside this handoff closure;
+no additional production owner was changed.
+
+
+### Stage 2 completion - 2026-10-13
+
+The bounded inspect stage is complete. Required units, current result derivation,
+local capture/judgment delivery, whole-view acceptance and final settlement now
+share the existing check owner. The actual canonical-browser integration proves
+8 and 32 region accumulation, one changed third-tier membership lookup, unchanged
+other-tier records/capture counts, cross-region invalidation, recovery without
+recapturing independent regions, bounded 24-action validation, and refusal of
+mixed observation versions. Missing/duplicate/extra/wrong-name acknowledgements,
+unavailable version metadata, declared failure, transport exceptions and cancellation
+cannot publish a new judgment or dispatch an unchecked successor batch.
+
+Final self-review also corrected unchanged-plan replies losing the retained fact
+acknowledgement (formal red then green); no source data was dropped or recomputed.
+The only additional browser production change returns its existing observation
+version. It is not a new epoch owner, dependency key or global invalidation rule.
+No Framework, renderer, viewport, activity, recipe engine, model or subscription
+setting changed. No second acceptance ledger, compatibility branch, automatic
+retry loop, extra model invocation or limit increase was introduced.
+
+Validation evidence:
+- `tmp/stage2-server-verified.log`: nine focused server/consumer files, 602 passed,
+  three pre-existing conditional skips. This is not the full local CI.
+- Browser owner/dependency/action tests: 37 passed in
+  `tmp/stage2-browser-final.log`; that attempt retained one failed runtime-input
+  contract assertion. Its corrected file has all 18 passed in
+  `tmp/stage2-runtime-contract-verified.log`, for 55 browser tests across the final
+  applicable results. Earlier failed runs remain failed evidence.
+- Declared production server/browser typechecks passed in
+  `tmp/stage2-server-types-final.log` and `tmp/stage2-browser-types.log`.
+- Focused lint is clean after the runtime-input correction; two existing
+  no-console warnings remain in formal test files. Naming: 15 passed; catalog: eight
+  passed. Logs: `tmp/stage2-lint-verified.log`,
+  `tmp/stage2-runtime-contract-lint-verified.log`,
+  `tmp/stage2-delivery-naming.log`, `tmp/stage2-catalog-test.log`.
+- Accepted exact inspect contract review
+  `33e9936de2e8ae2af1b36bf6cf6cfa73d8432f007427209c8a57e39c832e006a`, mapping 64.
+  `tmp/stage2-same-source-verified.log`: positive baseline, three precise negative
+  scenarios and recovery passed, 28 obligations. Runtime/proof source digest
+  `bea58480e44823440f59d9810e8dc179911dec1e7e4372353ce330c4dad52327`;
+  final recovery `df70fa0d-bd7e-4a31-b4b5-e68e380fea0e`. All five changed production
+  files and the proof test were byte-compared with that captured source afterward.
+
+Limits: these are controlled permanent integration proofs, not a live Taipei 101
+run or a first-frame latency result. Actual changed full-view pixels still reopen
+that whole-view judgment; unchanged regional passes survive. Validation establishes
+evidence at the observed boundary, not immunity from later user edits. Tools do not
+prove semantic completeness of an AI-authored plan or replace the primary agent's
+visual judgment. No service was started, no push/monitoring occurred, and the next
+stage has not started.
+
+
+### Stage 2 comprehensive correction - inspect
+
+Authorized objective: audit and repair the existing second-stage declaration,
+evidence delivery, cumulative judgment, dependency invalidation and settlement
+contracts. This does not authorize later stages, live101, full CI, push or monitoring.
+Baseline is HEAD 62127de41 plus the existing 21-file Stage 2 working diff.
+Discovery is frozen to current inspect source, its direct browser/provider consumers,
+current spec/Inspector, and their maintained tests. Review admission/identity, source
+ownership/lifetime, sparse accumulation, final completeness, failures/cancellation,
+public schemas, work counts and superseded instructions; no repository-wide audit.
+
+Read-only review identified three cases to prove before production changes:
+- Deferred visual decisions are saved only when the entire result is accepted, so
+  valid sparse work can be lost. Store their dependency-bound verdicts in the same
+  check owner; retain their explicit disposition as result metadata, not a second
+  acceptance store. Merge sparse decisions by identity and invalidate only actual
+  image dependencies; source/reference changes without finer bindings remain
+  conservatively criterion-dependent. Changed detail definitions reopen their own
+  decision. Never treat a reason as visual proof.
+- A visual review can report accepted while the shared store contains unresolved
+  mechanical results. Derive completion from both kinds of current results, retain
+  visual passes, and allow mechanical-only recovery without rejudging unchanged
+  images. Final settlement must use the same blocker boundary.
+- A malformed negative currency acknowledgement may retire evidence before its
+  required validation stamp is checked. Reject malformed acknowledgements without
+  destroying previously retained evidence; valid explicit stale receipts still
+  invalidate their actual dependents.
+
+Owner and allowlist remain inspect, the existing check-result schema, direct
+operation/provider consumers, maintained owner/browser/proof tests and current
+spec/Inspector/generated catalog. No new cache, background task, model call,
+compatibility path, retry engine or limit increase. Extend formal regressions first;
+confirm each failure, then repair at its owner. Re-run affected owner/consumer tests,
+production types, focused lint/naming, catalog and same-source proof. Final review
+checks the changed contracts and all discovered cases once; report actual remaining
+limits separately from defects and backlog.
+
+
+### Stage 2 comprehensive correction completion - 2026-10-13
+
+Three permanent regressions failed before production correction: sparse deferred
+decisions were lost before overall acceptance, visual acceptance ignored unresolved
+tool checks, and an unstamped negative validation removed a still-recoverable image.
+The current check store now retains deferred disposition metadata and exact submitted
+image dependencies; no accepted-only decision array remains. Changed definitions
+reopen their decision; identical replay is stable and invalid candidates write no
+judgment. Source dependencies are conservative where no narrower binding exists.
+Completion reads current tool blockers without clearing valid visual work; mechanical
+recovery proceeds through existing tools without another primary-agent verdict.
+Malformed negative currency reports cannot destroy retained receipts.
+
+Reviewed declaration/schema parity, capture versus judgment, cumulative required
+coverage, ownership/lifetime, source/image dependencies, supersession, negative and
+cancelled handoffs, transport batching, final settlement, work counts and scope.
+The 8/32-region canonical-browser cases retain unrelated results and capture counts.
+Whole-view judgment can wait for the final candidate; altered whole-view pixels
+still require that judgment. No claim of semantic image equivalence, AI workflow
+adoption or measured Taipei 101 speed is made. No further concrete finding remains
+within this frozen second-stage review. Later-stage backlog remains unimplemented.
+
+Final evidence:
+- Server union: 606 passed, three original conditional skips. Five unchanged direct
+  consumer suites passed in `tmp/stage2-audit-server.log`; its two failed fixtures
+  remain failed evidence. Those fixtures omitted an authoritative move scope or the
+  required mechanical capability despite expecting acceptance. Their valid-success
+  setup now provides those current contracts, preserving regrouping/refinement
+  assertions. All four affected suites then passed 271 cases in
+  `tmp/stage2-audit-server-final.log`.
+- Browser: all 56 tests passed in `tmp/stage2-audit-browser-final.log`, including the
+  malformed negative recovery with no recapture. Existing jsdom canvas capability
+  warnings are not a live rendering result.
+- Server production types and focused lint passed: `tmp/stage2-audit-types-final.log`
+  and `tmp/stage2-audit-lint-final.log`; one pre-existing test console warning remains.
+  Browser production source is unchanged from the earlier successful type gate.
+  Naming 15 and catalog eight passed (`tmp/stage2-audit-naming-final.log`,
+  `tmp/stage2-audit-catalog.log`); diff whitespace check passed.
+- Same-source proof passed baseline, all three exact negative scenarios and recovery:
+  `tmp/stage2-audit-same-source-final.log`, 28 obligations. The previous attempt
+  failed because the deliberate negative mutation still targeted the old branch.
+  Only that injection anchor changed; its three required failed cases are unchanged.
+  Accepted review `32dbb61b192ec11fba73846c1c6329dc695307a816f46eba734e350d4edc08e6`,
+  mapping 66; source digest
+  `b04dd2a2d51b8b96e514798e4d6fde0dbf39d6220fcb3a606933f6fa17db8c5b`;
+  final recovery `2b06dad1-5044-49fb-8ce1-f2ab462d6836`. Nine current production,
+  proof and contract files were byte-compared with that successful captured source.
+
+No service, live model or recording was started. No full CI, push, PR, monitoring
+or next-stage implementation occurred. Work remains in the original worktree,
+uncommitted and unpushed. The stage goal is ready to close; the whole plan is not.

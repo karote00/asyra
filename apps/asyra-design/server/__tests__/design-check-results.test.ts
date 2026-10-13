@@ -403,3 +403,43 @@ it('summarizes large retained failures without retransmitting their evidence', (
     'retained detail '.repeat(100)
   )
 })
+
+it('discards only untouched declaration placeholders and validates the whole removal first', () => {
+  const store = createDesignCheckResults()
+  const declaration = {
+    id: 'declared',
+    origin: 'main-agent' as const,
+    status: 'unverified' as const,
+    evidence: 'Await judgment',
+    dependencies: { 'criterion:one': '1' }
+  }
+  store.record(declaration)
+  store.record({ ...declaration, id: 'observed', scope: ['image'] })
+  const before = store.read({ includePassed: true })
+  expect(() => store.discardDeclarations(['declared', 'observed'])).toThrow(
+    /declaration/
+  )
+  expect(store.read({ includePassed: true })).toEqual(before)
+  store.invalidate(
+    ['criterion:one'],
+    'The declared source changed before any judgment'
+  )
+  expect(() => store.discardDeclarations(['observed'])).toThrow(/declaration/)
+  store.discardDeclarations(['declared', 'declared'])
+  expect(
+    store.read({ includePassed: true }).items.map((item) => item.id)
+  ).toEqual(['observed'])
+  expect(store.read().counts).toEqual({
+    pass: 0,
+    fail: 0,
+    unverified: 0,
+    stale: 1
+  })
+  expect(store.record(declaration)).toBe(2)
+  for (const status of ['fail', 'pass'] as const) {
+    store.record({ ...declaration, status })
+    expect(() => store.discardDeclarations(['declared', 'declared'])).toThrow(
+      /declaration/
+    )
+  }
+})

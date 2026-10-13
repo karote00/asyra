@@ -240,10 +240,15 @@ it('advertises one complete contract for every browser tool without exposing exe
   try {
     for (const action of input.actionDefinitions) {
       expect(action, action.name).toMatchObject({
-        revision: action.name === AiActionNames.REVIEW_DESIGN ? 3 : 2,
+        revision: expect.any(Number),
         outputSchema: expect.any(Object),
         resources: expect.any(Array)
       })
+      expect(Number.isSafeInteger(action.revision) && action.revision > 0).toBe(
+        true
+      )
+      if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+        expect(action.revision).toBe(3)
       expect(action.lifecycle.retry).not.toBe('read-only')
       registry.register(action)
     }

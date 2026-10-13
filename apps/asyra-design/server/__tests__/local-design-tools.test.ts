@@ -1396,7 +1396,10 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
                   { x: 0, y: 1 }
                 ]
               }
-            : { current: true }
+            : {
+                current: true,
+                validatedAt: { sessionId: 'consumer-validation', revision: 1 }
+              }
       })
     )
   }))
