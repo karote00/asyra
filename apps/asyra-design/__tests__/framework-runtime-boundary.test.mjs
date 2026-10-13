@@ -314,3 +314,20 @@ test('ordinary AI validation includes structural delivery regressions', () => {
     /src\/ai\/__tests__\/structural-delivery\.test\.ts(?:\s|$)/
   )
 })
+
+test('ordinary validation includes every maintained server regression suite', () => {
+  const commands = [
+    packageJson.scripts['test:server-response-harness'],
+    packageJson.scripts['test:local']
+  ].join(' ')
+  const missing = readdirSync(path.join(serverDirectory, '__tests__'))
+    .filter((file) => file.endsWith('.test.ts'))
+    .filter(
+      (file) => !commands.split(/\s+/).includes(`server/__tests__/${file}`)
+    )
+  assert.deepEqual(
+    missing,
+    [],
+    'Maintained server regressions must be in ordinary package validation'
+  )
+})

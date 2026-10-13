@@ -142,7 +142,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toBe(false)
   })
 
-  it('shows the original task after a concrete operation completes', async () => {
+  it('retains the completed work subject in the processing phase until settlement', async () => {
     const harness = createPanelHarness()
     render(
       <AiConversationPanel
@@ -185,10 +185,13 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('AI processingRefine the tower')
+    ).toBe('AI processingAdjust the roof')
     await act(async () => {
       harness.pending.resolve({ status: 'success' })
     })
+    expect(
+      screen.queryByRole('status', { name: 'Current activity' })
+    ).toBeNull()
   })
 
   it('does not show a redundant canvas or selection context caption', () => {

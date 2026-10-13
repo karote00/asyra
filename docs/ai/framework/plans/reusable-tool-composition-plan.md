@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 7 COMPLETE - Stage 8 package acceptance is next.
+Status: COMPLETE - Stages 1 through 8 implemented and locally verified.
 
 ## Current authority and stop boundary
 
@@ -38,8 +38,9 @@ past evidence; their old stop/push instructions do not override this authority.
 
 ## Stages
 
-Stages 1 and 2 are pushed. Close the Stage 3 findings first, then review and
-complete Stages 4 through 8 in order; each stage has a separate goal.
+Stages 1 through 7 are pushed. Stage 8 completes the integrated review and local
+package validation; its final delivery contains only test wiring, the current UI
+oracle and this closeout. Each stage used a separate reviewed goal.
 
 | Stage | Outcome | Required evidence |
 | --- | --- | --- |
@@ -1964,3 +1965,104 @@ obligations, four exact negative scenarios and recovery passing (11.699 seconds)
 Accepted review d6291bbed817cc5cf0ccf754ae06e947aabf416e7393f1cbc32ad6565df99657.
 The earlier full-proof failure remains recorded separately; it is not reused as a
 pass. This correction changes only the exact scenario expectation and plan record.
+
+
+## Stage 8 - Complete package acceptance
+
+### Reviewed Step Execution Card
+
+Owners: the existing request/compose/prepare/apply/inspect/settle/observe routes,
+plus the already changed Factory publication and Core canonical insertion owners.
+Review uses the current stage contract, current implementations, diff inventory,
+direct consumers and permanent tests only. No new repository-wide redesign.
+
+Inventory against origin/main identifies Runtime, Factory, Core, SceneTree,
+Preset, Design and Sim as changed runtime packages. Design and Sim are the actual
+canonical creation/publication consumers; Sim journal migration is already in
+Stage 3. Check other Apps for these direct contract references and shared
+subscription/history effects. Preserve their existing behavior; fix demonstrated
+direct regressions within this stage if required.
+
+Run the ordinary complete test:local suites for all six framework/Sim packages,
+and Design's complete test command (boundary, AI browser, server response, local
+App tests). Existing opt-in live-model and resource guards remain intact: no new
+101/live evaluator, PR monitoring, all-repository CI or unrelated precision suite.
+Run complete affected source lint and package tsc; also run direct App-consumer
+checks when the changed contract reaches them. Inspect failures promptly, complete
+bounded test-first owner corrections before rerunning only affected failed gates.
+
+Audit found five existing server regression files missing from Design's explicit
+ordinary test list: check-results, containers, draft-repair, target-index and
+prepared-review. Add a permanent command-wiring assertion first, prove it fails,
+then include those formal suites in the existing server command. This preserves
+future package test coverage; do not create a temporary replacement runner.
+
+Whole-flow review covers deferred mechanical checks, cumulative regional passes,
+structural handle success/partial/ownership, exact save and reload ordering,
+finite repair/no-progress/decision/cancel paths, fresh-segment/no-replay handoff,
+normalized UI/trace activity, image dependency reuse and final completion guards.
+Use current formal cases, including same-source positive/exact-negative/recovery
+proofs; profiler evidence is not mutation recovery authority. No duplicated
+registries, interpreters, acceptance stores or legacy compatibility path.
+
+Completion: all affected ordinary suites, lint and tsc pass; document original
+conditional skips and any corrected failures accurately. Review final changes,
+commit/push this stage and leave the tracked worktree clean. No PR status action.
+This closes staged implementation, not a new end-to-end AI timing claim.
+
+Stage 8 full-suite consumer correction: the ordinary Design AI suite failed an
+old panel expectation that discarded the completed work subject. The current
+purpose-continuity spec explicitly retains that subject in the observed processing
+phase until replacement or settlement. Update that formal UI oracle to assert
+the exact processing phase plus retained subject and retirement on success. No
+production reducer change or weaker assertion is needed. The initial full-suite
+log remains failed (`tmp/stage8-design-all.log`: 547 passed, one failed).
+
+### Stage 8 complete validation and final review
+
+The full ordinary affected-package suites passed on the final implementation:
+
+| Package / consumer | Verified result | Local evidence |
+| --- | --- | --- |
+| AI Agent Runtime | 356 tests | `tmp/stage8-runtime-all.log` |
+| Factory | 289 tests | `tmp/stage8-factory-all.log` |
+| Core | 268 tests | `tmp/stage8-core-all.log` |
+| SceneTree | 211 tests | `tmp/stage8-scene-tree-all.log` |
+| Preset | 212 tests | `tmp/stage8-preset-all.log` |
+| Design | 12 boundary, 548 AI browser, 1,121 server, 152 script and 540 local tests; 9 original opt-in skips | `tmp/stage8-boundary-final.log`, `tmp/stage8-design-ai-green.log`, `tmp/stage8-design-server-all.log`, `tmp/stage8-design-local-all.log` |
+| Sim | 13 supervisor, 874 ordinary and 9 guarded heavy/representative/witness tests; 77 original conditional skips | `tmp/stage8-sim-all.log`, `tmp/test-supervision/1791916198975037000-89058/` |
+| Office | Complete 14-test suite | `tmp/stage8-office-all.log` |
+| Starter | Complete 44-test suite | `tmp/stage8-starter-all.log` |
+| FieldScope | 8 supervisor and 6 direct bootstrap/history/shortcut tests | `tmp/stage8-fieldscope-direct.log` |
+
+All five changed framework packages compiled successfully. Design server/browser,
+Sim, Office, FieldScope and Starter package typechecks passed. Full changed-owner
+source lint and Sim/Starter package lint passed (25 existing console warnings,
+zero errors); naming passed. Evidence: `tmp/stage8-*-types.log`,
+`tmp/stage8-owner-lint.log`, `tmp/stage8-sim-lint.log`,
+`tmp/stage8-starter-lint.log`, `tmp/stage8-naming.log`.
+
+The current Design flow passed all 30 positive obligations, four exact injected
+negative scenarios and recovery in 13.813 seconds (`tmp/stage8-contract-proof.log`).
+Catalog equality passed eight tests. Earlier negative runs are expected proof
+failures, not ordinary test failures. The original Design full-suite failure
+remains recorded separately; only its affected AI suite and the not-yet-run
+server/local suites were run after the current-contract oracle correction.
+
+Final review followed producers through exact schemas, retained success/partial
+outputs, consumers, check-result ownership, dependency invalidation, recovery,
+canonical publication, persistence and reload. No unresolved in-scope defect was
+found after these corrections. Existing regressions prove local acceptance
+accumulation, mutation-preserving inspection failure, finite mechanical repair,
+no replay during primary-agent continuation, normalized purpose/trace agreement
+and native image reuse/invalidation. Sim's exact ordered insertion journal was
+updated in Stage 3; Office, FieldScope and Starter direct consumers require no
+additional production change. FieldScope precision profiles are unrelated to
+the changed publication contract and were not run.
+
+Limits remain explicit: image comparison requires caller-aligned native crops and
+never certifies semantic appearance; primary-agent visual review remains required.
+Unknown mutations are not automatically replayed. No new live101, model timing
+claim, model change, PR operation or monitoring was performed. Local evidence and
+recordings remain ignored. Final delivery follows the user's per-stage push
+authorization after the actual-head metadata checks.
