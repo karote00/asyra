@@ -144,7 +144,8 @@ describe('stage-owned App guidance', () => {
     const review = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(review.description).toContain('final=false')
+    expect(review.description).toContain('final=true (default)')
+    expect(review.description).toContain('without discarding valid local work')
     expect(review.description).toContain('deferredDetails')
     const criteria = requireTestValue(
       designEvidenceDefinitions.find(
@@ -184,3 +185,10 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) throw new Error('Required test fixture is unavailable')
   return value
 }
+
+it('separates remaining-work execution from replay and library availability recovery', () => {
+  expect(general).toContain('new execution segment')
+  expect(general).toContain('only the unresolved steps')
+  expect(general).toContain('resume restores library availability')
+  expect(general).toContain('not a saved execution position')
+})

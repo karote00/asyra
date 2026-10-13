@@ -1804,3 +1804,15 @@ unresolved. Resolving mechanical work alone preserves and reuses current primary
 judgments. A malformed negative validation response is unavailable evidence, not
 authority to delete retained receipts; only an admitted current=false acknowledgement
 may retire its dependencies. Recovery validates again without replay or recapture.
+
+### Primary-agent remaining-work segments
+
+An interrupted recipe returns its declared acknowledged recovery. The primary
+agent retains the original intent, consults current capabilities and pending
+checks, and invokes or authors only unresolved work as a new admitted execution
+segment with current input identities. It does not rerun initial creation. Library
+resume restores candidate availability, not a program counter. Unknown mutation
+scope retains its existing write-stop boundary. Repeated provider call identities
+are rejected before another dispatch; a new call identity is a new intentional
+invocation, not permission to assume prior unknown work rolled back. Failed save
+uses the successful receipt with save_tool and cannot replay product work.

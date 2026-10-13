@@ -1292,3 +1292,94 @@ it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
     }
   }
 )
+
+it('continues only an unresolved suffix using acknowledged document identities in a new admitted segment', async () => {
+  const app = fixture()
+  app.select.mockImplementationOnce(() => {
+    throw new Error('Selection interrupted')
+  })
+  try {
+    expect(
+      await app.invoke('tool_library.submit_tool', {
+        submissionId: 'initial-segment',
+        proposal
+      })
+    ).toMatchObject({ ok: true })
+    const first = await app.invoke('tool_library.invoke_tool', {
+      name: proposal.name,
+      revision: 1,
+      input: { width: 17 }
+    })
+    expect(first.execution.status).not.toBe('success')
+    expect(first.storage).toBeUndefined()
+    const created = first.execution.recovery.find(
+      (entry: { name: string; status: string }) =>
+        entry.name === proposal.steps[0].tool && entry.status === 'success'
+    )
+    expect(created).toMatchObject({ settlement: 'completed' })
+    const ids = created.value.actionResults[0].result.appliedElementIds
+    expect(ids).toEqual(['created-id'])
+    const next = {
+      format: 1,
+      name: 'select-existing-parts',
+      revision: 1,
+      description:
+        'Select acknowledged existing parts without recreating them.',
+      inputSchema: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, 'x-runtime-value': 'document' }
+      },
+      outputSchema: { type: 'null' },
+      steps: [
+        {
+          ...proposal.steps[1],
+          input: {
+            kind: 'object',
+            fields: {
+              arguments: {
+                kind: 'object',
+                fields: { elementIds: { kind: 'input', path: '' } }
+              }
+            }
+          }
+        }
+      ],
+      output: literal(null)
+    }
+    const found = await app.invoke('design_operations.describe_design_apis', {
+      operation: 'selection.selectElements'
+    })
+    expect(found.apis[0].recipeDependency).toMatchObject({
+      name: proposal.steps[1].tool,
+      revision: proposal.steps[1].revision
+    })
+    expect(
+      await app.invoke('tool_library.submit_tool', {
+        submissionId: 'remaining-segment',
+        proposal: next
+      })
+    ).toMatchObject({ ok: true })
+    const resumed = await app.invoke('tool_library.invoke_tool', {
+      name: next.name,
+      revision: 1,
+      input: ids
+    })
+    expect(resumed).toMatchObject({
+      execution: { status: 'success' },
+      storage: { status: 'saved', availability: 'eligible' }
+    })
+    expect(app.create).toHaveBeenCalledOnce()
+    expect(app.select).toHaveBeenCalledTimes(2)
+    expect(app.select).toHaveBeenLastCalledWith(['created-id'])
+    const available = await app.invoke(
+      'design_operations.describe_design_apis',
+      { names: [next.name] }
+    )
+    expect(available.tools[0]).toMatchObject({
+      name: next.name,
+      availability: 'eligible'
+    })
+  } finally {
+    await app.host.dispose()
+  }
+})

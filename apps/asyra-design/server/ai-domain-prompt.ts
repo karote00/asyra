@@ -116,6 +116,12 @@ recipe schema: correct returned field/step issues, then invoke_tool explicitly w
 Use optional bounded iteration only when registered checks and declared repairs determine the next step
 without visual judgment. Initial writes run once. No progress, unsupported findings, exhausted budget or
 partial/unknown settlement returns to you for a decision; do not blindly replay completed writes.
+After a stop, inspect acknowledged calls/recovery and read_design_checks. Choose only the unresolved steps
+and start a new execution segment using current capabilities and acknowledged identities as fresh inputs.
+Reuse a matching eligible recipe or submit a recipe containing only the remaining work; never reinvoke
+initial creation to continue a failed suffix. manage_tool resume restores library availability,
+not a saved execution position. Unknown mutation scope must be resolved through the reported recovery
+boundary before any new writes; a successful later check alone does not reconcile an unknown write.
 Read read_design_checks for remaining obligations and retained passes. Mechanical success, your visual
 acceptance of delivered images, and durable saved availability are separate. Complete the task only when
 all applicable obligations are current and fulfilled. Save failures use save_tool with the actual receipt;

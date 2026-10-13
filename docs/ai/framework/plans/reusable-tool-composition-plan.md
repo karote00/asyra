@@ -1,6 +1,6 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: STAGE 4 COMPLETE - review Stage 5 before its goal and implementation.
+Status: STAGE 5 COMPLETE - review Stage 6 before its goal and implementation.
 
 ## Current authority and stop boundary
 
@@ -1752,3 +1752,57 @@ input was the production regression and passed only after the owner fix.
 Self-review: no additional model, algorithm, interpreter, compatibility branch or
 automatic design choice. Existing complete/unsupported verdicts and mutation-scope
 protection remain. Stage 5 owns resuming unresolved intent in a new segment.
+
+## Stage 5 - primary-agent continuation
+
+### Reviewed plan and owner execution card
+
+Owner: compose route; existing discovery, library controls and provider protocol.
+Inputs are the original objective, current registry contracts, unresolved checks
+and typed acknowledged recovery. The primary agent chooses the correction; tools
+validate and execute it. Output is a new admitted execution segment for remaining
+work, followed independently by durable eligibility or save-only recovery.
+
+Use existing submit/invoke/save controls. A segment is an ordinary admitted tool
+invocation, not a new task object, persisted program counter or arbitrary DAG
+resume. After a partial recipe, the model reads its declared recovery and remaining
+checks, chooses a current existing capability or authors only the missing steps,
+and supplies acknowledged identities as fresh inputs. It never reruns initial
+creation to continue a suffix. Library resume restores a saved candidate's
+availability, not execution progress. Repeated provider call IDs are already
+rejected by the request protocol; test that actual owner instead of duplicating
+identity tracking in the library. Concurrent distinct calls still use leaf
+scheduling. Request cancellation and unknown writes remain terminal as specified.
+
+Review found guidance for stopping and save-only retry but no explicit distinction
+between a new execution segment and library resume. Add the exact guidance and
+permanent prompt contract. Add real-host create/failed-select/selection-only
+continuation, proving one creation and current typed ID delivery. Reuse existing
+real-provider protocol and saved-tool rediscovery tests, save-failure/no-replay,
+concurrent receipt and shutdown tests. Add missing repeated-ID protocol coverage
+in the existing provider harness. No live model required; mocks replace only the
+external transport and domain owner methods, never Runtime admission or dispatch.
+
+Allowed files: existing domain prompt and tests, operation-composition and provider
+tests; immediate host/protocol corrections only after a demonstrated regression.
+Do not change Stage 4 mechanics, model settings, security, schema strictness or
+limits. Self-review downstream: Stage 6 receives existing actual call IDs and
+purpose metadata; Stage 2 passes and Stage 3 artifacts remain request-owned.
+Focused tests, lint, tsc and bounded review precede this stage's commit/push.
+
+### Stage 5 closure
+
+Guidance now distinguishes remaining-work execution from candidate availability
+resume. A real host creates once, stops at failed selection, exports exact
+acknowledged IDs, discovers the selection capability and saves a newly admitted
+selection-only recipe after success. No re-creation occurs. Actual provider
+protocol tests reject repeated native call IDs both while active and after reply,
+with exactly one dispatched operation. Existing save-only, concurrent receipt,
+shutdown and saved-tool rediscovery cases passed without new state or limits.
+
+Validation: 248 tests passed, three pre-existing conditional skips
+(`tmp/stage5-handoff-verified.log`), production server tsc and scoped lint passed
+(the existing proof logger warning remains). Naming and same-source proof passed.
+A prompt test still expecting old final=false wording was aligned to current
+accumulation/completion wording while preserving the local-work-retention check.
+No production executor changed and no AI was launched.

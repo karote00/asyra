@@ -4572,3 +4572,61 @@ it('records registered review intent without declaring a new authored stage', as
     })
   ).toBe(true)
 })
+
+it.each(['active', 'settled'] as const)(
+  'rejects repeated native call identities after %s dispatch without repeating the operation',
+  async (phase) => {
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    let release!: () => void
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const executeBatch = vi.fn(
+      async (value: AiActionBatch): Promise<AiBatchReceipt> => {
+        if (phase === 'active') await held
+        return {
+          context: {},
+          actionResults: value.actions.map((action) => ({
+            actionId: action.id,
+            actionName: action.name,
+            result: { status: 'complete' }
+          }))
+        }
+      }
+    )
+    const promise = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'select_elements',
+            description: 'Select',
+            inputSchema: { type: 'object' }
+          }
+        ]
+      },
+      { environment, executeBatch }
+    )
+    const rejected = expect(promise).rejects.toMatchObject({
+      code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+    })
+    await untilTurn(server.packets)
+    const params = {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      callId: 'same-call',
+      tool: 'select_elements',
+      arguments: { arguments: { elementIds: ['shape'] } }
+    }
+    server.send({ id: 190, method: 'item/tool/call', params: { ...params } })
+    await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledOnce())
+    if (phase === 'settled')
+      await vi.waitFor(() =>
+        expect(server.packets.some((packet) => packet.id === 190)).toBe(true)
+      )
+    server.send({ id: 191, method: 'item/tool/call', params: { ...params } })
+    release()
+    await rejected
+    expect(executeBatch).toHaveBeenCalledOnce()
+  }
+)
