@@ -421,13 +421,13 @@ const runLocalAiProvider = async (
                 typeof input.metadata.aiTargets.compositionId === 'string'
                   ? input.metadata.aiTargets.compositionId
                   : undefined,
-              onInspection: (status) => {
+              onInspection: (status, tool = AiActionNames.INSPECT_DRAWING) => {
                 const context = callContext.getStore()
                 if (!context) return
                 if (status === 'running') context.inspectionId = randomUUID()
                 if (!context.inspectionId) return
                 reportProgress({
-                  tool: AiActionNames.INSPECT_DRAWING,
+                  tool,
                   status,
                   activity: {
                     kind: 'system',

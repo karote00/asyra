@@ -1287,7 +1287,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "dc0e514e272c38a1227c5c2127d8ea4bcf24ed2664c7784d7fe84049269f5183",
+      "contentSha256": "ed6a6f0f6d0b729fdaa0268e9af22ce0974004105073ebcddddc20836d46fb84",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1313,6 +1313,10 @@
         {
           "depth": 2,
           "title": "Lifecycle, inputs, outputs, and failure"
+        },
+        {
+          "depth": 3,
+          "title": "Diagnostic storage and retry ownership"
         },
         {
           "depth": 2,
@@ -1343,7 +1347,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 508
+      "wordCount": 625
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",

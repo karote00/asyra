@@ -1847,3 +1847,7 @@ Changed evidence, decode failure or cancellation never creates a pass. Compact
 pixel results are diagnostic facts; main-agent visual acceptance remains separate.
 The input's request-local inspection and numeric attachment selectors are control
 plane values, not portable recipe literals or durable document identities.
+
+### Mechanical inspection transport
+
+Mechanical measurements and dependency validation use bounded exchanges of at most 64 independent exact-target actions. Each target retains its own evidence and finding status. A known fail-fast action failure preserves acknowledged prefix results and may continue only the proven unexecuted read suffix; unknown outcomes remain unverified. Cancellation prevents late adoption and further dispatch. Grouping reads never replays acknowledged document writes or converts missing checks into passes.

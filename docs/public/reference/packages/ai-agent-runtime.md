@@ -53,6 +53,12 @@ synchronously after successful canonical publication and before yielding. Keep
 capture failure separate from the completed mutation; never replay a write to
 recover its receipt.
 
+### Diagnostic storage and retry ownership
+
+Diagnostic outbox adapters implement atomic `append(records)` for an ordered, single-request batch partitioned at `recordStorageBatchBytes` (256 KiB), with an individual record still subject to capture and transport bounds. The delivery sink keeps its existing pending-byte bound and streams durable prefixes independently from later storage work. A failed atomic append records the entire enclosing lost range; it never synthesizes completion or replays product operations.
+
+File-backed collectors retain only a recent digest window. Older retries are checked against the durable stream using a bounded sequential cursor; restart streams the evidence without retaining all hashes. Explicit host record budgets still apply. A generic collector without durable retry lookup retains its bounded in-memory admission budget.
+
 ## Relationships
 
 Feature System owns the invocation session. App executors call Core/common APIs.

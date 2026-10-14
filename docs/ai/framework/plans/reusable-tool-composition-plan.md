@@ -1,26 +1,24 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: COMPLETE - Stages 1 through 8 implemented and locally verified.
+Status: IN PROGRESS - live workload corrections after the completed staged work.
 
 ## Current authority and stop boundary
 
-The user authorizes completion of every remaining stage in this worktree,
-`.worktrees/ai-reusable-tool-design`, branch `codex/ai-reusable-tool-design`.
-The current conversation owns closeout. Stage 1 was pushed at `62127de41` and
-Stage 2 at `d7890d8a6`. Stage 3 and its persistence follow-up are complete, including the three review
-corrections documented below.
+The 2026-10-14 live test on 4e28aa8a7 exposed a large-workload regression after
+Stages 1-8 passed their local gates. Those gate results remain historical facts,
+not evidence that the live workload passed. Current user authorization is to
+analyze and fix the observed inspection fanout, activity repeated work/status,
+and diagnostic delivery gaps, then run the full recorded Taipei 101 test once.
+Reuse `.worktrees/ai-reusable-tool-design`. No push, PR operations, monitoring,
+extra evaluator AI, model change or unrelated refactor. Preserve local data/env.
 
-For each stage: review its complete plan and handoffs before setting a dedicated
-goal; implement, self-review and iterate; run applicable local tests, lint and
-TypeScript checks; then commit and push. Complete the preceding stage before
-advancing. Finally review all stage connections and run the affected packages'
-existing complete test suites, fixing regressions until those gates pass.
-No PR monitoring, PR creation, merge, extra model evaluator or full Taipei 101
-run is authorized. Stage 8 therefore uses deterministic integrated acceptance
-and the existing package suites instead of a new live drawing/recording run.
-Preserve .env, user documents, recordings and ignored evidence. Do not publish
-private configuration or local-only diagnostics. Historical cards below record
-past evidence; their old stop/push instructions do not override this authority.
+The live test deadline is 900 seconds from Send. Failure to complete within it
+is a failed test and must stop execution immediately through an independent
+watchdog, not a browser-poll-loop condition. Diagnostic/video cleanup may follow,
+but cannot extend drawing time or turn timeout into success. Normal completion
+still retains the ten-second recording hold. Do not automatically start another
+full drawing after a timeout. Follow the correction section below; older stage
+push/stop instructions are historical and do not control this task.
 
 ## Direction
 
@@ -2066,3 +2064,182 @@ Unknown mutations are not automatically replayed. No new live101, model timing
 claim, model change, PR operation or monitoring was performed. Local evidence and
 recordings remain ignored. Final delivery follows the user's per-stage push
 authorization after the actual-head metadata checks.
+
+
+## Live workload correction - 2026-10-14
+
+### Evidence, scope and reviewed connections
+
+Frozen baseline: ignored run `reusable-tools-1791943630483`, analysis.md and raw
+records, source 4e28aa8a7. First visible 109.308s, main construction 206.578s;
+7,718 fill targets written in a 2.107s overlapping action interval; only 2,836
+post-write checks completed in 3,352.661s, with 356.200ms browser handler time.
+The current code performs a separate exchange per target and replays accumulated
+activity on every panel render. Browser root recording stops at 288.051s while
+the server drawing record reaches cancellation at about 3,645s. This is a
+record-completeness defect, not evidence that the request lasted 288 seconds.
+
+Discovery is limited to the actual operation/check/store producer-consumer chain,
+conversation/activity subscriptions, recorder/outbox/collector, local live harness
+and their formal tests. No geometry, model, scene-tree, document transaction or
+other-App redesign. Runtime fixes include direct consumers when necessary.
+
+Implementation sequence:
+1. Inspect: exchange bounded groups of independent exact-target checks and stamp
+   validations through the existing batch route, preserving every target result.
+   Do not replace targets with a containing group or widen dependency invalidation.
+2. Settle: retain activity projection at its conversation lifetime and make the UI
+   consume it. Eliminate accumulated replay/copy work, preserve authored purpose,
+   true check phase, concurrent causality and terminal transitions.
+3. Observe: reproduce the interrupted delivery and repair its first incorrect
+   owner; preserve bounded capture, local durability, acknowledgements, gaps,
+   reconnect/cancellation and independence from product settlement.
+4. Local harness: independent 900-second timer cancels the owned request/provider
+   without waiting for a busy page; permanent deterministic deadline regression.
+5. Self-review, affected tests/lint/types and integrated representative workload;
+   then one live recorded test with timing, reference and completeness analysis.
+
+Review: batch transport is not a new review algorithm or ledger. Each canonical
+result retains its own action ID, scope and evidence. Failed/missing/duplicate or
+late receipts cannot become passes; completed writes are never replayed. Work
+must be bounded on the real consumer path, including result adoption and UI
+updates, not merely inside the geometry handler. The deadline owns only the test
+request and its processes; it cannot kill unrelated sessions or discard content.
+No new dependency or relaxed assertion is planned. Fifteen minutes is a hard
+acceptance condition, not a promised model duration.
+
+### Step Execution Card - inspect bounded transport
+
+Owner: inspect / apply-to-inspect. Authority: execution spec Capture and
+deterministic review responsibility; Inspector inspect exact-target retained
+checks, scoped invalidation, no-model and cancellation conditions.
+Inputs: acknowledged target set, current canonical stamps and cancellation.
+Outputs: the existing check store and compact check summary; unchanged mutation
+receipt and separate exact unresolved-target diagnostics. Current stamps reuse
+existing validation semantics in bounded transport groups. Missing stamps check
+once; per-target findings remain intact. No screenshot or model is introduced.
+Allowed: local-operation-tools and its existing tests, current spec/Inspector
+contract and generated catalog only where necessary. Forbidden: changed geometry,
+new acceptance store, broad invalidation, raised admission limits or write replay.
+Failures: preserve acknowledged per-action checks from partial batches, mark only
+unavailable results unresolved; cancellation stops successors and late adoption.
+Proofs: cold 7,718-target workload with bounded exchange counts; warm reuse;
+one stale dependency; mixed findings/missing/duplicate acknowledgements; partial
+batch and cancellation. Run focused operation/workflow/flow tests, types, lint,
+naming. Review direct consumers and the current Inspector before advancing.
+
+Inspect slice evidence: the 7,718-target permanent regression failed with 7,718 exchanges, then passed with at most 121 exchanges; warm evidence does not remeasure, and one stale target remeasures only itself. Independent reads resume only the proven unexecuted suffix after an exact fail-fast action failure; unknown transport outcomes stay unverified. Cancellation admits no late result. Existing workflow fixtures now execute every submitted action with canonical fail-fast receipts instead of assuming one action per exchange. All 201 operation/workflow tests, server TypeScript and focused ESLint pass (`tmp/live101-inspect-final.log`, `tmp/live101-inspect-types.log`, `tmp/live101-inspect-lint.log`). No source mutation was replayed.
+
+### Step Execution Card - settle incremental presentation
+
+- Owner: existing settle route, conversation controller and activity projection, panel, direct tests, current provider mechanical-inspection observation.
+- Input/output: actual progress events become the same lifecycle-aware purpose/phase view. Append each event once; render consumes the retained projection. Raw progress remains available as an immutable point-in-time read, materialized only on demand. Collapsed history must not render or traverse all entries. Conversation selection, terminal outcomes, stop, confirmation and questions retain current semantics.
+- Proof: count access to old event fields while repeatedly reading the controller/panel current activity; work must not grow with replay of all previous events. Verify immutable historical snapshots and demand-open history, existing lifecycle tests and panel tests, browser/server TypeScript and lint.
+- Exclusions: no language, model, purpose-authority or progress-event truncation changes. No timing-only pass oracle.
+- Self-review: state remains turn-owned; no cross-request cache, secondary reducer or React props comparison. Terminal and approval overlays are applied to the retained state, independently of provider progress.
+
+Settle evidence: 113 conversation/presentation/panel tests and 317 provider/operation tests pass (three original provider opt-in skips). Production browser/server types and focused lint pass. A retained projection consumes each event once; the 300-publication oracle reads no old event fields. Snapshot progress stays immutable at its captured length. Collapsed history has zero rows until explicitly opened. Mechanical measurement emits one observed checking child per bounded exchange and closes it even after failure.
+
+### Step Execution Card - observe durable batching and live evidence
+
+- Owner: Runtime delivery sink/outbox contract; Design IndexedDB adapter; direct tests/spec. Existing observe route governs sequence completeness, bounded capture and recovery independent of product execution.
+- Finding: saved baseline ends at sequence 7,209 / 288.051 seconds; console delivery issues were not captured, so the exact historical interruption cause is unproven. Source does prove one strict IndexedDB transaction per event and delivery waiting for the whole growing write queue. Do not mislabel those findings as a recovered baseline error.
+- Change: persist bounded record batches in one atomic host transaction, keep the existing pending-byte limit and per-record sequences; deliver the durable prefix without waiting for producer quiescence. Keep known gaps explicit, exact acknowledgements, recoverable transport suspension, no fabricated terminal, no product replay. Update the single outbox contract and all consumers rather than add a compatibility branch.
+- Proof: bounded append work count, atomic failure/reopen with the real IndexedDB adapter, delivery while a later append is pending, cancellation/terminal flush, existing offline/recovery and gap tests. Record console delivery warnings and final local outbox state in the next local-only live harness.
+- Self-review: independent durability remains strict, chunks never mix request ownership, failed persistence marks the entire affected chunk, memory limit unchanged; diagnostic failures never cancel product work.
+
+Observe evidence: 1,024 records previously required 1,024 strict storage appends; now at most 32 atomic batches preserve every sequence with the same 2 MiB capture limit. A blocked second batch no longer prevents delivery of the first durable prefix. Real IndexedDB quota/duplicate failures roll back the whole batch and preserve a truthful enclosing gap after reopen; they do not claim individual records survived. Historical interruption attribution remains unknown because warnings were absent from that run's evidence.
+
+### Step Execution Card - local live deadline
+
+- Owner: local-only live test driver and a permanent testable deadline helper; no App runtime timeout or model change.
+- A separate worker starts a monotonic timer at Send with an absolute 900-second boundary. At timeout it records failure and terminates only the explicitly owned Vite/provider process group and owned test browser process tree. It must not wait for page evaluate, screenshots, a DOM cancel button or polling. A finished-before-deadline run disarms it; a late completion cannot turn failure into success.
+- Ownership: the driver starts and verifies these services/browser and passes their exact PIDs. No user browser or unrelated server is targeted. Normal completion keeps final fit and ten-second video hold outside execution time; timeout terminates drawing first, then attempts evidence cleanup.
+- Proof: permanent short-deadline child-process tests, including a blocked main test driver and pre-deadline completion; no actual AI calls. Verify the production live configuration is exactly 900,000 ms. Record the observed expiry and process stop times, not a hard-real-time guarantee the OS cannot supply.
+- Self-review: no polling-only watchdog, no raised timeout, no full101 repeated automatically, no restoring monitoring. The fixture and video remain local; the helper is a reusable local-test safety boundary.
+
+Pre-live self-review: exact-target handoffs, fail-fast continuation, cancellation, retained validity, controller lifetime, collapsed/history rendering, durable prefix acknowledgements and atomic failures were checked against direct consumers. Runtime 358 tests pass; Design 30 flow proofs, 113 conversation/UI tests, 317 operation/provider tests (three original opt-in skips), and 12 storage/startup tests pass. Production TypeScript, focused lint and 15 naming checks pass. The deadline helper passes three permanent local safety tests, including termination during a blocked driver. Existing services are rebuilt; the next step is one frozen-source live run, with no code edits during drawing.
+
+### Observe iteration replan - measured live recording overflow
+
+The live run `reusable-tools-1791949367770` completed product work in 626.779 s
+with 29,912 nodes. A real 5,205-target correction plus mechanical inspection took
+2.774 s. Recording acceptance failed: capture overflow began at 408.595 s, and
+remote browser video export used the wrong API. Keep this run and its gaps as
+failed evidence; do not reconstruct missing records or claim video delivery.
+
+The previous count-batched persistence proof was insufficient for sustained
+bursts. Replace transaction-count partitioning with a byte-bounded transaction
+(256 KiB, a single larger record remains individually bounded by the existing
+capture limit), preserving the 2 MiB pending limit and strict atomic durability.
+Split at discontinuities after loss; never turn a capture gap into an invalid
+storage batch. Prove sustained producer bursts against delayed storage, bounded
+transaction bytes, prefix delivery, atomic rollback and reopen.
+
+The durable file collector must not retain an ever-growing digest array or reject
+long valid streams merely because they contain 50,000 events. Retain a bounded
+recent digest window and verify older retries from the authoritative local file.
+Restoration streams the file with bounded memory. Sequential old-prefix retries
+reuse a bounded read cursor; conflicting retries and malformed persistence still
+fail before any new event is written. Explicit host record budgets remain enforced.
+This is storage-owner work, not a relaxed diagnostic validation contract.
+
+Local harness corrections: save remote video with `saveAs` before closing its
+browser server; prove a short recorded session is decodable before live AI.
+Console diagnostics use append-only JSONL plus bounded summaries, never rewrite
+all previous warnings for each new warning. Preserve the independent 900-second
+watchdog. Do not change product geometry, models, review admission or delivery
+limits to make this evidence pass.
+
+Self-review: the bounded owner remains observe; storage throughput and retry
+identity belong to the existing Runtime/host outbox and file collector. Extend
+only their direct tests and contract documentation. No dependency, parallel
+record owner, fabricated completion or product replay. After focused gates and
+recording smoke evidence, run one new frozen-source full101 test.
+
+Observe iteration evidence: the paced-burst oracle failed on the previous 32-record
+partition and passes with byte partitioning at the unchanged capture budget.
+A capture hole no longer creates a noncontiguous storage batch. Runtime suite:
+361 tests passed, followed by the additional bounded-retry-window oracle (four
+file collector tests passed). Browser storage/startup: 13 passed, including
+large atomic batches and reopen. Current execution-flow proof: 30 passed.
+Production types, focused lint and naming pass. Four permanent deadline/remote
+recording tests pass; a real remote Chrome video survives server disposal.
+Long durable streams beyond 50,000 records retain exact conflicting-retry
+rejection and terminal recovery, with bounded recent digests and sequential
+file cursors. No product source changes follow this frozen-source live boundary.
+
+Final frozen-source live acceptance: `tmp/ai-recording/runs/reusable-tools-1791951004329`.
+First visible observation 79.678 s; UI success 575.543 s; final video export
+589.259 s after Send, within the 900-second deadline. Final document 16,802 nodes.
+Actual 3,072-target correction/check completed in 1.378 s; final mechanical store
+3,094 pass / 0 fail / 0 stale / 0 unverified. Final visual criteria 7/7 retained;
+refreshing mechanical evidence reused the same eight inspection images. Twenty
+record streams are complete, browser outbox empty, zero page errors or delivery
+gap warnings. Two existing Pixi warning stacks remain. Video saved and three
+positions decoded/viewed; actual two references viewed and linked. Detailed
+analysis distinguishes six recovered non-success/partial tool calls, including
+query reservations and unavailable immediate mutation-delivery receipts, from
+completed backend save streams. It does not claim all handoff friction is gone.
+Workloads differ across runs; no total-time speedup ratio is asserted. Services
+are closed, local evidence preserved, no push or monitoring resumed.
+
+
+Push checkpoint - 2026-10-14: user authorized publication before a read-only
+review of remaining receipt, query-lifetime and response-delivery issues.
+Current-source gates passed: Runtime 362 tests; Design server 407 tests with
+three existing opt-in skips; browser/controller/storage 126 tests; four local
+deadline/video tests; Runtime build and Design browser/server typecheck; naming
+15 tests; focused lint with zero errors and three existing console warnings.
+The catalog equality gate first detected a stale generated snapshot, then passed
+all eight cases after the existing generator refreshed the four new conditions.
+The generated README check first detected hand-authored adapter documentation;
+the same text now lives in the maintained Runtime package guide, and all 19
+README checks pass. No runtime source changed during these publication checks.
+Evidence: `tmp/push-101-repairs/`. No full CI, repeat101 or monitoring.
+Evaluate repairs by the original failing scenario, preserved correctness and
+work counts; scene node count is descriptive, not a success/failure criterion.
+The public documentation gate also detected generated API/guide indexes behind
+the current source. Existing generation synchronized the new exported byte
+bound and guide hashes; validation passes for 41 pages, 19 guides, 291 local
+links and 135 API references (`tmp/push-101-repairs/docs-final.log`).

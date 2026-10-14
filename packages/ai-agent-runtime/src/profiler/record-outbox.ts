@@ -1,5 +1,8 @@
 import type { ExecutionRecord } from './records.js'
 
+/** Strict storage transactions are partitioned by bytes, not event frequency. */
+export const recordStorageBatchBytes = 256 * 1024
+
 /** An enclosing lost range, never a reconstruction or exact missing-record count. */
 export interface ExecutionRecordGap {
   readonly requestId: string
@@ -13,7 +16,8 @@ export interface ExecutionRecordOutbox {
   reserve(requestId: string): Promise<void>
   recordGap(gap: ExecutionRecordGap): Promise<void>
   gap(requestId: string): Promise<ExecutionRecordGap | undefined>
-  append(record: ExecutionRecord): Promise<void>
+  /** Atomically persist one bounded, ordered, single-request batch. */
+  append(records: readonly ExecutionRecord[]): Promise<void>
   read(
     requestId: string,
     fromSequence: number,

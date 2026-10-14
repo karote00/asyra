@@ -415,6 +415,7 @@
             "isExecutionActivity",
             "parseExecutionRecord",
             "partitionExecutionTime",
+            "recordStorageBatchBytes",
             "recoverRecordDelivery",
             "redactAiValue",
             "runAiActionBatchTransaction",

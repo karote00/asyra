@@ -1,3 +1,4 @@
+import { recordStorageBatchBytes } from '@asyra/ai-agent-runtime'
 import type {
   ExecutionRecordGap,
   ExecutionRecordOutbox
@@ -182,11 +183,26 @@ export const createBrowserRecordOutbox = (
       control(requestId, 'readonly', (value, _store, set) => {
         set(value?.gap ? { requestId, ...value.gap } : undefined)
       }),
-    append: (record) => {
-      if (!Number.isSafeInteger(record.sequence) || record.sequence < 0)
-        return Promise.reject(new Error('Invalid payload sequence'))
+    append: (records) => {
+      const first = records[0]
+      if (
+        !first ||
+        (records.length > 1 &&
+          new TextEncoder().encode(JSON.stringify(records)).byteLength >
+            recordStorageBatchBytes) ||
+        records.some(
+          (record, index) =>
+            !Number.isSafeInteger(record.sequence) ||
+            record.sequence < 0 ||
+            record.requestId !== first.requestId ||
+            record.sequence !== first.sequence + index
+        )
+      )
+        return Promise.reject(
+          new Error('Invalid payload batch sequence or ownership')
+        )
       return transact<undefined>('readwrite', (store) => {
-        store.add(record)
+        for (const record of records) store.add(record)
       })
     },
     read: (requestId, fromSequence, limit) => {

@@ -2163,8 +2163,9 @@ it('execution proof retains offline diagnostics until a matching durable termina
       gap = value
     },
     gap: async () => gap,
-    append: async (record: ExecutionRecord) => {
-      stored.set(record.sequence, structuredClone(record))
+    append: async (records: readonly ExecutionRecord[]) => {
+      for (const record of records)
+        stored.set(record.sequence, structuredClone(record))
     },
     requests: async () => (stored.size || reserved ? ['proof-recording'] : []),
     read: async (_id: string, from: number, count: number) =>
@@ -2553,36 +2554,33 @@ it('execution proof checks all acknowledged parts before returning deferred capt
     registered,
     designs,
     async (batch) => {
-      const action = batch.actions[0]
-      const input = action.arguments as { elementId?: string }
-      order.push(action.name)
-      let result: AiBatchReceipt['actionResults'][number]['result']
-      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
-        result = { status: 'complete', compositionId: 'part-' + ++writes }
-      else if (action.name === AiActionNames.REVIEW_DESIGN)
-        result = {
-          complete: true,
-          findings: [],
-          evidence: {
-            sessionId: 'proof-stage',
-            revision: writes,
-            receiptId: String(input.elementId)
-          },
-          measuredTextIds: []
+      const actionResults = batch.actions.map((action) => {
+        const input = action.arguments as { elementId?: string }
+        order.push(action.name)
+        let result: AiBatchReceipt['actionResults'][number]['result']
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+          result = { status: 'complete', compositionId: 'part-' + ++writes }
+        else if (action.name === AiActionNames.REVIEW_DESIGN)
+          result = {
+            complete: true,
+            findings: [],
+            evidence: {
+              sessionId: 'proof-stage',
+              revision: writes,
+              receiptId: String(input.elementId)
+            },
+            measuredTextIds: []
+          }
+        else {
+          expect(action.name).toBe(AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+          result = {
+            current: true,
+            validatedAt: { sessionId: 'proof-validation', revision: 1 }
+          }
         }
-      else {
-        expect(action.name).toBe(AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
-        result = {
-          current: true,
-          validatedAt: { sessionId: 'proof-validation', revision: 1 }
-        }
-      }
-      return {
-        context: {},
-        actionResults: [
-          { actionId: action.id, actionName: action.name, result }
-        ]
-      }
+        return { actionId: action.id, actionName: action.name, result }
+      })
+      return { context: {}, actionResults }
     }
   )
   const workflow = createLocalDesignWorkflow(designs, operations)

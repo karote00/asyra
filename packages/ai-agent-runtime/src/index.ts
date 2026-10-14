@@ -200,3 +200,5 @@ export type {
 } from './tool-store.js'
 
 export { aiRecipeInputSchema } from './recipe-format.js'
+
+export { recordStorageBatchBytes } from './profiler/record-outbox.js'

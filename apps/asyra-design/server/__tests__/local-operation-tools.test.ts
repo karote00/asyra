@@ -2474,11 +2474,7 @@ it('dispatches many registered edits once and reviews the completed batch once',
     },
     new AbortController().signal
   )
-  expect(execute.mock.calls.map(([b]) => b.actions.length)).toEqual([
-    47,
-    ...Array(47).fill(1),
-    1
-  ])
+  expect(execute.mock.calls.map(([b]) => b.actions.length)).toEqual([47, 47, 1])
   expect(execute.mock.calls[0][0].actions.map((a) => a.arguments)).toEqual(
     Array.from({ length: 47 }, (_, i) => ({
       elementId: `id-${i}`,
@@ -3946,14 +3942,14 @@ it.each([
     }
     let inspected = receipt
     if (defer) {
-      expect(execute).toHaveBeenCalledTimes(3)
+      expect(execute).toHaveBeenCalledTimes(2)
       expect(receipt.inspectionDeferred).toBe(true)
       inspected = await call(AiActionNames.INSPECT_DRAWING, {
         arguments: { elementId: 'a' }
       })
     } else {
-      expect(execute).toHaveBeenCalledTimes(4)
-      expect(execute.mock.calls[3][0].actions[0]).toMatchObject({
+      expect(execute).toHaveBeenCalledTimes(3)
+      expect(execute.mock.calls[2][0].actions[0]).toMatchObject({
         name: AiActionNames.INSPECT_DRAWING,
         arguments: { elementId: 'a' }
       })
@@ -7007,4 +7003,217 @@ describe('deterministic regional image checks', () => {
       f.call('check_drawing_image', { ...f.request, channelTolerance: -1 })
     ).rejects.toThrow()
   })
+})
+
+it('checks a large exact mutation set in bounded exchanges and reuses independent stamps', async () => {
+  const targets = new Set(Array.from({ length: 7718 }, (_, n) => `target-${n}`))
+  const measured: string[] = []
+  let stale: string | undefined = undefined
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      const id = String(action.arguments.elementId)
+      let result: AiJsonValue
+      if (action.name === AiActionNames.REVIEW_DESIGN) {
+        measured.push(id)
+        result = {
+          complete: true,
+          findings: [],
+          measuredTextIds: [],
+          evidence: { sessionId: 'bulk', revision: 1, receiptId: id }
+        }
+      } else {
+        const stamp = action.arguments.evidence as { receiptId: string }
+        result = { current: stamp.receiptId !== stale }
+      }
+      return { actionId: action.id, actionName: action.name, result }
+    })
+  }))
+  const owner = createOwner(
+    [
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const check = () =>
+    owner.finishInspection(
+      targets,
+      undefined,
+      true,
+      new AbortController().signal
+    )
+  const cold = await check()
+  expect(cold.checks.counts).toEqual({
+    pass: 7718,
+    fail: 0,
+    stale: 0,
+    unverified: 0
+  })
+  expect(new Set(measured)).toEqual(targets)
+  expect(measured).toHaveLength(targets.size)
+  expect(execute.mock.calls.length).toBeLessThanOrEqual(
+    Math.ceil(targets.size / 64)
+  )
+  expect(
+    execute.mock.calls.every(([batch]) => batch.actions.length <= 64)
+  ).toBe(true)
+  execute.mockClear()
+  measured.length = 0
+  await check()
+  expect(measured).toHaveLength(0)
+  expect(execute.mock.calls.length).toBeLessThanOrEqual(
+    Math.ceil(targets.size / 64)
+  )
+  execute.mockClear()
+  stale = 'target-4000'
+  await check()
+  expect(measured).toEqual([stale])
+  expect(execute.mock.calls.length).toBeLessThanOrEqual(
+    Math.ceil(targets.size / 64) + 1
+  )
+})
+
+it('preserves acknowledged checks before a failed chunk member without replaying or accepting missing results', async () => {
+  const targets = new Set(Array.from({ length: 130 }, (_, n) => `item-${n}`))
+  let exchanges = 0
+  const execute = vi.fn(async (batch: AiActionBatch) => {
+    const failed = exchanges++ === 0
+    const completed = failed ? batch.actions.slice(0, 3) : batch.actions
+    return {
+      context: {},
+      ...(failed
+        ? {
+            failure: {
+              code: 'CHECK_FAILED',
+              message: 'Check unavailable',
+              stage: 'execution',
+              actionName: batch.actions[3].name,
+              actionId: batch.actions[3].id,
+              actionExecutionMs: 0,
+              settlement: 'partial' as const,
+              contextFresh: true
+            }
+          }
+        : {}),
+      actionResults: completed.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          complete: true,
+          findings: [],
+          evidence: { sessionId: 'partial', revision: 1 }
+        }
+      }))
+    }
+  })
+  const owner = createOwner(
+    [
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Check',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const result = await owner.finishInspection(
+    targets,
+    undefined,
+    true,
+    new AbortController().signal
+  )
+  expect(execute).toHaveBeenCalledTimes(4)
+  expect(result.checks.counts).toEqual({
+    pass: 129,
+    fail: 0,
+    stale: 0,
+    unverified: 1
+  })
+  expect(result.measurementIssues?.map((issue) => issue.elementId)).toEqual([
+    'item-3'
+  ])
+  expect(
+    execute.mock.calls
+      .slice(1)
+      .flatMap(([batch]) => batch.actions.map((a) => a.arguments.elementId))
+  ).toEqual([...targets].slice(4))
+})
+
+it('cancels a bulk check before admitting late results or dispatching the next chunk', async () => {
+  const controller = new AbortController()
+  const results = createDesignCheckResults()
+  const execute = vi.fn(async (batch: AiActionBatch) => {
+    controller.abort(new Error('Cancelled'))
+    return {
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          complete: true,
+          findings: [],
+          evidence: { sessionId: 'late', revision: 1 }
+        }
+      }))
+    }
+  })
+  const owner = createOwner(
+    [
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Check',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    { checkResults: results }
+  )
+  await expect(
+    owner.finishInspection(
+      new Set(Array.from({ length: 130 }, (_, n) => `item-${n}`)),
+      undefined,
+      true,
+      controller.signal
+    )
+  ).rejects.toThrow('Cancelled')
+  expect(execute).toHaveBeenCalledTimes(1)
+  expect(results.summary([]).counts.pass).toBe(0)
+})
+
+it('exposes mechanical inspection activity for the entire bounded read and always closes it', async () => {
+  const onInspection = vi.fn()
+  const execute = vi.fn(async () => {
+    expect(onInspection).toHaveBeenLastCalledWith(
+      'running',
+      AiActionNames.REVIEW_DESIGN
+    )
+    throw new Error('Read transport unavailable')
+  })
+  const owner = createOwner(
+    [
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Check',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    { onInspection }
+  )
+  const result = await owner.finishInspection(
+    new Set(['window']),
+    undefined,
+    true,
+    new AbortController().signal
+  )
+  expect(result.checks.counts.unverified).toBe(1)
+  expect(onInspection.mock.calls).toEqual([
+    ['running', AiActionNames.REVIEW_DESIGN],
+    ['completed', AiActionNames.REVIEW_DESIGN]
+  ])
 })

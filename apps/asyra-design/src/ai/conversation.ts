@@ -3,6 +3,7 @@ import {
   projectAiQuestion,
   createAiActivityProjection
 } from './presentation'
+import type { AiActivityProjectionState } from './activity-state'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
   AiJsonValue,
@@ -449,8 +450,15 @@ export const createAiConversationController = (
     return targetHints
   }
 
-  const getSnapshot = (): AiConversationSnapshot =>
-    Object.freeze({
+  const activities = new Map<
+    string,
+    ReturnType<typeof createAiActivityProjection>
+  >()
+  const getSnapshot = (): AiConversationSnapshot => {
+    const turn = activeTurn
+    const length = turn?.progress.length ?? 0
+    let progress: readonly AiRuntimeProgressUpdate[] | undefined
+    return Object.freeze({
       activeTurn:
         activeTurn === null
           ? null
@@ -465,7 +473,11 @@ export const createAiConversationController = (
               conversationId: activeTurn.conversationId,
               intent: activeTurn.intent,
               originalIntent: activeTurn.originalIntent,
-              progress: Object.freeze([...activeTurn.progress]),
+              get progress() {
+                return (progress ??= Object.freeze(
+                  turn?.progress.slice(0, length) ?? []
+                ))
+              },
               turnId: activeTurn.turnId
             }),
       conversationId,
@@ -473,6 +485,7 @@ export const createAiConversationController = (
       settledTurns: Object.freeze([...settledTurns]),
       targetHints
     })
+  }
 
   const observeSafely = (
     observer: (snapshot: AiConversationSnapshot) => void,
@@ -537,6 +550,12 @@ export const createAiConversationController = (
   }
 
   const controller = {
+    getActivity: (turnId: string, snapshot: AiActivityProjectionState = {}) => {
+      const projection = activities.get(turnId)
+      if (!projection)
+        throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      return projection.result(snapshot)
+    },
     getNavigationSnapshot,
     subscribeNavigation: (observer: () => void): (() => void) => {
       if (disposed) return () => undefined
@@ -648,15 +667,16 @@ export const createAiConversationController = (
         startedAtMs,
         turnId: `${conversationId}:turn:${turnIndex}`
       }
+      const activityProjection = createAiActivityProjection({
+        purpose: originalIntent
+      })
+      activities.set(currentTurn.turnId, activityProjection)
       activeTurn = currentTurn
       options.confirmation?.beginTurn(currentTurn.turnId)
       options.history?.beginTurn(currentTurn.turnId)
       const aiTargets = revalidateTargetHints()
       notify()
 
-      const activityProjection = createAiActivityProjection({
-        purpose: originalIntent
-      })
       const progressObserver: AiRuntimeProgressObserver = (update) => {
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
           return
@@ -826,6 +846,7 @@ export const createAiConversationController = (
       observers.clear()
       navigationObservers.clear()
       storedConversations.clear()
+      activities.clear()
       navigationSnapshot = undefined
       if (pendingSettlement) {
         await pendingSettlement.catch(() => undefined)

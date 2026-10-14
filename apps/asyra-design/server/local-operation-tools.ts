@@ -483,7 +483,7 @@ export const createLocalOperationTools = (
       indexes: number[],
       referenceIds?: string[]
     ) => ReferenceIdentity[]
-    onInspection?: (status: 'running' | 'completed') => void
+    onInspection?: (status: 'running' | 'completed', tool?: string) => void
   } = {}
 ) => {
   const queryArtifacts = options.ownership
@@ -1349,80 +1349,151 @@ export const createLocalOperationTools = (
           }
         })
       : undefined
-  const measure = async (elementId: string, signal?: AbortSignal) => {
+  // Bound transport work independently from model input and scene size.
+  const measurementBatchSize = 64
+  const measure = async (
+    elementIds: readonly string[],
+    signal?: AbortSignal
+  ) => {
     signal?.throwIfAborted()
-    const actionId = randomUUID()
+    options.onInspection?.('running', AiActionNames.REVIEW_DESIGN)
     try {
-      const receipt = await executeBatch({
-        batchId: randomUUID(),
-        actions: [
-          {
-            id: actionId,
-            name: AiActionNames.REVIEW_DESIGN,
-            arguments: { elementId },
-            summary: 'Checking the layout'
+      const actionResults: AiBatchReceipt['actionResults'][number][] = []
+      const errors = new Map<string, string>()
+      for (let offset = 0; offset < elementIds.length;) {
+        signal?.throwIfAborted()
+        const ids = elementIds.slice(offset, offset + measurementBatchSize)
+        const actions = ids.map((elementId) => ({
+          id: randomUUID(),
+          name: AiActionNames.REVIEW_DESIGN,
+          arguments: { elementId },
+          summary: 'Checking the layout'
+        }))
+        let receipt: AiBatchReceipt
+        try {
+          receipt = await executeBatch({ batchId: randomUUID(), actions })
+        } catch (error) {
+          signal?.throwIfAborted()
+          if (
+            !(error instanceof BrowserBatchExecutionError) ||
+            !error.receipt
+          ) {
+            for (const id of ids) markMeasurementUnavailable(id)
+            throw error
           }
-        ]
-      })
-      signal?.throwIfAborted()
-      updateMeasurementState(elementId, receipt, actionId)
-      return { context: {}, actionResults: receipt.actionResults }
-    } catch (error) {
-      signal?.throwIfAborted()
-      markMeasurementUnavailable(elementId)
-      throw error
+          receipt = error.receipt
+        }
+        signal?.throwIfAborted()
+        const failedIndex = receipt.failure
+          ? actions.findIndex(
+              (action) => action.id === receipt.failure?.actionId
+            )
+          : actions.length
+        const completedPrefix =
+          receipt.failure &&
+          failedIndex >= 0 &&
+          receipt.failure.stage === 'execution' &&
+          receipt.failure.contextFresh === true
+        const processed = completedPrefix ? failedIndex + 1 : actions.length
+        for (let index = 0; index < processed; index++) {
+          const action = actions[index]
+          // A failed suffix cannot erase an earlier acknowledged read. Unknown
+          // failure position cannot certify any member of the batch.
+          const acknowledged =
+            !receipt.failure || (failedIndex >= 0 && index < failedIndex)
+          const result = {
+            context: receipt.context,
+            actionResults: receipt.actionResults.filter(
+              (entry) => entry.actionId === action.id
+            ),
+            ...(!acknowledged ? { failure: receipt.failure } : {})
+          }
+          updateMeasurementState(ids[index], result, action.id)
+          if (measuredTargets.get(ids[index]))
+            actionResults.push(...result.actionResults)
+          else if (receipt.failure)
+            errors.set(ids[index], receipt.failure.message)
+        }
+        // Only resume a suffix the canonical fail-fast executor did not run.
+        // An unknown transport outcome leaves the chunk unverified instead.
+        offset += processed
+      }
+      return { context: {}, actionResults, errors }
+    } finally {
+      options.onInspection?.('completed', AiActionNames.REVIEW_DESIGN)
     }
   }
 
-  const measurementCurrent = async (
-    elementId: string,
+  const measurementsCurrent = async (
+    elementIds: readonly string[],
     signal?: AbortSignal
   ) => {
-    const markStale = () => {
-      measuredTargets.set(elementId, undefined)
+    const current = new Set<string>()
+    const markStale = (id: string) => {
+      measuredTargets.set(id, undefined)
       checkResults.invalidate(
-        [measurementId(elementId)],
+        [measurementId(id)],
         'Canonical measurement dependencies changed or are unavailable.'
       )
-      return false
     }
-    const stamp = measuredTargets.get(elementId)
-    if (!stamp) return false
+    const pending = elementIds.filter((id) => measuredTargets.get(id))
     if (
       !registered.some(
         (action) => action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       )
-    )
-      return markStale()
-    signal?.throwIfAborted()
-    const actionId = randomUUID()
-    try {
-      const receipt = await executeBatch({
-        batchId: randomUUID(),
-        actions: [
-          {
-            id: actionId,
-            name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
-            arguments: { evidence: stamp },
-            summary: 'Checking layout evidence dependencies'
-          }
-        ]
-      })
-      signal?.throwIfAborted()
-      const matches = receipt.actionResults.filter(
-        (entry) =>
-          entry.actionId === actionId &&
-          entry.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-      )
-      const result = matches.length === 1 ? matches[0].result : undefined
-      return !receipt.failure && isRecord(result) && result.current === true
-        ? true
-        : markStale()
-    } catch {
-      markStale()
-      signal?.throwIfAborted()
-      return false
+    ) {
+      pending.forEach(markStale)
+      return current
     }
+    for (
+      let offset = 0;
+      offset < pending.length;
+      offset += measurementBatchSize
+    ) {
+      signal?.throwIfAborted()
+      const ids = pending.slice(offset, offset + measurementBatchSize)
+      const actions = ids.map((id) => {
+        const evidence = measuredTargets.get(id)
+        if (!evidence)
+          throw new Error(
+            'Measurement dependencies disappeared before validation.'
+          )
+        return {
+          id: randomUUID(),
+          name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+          arguments: { evidence },
+          summary: 'Checking layout evidence dependencies'
+        }
+      })
+      let receipt: AiBatchReceipt | undefined
+      try {
+        receipt = await executeBatch({ batchId: randomUUID(), actions })
+      } catch (error) {
+        if (error instanceof BrowserBatchExecutionError) receipt = error.receipt
+      }
+      signal?.throwIfAborted()
+      const failedIndex = receipt?.failure
+        ? actions.findIndex(
+            (action) => action.id === receipt?.failure?.actionId
+          )
+        : actions.length
+      for (let index = 0; index < actions.length; index++) {
+        const matches = receipt?.actionResults.filter(
+          (entry) =>
+            entry.actionId === actions[index].id &&
+            entry.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+        )
+        const result = matches?.length === 1 ? matches[0].result : undefined
+        if (
+          (!receipt?.failure || (failedIndex >= 0 && index < failedIndex)) &&
+          isRecord(result) &&
+          result.current === true
+        )
+          current.add(ids[index])
+        else markStale(ids[index])
+      }
+    }
+    return current
   }
   const checkMeasurements = async (
     targets: readonly string[],
@@ -1430,13 +1501,15 @@ export const createLocalOperationTools = (
     compute = false
   ) => {
     if (!canReview) return
-    let complete = targets.length > 0
-    for (const target of new Set(targets)) {
-      if (await measurementCurrent(target, signal)) continue
-      if (compute) await measure(target, signal)
-      if (!(await measurementCurrent(target, signal))) complete = false
+    const ids = [...new Set(targets)]
+    const current = await measurementsCurrent(ids, signal)
+    const missing = ids.filter((id) => !current.has(id))
+    if (compute && missing.length) {
+      await measure(missing, signal)
+      for (const id of await measurementsCurrent(missing, signal))
+        current.add(id)
     }
-    measurementPending = !complete
+    measurementPending = !ids.length || current.size !== ids.length
   }
 
   const inspect = async (
@@ -1545,38 +1618,42 @@ export const createLocalOperationTools = (
           : 'Restore review_design capability, then run review_design for affected targets. Do not replay writes.'
       })
     }
-    for (const elementId of targets) {
+    const ids = [...targets]
+    const current = unavailableReason
+      ? new Set<string>()
+      : await measurementsCurrent(ids, signal)
+    const missing = ids.filter((id) => !current.has(id))
+    for (
+      let offset = 0;
+      offset < missing.length;
+      offset += measurementBatchSize
+    ) {
       signal.throwIfAborted()
+      const chunk = missing.slice(offset, offset + measurementBatchSize)
       if (unavailableReason) {
-        markMeasurementUnavailable(elementId)
+        chunk.forEach((id) => markMeasurementUnavailable(id))
         continue
       }
+      let message =
+        'Mechanical checking did not complete; inspect this target again.'
+      let errors: Map<string, string> | undefined
       try {
-        if (await measurementCurrent(elementId, signal)) continue
-        const measurement = await measure(elementId, signal)
+        const measurement = await measure(chunk, signal)
+        errors = measurement.errors
+        if (fullResponse) actionResults.push(...measurement.actionResults)
+      } catch (error) {
+        signal.throwIfAborted()
+        message =
+          error instanceof Error ? error.message : 'Mechanical checking failed.'
+      }
+      for (const elementId of chunk) {
         if (!measuredTargets.get(elementId))
           measurementIssues.push({
             elementId,
-            message:
-              'Mechanical checking did not complete; inspect this target again.',
+            message: errors?.get(elementId) ?? message,
             recovery:
               'Run review_design for this target; do not replay acknowledged writes.'
           })
-        else if (fullResponse) actionResults.push(...measurement.actionResults)
-      } catch (error) {
-        signal.throwIfAborted()
-        // A follow-up failure never changes the acknowledged mutation receipt.
-        markMeasurementUnavailable(elementId)
-        measurementIssues.push({
-          elementId,
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Mechanical checking failed.',
-          recovery: settlementUnknown
-            ? 'Reconcile unknown write settlement before checking; do not replay writes.'
-            : 'Run review_design for this target; do not replay acknowledged writes.'
-        })
       }
     }
     if (targets.size) measurementPending = measurementIssues.length > 0
@@ -2124,7 +2201,7 @@ export const createLocalOperationTools = (
               .filter((id) => id.startsWith('measurement:'))
               .map((id) => id.slice(12))
           : measuredTargets.keys()
-        for (const target of targetIds) await measurementCurrent(target, signal)
+        await measurementsCurrent([...targetIds], signal)
         const ids = dependencies
           ? [...dependencies]
               .filter((key) => key.startsWith('inspection:'))

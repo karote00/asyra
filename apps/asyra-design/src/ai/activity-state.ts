@@ -607,25 +607,36 @@ export const createAiActivityProjection = (
       history.push({ entry: state.entry, lifecycle: state.lifecycle })
     return result.decision
   }
-  const result = () => {
+  const result = (overrides: AiActivityProjectionState = {}) => {
     const projected = reduceAiActivity(state, {
       type: 'conversation',
-      snapshot
+      snapshot: { ...snapshot, ...overrides }
     }).state
-    const entries = history
-      .filter(
-        (item) =>
-          projected.lifecycle !== 'awaiting-answer' ||
-          item.lifecycle !== 'settled'
-      )
-      .map((item) => item.entry)
-    if (
-      projected.lifecycle !== 'awaiting-answer' &&
-      !sameActivity(entries.at(-1), projected.entry)
-    )
-      entries.push(projected.entry)
-    if (!entries.length) entries.push({ label: 'Starting request' })
-    return { entries, current: entries[entries.length - 1] }
+    const length = history.length
+    const current = projected.entry
+    let entries: ActivityEntry[] | undefined
+    return {
+      current,
+      get entries() {
+        if (!entries) {
+          entries = history
+            .slice(0, length)
+            .filter(
+              (item) =>
+                projected.lifecycle !== 'awaiting-answer' ||
+                item.lifecycle !== 'settled'
+            )
+            .map((item) => item.entry)
+          if (
+            projected.lifecycle !== 'awaiting-answer' &&
+            !sameActivity(entries.at(-1), current)
+          )
+            entries.push(current)
+          if (!entries.length) entries.push({ label: 'Starting request' })
+        }
+        return entries
+      }
+    }
   }
   return { append, result }
 }

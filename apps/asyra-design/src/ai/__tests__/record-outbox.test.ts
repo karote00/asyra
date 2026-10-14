@@ -18,7 +18,7 @@ describe('browser diagnostic outbox', () => {
     const factory = new IDBFactory()
     const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
     const item = record('request-a', 0)
-    await first.append(item)
+    await first.append([item])
     item.event = 'changed'
     await first.close()
     const reopened = createBrowserRecordOutbox({
@@ -43,7 +43,7 @@ describe('browser diagnostic outbox', () => {
       record('a', 2),
       record('b', 0)
     ])
-      await outbox.append(item)
+      await outbox.append([item])
     expect(await outbox.read('a', 1, 1)).toEqual([record('a', 1)])
     await outbox.remove('a')
     expect(await outbox.requests()).toEqual(['b'])
@@ -56,9 +56,9 @@ describe('browser diagnostic outbox', () => {
       factory: new IDBFactory(),
       keyRange: IDBKeyRange
     })
-    await outbox.append(record('a', 0))
+    await outbox.append([record('a', 0)])
     await expect(
-      outbox.append({ ...record('a', 0), event: 'changed' })
+      outbox.append([{ ...record('a', 0), event: 'changed' }])
     ).rejects.toThrow()
     expect(await outbox.read('a', 0, 32)).toEqual([record('a', 0)])
     await outbox.close()
@@ -70,7 +70,7 @@ describe('browser diagnostic outbox', () => {
       keyRange: IDBKeyRange
     })
     await outbox.close()
-    await expect(outbox.append(record('a', 0))).rejects.toThrow('closed')
+    await expect(outbox.append([record('a', 0)])).rejects.toThrow('closed')
   })
 })
 
@@ -79,7 +79,7 @@ describe('durable diagnostic gaps', () => {
     const factory = new IDBFactory()
     const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
     await first.reserve('gap-request')
-    await first.append(record('gap-request', 0))
+    await first.append([record('gap-request', 0)])
     await first.recordGap({
       requestId: 'gap-request',
       fromSequence: 1,
@@ -117,7 +117,7 @@ describe('durable diagnostic gaps', () => {
       keyRange: IDBKeyRange
     })
     await outbox.reserve('control-only')
-    await expect(outbox.append(record('control-only', -1))).rejects.toThrow(
+    await expect(outbox.append([record('control-only', -1)])).rejects.toThrow(
       'sequence'
     )
     await outbox.recordGap({
@@ -200,13 +200,13 @@ it('recovers a real browser storage gap after payload quota failure without inve
         await recoverRecordDelivery({ outbox: recovered, send, onIssue })
       ).toEqual({ complete: false })
       expect(await recovered.gap('quota')).toMatchObject({
-        fromSequence: 1,
-        throughSequence: 1,
+        fromSequence: 0,
+        throughSequence: 2,
         stage: 'storage'
       })
       expect(
         (await recovered.read('quota', 0, 32)).map((item) => item.sequence)
-      ).toEqual([0, 2])
+      ).toEqual([])
       expect(send).not.toHaveBeenCalled()
       expect(onIssue).toHaveBeenCalledWith(
         expect.objectContaining({ reason: expect.stringContaining('gap') })
@@ -218,4 +218,42 @@ it('recovers a real browser storage gap after payload quota failure without inve
     await outbox.close()
     add.mockRestore()
   }
+})
+
+it('atomically rejects a conflicting batch and preserves the exact durable prefix after reopen', async () => {
+  const factory = new IDBFactory()
+  const first = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+  await first.append([record('a', 1)])
+  await expect(
+    first.append([record('a', 0), record('a', 1), record('a', 2)])
+  ).rejects.toThrow()
+  await first.close()
+  const second = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+  expect(await second.read('a', 0, 32)).toEqual([record('a', 1)])
+  await expect(second.append([record('a', 2), record('b', 3)])).rejects.toThrow(
+    'ownership'
+  )
+  await second.close()
+})
+
+it('persists byte-bounded bursts larger than a transport page in one atomic transaction', async () => {
+  const factory = new IDBFactory()
+  const outbox = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+  const records = Array.from({ length: 300 }, (_, sequence) =>
+    record('burst', sequence)
+  )
+  await outbox.append(records)
+  await expect(
+    outbox.append(
+      records.map((item) => ({
+        ...item,
+        sequence: item.sequence + 300,
+        detail: 'x'.repeat(1000)
+      }))
+    )
+  ).rejects.toThrow('batch')
+  await outbox.close()
+  const reopened = createBrowserRecordOutbox({ factory, keyRange: IDBKeyRange })
+  expect(await reopened.read('burst', 0, 1000)).toEqual(records)
+  await reopened.close()
 })

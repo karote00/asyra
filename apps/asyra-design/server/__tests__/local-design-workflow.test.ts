@@ -1239,94 +1239,113 @@ const inspectionBoundaryFixture = (
     registered,
     designs,
     async (batch) => {
-      const action = batch.actions[0]
-      const target = String(
-        (action.arguments as { elementId?: string }).elementId
-      )
-      events.push(action.name + ':' + target)
-      let result: AiBatchReceipt['actionResults'][number]['result']
-      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
-        applied++
-        if (options.lostApply === applied)
-          throw new Error('Application acknowledgement lost')
-        if (options.uncertainApply === applied)
-          result = {
-            status: 'partial',
-            settlement: 'unknown',
-            compositionId: 'part-' + applied
+      const receipt: {
+        context: AiBatchReceipt['context']
+        actionResults: AiBatchReceipt['actionResults'][number][]
+        failure?: AiBatchReceipt['failure']
+      } = { context: {}, actionResults: [] }
+      for (const action of batch.actions) {
+        options.cancelCheck?.signal.throwIfAborted()
+        const target = String(
+          (action.arguments as { elementId?: string }).elementId
+        )
+        events.push(action.name + ':' + target)
+        let result: AiBatchReceipt['actionResults'][number]['result']
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+          applied++
+          if (options.lostApply === applied)
+            throw new Error('Application acknowledgement lost')
+          if (options.uncertainApply === applied)
+            result = {
+              status: 'partial',
+              settlement: 'unknown',
+              compositionId: 'part-' + applied
+            }
+          else if (options.unknownApply === applied)
+            result = { status: 'unknown', compositionId: 'part-' + applied }
+          else if (options.stopApply === applied)
+            result = {
+              status: 'partial',
+              compositionId: 'part-' + applied,
+              appliedElementIds: ['part-' + applied],
+              complete: false
+            }
+          else
+            result = {
+              status: 'complete',
+              compositionId: 'part-' + (options.repeatedTarget ? 1 : applied),
+              appliedElementIds: [
+                'part-' + (options.repeatedTarget ? 1 : applied)
+              ]
+            }
+        } else if (action.name === AiActionNames.REVIEW_DESIGN) {
+          if (options.failCheck === target) {
+            receipt.failure = {
+              code: 'CHECK_FAILED',
+              message: 'Measurement transport failed',
+              stage: 'execution',
+              actionName: action.name,
+              actionId: action.id,
+              actionExecutionMs: 1,
+              settlement: 'partial',
+              contextFresh: true
+            }
+            break
           }
-        else if (options.unknownApply === applied)
-          result = { status: 'unknown', compositionId: 'part-' + applied }
-        else if (options.stopApply === applied)
+          options.cancelCheck?.abort()
           result = {
-            status: 'partial',
-            compositionId: 'part-' + applied,
-            appliedElementIds: ['part-' + applied],
-            complete: false
+            complete: options.incompleteCheck !== target,
+            findings:
+              options.finding === target
+                ? [{ kind: 'container-overflow', elementId: target }]
+                : [],
+            ...(options.missingCheckEvidence
+              ? {}
+              : { evidence: { sessionId: 'stage1', revision: applied } }),
+            measuredTextIds: []
           }
-        else
+        } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
           result = {
-            status: 'complete',
-            compositionId: 'part-' + (options.repeatedTarget ? 1 : applied),
-            appliedElementIds: [
-              'part-' + (options.repeatedTarget ? 1 : applied)
-            ]
+            current: true,
+            validatedAt: { sessionId: 'consumer-validation', revision: 1 },
+            coverage: { complete: true }
           }
-      } else if (action.name === AiActionNames.REVIEW_DESIGN) {
-        if (options.failCheck === target)
-          throw new Error('Measurement transport failed')
-        options.cancelCheck?.abort()
-        result = {
-          complete: options.incompleteCheck !== target,
-          findings:
-            options.finding === target
-              ? [{ kind: 'container-overflow', elementId: target }]
-              : [],
-          ...(options.missingCheckEvidence
-            ? {}
-            : { evidence: { sessionId: 'stage1', revision: applied } }),
-          measuredTextIds: []
+        } else {
+          result = {
+            available: !options.captureUnavailable,
+            imageScope: 'overview',
+            evidence: { sessionId: 'stage1', revision: applied },
+            image: {
+              dataUrl: 'data:image/png;base64,AA==',
+              width: 1,
+              height: 1
+            }
+          }
         }
-      } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-        result = {
-          current: true,
-          validatedAt: { sessionId: 'consumer-validation', revision: 1 },
-          coverage: { complete: true }
-        }
-      } else {
-        result = {
-          available: !options.captureUnavailable,
-          imageScope: 'overview',
-          evidence: { sessionId: 'stage1', revision: applied },
-          image: { dataUrl: 'data:image/png;base64,AA==', width: 1, height: 1 }
-        }
-      }
-      return publishReceipt(
-        batch,
-        {
-          context: {},
-          actionResults: [
-            { actionId: action.id, actionName: action.name, result }
-          ],
-          ...(action.name === AiActionNames.APPLY_PREPARED_DESIGN &&
+        receipt.actionResults.push({
+          actionId: action.id,
+          actionName: action.name,
+          result
+        })
+        if (
+          action.name === AiActionNames.APPLY_PREPARED_DESIGN &&
           options.browserFailure &&
           applied === (options.browserFailureAt ?? 2)
-            ? {
-                failure: {
-                  code: 'ACTION_FAILED',
-                  message: 'A later action failed',
-                  stage: 'execution',
-                  actionName: action.name,
-                  actionId: action.id,
-                  actionExecutionMs: 1,
-                  settlement: options.browserFailure,
-                  contextFresh: true
-                }
-              }
-            : {})
-        },
-        1
-      )
+        ) {
+          receipt.failure = {
+            code: 'ACTION_FAILED',
+            message: 'A later action failed',
+            stage: 'execution',
+            actionName: action.name,
+            actionId: action.id,
+            actionExecutionMs: 1,
+            settlement: options.browserFailure,
+            contextFresh: true
+          }
+          break
+        }
+      }
+      return publishReceipt(batch, receipt, 1)
     }
   )
   const workflow = createLocalDesignWorkflow(

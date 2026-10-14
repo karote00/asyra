@@ -962,3 +962,50 @@ it('retains the original activity objective through a failed clarification and r
     'Draw a detailed tower'
   ])
 })
+
+it('reads current activity without replaying old progress and preserves point-in-time history', async () => {
+  const pending = createDeferred<unknown>()
+  let request: Parameters<AiConversationFeature['execute']>[0] | undefined
+  const feature = createFeature((value) => {
+    request = value
+    return pending.promise
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const done = controller.submit('Draw the tower')
+  let reads = 0
+  const first = {
+    attempt: 1,
+    get phase() {
+      reads++
+      return 'execution' as const
+    },
+    message: 'Preparing windows'
+  }
+  request?.progressObserver(first)
+  const snapshot = controller.getSnapshot()
+  const id = snapshot.activeTurn?.turnId ?? ''
+  reads = 0
+  for (let i = 0; i < 300; i++) {
+    request?.progressObserver({
+      phase: 'execution',
+      attempt: 1,
+      message: `Preparing part ${i}`
+    })
+    const activity = controller.getActivity(id, { purpose: 'Draw the tower' })
+    expect(activity.current.label).toBeTruthy()
+    controller.getSnapshot()
+  }
+  expect(reads).toBe(0)
+  expect(snapshot.activeTurn?.progress).toEqual([first])
+  expect(controller.getSnapshot().activeTurn?.progress).toHaveLength(301)
+  expect(controller.getActivity(id).entries.length).toBeGreaterThan(0)
+  pending.resolve({ status: 'executed', actionResults: [] })
+  await done
+  expect(
+    controller.getActivity(id, { outcome: 'success' }).current.label
+  ).toBeTruthy()
+  await controller.dispose()
+})
