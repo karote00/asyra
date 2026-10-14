@@ -41,7 +41,19 @@ function localizationFixture() {
     path.join(repository, 'apps/asyra-design/src'),
     { recursive: true, force: false }
   )
+  const recipeContract = loadContract(
+    root,
+    undefined,
+    'packages/ai-agent-runtime/flow-contracts.json'
+  )
   for (const file of [
+    ...[
+      'manifestPath',
+      'configFile',
+      'testFile',
+      'architecturePath',
+      'specPath'
+    ].map((key) => recipeContract[key]),
     'packages/render/navigation-flow-contracts.json',
     'packages/render/src/__tests__/navigation-flow.config.ts',
     'packages/render/src/__tests__/viewport-layer.test.ts',
@@ -63,6 +75,7 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    recipeContract,
     loadContract(
       root,
       undefined,
@@ -111,6 +124,14 @@ function localizationFixture() {
     fs.readFileSync(path.join(root, executionContract.manifestPath), 'utf8')
   )
   for (const scenario of executionManifest.scenarios) {
+    const file = scenario.mutation?.file
+    if (file)
+      originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
+  }
+  const recipeManifest = JSON.parse(
+    fs.readFileSync(path.join(root, recipeContract.manifestPath), 'utf8')
+  )
+  for (const scenario of recipeManifest.scenarios) {
     const file = scenario.mutation?.file
     if (file)
       originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
@@ -178,6 +199,24 @@ function localizationFixture() {
           })
         })
       `
+      )
+    },
+    mutateRecipe(id) {
+      const { file, from, to } = recipeManifest.scenarios.find(
+        (item) => item.id === id
+      ).mutation
+      const original = originals.get(file)
+      assert.equal(original.split(from).length, 2)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
+    },
+    failRecipeSourceEntry() {
+      const file = 'packages/ai-agent-runtime/src/recipe-admission.ts'
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(
+        path.join(repository, file),
+        originals.get(file) +
+          "\nthrow new Error('Captured recipe admission failed')\n"
       )
     },
     mutateViewport() {
@@ -279,6 +318,8 @@ function localizationFixture() {
         repository,
         'packages/factory/src/__tests__/flow-proof.config.ts'
       )
+      if (kind === 'recipe')
+        configFile = path.join(repository, recipeContract.configFile)
       if (kind === 'history')
         configFile = path.join(
           repository,

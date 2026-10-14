@@ -2266,6 +2266,16 @@ orchestration, not concrete engine output or complete rendering correctness.
 The retained-camera fault maps to `navigation.camera`; setup errors remain
 unresolved execution evidence. Recovery preserves historical failures.
 
+The four existing reusable-tool composition cases are also a default observation
+source. They map to admission, registration, invocation and persistence with exact
+implementation paths and sections in `TOOL_SPECIFICATION.md`. The source config
+supports ordinary runs with one worker and rejects undeclared workspace imports.
+Independent admission, retry-receipt identity, call-inventory and reload-inventory
+faults exercise the four original assertions; combined faults retain all four
+nodes. Recovery preserves historical evidence, and source-load errors do not
+invent a node. These cases use injected in-memory host adapters, not live models,
+actual disk durability or complete host security integration.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and
