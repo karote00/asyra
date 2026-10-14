@@ -2237,6 +2237,16 @@ the original runner stack alongside the JSON report. Unavailable precision remai
 produce unresolved records. Failure text is original runner evidence, not an
 inferred root cause. Multiple cases at one node remain separate.
 
+The additional `history-replay` target maps two existing Factory journal-backed
+History cases: whole-action ordered replay and staged first-before/latest-after
+values. These execute real Factory replay handlers; they do not establish complete
+App state or rendering correctness. The remaining tests in the same file remain
+unmapped observations. Its manifest and isolated source config retain the same
+Vitest producer, exact identity rules and immutable history. Controlled replay
+order and inverse-value faults prove localization without changing assertions.
+This partial manifest does not satisfy strict accepted-proof inventory: the other
+twelve tests remain unregistered, and `prove` must not report conformance.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and

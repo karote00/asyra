@@ -28,6 +28,10 @@ function localizationFixture() {
     { recursive: true }
   )
   for (const file of [
+    'packages/factory/history-replay-flow-contracts.json',
+    'packages/factory/src/__tests__/history-replay.config.ts',
+    'packages/factory/src/__tests__/factory-journal-history.test.ts',
+    'tools/flow-inspector/inspectors/history-replay-flow-inspector.data.cjs',
     'apps/asyra-design/undo-redo-flow-contracts.json',
     'apps/asyra-design/vite.config.ts',
     'tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs',
@@ -40,6 +44,11 @@ function localizationFixture() {
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
     loadContract(root),
+    loadContract(
+      root,
+      undefined,
+      'packages/factory/history-replay-flow-contracts.json'
+    ),
     loadContract(
       root,
       undefined,
@@ -58,9 +67,10 @@ function localizationFixture() {
     }
   }
   const appFile = 'apps/asyra-design/src/features/undo-redo/index.ts',
-    factoryFile = 'packages/factory/src/value-clone.ts'
+    factoryFile = 'packages/factory/src/value-clone.ts',
+    replayFile = 'packages/factory/src/data-transact.ts'
   const originals = new Map(
-    [appFile, factoryFile].map((file) => [
+    [appFile, factoryFile, replayFile].map((file) => [
       file,
       fs.readFileSync(path.join(repository, file), 'utf8')
     ])
@@ -130,6 +140,28 @@ function localizationFixture() {
       `
       )
     },
+    mutateReplay(scenario) {
+      const contract = JSON.parse(
+        fs.readFileSync(
+          path.join(
+            root,
+            'packages/factory/history-replay-flow-contracts.json'
+          ),
+          'utf8'
+        )
+      )
+      const mutation = contract.scenarios.find(
+        (item) => item.id === scenario
+      )?.mutation
+      assert.ok(mutation)
+      const original = originals.get(replayFile)
+      assert.equal(original.split(mutation.from).length, 2)
+      fs.chmodSync(path.join(repository, replayFile), 0o600)
+      fs.writeFileSync(
+        path.join(repository, replayFile),
+        original.replace(mutation.from, mutation.to)
+      )
+    },
     mutate(kind) {
       const file = kind === 'app' ? appFile : factoryFile
       const from = kind === 'app' ? 'if (snapshot.keyShift)' : 'return value'
@@ -151,18 +183,23 @@ function localizationFixture() {
     async run(kind, args = []) {
       const tmp = path.join(directory, 'tmp')
       fs.mkdirSync(tmp, { recursive: true })
+      let configFile = path.join(
+        repository,
+        'packages/factory/src/__tests__/flow-proof.config.ts'
+      )
+      if (kind === 'history')
+        configFile = path.join(
+          repository,
+          'packages/factory/src/__tests__/history-replay.config.ts'
+        )
+      if (kind === 'app') configFile = config
       const result = await runProcess({
         executable: process.execPath,
         args: [
           require.resolve('vitest/vitest.mjs'),
           'run',
           '--config',
-          kind === 'app'
-            ? config
-            : path.join(
-                repository,
-                'packages/factory/src/__tests__/flow-proof.config.ts'
-              ),
+          configFile,
           '--reporter=default',
           '--reporter=' +
             path.join(
