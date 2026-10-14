@@ -339,3 +339,101 @@ test(
     t.diagnostic('History replay evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'ordinary Design execution failures locate distinct nodes and preserve recovery history',
+  { timeout: 120000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('execution')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 23)
+    assert.ok(
+      baseline.record.cases.every((item) => item.resolution === 'mapped'),
+      JSON.stringify(baseline.record.issues)
+    )
+    assert.deepEqual(
+      [
+        ...new Set(
+          baseline.record.cases.map((item) => item.locations[0].stepId)
+        )
+      ].sort(),
+      ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
+    )
+    const scenarios = [
+      'omit-registered-tools',
+      'misclassify-combined-tool',
+      'ignore-canonical-evidence'
+    ]
+    const steps = ['compose', 'apply', 'inspect']
+    for (const [index, scenario] of scenarios.entries()) {
+      fixture.mutateExecution(scenario)
+      const fault = await fixture.run('execution')
+      assert.equal(fault.result.code, 1, fault.result.output)
+      const failed = fault.record.cases.filter(
+        (item) => item.status === 'failed'
+      )
+      assert.deepEqual(
+        failed.map((item) => item.locations[0].stepId).sort(),
+        steps.slice(0, index + 1).sort()
+      )
+      for (const item of failed) {
+        assert.equal(item.resolution, 'mapped')
+        assert.equal(item.locations[0].targetId, 'ai-execution-flow')
+        assert.ok(item.locations[0].implementationPaths.length)
+        assert.ok(
+          item.failureDetails.some((error) => error.message && error.stack)
+        )
+      }
+      const output = []
+      assert.equal(
+        await main(['test-results', fault.record.id], {
+          repositoryRoot: fixture.repository,
+          write: (line) => output.push(line)
+        }),
+        0
+      )
+      assert.deepEqual(JSON.parse(output.join('')), fault.record)
+    }
+    const failedRecord = fixture.reader.get(fixture.reader.list().runs[0].id)
+    fixture.restore()
+    const recovery = await fixture.run('execution')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+    assert.ok(
+      fixture.reader
+        .list()
+        .currentCases.every((item) => item.status === 'passed')
+    )
+    assert.deepEqual(fixture.reader.get(failedRecord.id), failedRecord)
+    t.diagnostic('Execution evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'Design execution uses the captured runtime entry and retains setup failure without a guessed node',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.failExecutionSourceEntry()
+    const fault = await fixture.run('execution')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.match(fault.record.issues.join(' '), /Captured runtime entry failed/)
+    assert.equal(
+      fault.record.cases.filter((item) => item.status === 'failed').length,
+      0
+    )
+    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
+    fixture.restore()
+    const recovery = await fixture.run('execution')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(
+      recovery.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      23
+    )
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+  }
+)

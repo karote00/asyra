@@ -471,3 +471,26 @@ test('History replay admission maps existing Factory cases to their runtime owne
     ]
   )
 })
+
+test('Design execution admission locates all existing cases within their seven owners', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/flow-contracts.json'
+  )
+  assert.equal(contract.cases.length, 23)
+  assert.deepEqual(
+    [...new Set(contract.cases.map((item) => item.stepId))].sort(),
+    ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
+  )
+  const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+  for (const item of contract.cases) {
+    assert.ok(source.includes(item.testName))
+    assert.ok(item.implementationPaths?.length, item.id)
+    for (const file of item.implementationPaths) {
+      assert.ok(fs.statSync(path.join(root, file)).isFile())
+      assert.ok(!file.includes('__tests__'), item.id)
+    }
+  }
+})

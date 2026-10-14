@@ -22,10 +22,24 @@ function localizationFixture() {
   )
   const repository = path.join(directory, 'repository')
   fs.cpSync(initial.sourceRoot, repository, { recursive: true })
+  const executionContract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/flow-contracts.json'
+  )
+  const executionSource = captureSource(
+    root,
+    path.join(directory, 'execution-capture'),
+    executionContract
+  )
+  fs.cpSync(executionSource.sourceRoot, repository, {
+    recursive: true,
+    force: false
+  })
   fs.cpSync(
     path.join(root, 'apps/asyra-design/src'),
     path.join(repository, 'apps/asyra-design/src'),
-    { recursive: true }
+    { recursive: true, force: false }
   )
   for (const file of [
     'packages/factory/history-replay-flow-contracts.json',
@@ -43,6 +57,7 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    executionContract,
     loadContract(root),
     loadContract(
       root,
@@ -59,9 +74,15 @@ function localizationFixture() {
       for (const boundary of step.implementationBoundary) {
         const file = boundary.replace(/\/\*\*$/, '')
         const destination = path.join(repository, file)
-        if (!fs.existsSync(destination)) {
+        if (
+          !fs.existsSync(destination) ||
+          fs.statSync(path.join(root, file)).isDirectory()
+        ) {
           fs.mkdirSync(path.dirname(destination), { recursive: true })
-          fs.cpSync(path.join(root, file), destination, { recursive: true })
+          fs.cpSync(path.join(root, file), destination, {
+            recursive: true,
+            force: false
+          })
         }
       }
     }
@@ -75,6 +96,14 @@ function localizationFixture() {
       fs.readFileSync(path.join(repository, file), 'utf8')
     ])
   )
+  const executionManifest = JSON.parse(
+    fs.readFileSync(path.join(root, executionContract.manifestPath), 'utf8')
+  )
+  for (const scenario of executionManifest.scenarios) {
+    const file = scenario.mutation?.file
+    if (file)
+      originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
+  }
   const config = path.join(directory, 'app.config.mjs')
   fs.writeFileSync(
     config,
@@ -162,6 +191,32 @@ function localizationFixture() {
         original.replace(mutation.from, mutation.to)
       )
     },
+    failExecutionSourceEntry() {
+      const file = 'packages/ai-agent-runtime/src/index.ts'
+      const original = fs.readFileSync(path.join(repository, file), 'utf8')
+      originals.set(file, original)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(
+        path.join(repository, file),
+        original + "\nthrow new Error('Captured runtime entry failed')\n"
+      )
+    },
+    mutateExecution(scenarioId) {
+      const mutation = executionManifest.scenarios.find(
+        (item) => item.id === scenarioId
+      )?.mutation
+      assert.ok(mutation)
+      const original = fs.readFileSync(
+        path.join(repository, mutation.file),
+        'utf8'
+      )
+      assert.equal(original.split(mutation.from).length, 2)
+      fs.chmodSync(path.join(repository, mutation.file), 0o600)
+      fs.writeFileSync(
+        path.join(repository, mutation.file),
+        original.replace(mutation.from, mutation.to)
+      )
+    },
     mutate(kind) {
       const file = kind === 'app' ? appFile : factoryFile
       const from = kind === 'app' ? 'if (snapshot.keyShift)' : 'return value'
@@ -193,6 +248,8 @@ function localizationFixture() {
           'packages/factory/src/__tests__/history-replay.config.ts'
         )
       if (kind === 'app') configFile = config
+      if (kind === 'execution')
+        configFile = path.join(repository, executionContract.configFile)
       const result = await runProcess({
         executable: process.execPath,
         args: [

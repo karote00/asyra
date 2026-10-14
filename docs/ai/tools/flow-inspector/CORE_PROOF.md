@@ -2247,6 +2247,15 @@ order and inverse-value faults prove localization without changing assertions.
 This partial manifest does not satisfy strict accepted-proof inventory: the other
 twelve tests remain unregistered, and `prove` must not report conformance.
 
+The existing `ai-execution-flow` manifest is also a default observation source.
+Its 23 unchanged cases map to seven existing responsibility nodes with precise
+case source locations. Its isolated config resolves declared public workspace
+entries to source and rejects undeclared imports. Tests use controlled providers,
+not live model calls. Capability, access-classification and canonical-evidence
+faults locate compose, apply and inspect independently; combined failures retain
+all three nodes. Recovery replaces current outcomes while retaining history.
+These bounded cases do not establish complete model or end-user behavior.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and

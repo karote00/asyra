@@ -49,117 +49,191 @@
         {
           "id": "compose.ordered-parts",
           "stepId": "compose",
-          "testName": "execution proof resolves batched semantic identities and applies ordered ready parts"
+          "testName": "execution proof resolves batched semantic identities and applies ordered ready parts",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "prepare.indexed-targets",
           "stepId": "prepare",
-          "testName": "execution proof reuses artifact prefix lookup without rereading every key"
+          "testName": "execution proof reuses artifact prefix lookup without rereading every key",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-target-index.ts"
+          ]
         },
         {
           "id": "prepare.compact-repair",
           "stepId": "prepare",
-          "testName": "execution proof repairs rejected source through the same request preparation owner"
+          "testName": "execution proof repairs rejected source through the same request preparation owner",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-draft-repair.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
         },
         {
           "id": "compose.definition-delivery",
           "stepId": "compose",
-          "testName": "execution proof preserves partial lookup full recovery and declaration constraints"
+          "testName": "execution proof preserves partial lookup full recovery and declaration constraints",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "compose.registered-tools",
           "stepId": "compose",
-          "testName": "execution proof preserves registered native capability envelopes"
+          "testName": "execution proof preserves registered native capability envelopes",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts"
+          ]
         },
         {
           "id": "request.continuity",
           "stepId": "request",
-          "testName": "execution proof validates continuity references before a successor request"
+          "testName": "execution proof validates continuity references before a successor request",
+          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
         },
         {
           "id": "prepare.lifetime",
           "stepId": "prepare",
-          "testName": "execution proof retains immutable preparation within its request only"
+          "testName": "execution proof retains immutable preparation within its request only",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
         },
         {
           "id": "apply.composition",
           "stepId": "apply",
-          "testName": "execution proof composes preparation and canonical dispatch without repeated work"
+          "testName": "execution proof composes preparation and canonical dispatch without repeated work",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-tool-scheduler.ts"
+          ]
         },
         {
           "id": "inspect.current-evidence",
           "stepId": "inspect",
-          "testName": "execution proof distinguishes stage readiness from current final assessment"
+          "testName": "execution proof distinguishes stage readiness from current final assessment",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "settle.partial",
           "stepId": "settle",
-          "testName": "execution proof retains partial progress when a successor makes no change"
+          "testName": "execution proof retains partial progress when a successor makes no change",
+          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
         },
         {
           "id": "observe.accounting",
           "stepId": "observe",
-          "testName": "execution proof accounts observed spans without private payloads or invented model timing"
+          "testName": "execution proof accounts observed spans without private payloads or invented model timing",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "packages/ai-agent-runtime/src/profiler/evaluation.ts"
+          ]
         },
         {
           "id": "observe.transport",
           "stepId": "observe",
-          "testName": "execution proof records timestamped transport without storing transport content"
+          "testName": "execution proof records timestamped transport without storing transport content",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/profiler/recorder.ts"
+          ]
         },
         {
           "id": "observe.shared-invocation",
           "stepId": "observe",
-          "testName": "execution proof composes a non-drawing host through shared invocation and local projection"
+          "testName": "execution proof composes a non-drawing host through shared invocation and local projection",
+          "implementationPaths": ["packages/ai-agent-runtime/src/invocation.ts"]
         },
         {
           "id": "apply.region-removal",
           "stepId": "apply",
-          "testName": "execution proof hands a region identity set into one compact plural removal"
+          "testName": "execution proof hands a region identity set into one compact plural removal",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "observe.source-provenance",
           "stepId": "observe",
-          "testName": "execution proof retains source identity and unavailable upstream payload provenance"
+          "testName": "execution proof retains source identity and unavailable upstream payload provenance",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "packages/ai-agent-runtime/src/profiler/records.ts"
+          ]
         },
         {
           "id": "prepare.reference-recovery",
           "stepId": "prepare",
-          "testName": "execution proof recovers a rejected reference through a different original source and reuses it"
+          "testName": "execution proof recovers a rejected reference through a different original source and reuses it",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-reference-tools.ts"
+          ]
         },
         {
           "id": "inspect.evidence-responsibilities",
           "stepId": "inspect",
-          "testName": "execution proof routes separate evidence tools without canvas mutations"
+          "testName": "execution proof routes separate evidence tools without canvas mutations",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "settle.durability",
           "stepId": "settle",
-          "testName": "execution proof confirms a durable sequence without extending it to later edits"
+          "testName": "execution proof confirms a durable sequence without extending it to later edits",
+          "implementationPaths": [
+            "apps/asyra-design/server/document-persistence-queue.ts"
+          ]
         },
         {
           "id": "inspect.capture-handoff",
           "stepId": "inspect",
-          "testName": "execution proof composes capture and assessment without dropping unavailable targets"
+          "testName": "execution proof composes capture and assessment without dropping unavailable targets",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "settle.activity",
           "stepId": "settle",
-          "testName": "execution proof preserves concrete work through progress and settlement"
+          "testName": "execution proof preserves concrete work through progress and settlement",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts"
+          ]
         },
         {
           "id": "inspect.prepared-recipe",
           "stepId": "inspect",
-          "testName": "execution proof binds prepared recipe assessment to immutable source before applying"
+          "testName": "execution proof binds prepared recipe assessment to immutable source before applying",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-prepared-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "compose.common-tool-contract",
           "stepId": "compose",
-          "testName": "execution proof shares immutable tool contracts and preserves rejected output without replay"
+          "testName": "execution proof shares immutable tool contracts and preserves rejected output without replay",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-contract.ts",
+            "apps/asyra-design/server/operation-input-schema.ts"
+          ]
         },
         {
           "id": "observe.durable-outbox",
           "stepId": "observe",
-          "testName": "execution proof retains offline diagnostics until a matching durable terminal acknowledgement"
+          "testName": "execution proof retains offline diagnostics until a matching durable terminal acknowledgement",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/profiler/record-delivery.ts",
+            "packages/ai-agent-runtime/src/node/record-collector.ts"
+          ]
         }
       ],
       "handoffs": [
