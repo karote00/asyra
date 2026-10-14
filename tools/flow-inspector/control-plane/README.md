@@ -94,13 +94,16 @@ node node_modules/vitest/vitest.mjs run --config packages/factory/src/__tests__/
 # Existing Design execution assertions (23 cases across seven nodes; no live model).
 node node_modules/vitest/vitest.mjs run --config apps/asyra-design/server/__tests__/execution-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
+# Existing Render viewport assertions (six cases at the render adapter owner).
+node node_modules/vitest/vitest.mjs run --config packages/render/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
 # Human and agent clients read the same retained context; no proof lock is needed.
 node tools/flow-inspector/control-plane/cli.cjs test-results
 node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
 node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 test-results <run-id>
 ```
 
-Open `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
+Open `/render-engine-boundary`, `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
 local Board. The
 **Test failure locations** section lists all observed failures, including
 unmapped failures. Selecting a mapped failure focuses its declared owner card
@@ -129,6 +132,13 @@ inspect, settle and observe, with exact implementation locations. Their isolated
 config uses source entries and rejects undeclared workspace dependencies; no
 live provider is invoked. Controlled capability, scheduling and stale-evidence
 faults exercise separate nodes without changing assertions.
+The six existing Render viewport cases map to `orchestrate-render-adapter` with
+precise ViewportLayer and collaborator paths. Its source-only config includes
+the public recording-engine test adapter, uses one worker, and rejects undeclared
+workspace imports. These observations cover viewport orchestration, not actual
+Pixi output or all rendering behavior. A camera-retention fault reaches the
+existing adapter node; source-load errors remain execution failures without a
+guessed node.
 Other tests remain explicitly unmapped. Exact implementation
 paths are provided where declared; otherwise the responsible step boundary is
 shown with unavailable precision. Mapping identifies an investigation starting

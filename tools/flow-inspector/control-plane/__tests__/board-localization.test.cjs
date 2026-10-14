@@ -452,3 +452,65 @@ test(
     t.diagnostic('Execution Board evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'Render viewport Board selects the failed adapter with matching evidence and historical recovery',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.mutateViewport()
+    const fault = await fixture.run('viewport')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failures = fault.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.equal(failures.length, 1)
+    await page.goto(server.origin + '/render-engine-boundary')
+    const frame = page.frameLocator('iframe')
+    const buttons = frame.locator('#test-result-failures button')
+    await expect(buttons).toHaveCount(1)
+    await buttons.first().click()
+    await expect(
+      frame.locator('[data-step-id="orchestrate-render-adapter"].is-selected')
+    ).toHaveCount(1)
+    await expect(frame.locator('.observation-failed')).toHaveCount(1)
+    const details = frame.locator('#test-result-detail')
+    for (const file of failures[0].locations[0].implementationPaths)
+      await expect(details).toContainText(file)
+    await expect(details).toContainText(failures[0].failures[0])
+    const machine = await (
+      await fetch(server.origin + '/api/test-results/' + fault.record.id)
+    ).json()
+    assert.deepEqual(machine, fault.record)
+    for (const field of ['expected', 'actual']) {
+      assert.equal(
+        await details
+          .locator('[data-failure-field="' + field + '"]')
+          .textContent(),
+        failures[0].failureDetails[0][field]
+      )
+    }
+    await page.screenshot({
+      path: path.join(fixture.directory, 'viewport-desktop.png'),
+      fullPage: true
+    })
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await details.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'viewport-narrow.png'),
+      fullPage: true
+    })
+    fixture.restore()
+    const recovery = await fixture.run('viewport')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    await expect(buttons).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await expect(buttons).toHaveCount(1)
+    await buttons.first().click()
+    await expect(details).toContainText(failures[0].failures[0])
+    t.diagnostic('Viewport Board evidence: ' + fixture.directory)
+  }
+)

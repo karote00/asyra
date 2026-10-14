@@ -2256,6 +2256,16 @@ faults locate compose, apply and inspect independently; combined failures retain
 all three nodes. Recovery replaces current outcomes while retaining history.
 These bounded cases do not establish complete model or end-user behavior.
 
+The six existing Render ViewportLayer cases are a default observation source
+through `packages/render/navigation-flow-contracts.json`. They resolve to the
+existing `render-engine-boundary` target's `orchestrate-render-adapter` node
+with exact ViewportLayer and relevant RenderLayer/RenderObjectRuntime locations.
+The source-only config works in ordinary and captured execution, including the
+public render-engine testing entry. Its recording adapter proves bounded viewport
+orchestration, not concrete engine output or complete rendering correctness.
+The retained-camera fault maps to `navigation.camera`; setup errors remain
+unresolved execution evidence. Recovery preserves historical failures.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and
