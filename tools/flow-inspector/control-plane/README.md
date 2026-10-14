@@ -97,13 +97,16 @@ node node_modules/vitest/vitest.mjs run --config apps/asyra-design/server/__test
 # Existing Render viewport assertions (six cases at the render adapter owner).
 node node_modules/vitest/vitest.mjs run --config packages/render/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
+# Existing reusable-tool composition assertions (four responsibility nodes).
+node node_modules/vitest/vitest.mjs run --config packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
 # Human and agent clients read the same retained context; no proof lock is needed.
 node tools/flow-inspector/control-plane/cli.cjs test-results
 node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
 node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 test-results <run-id>
 ```
 
-Open `/render-engine-boundary`, `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
+Open `/reusable-tool-composition`, `/render-engine-boundary`, `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
 local Board. The
 **Test failure locations** section lists all observed failures, including
 unmapped failures. Selecting a mapped failure focuses its declared owner card
@@ -139,6 +142,16 @@ workspace imports. These observations cover viewport orchestration, not actual
 Pixi output or all rendering behavior. A camera-retention fault reaches the
 existing adapter node; source-load errors remain execution failures without a
 guessed node.
+The four existing reusable-tool composition cases are also a default observation
+source. They map to admission, registration, invocation and persistence with exact
+implementation paths and sections in `TOOL_SPECIFICATION.md`. The source config
+supports ordinary runs with one worker and rejects undeclared workspace imports.
+Independent admission, retry-receipt identity, call-inventory and reload-inventory
+faults exercise the four original assertions; combined faults retain all four
+nodes. Recovery preserves historical evidence, and source-load errors do not
+invent a node. These cases use injected in-memory host adapters, not live models,
+actual disk durability or complete host security integration.
+
 Other tests remain explicitly unmapped. Exact implementation
 paths are provided where declared; otherwise the responsible step boundary is
 shown with unavailable precision. Mapping identifies an investigation starting

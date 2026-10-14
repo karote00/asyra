@@ -6,7 +6,12 @@
   "specPath": "packages/ai-agent-runtime/TOOL_SPECIFICATION.md",
   "testFile": "packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts",
   "configFile": "packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts",
-  "negativeCaseIds": ["admit.handoff"],
+  "negativeCaseIds": [
+    "admit.handoff",
+    "register.handoff",
+    "invoke.handoff",
+    "persist.handoff"
+  ],
   "externalInputs": [],
   "flows": [
     {
@@ -18,22 +23,41 @@
         {
           "id": "admit.handoff",
           "stepId": "admit",
-          "testName": "recipe proof rejects ineligible dependencies before registration"
+          "testName": "recipe proof rejects ineligible dependencies before registration",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/recipe-admission.ts",
+            "packages/ai-agent-runtime/src/recipe-schema.ts",
+            "packages/ai-agent-runtime/src/tool-contract.ts"
+          ]
         },
         {
           "id": "register.handoff",
           "stepId": "register",
-          "testName": "recipe proof registers retry-safe scoped candidates in the canonical registry"
+          "testName": "recipe proof registers retry-safe scoped candidates in the canonical registry",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-library.ts",
+            "packages/ai-agent-runtime/src/action-registry.ts"
+          ]
         },
         {
           "id": "invoke.handoff",
           "stepId": "invoke",
-          "testName": "recipe proof executes nested tools without scheduler deadlock or lost references"
+          "testName": "recipe proof executes nested tools without scheduler deadlock or lost references",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/recipe-execution.ts",
+            "packages/ai-agent-runtime/src/invocation.ts",
+            "packages/ai-agent-runtime/src/tool-contract.ts"
+          ]
         },
         {
           "id": "persist.handoff",
           "stepId": "persist",
-          "testName": "recipe proof saves without replay and validates durable reuse"
+          "testName": "recipe proof saves without replay and validates durable reuse",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-store.ts",
+            "packages/ai-agent-runtime/src/tool-library.ts",
+            "packages/ai-agent-runtime/src/action-registry.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -85,6 +109,36 @@
         "file": "packages/ai-agent-runtime/src/recipe-admission.ts",
         "from": "contract.composition !== 'allowed'",
         "to": "false"
+      }
+    },
+    {
+      "id": "copy-registration-receipt",
+      "title": "Lose registration receipt identity",
+      "expectedFailedCaseIds": ["register.handoff"],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/tool-library.ts",
+        "from": "return previous.result",
+        "to": "return { ...previous.result }"
+      }
+    },
+    {
+      "id": "omit-invocation-calls",
+      "title": "Omit invocation call inventory",
+      "expectedFailedCaseIds": ["invoke.handoff"],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/recipe-execution.ts",
+        "from": "calls: Object.freeze(records.slice(start))",
+        "to": "calls: Object.freeze([])"
+      }
+    },
+    {
+      "id": "omit-reload-name",
+      "title": "Omit reloaded tool identity",
+      "expectedFailedCaseIds": ["persist.handoff"],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/tool-store.ts",
+        "from": "loaded.push(record.contract.name)",
+        "to": "loaded.push('')"
       }
     }
   ]

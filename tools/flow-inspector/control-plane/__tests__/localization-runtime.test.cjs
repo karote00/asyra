@@ -524,3 +524,107 @@ test(
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
 )
+
+test(
+  'ordinary reusable composition failures retain independent owners and combined recovery evidence',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('recipe')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 4)
+    assert.deepEqual(baseline.record.issues, [])
+    assert.ok(
+      baseline.record.cases.every((item) => item.resolution === 'mapped')
+    )
+    const scenarios = [
+      'allow-control-plane',
+      'copy-registration-receipt',
+      'omit-invocation-calls',
+      'omit-reload-name'
+    ]
+    const steps = ['admit', 'register', 'invoke', 'persist']
+    for (const [index, scenario] of scenarios.entries()) {
+      fixture.restore()
+      fixture.mutateRecipe(scenario)
+      const fault = await fixture.run('recipe')
+      assert.equal(fault.result.code, 1, fault.result.output)
+      const failed = fault.record.cases.filter(
+        (item) => item.status === 'failed'
+      )
+      assert.deepEqual(
+        failed.map((item) => item.locations[0]?.stepId),
+        [steps[index]]
+      )
+      const location = failed[0].locations[0]
+      assert.equal(location.targetId, 'reusable-tool-composition')
+      assert.equal(location.caseId, steps[index] + '.handoff')
+      assert.equal(
+        location.specPath,
+        'packages/ai-agent-runtime/TOOL_SPECIFICATION.md'
+      )
+      assert.ok(location.implementationPaths.length)
+      assert.ok(
+        failed[0].failureDetails.some((error) => error.message && error.stack)
+      )
+    }
+    fixture.restore()
+    for (const scenario of scenarios) fixture.mutateRecipe(scenario)
+    const combined = await fixture.run('recipe')
+    assert.equal(combined.result.code, 1, combined.result.output)
+    assert.deepEqual(
+      combined.record.cases
+        .filter((item) => item.status === 'failed')
+        .map((item) => item.locations[0].stepId)
+        .sort(),
+      [...steps].sort()
+    )
+    const output = []
+    assert.equal(
+      await main(['test-results', combined.record.id], {
+        repositoryRoot: fixture.repository,
+        write: (line) => output.push(line)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(output.join('')), combined.record)
+    fixture.restore()
+    const recovery = await fixture.run('recipe')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+    assert.ok(
+      fixture.reader
+        .list()
+        .currentCases.every((item) => item.status === 'passed')
+    )
+    assert.deepEqual(fixture.reader.get(combined.record.id), combined.record)
+    t.diagnostic('Recipe evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'reusable composition source failures remain execution evidence without a guessed node',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.failRecipeSourceEntry()
+    const fault = await fixture.run('recipe')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.match(
+      fault.record.issues.join(' '),
+      /Captured recipe admission failed/
+    )
+    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
+    fixture.restore()
+    const recovery = await fixture.run('recipe')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(
+      recovery.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      4
+    )
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+  }
+)

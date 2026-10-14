@@ -298,6 +298,90 @@ section. Preserve existing historical records and case identities; new observati
 carry the corrected contract digest. The shared runtime fixture includes the
 selected authoritative document so observation fingerprints remain available.
 
+## Selected reusable-tool composition coverage - 2026-10-15
+
+Activated after PR #325 merged, based on `1aa089e12`, under the Bounded
+Result-Source Slice. Select the existing four cases in
+`packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts` and its existing
+manifest, config and `reusable-tool-composition` architecture. Keep the original
+assertions and identities. The cases locate admission, registration, invocation
+and persistence responsibilities; they use host-injected in-memory adapters, not
+a live provider, actual disk durability or complete host security integration.
+
+Readiness review: existing baseline/admission-fault/recovery proof passes. The
+config requires proof environment variables despite importing this package's
+source directly. Enable an ordinary baseline invocation with one worker and reject
+undeclared workspace dependencies; no source aliases are needed for the existing
+relative-only import closure. Manifest specification and all four section anchors
+must match the existing architecture authority. Exact case locations stay inside
+their respective owner boundaries. The existing source capture admits this package;
+do not add another runtime capture or mapping registry.
+
+Complete handoff: unchanged Vitest cases produce original outcomes; admission
+supplies exact file/name/node/path mappings; localization stores every result and
+original error; API, CLI and Board consume the same observation. Preserve source,
+project, attempt and historical identities, explicit unresolved results and all
+existing targets. No test rerun is needed merely to produce a localization report.
+
+Execution cards, governed by the existing core proof Inspector and CORE_PROOF.md:
+
+1. `admit-proof-contract` / Admission: inputs are the selected specification,
+   unchanged case file and architecture; outputs are admitted precise locations
+   and ordinary/captured execution config. Add this manifest/config to the core
+   admission boundary. Its existing admission tests prove locations and reference
+   integrity. Retain the admission negative and add isolated runtime mutations
+   for retry-receipt identity, invocation call inventory and reload inventory;
+   each must fail only its named existing case. No contract bypass, assertion
+   rewrite, runtime-result guessing or production runtime edits. Stop if an
+   unchanged case cannot detect its declared fault.
+2. `localize-test-results` / Ordinary Test Failure Localization: consume admitted
+   mapping and original Vitest evidence; register the manifest in the existing
+   defaults and extend its permanent runtime fixture/tests. Emit retained results
+   for four nodes, including combined faults, source-load failure without a guessed
+   node, recovery and CLI equality. Incomplete execution grants no passing result;
+   preserve shared stale/duplicate/unmapped/partial-run behavior and other targets.
+   Allowed contributors are the existing reporter, product contracts and read
+   service; no model inference, accepted-baseline mutation, cache or dispatch.
+3. `render-proof-board` / Board: consume service-owned observations at the existing
+   target route. Extend its permanent browser regression for four failed cards,
+   exact implementation/spec references, original errors, API equality, recovery
+   and historical selection. Inspect desktop/narrow screenshots. No client-side
+   ownership decisions, new controls or missing-evidence success. Regenerate the
+   existing catalog for the changed admission boundary. Failure ownership remains
+   the corresponding admission, localization or Board step.
+
+Frozen review and mutation scope: selected manifest/config, core admission boundary,
+default registration, existing admission/runtime/Board tests and fixture, generated
+catalog, current localization docs and this plan. Reread the matching Inspector
+before advancing each segment. Required gates: test-first startup/location
+regressions, four independent faults and combined recovery, source-load failure,
+full control-plane and Board suites, package tests, original core proof/candidate,
+selected composition proof, naming, CI scope/test placement, scoped lint/format,
+tool typecheck, App/tool build, diff and exact-head Changeset checks. Unknown
+ownership or a required out-of-scope runtime change stops this slice. No other test
+sets, new producers, live model calls, runtime fixes, task orchestration, commands
+or comments are authorized. This slice does not close the supporting plan.
+
+Completed validation: startup and missing-location regressions failed before the
+corresponding fixes. The four independent faults each reach only their declared
+case/node; combined faults, source-load execution errors, recovery and retained
+CLI/API/Board history pass without changing original product assertions or runtime
+code. The documented ordinary invocation records four mapped passes. Composition
+proof passes one flow, four negatives and four obligations; the original core
+proof passes three flows, five negatives and nine obligations, with candidate
+verification passing separately.
+
+Focused admission/localization/runtime tests: 64 passed. Full control-plane:
+511 passed, two environment-conditional skips (unconfigured installed app-server
+probe and the inapplicable unsupported-containment branch). Full Board: 22 passed,
+two retained-live-evidence skips. Desktop/narrow screenshots were inspected.
+Package tests (12 React, 100 contracts), 68 scope/placement tests, 15 naming tests,
+scoped ESLint/authored formatting, tool typecheck, generator equality and the final
+21-task App/tool build passed. Bounded final review covered the diff, original
+owner boundaries, authoritative spec sections and direct consumers, with no
+remaining actionable in-scope issue. This completes only this selected slice;
+remote CI and user review remain separate from local validation.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

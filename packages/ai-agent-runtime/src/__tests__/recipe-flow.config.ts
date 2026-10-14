@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const sourceRoot = process.env.FLOW_PROOF_SOURCE
-if (!sourceRoot) throw new Error('Missing captured proof source')
+const sourceRoot =
+  process.env.FLOW_PROOF_SOURCE ?? resolve(import.meta.dirname, '../../../..')
 const manifest = JSON.parse(
   readFileSync(
     resolve(sourceRoot, 'packages/ai-agent-runtime/flow-contracts.json'),
@@ -10,7 +10,8 @@ const manifest = JSON.parse(
   )
 )
 const scenario = manifest.scenarios.find(
-  (entry: { id: string }) => entry.id === process.env.FLOW_PROOF_SCENARIO
+  (entry: { id: string }) =>
+    entry.id === (process.env.FLOW_PROOF_SCENARIO ?? 'baseline')
 )
 if (!scenario) throw new Error('Unknown recipe proof scenario')
 
@@ -19,6 +20,10 @@ export default {
     {
       name: 'registered-recipe-proof-mutation',
       enforce: 'pre' as const,
+      resolveId(id: string) {
+        if (id.startsWith('@asyra/'))
+          throw new Error('Uncaptured source dependency: ' + id)
+      },
       transform(code: string, id: string) {
         const mutation = scenario.mutation
         if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
@@ -31,6 +36,7 @@ export default {
   test: {
     environment: 'node',
     include: [resolve(sourceRoot, manifest.testFile)],
+    maxWorkers: 1,
     fileParallelism: false
   }
 }

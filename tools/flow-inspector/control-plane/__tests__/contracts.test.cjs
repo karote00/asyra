@@ -557,3 +557,63 @@ test('Render viewport source config runs all unchanged cases without proof envir
   assert.equal(report.numPassedTests, 6)
   assert.equal(report.numFailedTests, 0)
 })
+
+test('Reusable composition admission retains four exact owner locations', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'packages/ai-agent-runtime/flow-contracts.json'
+  )
+  assert.equal(
+    contract.specPath,
+    contract.architectureDefinition.authority.specPath
+  )
+  assert.deepEqual(
+    contract.cases.map((item) => item.stepId),
+    ['admit', 'register', 'invoke', 'persist']
+  )
+  const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+  const spec = fs.readFileSync(path.join(root, contract.specPath), 'utf8')
+  const headings = spec
+    .split('\n')
+    .filter((line) => /^#{1,6} /.test(line))
+    .map(
+      (line) => '#' + line.replace(/^#+ /, '').toLowerCase().replace(/ /g, '-')
+    )
+  for (const item of contract.cases) {
+    assert.ok(source.includes(item.testName.replace('recipe proof ', '')))
+    assert.ok(item.implementationPaths?.length, item.id)
+    for (const file of item.implementationPaths)
+      assert.ok(fs.statSync(path.join(root, file)).isFile())
+    const step = contract.architectureDefinition.steps.find(
+      (step) => step.id === item.stepId
+    )
+    for (const ref of step.specRefs) assert.ok(headings.includes(ref), ref)
+  }
+})
+test('Reusable composition source config runs all unchanged cases without proof environment', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const temporary = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/recipe-config-')
+  )
+  const env = { ...process.env, TMPDIR: temporary }
+  delete env.FLOW_PROOF_SOURCE
+  delete env.FLOW_PROOF_SCENARIO
+  const result = require('node:child_process').spawnSync(
+    process.execPath,
+    [
+      require.resolve('vitest/vitest.mjs'),
+      'run',
+      '--config',
+      'packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts',
+      '--reporter=json'
+    ],
+    { cwd: root, env, encoding: 'utf8', timeout: 30000 }
+  )
+  assert.equal(result.status, 0, result.stdout + result.stderr)
+  const report = JSON.parse(result.stdout)
+  assert.equal(report.numPassedTests, 4)
+  assert.equal(report.numFailedTests, 0)
+})

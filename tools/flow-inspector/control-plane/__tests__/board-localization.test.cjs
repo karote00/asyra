@@ -518,3 +518,70 @@ test(
     t.diagnostic('Viewport Board evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'Reusable composition Board selects four failed owners and retains the original history',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    for (const scenario of [
+      'allow-control-plane',
+      'copy-registration-receipt',
+      'omit-invocation-calls',
+      'omit-reload-name'
+    ])
+      fixture.mutateRecipe(scenario)
+    const fault = await fixture.run('recipe')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failures = fault.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.equal(failures.length, 4)
+    await page.goto(server.origin + '/reusable-tool-composition')
+    const frame = page.frameLocator('iframe')
+    const buttons = frame.locator('#test-result-failures button')
+    await expect(buttons).toHaveCount(4)
+    await expect(frame.locator('.observation-failed')).toHaveCount(4)
+    const details = frame.locator('#test-result-detail')
+    for (const [index, item] of failures.entries()) {
+      await buttons.nth(index).click()
+      await expect(
+        frame.locator(
+          '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
+        )
+      ).toHaveCount(1)
+      for (const file of item.locations[0].implementationPaths)
+        await expect(details).toContainText(file)
+      await expect(details).toContainText(item.failures[0])
+      await expect(details).toContainText(item.locations[0].specPath)
+      for (const ref of item.locations[0].specRefs)
+        await expect(details).toContainText(ref)
+    }
+    const machine = await (
+      await fetch(server.origin + '/api/test-results/' + fault.record.id)
+    ).json()
+    assert.deepEqual(machine, fault.record)
+    await page.screenshot({
+      path: path.join(fixture.directory, 'recipe-desktop.png'),
+      fullPage: true
+    })
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await details.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'recipe-narrow.png'),
+      fullPage: true
+    })
+    fixture.restore()
+    const recovery = await fixture.run('recipe')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    await expect(buttons).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await expect(buttons).toHaveCount(4)
+    await buttons.first().click()
+    await expect(details).toContainText(failures[0].failures[0])
+    t.diagnostic('Recipe Board evidence: ' + fixture.directory)
+  }
+)
