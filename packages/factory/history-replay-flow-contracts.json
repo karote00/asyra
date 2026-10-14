@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "manifestPath": "packages/factory/history-replay-flow-contracts.json",
+  "targetId": "history-replay",
+  "architecturePath": "tools/flow-inspector/inspectors/history-replay-flow-inspector.data.cjs",
+  "specPath": "docs/ai/framework/packages/factory.md",
+  "testFile": "packages/factory/src/__tests__/factory-journal-history.test.ts",
+  "configFile": "packages/factory/src/__tests__/history-replay.config.ts",
+  "negativeCaseIds": ["replay.ordered-action", "replay.staged-values"],
+  "externalInputs": [],
+  "flows": [
+    {
+      "id": "history-replay",
+      "title": "Replay a committed action",
+      "goal": "Preserve action order and exact staged inverse/forward values.",
+      "stepIds": ["replay-history-action"],
+      "cases": [
+        {
+          "id": "replay.ordered-action",
+          "stepId": "replay-history-action",
+          "testName": "Factory journal-backed action history records one owner batch as one Undo action and replays the whole action",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "replay.staged-values",
+          "stepId": "replay-history-action",
+          "testName": "Factory journal-backed action history replaces one staged gesture History bundle and replays only its first-before/latest-after values",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    }
+  ],
+  "defaultNegativeScenario": "replay-order",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "replay-order",
+      "title": "Incorrect inverse replay order",
+      "expectedFailedCaseIds": [
+        "replay.ordered-action",
+        "replay.staged-values"
+      ],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "const orderedEntries = direction === 'inverse' ? entries.reverse() : entries",
+        "to": "const orderedEntries = entries"
+      }
+    },
+    {
+      "id": "inverse-regression",
+      "title": "Incorrect inverse value",
+      "expectedFailedCaseIds": ["replay.staged-values"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "inversePayload.after = (payload as { before?: unknown }).before",
+        "to": "inversePayload.after = (payload as { after?: unknown }).after"
+      }
+    }
+  ]
+}

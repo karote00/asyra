@@ -254,3 +254,88 @@ test(
     assert.deepEqual(JSON.parse(output.join('')).cases, fault.record.cases)
   }
 )
+
+test(
+  'ordinary History replay faults locate registered cases while preserving unmapped failures and other targets',
+  { timeout: 120000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('history')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 14)
+    assert.equal(
+      baseline.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      2
+    )
+    fixture.mutate('app')
+    const appFault = await fixture.run('app')
+    assert.equal(appFault.result.code, 1, appFault.result.output)
+    fixture.restore()
+    for (const scenario of ['replay-order', 'inverse-regression']) {
+      fixture.mutateReplay(scenario)
+      const fault = await fixture.run('history')
+      assert.equal(fault.result.code, 1, fault.result.output)
+      const failures = fault.record.cases.filter(
+        (item) => item.status === 'failed'
+      )
+      const mapped = failures.filter((item) => item.resolution === 'mapped')
+      assert.equal(mapped.length, scenario === 'replay-order' ? 2 : 1)
+      assert.ok(failures.some((item) => item.resolution === 'unmapped'))
+      for (const item of mapped) {
+        assert.equal(item.locations[0].targetId, 'history-replay')
+        assert.equal(item.locations[0].stepId, 'replay-history-action')
+        assert.equal(item.locations[0].ownerPackage, '@asyra/factory')
+        assert.ok(
+          item.failureDetails.some(
+            (error) => error.diff && error.expected && error.actual
+          )
+        )
+      }
+      const output = []
+      assert.equal(
+        await main(['test-results', fault.record.id], {
+          repositoryRoot: fixture.repository,
+          write: (line) => output.push(line)
+        }),
+        0
+      )
+      assert.deepEqual(JSON.parse(output.join('')), fault.record)
+      fixture.restore()
+      // A filtered success retires only its exact identity, not skipped failures.
+      const partial = await fixture.run('history', [
+        '--testNamePattern=records one owner batch'
+      ])
+      assert.equal(partial.result.code, 0, partial.result.output)
+      assert.ok(
+        fixture.reader
+          .list()
+          .currentCases.some(
+            (item) =>
+              item.status === 'failed' &&
+              item.locations.some(
+                (location) => location.caseId === 'replay.staged-values'
+              )
+          )
+      )
+      const recovered = await fixture.run('history')
+      assert.equal(recovered.result.code, 0, recovered.result.output)
+      assert.equal(
+        recovered.record.source.digest,
+        baseline.record.source.digest
+      )
+      assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+      const current = fixture.reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed')
+      assert.equal(current.length, 2)
+      assert.ok(
+        current.every(
+          (item) => item.locations[0].targetId === 'history-shortcut'
+        )
+      )
+    }
+    t.diagnostic('History replay evidence: ' + fixture.directory)
+  }
+)

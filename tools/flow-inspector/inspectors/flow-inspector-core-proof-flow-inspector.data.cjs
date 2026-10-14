@@ -618,6 +618,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'packages/factory/flow-contracts.json',
+        'packages/factory/history-replay-flow-contracts.json',
         'tools/flow-inspector/control-plane/contracts.cjs',
         'tools/flow-inspector/control-plane/__tests__/contracts.test.cjs',
         'apps/asyra-design/undo-redo-flow-contracts.json'
