@@ -36,6 +36,27 @@ function localizationFixture() {
     fs.mkdirSync(path.dirname(path.join(repository, file)), { recursive: true })
     fs.copyFileSync(path.join(root, file), path.join(repository, file))
   }
+  // The proof sandbox contains executable runtime inputs; ordinary observations
+  // also fingerprint declared architecture boundaries outside that runtime.
+  for (const contract of [
+    loadContract(root),
+    loadContract(
+      root,
+      undefined,
+      'apps/asyra-design/undo-redo-flow-contracts.json'
+    )
+  ]) {
+    for (const step of contract.runtimeScope.steps) {
+      for (const boundary of step.implementationBoundary) {
+        const file = boundary.replace(/\/\*\*$/, '')
+        const destination = path.join(repository, file)
+        if (!fs.existsSync(destination)) {
+          fs.mkdirSync(path.dirname(destination), { recursive: true })
+          fs.cpSync(path.join(root, file), destination, { recursive: true })
+        }
+      }
+    }
+  }
   const appFile = 'apps/asyra-design/src/features/undo-redo/index.ts',
     factoryFile = 'packages/factory/src/value-clone.ts'
   const originals = new Map(
@@ -87,7 +108,7 @@ function localizationFixture() {
         fs.writeFileSync(path.join(repository, file), text)
       }
     },
-    async run(kind) {
+    async run(kind, args = []) {
       const tmp = path.join(directory, 'tmp')
       fs.mkdirSync(tmp, { recursive: true })
       const result = await runProcess({
@@ -107,7 +128,8 @@ function localizationFixture() {
             path.join(
               root,
               'tools/flow-inspector/control-plane/vitest-reporter.mjs'
-            )
+            ),
+          ...args
         ],
         cwd: repository,
         env: {

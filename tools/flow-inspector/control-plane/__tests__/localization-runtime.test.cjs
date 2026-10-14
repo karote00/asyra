@@ -105,3 +105,109 @@ test('in-flight mapped-source edits invalidate locations and later reporter cycl
   assert.equal(fixture.reader.get(context.id).phase, 'completed')
   assert.equal(fixture.reader.get(reporter.context.id).phase, 'running')
 })
+
+test(
+  'real filtered rerun preserves the other failed shortcut until it executes again',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.mutate('app')
+    const failed = await fixture.run('app')
+    assert.equal(failed.result.code, 1)
+    fixture.restore()
+    const filtered = await fixture.run('app', [
+      '-t',
+      'keeps the exclusive Undo'
+    ])
+    assert.equal(filtered.result.code, 0)
+    assert.deepEqual(
+      filtered.record.cases.map((item) => item.status),
+      ['passed', 'skipped']
+    )
+    const unresolved = fixture.reader
+      .list()
+      .currentCases.filter((item) => item.status === 'failed')
+    assert.equal(unresolved.length, 1)
+    assert.equal(unresolved[0].runId, failed.record.id)
+    assert.match(unresolved[0].testName, /awaits Redo/)
+    await fixture.run('app')
+    assert.equal(
+      fixture.reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed').length,
+      0
+    )
+  }
+)
+
+test(
+  'real suite hook failures retain the original error stack without inventing a node',
+  { timeout: 60000 },
+  async () => {
+    const fs = require('node:fs'),
+      path = require('node:path')
+    const fixture = localizationFixture()
+    const file = path.join(
+      fixture.repository,
+      'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+    )
+    const original = fs.readFileSync(file, 'utf8')
+    fs.writeFileSync(
+      file,
+      "import { beforeAll } from 'vitest'\nbeforeAll(() => { throw new Error('localization setup failure') })\n" +
+        original
+    )
+    const result = await fixture.run('app')
+    assert.equal(result.result.code, 1)
+    assert.ok(
+      result.record.issues.some(
+        (issue) =>
+          issue.includes('localization setup failure') &&
+          /feature\.test\.ts:\d+:\d+/.test(issue)
+      ),
+      JSON.stringify(result.record.issues)
+    )
+    assert.equal(
+      result.record.cases.filter((item) => item.status === 'failed').length,
+      0
+    )
+  }
+)
+
+test('missing mapped implementation input cannot yield a precise mapped location', () => {
+  const fs = require('node:fs'),
+    path = require('node:path')
+  const {
+    beginObservation,
+    completeObservation
+  } = require('../localization.cjs')
+  const fixture = localizationFixture()
+  fs.unlinkSync(
+    path.join(
+      fixture.repository,
+      'apps/asyra-design/src/features/undo-redo/index.ts'
+    )
+  )
+  const context = beginObservation(fixture.repository)
+  const contract = context.contracts.find(
+    (item) => item.targetId === 'history-shortcut'
+  )
+  const result = completeObservation(fixture.repository, context, {
+    success: false,
+    testResults: [
+      {
+        name: contract.testFile,
+        assertionResults: [
+          {
+            fullName: contract.cases[0].testName,
+            status: 'failed',
+            failureMessages: ['missing import']
+          }
+        ]
+      }
+    ]
+  })
+  assert.equal(result.cases[0].resolution, 'stale')
+  assert.match(result.issues.join(' '), /missing/i)
+})

@@ -46,6 +46,19 @@ export default class LocalizationReporter extends JsonReporter {
     this.errors = errors.map((error) =>
       String(error?.stack ?? error?.message ?? error)
     )
+    const retainSuiteErrors = (suite, file) => {
+      if (suite.type === 'test') return
+      for (const error of suite.result?.errors ?? [])
+        this.errors.push(
+          file.filepath +
+            ': ' +
+            suite.name +
+            '\n' +
+            String(error?.stack ?? error?.message ?? error)
+        )
+      for (const child of suite.tasks ?? []) retainSuiteErrors(child, file)
+    }
+    for (const file of files) retainSuiteErrors(file, file)
     await super.onFinished(files, errors, coverage)
   }
 

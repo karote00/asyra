@@ -1,4 +1,4 @@
-/* global window, document, fetch, AbortController, MutationObserver, CustomEvent, TextEncoder */
+/* global window, document, fetch, AbortController, MutationObserver, CustomEvent, TextEncoder, URLSearchParams */
 ;(() => {
   window.addEventListener(
     'load',
@@ -52,7 +52,9 @@
         busy = false,
         disposed = false,
         chosen = null,
-        hashHandled = false,
+        linkHandled = false,
+        selectionDirty = true,
+        renderRevision = 0,
         displayedCases = []
       const records = new Map()
       const get = async (url) => {
@@ -162,12 +164,33 @@
           details.append(evidence)
           locate(item)
         } catch (error) {
-          if (!disposed) notice.textContent = error.message
+          if (!disposed && chosen === item.id)
+            notice.textContent = error.message
         }
       }
       const render = async () => {
-        const selected = selection ? await recordFor(selection) : null
-        if (disposed || (selection && selected?.id !== selection)) return
+        const revision = ++renderRevision
+        const requestedSelection = selection
+        let selected
+        try {
+          selected = requestedSelection
+            ? await recordFor(requestedSelection)
+            : null
+        } catch (error) {
+          if (
+            disposed ||
+            revision !== renderRevision ||
+            requestedSelection !== selection
+          )
+            return false
+          throw error
+        }
+        if (
+          disposed ||
+          revision !== renderRevision ||
+          requestedSelection !== selection
+        )
+          return false
         const cases = selected?.cases ?? state.currentCases
         displayedCases = cases
         if (chosen && !cases.some((item) => item.id === chosen)) {
@@ -214,13 +237,15 @@
           if (route) {
             const link = node('a', 'Open ' + other.title)
             link.href =
-              route.url + '#observation=' + encodeURIComponent(item.id)
+              route.url + '?observation=' + encodeURIComponent(item.id)
             link.target = '_top'
             row.append(link)
           }
           list.append(row)
         }
         highlight()
+        selectionDirty = false
+        return true
       }
       const refresh = async () => {
         if (busy || disposed) return
@@ -231,7 +256,6 @@
           const nextSignature = JSON.stringify(next)
           if (nextSignature !== signature) {
             state = next
-            signature = nextSignature
             history.replaceChildren(
               node('option', 'Latest observed result per test')
             )
@@ -250,17 +274,28 @@
               history.append(option)
             }
             history.value = selection
-            await render()
           }
-          const hash = window.parent.location.hash
-          if (!hashHandled && hash.startsWith('#observation=')) {
-            hashHandled = true
-            const id = decodeURIComponent(hash.slice('#observation='.length))
+          if (nextSignature !== signature || selectionDirty) {
+            if (await render()) signature = nextSignature
+          }
+          const id = new URLSearchParams(window.parent.location.search).get(
+            'observation'
+          )
+          if (!linkHandled && id) {
             const record = await recordFor(id.split(':')[0])
             const item = record.cases.find((item) => item.id === id)
-            if (item) await show(item)
+            if (item && !linkHandled && !disposed) {
+              selection = record.id
+              history.value = selection
+              selectionDirty = true
+              if (await render()) {
+                linkHandled = true
+                await show(item)
+              }
+            }
           }
         } catch (error) {
+          selectionDirty = true
           if (!disposed) notice.textContent = error.message
         } finally {
           busy = false
@@ -270,6 +305,8 @@
         'change',
         () => {
           selection = history.value
+          linkHandled = true
+          selectionDirty = true
           chosen = null
           details.replaceChildren()
           render().catch((error) => {

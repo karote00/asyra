@@ -2231,7 +2231,9 @@ Every received failure is retained, including unmapped cases and suite/runner
 errors. The localization owner resolves a unique file/name/project match to the
 admitted case, flow, architecture step, failure owner, spec and implementation
 boundary. Optional exact case implementation locations must lie in that boundary.
-Unavailable precision remains explicit. Missing, ambiguous or changed mappings
+Missing declared source inputs make localization unavailable, not a precise
+reference to a nonexistent implementation. Suite setup and hook errors retain
+the original runner stack alongside the JSON report. Unavailable precision remains explicit. Missing, ambiguous or changed mappings
 produce unresolved records. Failure text is original runner evidence, not an
 inferred root cause. Multiple cases at one node remain separate.
 
@@ -2243,6 +2245,10 @@ reuse admitted records until their files change; they do not rehash working-tree
 sources or re-localize cases on polling. Currentness refers to the latest observed
 run for an exact test scope, not continuously current source. Historic results
 remain accessible, and one scope's pass cannot clear another scope's failure.
+Skipped, pending, todo and unknown observations cannot retire an executed failure;
+a partially executed ambiguous identity group keeps its prior failures until
+complete execution resolves the group. Equal start timestamps retain concurrent
+results instead of choosing authority by random run-id ordering.
 
 The existing Board receives the same completed locations. One selection focuses
 the matching existing architecture card and displays the test identity, mapped
@@ -2250,6 +2256,13 @@ owner, exact implementation location when declared, boundary, contract reference
 original reason and rerun command. It never infers mappings or overrides proof
 badges. Unmapped and execution failures remain visible without a guessed card.
 Static viewers remain independent; commands displayed as text do not execute.
+Cross-target links carry the observation selector in a query parameter that the
+existing path router preserves. The service admits exactly one valid run-id/case
+selector only for a registered target-page GET; other query parameters, API
+queries and mutation queries remain rejected. A historical link selects its
+retained run scope.
+Delayed responses cannot overwrite a newer selection, and transient read errors
+remain retryable without requiring a new test execution.
 
 Formal acceptance includes real unchanged App/Factory assertions before a source
 fault, after the fault and after restoration; duplicate names/projects, multiple

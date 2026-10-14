@@ -171,3 +171,84 @@ test('malformed retained cases are reported and never projected onto the Board',
   assert.equal(results.currentCases.length, 0)
   assert.match(results.issues.join(' '), /Invalid observation/)
 })
+
+test('skipped pending and unknown observations cannot retire an executed failure', () => {
+  for (const status of ['skipped', 'pending', 'todo', 'unknown']) {
+    const dir = fs.mkdtempSync(
+      path.join(root, 'tmp/flow-inspector/not-executed-')
+    )
+    const first = context()
+    first.startedAt = '2026-10-14T00:00:00.000Z'
+    const failed = localizeReport(root, first, report([failure()]))
+    saveObservation(dir, failed)
+    const next = context()
+    next.startedAt = '2026-10-14T00:00:01.000Z'
+    const skipped = localizeReport(
+      root,
+      next,
+      report([{ ...failure(), status, failureMessages: [] }])
+    )
+    saveObservation(dir, skipped)
+    const reader = createObservationReader(dir)
+    assert.equal(reader.list().currentCases[0].status, 'failed', status)
+    assert.equal(reader.get(skipped.id).cases[0].status, status)
+  }
+})
+
+test('a partially executed ambiguous group cannot clear its previous failures', () => {
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/partial-identity-')
+  )
+  const first = context()
+  first.startedAt = '2026-10-14T00:00:00.000Z'
+  saveObservation(
+    dir,
+    localizeReport(root, first, report([failure(), failure()]))
+  )
+  const next = context()
+  next.startedAt = '2026-10-14T00:00:01.000Z'
+  saveObservation(
+    dir,
+    localizeReport(
+      root,
+      next,
+      report([
+        { ...failure(), status: 'passed', failureMessages: [] },
+        { ...failure(), status: 'skipped', failureMessages: [] }
+      ])
+    )
+  )
+  assert.equal(
+    createObservationReader(dir)
+      .list()
+      .currentCases.filter((item) => item.status === 'failed').length,
+    2
+  )
+})
+
+test('simultaneous runs do not use random UUID ordering to hide a failure', () => {
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/concurrent-observations-')
+  )
+  const first = context()
+  first.id = '10000000-0000-4000-8000-000000000000'
+  first.startedAt = '2026-10-14T00:00:00.000Z'
+  const second = context()
+  second.id = '20000000-0000-4000-8000-000000000000'
+  second.startedAt = first.startedAt
+  saveObservation(dir, localizeReport(root, first, report([failure()])))
+  saveObservation(
+    dir,
+    localizeReport(
+      root,
+      second,
+      report([{ ...failure(), status: 'passed', failureMessages: [] }])
+    )
+  )
+  assert.equal(
+    createObservationReader(dir)
+      .list()
+      .currentCases.filter((item) => item.status === 'failed').length,
+    1
+  )
+})

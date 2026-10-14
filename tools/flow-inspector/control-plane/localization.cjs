@@ -22,10 +22,8 @@ function sourceFingerprint(root, contracts) {
   const inputs = new Set(['package.json', 'yarn.lock'])
   const add = (input) => {
     const file = safePath(root, input)
-    if (!fs.existsSync(file)) {
-      inputs.add(input)
-      return
-    }
+    if (!fs.existsSync(file))
+      throw new Error('Missing mapped observation input: ' + input)
     if (fs.lstatSync(file).isSymbolicLink())
       throw new Error('Symlinked observation input: ' + input)
     if (fs.statSync(file).isDirectory()) {
@@ -359,6 +357,9 @@ function createObservationReader(directory, options = {}) {
             a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id)
         )
       const current = new Map()
+      const startedAt = new Map(
+        records.map((record) => [record.id, record.startedAt])
+      )
       for (const record of records) {
         const perRun = new Map()
         for (const item of record.cases) {
@@ -366,7 +367,25 @@ function createObservationReader(directory, options = {}) {
           if (!perRun.has(key)) perRun.set(key, [])
           perRun.get(key).push(item)
         }
-        for (const [key, items] of perRun) current.set(key, items)
+        for (const [key, items] of perRun) {
+          const previous = current.get(key)
+          if (
+            previous?.some(
+              (item) => startedAt.get(item.runId) === record.startedAt
+            )
+          ) {
+            current.set(key, [...previous, ...items])
+            continue
+          }
+          const incomplete = items.some(
+            (item) => !['passed', 'failed'].includes(item.status)
+          )
+          // A filtered invocation supplies skipped siblings, not recovery evidence.
+          // An ambiguous group must settle completely before retiring its failures.
+          if (incomplete && previous?.some((item) => item.status === 'failed'))
+            continue
+          current.set(key, items)
+        }
       }
       return structuredClone({
         runs: records

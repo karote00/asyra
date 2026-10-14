@@ -173,7 +173,17 @@ async function startServer(
           route.pathname === targetPath &&
           [...route.searchParams.keys()].length === 1 &&
           Boolean(route.searchParams.get('inspector'))
-        if (route.search && !targetQuery)
+        const observationSelector = route.searchParams
+          .get('observation')
+          ?.match(/^([a-f0-9-]{36}):(0|[1-9][0-9]{0,8})$/)
+        const observationQuery =
+          request.method === 'GET' &&
+          /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(route.pathname) &&
+          assets.get(route.pathname) === workspaceAsset &&
+          [...route.searchParams.keys()].length === 1 &&
+          observationSelector &&
+          validId(observationSelector[1])
+        if (route.search && !targetQuery && !observationQuery)
           throw new ActionError(400, 'Query parameters are unsupported')
         if (request.method === 'GET') {
           if (

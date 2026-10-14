@@ -693,5 +693,34 @@ test('ordinary test observations are readable without becoming accepted proof ev
     listing.currentCases[0].locations[0].stepId,
     contract.cases[0].stepId
   )
+  const selector = encodeURIComponent(record.cases[0].id)
+  assert.equal(
+    (
+      await fetch(
+        server.origin + '/transaction-atomicity?observation=' + selector
+      )
+    ).status,
+    200
+  )
+  for (const route of [
+    '/api/state?observation=' + selector,
+    '/transaction-atomicity?observation=invalid',
+    '/transaction-atomicity?observation=' + selector + '&extra=1',
+    '/transaction-atomicity?observation=' +
+      selector +
+      '&observation=' +
+      selector,
+    '/unknown-page?observation=' + selector
+  ])
+    assert.equal((await fetch(server.origin + route)).status, 400, route)
+  assert.equal(
+    (
+      await fetch(
+        server.origin + '/transaction-atomicity?observation=' + selector,
+        { method: 'POST' }
+      )
+    ).status,
+    400
+  )
   assert.equal(server.service.state().runs.length, 0)
 })

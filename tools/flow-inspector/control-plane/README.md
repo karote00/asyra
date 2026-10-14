@@ -99,9 +99,12 @@ Open `/history-shortcut` or `/transaction-atomicity` on the local Board. The
 unmapped failures. Selecting a mapped failure focuses its declared owner card
 and shows the original assertion, implementation boundary, source identity and
 original invocation. Cross-target links open the appropriate existing canvas.
-The history selector also exposes setup errors and full reports without cases.
+The history selector also exposes setup errors with original stacks and full
+reports without cases. Historical cross-target links select the retained run.
 After a rerun, **Latest observed result per test** updates only the tests actually
-observed; previous failure records remain selectable. It does not mean the
+executed; skipped siblings from a filtered rerun cannot clear their prior
+failures. Equal-start concurrent results remain visible. Previous failure records
+remain selectable. It does not mean the
 working tree is continuously verified. Old architecture versions never color
 new canvas nodes.
 

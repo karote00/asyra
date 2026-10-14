@@ -85,6 +85,40 @@ Playwright result producer or general CI import is part of this milestone. Futur
 work should expand mappings and result producers only after the localized path
 proves useful for real failures; those remain separate bounded increments.
 
+## PR 322 review iteration
+
+The review baseline is `c2f50f75c`. Discovery is restricted to this PR, its
+direct consumers, ordinary result identity/history, UI lifecycle, source/error
+retention and the existing CI gates. The original Board CI failed because its
+Linux Chrome socket path exceeded the platform limit.
+
+Cross-target review replaced the earlier client-only repair approach: the static
+workspace canonicalizes hashes, and the HTTP service rejects arbitrary query
+parameters. `serve-proof-actions` must admit exactly one valid observation query
+on a registered target page for GET requests. Its server and server contract tests
+own that admission; unrelated queries, API routes and mutations remain rejected.
+`render-proof-board` then consumes the retained selector, selects historical scope,
+rejects stale asynchronous responses and retries transient reads. Its existing
+browser test must follow the actual rendered cross-target link, not a constructed
+URL that bypasses either owner. This is a bounded repair of the original failure
+navigation contract, not a new routing system or static-workspace execution path.
+
+The revised sequence is service query admission (positive and negative HTTP
+cases), then actual cross-target browser navigation/retry and the full Board
+suite. Core observation repairs retain filtered failures, simultaneous outcomes,
+missing-source unavailability and original hook stacks, with permanent failing
+regressions and real Vitest execution. Final gates are the existing control-plane
+group, Board group, package contracts, generated catalog, lint, formatting, naming,
+typecheck and build. No new dependencies, command actions or unrelated repairs.
+
+Review corrections passed the full control-plane group (493 passed, two platform
+skips), the complete Board group (16 passed, two retained-live-evidence skips),
+and package, naming/placement/scope, lint, formatting, typecheck and build gates.
+The original three-flow/five-negative/nine-obligation proof and candidate proof
+also passed. New HTTP cases preserve query rejection outside the exact read-only
+selector. Remote Linux validation is checked separately after the review update
+is pushed; local success does not replace that result.
+
 ## Planning baseline and original gaps
 
 Read-only inventory baseline: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6`.
