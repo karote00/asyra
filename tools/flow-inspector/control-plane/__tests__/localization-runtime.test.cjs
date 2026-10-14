@@ -628,3 +628,102 @@ test(
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
 )
+
+test(
+  'ordinary Pixi failures remain distinct from adapter failures on the same Inspector through partial recovery',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('pixi')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 27)
+    assert.deepEqual(baseline.record.issues, [])
+    assert.ok(
+      baseline.record.cases.every((item) => item.resolution === 'mapped')
+    )
+    fixture.mutatePixi()
+    const fault = await fixture.run('pixi')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failed = fault.record.cases.filter((item) => item.status === 'failed')
+    assert.equal(failed.length, 1)
+    const location = failed[0].locations[0]
+    assert.equal(location.stepId, 'execute-render-engine')
+    assert.equal(location.targetId, 'render-engine-boundary')
+    assert.equal(location.caseId, 'navigation.camera')
+    assert.equal(
+      location.specPath,
+      'docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
+    )
+    assert.deepEqual(location.implementationPaths, [
+      'packages/render-engine-pixi/src/pixi-render-engine.ts'
+    ])
+    assert.ok(
+      failed[0].failureDetails.some((error) => error.message && error.stack)
+    )
+    fixture.mutateViewport()
+    const adapter = await fixture.run('viewport')
+    assert.equal(adapter.result.code, 1, adapter.result.output)
+    const currentFailures = () =>
+      fixture.reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed')
+    assert.deepEqual(
+      currentFailures()
+        .map((item) => item.locations[0].stepId)
+        .sort(),
+      ['execute-render-engine', 'orchestrate-render-adapter']
+    )
+    assert.equal(new Set(currentFailures().map((item) => item.file)).size, 2)
+    fixture.restorePixi()
+    const partial = await fixture.run('pixi')
+    assert.equal(partial.result.code, 0, partial.result.output)
+    assert.deepEqual(
+      currentFailures().map((item) => item.locations[0].stepId),
+      ['orchestrate-render-adapter']
+    )
+    const output = []
+    assert.equal(
+      await main(['test-results', fault.record.id], {
+        repositoryRoot: fixture.repository,
+        write: (line) => output.push(line)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(output.join('')), fault.record)
+    fixture.restore()
+    const recovery = await fixture.run('viewport')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+    assert.equal(currentFailures().length, 0)
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+    assert.deepEqual(fixture.reader.get(adapter.record.id), adapter.record)
+    t.diagnostic('Pixi evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'Pixi uses the captured public engine source and retains load errors without guessed nodes',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.failViewportSourceEntry()
+    const fault = await fixture.run('pixi')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.match(
+      fault.record.issues.join(' '),
+      /Captured render engine entry failed/
+    )
+    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
+    fixture.restore()
+    const recovery = await fixture.run('pixi')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(
+      recovery.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      27
+    )
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+  }
+)

@@ -2276,6 +2276,17 @@ nodes. Recovery preserves historical evidence, and source-load errors do not
 invent a node. These cases use injected in-memory host adapters, not live models,
 actual disk durability or complete host security integration.
 
+The 27 existing Pixi engine adapter cases are a default observation source through
+`packages/render-engine-pixi/navigation-flow-contracts.json`. Their declared
+investigation entry is `pixi-render-engine.ts` at `execute-render-engine`, with
+sections from the same authoritative Render-Engine Boundary specification. The
+source-only config resolves the public engine and testing entries, uses one worker
+and rejects undeclared workspace imports. The tests mock Pixi; they do not prove
+GPU pixels or complete rendering behavior. Transform-group faults locate the
+engine independently of Render adapter faults on the same Inspector. Exact test
+identities keep their overlapping flow/case labels distinct, and rerunning one
+source cannot clear the other's unrun failure. Load errors stay execution evidence.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and

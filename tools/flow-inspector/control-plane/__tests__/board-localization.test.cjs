@@ -585,3 +585,91 @@ test(
     t.diagnostic('Recipe Board evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'Pixi and adapter failures select distinct owners on the shared Board and recover only their rerun scope',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.mutatePixi()
+    fixture.mutateViewport()
+    const engine = await fixture.run('pixi')
+    const adapter = await fixture.run('viewport')
+    for (const fault of [engine, adapter])
+      assert.equal(fault.result.code, 1, fault.result.output)
+    await page.goto(server.origin + '/render-engine-boundary')
+    const frame = page.frameLocator('iframe')
+    const buttons = frame.locator('#test-result-failures button')
+    const details = frame.locator('#test-result-detail')
+    await expect(buttons).toHaveCount(2)
+    await expect(frame.locator('.observation-failed')).toHaveCount(2)
+    for (const fault of [engine, adapter]) {
+      const failed = fault.record.cases.filter(
+        (item) => item.status === 'failed'
+      )
+      assert.equal(failed.length, 1)
+      const item = failed[0]
+      await buttons.filter({ hasText: item.testName }).click()
+      await expect(
+        frame.locator(
+          '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
+        )
+      ).toHaveCount(1)
+      for (const file of item.locations[0].implementationPaths)
+        await expect(details).toContainText(file)
+      await expect(details).toContainText(item.locations[0].specPath)
+      for (const ref of item.locations[0].specRefs)
+        await expect(details).toContainText(ref)
+      await expect(details).toContainText(item.failures[0])
+      const machine = await (
+        await fetch(server.origin + '/api/test-results/' + fault.record.id)
+      ).json()
+      assert.deepEqual(machine, fault.record)
+    }
+    await buttons
+      .filter({
+        hasText: engine.record.cases.find((item) => item.status === 'failed')
+          .testName
+      })
+      .click()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'pixi-desktop.png'),
+      fullPage: true
+    })
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await details.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'pixi-narrow.png'),
+      fullPage: true
+    })
+    fixture.restorePixi()
+    const partial = await fixture.run('pixi')
+    assert.equal(partial.result.code, 0, partial.result.output)
+    await expect(buttons).toHaveCount(1)
+    await expect(
+      frame.locator('[data-step-id="execute-render-engine"].observation-failed')
+    ).toHaveCount(0)
+    await expect(
+      frame.locator(
+        '[data-step-id="orchestrate-render-adapter"].observation-failed'
+      )
+    ).toHaveCount(1)
+    fixture.restore()
+    const recovery = await fixture.run('viewport')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    await expect(buttons).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(engine.record.id)
+    await expect(buttons).toHaveCount(1)
+    await buttons.first().click()
+    await expect(
+      frame.locator('[data-step-id="execute-render-engine"].is-selected')
+    ).toHaveCount(1)
+    await expect(details).toContainText(
+      engine.record.cases.find((item) => item.status === 'failed').failures[0]
+    )
+    t.diagnostic('Pixi Board evidence: ' + fixture.directory)
+  }
+)

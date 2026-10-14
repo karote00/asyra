@@ -382,6 +382,88 @@ owner boundaries, authoritative spec sections and direct consumers, with no
 remaining actionable in-scope issue. This completes only this selected slice;
 remote CI and user review remain separate from local validation.
 
+## Selected Pixi engine coverage - 2026-10-15
+
+Activated after PR #326 merged at `1407655dc`, under the Bounded Result-Source
+Slice. Select the 27 existing cases in `packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts`
+and its existing navigation manifest. Preserve original assertions, identities,
+routes and the transform-group negative. These mocked Pixi adapter tests establish
+command/resource/lifecycle behavior, not actual GPU output or complete rendering.
+
+Readiness review: map all cases to the existing `execute-render-engine` owner on
+`render-engine-boundary`; pair its section references with the architecture's
+completed Render-Engine Boundary specification. Exact implementation locations
+begin at `pixi-render-engine.ts` inside that owner's declared source boundary.
+The ordinary config must resolve the public render-engine and testing entries to
+source, reject undeclared workspace imports and run with one worker. Existing
+source capture owns dependency admission; do not create another capture registry.
+
+The complete flow reuses unchanged Vitest outcomes, admitted case ownership,
+retained original evidence and existing CLI/API/Board projections. The selected
+manifest shares target, flow and camera case labels with the Render adapter
+manifest, but exact test-file/name/project identities must keep them distinct.
+Prove both failures together, then rerun only Pixi: its recovery must not clear
+the unrun Render failure. Historical runs remain readable. Source-load failure
+must retain execution evidence without inventing a product node.
+
+Execution cards under CORE_PROOF.md and the existing core proof Inspector:
+
+1. `admit-proof-contract` / Admission consumes the selected product manifest,
+   architecture and existing cases. Add only the selected Pixi manifest/config
+   to its boundary. Permanent admission tests first expose the wrong specification
+   reference, missing exact paths and proof-only startup. Align the current
+   specification, add precise paths and public source aliases. Preserve admission
+   conditions, all handoffs and runtime authority. Inputs may not be inferred;
+   missing or conflicting contracts stop execution. No runtime or assertion edits.
+2. `localize-test-results` / Ordinary Test Failure Localization consumes admitted
+   contracts and original reports. Add the selected manifest to existing defaults;
+   extend the existing runtime fixture and tests for single-engine failure,
+   simultaneous adapter/engine failures, partial recovery, retained CLI history
+   and source-load errors. Existing unknown, stale, duplicate and incomplete
+   semantics remain unchanged. No inferred diagnosis, dispatch or acceptance.
+3. `render-proof-board` / Board consumes the same service-owned records on the
+   existing target. Its permanent browser test selects both failed owners, checks
+   paths/spec/original errors and API equality, then proves partial recovery and
+   historical selection on desktop and narrow layouts. No new controls, mapping
+   authority or UI-owned verdicts. Regenerate the catalog for the admission boundary.
+
+For each card the failure owner is that same core step; existing contributors,
+conditions and bypasses apply. Reread its full Inspector contract before advancing.
+Allowed mutation scope: selected manifest/config, core admission boundary, default
+registration, existing admission/localization fixture/runtime/Board tests,
+generated catalog, localization docs, Changeset and this plan. Review methods are
+bounded source/contract comparison, current diff/direct-consumer inspection and
+formal positive/negative/recovery gates. No other producer, product runtime,
+GPU behavior, scheduling, command buttons or comments are included. Stop for a
+required out-of-scope runtime correction or unresolved owner contract.
+
+Required gates: focused admission/localization/runtime tests, full control-plane
+and Board suites, original core proof/candidate, selected Pixi proof, package
+checks, typecheck, scoped lint/format, naming, scope/test-placement, deterministic
+generation, App/tool build and exact-head Changeset check. This slice closes only
+its selected test coverage, not the supporting plan.
+
+Completed validation: existing captured baseline/negative/recovery proof passed
+before implementation. Test-first regressions reproduced the wrong specification,
+proof-only startup and absent ordinary mapping. All 27 unchanged cases now map to
+the declared engine entry. Independent engine failure, shared-Inspector dual
+failure, partial recovery, source-load errors and retained CLI/API/Board history
+pass. Original runtime, assertions, handoffs, case identities, workspace authority
+and negative scenario remain unchanged.
+
+Focused admission/localization/runtime tests: 68 passed. Full control-plane:
+515 passed, two environment-conditional skips (unconfigured installed app-server
+probe and the inapplicable unsupported-containment branch). Full Board: 23 passed,
+two retained-live-evidence skips. Desktop/narrow screenshots were inspected.
+Package checks passed (12 React, 100 contracts), along with 68 scope/placement
+checks, 15 naming tests, scoped ESLint/authored formatting, typecheck, deterministic
+catalog generation and the final 21-task App/tool build. Core proof/candidate
+passed (three flows, five negatives, nine obligations); selected Pixi proof passed
+(one flow, one negative, 27 obligations). The documented ordinary invocation
+retained 27 mapped passes with no issues. Final bounded review found no remaining
+actionable issue. This closes only this selected slice; remote CI and user review
+remain separate from local validation.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

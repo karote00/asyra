@@ -617,3 +617,66 @@ test('Reusable composition source config runs all unchanged cases without proof 
   assert.equal(report.numPassedTests, 4)
   assert.equal(report.numFailedTests, 0)
 })
+
+test('Pixi engine admission retains 27 exact responsibility locations', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'packages/render-engine-pixi/navigation-flow-contracts.json'
+  )
+  assert.equal(
+    contract.specPath,
+    contract.architectureDefinition.authority.specPath
+  )
+  const headings = fs
+    .readFileSync(path.join(root, contract.specPath), 'utf8')
+    .split('\n')
+    .filter((line) => /^#{1,6} /.test(line))
+    .map(
+      (line) => '#' + line.replace(/^#+ /, '').toLowerCase().replace(/ /g, '-')
+    )
+  const step = contract.architectureDefinition.steps.find(
+    (item) => item.id === 'execute-render-engine'
+  )
+  for (const reference of step.specRefs)
+    assert.ok(headings.includes(reference), reference)
+  assert.equal(contract.cases.length, 27)
+  for (const item of contract.cases) {
+    assert.equal(item.stepId, 'execute-render-engine')
+    assert.ok(
+      item.implementationPaths?.includes(
+        'packages/render-engine-pixi/src/pixi-render-engine.ts'
+      ),
+      item.id
+    )
+    for (const file of item.implementationPaths)
+      assert.ok(fs.statSync(path.join(root, file)).isFile())
+  }
+})
+
+test('Pixi engine source config runs all unchanged cases without proof environment', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const temporary = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/pixi-config-')
+  )
+  const env = { ...process.env, TMPDIR: temporary }
+  delete env.FLOW_PROOF_SOURCE
+  delete env.FLOW_PROOF_SCENARIO
+  const result = require('node:child_process').spawnSync(
+    process.execPath,
+    [
+      require.resolve('vitest/vitest.mjs'),
+      'run',
+      '--config',
+      'packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts',
+      '--reporter=json'
+    ],
+    { cwd: root, env, encoding: 'utf8', timeout: 30000 }
+  )
+  assert.equal(result.status, 0, result.stdout + result.stderr)
+  const report = JSON.parse(result.stdout)
+  assert.equal(report.numPassedTests, 27)
+  assert.equal(report.numFailedTests, 0)
+})

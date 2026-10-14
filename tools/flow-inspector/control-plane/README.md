@@ -100,6 +100,9 @@ node node_modules/vitest/vitest.mjs run --config packages/render/src/__tests__/n
 # Existing reusable-tool composition assertions (four responsibility nodes).
 node node_modules/vitest/vitest.mjs run --config packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
+# Existing Pixi engine adapter assertions (27 cases; mocked Pixi, no GPU proof).
+node node_modules/vitest/vitest.mjs run --config packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
 # Human and agent clients read the same retained context; no proof lock is needed.
 node tools/flow-inspector/control-plane/cli.cjs test-results
 node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
@@ -151,6 +154,17 @@ faults exercise the four original assertions; combined faults retain all four
 nodes. Recovery preserves historical evidence, and source-load errors do not
 invent a node. These cases use injected in-memory host adapters, not live models,
 actual disk durability or complete host security integration.
+
+The 27 existing Pixi engine adapter cases are a default observation source through
+`packages/render-engine-pixi/navigation-flow-contracts.json`. Their declared
+investigation entry is `pixi-render-engine.ts` at `execute-render-engine`, with
+sections from the same authoritative Render-Engine Boundary specification. The
+source-only config resolves the public engine and testing entries, uses one worker
+and rejects undeclared workspace imports. The tests mock Pixi; they do not prove
+GPU pixels or complete rendering behavior. Transform-group faults locate the
+engine independently of Render adapter faults on the same Inspector. Exact test
+identities keep their overlapping flow/case labels distinct, and rerunning one
+source cannot clear the other's unrun failure. Load errors stay execution evidence.
 
 Other tests remain explicitly unmapped. Exact implementation
 paths are provided where declared; otherwise the responsible step boundary is
