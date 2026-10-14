@@ -227,3 +227,99 @@ test(
     await expect(frame.locator('#test-result-failures button')).toHaveCount(0)
   }
 )
+
+test(
+  'structured assertion evidence stays distinct and inert in the Board',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.addAssertionFailures()
+    const fault = await fixture.run('app')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const machine = await (
+      await fetch(server.origin + '/api/test-results/' + fault.record.id)
+    ).json()
+    const failures = machine.cases.filter((item) => item.status === 'failed')
+    assert.equal(failures.length, 2)
+    await page.goto(server.origin + '/history-shortcut')
+    const frame = page.frameLocator('iframe')
+    const buttons = frame.locator('#test-result-failures button')
+    await expect(buttons).toHaveCount(2)
+    for (const [index, item] of failures.entries()) {
+      await buttons.nth(index).click()
+      const errors = frame.locator('#test-result-detail .test-result-assertion')
+      await expect(errors).toHaveCount(4)
+      for (const [errorIndex, error] of item.failureDetails.entries()) {
+        for (const key of ['message', 'stack', 'expected', 'actual', 'diff']) {
+          if (!Object.hasOwn(error, key) || key === 'diff') continue
+          // Compare textContent exactly; assertion whitespace is evidence.
+          assert.equal(
+            await errors
+              .nth(errorIndex)
+              .locator('[data-failure-field="' + key + '"]')
+              .textContent(),
+            error[key]
+          )
+        }
+      }
+      const renderedDiff = await errors
+        .first()
+        .locator('[data-failure-field="diff"]')
+        .textContent()
+      assert.equal(renderedDiff.includes('\u001b'), false)
+      assert.ok(renderedDiff.includes('-   ' + [9999, 8888][index]))
+      assert.ok(renderedDiff.includes('+   57'))
+      await expect(errors.first()).toContainText(String([9999, 8888][index]))
+      await expect(errors.nth(3)).toContainText('Actual - empty string')
+      await expect(errors.locator('img')).toHaveCount(0)
+    }
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await frame
+      .locator('.test-result-assertion [data-failure-field="diff"]')
+      .first()
+      .scrollIntoViewIfNeeded()
+    await expect(frame.locator('.test-result-assertion').first()).toBeVisible()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'assertion-details-narrow.png'),
+      fullPage: true
+    })
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await buttons.first().click()
+    await expect(frame.locator('.test-result-assertion').first()).toContainText(
+      '9999'
+    )
+    t.diagnostic('Structured evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'suite assertion differences remain run evidence without a product-node diagnosis',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.addHookAssertionFailure()
+    const fault = await fixture.run('app')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.equal(fault.record.executionFailureDetails.length, 1)
+    await page.goto(server.origin + '/history-shortcut')
+    const frame = page.frameLocator('iframe')
+    const execution = frame.locator('#test-result-execution-details')
+    await expect(execution).toContainText(fault.record.id)
+    await expect(
+      execution.locator('[data-failure-field="expected"]')
+    ).toContainText('9999')
+    assert.equal(
+      await execution.locator('[data-failure-field="actual"]').textContent(),
+      fault.record.executionFailureDetails[0].actual
+    )
+    await expect(frame.locator('#test-result-failures button')).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await expect(
+      execution.locator('[data-failure-field="diff"]')
+    ).toContainText('9999')
+  }
+)

@@ -7,6 +7,29 @@ const { loadContract } = require('./contracts.cjs')
 const { safePath } = require('./snapshot.cjs')
 const { writeAtomic, validId } = require('./store.cjs')
 const digest = (value) => createHash('sha256').update(value).digest('hex')
+const FAILURE_DETAIL_FIELDS = [
+  'name',
+  'message',
+  'stack',
+  'expected',
+  'actual',
+  'diff'
+]
+const validFailureDetails = (value, execution = false) =>
+  Array.isArray(value) &&
+  value.every(
+    (detail) =>
+      detail &&
+      typeof detail === 'object' &&
+      !Array.isArray(detail) &&
+      Object.entries(detail).every(
+        ([key, text]) =>
+          (FAILURE_DETAIL_FIELDS.includes(key) ||
+            (execution &&
+              ['file', 'projectName', 'suiteName'].includes(key))) &&
+          typeof text === 'string'
+      )
+  )
 const DEFAULT_MANIFESTS = [
   'packages/factory/flow-contracts.json',
   'apps/asyra-design/undo-redo-flow-contracts.json'
@@ -101,6 +124,12 @@ function localizeReport(root, context, report, options = {}) {
   const issues = [...context.issues, ...(options.errors ?? []).map(String)]
   if (!report || !Array.isArray(report.testResults))
     issues.push('Missing or malformed test report')
+  const executionFailureDetails = options.executionFailureDetails
+  if (
+    executionFailureDetails !== undefined &&
+    !validFailureDetails(executionFailureDetails, true)
+  )
+    issues.push('Malformed execution failure details')
   const observations = []
   const suites = Array.isArray(report?.testResults) ? report.testResults : []
   for (const [index, suite] of suites.entries()) {
@@ -114,7 +143,10 @@ function localizeReport(root, context, report, options = {}) {
     }
     if (suite.message) issues.push(suite.name + ': ' + suite.message)
     const projectName = options.projects?.[index] ?? ''
-    for (const assertion of suite.assertionResults) {
+    for (const [
+      assertionIndex,
+      assertion
+    ] of suite.assertionResults.entries()) {
       if (!assertion || typeof assertion.fullName !== 'string') {
         issues.push('Malformed test observation')
         continue
@@ -128,7 +160,13 @@ function localizeReport(root, context, report, options = {}) {
       ].includes(assertion.status)
         ? assertion.status
         : 'unknown'
+      const failureDetails = options.failureDetails?.[index]?.[assertionIndex]
+      if (failureDetails !== undefined && !validFailureDetails(failureDetails))
+        issues.push('Malformed assertion details: ' + assertion.fullName)
       observations.push({
+        ...(validFailureDetails(failureDetails)
+          ? { failureDetails: structuredClone(failureDetails) }
+          : {}),
         file: relative(root, suite.name),
         projectName,
         testName: assertion.fullName,
@@ -213,6 +251,9 @@ function localizeReport(root, context, report, options = {}) {
     authority: 'observation-only',
     phase: 'completed',
     finishedAt: new Date().toISOString(),
+    ...(validFailureDetails(executionFailureDetails, true)
+      ? { executionFailureDetails: structuredClone(executionFailureDetails) }
+      : {}),
     issues,
     cases,
     report
@@ -260,6 +301,8 @@ function validCase(item, runId) {
     ) &&
     ['mapped', 'unmapped', 'ambiguous', 'stale'].includes(item.resolution) &&
     strings(item.failures) &&
+    (!Object.hasOwn(item, 'failureDetails') ||
+      validFailureDetails(item.failureDetails)) &&
     Array.isArray(item.locations) &&
     (item.resolution === 'mapped'
       ? item.locations.length === 1
@@ -316,6 +359,8 @@ function createObservationReader(directory, options = {}) {
           !['running', 'completed'].includes(record.phase) ||
           !Array.isArray(record.cases) ||
           !strings(record.issues) ||
+          (Object.hasOwn(record, 'executionFailureDetails') &&
+            !validFailureDetails(record.executionFailureDetails, true)) ||
           !record.cases.every((item) => validCase(item, record.id)) ||
           (record.command !== null &&
             (!record.command ||
@@ -397,15 +442,30 @@ function createObservationReader(directory, options = {}) {
       }
       return structuredClone({
         runs: records
-          .map(({ id, startedAt, finishedAt, phase, head, issues, cases }) => ({
-            id,
-            startedAt,
-            finishedAt,
-            phase,
-            head,
-            issues,
-            failedCount: cases.filter((item) => item.status === 'failed').length
-          }))
+          .map(
+            ({
+              id,
+              startedAt,
+              finishedAt,
+              phase,
+              head,
+              issues,
+              cases,
+              executionFailureDetails
+            }) => ({
+              id,
+              startedAt,
+              finishedAt,
+              phase,
+              head,
+              issues,
+              ...(executionFailureDetails === undefined
+                ? {}
+                : { executionFailureDetails }),
+              failedCount: cases.filter((item) => item.status === 'failed')
+                .length
+            })
+          )
           .reverse(),
         currentCases: [...current.values()].flat(),
         issues: [...entries.values()]
@@ -416,6 +476,7 @@ function createObservationReader(directory, options = {}) {
   }
 }
 module.exports = {
+  FAILURE_DETAIL_FIELDS,
   DEFAULT_MANIFESTS,
   observationDirectory,
   sourceFingerprint,

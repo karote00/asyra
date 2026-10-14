@@ -59,12 +59,12 @@ const data = {
         'Retain ordinary test observations and resolve responsibility without granting conformance.',
       inputs: [
         'artifact:admitted-proof-contract',
-        'original Vitest case report and project identities',
+        'original Vitest case report, runner-normalized error details and project identities',
         'run identity and mapped working-tree input fingerprints'
       ],
       outputs: ['artifact:localized-test-observations'],
       conditions: [
-        'Resolve exact file/name/project identities once at ingestion; retain every failure and original report.',
+        'Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.',
         'Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.',
         'Retain atomic per-run records and reuse admitted read projections until files change.'
       ],
@@ -929,7 +929,7 @@ const data = {
       ],
       outputs: ['artifact:proof-board-view'],
       conditions: [
-        'Project original test observations in the existing detail panel. Select only exact architecture-version matches, preserve unresolved failures and history, and clear retired selected details after recovery. Selection performs no command execution.',
+        'Project original test observations and each retained assertion difference as text in the existing detail panel; do not compute missing values or interpret evidence as HTML. Select only exact architecture-version matches, preserve unresolved failures and history, and clear retired selected details after recovery. Selection performs no command execution.',
         'Project service-owned runtime authority and contract-scope digests for the selected source. The Board does not derive package closure, aliases, task ownership or eligibility.',
         'For dependent work preparation, require an explicit retained assessment selection for the selected target and current allocation and forward only its id with the target decision. Present the selected work and prerequisite status from the service projection; do not infer eligibility or use PR/task state as proof. Independent work continues to use the explicit completed baseline-proof selector.',
         'Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.',

@@ -23,6 +23,55 @@
         if (text !== undefined) element.textContent = text
         return element
       }
+      // eslint-disable-next-line no-control-regex
+      const terminalStyles = /\u001b\[[0-9;]*m/g
+      const appendFailureDetails = (container, errors) => {
+        if (!errors?.length)
+          container.append(
+            node('p', 'Structured assertion details were not recorded.')
+          )
+        for (const [index, error] of (errors ?? []).entries()) {
+          const assertion = node('section')
+          assertion.className = 'test-result-assertion'
+          assertion.append(node('h5', 'Error - ' + (index + 1)))
+          for (const [key, label] of Object.entries({
+            file: 'File',
+            projectName: 'Project',
+            suiteName: 'Suite',
+            name: 'Error type',
+            message: 'Original message',
+            diff: 'Runner diff',
+            expected: 'Expected',
+            actual: 'Actual',
+            stack: 'Original stack'
+          })) {
+            if (!Object.hasOwn(error, key)) continue
+            assertion.append(
+              node('h6', label + (error[key] === '' ? ' - empty string' : ''))
+            )
+            // Remove terminal styling only in presentation; retain original evidence.
+            const text =
+              key === 'diff'
+                ? error[key].replace(terminalStyles, '')
+                : error[key]
+            const value = node('pre', text)
+            value.dataset.failureField = key
+            assertion.append(value)
+          }
+          if (
+            !['expected', 'actual', 'diff'].some((key) =>
+              Object.hasOwn(error, key)
+            )
+          )
+            assertion.append(
+              node(
+                'p',
+                'The runner did not supply expected, actual or diff values.'
+              )
+            )
+          container.append(assertion)
+        }
+      }
       const panel = node('section')
       panel.id = 'test-result-controls'
       panel.className = 'proof-controls'
@@ -40,11 +89,13 @@
       const notice = node('p')
       notice.id = 'test-result-notice'
       notice.setAttribute('role', 'status')
+      const executionDetails = node('div')
+      executionDetails.id = 'test-result-execution-details'
       const list = node('div')
       list.id = 'test-result-failures'
       const details = node('div')
       details.id = 'test-result-detail'
-      panel.append(label, notice, list, details)
+      panel.append(label, notice, executionDetails, list, details)
       detail.prepend(panel)
       let state,
         signature = '',
@@ -157,6 +208,7 @@
             ].join('\n')
           )
           details.append(pre)
+          appendFailureDetails(details, item.failureDetails)
           const evidence = node('a', 'Open retained report and context')
           evidence.href = '/api/test-results/' + record.id
           evidence.target = '_blank'
@@ -212,6 +264,14 @@
           cases.filter((item) => item.resolution !== 'mapped').length +
           ' unresolved observations. ' +
           issues.join('\n')
+        executionDetails.replaceChildren()
+        for (const run of selected ? [selected] : state.runs) {
+          if (!run.executionFailureDetails?.length) continue
+          const section = node('section')
+          section.append(node('h4', 'Retained execution failure - ' + run.id))
+          appendFailureDetails(section, run.executionFailureDetails)
+          executionDetails.append(section)
+        }
         list.replaceChildren()
         if (selected) {
           const evidence = node('a', 'Open selected run report and context')

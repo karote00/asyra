@@ -662,7 +662,30 @@ test('ordinary test observations are readable without becoming accepted proof ev
         }
       ]
     },
-    {}
+    {
+      executionFailureDetails: [
+        {
+          file: 'setup.ts',
+          suiteName: 'setup',
+          expected: 'null',
+          actual: 'undefined',
+          diff: 'runner execution diff'
+        }
+      ],
+      failureDetails: [
+        [
+          [
+            {
+              message: 'original assertion',
+              actual: '',
+              expected: 'retained expected',
+              diff: 'runner diff',
+              stack: 'runner stack'
+            }
+          ]
+        ]
+      ]
+    }
   )
   saveObservation(observationPath, record)
   const server = await startServer(root, {
@@ -692,6 +715,14 @@ test('ordinary test observations are readable without becoming accepted proof ev
   assert.equal(
     listing.currentCases[0].locations[0].stepId,
     contract.cases[0].stepId
+  )
+  assert.deepEqual(
+    listing.currentCases[0].failureDetails,
+    record.cases[0].failureDetails
+  )
+  assert.deepEqual(
+    listing.runs[0].executionFailureDetails,
+    record.executionFailureDetails
   )
   const selector = encodeURIComponent(record.cases[0].id)
   assert.equal(

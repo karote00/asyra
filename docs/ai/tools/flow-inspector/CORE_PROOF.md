@@ -2237,6 +2237,22 @@ the original runner stack alongside the JSON report. Unavailable precision remai
 produce unresolved records. Failure text is original runner evidence, not an
 inferred root cause. Multiple cases at one node remain separate.
 
+Optional case `failureDetails` retain the ordered runner-supplied error records:
+name, message, stack, expected, actual and diff as exact strings. Capture these
+before JSON reporter normalization, preserving file/test traversal identity and
+separate soft assertions even when full test names collide. Empty strings remain
+present; absent fields mean the runner did not provide the value. The original
+JSON report and failure messages remain unchanged. Readers validate details when
+present and preserve immutable historical absence. Board, API and CLI consume the
+same retained values; the Board renders them as text without computing a diff,
+executing HTML or reconstructing missing evidence. Only terminal SGR styling is
+removed from the displayed diff; retained/API strings and displayed expected/actual
+values remain unchanged. Suite-hook and run-level
+assertion errors use optional run `executionFailureDetails` with the same fields
+and runner-supplied file/project/suite context when available. Read summaries
+retain their run association; the Board labels them as retained execution
+failures, including historical selection, without marking a product node.
+
 The producer atomically retains one record per run under
 `tmp/flow-inspector/test-results/`. Raw reports and resolved locations are retained
 together. A dedicated read projection exposes these observations through the

@@ -90,6 +90,46 @@ function localizationFixture() {
     directory,
     repository,
     reader,
+    addHookAssertionFailure() {
+      const file = path.join(
+        repository,
+        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+      )
+      const original = fs.readFileSync(file, 'utf8')
+      fs.writeFileSync(
+        file,
+        `import { beforeAll } from 'vitest'
+        beforeAll(() => {
+          const actual = Array.from({ length: 100 }, (_, index) => index)
+          const expected = [...actual]
+          expected[57] = 9999
+          expect(actual, 'localization setup failure').toEqual(expected)
+        })
+      ` + original
+      )
+    },
+    addAssertionFailures() {
+      const file = path.join(
+        repository,
+        'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+      )
+      fs.appendFileSync(
+        file,
+        `
+        describe('structured evidence', () => {
+          it.each([9999, 8888])('retains long assertion differences', (replacement) => {
+            const actual = Array.from({ length: 100 }, (_, index) => index)
+            const expected = [...actual]
+            expected[57] = replacement
+            expect.soft(actual).toEqual(expected)
+            expect.soft(false).toBe(true)
+            expect.soft(undefined).toBe(null)
+            expect.soft('').toBe('<img src=x onerror="globalThis.evidenceExecuted=true">')
+          })
+        })
+      `
+      )
+    },
     mutate(kind) {
       const file = kind === 'app' ? appFile : factoryFile
       const from = kind === 'app' ? 'if (snapshot.keyShift)' : 'return value'

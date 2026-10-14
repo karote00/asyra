@@ -304,3 +304,86 @@ test('partial duplicate groups retain new failures until complete recovery', () 
   assert.deepEqual(reader.get(first.id), oldFailure)
   assert.deepEqual(reader.get(next.id), newFailure)
 })
+
+test('assertion details preserve exact values without changing raw evidence or historical absence', () => {
+  const input = report([failure()])
+  const details = [
+    {
+      message: 'mismatch',
+      actual: '',
+      expected: 'null',
+      diff: '- null\n+ empty',
+      stack: 'original stack'
+    }
+  ]
+  const result = localizeReport(root, context(), input, {
+    failureDetails: [[details]]
+  })
+  assert.deepEqual(result.cases[0].failureDetails, details)
+  assert.deepEqual(result.report, input)
+  assert.deepEqual(
+    result.cases[0].failures,
+    input.testResults[0].assertionResults[0].failureMessages
+  )
+  details[0].actual = 'changed later'
+  assert.equal(result.cases[0].failureDetails[0].actual, '')
+  const historical = localizeReport(root, context(), input)
+  assert.equal(Object.hasOwn(historical.cases[0], 'failureDetails'), false)
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/detail-admission-')
+  )
+  saveObservation(dir, historical)
+  assert.deepEqual(createObservationReader(dir).get(historical.id), historical)
+})
+
+test('malformed retained assertion details cannot reach read consumers', () => {
+  for (const details of [
+    null,
+    {},
+    [null],
+    [{ actual: 42 }],
+    [{ expected: {} }],
+    [{ arbitrary: 'not a runner field' }]
+  ]) {
+    const dir = fs.mkdtempSync(
+      path.join(root, 'tmp/flow-inspector/invalid-details-')
+    )
+    const record = localizeReport(root, context(), report([failure()]))
+    record.cases[0].failureDetails = details
+    saveObservation(dir, record)
+    const reader = createObservationReader(dir)
+    assert.deepEqual(reader.list().currentCases, [])
+    assert.match(reader.list().issues.join(' '), /Invalid observation/)
+  }
+})
+
+test('run-level assertion details retain context and reject malformed evidence', () => {
+  const details = [
+    {
+      message: 'setup mismatch',
+      expected: 'null',
+      actual: 'undefined',
+      diff: 'original difference',
+      file: 'setup.ts',
+      projectName: 'browser',
+      suiteName: 'setup'
+    }
+  ]
+  const result = localizeReport(root, context(), report([]), {
+    executionFailureDetails: details
+  })
+  assert.deepEqual(result.executionFailureDetails, details)
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/execution-details-')
+  )
+  saveObservation(dir, result)
+  const reader = createObservationReader(dir)
+  assert.deepEqual(reader.list().runs[0].executionFailureDetails, details)
+  assert.deepEqual(reader.get(result.id).executionFailureDetails, details)
+  for (const invalid of [null, [{ expected: false }], [{ file: {} }]]) {
+    const record = localizeReport(root, context(), report([]))
+    record.executionFailureDetails = invalid
+    saveObservation(dir, record)
+    assert.throws(() => reader.get(record.id), /Invalid observation/)
+  }
+})

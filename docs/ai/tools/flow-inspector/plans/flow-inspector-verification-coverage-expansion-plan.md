@@ -141,6 +141,100 @@ App dependency-aware build completed all 20 tasks. The original three-flow,
 five-negative, nine-obligation proof and candidate proof also passed. Remote CI
 for this correction remains a separate verification after push.
 
+## Structured assertion evidence repair - 2026-10-14
+
+Baseline: `a61027909`, continuing the same PR and worktree. The objective is to
+retain the runner-supplied assertion differences that JsonReporter otherwise
+omits, so humans and agents receive the same usable failure evidence. Scope is
+this milestone's producer, observation admission, read consumers, Board, formal
+tests, Inspector and documentation. Review remains limited to the full PR, its
+direct consumers, source/identity/history correctness, evidence completeness,
+UI lifecycle and the existing gates. No new runners, dependencies, command
+execution, comments, causal inference or task orchestration.
+
+Plan review rejected reconstructing differences from stack text or serializing
+arbitrary task objects. Vitest already supplies normalized error text, including
+expected, actual and diff. Capture those exact strings before JsonReporter drops
+them; preserve absence and empty strings, and never manufacture a diff. Retain
+separate errors for soft assertions. Bind the capture by file and test traversal
+ordinal, matching JsonReporter's traversal, rather than by colliding full names.
+Real-run tests must prove this alignment for duplicate names and multiple errors.
+
+The localization owner adds optional `failureDetails` to each case, containing
+an ordered array of error records with only runner-supplied string fields:
+`name`, `message`, `stack`, `expected`, `actual`, and `diff`. These are an additive
+observation format-1 field, not new mapping authority. Historical records without
+this evidence remain immutable and readable, with absence explicit rather than
+reconstructed. The raw JSON report and existing failure strings remain unchanged.
+Read admission validates the added field when present; malformed details must not
+reach the Board. The existing reader/HTTP/CLI forward the same retained values.
+The Board renders error-specific expected/actual/diff using text nodes, including
+empty values, and never interprets evidence as HTML or generates replacements.
+
+Execution order and owner cards:
+
+1. `localize-test-results` under CORE_PROOF's Ordinary Test Failure Localization
+   and the matching core Inspector step. Inputs are admitted mapping, original
+   Vitest tasks/report and run/source identity; output is retained observations.
+   Allowed files are its reporter, localization module and existing unit/runtime
+   tests/fixture. Forbidden contributors remain inferred ownership, accepted
+   baseline writes and command dispatch. First prove real long-array mismatches,
+   duplicate titles, multiple soft errors and missing/empty values fail current
+   retention; then implement capture, storage and read admission. Recheck history,
+   partial reruns, source invalidation and ordinary test exit status before advancing.
+2. `serve-proof-actions` forwards the producer's completed observations through
+   existing read-only routes and CLI. Strengthen the existing server contract test
+   to verify exact detail equality, original report preservation and no proof
+   authority; no new routes or service-side derivation are needed.
+3. `render-proof-board` consumes those admitted cases under its existing boundary.
+   Add a real-run browser regression before implementation, proving two colliding
+   failures retain different long-array values, multiple errors are readable, and
+   HTML-looking values remain text. Recheck selection, history, recovery and
+   desktop/narrow rendering. The failure owner remains the matching owner step.
+
+Self-review additions: real runner output is required, synthetic JsonReporter
+objects alone cannot close this bug; empty values must use property presence;
+original evidence and source identity must remain attached; immutable old records
+cannot be migrated in place. The plan is executable within existing owner
+boundaries. Stop and replan on a contract contradiction or repeated failed owner
+iteration; do not broaden the milestone to satisfy a gate.
+
+Implementation self-review found that retaining only test-body differences leaves
+the same defect in suite-hook or run-level assertions. The bounded revision adds
+optional run-level `executionFailureDetails` with the same error text fields and,
+when supplied by the runner, file/project/suite context. These remain execution
+errors with no fabricated product node. The read summary and Board must preserve
+the run association, including historical selection. Add real hook assertion
+regressions before this correction and validate malformed run-level details too.
+This closes the existing execution-error acceptance case; it adds no result source.
+
+Visual review found terminal SGR color sequences in real Vitest diffs. Preserve
+them in retained/API evidence, but remove only those color/style sequences from
+Board diff presentation, with the runner diff before full expected/actual values.
+Do not recompute the diff or normalize expected/actual strings. A browser test
+must prove the changed lines remain readable and SGR sequences are absent, while
+machine evidence remains byte-for-byte identical to the retained runner text.
+
+Closure requires the full existing control-plane and Board suites, package tests,
+naming/placement/scope, formatting, lint, typecheck/build, catalog generation,
+original proof/candidate proof, a bounded full-stage review and exact-head remote
+CI inspection. Resolve concrete in-scope findings before claiming completion;
+pending or failed CI is never a passing result. Preserve user-owned work and do
+not merge the PR.
+
+Repair validation: the full control-plane suite passed 498 tests with two
+platform skips; the final Board suite passed 18 tests with two retained-live
+external-evidence skips. The real-run producer group passed 20 tests. Package
+React tests and 100 contracts, 68 scope/placement contracts, typecheck, build,
+original proof (three flows, five negatives, nine obligations), candidate proof
+and catalog generation passed. The final narrow screenshot was inspected:
+runner differences remain readable, empty values stay explicit and HTML-looking
+assertion values remain text. Test-first regressions demonstrated each repaired
+gap before implementation. Bounded self-review of producer ordering, admission,
+history, API/CLI parity and Board selection found no further actionable defect.
+Remote checks are tracked against the pushed revision in PR #322; local success
+does not imply remote completion.
+
 ## Planning baseline and original gaps
 
 Read-only inventory baseline: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6`.

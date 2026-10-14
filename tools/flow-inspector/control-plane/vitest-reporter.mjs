@@ -46,9 +46,20 @@ export default class LocalizationReporter extends JsonReporter {
     this.errors = errors.map((error) =>
       String(error?.stack ?? error?.message ?? error)
     )
-    const retainSuiteErrors = (suite, file) => {
-      if (suite.type === 'test') return
-      for (const error of suite.result?.errors ?? [])
+    const captureError = (error) =>
+      Object.fromEntries(
+        localization.FAILURE_DETAIL_FIELDS.filter(
+          (key) => typeof error?.[key] === 'string'
+        ).map((key) => [key, error[key]])
+      )
+    this.executionFailureDetails = errors.map(captureError)
+    this.failureDetails = []
+    const retainErrors = (suite, file, cases) => {
+      if (suite.type === 'test') {
+        cases.push((suite.result?.errors ?? []).map(captureError))
+        return
+      }
+      for (const error of suite.result?.errors ?? []) {
         this.errors.push(
           file.filepath +
             ': ' +
@@ -56,9 +67,21 @@ export default class LocalizationReporter extends JsonReporter {
             '\n' +
             String(error?.stack ?? error?.message ?? error)
         )
-      for (const child of suite.tasks ?? []) retainSuiteErrors(child, file)
+        this.executionFailureDetails.push({
+          ...captureError(error),
+          file: file.filepath,
+          projectName: file.projectName ?? '',
+          suiteName: suite.name
+        })
+      }
+      for (const child of suite.tasks ?? []) retainErrors(child, file, cases)
     }
-    for (const file of files) retainSuiteErrors(file, file)
+    // Preserve file and depth-first test order used by JsonReporter. Names may collide.
+    for (const file of files) {
+      const cases = []
+      retainErrors(file, file, cases)
+      this.failureDetails.push(cases)
+    }
     await super.onFinished(files, errors, coverage)
   }
 
@@ -67,7 +90,12 @@ export default class LocalizationReporter extends JsonReporter {
       this.root,
       this.context,
       JSON.parse(bytes),
-      { projects: this.projects, errors: this.errors }
+      {
+        projects: this.projects,
+        errors: this.errors,
+        failureDetails: this.failureDetails,
+        executionFailureDetails: this.executionFailureDetails
+      }
     )
     this.completed = true
     this.ctx.logger.log('Flow Inspector observation: ' + record.id)

@@ -145,19 +145,8 @@ test(
   'real suite hook failures retain the original error stack without inventing a node',
   { timeout: 60000 },
   async () => {
-    const fs = require('node:fs'),
-      path = require('node:path')
     const fixture = localizationFixture()
-    const file = path.join(
-      fixture.repository,
-      'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
-    )
-    const original = fs.readFileSync(file, 'utf8')
-    fs.writeFileSync(
-      file,
-      "import { beforeAll } from 'vitest'\nbeforeAll(() => { throw new Error('localization setup failure') })\n" +
-        original
-    )
+    fixture.addHookAssertionFailure()
     const result = await fixture.run('app')
     assert.equal(result.result.code, 1)
     assert.ok(
@@ -168,6 +157,14 @@ test(
       ),
       JSON.stringify(result.record.issues)
     )
+    assert.equal(result.record.executionFailureDetails?.length, 1)
+    const detail = result.record.executionFailureDetails[0]
+    assert.match(detail.expected, /9999/)
+    assert.match(detail.actual, /57/)
+    assert.match(detail.diff, /9999/)
+    assert.match(detail.file, /feature\.test\.ts$/)
+    assert.equal(detail.projectName, '')
+    assert.deepEqual(fixture.reader.get(result.record.id), result.record)
     assert.equal(
       result.record.cases.filter((item) => item.status === 'failed').length,
       0
@@ -211,3 +208,49 @@ test('missing mapped implementation input cannot yield a precise mapped location
   assert.equal(result.cases[0].resolution, 'stale')
   assert.match(result.issues.join(' '), /missing/i)
 })
+
+test(
+  'real duplicate failures retain runner differences and every soft assertion',
+  { timeout: 60000 },
+  async () => {
+    const fixture = localizationFixture()
+    fixture.addAssertionFailures()
+    const fault = await fixture.run('app')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failures = fault.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.equal(failures.length, 2)
+    assert.equal(failures[0].testName, failures[1].testName)
+    for (const [index, item] of failures.entries()) {
+      assert.equal(item.resolution, 'ambiguous')
+      assert.equal(item.failureDetails?.length, 4)
+      const [array, boolean, missing, empty] = item.failureDetails
+      assert.match(array.message, /Array\(100\)/)
+      assert.ok(array.expected.includes(String([9999, 8888][index])))
+      assert.ok(array.diff.includes(String([9999, 8888][index])))
+      assert.ok(array.actual.includes('57'))
+      assert.equal(boolean.actual, 'false')
+      assert.equal(boolean.expected, 'true')
+      assert.equal(missing.actual, 'undefined')
+      assert.equal(missing.expected, 'null')
+      assert.equal(empty.actual, '')
+      assert.match(empty.expected, /<img/)
+      assert.ok(
+        item.failureDetails.every((error) =>
+          error.stack.includes('feature.test.ts')
+        )
+      )
+    }
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+    const output = []
+    assert.equal(
+      await main(['test-results', fault.record.id], {
+        repositoryRoot: fixture.repository,
+        write: (line) => output.push(line)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(output.join('')).cases, fault.record.cases)
+  }
+)
