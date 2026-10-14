@@ -68,6 +68,11 @@ const authorize = (actor, capability) => {
     throw new ActionError(403, 'Action is not authorized')
 }
 
+const {
+  createObservationReader,
+  observationDirectory
+} = require('./localization.cjs')
+
 function createService(
   repositoryRoot,
   {
@@ -85,6 +90,7 @@ function createService(
     timeoutMs = 30000,
     acceptedBase = 'origin/main',
     ciAdmission = null,
+    observationPath = observationDirectory(repositoryRoot),
     agentOptions = {},
     deliveryAdapter = null
   } = {}
@@ -95,6 +101,8 @@ function createService(
   let contract = loadCurrentContract()
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   const repository = fs.realpathSync(repositoryRoot)
+  safePath(repositoryRoot, path.relative(repositoryRoot, observationPath))
+  const observations = createObservationReader(observationPath)
   const store = openStore(directory)
   const immutable = (value) => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -1856,6 +1864,8 @@ function createService(
     })
   }
   return {
+    testResults: () => observations.list(),
+    testResult: (id) => observations.get(id),
     startTargetAssessment(request, actor) {
       authorize(actor, 'verify')
       objectRequest(request, [

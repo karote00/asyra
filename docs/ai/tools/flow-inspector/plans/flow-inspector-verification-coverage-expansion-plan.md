@@ -35,7 +35,207 @@ are planning changes only: runtime, permissions, architecture steps, acceptance
 authorities and completed delivery records remain unchanged.
 Command buttons and comment blocks are deferred until this path is complete.
 
-## Current implementation and remaining gaps
+## Bounded implementation - 2026-10-14
+
+The next implementation covers Priorities 1-3 for the existing Design Undo/Redo
+shortcut cases and registered Factory cases. The base is
+`c696dba31984ac2fc6be817524505c722b4af9d9`; implementation lives on a new
+`codex/flow-test-failure-localization` worktree branch. The older inventory below
+is retained as the planning baseline, not the current completion claim.
+
+The implemented path is an opt-in Vitest reporter on the original invocation,
+immutable per-run observations, exact file/name/project mapping through existing
+contract admission, and the same original context exposed through the existing
+Board, read API and CLI. Unmapped/ambiguous/stale failures and setup errors stay
+visible. Recovery updates only observed cases and preserves historical failures.
+Declared responsibility is the starting point for investigation, not a claim
+that the mapped step is the proven root cause.
+
+Owner execution boundaries:
+
+- `admit-proof-contract`: admit the App terminal shortcut flow, optional exact
+  implementation paths within the existing step boundary and project identities.
+- `localize-test-results`: retain original results and mapped-input fingerprints,
+  resolve responsibility once, preserve unknowns and immutable completed history.
+- `serve-proof-actions`: expose read-only observations without accepted-proof,
+  task or delivery effects; keep cached record reads separate from source capture.
+- `render-proof-board`: select existing matching-version cards, display the same
+  machine context and original failure, and clear retired details after recovery.
+
+Formal validation includes unchanged App/Factory assertions through baseline,
+fault and restoration; source edits during execution; missing/malformed reports;
+identity collisions; independent scopes; actual read counts; API/CLI equality;
+and desktop/narrow Board selection, history and recovery. Regression fixes add
+permanent tests before implementation. Existing control-plane, package, naming,
+placement, formatting, lint, typecheck, build and browser gates remain required.
+The existing CI control-plane list and Board discovery include these new tests.
+
+This bounded milestone is implemented and locally validated: the full existing
+control-plane group passed 487 tests with two platform-specific skips; the final
+focused group passed 54 tests; the complete Board group passed 14 tests with two
+retained-live-evidence skips. The original proof passed all three flows, five
+negative scenarios and nine obligations. Package tests, naming/placement/scope
+contracts, lint, typecheck, generated catalog and production builds passed.
+Desktop and narrow screenshots were inspected. No live provider or GitHub
+write was used as test evidence. Broader result-producer and mapping coverage
+remains future work; command buttons and comment blocks remain deferred.
+
+No automatic repair, task dispatch, command buttons, comments, ADE integration,
+Playwright result producer or general CI import is part of this milestone. Future
+work should expand mappings and result producers only after the localized path
+proves useful for real failures; those remain separate bounded increments.
+
+## PR 322 review iteration
+
+The review baseline is `c2f50f75c`. Discovery is restricted to this PR, its
+direct consumers, ordinary result identity/history, UI lifecycle, source/error
+retention and the existing CI gates. The original Board CI failed because its
+Linux Chrome socket path exceeded the platform limit.
+
+Cross-target review replaced the earlier client-only repair approach: the static
+workspace canonicalizes hashes, and the HTTP service rejects arbitrary query
+parameters. `serve-proof-actions` must admit exactly one valid observation query
+on a registered target page for GET requests. Its server and server contract tests
+own that admission; unrelated queries, API routes and mutations remain rejected.
+`render-proof-board` then consumes the retained selector, selects historical scope,
+rejects stale asynchronous responses and retries transient reads. Its existing
+browser test must follow the actual rendered cross-target link, not a constructed
+URL that bypasses either owner. This is a bounded repair of the original failure
+navigation contract, not a new routing system or static-workspace execution path.
+
+The revised sequence is service query admission (positive and negative HTTP
+cases), then actual cross-target browser navigation/retry and the full Board
+suite. Core observation repairs retain filtered failures, simultaneous outcomes,
+missing-source unavailability and original hook stacks, with permanent failing
+regressions and real Vitest execution. Final gates are the existing control-plane
+group, Board group, package contracts, generated catalog, lint, formatting, naming,
+typecheck and build. No new dependencies, command actions or unrelated repairs.
+
+Review corrections passed the full control-plane group (493 passed, two platform
+skips), the complete Board group (16 passed, two retained-live-evidence skips),
+and package, naming/placement/scope, lint, formatting, typecheck and build gates.
+The original three-flow/five-negative/nine-obligation proof and candidate proof
+also passed. New HTTP cases preserve query rejection outside the exact read-only
+selector. Remote Linux validation is checked separately after the review update
+is pushed; local success does not replace that result.
+
+## PR 322 second review repair
+
+The bounded follow-up to `0089b009e` repairs two findings. The observation reader
+must retain new failures alongside unresolved prior failures when a duplicate
+identity group executes only partially. A permanent regression first failed on
+the missing new observation, then passed after the reader correction; it also
+checks repeated reads, complete recovery and immutable history.
+
+The Linux Board CI run reached Chrome but failed all three localization browser
+cases. Its job omitted the App build prerequisite already used by the
+control-plane job. The Board job now runs that same dependency-aware build before
+its tests. Browser cases assert the two expected mapped assertion failures before
+checking UI behavior, so import/setup errors cannot stand in for injected faults.
+No renderer semantics, mapping authority, dependencies or deferred features change.
+
+Validation passed: 494 control-plane tests (two platform skips), 16 Board tests
+(two retained-live-evidence skips), package React tests and 100 package contracts,
+68 scope/placement contracts, naming, lint, formatting, typecheck and build. The
+App dependency-aware build completed all 20 tasks. The original three-flow,
+five-negative, nine-obligation proof and candidate proof also passed. Remote CI
+for this correction remains a separate verification after push.
+
+## Structured assertion evidence repair - 2026-10-14
+
+Baseline: `a61027909`, continuing the same PR and worktree. The objective is to
+retain the runner-supplied assertion differences that JsonReporter otherwise
+omits, so humans and agents receive the same usable failure evidence. Scope is
+this milestone's producer, observation admission, read consumers, Board, formal
+tests, Inspector and documentation. Review remains limited to the full PR, its
+direct consumers, source/identity/history correctness, evidence completeness,
+UI lifecycle and the existing gates. No new runners, dependencies, command
+execution, comments, causal inference or task orchestration.
+
+Plan review rejected reconstructing differences from stack text or serializing
+arbitrary task objects. Vitest already supplies normalized error text, including
+expected, actual and diff. Capture those exact strings before JsonReporter drops
+them; preserve absence and empty strings, and never manufacture a diff. Retain
+separate errors for soft assertions. Bind the capture by file and test traversal
+ordinal, matching JsonReporter's traversal, rather than by colliding full names.
+Real-run tests must prove this alignment for duplicate names and multiple errors.
+
+The localization owner adds optional `failureDetails` to each case, containing
+an ordered array of error records with only runner-supplied string fields:
+`name`, `message`, `stack`, `expected`, `actual`, and `diff`. These are an additive
+observation format-1 field, not new mapping authority. Historical records without
+this evidence remain immutable and readable, with absence explicit rather than
+reconstructed. The raw JSON report and existing failure strings remain unchanged.
+Read admission validates the added field when present; malformed details must not
+reach the Board. The existing reader/HTTP/CLI forward the same retained values.
+The Board renders error-specific expected/actual/diff using text nodes, including
+empty values, and never interprets evidence as HTML or generates replacements.
+
+Execution order and owner cards:
+
+1. `localize-test-results` under CORE_PROOF's Ordinary Test Failure Localization
+   and the matching core Inspector step. Inputs are admitted mapping, original
+   Vitest tasks/report and run/source identity; output is retained observations.
+   Allowed files are its reporter, localization module and existing unit/runtime
+   tests/fixture. Forbidden contributors remain inferred ownership, accepted
+   baseline writes and command dispatch. First prove real long-array mismatches,
+   duplicate titles, multiple soft errors and missing/empty values fail current
+   retention; then implement capture, storage and read admission. Recheck history,
+   partial reruns, source invalidation and ordinary test exit status before advancing.
+2. `serve-proof-actions` forwards the producer's completed observations through
+   existing read-only routes and CLI. Strengthen the existing server contract test
+   to verify exact detail equality, original report preservation and no proof
+   authority; no new routes or service-side derivation are needed.
+3. `render-proof-board` consumes those admitted cases under its existing boundary.
+   Add a real-run browser regression before implementation, proving two colliding
+   failures retain different long-array values, multiple errors are readable, and
+   HTML-looking values remain text. Recheck selection, history, recovery and
+   desktop/narrow rendering. The failure owner remains the matching owner step.
+
+Self-review additions: real runner output is required, synthetic JsonReporter
+objects alone cannot close this bug; empty values must use property presence;
+original evidence and source identity must remain attached; immutable old records
+cannot be migrated in place. The plan is executable within existing owner
+boundaries. Stop and replan on a contract contradiction or repeated failed owner
+iteration; do not broaden the milestone to satisfy a gate.
+
+Implementation self-review found that retaining only test-body differences leaves
+the same defect in suite-hook or run-level assertions. The bounded revision adds
+optional run-level `executionFailureDetails` with the same error text fields and,
+when supplied by the runner, file/project/suite context. These remain execution
+errors with no fabricated product node. The read summary and Board must preserve
+the run association, including historical selection. Add real hook assertion
+regressions before this correction and validate malformed run-level details too.
+This closes the existing execution-error acceptance case; it adds no result source.
+
+Visual review found terminal SGR color sequences in real Vitest diffs. Preserve
+them in retained/API evidence, but remove only those color/style sequences from
+Board diff presentation, with the runner diff before full expected/actual values.
+Do not recompute the diff or normalize expected/actual strings. A browser test
+must prove the changed lines remain readable and SGR sequences are absent, while
+machine evidence remains byte-for-byte identical to the retained runner text.
+
+Closure requires the full existing control-plane and Board suites, package tests,
+naming/placement/scope, formatting, lint, typecheck/build, catalog generation,
+original proof/candidate proof, a bounded full-stage review and exact-head remote
+CI inspection. Resolve concrete in-scope findings before claiming completion;
+pending or failed CI is never a passing result. Preserve user-owned work and do
+not merge the PR.
+
+Repair validation: the full control-plane suite passed 498 tests with two
+platform skips; the final Board suite passed 18 tests with two retained-live
+external-evidence skips. The real-run producer group passed 20 tests. Package
+React tests and 100 contracts, 68 scope/placement contracts, typecheck, build,
+original proof (three flows, five negatives, nine obligations), candidate proof
+and catalog generation passed. The final narrow screenshot was inspected:
+runner differences remain readable, empty values stay explicit and HTML-looking
+assertion values remain text. Test-first regressions demonstrated each repaired
+gap before implementation. Bounded self-review of producer ordering, admission,
+history, API/CLI parity and Board selection found no further actionable defect.
+Remote checks are tracked against the pushed revision in PR #322; local success
+does not imply remote completion.
+
+## Planning baseline and original gaps
 
 Read-only inventory baseline: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6`.
 The following describes inspected source and permanent test coverage, not a

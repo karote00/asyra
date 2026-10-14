@@ -627,3 +627,131 @@ test('HTTP target assessment actions retain service authority and cached results
     fs.rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('ordinary test observations are readable without becoming accepted proof evidence', async (t) => {
+  const { saveObservation, localizeReport } = require('../localization.cjs')
+  const { loadContract } = require('../contracts.cjs')
+  const directory = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/localization-http-')
+  )
+  const observationPath = path.join(directory, 'observations')
+  const contract = loadContract(root)
+  const record = localizeReport(
+    root,
+    {
+      format: 1,
+      id: require('node:crypto').randomUUID(),
+      startedAt: new Date().toISOString(),
+      source: null,
+      head: null,
+      contracts: [contract],
+      issues: [],
+      command: null
+    },
+    {
+      testResults: [
+        {
+          name: path.join(root, contract.testFile),
+          assertionResults: [
+            {
+              fullName: contract.cases[0].testName,
+              status: 'failed',
+              failureMessages: ['original assertion']
+            }
+          ]
+        }
+      ]
+    },
+    {
+      executionFailureDetails: [
+        {
+          file: 'setup.ts',
+          suiteName: 'setup',
+          expected: 'null',
+          actual: 'undefined',
+          diff: 'runner execution diff'
+        }
+      ],
+      failureDetails: [
+        [
+          [
+            {
+              message: 'original assertion',
+              actual: '',
+              expected: 'retained expected',
+              diff: 'runner diff',
+              stack: 'runner stack'
+            }
+          ]
+        ]
+      ]
+    }
+  )
+  saveObservation(observationPath, record)
+  const server = await startServer(root, {
+    url: 'http://127.0.0.1:4349',
+    serviceOptions: {
+      directory: path.join(directory, 'proofs'),
+      observationPath
+    }
+  })
+  t.after(async () => {
+    await server.close()
+    fs.rmSync(directory, { recursive: true, force: true })
+  })
+  const response = await fetch(server.origin + '/api/test-results/' + record.id)
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), record)
+  const output = []
+  const { main } = require('../cli.cjs')
+  await main(['--url', server.origin + '/', 'test-results', record.id], {
+    repositoryRoot: root,
+    write: (line) => output.push(line)
+  })
+  assert.deepEqual(JSON.parse(output.join('')), record)
+  const listing = await (
+    await fetch(server.origin + '/api/test-results')
+  ).json()
+  assert.equal(
+    listing.currentCases[0].locations[0].stepId,
+    contract.cases[0].stepId
+  )
+  assert.deepEqual(
+    listing.currentCases[0].failureDetails,
+    record.cases[0].failureDetails
+  )
+  assert.deepEqual(
+    listing.runs[0].executionFailureDetails,
+    record.executionFailureDetails
+  )
+  const selector = encodeURIComponent(record.cases[0].id)
+  assert.equal(
+    (
+      await fetch(
+        server.origin + '/transaction-atomicity?observation=' + selector
+      )
+    ).status,
+    200
+  )
+  for (const route of [
+    '/api/state?observation=' + selector,
+    '/transaction-atomicity?observation=invalid',
+    '/transaction-atomicity?observation=' + selector + '&extra=1',
+    '/transaction-atomicity?observation=' +
+      selector +
+      '&observation=' +
+      selector,
+    '/unknown-page?observation=' + selector
+  ])
+    assert.equal((await fetch(server.origin + route)).status, 400, route)
+  assert.equal(
+    (
+      await fetch(
+        server.origin + '/transaction-atomicity?observation=' + selector,
+        { method: 'POST' }
+      )
+    ).status,
+    400
+  )
+  assert.equal(server.service.state().runs.length, 0)
+})

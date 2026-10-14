@@ -1669,7 +1669,10 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(16)
+      await expect(canvas.locator('.step-card')).toHaveCount(17)
+      await expect(
+        canvas.locator('[data-step-id="localize-test-results"]')
+      ).toHaveCount(1)
       await expect(
         canvas.locator('[data-step-id="assess-target-source"]')
       ).toHaveCount(1)

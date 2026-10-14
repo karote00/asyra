@@ -139,6 +139,10 @@ async function startServer(
       assets.set(resource.pathname, [file, 'text/plain; charset=utf-8'])
     }
   }
+  assets.set('/localization.js', [
+    path.join(__dirname, 'public/localization.js'),
+    'text/javascript; charset=utf-8'
+  ])
   const service = createService(repositoryRoot, serviceOptions)
   let origin
   let closing = false
@@ -169,7 +173,17 @@ async function startServer(
           route.pathname === targetPath &&
           [...route.searchParams.keys()].length === 1 &&
           Boolean(route.searchParams.get('inspector'))
-        if (route.search && !targetQuery)
+        const observationSelector = route.searchParams
+          .get('observation')
+          ?.match(/^([a-f0-9-]{36}):(0|[1-9][0-9]{0,8})$/)
+        const observationQuery =
+          request.method === 'GET' &&
+          /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(route.pathname) &&
+          assets.get(route.pathname) === workspaceAsset &&
+          [...route.searchParams.keys()].length === 1 &&
+          observationSelector &&
+          validId(observationSelector[1])
+        if (route.search && !targetQuery && !observationQuery)
           throw new ActionError(400, 'Query parameters are unsupported')
         if (request.method === 'GET') {
           if (
@@ -214,6 +228,22 @@ async function startServer(
             /^\/api\/targets\/([a-f0-9-]{36})$/
           )
           if (targetRoute) return send(200, service.getTarget(targetRoute[1]))
+          if (route.pathname === '/api/test-results')
+            return send(200, {
+              ...service.testResults(),
+              targets:
+                workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries.map(
+                  (entry) => ({
+                    id: entry.data?.target?.id,
+                    url: '/' + entry.slug
+                  })
+                )
+            })
+          const observationRoute = route.pathname.match(
+            /^\/api\/test-results\/([a-f0-9-]{36})$/
+          )
+          if (observationRoute)
+            return send(200, service.testResult(observationRoute[1]))
           if (route.pathname === '/api/state') return send(200, service.state())
           if (route.pathname === '/api/shared')
             return send(200, service.shared())
@@ -277,7 +307,10 @@ async function startServer(
                 '</head>',
                 '<link rel="stylesheet" href="/board.css" /></head>'
               )
-              .replace('</body>', '<script src="/board.js"></script></body>')
+              .replace(
+                '</body>',
+                '<script src="/board.js"></script><script src="/localization.js"></script></body>'
+              )
           }
           response.writeHead(status, { 'Content-Type': asset[1] })
           return response.end(content)

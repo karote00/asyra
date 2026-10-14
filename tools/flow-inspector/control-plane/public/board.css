@@ -250,3 +250,33 @@
 #target-controls h4 {
   margin: 0;
 }
+
+#test-result-controls {
+  padding: 12px;
+  margin-bottom: 12px;
+}
+#test-result-controls pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 480px;
+  overflow: auto;
+}
+#test-result-controls select,
+#test-result-controls button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#test-result-failures > div {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+#test-result-notice {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.observation-failed {
+  outline: 2px solid #e88349;
+  outline-offset: 3px;
+}

@@ -247,12 +247,38 @@ function admitContract(manifest, architecture) {
         selected.has(item.stepId) && nonempty(item.testName),
         'missing case mapping'
       )
+      if (Object.hasOwn(item, 'implementationPaths')) {
+        unique(item.implementationPaths, 'implementation locations')
+        requireCondition(
+          item.implementationPaths.every(
+            (location) =>
+              canonicalRelativePath(location) &&
+              !location.includes('*') &&
+              steps
+                .get(item.stepId)
+                .implementationBoundary.some(
+                  (boundary) =>
+                    boundary === location ||
+                    (boundary.endsWith('/**') &&
+                      location.startsWith(boundary.slice(0, -2)))
+                )
+          ),
+          'invalid implementation location'
+        )
+      }
+      if (Object.hasOwn(item, 'projectName'))
+        requireCondition(
+          typeof item.projectName === 'string',
+          'invalid project identity'
+        )
       cases.push({ ...item, flowId: flow.id })
     }
-    unique(
-      flow.handoffs?.map((item) => item.routeId),
-      'handoff ids'
-    )
+    requireCondition(Array.isArray(flow.handoffs), 'missing handoffs')
+    if (flow.handoffs.length)
+      unique(
+        flow.handoffs.map((item) => item.routeId),
+        'handoff ids'
+      )
     const incoming = architecture.routes.filter(
       (route) => selected.has(route.to) && route.producedArtifacts.length
     )

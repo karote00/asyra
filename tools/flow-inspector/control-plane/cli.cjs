@@ -287,6 +287,7 @@ async function main(
     negative: [0, 1],
     scenario: [1, 2],
     prove: [0],
+    'test-results': [0, 1],
     status: [0],
     show: [1],
     cancel: [1],
@@ -300,8 +301,33 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
+      'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | test-results [run-id] | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
     )
+  if (command === 'test-results') {
+    const {
+      createObservationReader,
+      observationDirectory
+    } = require('./localization.cjs')
+    let result
+    if (origin) {
+      const address = parseLocalUrl(origin)
+      const response = await fetch(
+        address.origin +
+          '/api/test-results' +
+          (parameters[0] ? '/' + encodeURIComponent(parameters[0]) : '')
+      )
+      if (!response.ok)
+        throw new Error('Observation read failed: ' + response.status)
+      result = await response.json()
+    } else {
+      const reader = createObservationReader(
+        observationDirectory(repositoryRoot)
+      )
+      result = parameters[0] ? reader.get(parameters[0]) : reader.list()
+    }
+    write(JSON.stringify(result, null, 2))
+    return 0
+  }
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
       serviceOptions: serviceOptions(repositoryRoot, manifestPath)

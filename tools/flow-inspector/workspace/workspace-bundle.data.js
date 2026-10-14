@@ -38,6 +38,7 @@
       "tools/flow-inspector/inspectors/group-component-and-hierarchy-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/group-context-menu-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/group-interaction-mvp-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/layer-tree-reparent-reorder-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
@@ -22691,6 +22692,121 @@
       }
     },
     {
+      "id": "history-shortcut",
+      "slug": "history-shortcut",
+      "title": "History Shortcut",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "history-shortcut",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "history-shortcut",
+          "kind": "app",
+          "title": "History Shortcut",
+          "subtitle": "App Undo/Redo routing and completion"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/features/undo-redo.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs",
+          "semanticOwner": "Asyra Design",
+          "inspectorOwner": "Asyra Design"
+        },
+        "links": [
+          {
+            "id": "product-contract",
+            "kind": "authority",
+            "label": "Undo/Redo behavior",
+            "href": "../../../docs/ai/apps/asyra-design/features/undo-redo.md"
+          }
+        ],
+        "lanes": [
+          {
+            "id": "app",
+            "title": "App Shortcut",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "select-history-replay",
+            "order": 1,
+            "laneId": "app",
+            "title": "Select and await history replay",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "Choose Undo or Redo from the shortcut and await the App history API.",
+            "inputs": [
+              "shortcut keyShift state",
+              "App history API completion"
+            ],
+            "outputs": [
+              "artifact:history-shortcut-outcome"
+            ],
+            "conditions": [
+              "Without Shift invoke Undo; with Shift invoke Redo.",
+              "Keep exclusive execution pending until the requested replay settles."
+            ],
+            "bypasses": [
+              "No alternate replay direction or early success is permitted."
+            ],
+            "allowedContributors": [
+              "App shortcut definition",
+              "App history API"
+            ],
+            "forbiddenContributors": [
+              "direct Factory stack mutation",
+              "test output as product state"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/features/undo-redo/index.ts",
+              "apps/asyra-design/src/common-apis/history.ts",
+              "apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts"
+            ],
+            "specRefs": [
+              "#behavior",
+              "#contract"
+            ],
+            "failureOwnerStepId": "select-history-replay"
+          }
+        ],
+        "routes": [
+          {
+            "id": "shortcut-complete",
+            "from": "select-history-replay",
+            "kind": "terminal",
+            "predicate": "The selected replay completes.",
+            "producedArtifacts": [
+              "artifact:history-shortcut-outcome"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:history-shortcut-outcome",
+            "ownerStepId": "select-history-replay",
+            "channel": "App feature result",
+            "consumerStepIds": [],
+            "terminal": true
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": []
+      }
+    },
+    {
       "id": "input-system-environment-neutrality",
       "slug": "input-environments",
       "title": "Input System Environment Neutrality Flow",
@@ -39094,6 +39210,52 @@
         ],
         "steps": [
           {
+            "id": "localize-test-results",
+            "order": 18,
+            "laneId": "proof",
+            "title": "Locate ordinary test failures",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Retain ordinary test observations and resolve responsibility without granting conformance.",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "original Vitest case report, runner-normalized error details and project identities",
+              "run identity and mapped working-tree input fingerprints"
+            ],
+            "outputs": [
+              "artifact:localized-test-observations"
+            ],
+            "conditions": [
+              "Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.",
+              "Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.",
+              "Retain atomic per-run records and reuse admitted read projections until files change."
+            ],
+            "bypasses": [
+              "Incomplete execution has no completed result or passing authority."
+            ],
+            "allowedContributors": [
+              "opt-in Vitest reporter",
+              "existing product proof manifest and architecture",
+              "local read-only service and CLI"
+            ],
+            "forbiddenContributors": [
+              "model-inferred ownership",
+              "accepted baseline mutation",
+              "arbitrary command dispatch"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/localization.cjs",
+              "tools/flow-inspector/control-plane/vitest-reporter.mjs",
+              "tools/flow-inspector/control-plane/__tests__/localization.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/localization-runtime-fixture.cjs"
+            ],
+            "specRefs": [
+              "#ordinary-test-failure-localization"
+            ],
+            "failureOwnerStepId": "localize-test-results"
+          },
+          {
             "id": "assess-target-source",
             "order": 17,
             "laneId": "proof",
@@ -39618,6 +39780,7 @@
               "artifact:admitted-proof-contract"
             ],
             "conditions": [
+              "A selected terminal step with no incoming artifact routes admits an explicit empty handoff list; steps with incoming routes still require every handoff. Optional case implementationPaths must be exact relative paths within the selected step boundary; projectName is an optional exact runner project identity.",
               "Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.",
               "Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.",
               "Publish separately digested runtimeScope from the union of mapped step IDs in architecture order, retaining each step ownerPackage and implementationBoundary once. A mapping with explicit workspaceSources retains validated unique workspace names, relative runtime inputs and nullable alias entries in scope format 2; genuine historical absence retains scope format 1. Preserve mapping format 2, Inspector schema 2 and contract digest semantics. This step does not read workspace manifests or derive dependency closure; capture-proof-source owns that admission. Re-admitting historical definitions cannot itself grant new workspace runtime authority."
@@ -39637,7 +39800,8 @@
             "implementationBoundary": [
               "packages/factory/flow-contracts.json",
               "tools/flow-inspector/control-plane/contracts.cjs",
-              "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs"
+              "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs",
+              "apps/asyra-design/undo-redo-flow-contracts.json"
             ],
             "specRefs": [
               "#admission"
@@ -39852,6 +40016,7 @@
             "ownerPackage": "tools/flow-inspector/control-plane",
             "purpose": "Controlled Actions and Retention",
             "inputs": [
+              "artifact:localized-test-observations",
               "artifact:admitted-proof-contract",
               "artifact:assessed-proof-evidence",
               "artifact:proof-source-snapshot",
@@ -39875,6 +40040,7 @@
               "artifact:scoped-work-review"
             ],
             "conditions": [
+              "Serve retained ordinary test observations through read-only endpoints and CLI without creating tasks, running proofs or granting accepted authority. Admit a single valid observation selector only on registered target-page GET requests; reject unrelated query parameters and keep mutation authorization unchanged.",
               "Bind local service creation, fresh candidate loading and restart to one server-selected product manifest. Reject another product at the same store; isolate implicit stores by manifest identity. CLI local selection forwards that path while remote actions consume the running service selection. Retain runtimeAuthority formats 1 and 2 only from source-owner capture or complete re-admission, never from current contract reconstruction; unknown versions reject. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.",
               "For dependent work admission, resolve only the explicitly selected retained assessment and its registered source, then supply that complete immutable owner artifact and a private exact live-source lookup to manage-flow-target. Require matching actor, current target/allocation and retained pins before the target decision; task start rejects retired source authority even though the admission revision makes the assessment projection historical. Do not accept client result/source fields, recompute prerequisite evidence or treat integration eligibility as admission authority. Existing independent baseline-proof admission remains unchanged.",
               "For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require the current-contract assessor work result including prerequisites to pass; historical preservation is not a new requirement; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.",
@@ -39923,6 +40089,7 @@
               "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
             ],
             "specRefs": [
+              "#ordinary-test-failure-localization",
               "#scoped-work-review-handoff",
               "#controlled-actions-and-retention",
               "#source-admission-in-the-local-service",
@@ -39958,6 +40125,7 @@
               "artifact:proof-board-view"
             ],
             "conditions": [
+              "Project original test observations and each retained assertion difference as text in the existing detail panel; do not compute missing values or interpret evidence as HTML. Select only exact architecture-version matches, preserve unresolved failures and history, and clear retired selected details after recovery. Selection performs no command execution.",
               "Project service-owned runtime authority and contract-scope digests for the selected source. The Board does not derive package closure, aliases, task ownership or eligibility.",
               "For dependent work preparation, require an explicit retained assessment selection for the selected target and current allocation and forward only its id with the target decision. Present the selected work and prerequisite status from the service projection; do not infer eligibility or use PR/task state as proof. Independent work continues to use the explicit completed baseline-proof selector.",
               "Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.",
@@ -39988,9 +40156,12 @@
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/public/board.js",
               "tools/flow-inspector/control-plane/public/board.css",
+              "tools/flow-inspector/control-plane/public/localization.js",
+              "tools/flow-inspector/control-plane/__tests__/board-localization.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs"
             ],
             "specRefs": [
+              "#ordinary-test-failure-localization",
               "#board",
               "#target-assessment-board-consumer",
               "#integrated-target-baseline-acceptance",
@@ -40002,6 +40173,16 @@
           }
         ],
         "routes": [
+          {
+            "id": "localization-to-service",
+            "from": "localize-test-results",
+            "to": "serve-proof-actions",
+            "kind": "handoff",
+            "predicate": "An original test observation has been retained.",
+            "producedArtifacts": [
+              "artifact:localized-test-observations"
+            ]
+          },
           {
             "id": "target-assessment-to-work-admission",
             "from": "assess-target-source",
@@ -40532,6 +40713,14 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:localized-test-observations",
+            "ownerStepId": "localize-test-results",
+            "channel": "retained local test observations",
+            "consumerStepIds": [
+              "serve-proof-actions"
+            ]
+          },
           {
             "id": "artifact:scoped-work-review",
             "ownerStepId": "serve-proof-actions",
