@@ -416,3 +416,25 @@ test('accepted contracts retain detached architecture for immutable version reco
   assert.ok(Object.isFrozen(original.architectureDefinition.steps))
   assert.notStrictEqual(original.architectureDefinition, architecture)
 })
+
+test('a terminal App shortcut admits no incoming handoffs and retains exact locations', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/undo-redo-flow-contracts.json'
+  )
+  assert.equal(contract.flows[0].steps[0].ownerPackage, '@asyra/asyra-design')
+  assert.deepEqual(contract.flows[0].handoffs, [])
+  for (const location of ['../outside.ts', 'packages/factory/src/index.ts']) {
+    const changed = structuredClone(contract.definition)
+    changed.flows[0].cases[0].implementationPaths = [location]
+    assert.throws(
+      () => admitContract(changed, contract.architectureDefinition),
+      /implementation location/
+    )
+  }
+  const changed = structuredClone(manifest)
+  changed.flows[0].handoffs = []
+  assert.throws(() => admitContract(changed, architecture), /handoff/)
+})

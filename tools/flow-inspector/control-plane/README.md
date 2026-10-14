@@ -75,6 +75,52 @@ To use the CLI while the board is open, prefix a command with
 and store. Without `--url`, the CLI requires exclusive local store ownership.
 Choose a free port for this tool; do not terminate another application's server.
 
+## Locate Failures from an Existing Test Run
+
+Add the optional reporter alongside the normal reporter to the same Vitest
+invocation. It observes the original assertions and exit status; it does not
+launch a diagnostic rerun. From the repository root:
+
+```bash
+# Existing Design shortcut assertions, with their jsdom environment.
+yarn workspace @asyra/asyra-design exec vitest run --environment jsdom --maxWorkers=1 --no-file-parallelism src/features/undo-redo/__tests__/feature.test.ts --reporter=default --reporter=../../tools/flow-inspector/control-plane/vitest-reporter.mjs
+
+# Existing Factory transaction assertions and their source-owned config.
+node node_modules/vitest/vitest.mjs run --config packages/factory/src/__tests__/flow-proof.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
+# Human and agent clients read the same retained context; no proof lock is needed.
+node tools/flow-inspector/control-plane/cli.cjs test-results
+node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 test-results <run-id>
+```
+
+Open `/history-shortcut` or `/transaction-atomicity` on the local Board. The
+**Test failure locations** section lists all observed failures, including
+unmapped failures. Selecting a mapped failure focuses its declared owner card
+and shows the original assertion, implementation boundary, source identity and
+original invocation. Cross-target links open the appropriate existing canvas.
+The history selector also exposes setup errors and full reports without cases.
+After a rerun, **Latest observed result per test** updates only the tests actually
+observed; previous failure records remain selectable. It does not mean the
+working tree is continuously verified. Old architecture versions never color
+new canvas nodes.
+
+The initial mapping scope is the two Design shortcut cases and the registered
+Factory cases. Other tests remain explicitly unmapped. Exact implementation
+paths are provided where declared; otherwise the responsible step boundary is
+shown with unavailable precision. Mapping identifies an investigation starting
+point, not the proven defect or a restriction on the eventual fix.
+
+Records live under `tmp/flow-inspector/test-results/` with raw reports, run UUID,
+Git HEAD, mapped-input fingerprints and original command. Runner errors and
+incomplete runs do not become node failures or accepted proof. These are local
+observations, not baseline acceptance. The reporter is opt-in developer tooling
+and adds nothing to products built with Asyra. `FLOW_LOCALIZATION_ROOT` can select
+an isolated checkout; `FLOW_LOCALIZATION_MANIFESTS` can supply a JSON array of
+existing admitted manifest paths. These environment values must be retained
+when reproducing a custom invocation. No credentials or arbitrary environment
+variables are captured.
+
 ## CLI and CI Proof
 
 Periodic formal verification does not require a model or AI credentials.

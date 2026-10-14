@@ -35,7 +35,57 @@ are planning changes only: runtime, permissions, architecture steps, acceptance
 authorities and completed delivery records remain unchanged.
 Command buttons and comment blocks are deferred until this path is complete.
 
-## Current implementation and remaining gaps
+## Bounded implementation - 2026-10-14
+
+The next implementation covers Priorities 1-3 for the existing Design Undo/Redo
+shortcut cases and registered Factory cases. The base is
+`c696dba31984ac2fc6be817524505c722b4af9d9`; implementation lives on a new
+`codex/flow-test-failure-localization` worktree branch. The older inventory below
+is retained as the planning baseline, not the current completion claim.
+
+The implemented path is an opt-in Vitest reporter on the original invocation,
+immutable per-run observations, exact file/name/project mapping through existing
+contract admission, and the same original context exposed through the existing
+Board, read API and CLI. Unmapped/ambiguous/stale failures and setup errors stay
+visible. Recovery updates only observed cases and preserves historical failures.
+Declared responsibility is the starting point for investigation, not a claim
+that the mapped step is the proven root cause.
+
+Owner execution boundaries:
+
+- `admit-proof-contract`: admit the App terminal shortcut flow, optional exact
+  implementation paths within the existing step boundary and project identities.
+- `localize-test-results`: retain original results and mapped-input fingerprints,
+  resolve responsibility once, preserve unknowns and immutable completed history.
+- `serve-proof-actions`: expose read-only observations without accepted-proof,
+  task or delivery effects; keep cached record reads separate from source capture.
+- `render-proof-board`: select existing matching-version cards, display the same
+  machine context and original failure, and clear retired details after recovery.
+
+Formal validation includes unchanged App/Factory assertions through baseline,
+fault and restoration; source edits during execution; missing/malformed reports;
+identity collisions; independent scopes; actual read counts; API/CLI equality;
+and desktop/narrow Board selection, history and recovery. Regression fixes add
+permanent tests before implementation. Existing control-plane, package, naming,
+placement, formatting, lint, typecheck, build and browser gates remain required.
+The existing CI control-plane list and Board discovery include these new tests.
+
+This bounded milestone is implemented and locally validated: the full existing
+control-plane group passed 487 tests with two platform-specific skips; the final
+focused group passed 54 tests; the complete Board group passed 14 tests with two
+retained-live-evidence skips. The original proof passed all three flows, five
+negative scenarios and nine obligations. Package tests, naming/placement/scope
+contracts, lint, typecheck, generated catalog and production builds passed.
+Desktop and narrow screenshots were inspected. No live provider or GitHub
+write was used as test evidence. Broader result-producer and mapping coverage
+remains future work; command buttons and comment blocks remain deferred.
+
+No automatic repair, task dispatch, command buttons, comments, ADE integration,
+Playwright result producer or general CI import is part of this milestone. Future
+work should expand mappings and result producers only after the localized path
+proves useful for real failures; those remain separate bounded increments.
+
+## Planning baseline and original gaps
 
 Read-only inventory baseline: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6`.
 The following describes inspected source and permanent test coverage, not a

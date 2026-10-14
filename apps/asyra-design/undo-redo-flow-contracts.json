@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "manifestPath": "apps/asyra-design/undo-redo-flow-contracts.json",
+  "targetId": "history-shortcut",
+  "architecturePath": "tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs",
+  "specPath": "docs/ai/apps/asyra-design/features/undo-redo.md",
+  "testFile": "apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts",
+  "configFile": "apps/asyra-design/vite.config.ts",
+  "negativeCaseIds": ["shortcut.undo", "shortcut.redo"],
+  "externalInputs": [],
+  "workspaceSources": [
+    {
+      "name": "@asyra/asyra-design",
+      "inputs": ["src/**"],
+      "entry": null
+    }
+  ],
+  "flows": [
+    {
+      "id": "history-shortcut",
+      "title": "History shortcut",
+      "goal": "Select and await the intended history direction.",
+      "stepIds": ["select-history-replay"],
+      "cases": [
+        {
+          "id": "shortcut.undo",
+          "stepId": "select-history-replay",
+          "testName": "Undo/Redo feature cooperative replay keeps the exclusive Undo execution pending until replay settles",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts"
+          ]
+        },
+        {
+          "id": "shortcut.redo",
+          "stepId": "select-history-replay",
+          "testName": "Undo/Redo feature cooperative replay awaits Redo when Shift selects the forward replay",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    }
+  ],
+  "defaultNegativeScenario": "reverse-shortcut",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "reverse-shortcut",
+      "title": "Reversed shortcut direction",
+      "expectedFailedCaseIds": ["shortcut.undo", "shortcut.redo"],
+      "mutation": {
+        "file": "apps/asyra-design/src/features/undo-redo/index.ts",
+        "from": "if (snapshot.keyShift)",
+        "to": "if (!snapshot.keyShift)"
+      }
+    }
+  ]
+}

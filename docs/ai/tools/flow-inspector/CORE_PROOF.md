@@ -2209,3 +2209,51 @@ formal cases use real source-, runner- and evidence-owner case results at one
 captured source. Synthetic work or PR observations are labeled presentation data,
 never proof. No test performs acceptance in the repository's real local store or
 any external provider.
+
+## Ordinary Test Failure Localization
+
+The opt-in Vitest reporter observes an existing invocation without rerunning it
+or changing its assertions/exit status. It consumes explicitly selected existing
+version-2 proof manifests, retaining their admitted architecture and exact cases.
+The initial selections are Factory transaction tests and Design Undo/Redo shortcut
+tests. Shortcut observations prove App routing and awaiting only, not History replay.
+
+The reporter records a running observation before execution and a completed
+observation after settlement. Each record binds run UUID, time, Git HEAD,
+working-tree mapped-input fingerprints, manifest/architecture digest, test file,
+full test name and Vitest project identity. Parameterized duplicate full identities
+remain ambiguous, never arbitrarily assigned. Input fingerprints describe the
+observed working tree, not a captured execution sandbox or complete runtime
+provenance. In-flight changes make localization stale. Missing runner reports
+remain incomplete; observations never grant accepted conformance or delivery.
+
+Every received failure is retained, including unmapped cases and suite/runner
+errors. The localization owner resolves a unique file/name/project match to the
+admitted case, flow, architecture step, failure owner, spec and implementation
+boundary. Optional exact case implementation locations must lie in that boundary.
+Unavailable precision remains explicit. Missing, ambiguous or changed mappings
+produce unresolved records. Failure text is original runner evidence, not an
+inferred root cause. Multiple cases at one node remain separate.
+
+The producer atomically retains one record per run under
+`tmp/flow-inspector/test-results/`. Raw reports and resolved locations are retained
+together. A dedicated read projection exposes these observations through the
+existing loopback service and CLI, separate from accepted proof runs. Readers
+reuse admitted records until their files change; they do not rehash working-tree
+sources or re-localize cases on polling. Currentness refers to the latest observed
+run for an exact test scope, not continuously current source. Historic results
+remain accessible, and one scope's pass cannot clear another scope's failure.
+
+The existing Board receives the same completed locations. One selection focuses
+the matching existing architecture card and displays the test identity, mapped
+owner, exact implementation location when declared, boundary, contract reference,
+original reason and rerun command. It never infers mappings or overrides proof
+badges. Unmapped and execution failures remain visible without a guessed card.
+Static viewers remain independent; commands displayed as text do not execute.
+
+Formal acceptance includes real unchanged App/Factory assertions before a source
+fault, after the fault and after restoration; duplicate names/projects, multiple
+failures per step, unknown tests, in-flight edits, unavailable reports, setup
+errors, independent scopes and retained history; Board/machine equality and
+unchanged-poll read counts. The test runner and package runtime remain their
+existing owners. New result-source integrations are outside this milestone.
