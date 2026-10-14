@@ -502,6 +502,22 @@ test('Render viewport admission retains six exact responsibility locations', () 
     undefined,
     'packages/render/navigation-flow-contracts.json'
   )
+  assert.equal(
+    contract.specPath,
+    contract.architectureDefinition.authority.specPath
+  )
+  const headings = fs
+    .readFileSync(path.join(root, contract.specPath), 'utf8')
+    .split('\n')
+    .filter((line) => /^#{1,6} /.test(line))
+    .map(
+      (line) => '#' + line.replace(/^#+ /, '').toLowerCase().replace(/ /g, '-')
+    )
+  const step = contract.architectureDefinition.steps.find(
+    (item) => item.id === 'orchestrate-render-adapter'
+  )
+  for (const reference of step.specRefs)
+    assert.ok(headings.includes(reference), reference)
   assert.equal(contract.cases.length, 6)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'orchestrate-render-adapter')

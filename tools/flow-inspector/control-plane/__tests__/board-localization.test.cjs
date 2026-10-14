@@ -479,6 +479,10 @@ test(
     for (const file of failures[0].locations[0].implementationPaths)
       await expect(details).toContainText(file)
     await expect(details).toContainText(failures[0].failures[0])
+    await expect(details).toContainText(
+      'Contract: docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
+    )
+    await expect(details).toContainText('#state-to-render-surface')
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
     ).json()

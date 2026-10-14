@@ -288,6 +288,16 @@ focused and full suites passed without weakening assertions. Bounded final revie
 found no remaining actionable issue. This closes only the selected Render slice;
 remote CI and merge remain separate from local completion.
 
+Stage review correction: the viewport manifest previously paired the Render
+package document with architecture section references owned by the completed
+Render-Engine Boundary plan. Align its specification path with the selected
+Inspector authority. A test-first regression proves the previous mismatch and
+checks that every selected step reference resolves to a heading in that document.
+Runtime and Board regressions assert the same retained specification path and
+section. Preserve existing historical records and case identities; new observations
+carry the corrected contract digest. The shared runtime fixture includes the
+selected authoritative document so observation fingerprints remain available.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

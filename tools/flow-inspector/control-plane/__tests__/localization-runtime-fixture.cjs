@@ -47,6 +47,7 @@ function localizationFixture() {
     'packages/render/src/__tests__/viewport-layer.test.ts',
     'tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs',
     'docs/ai/framework/packages/render.md',
+    'docs/ai/framework/plans/completed/render-engine-boundary-plan.md',
     'packages/factory/history-replay-flow-contracts.json',
     'packages/factory/src/__tests__/history-replay.config.ts',
     'packages/factory/src/__tests__/factory-journal-history.test.ts',

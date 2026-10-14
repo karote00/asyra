@@ -3,7 +3,7 @@
   "manifestPath": "packages/render/navigation-flow-contracts.json",
   "targetId": "render-engine-boundary",
   "architecturePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
-  "specPath": "docs/ai/framework/packages/render.md",
+  "specPath": "docs/ai/framework/plans/completed/render-engine-boundary-plan.md",
   "testFile": "packages/render/src/__tests__/viewport-layer.test.ts",
   "configFile": "packages/render/src/__tests__/navigation-flow.config.ts",
   "workspaceSources": [

@@ -461,6 +461,11 @@ test(
     assert.equal(location.targetId, 'render-engine-boundary')
     assert.equal(location.stepId, 'orchestrate-render-adapter')
     assert.equal(location.caseId, 'navigation.camera')
+    assert.equal(
+      location.specPath,
+      'docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
+    )
+    assert.ok(location.specRefs.includes('#state-to-render-surface'))
     assert.deepEqual(location.implementationPaths, [
       'packages/render/src/layers/viewport/viewport-layer.ts',
       'packages/render/src/types/render-object.ts'
