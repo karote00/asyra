@@ -1,24 +1,15 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: IN PROGRESS - live workload corrections after the completed staged work.
+Status: PERSISTENCE 409 CORRECTION VERIFIED LOCALLY - real edits, Undo/Redo, durable checkpoints and reload pass; no push or monitoring authorized.
 
 ## Current authority and stop boundary
 
-The 2026-10-14 live test on 4e28aa8a7 exposed a large-workload regression after
-Stages 1-8 passed their local gates. Those gate results remain historical facts,
-not evidence that the live workload passed. Current user authorization is to
-analyze and fix the observed inspection fanout, activity repeated work/status,
-and diagnostic delivery gaps, then run the full recorded Taipei 101 test once.
-Reuse `.worktrees/ai-reusable-tool-design`. No push, PR operations, monitoring,
-extra evaluator AI, model change or unrelated refactor. Preserve local data/env.
-
-The live test deadline is 900 seconds from Send. Failure to complete within it
-is a failed test and must stop execution immediately through an independent
-watchdog, not a browser-poll-loop condition. Diagnostic/video cleanup may follow,
-but cannot extend drawing time or turn timeout into success. Normal completion
-still retains the ten-second recording hold. Do not automatically start another
-full drawing after a timeout. Follow the correction section below; older stage
-push/stop instructions are historical and do not control this task.
+The current task replaces Design's durable/peer interpretation of low-level Factory batches with explicit canonical document operations prepared once by the publishing App adapter. Preserve source publication identity/order, semantic source slices, Undo/Redo, compensation, retained retry bytes, checkpoint integrity and reload. Scope includes the Design publication adapter, wire validation, peer processor, outbox consumers, durable materializer/errors and their formal contracts/tests. Generic Factory, Core and Collaboration retain their current APIs unless a demonstrated direct integration defect requires correction. No live101, model calls, push or monitoring.
+The preceding four handoff repairs and recorded full101 are retained evidence.
+Reuse the current worktree; no push, monitoring, new live101, extra evaluator AI,
+model change or unrelated framework optimization. Finish scoped tests, lint,
+production typechecks and review, then report. Existing local changes are preserved.
+Any later authorized full101 retains its independent 900-second hard deadline.
 
 ## Direction
 
@@ -2243,3 +2234,950 @@ The public documentation gate also detected generated API/guide indexes behind
 the current source. Existing generation synchronized the new exported byte
 bound and guide hashes; validation passes for 41 pages, 19 guides, 291 local
 links and 135 API references (`tmp/push-101-repairs/docs-final.log`).
+
+
+## Post-live handoff corrections - 2026-10-14
+
+### Bounded contract and reviewed sequence
+
+Fix the observed handoff failures, not scene complexity. The source checkpoint
+is 713805aaa49692a6406d73eb6b7a92b6276a1aa8. Discovery is limited to the affected
+Runtime action wrapper, Design transaction/action/query owners, operation tool
+projection, descriptor delivery and their direct consumers/specs/tests.
+
+1. Runtime apply: forward the optional settlement callback unchanged to the host
+   executor. The host chooses its synchronous publication boundary. Prove actual
+   Runtime invocation reaches the structural receipt publisher and its next
+   consumer; cancellation, throwing mutation, callback failure and optional
+   recording must not cause a second write or duplicate notification.
+2. Query apply: add an explicit transient identity delivery to the existing
+   context reader for complete region targets. It uses the same canonical
+   selector/validation and never publishes a reusable handle or reserves a
+   retained entry. A matching retained query may supply its existing selected
+   identities without acquiring/releasing the caller's lease. The backend
+   deduplicates query selectors within its current operation batch and retains
+   only the copied target IDs until ordinary mutation admission. Prove more than
+   eight distinct queries with the unchanged eight-entry budget, pinned external
+   consumers, invalid/count/empty/cancel paths and later admission failure.
+3. Operation delivery: recognize only the exact canonical successful outcome
+   for compact valueless write acknowledgements. Preserve unknown, partial,
+   failed and unavailable receipts in full. Original receipts and mutation scope
+   reach validation/invalidation and existing execution recording before model
+   projection. Structural outputs keep their existing immutable readback handles;
+   full response at initial invocation remains available. Do not introduce a
+   second receipt store or suggest rerunning writes for readback. Prove real
+   action outputs, ordered counts, unchanged original scopes, compact bytes and
+   failure preservation, including successful prefixes of failed batches.
+4. Compose delivery: verify descriptor identity/revision/coverage/field-set
+   reuse, changed definitions, scoped recovery and explicit delivery-failure or
+   context-loss recovery. A previous response is not proof the model received it.
+   The recorded full refresh is not by itself a duplicate-delivery bug. Only
+   change production behavior if a formal counterexample requires it.
+
+### Self-review before implementation
+
+The apply and compose Inspector contracts already require synchronous settlement,
+exact ownership, original receipt checking and scoped definition recovery. The
+query extension needs an explicit transient output branch: no fake handle and no
+optional weakening of retained success. Restrict transient reads to complete
+region IDs. Public retained page/reference/column consumers remain pinned.
+Reject transient snapshot/metadata requests, foreign/released handles and
+incoherent reads. Do not fix capacity by raising limits or releasing caller data.
+
+All writes retain current permission, existence, revision, cancellation and Undo
+admission. Delivery or callback failure cannot replay a completed mutation.
+Compact projection must not erase findings or failure settlement. No new model,
+callback interpreter, background task, repository-wide migration or dependency.
+
+### Execution cards and closure
+
+Owner 1: Runtime apply wrapper and existing Runtime/App structural tests.
+Owner 2: Design context action/schema and retained query owner, operation target
+resolver, their formal tests, current apply specification and Inspector condition.
+Owner 3: Design operation result projection and existing canonical result tests.
+Owner 4: compose discovery definition tests and current description only if needed.
+Each starts with a failing regression where behavior is wrong, then implementation,
+focused tests, type/lint checks and direct-consumer review before advancing.
+
+Final gates: affected Runtime suite/build, Design server operation/ownership and
+browser query/structural/transaction tests, production browser/server typechecks,
+focused ESLint, naming, current generated catalog equality and documentation
+checks if contracts change. No entire local CI or full101. Retain failed evidence
+as failed. Completion requires all four handoffs verified with remaining limits
+reported; leave changes local and monitoring disabled.
+
+
+### Handoff correction review evidence
+
+Runtime apply regression failed on both missing notification and swallowed
+settlement error; the real Runtime-to-structural-action regression failed before
+fixing the wrapper. The host callback now passes unchanged, without invocation
+or replay in Runtime. Subsequent full receipt recovery uses the actual Runtime
+request signal, not the external caller signal; the ownership assertion correctly
+caught that fixture mistake. Runtime 16 and structural 14 focused cases passed.
+
+Query apply regression reproduces capacity exhaustion with eight accepted pins.
+The value-only path uses the existing query computation and borrows cached
+identities without borrowing/releasing a lease. Sixteen internal regions now
+resolve with all eight accepted pins intact; repeated selectors avoid a new
+spatial selection. Native schema conversion and browser runtime reject unsupported
+transient shapes. Output review added a counterexample for a transient result
+masquerading as retained by supplying fake handles; keep output alternatives
+explicitly disjoint. Normal query and operation suites passed 25 and 143 cases
+before this additional contract oracle.
+
+Compose verification uses the existing exact discovery/recovery tests: changed
+native registry generations, revisions, removed recipes, full/usage/field coverage,
+path ordering, partial recovery and explicit context/delivery loss. No evidence
+supports removing recovery or increasing limits. Production definition delivery
+is unchanged. Its provenance means returned, never confirmed model receipt.
+
+Remaining closure is current-source integrated regression/type/lint verification,
+including failure/cancellation and original receipt preservation. This is not a
+new live101 speed claim and is not measured by scene node count.
+
+
+### Query handoff iteration - preserve typed composition
+
+The existing real query-to-fill recipe rejected the draft union output: changing
+one retained query action to optionally return no handle makes the next typed
+step unable to rely on that handle. This is a contract-design defect, not grounds
+to weaken recipe admission or preserve an old format through compatibility.
+Re-review chooses two exact contracts in the same registry and query owner:
+`read_design_context` always delivers retained references; the new batch-only
+`resolve_design_targets` delivers transient region identities only. Both use
+canonical query validation/computation. The latter has no public lifetime switch,
+handle, cleanup callback or independent cache. Internal target.query uses it.
+
+Owner/card: apply plus its compose admission consumer; inputs are registered
+region bounds/filter/expected count, output is complete copied IDs or rejection.
+The existing query store owns computation and cancellation; action constants,
+effect metadata and runtime-input register the one new read action. Existing
+read/refinement/page/release contracts and recipe bindings remain unchanged.
+Allow those exact registration files plus context/operation tests in this slice;
+no new tool engine, registry, model exposure route or store. The existing failed
+query-to-fill composition test is the preservation oracle. New resolver tests
+prove no capacity reservation, no fake handles, input/native equivalence and
+failure before writes. Re-run ownership/operation/query tests, types/lint/naming
+before closing. This supersedes the draft output-union detail above.
+
+
+Registration consumer review: the existing startup test detects the new action
+missing from the explicit App permission policy. Add only this canonical read
+identifier to that policy and its standard activity label; unknown actions still
+reject. These are direct registration consumers within the current Inspector
+allowlist, not a permission redesign. The Node-only flow proof uses its protocol
+fixture and the current resolver identity; importing the browser action factory
+there incorrectly pulled browser globals into the server proof/typecheck. Actual
+browser contracts remain tested through the real factory in focused tests.
+
+### Ordered handoff correction closeout
+
+All four reviewed boundaries are verified. Runtime forwards the exact settlement
+callback to the host transaction, including recording on/off, failure and
+cancellation. The actual Factory transaction and Runtime prove group-to-readback
+and group-to-edit without a child query or replay. Region targets use the separate
+value-only action through the existing query owner; all eight existing retained
+pins survive sixteen distinct internal queries. A final regression exposed an
+equivalent selector with reordered object keys performing a seventeenth spatial
+read. Canonical record-key ordering now deduplicates it within the operation batch
+while preserving array order and all seventeen requested writes. Capacity is
+unchanged. Cancellation and unknown read settlement cannot proceed to writes.
+
+The actual basic-action/observation/Runtime/transaction/server chain proves
+compact success for sixteen plural edits: all 3,072 affected identities reach
+recording and the existing check owner; the model receives acknowledgements and
+one actionable pending reference, under 2,000 serialized bytes and under one
+tenth of the original receipts. Failure, partial/unknown settlement, unavailable
+delivery and unknown extensions remain explicit. This measures transfer and
+work, not drawing quality, scene complexity or model latency. Definition delivery
+already meets request/revision/view/field identity and recovery contracts; its
+existing formal tests pass, so production discovery is unchanged.
+
+Final verification: Runtime 370 tests plus build; Design AI 554 tests; server
+handoff/ownership 221 tests; the affected real structural integration 15 tests
+rechecked after the query-key correction; browser/server production typechecks;
+focused lint (zero errors, two pre-existing console warnings); naming 15;
+generated catalog 8; documentation and task-context checks. Query owner and
+schema-focused regressions also passed in their owner slice. Evidence is in
+`tmp/handoff-{runtime,ai-suite,server,structural,types,lint,naming}-final.log`,
+`tmp/handoff-catalog.log` and `tmp/handoff-docs.log`. Failed red and intermediate
+draft-contract evidence remains failed; it is not included as passing validation.
+
+Current Design source candidate `8b5f2ec1-60ed-4e7e-870b-7cd273375416` passed at
+source `93174d30ab833e6f0d61a74c86026b67c717df3239da9c74d234487fb6c6cb0f`.
+Reviewed contract `fe046cc8e2975ac2a0e689fda4663cd685a9f9b23862fe028c67cadd1a006239`
+was accepted with no blockers. Final bounded review covered producers, registered
+schemas, policy admission, lifetime, failure/cancellation, downstream composition,
+recording and compact response consumers. No new registry/cache, compatibility
+path, higher limit, extra AI evaluator or model change was introduced. No new
+full101, whole local CI, push or monitoring occurred. Full drawing elapsed time
+and first-frame improvement remain unmeasured by this correction task.
+
+The same-source final Flow proof also passed: one flow, four intentionally failing
+negative scenarios, thirty obligations and successful recovery
+(`tmp/handoff-proof-final.log`). Those injected failures are required negative
+evidence, not unresolved product failures.
+
+## Discovery and activity correction - 2026-10-14
+
+### Bounded contract and reviewed sequence
+
+Observed source: HEAD 713805aaa plus the completed local handoff changes. Frozen
+run reusable-tools-1791965887247 proves discovery advertised review_design as a
+batch action while batch admission rejects it. Taipei/ornament queries establish
+unsuccessful capability lookup, not proof of the model's private intent.
+Completion retains an expired call purpose. Long-window evidence is in the run's
+tool-status-timing-audit.md and action-timing-breakdown.json.
+
+1. Compose: derive batch schema, batch admission and advertised routes from the
+   same admitted action set. Keep explicit mechanical review/capture on their
+   existing native owners so findings and image evidence are processed correctly.
+   Discover their actual native wrapper, including argument wrapping; unavailable
+   or ambiguous native bindings never invent a namespace or executable route.
+   Cover exact names/operations, menus, lexical results, candidates and definition
+   reuse/refresh, preserving independent recipe contracts.
+2. Compose: distinguish capability lookup from subject/reference research in
+   existing App/tool guidance. Publish compact registry-derived menus and include
+   native/saved capabilities in lexical search. Unknown terms return capability
+   choices and research guidance without automatic dispatch, subject lists or a
+   new model/classifier. Known tools remain directly callable. Full/partial exact
+   schemas and explicit recovery remain available; lookup does not reserve them.
+3. Settle: every ordered start/end updates live invocation state; completed call
+   text cannot survive as current work. Preserve objective, live ancestry,
+   concurrent siblings, retries, cancellation and terminal precedence. Deduplicate
+   only projected presentation. Remove superseded segment-purpose retention,
+   not another fallback or timeout. Preserve current authored language.
+4. Observe assessment: retain exact-ID exchange timing for the frozen run and
+   distinguish provider-side intervals from inclusive App work and research.
+   Identify measured apply substeps without double-counting. No speculative
+   performance change, inference-time claim or new full drawing is authorized by
+   this measurement slice; concrete owner regressions may be repaired within the
+   affected discovery/status handoff, not a renderer/storage redesign.
+
+### Plan review and execution cards
+
+Compose card: owner compose; spec capability-discovery-and-composition and shared
+contracts; Inspector compose inputs admitted registry/request, outputs callable
+program, failure owner compose. Allowed contributors actual native inventory,
+canonical action definitions and existing prompt. Boundary local-operation-tools,
+ai-domain-prompt and their existing tests plus current spec/Inspector. Inputs are
+unchanged selectors; outputs exact routes and bounded capability menus. No web
+request, canvas operation, permission relaxation, separate registry or extra AI
+occurs during discovery. Formal tests must reproduce the false batch route and
+native search omission first, then prove all discovery surfaces and actual native
+invocation agree; unavailable registration and query pagination remain explicit.
+
+Settle card: owner settle; spec purpose-lifetime; Inspector ordered progress to
+visible outcome, failure owner settle. Boundary activity-state and presentation
+formal tests plus direct panel/progress consumers. Inputs current request/attempt,
+sequence, call/parent ID, phase and authored purpose. Outputs live purpose/phase
+and diagnostic selection. No inference of model work from elapsed time; no stale
+purpose retained after completion. Red/green regressions cover completion with
+no objective, objective fallback, parent/sibling work, late events, duplicate
+visible starts, retry and lifecycle controls. A new work purpose must have a new
+valid invocation or explicit request purpose, never revive a closed call.
+
+Feasibility review: native wrappers already own explicit review/capture result
+processing; route metadata must preserve wrapper inputs rather than removing the
+batch restriction. Native inventory is lazy and revision-aware, so discovery must
+not snapshot it at owner construction. Search choices are advisory, not dispatch.
+The status reducer already stores ordered active calls; remove stale retention
+while retaining that owner and its concurrency semantics. Scoped schema reuse
+keys and full definitions remain independent of compact menus. Terminal events
+must update state even when the visible projection is identical.
+
+Gates: regression-first operation/prompt tests; presentation plus direct panel and
+provider progress tests; affected server/browser production tsc; focused ESLint,
+naming, current generated Inspector catalog equality and same-source flow proof.
+Only current-task/direct-consumer failures may expand tests. No full local CI.
+Stop if the canonical input/output or owner cannot support the promised route;
+revise this bounded contract before further implementation. Finish with local
+review and a report, not remote operations or automatic monitoring.
+
+
+### Settle handoff review refinement
+
+Focused reducer tests passed, but the real panel integration exposed a direct
+consumer identity mismatch: a new event with identical visible content creates a
+new current entry while deduplication retains the previous history entry. The
+panel intentionally marks the current entry by identity, so its current marker
+vanishes. Keep one canonical visible entry when content is unchanged, after the
+new state has already consumed the event. A formal identity regression fails
+before the fix. Preserve historical snapshot immutability, lifecycle precedence,
+and event diagnostics. This is within the settle projection boundary, not a new
+UI state store or a timeout workaround. Re-run the three direct browser suites,
+the exact 360/1280 activity E2E and inspect its screenshots before closure.
+
+Additional review regressions prove same-text request purposes replace their
+invocation identity and completion during approval retires the call without
+resuming execution. Superseded completed-purpose assertions in panel/conversation
+fixtures now expect the original objective; retry safety checks remain intact.
+The first mixed node/browser invocation was an invalid environment invocation;
+it is not passing product evidence. Subsequent corrected browser failures and
+E2E failures remain recorded as failures until the bounded corrections pass.
+
+
+The subsequent full activity E2E passed the event sequence and current marker,
+then exposed a direct panel handoff: opening history measured scroll extent
+before lazily mounted rows existed, so Jump to latest stayed absent. A permanent
+single-toggle regression uses rendered row presence as its height oracle and
+fails on the current panel. Move this existing measurement after history layout;
+do not change follow policy, add polling or weaken E2E assertions. This bounded
+consumer correction is necessary to preserve the same affected activity view.
+
+
+### Discovery and activity correction closure
+
+The advertised execution route now comes from the same admitted action set as
+batch input schema and batch resolution. Explicit review and capture resolve the
+actual design_operations native wrapper and its arguments envelope. Missing or
+ambiguous wrappers are unavailable; a saved same-name tool cannot substitute.
+Exact, partial, repeated, refreshed, category, candidate and lexical views retain
+the correct route. Native/saved lexical menus omit full schemas without marking
+exact definitions delivered. Capability lookup guidance distinguishes external
+reference research and does not require repeated lookup of known tools.
+
+Canonical activity consumes ordered starts/completions before presentation
+filtering. Completed call purposes expire, equal-text request purposes retain the
+new invocation identity, and approval acknowledgements close work without
+resuming execution. Live parent/siblings, request objectives, retries and terminal
+precedence remain. Identical presentation reuses its history entry for the panel
+current marker; disclosure geometry is measured after lazy rows mount. No stale
+segment retention, timeout, extra AI or separate activity owner remains.
+
+Verification: 391 operation/prompt/composition/provider tests passed with three
+existing conditional skips; 122 presentation/conversation/panel tests passed;
+360/1280 activity E2E both passed (16.0 seconds). Browser/server production tsc,
+scoped ESLint (zero errors, three existing console warnings), naming 15 and
+current generated catalog eight tests passed. Same-source flow proof passed all
+30 obligations, four exact injected negative scenarios and recovery on source
+b1173136c7de44bdb7c6c6a81658da2c45b42672a1a7848ee6f85d947537db47.
+Candidate 2420f57c-0b4a-4545-8554-6985cf920383 and contract review
+9ec371d79acb79323d6f6ba3c81dd97f513233c0be4441d4fb10104b0e40ce2b
+were accepted with no blockers (mapping revision 73). The mapping-only command
+was inappropriate for the architecture change; supported contract acceptance was
+used before the successful proof. Failed/interrupted exploratory runs remain
+failed, not relabeled as successful evidence.
+
+Visual evidence: APP_URL http://127.0.0.1:3300, existing real App activity E2E,
+360x900 and 1280x900. Deterministic streamed status, no canvas mutation; initial
+viewport/document state follows the existing fixture. Screenshots
+completed-call-purpose.png and current-activity.png were inspected: completed
+Base surfaces returns to the request objective with AI processing; actual active
+purpose remains visible. No visible mismatch found in these scenarios. All three
+Playwright-owned service ports 3300/3401/4401 were confirmed closed after exit.
+The local report records exact commands and artifact paths.
+
+Timing assessment retains the frozen full101: all 50 App exchanges match exact
+native call IDs; two research calls are separate. Six exchange windows exceed
+30 seconds, primarily before dispatch, not inside App tools. The largest App
+call is 12.826 seconds including approximately 12.333 seconds of apply. This
+correction removes demonstrated route/status defects; it does not claim measured
+model-time or end-to-end speed improvement. No new full101, full local CI, push
+or monitoring was performed. Final review is closed at the scoped report.
+
+
+Final metadata check: task-context initially selected the new local subsection,
+which cannot exist in the committed base. Its association now uses the existing
+Current authority and stop boundary heading; that heading explicitly selects this
+bounded correction. Preflight and public documentation validation passed. No
+base/history rewrite or scope expansion was used to satisfy the check.
+
+
+### Product-facing processing label - 2026-10-14
+
+User refinement: the panel speaks for the product, not the model. This bounded
+copy correction belongs to the existing settle/activity presentation owner.
+Replace the provider phase display label with "Processing your request" while
+retaining the current valid purpose. Internal provider classification, ordered
+start/end events, purpose expiry, approval/save/terminal precedence, history
+identity and diagnostic ownership remain unchanged. No new status inference or
+retention policy, catalog fix, dependency, push or monitoring is included.
+
+Review: the existing settle flow already separates phase and purpose. Change
+only its display literal and direct expectations; do not change the flow
+semantics or introduce an alternative renderer. Existing presentation and actual
+panel tests cover live work, completed-call retirement, original objective,
+failure and final settlement. Update their expected product copy first, prove
+the panel regression fails, then run both focused files, browser production
+types and focused lint. This does not close the separately observed long
+objective fallback or sub-200ms presentation churn.
+
+Validation: the actual panel regression first failed on the old label, then
+95 presentation/panel tests and 27 conversation tests passed. Updated direct
+360px/1280px streamed-history E2E expectations; both passed (19.1s). Browser
+production tsc and focused ESLint passed. The only production change in this
+follow-up is the provider display literal; lifecycle and purpose selection are
+unchanged. Existing dirty work is preserved. No commit, push, full CI, live 101
+rerun or monitoring was performed.
+
+
+## Pagination and concrete activity correction - 2026-10-14
+
+### Frozen scope and reviewed design
+
+Fix discovery page validation and concrete current work presentation. Preserve all
+existing work. No push, monitoring, model change, extra model evaluator, full101,
+or full local CI. Discovery searches capabilities, never subject references.
+Discovery emptiness is a valid complete result, not a failed invocation.
+
+1. Compose owner: one page boundary uses `count`, `offset`, `complete`, and
+   optional `next`; the returned count is `apis.length + tools.length`. Native
+   category, API category and mixed lexical query use the same boundary producer.
+   End offsets are valid; offsets beyond the inventory fail before delivery.
+   The actual invocation result validator rejects inconsistent totals, malformed
+   collections, unusable continuation and continuation on a complete page.
+   Menus remain compact and do not consume exact-schema delivery.
+2. Settle owner: request-scoped public commentary describes a concrete stage
+   intent (target and purpose), not a claim that pixels are currently changing.
+   It survives individual child invocations until newer stage commentary,
+   explicit stage completion, retry or lifecycle settlement. The primary AI
+   publishes it before preparing inputs and changes it when the task changes.
+   A call purpose remains call-scoped and expires on completion. Stage intent is
+   the visible umbrella while present; without it, use a genuinely live common
+   call purpose. Do not echo the full original objective as current work.
+3. Visible current work shows that concrete purpose without a generic phase
+   prefix. Same-purpose system phases and changing child counts do not create
+   history entries or announcements. All starts/ends still update state and
+   diagnostic actual phase/count. No debounce, timeout, guessed phase, additional
+   model request or copied completed call purpose. Without authored purpose,
+   retain an honest observed phase; do not invent specific work.
+4. Approval, stopping, saving, failure and terminal outcomes override purpose.
+   Reject late/old-sequence events, retain live ancestry and sibling isolation,
+   and clear stage intent across attempts. Full text stays available with the
+   existing three-line preview. No language normalization.
+
+### Step cards and bounded evidence
+
+- Compose: implementation boundary is local-operation-tools, its formal tests,
+  ai-domain-prompt and its tests. Inputs are admitted selectors and canonical
+  descriptors; outputs are valid compact pages and primary-agent guidance.
+  Failure remains a recoverable invocation failure, without executing canvas
+  actions. Prove native/API/mixed/empty/end pages through invokeLocalTool and
+  corrupt-output rejection; retain exact-schema and inventory-revision tests.
+- Settle: implementation boundary is activity-state, presentation tests,
+  conversation/panel tests and existing conversation E2E. Inputs are ordered
+  existing public progress events; output is concrete current work plus separate
+  observed-phase diagnostics. Prove repeated start/end work counts with unchanged
+  purpose, stage replacement/completion, call expiry, concurrent ancestry,
+  retry, cancellation and terminal protection. Verify real panel narrow/wide
+  rendering and history identity. No timer-based suppression.
+- Synchronize the purpose-lifetime spec, compose/settle Inspector contracts and
+  generated catalog. Reuse supported source proof and contract admission.
+  Run affected tests, production typechecks, focused lint and naming only.
+
+### Self-review before implementation
+
+The previous contract explicitly erased stage commentary on authored call start;
+that made provider gaps fall back to the whole request. Retaining the last call
+would instead revive completed drawing. A separately owned stage intent resolves
+both without copying transient text. Stage accuracy depends on the primary AI
+announcing an actual stage change; deterministic tests prove transport/lifetime,
+not model compliance. Call start/end facts remain observable independently of
+visible deduplication. Native `total` is replaced by canonical `count`; no legacy
+fallback or second catalog is introduced. Empty/end pages, registry changes,
+concurrent work, missing purpose, old events and lifecycle overrides are covered.
+
+
+### Correction verification and closeout
+
+- Discovery regression first failed through invokeLocalTool; final owner suite:
+  165 passed (`tmp/pagination-purpose-green-final.log`). Pages use one boundary
+  producer, mixed entry counts and canonical `count`; corrupted completion,
+  missing completion, malformed arrays and unusable next offsets fail validation.
+  Actual provider protocol proof also executes the recorded `delete elements`
+  query and native category through the common host with successful delivery.
+- Stage stability regression first failed. Forty child operations and all 160
+  start/phase/end updates preserve one visible purpose/history entry while actual
+  phase/count diagnostics change. A separate red/green regression closes replaced
+  stage identities, preventing late commentary from resurrecting them.
+- Presentation, conversation and panel: 123 passed
+  (`tmp/purpose-consumers-final.log`). Server prompt/provider/invocation/discovery:
+  411 passed with three existing conditional skips before the final additional
+  missing-boundary regression; the affected discovery suite subsequently passed
+  all 165 tests. No skipped test was used as positive evidence.
+- Streamed panel E2E at 360/1280: two passed in 21.1 seconds
+  (`tmp/pagination-purpose-e2e.log`); concrete purpose stays stable across query,
+  inspection and completion events with no new history rows. Inspected actual
+  completed-call and wrapped-current-purpose screenshots; full title/DOM,
+  three-line preview, history position and following behavior are preserved.
+  Tests own their temporary 3300/3401/4401 services; all listeners exited.
+- Browser/server production TypeScript checks exit 0. Scoped ESLint: zero errors,
+  one existing console warning in the execution proof fixture. Naming: 15 passed.
+  Generated Inspector catalog: eight passed; task-context preflight and diff
+  whitespace check passed. Logs use `tmp/pagination-purpose-*`.
+- Final candidate `87be970e-8891-4d57-bd2e-fff61b8affca`, source
+  `79a868b5328a7ef5307d55199162d294dfc6f8091ed1e8997b2ee6cbc600fd0d`.
+  Exact contract review
+  `08f34bab154482cb3e1fbbb3c9602b46fd5daa43a5385c4832dfe23a569779fe`
+  accepted at revision 74. Same-source baseline, four exact negative scenarios
+  and recovery passed all 30 obligations (`tmp/pagination-purpose-proof.log`).
+  Expected negative runs remain failures, not mislabeled passing runs.
+- Final bounded review covered the changed producers, invocation result validator,
+  request-stage/call lifetimes, conversation handoff, visible/history projection,
+  diagnostic return, prompt, direct consumers and lifecycle tests. No new runtime
+  dependency, duplicated registry, timer suppression or evaluator model.
+- No new full101 or real-provider acceptance was run. Formal tests prove lifetime,
+  transport, rendering and actual execution boundaries; concrete stage authorship
+  still relies on the primary AI following its updated existing commentary
+  contract. Missing authored detail is never fabricated. No push or monitoring.
+
+### Full handoff review follow-up - 2026-10-14
+
+Scope remains discovery pagination and current activity. No live model, full101,
+push, monitoring, dependency changes or unrelated owner work.
+
+Review findings and execution cards:
+- Compose: output admission currently checks the continuation offset but not the
+  successor input contract. Reuse the discovery input validator for continuation
+  validation. A registry change between pages can also silently skip entries;
+  bind returned continuations to the existing native registry revision and reject
+  stale continuation before delivering any page. No retained catalog snapshots or
+  alternate registry. Formal tests must exercise the actual invocation boundary,
+  valid continuation, malformed selectors and revision changes with bounded reads.
+- Settle: diagnostic phase currently comes from the incoming event even when that
+  event is rejected or completed. Derive it from accepted state and active leaves,
+  preserving unscoped observed phases separately from visible stage intent.
+  Test parent/child, concurrent completion, late events, empty active calls and
+  stage continuity. Raw events remain available as incoming-event evidence.
+- Verify producer-to-projection transport with the existing fake-provider protocol
+  test, including public stage commentary and tool completion. No paid inference.
+
+Plan self-review: compose owns page admission and native revision; settle owns
+accepted lifecycle and diagnostics. Neither change introduces status timers,
+semantic guesses, sticky completed work, extra model calls or larger limits.
+Stage wording still comes from the primary agent: deterministic tests can prove
+transport/lifetime but cannot guarantee that a future model authors a correct
+stage description. This limitation must remain explicit in the report.
+
+Gates: focused formal regressions red before production changes; affected server
+and activity consumer tests, production typecheck, focused lint/naming, generated
+catalog consistency and same-source Flow proof. Reuse unchanged visual evidence.
+Review only these changes and their direct consumers before closing.
+
+
+### Handoff review verification and stop
+
+- Reproduced six discovery failures before implementation: five invalid successor
+  inputs and a registry mutation silently skipping a capability. A subsequent
+  category-specific regression isolated the advertised category constraint.
+  Continuations now share input validation and pin the existing registry revision;
+  unchanged multi-page traversal reads the native inventory once, and a changed
+  revision rebuilds it once after an explicit restart.
+- Reproduced two activity failures: completed calls retained their diagnostic
+  phase, and coordinator/rejected events overrode live child diagnostics. Accepted
+  state now owns phase projection, with surviving children/siblings and terminal
+  controls preserved independently of stage text. Two lint findings were corrected
+  before final source verification.
+- Final server suites: 360 passed, 3 original guarded skips (operation owner,
+  provider protocol and prompt). Existing fake-provider public-commentary through
+  preparation/completion projection test passes; it performs no model inference.
+  Activity/conversation/panel suites: 124 passed; final phase-helper cleanup reran
+  all 62 presentation cases successfully. Production typecheck, focused lint,
+  naming (15), catalog consistency (8), task context and whitespace checks pass.
+- Final captured candidate b8e90643-36b5-4c76-a086-46a3c928d327, source
+  fe873d70d25e8ee1ab394b9f1443079bb01cff9025ba3cd28b99e88ceb793171;
+  accepted review 4abbdbc180e26e114be6645cb49de8c1b401ff6271c7e2930ec74eb4d30b0c7c.
+  Same-source baseline, four expected negative scenarios and recovery passed all
+  30 obligations, mapping revision 75. Recovery b83fc042-160a-4b44-a39c-8651e5f7c7fd.
+  Evidence: `tmp/pagination-purpose-review-*`.
+- Final bounded review covered input/output admission, dynamic registry lifetime,
+  provider transport, stage/call ordering, parent/sibling completion, retry,
+  approval/cancellation/settlement, UI history deduplication and diagnostics.
+  No remaining reproducible defect was found in these changed handoffs. Model
+  authorship remains an explicit limitation, not a deterministic success claim.
+- No full101, paid/live model call, browser service, push or monitoring was started.
+  Previous unchanged visual E2E evidence remains applicable. Stop here and report.
+
+### Second full consumer review - 2026-10-14
+
+Frozen scope: review the three preceding corrections through current callers,
+registry lifetime, canonical invocation, activity transport, conversation/UI and
+recorded diagnostics. No full101, live model, push, monitoring or unrelated work.
+
+Settle verification card: the existing progress/settlement flow test performs
+assertions inside a feature callback whose exceptions the conversation owner
+intentionally catches. Its expected failed outcome can hide an assertion failure.
+Capture immutable checkpoints in the callback and assert outside the failure
+boundary, including that the feature reaches its intended outcome. First expose
+its outdated completed-phase expectation as a real red test; then align that
+expectation with the current accepted-live-phase spec. Preserve product error
+handling. Owner: settle; contract: Purpose lifetime and diagnostic consistency;
+allowed file: existing execution-flow-proof.test.ts; no production mutation.
+Run the complete existing flow proof suite and direct consumer tests, not only
+new tests. Stop after bounded review, scoped validation and a factual report.
+
+Compose follow-up card: tracing the real local library shows its invalidation
+counter also advances after rejected submissions and repeated save attempts.
+Treating that counter as page identity introduces needless restart failures.
+Use it only to refresh the existing inventory; compare an ordered descriptor
+fingerprint during that refresh and advance a request-local discovery revision
+only if the catalog actually changes. Retain only the fingerprint and revision,
+not page snapshots or a second registry. Same-generation reads do no serialization.
+The discovery owner remains local-operation-tools; actual host/library semantics
+remain unchanged. Test actual host rejection followed by continuation, plus true
+registry change and inventory work counts. Current compose contract still rejects
+real changed catalogs; unchanged catalog continuations remain usable. Input/output
+shape stays unchanged. Focused tests, consumer suites, lint/types and current
+source proof close this slice; no full101 or model invocation.
+
+Second review closure:
+- Confirmed the old progress/settlement test passed with its assertion inside the
+  caught feature callback, then failed once checkpoints were asserted outside that
+  boundary (`second-review-hidden-assertion-before/red.log`). Corrected the stale
+  expected phase, retained intended failed-outcome handling, and verified that the
+  callback reaches its explicit end. All 30 existing flow cases now pass with the
+  effective assertion. The previous green alone did not prove that old assertion.
+- Actual host/library regression reproduced rejected recipe admission advancing
+  the invalidation counter without changing definitions. Its next page previously
+  failed. It now succeeds; genuine catalog changes still reject stale pages.
+  Formal inventory oracle proves 19 schema reads for initial inventory, no extra
+  reads across unchanged pages, 19 on invalidation with unchanged contents, and 18
+  after actual removal. No page snapshots, document access or canvas mutation.
+- Existing upstream/downstream suites: 221 discovery/composition tests, 311
+  host/library/invocation/scheduler/provider/prompt/flow tests (3 original guarded
+  skips), 145 browser transport/activity/conversation/panel tests, and 40 Runtime
+  progress/multi-batch/trace tests passed: 717 distinct passed tests. No live AI.
+- Production typecheck, naming (15), catalog consistency (8), whitespace and task
+  context pass. Focused lint has no errors and one pre-existing console warning
+  at execution-flow-proof.test.ts:1364. Logs: `tmp/second-review-*`.
+- Captured source bdfb6a330f73c5d50b0eb5cde6fd1b7d4582234e3800b801a15e36ca95323a2c,
+  candidate cf757698-2d7d-4b3f-9303-bd6132ffe3d1, accepted review
+  a64e89d4a1941c2bd97a543b750b274cd4056686115b6c560525f4e39123524e.
+  Same-source baseline, four expected negative scenarios and recovery passed all
+  30 obligations; recovery d6d9b17d-1021-4e93-925e-594557dbf76e, mapping revision 76.
+- Final review covers successor-input validity, catalog ordering and invalidation,
+  exact-schema delivery reuse, recoverable admission and cancellation, actual
+  host scheduling, accepted activity state, conversation failure handling, panel
+  history and diagnostic transport. No remaining reproducible regression in these
+  changed handoffs. Primary-agent stage authorship remains the stated limitation.
+  No full101, extra model invocation, push, monitor or new service was started.
+
+### Whole-changeset review - panel mount regression proof
+
+- Owner: settle / conversation presentation; existing purpose/lifecycle contract and current feed follow-latest behavior.
+- Inputs: an existing conversation mounted into an overflowing feed, subsequent progress and history expansion/collapse. Output: initial latest position, intentional reading position preserved during updates, correct jump control.
+- Boundary: current panel component and its existing formal test; no model, provider, document or framework semantic changes. Allowed contributor: conversation presentation; forbidden: invented activity or history reset. Failure owner: settle.
+- Discovery: all current production diffs and direct upstream/downstream owners, changed assertions and complete existing AI/server/Runtime suites. Do not infer acceptance from newly added tests alone.
+- Gates: reproduce mount ordering in the formal panel suite; focused panel tests and affected AI suite, lint/typecheck. Existing deterministic suites cover remaining handoffs. Stop after review and report; no live101, external model, push or monitoring.
+
+The mount regression failed with scrollTop 0 instead of the latest position. The correction orders initial following before expansion measurement; no additional timer, cache or state owner. During test-oracle review, strengthen existing settlement-failure event assertions outside the caught callback and require successful final runtime settlement in the observed compact-receipt proof. These are proof-strengthening changes at the existing apply/settle boundaries, not new production behavior. Inputs/outcomes and failure ownership remain unchanged; focused multi-batch and structural-delivery tests must pass.
+
+### Whole-changeset review findings and evidence
+
+Reviewed all 28 modified files and direct current producers/consumers, not only pagination and status regressions. The read covered discovery schemas/routes and dynamic catalog identity; transient region selection and retained leases; batch preflight/target admission; runtime settlement callback and original/compact receipt delivery; cancellation/partial outcomes and persistence consumers; activity ancestry/retry/terminal projection; feed/history lifecycle; prompt/spec/Inspector agreement and changed test oracles. Existing ownership remains canonical; no second registry, new interpreter, timer or cached document copy was added.
+
+Findings:
+- Confirmed panel mount regression: the new expansion measurement ran before initial follow-latest and disabled following for an existing overflowing feed. Formal mount test failed with scrollTop 0; reordered existing layout effects. Both real-browser widths now cover reopening at a short viewport, alongside expansion/collapse and manual following.
+- Confirmed false-green test: the observed compact fill receipt proof returned an invalid empty final action batch; all writes completed but Runtime finished failed. A new final-status assertion exposed the failure. The fixture now uses the existing canonical report_outcome action, matching the production provider; no production admission was weakened.
+- Strengthened settlement-failure proof: exact events are asserted outside the caught callback, so an earlier assertion failure cannot masquerade as the intended settlement failure. This is an oracle improvement, not another demonstrated runtime defect.
+
+Verification: complete Runtime 370 tests; complete App AI 566 tests; complete server-response harness 1,156 tests with 9 guarded skips (live models disabled); five additional ownership/retained/composition files 95 tests. Production typechecks pass; focused changed-file lint and naming 15 tests pass. Logs: tmp/full-review-{runtime-verified,browser-verified,server,handoffs,types,lint-final,naming}.log. Original red logs remain tmp/full-review-mount-red.log and tmp/full-review-receipt-red.log. UI current-activity cases passed at 360/1280 widths and reopened-latest screenshots were inspected; full conversation/tool-library suite is the final UI checkpoint.
+
+Limits: no live model or 101 run, so this review makes no new first-frame, total-duration or model-stage-authorship claim. Tests verify actual event/receipt contracts and work counts, not model-internal timing or aesthetic judgment. No push or monitoring.
+
+Full UI review exposed three additional consumer failures: clarification-history reads race lazy mounting, and two timeout cases still require the superseded objective-as-current-activity behavior. Correct the async assertion and the current honest-phase oracle without restoring obsolete behavior. More importantly, the two Frame revision/Undo cases emit backend 409 for a props/removeProperty publication while their canvas-only assertions pass. Add durable checkpoint equality and reload to that existing formal scenario (settle persistence boundary) to make the failure visible. This review does not assume the persistence bug was introduced by the current diff or authorize a new canonical publication redesign; preserve the failing evidence and report the open issue.
+
+### Whole-changeset review closeout - open persistence blocker
+
+Full conversation/library E2E: 19 passed, 3 failed, 3 pre-existing profiling skips (tmp/full-review-ui-suite.log). The three failures were the lazy history mount race and obsolete objective-as-status assertions. Corrected consumers then passed all three targeted cases; the new Frame durability assertion failed as intended to expose the real persistence problem (tmp/full-review-ui-consumers.log: 3 passed, 1 failed). Do not label either original run green.
+
+P1 open: native Frame replacement followed by Undo/Redo produces props/removeProperty publication evidence which the canonical persistence classifier rejects with HTTP 409. The canvas-only scenario previously passed while server retries continued. The permanent test now compares the durable checkpoint digest with the final canonical canvas and would reload only after equality. In the reproduced failure, persisted byteLength is 236 versus expected 4621; reload is correctly not attempted after failed durability. No user document was touched. The current changeset does not modify the classifier; this review establishes the mismatch, not when it was introduced or the complete producer-side root cause. Follow-up must inspect the original publication envelope and its producer/classifier boundary, rather than suppressing 409 or accepting arbitrary property removal.
+
+Resolved P2: overflowing-feed mount loses follow-latest, corrected by effect ordering and permanent unit plus real-browser regression. Resolved proof gap: compact receipt scenario ended with an invalid empty batch, now uses canonical report_outcome and asserts successful terminal status. Strengthened settlement failure oracle verifies expected event sequence outside caught callbacks. Existing full Runtime 370, App AI 566, server 1156 (9 guarded skips), and supplemental ownership 95 tests passed. Production types, changed-file lint and naming passed. No new live101/performance conclusion. Full UI acceptance remains blocked on the durable checkpoint mismatch.
+
+The earlier candidate 1325589a-d16d-41ee-b68b-6a478911a3d3 passed deterministic flow tests with no contract changes or blockers in its contract diff. It predates the new persistence regression and is not final whole-flow acceptance; do not use it to close this review's open blocker. Temporary Playwright services use isolated ports 3300/3401/4401 and test documents. No push or monitoring.
+
+### Persistence 409 - producer-to-durable correction
+
+- Objective: explain the first rejected real publication, repair its canonical owner, and prove each edit/Undo/Redo checkpoint and reload.
+- Discovery: capture actual Core publications from the existing Frame revision E2E; trace their current producer and shared decoder, reducer and materializer. Synthetic fixtures alone cannot establish the producer contract.
+- Authorized scope: existing Design persistence/collaboration source and formal tests, directly implicated framework producer only if evidence proves it incorrect, and matching active specifications/Inspector boundaries.
+- Preserve: source slice order, owner payloads, one intended Undo entry, atomic persistence, duplicate/sequence rejection, shared property integrity and remote replay. Never drop unknown property events, reorder arbitrary operations, ignore 409, reset the document or replay successful writes.
+- Sequence: reproduce and preserve envelope evidence; self-review the root-cause-specific plan; add permanent regression before production edits; repair; verify real mutations, each Undo/Redo durable state, reload, direct decoder/reducer consumers, types and lint.
+- Initial review: current failure is proven, but event-name logs do not establish the origin or complete slice shape. Capture those before choosing a production fix. The existing settle flow owns durability but does not yet describe the implicated decoder boundary; update the relevant persistence contract once the exact root cause is established.
+- Stop: all bounded regressions and direct consumer checks pass; report evidence and remaining limits. No remote operations or monitoring.
+
+#### Confirmed cause and reviewed correction - synchronous immediate boundary
+
+The captured `tmp/persistence-409-publications.json` proves forward publication 4 already splits one synchronous subtree removal into Scene and Props slices. Undo is not the first failure. Core correctly applies Scene removal then orphan Props removal without yielding. Factory assigns a separate owner-batch slice to each handoff; its single-event path also falls back to per-batch slices. Publication coalescing retains those incorrect independent boundaries. Both persistence and live consumers correctly require complete source slices. Earlier grouped-history normalization only covered atomic transaction-end members and did not repair this immediate forward producer.
+
+Reviewed owner: Factory shared delivery (`settle-local-shared-projection` and its journal/history consumers). Use the existing immediate publication microtask token to identify one synchronous immediate boundary across separate owner calls. Close it at the existing microtask/settlement/discard boundary; do not merge across awaits, explicit progressive boundaries, transactions or publications. Preserve original immutable batches/deliveries and replay source mapping. No payload inspection, App-specific operation list, extra journal, decoder leniency or wire-schema change.
+
+Test-first: separate Scene/Props owner handoffs must share one slice, adjacent asynchronous turns must remain separate, and ordinary/grouped Undo/Redo and published rollback compensation must preserve the source boundaries. Existing explicit progressive, atomic, publication-budget and failure tests remain required. Then the real Frame revision flow must reach an exact durable checkpoint after every edit, Undo and Redo and reload unchanged. Shared-property removal and strict malformed-source tests remain direct-consumer gates.
+
+Self-review: the existing token already closes the synchronous enqueue window, including settlement before its queued microtask. Referencing that lifetime avoids another cache/reset protocol. `batchPublications:false` changes transport flushing, not the semantic completeness of one synchronous action. Frame E2E captures production publications; no extra AI call is needed. Authorized implementation is bounded to Factory shared-delivery identity, formal tests and matching Factory/Inspector docs, plus the existing real App persistence E2E.
+
+Verification update: the corrected real flow reaches each edit and all Undo checkpoints without any 409. The expanded nine-checkpoint oracle exceeded Playwright's default 30-second whole-test deadline during Redo; the real persistence queue intentionally flushes after 3 seconds. This is not a persistence assertion failure or a reason to change its policy. Give only this expanded test 90 seconds; retain each 10-second checkpoint assertion, all nine intermediate equality checks and reload. Preserve the deadline-failed evidence in `tmp/persistence-409-real-e2e.log` before the rerun.
+
+Further verification: all nine durable checkpoints and desktop reload pass. The narrow-width run reaches the same durable state, then its generic canvas-ready helper waits forever because the existing desktop sidebars leave the viewport anchor hidden at 360px bootstrap. Restore the same 1280px bootstrap viewport before reload; keep all revision/error/Undo/Redo checks at both requested widths. This persistence task does not claim to fix narrow-screen layout. The old `premature-publication` mutation no longer breaks grouped boundary preservation because the new immediate boundary is complete; its expected violation is now only `deferred.delivery`. The new exact split-immediate mutation separately proves this correction, rather than requiring an obsolete incidental failure.
+
+#### Persistence correction closeout
+
+Root cause is the Factory immediate source-boundary identity, not an HTTP retry policy or a malformed user operation. Core synchronously removes the Scene subtree and then its orphan property graph. Separate owner calls previously received separate slice IDs even though they belong to one complete synchronous operation. The progressive publication exposed those incomplete slices to the strict App decoder; Props removal then appeared without its Scene predecessor. Grouped-history repair for atomic transaction-end members did not cover this immediate forward path.
+
+The fix uses the existing enqueue-window token for immediate slice identity across both scalar and batch owner handoffs. Microtask, settlement and discard boundaries already advance that token. Original batches, event order and source evidence remain immutable; ordinary/grouped Undo/Redo and compensation reuse the same complete source boundary. No App decoder, reducer, HTTP error handling, persistence retry policy, schema allowance or model behavior was changed.
+
+Verification on this implementation:
+
+| Evidence | Result | Location |
+| --- | --- | --- |
+| Actual pre-fix publication and failure | Reproduced normal revision before Undo; Scene/Props split | `tmp/persistence-409-publications.json`, `tmp/persistence-409-capture.log` |
+| Permanent Factory regression before fix | Both ordinary/grouped cases failed with four slices instead of two | `tmp/persistence-409-factory-red.log` |
+| Complete Factory tests | 292 passed | `tmp/persistence-409-factory-all.log` |
+| Core direct owner/transaction consumers | 42 passed | `tmp/persistence-409-core.log` |
+| App decoder/materializer, reducer, queue, adapter and AI transaction tests | 82 passed | `tmp/persistence-409-consumers.log` |
+| Frame revisions at 1280px | Three edits, three Undo, three Redo each durably equal; reload equal | Desktop case passed in `tmp/persistence-409-real-e2e.log` |
+| Frame revisions at 360px | Same nine durable checks and reload passed | `tmp/persistence-409-narrow-e2e.log` |
+| Existing real grouped structural flow | Each history transition persisted and fresh-loaded; passed | `tmp/persistence-409-structural-e2e.log` |
+| Factory same-source positive/negative/recovery | 3 flows, 7 exact negative scenarios, 11 obligations passed | `tmp/persistence-409-factory-proof.log` |
+| Quality checks | Factory/App types, focused lint, 15 naming checks, catalog contract and diff whitespace passed | `tmp/persistence-409-{factory-types,app-types,lint-final,naming,catalog-test}.log` |
+
+Final Factory recovery candidate `b524c5f5-8bf4-48fa-82ef-899aa86264f1`, source `5dd5152c8d2697caf06482bbb765d0e8158908ae1fd7c3b21db6d6d32484983c`, mapping revision 5. The negative mutation for split immediate boundaries detects this defect; forbidden commit and omitted compensation also correctly fail the new compensation assertion. No assertion was removed to make the source pass.
+
+Earlier failed runs remain failed evidence: the expanded test first exceeded the old 30-second total budget; its nine real 3-second save windows now have a scoped 90-second total while each checkpoint still has 10 seconds. The desktop case then passed; narrow-screen bootstrap exposed the existing hidden canvas anchor, so reload uses the original 1280px bootstrap dimensions while all narrow-screen interactions and durable checks remain at 360px. This task makes no narrow-screen layout correctness claim. It also makes no full-worktree delivery or new 101 performance claim.
+
+Final self-review checked synchronous and asynchronous boundaries, scalar/batch entry points, token lifetime, grouped/ordinary replay, compensation, explicit progressive/atomic policy, publication budget preservation, strict decoder rejection, atomic failed materialization, equality at every durable checkpoint and fresh reload. Existing negative and rollback contracts remain intact. Temporary Playwright services on 3300/3401/4401 are closed. No live AI, full101, push or monitoring was performed.
+
+### Factory correction - cross-consumer review
+
+- Objective: review the changed source-slice identity through enqueue, microtask/settlement, publication, rollback, grouped/replace-latest History, replay and durable consumption.
+- Scope: Factory delivery owner and direct Core/Preset/App consumers. Inspect current call sites and existing tests, including non-AI Design gestures, Office, Sim, FieldScope and Starter. No unrelated domain calculation audit.
+- Contract comparison: the settle-local-shared-projection step preserves ordered channel batches, asynchronous window separation, explicit progressive source order, one intended Undo entry and inverse compensation. Transport acknowledgement remains distinct from backend durability.
+- Gates: existing Factory suite and Core/Preset lifecycle/history suites; existing direct App runtime/storage tests; existing Design gesture/publication tests and two-actor collaboration with Undo/Redo and reload. Reuse unchanged earlier real-edit checkpoint proofs. Any demonstrated regression requires a permanent failing test before correction, scoped lint/types and repeated affected gates.
+- Stop: report findings and exact evidence/limits after these boundaries pass; no push, monitor or live 101.
+
+#### Backend validation responsibility clarified
+
+The durable backend does not invoke a model or re-review a drawing. `document-materializer.ts` decodes publication frames through the same App `decodeDocumentPublication` used by collaboration, checks publication identity/contiguous sequence/retry identity against the durable checkpoint, applies canonical changes and commits the next checkpoint. The reported failure occurred during decoding, before canonical application. The endpoint currently maps thrown failures to HTTP 409; that status alone does not establish a document revision conflict.
+
+The current protocol still couples reconstruction of canonical changes to ordered low-level Scene/Props evidence within a complete source slice. Factory's correction restores the declared source-boundary contract for all synchronous immediate owner handoffs; it does not remove this protocol coupling. A possible later protocol redesign could transmit explicit canonical operations with their required data and retain backend ordering/reference validation, rather than infer operations from internal batches. That is a separate cross-producer/peer/history/storage change, not silently included in this review. No backend guard was relaxed and no cross-async slices were merged.
+
+#### Cross-consumer review result
+
+- No new regression found in the frozen Factory correction and its direct consumers. No additional production changes were made during this review. The token is transaction-instance-local, advances at microtask/settlement/discard boundaries, and is copied into immutable source batches before replay. Local channel delivery remains synchronous; history staging and public source-window batching remain separate responsibilities. Existing source IDs preserve replay and compensation rather than regenerating boundaries from inverse calls.
+- Existing coverage inspected includes scalar/batch equivalence, explicit progressive ordering, immediate/deferred mixtures, bounded publication windows, custom channels, rejected append, partial compensation, observer isolation/reentrancy, nested replay, grouped History and replace-latest gestures. Direct App inspection covers Design pointer/pen/gradient/stroke paths and other Apps' Core transactions and durable consumers. Compiled Factory output used by packed consumers contains the current correction.
+- Fresh tests: Factory 292; Core history/hierarchy/persistence/observer 41; Preset lifecycle/group/selection 54; Office complete suite 14; Starter complete suite 44; Sim selected runtime/storage/observation suites 50; FieldScope selected runtime/history/workspace suites 11; Design gesture/history/publication/outbox/lifecycle/reducer/queue suites 126. Total 632 passed. Logs: `tmp/factory-impact-{factory,core,preset,office,starter,sim,fieldscope,design}.log`. Sim and FieldScope use their existing guarded supervisors. Existing mocked canvas warnings in Sim are not product browser failures.
+- Existing collaboration suite: all 14 tests passed in 2.7 minutes, including 16/320/1280-item two-actor batches, persistence/reload, reconnect/reset recovery, nested Group restoration, remote hierarchy/geometry Redo, vector anchors, live create/drag/pen before pointer-up and Fill Undo/Redo. Log: `tmp/factory-impact-collaboration.log`. These use deterministic existing fixtures, not live model calls.
+- Retained earlier evidence: actual Frame revisions at both viewport sizes, each edit/Undo/Redo backend digest, reload, structural operations/fresh load, Factory exact-negative proof, lint and production types. Runtime source was unchanged during this review, so these unchanged gates were not repeated.
+- Limits: this is the complete direct-impact review of the Factory correction, not every unrelated App feature or domain simulation. Backend low-level-evidence coupling remains as documented above; no claim of protocol decoupling. No live101, push or monitoring.
+
+### Explicit document publication contract
+
+#### Deep analysis and reviewed design
+
+The 409 arose before canonical application: the backend decoded raw Scene/Props batches into semantic changes. The live peer repeats the same derivation. The corrected Factory source windows are necessary local delivery semantics but do not remove this receiver coupling. The first contract boundary to correct is the publishing App adapter, which already filters local-only channels and owns the translation from framework delivery to document transport.
+
+Reuse the existing generic SharedPublication envelope and binary framing. Each source slice carries explicitly typed canonical changes in the App-owned `document` channel with `applyCanonicalChanges` delivery. This is an application payload, not a registered Factory channel or another history journal. Preserve publication/artifact/transaction IDs, origin, semantic slice identity/order and publication-level compensation reference. Transport batch/fragment layout has no semantic meaning to receivers. Canonical delivery IDs are deterministic from source slice IDs; compensation targets the source publication, not guessed synthetic per-delivery identities. No duplicate raw event payload is transmitted.
+
+The sender converts complete immutable Factory evidence once before outbox retention. Source classification remains solely at this local adapter boundary. Peer and backend share one exact canonical payload validator and consume the resulting ordered changes directly. Neither reconstructs actions from Props/Scene adjacency or silently accepts the old event format. Existing saved document checkpoints retain their format; unsupported pending publication formats fail explicitly and remain recoverable evidence, never auto-reset or discard user data. Transport remains generic and opaque.
+
+Validation preserves required fields and canonical change kinds, finite transport values, hierarchy/property relationships and apply-owner checks. Reject malformed/unknown/mixed raw payloads before canonical mutation; no partial checkpoint advancement. Validate identity/contiguous sequence, exact retries and optimistic durable sequence separately. Classify malformed requests as 400, invalid canonical operations as 422, genuine checkpoint/identity conflicts as 409 and unexpected storage failures as 500. Diagnostics must not mask the original failure or replay writes.
+
+Review completed before implementation: (1) generic envelope reuse avoids a second provider/interpreter; (2) source semantic slices survive frame/batch regrouping; (3) all origins including compensation take the same producer path; (4) exact retained bytes/IDs support retries without re-derivation; (5) receiver policy transformations are validated before apply; (6) failed decoding/apply does not advance durable state; (7) bootstrap/outbox replay uses the same canonical consumer; (8) old raw transport is rejected rather than supported as a fallback; (9) local Factory diagnostics remain explicitly separate from the document wire contract.
+
+#### Execution order and bounded gates
+
+1. App publication owner: formal red tests for explicit canonical payload, raw receiver rejection, equivalent transport regrouping and preservation of source/compensation identity. Implement the local adapter and common strict canonical reader.
+2. Peer and persistence consumers: switch to the common reader, update existing fixtures to invoke the real producer, retain malformed-input and failed-apply assertions. Prove retry, compensation, Undo/Redo and checkpoint invariants.
+3. Backend error owner: typed error categories and actual HTTP tests for invalid request, semantic rejection, sequence conflict and storage failure. Preserve failed evidence and retry identity.
+4. Integrated closure: existing Factory/Core/Preset and directly affected App tests, server/browser typechecks and lint; real two-actor collaboration, actual edits/Undo/Redo, compensation and persistence/reload. No live101 or unrelated full CI. Self-review the changed contract and direct consumers before reporting.
+
+#### Step card - publishing App canonical contract
+
+Owner: `apply-remote-publication` App adaptation route, with source `factory-adapter.ts` and the matching peer/backend consumers. Inputs: completed immutable Factory document evidence; outputs: explicit canonical document publication and strict ordered change slices. Conditions: preserve source identity, semantic boundaries, action/replay/compensation order and local-only exclusions. Bypass: no document changes. Contributors: existing local classifier and public CanonicalChange contract. Forbidden: receiver reconstruction, cross-publication merge, model calls, live-state rereads, alternate history or fallback raw format. Boundary: Design collaboration adapter/types/validator/processor plus directly named tests and backend integration. Failure owner: publishing adapter for incomplete source evidence, receiving validator for malformed payload; no false acknowledgement. Gates: permanent contract regressions red before implementation, focused producer/consumer suites, then naming/type/lint. Stop before advancing if any current semantic case loses information.
+
+#### Step card - durable materialization and error ownership
+
+Owner: existing Design durable session/materializer route in the conversational drawing performance Inspector. Inputs: explicit canonical publication frames, contiguous sequence and retained request identity; outputs: committed checkpoint/watermark or a classified failure. Contributors: common canonical reader, reducer and transactional store. Forbidden: raw event reconstruction, inferred operation batching, checkpoint advance on failure, generic errors represented as revision conflicts. Files: document materializer/backend/reducer and new persistence error type; direct HTTP/materializer/queue tests. Exact HTTP regression is red: invalid request, invalid reference and disk failure all incorrectly return 409; conflict and exact retry tests already pass. Gate: all five HTTP cases plus canonical consumer suites, failed-later-publication atomicity and queue retry evidence. Preserve the actual thrown message and cause.
+
+Producer/peer review: 73 existing and new focused cases pass after fixtures now distinguish local Factory evidence from remote canonical payload. Source translation does not recursively revalidate trusted Factory data; untrusted receiving data is validated. Topology derivation occurs once at source. No consumer compatibility branch was introduced.
+
+#### Self-review correction - retry content identity
+
+The existing durable retry check compares only publication IDs and sequence numbers. A new actual-HTTP regression proves changed canonical payload under the same durable identity is incorrectly acknowledged. Retain a digest of canonical operation content and semantic source metadata, excluding request IDs, transport batch IDs and frame fragmentation. Compare it before acknowledging any durable retry. A checkpoint without a digest must not be treated as proof of an identical operation; new publications may extend that checkpoint and record their own digests. This preserves saved document data without accepting old raw publications or fabricating retry equality. Digest capture is per incoming publication, never a full-document scan.
+
+
+#### Integration review - compensation framing and capture consumers
+
+The real HTTP compensation regression exposes another receiving boundary: binary frame decoding duplicated the former per-delivery compensation requirement. Centralize this shape predicate across envelope and both existing codec layouts; document publications correlate compensation at publication level, while generic owner-event transport retains its own contract. Add an exact binary round-trip regression before the fix. The collaboration E2E capture helper must pass raw Factory evidence through the actual producer adapter before testing the remote consumer. Its observed rejection is not a production fallback requirement. Stop the broad run, preserve its failure, complete these bounded corrections and focused proofs, then repeat the complete collaboration suite.
+
+
+Receiver validation also preserves finite signed-zero coordinates supported by the existing binary codec. A formal red case exposed accidental use of the stricter JSON-lossless predicate. Reuse its structural traversal with the numeric policy made explicit; JSON control/frame optimization still rejects signed zero while document operation validation accepts it. Stored JSON document semantics treat both zeros identically, as before; retry identity follows the saved document value semantics. Non-finite values remain rejected.
+
+#### Source normalization correction from real structural persistence
+
+The original 14 collaboration cases passed, but real grouped visibility changes exposed local `options.undoable` in the derived element-data change. Receiver rejection is correct: sender transaction options must not become remote history policy. Keep strict receiver validation; explicitly project semantic fields for element-data and subtree-removal at the publishing document owner, leaving original Factory evidence unchanged. Add the exact producer-to-reader red regression before the change, verify both option-bearing variants, then rerun structural persistence and the affected source suites. The existing creation-only and nested history cases are not substitutes for this direct consumer coverage.
+
+The additional real compensation case uses the existing gesture publication policy (`batchPublications: false`) to make its prefix visible before rollback. The initial fixture used ordinary coalesced delivery and therefore had no visible prefix to compensate; correcting the fixture to this existing policy requires no product timing or threshold change.
+
+
+#### Architecture review closure
+
+The architecture now gives source preparation its own actual App owner step between Factory publication and generic Collaboration, rather than describing producer work on the remote apply node. The existing transport envelope stays generic. The shared remote/persistence validator and retry content identity are documented in the active App collaboration module; generated Inspector data is synchronized through the existing generator. Captured document-publication diagnostics now read the same current wire contract, while explicitly captured Factory evidence is prepared through the producer before remote-consumer assertions. Formal scripts include the new publication and HTTP persistence tests.
+
+
+Final direct-consumer review also checked the existing Props mutation contract: `id` and `type` are immutable during value replacement. The new canonical document boundary must reject such replacement attempts and reserved record keys before peer or backend apply. Three red cases now pin that requirement; creation components continue to carry their required identity/type. This is a fixed wire identity constraint, not a second property schema registry.
+
+One Frame validation attempt overlapped source formatting and produced an invalid empty in-memory digest during Redo; that run is retained as failed and is not acceptance evidence. The final browser run uses frozen production sources after all format/type checks. Earlier successful Frame cases do not replace the final run.
+
+
+#### Exact retry acknowledgement handoff
+
+Final inspection of the direct persistence consumer found a real contract mismatch: materializer retries returned the current document watermark, while `completeSuccessfulBatch` requires the exact requested batch ending sequence. An actual HTTP red case retries sequence 1 after sequence 2 is durable and receives 2. Acknowledge the requested already-durable range, leaving the stored watermark unchanged. Prove the same response through the actual persistence queue with both retained publications; it must remain editable, advance in order and not replay canonical writes. This changes only the already-durable retry response; new commits and invalid conflicts retain their existing behavior.
+
+
+A later collaboration run stopped on unexpected browser navigation during the 320-item Undo observation. It is retained as failed; the navigation trigger was not established by the emitted stack. Final acceptance runs after all edits, generation and builds settle, with no concurrent writers and failure trace retention. No retry allowance, assertion relaxation or navigation-error suppression is added.
+
+#### Explicit publication contract - final local verification
+
+- The final frozen collaboration run passed all 15 cases in 3.0 minutes, including 16/320/1280-item delivery, reconnect/reset, nested Group Undo/Redo, live gesture publication and visible-prefix compensation through peer convergence, durable save and reload. Log: `tmp/persistence-contract-final-acceptance.log`. The earlier navigation failure remains recorded; this successful run does not establish its cause.
+- Five actual edit/history/persistence browser cases passed in 2.1 minutes: both Frame viewport cases, registered and canonical structural handoffs, and grouping/ungrouping/deletion with each Undo/Redo persisted and freshly loaded. Log: `tmp/persistence-contract-frozen-reload.log`.
+- Focused unit/integration coverage passed 249 unique cases: 207 browser-side cases plus 42 server cases. The final retry-boundary run reports 87 because it also repeats 45 collaboration-operation cases; these are not double-counted. Logs: `tmp/persistence-contract-units-complete.log` and `tmp/persistence-contract-retry-boundary-green.log`. The real HTTP and actual queue proof confirms old-range retries acknowledge their own ending sequence without lowering the stored watermark or reapplying writes.
+- Existing server/middleware/bundle contracts passed 28 cases; current Inspector/catalog contracts passed 43; naming passed 15. Production and backend type checks passed. Scoped lint has zero errors and one existing backend console warning. Evidence: `tmp/persistence-contract-{server-contracts,flow-final,naming-final,types-final,backend-types,lint-final}.log` and `tmp/persistence-contract-retry-lint.log`.
+- Final source review covered source preparation, common peer/backend validation, binary compensation correlation, content identity, exact retry acknowledgements, failure atomicity, local execution-option exclusion and immutable property identity. Framework Factory and generic transport ownership remain unchanged by this task; earlier unchanged direct-consumer evidence above is retained rather than rerun.
+- Playwright-owned ports 3300/3401/4401 have no remaining listeners. Local configuration and unrelated worktree changes are preserved. This bounded persistence task is complete locally; no live101, model call, push, PR operation or monitoring was performed.
+
+
+#### Follow-up review - persistence handoffs and browser navigation
+
+Scope: re-review the explicit document producer, all receiving/bootstrap paths, queue/store identity and failure settlement, ordinary batch/history/compensation consumers, and the failed 320-item browser case. Discovery uses current source/direct call sites, bounded diffs and retained logs; no unrelated framework or AI behavior changes. Preserve semantic slices, no peer history/echo, atomic durable commit, exact retry identity and acknowledged range. No live101, push or monitoring.
+
+Review card: the existing 320-item collaboration E2E owns diagnostic observation of both browser contexts. Its previous failure has no retained trace (the configuration traces only first retries); later successful tests replaced the default result directory. Capture actual document request initiators, main-frame navigation reasons/commits and Vite reload messages before navigation, attach them even on failure, and assert that creation/Undo/Redo does not navigate. Reproduce with an isolated cold Vite cache and frozen source. Keep original assertions, timeouts and fail-fast. This is test-observation coverage, not a product/Inspector semantic change; no runtime route expansion or navigation suppression. If the historical trigger cannot be proven, distinguish reproduced causes from the missing historical evidence.
+
+
+#### Follow-up review findings - local completion claim withdrawn
+
+- **Open P1: source conversion failure is lost before outbox ownership.** `createDocumentCollaborationPublicationSource` performs conversion inside the Factory subscriber. The actual Factory deliberately catches subscriber exceptions so observers cannot change canonical settlement. When conversion throws, `scheduleLocalPublication` is never called: no pending or conflicted record exists and the session can continue reporting `synced`. The new permanent lifecycle regression uses an actual isolated Factory and LocalSharedDataChannel, verifies a completed source publication and no provider send, and fails with actual `pendingCount: 0, sync: synced` versus required `pendingCount: 1, sync: conflicted`. This supersedes the previous local-completion statement for the failure path. Log: `tmp/persistence-review-producer-failure-red.log`. Production code remains unchanged in this review.
+- Repair direction: App source preparation must explicitly hand a failed source artifact to the existing session/outbox failure owner before the Factory callback returns. Retain it as non-sendable failure evidence, expose failed sync/persistence confirmation, and preserve it across reload. Never send raw evidence as a fallback, mark it acknowledged, or make Factory observers change local transaction settlement. Prove storage failure and later valid publications cannot hide the retained failure.
+- The full direct-consumer review traced producer filtering and atomic/progressive semantics, ordinary outbox/bootstrap paths, Core remote replay and rollback, reducer copy-on-write, transactional file write/cache ordering, sequence/content identity and exact range acknowledgement. No additional concrete defect was found in those inspected paths. Earlier unchanged Factory/Core/other-App evidence remains applicable; this review makes no claim about unrelated features.
+- **Navigation cause remains unproven.** The old run had no first-attempt trace because its default configuration traces only first retries; its default results directory was replaced by later runs. Read-only inspection of this conversation's command timeline establishes concurrent file edits/test execution at 13:37:04Z and 13:38:17Z during the failed run ending 13:38:20Z, so its earlier `frozen` description was incorrect. Those facts do not identify the actual navigation initiator.
+- Fresh cold-cache full collaboration passed 15/15 (3.1 minutes), with no source writes during execution. A separate traced 320-item creation/Undo/Redo run passed (1.0 minute); both actors have exactly one initial document request/commit and no reload messages. Repeating the prior overlapping backend unit command during that run also passed without navigation. This excludes neither a historical source-edit-triggered reload nor another missing event, and cannot retroactively prove either. Logs: `tmp/persistence-review-cold-browser.log`, `tmp/persistence-review-navigation.log`, `tmp/persistence-review-concurrent-unit.log`; full browser evidence: `tmp/persistence-review-navigation.json`, `tmp/persistence-review-navigation-evidence.json`, and `tmp/persistence-review-navigation-results/`.
+- Permanent E2E observation now records document request initiators, requested navigation reasons, main-frame commits and development-server reload/update messages, asserts one navigation per actor for the 320-item case, and saves the evidence inside the test output directory even with the line reporter. This neither retries failed operations nor suppresses navigation errors. The previous cache was preserved inside `tmp/persistence-review-vite-cache-before`; the current cache is generated normally.
+- Review conclusion: the persistence change is not ready to be declared fully correct until the P1 is repaired and the new regression passes. The historical navigation root cause is an explicit evidence limit, not a fixed bug. No live101, push, PR or monitoring.
+
+
+Follow-up verification: the complete lifecycle suite reports 20 existing cases passed and the new source-conversion regression failed (1/21); this is a known open failure, not a green gate. Scoped test lint and naming pass. The final line-reporter 320-item run passed in 54.9 seconds and its JSON evidence remains on disk with exactly one initial document request/commit per actor and no requested navigation or development-server reload. Logs: `tmp/persistence-review-lifecycle-all.log`, `tmp/persistence-review-lint-final.log`, `tmp/persistence-review-naming-final.log`, `tmp/persistence-review-evidence-browser.log`; permanent output under `tmp/persistence-review-evidence-results/`. No product implementation changes were made during this review.
+
+
+#### Factory-to-document preparation failure handoff - bounded repair
+
+Objective: a completed local publication whose document preparation fails must be retained as a non-sendable conflict, never disappear behind Factory observer isolation or permit false persistence confirmation. Preserve local canonical settlement, History, ordinary publication identity, and explicit Reset generation behavior. Scope is the Design publication adapter, document lifecycle/outbox and direct formal consumers, their current specification and Inspector routes. No Factory/Core production changes, raw-wire fallback, source replay, new recovery UI, live101, push or monitoring.
+
+Reviewed flow: the adapter prepares document evidence once and reports either a prepared publication or the original immutable source plus a normalized preparation error to required App callbacks. Local-only publications remain a no-op. Catch only preparation errors, not downstream subscriber failures. The lifecycle immediately queues either outcome in source order; the existing outbox retains failures with `conflicted` status and a reason, making the raw source diagnostic evidence only. The same storage identity and generation rules apply to pending and failed records. Recovery drains only the contiguous pending prefix before the first conflict; an apply/acceptance rejection stops the current drain. Later publications, including Undo/Redo and compensation, remain retained without bypassing a missing predecessor. Confirmation queues behind retention and rejects unresolved failures without calling provider confirmation. Storage failures remain explicit throughout the session, including generation rebinding; only explicit clear/reset or a successfully restored new outbox lifetime can clear that failure. Reset remains an explicitly destructive, separately owned operation.
+
+Step card A: `prepare-document-publication`; spec `collaboration-reference.md` / Explicit canonical document publications. Input immutable Factory evidence; outputs prepared canonical publication or explicit source preparation failure. Conditions document channel selection, atomic/progressive slice preservation; bypass local-only evidence. Allowed contributors existing classifier/adapter; forbidden Factory settlement changes, raw fallback transport, renderer/history reads. Boundary factory-adapter and direct adapter/capture tests. Failure owner adapter callback into the document session. Prove actual Factory delivery remains non-throwing while the required failure callback sees the original source; computed-projection and unsupported events never reach the success callback. Recheck contract before session work.
+
+Step card B: `open-socket-authoritative-document-session`; same spec plus durable outbox section. Inputs prepared publications or source preparation failures in original order. Outputs durable pending/conflicted records, accurate session status and persistence-confirmation rejection. Boundary lifecycle, publication-outbox and existing lifecycle/outbox tests. Existing IndexedDB owner is the only retention store; no second document model or implicit retry of the user action. Prove failure reload/file isolation, acknowledgement rejection, ordered prefix blocking, later successful writes, storage failure and reconnect, immediate confirmation ordering, disposal/reopen, and recovery that never sends raw failure evidence. Run existing producer/consumer/history/compensation tests and the real two-actor collaboration/save/reload E2E after focused gates. Typecheck, scoped lint and naming are closure gates; no unrelated full CI.
+
+Self-review: all direct callers of the adapter require explicit failure handling (production session, diagnostic browser capture and formal adapter tests). Existing `retainConflict` cannot create a missing record; add a creation path in the current outbox rather than call it after the fact. Existing pending-only filtering skips conflicts, so use a contiguous prefix and stop the active loop on rejection. Existing generation binding clears storage failure without proving retained records reached disk; keep failure sticky within the lifetime. The current red lifecycle regression establishes the original defect; strengthen permanent tests before implementation. Stop on a new out-of-scope owner requirement or unresolved handoff; do not weaken accepted behavior to pass.
+
+Segment A review: preparation callback contract now catches only preparation, retains identity, preserves no-document bypass and cannot misclassify a downstream callback error. Existing computed-projection regression failed before and all five adapter cases pass after. Required callback wiring remains the session segment; no Factory settlement change. Re-read the session step before implementing retention. Outbox prefix and new retention cases are red before production edits.
+
+Segment B focused review: the original real-Factory regression now reaches retained conflict and fresh session reload; source storage quota failure, reconnect and later writes preserve failure. Pending-prefix selection and the active drain both stop on rejection. Factory shared-publication/flow proofs (72), Core facade/history/persistence (20), and backend reducer/error/reset/queue tests (42) pass unchanged. Extend the existing real-browser recovery scenario to cover local create/Undo/Redo behind a conflict, rejected persistence confirmation and reload with the same retained count while another peer continues working. This proves the new ordering boundary with real interaction and IndexedDB, without a new diagnostic app path.
+
+Browser review iteration: the full collaboration run stopped in the existing retained-source recovery case. A focused strengthened assertion proved its supposed independent peer also loaded `pendingCount: 1, sync: conflicted`: `context.newPage()` shares IndexedDB and therefore the same file-local failure. This is not a failed inbound transport or a reason to bypass conflicts. Change only that fixture to a separate browser context, require its empty/synced outbox before interaction, then retain the full local create/Undo/Redo, peer reception and reload assertions. Red evidence: `tmp/factory-handoff-peer-red.log`. No production adjustment or timeout increase is justified by this finding. Re-review confirms file-local failure ownership stays unchanged.
+
+Final direct-consumer review found the browser capture reader would decode the new failure envelope as a document publication and lose its source ID/reason. A permanent adapter/capture regression first proves `unknown` plus a generic envelope error, then verifies the original source ID and preparation error are retained without trying document decode. No production tool or status schema changes. The isolated-peer recovery case passes (19.6s); all browser source is frozen again for the final full collaboration suite after these focused corrections.
+
+
+#### Factory-to-document failure handoff - scoped closure
+
+The previously open P1 is repaired in the publishing App/session/outbox boundaries. Factory and Core production settlement are unchanged. The required preparation-failure callback retains immutable source identity and error as a non-sendable conflict; ordinary document delivery remains canonical-only. Ordered recovery stops at conflicts, including a rejection arising during the current drain. Subsequent action/replay/compensation records remain pending behind the failure. Confirmation is serialized after retention and never requests a provider receipt while the session is conflicted or storage-failed. Reload restores durable failures and later records without reapplying raw evidence. IndexedDB write failure retains memory evidence and explicit storage-failed status; it is not a promise that failed disk writes survive closing the tab. Reconnect and successful later writes cannot erase that failure. Explicit Reset/file-generation handling remains unchanged.
+
+Final review covered the changed producer, every adapter caller, outbox storage/load/generation/acknowledgement, lifecycle enqueue/drain/confirmation/disposal/reconnect, direct peer canonical consumers, and existing Factory/Core History and compensation paths. No further in-scope blocking finding remains. The browser diagnostic capture now preserves the actual source ID/error. The recovery E2E's independent peer uses an independent IndexedDB context; same-context tabs intentionally retain the same file-scoped failures. No raw transport fallback, added local canonical store, history mutation, automatic source replay, model call or timeout increase was introduced.
+
+Evidence:
+- Original real-Factory lifecycle regression and new outbox/adapter cases were red before owner implementation: `tmp/factory-handoff-red.log`, `factory-handoff-outbox-red.log`, `factory-handoff-adapter-red.log`.
+- Design direct-consumer suites: 219 passed across eight files (`tmp/factory-handoff-consumers-final.log`). Subsequent diagnostic-only correction was red then all seven adapter/capture cases passed (`tmp/factory-handoff-diagnostic-{red,green}.log`); 220 distinct cases across the combined same-production-owner evidence, not 226.
+- Factory shared publication/flow: 72 passed (`tmp/factory-handoff-framework.log`); Core facade/history/persistence: 20 passed (`tmp/factory-handoff-core.log`); backend reducer/reset/error/retry queue: 42 passed (`tmp/factory-handoff-backend.log`).
+- Full real-browser collaboration: 15 passed, 3.2 minutes, fixed source and first-attempt traces (`tmp/factory-handoff-browser-final.log`, `tmp/factory-handoff-browser-final-results/`). Covers independent peers, failed-source recovery, local create/Undo/Redo behind conflict, confirmation rejection, retained reload, batch creation, Groups/vectors/Fill, visible rollback compensation and durable reload. Earlier failed runs remain failed evidence; the separate-context fixture correction has its own focused red and green logs.
+- Production browser/server typecheck passed (`tmp/factory-handoff-types-closure.log`, command exit 0); scoped lint has zero errors and nine existing lifecycle console warnings; naming 15 passed. Inspector contracts/catalog 43 passed (`tmp/factory-handoff-inspectors-final.log`), generated catalog synchronized. Scoped whitespace check passed.
+
+No live101, push, PR operation or monitoring. This closes only the authorized failure-handoff repair, not the entire reusable-tool plan. The earlier historical navigation initiator remains unproven; this passing traced run does not retroactively identify it.
+
+
+#### Failure recovery completion - revised bounded task
+
+The previous handoff closure is superseded for recovery completeness. Retaining a conflict is an intermediate safety state, not completion. The user-visible endpoint is: preserve edits, reopen them, retry after the cause is corrected, drain in original order, receive durable confirmation, and reopen the saved result. A permanently invalid source must remain explicit and downloadable; Reset is never recovery.
+
+Scope: Design publication adapter, outbox, document lifecycle, recovery presentation and their formal tests/spec/Inspector. Factory transaction/history and server canonical validation remain authoritative and unchanged. No live101, model calls, push, monitoring, dependency change or alternate server overwrite path. Review follows producer -> retention -> reopen -> recovery -> source acceptance -> durability -> reload, including peer changes, Undo/Redo, compensation, duplicate delivery, repeated storage failure and disposal. No unrelated cleanup.
+
+Design review decisions:
+- Outbox storage writes preserve a durable prefix: after a write fails, no later record may be stored without the missing predecessors. Retry flushes retained memory in order; storage recovery cannot merely clear a flag. An unsuccessful initial load must not permit writes over unknown persisted records.
+- Preparation conflicts retain their source category. Retry invokes the same canonical preparation owner; canonical admission conflicts retry through the existing provider/apply boundary. No unchecked raw send, skipped record, changed publication identity or automatic conflict deletion.
+- A blocked session preserves a read-only recovery document captured from the existing Core canonical snapshot API. Only failure/recovery paths capture this document; ordinary publications retain their existing incremental route. This is an outbox-owned recovery artifact, not another editable authority or server checkpoint. The latest retained recovery document is the local reopen source while blocked. The session isolates live inbound delivery during this state rather than applying peer changes over a divergent draft. It never replaces the shared server document with the draft.
+- Explicit retry first durably retains all evidence, then re-prepares eligible failed sources. A fresh session replays canonical publications against the authoritative checkpoint through ordinary admission. Failed retry preserves the recovery draft and all remaining evidence. A downloadable recovery document is available when a source is still invalid or storage is unavailable; no promise of durable retention is made when every storage write fails.
+- Recovery presentation exposes retry/download and pending work, not only a warning. Reload/retry does not represent persistence success; confirmation still waits for source acceptance and backend receipt. Protect unsaved in-memory work before unload.
+
+Owner card - open-socket-authoritative-document-session (first slice: outbox):
+Spec: collaboration-reference.md / Source preparation failure ownership and Recovery completion. Inspector: ai-conversational-drawing-performance-flow-inspector.data.cjs / open-socket-authoritative-document-session; preparation remains prepare-document-publication. Inputs: immutable publication, explicit source failure category, canonical recovery document, current file generation, storage results. Outputs: ordered durable pending/conflicted records, reopen recovery document, explicit retry outcome and storage status. Conditions: canonical-only transport, no successor write overtakes missing predecessor, no unknown-load overwrite, explicit generation Reset is separate. Contributors: App session/storage and existing Core snapshot/preparation APIs. Forbidden: raw send, server snapshot overwrite, Factory history mutation, normal-path document snapshot, silent discard. Failure owner: document session. Boundaries: collaboration/{publication-outbox,factory-adapter,lifecycle}.ts, render-app/index.tsx, their direct formal unit/E2E consumers and current contract docs. Work one sub-boundary at a time; tests red before production changes. Stop/replan on disproved recovery or concurrency assumptions, never weaken an oracle to accept stranded edits.
+
+Gates/DoD: formal durable-prefix reload regression; storage load/write/retry failures; preparation failure then real edits/Undo/Redo/reopen/retry/confirmation/second reopen; persistent invalid source retains accessible draft; connected peers and exact retry/compensation preservation; no snapshots on normal publication; scoped lint, browser/server tsc, naming, Inspector/catalog tests and full collaboration E2E. Review repeats through the complete affected flow after corrections, not just the new case. Completion requires the recovery endpoint; a blocked-only green test cannot close this task.
+
+Recovery outbox slice: the three new regressions failed before implementation (successor durable gap, unknown initial load, missing recovery API). All 16 outbox cases now pass. A later successful write cannot clear storage-failed by itself; explicit retry must flush the complete retained prefix. Ordinary append remains publication-only. Review carries the retry/load/generation paths into the next owner integration rather than declaring the task complete.
+
+Owner card - document session recovery integration: same Inspector step and Recovery completion spec. Inputs are the outbox's retained failure category, canonical recovery document and prepared publication prefix. Output is a blocked-but-readable local document or ordinary canonical replay followed by durable confirmation. The session uses Core's existing snapshot/load APIs only on failure/reopen; it pauses inbound traffic while a divergent recovery document is active. Preparation uses the exact existing adapter function. Retry must persist evidence before allowing a fresh authoritative bootstrap; it cannot silently skip unsupported sources. UI consumes session recovery state and invokes explicit retry/export, with no independent write authority. Allowlist extends the same session step to direct recovery presentation/tests. Formal gate: transient conversion failure -> local draft -> reconnect preserving it -> reopen -> preparation repaired -> ordinary source acceptance -> persistence receipt. Existing publication/undo/retry tests remain required. Initial test setup used a nonexistent processor export and was corrected to the actual Core apply facade before collecting the behavioral red result.
+
+
+Recovery integration self-review: the real browser case completed faulted real drawing + Undo/Redo + reopen + rejected retry + export + repaired retry + independent peer merge + durable receipt + second reload (25.4s). This is evidence for the happy recovery endpoint, not closeout. Additional failure-during-recovery cases proved snapshot exceptions could escape before retention, conflict storage rejection could skip isolation, and initial-load repair could resurrect an obsolete generation. Add bounded regressions before correcting those exact owner paths. Keep source retention independent of optional snapshot capture, isolate in finally even when storage fails, and apply the authoritative Reset generation to recovered stored records. No broadened framework or backend change.
+
+
+Recovery final integration review: the full 16-case collaboration suite passed. A direct-consumer audit found explicit Reset assumes an active socket, whereas a safely reopened recovery draft deliberately owns none. Preserve explicit Reset by opening a short-lived authoritative session when isolated; clear retained evidence only after server acknowledgement, and retain the active recovery handle on Reset failure. Export must wait for queued retention before reading the recovery artifact. These are bounded lifecycle/presentation corrections under the same Inspector owner, not a new recovery protocol. Prove both regressions before production changes, then recheck ordinary collaboration, recovery, compensation and durable reload.
+
+Recovery failure-boundary follow-up: optional canonical recovery-document capture may fail while the source evidence is safely retained. Reopen must still expose explicit preparation retry; absence of the optional document must not suppress recovery controls. The regression was red before changing the startup conflict predicate. Download reports the missing document honestly, while canonical source retry remains available. The storage E2E assertion was corrected to the public wrapped storage error rather than the injected inner DOMException; no production validation was relaxed.
+
+Reset transport review: opening the temporary session is not sufficient; the existing provider requires the explicit bootstrap-consumed handshake before Reset. This short-lived Reset-only session does not hydrate or overwrite the local draft. Its failure retains the recovery handle and evidence. Prove the handshake ordering and real reopened-recovery Reset separately. Also strengthen the recovery endpoint with a new edit after recovery and its second durable reload, and register the new presentation tests in the existing package test:local entry.
+
+
+#### Failure recovery completion - verified endpoint
+
+The bounded completion endpoint is now exercised through real browser edits, retained source failure, additional edits/Undo/Redo/rollback compensation, blocked reopen, rejected retry, valid recovery-file export, repaired canonical retry, independent peer merge, another new edit, durable server confirmation and a second reload with exact element identities. A separate real IndexedDB quota-failure case proves a missing predecessor cannot be bypassed by later edits; explicit storage retry durably retains the complete prefix before reload and ordinary source replay/confirmation. No server checkpoint overwrite, unchecked raw transport, skipped conflict or relaxed canonical validation is used.
+
+The final review traced source callbacks, optional capture failure, queue settlement, storage load/put/delete/generation, preparation/re-admission, disconnect/reconnect/reopen, duplicate acknowledgement, live peers, UI retry/download/unload, confirmation, disposal and explicit Reset. Normal publication still captures zero recovery snapshots. Factory/Core production code and backend validation were not changed in this recovery slice. Existing provider/operations/protocol and actual batch/Group/vector/Fill/Undo/Redo/compensation tests remain evidence for direct consumers. Recovery controls are registered in the package's existing test:local command.
+
+Evidence and lineage:
+- Durable prefix/load/recovery regressions, optional capture/conflict-storage failure, stale generation, Reset/export ordering and missing-draft retry were red before their bounded owner fixes. Logs: `tmp/recovery-prefix-red.log`, `recovery-review-red.log`, `recovery-generation-red.log`, `recovery-reset-export-red.log`, `recovery-no-draft-red.log`, `recovery-reset-handshake-red.log`. Setup-only runs are not behavior evidence.
+- Final direct-consumer unit/integration run: 254 passed across 13 files (`tmp/recovery-final-consumers.log`). Includes lifecycle 28, outbox 17, provider 50, adapter 7, protocol 62, operations 45, document publication 15, publication feature 5, render startup 12, recovery UI 2, and Reset/mode 11. Earlier overlapping green runs are not additional tests.
+- Complete real collaboration suite: 17 passed in 3.6 minutes (`tmp/recovery-closure-browser.log`, `tmp/recovery-closure-browser-results/`). After its direct Reset transport follow-up, the four affected endpoints passed in 47.2 seconds (`tmp/recovery-final-endpoints.log`, `tmp/recovery-final-endpoints-results/`), including the new isolated Reset case and strengthened post-recovery edit. The final small production delta is confined to the temporary Reset session handshake; all unchanged complete-suite paths retain their prior proof. This is 18 distinct browser cases, not 21.
+- Backend reducer/Reset/error/retry suites: 42 passed (`tmp/recovery-final-backend.log`); no backend production delta in this slice. Browser/server production typecheck passed on final source (`tmp/recovery-verified-types.log`). Scoped lint, naming and Inspector/catalog closure logs are `tmp/recovery-closure-lint.log`, `tmp/recovery-closure-naming.log`, `tmp/recovery-closure-inspector.log`.
+- Blocked and recovered screenshots were inspected; the downloaded canonical recovery document passes Core preflight and contains the exact retained local elements. The final recovery screenshots show the post-recovery edit as well. All browser runs kept source frozen; the historical navigation interruption is not assigned a cause by these successful runs.
+
+Limits are explicit: if disk writes remain unavailable, work stays in memory with export and unload warning; closing the tab cannot be promised durable. If canonical preparation or admission still rejects a source, retry preserves the evidence and document instead of silently discarding it or claiming saved. The user can retry after the cause is corrected or export the valid recovery document when available. Reset is a separate destructive choice, never automatic recovery.
+
+No live101, model calls, push, commit, PR changes or monitoring. This closes only the requested recovery endpoint and its direct regressions, not the full reusable-tool plan.
+
+Final metadata closeout: Inspector/catalog 43 passed, naming 15 passed, scoped lint zero errors with 13 explicit console warnings, and scoped whitespace check passed. The test:local entry includes the new recovery UI suite. Temporary browser services on 3300/3401/4401 exited after the final endpoint run. All test artifacts remain local. No new candidate/target assessment or global plan completion is claimed by this bounded recovery report.
+
+
+#### Recovery completion - asynchronous boundary review
+
+This requested review reopens the bounded recovery task, not the full composition plan. Follow source publication -> preparation -> durable outbox -> source acceptance/ack cleanup -> reopen/retry -> later edits/confirmation, including in-flight reconnect, failed storage binding, disposal, history and rollback compensation. Read actual producers/consumers and deferred failure paths rather than relying on prior green totals. Scope remains the Design session/outbox/recovery controls and direct formal tests/spec/Inspector; no Factory/Core behavior change, server validation weakening, live101, push or monitoring.
+
+Owner card: open-socket-authoritative-document-session, collaboration-reference.md / Recovery completion. Inputs: canonical/source publications, generation/bootstrap, ordered storage outcomes, source acknowledgements, active transaction boundary and session lifetime. Outputs: preserved current draft/source order, actionable recovery, valid replay, durable confirmation without collateral history reset. No async continuation may overwrite a recovery draft or revive a disposed session. Live publication rejection is not replay failure and cannot reload Core. Acknowledgement cleanup failure must enter recovery just like append failure. Reload admission must recheck active edits after asynchronous retention. Storage-generation binding failure remains recoverable without replaying a retired generation. Allowed contributors/boundaries are the existing session/outbox/Core public transaction/snapshot APIs, current recovery controls, their tests and contract documents. Forbidden: raw send, dropped evidence, blanket Core reload, weakening backend validation or new transaction authority. Failure owner: session. Prove deferred failures red, fix within owner, then direct-consumer unit/types/lint and real collaboration/Undo/Redo/compensation/storage-reload E2E. Stop and replan on an inconsistent generation/replay contract; do not add alternate persistence paths.
+
+
+The async-boundary review found six failure categories, proved by seven red regressions: accepted-source deletion failure; reconnect overtaking recovery; live rejection after prior replay resetting history; active edits beginning during recovery; incomplete generation retirement/startup binding failure; and activation reviving after disposal. The fixes stay in the session and outbox owners. The 52 owner tests pass after correction. The real browser proof now covers accepted-source cleanup failure, subsequent edits and Undo/Redo, exact-identity replay, a new live rejection after replay, preserved Undo/Redo, another recovery, a subsequent edit, persistence receipt and durable reload with a second actor. Its first run stopped at a test-only bare module import in page.evaluate; the fixture now injects at the served provider module boundary and the whole case passes (28.1s). No production test switch or validation bypass was added.
+
+Review of neighboring ownership: source preparation/Factory publication and canonical operations are unchanged by this slice; send precedes durable outbox cleanup; a failed cleanup retains exact identity; replay reuses server idempotency rather than constructing a new source; recovery snapshot work remains failure-only; current generation binding must finish before releasing storage failure; recovery/disposal cannot be overridden by an awaited connection result. Complete direct-consumer and browser regression gates remain pending below. This does not claim global plan completion or perfect handling of arbitrary storage loss.
+
+
+Continuation within the same owner card: the Core-facing session adapter also awaits preparation before assigning its handle. Direct source inspection found that disposing during this wait can miss the pending controller; the deprecated preparation helper's cancellation test does not prove this actual App entry point. Add formal successful/failed delayed-bootstrap tests through createCollaborationDocumentSession, preserve a successor session's global handle, then correct adapter lifetime ownership before final closure. No Core/Factory mutation or new persistence path. The first complete browser pass is preserved separately; rerun affected startup/recovery endpoints after this closure, not unchanged batch workload cases.
+
+
+The actual Core-facing adapter tests exposed both delayed-success revival and delayed-failure clearing of a successor's window handle. Both failed before correction (`tmp/recovery-audit-core-session-red.log`). The adapter now owns pending preparation, rejects preparation/activation after disposal, settles its controller and scopes global cleanup to its own identity. Lifecycle plus Strict Mode tests: 48 passed (`tmp/recovery-audit-core-session-green.log`). The complete collaboration browser suite passed all 19 cases before this final adapter change (`tmp/recovery-audit-browser.log`, 4.1m); affected startup/recovery endpoint rerun and final current-source consumer gates follow. No success is inferred from a predecessor run for an altered endpoint.
+
+
+The final load-source handoff check also proved that an already returned checkpoint loader remained callable after session disposal. The permanent regression fails on that behavior (`tmp/recovery-audit-load-source-red.log`); the same session lifetime now guards load as well as prepare/activate. This is not a second cancellation authority: the existing App session owns all three entry points. The 8 affected browser endpoints passed after the pending-preparation adapter fix (`tmp/recovery-audit-final-browser.log`, 1.4m). The final guard changes only calls on an already disposed source; final owner/direct-consumer checks and ordinary startup browser proof close it below.
+
+
+##### Asynchronous recovery review - bounded closeout
+
+Final direct-consumer verification: 265 tests across 13 files passed on the final production source (`tmp/recovery-audit-closed-consumers.log`), including 37 lifecycle, 18 outbox and 3 recovery-control tests, plus existing provider, adapter, protocol, operations, publication, action, Strict Mode, Reset and mode consumers. Production typecheck passed (`tmp/recovery-audit-closed-types.log`). Scoped lint passed with zero errors and 13 explicit console warnings (`tmp/recovery-audit-closed-lint.log`); naming passed 15 tests. All newly exposed behavior mismatches were proved red before production changes; the original test-only browser module-import issue was corrected at its served-module fixture boundary.
+
+Browser evidence is a lineage, not inflated case totals: all 19 collaboration cases passed in `tmp/recovery-audit-browser.log`; after the pending-preparation lifetime correction the 8 affected startup/recovery/compensation endpoints passed in `tmp/recovery-audit-final-browser.log`; after expiring the already-returned load source, ordinary startup and the complete accepted-cleanup/rejection/history/save/reload endpoint passed again in `tmp/recovery-audit-closed-browser.log` (2 cases, 28.0s). No endpoint failure remains. Normal/batch collaboration, reconnect, exact Group Undo/Redo, live drag/vector delivery, computed Fill fields, rollback compensation, generation Reset and recovery are covered by the complete suite and affected reruns. No live AI or 101 run was used.
+
+Source review followed the actual App/Core session entry, immutable source preparation, ordered retention, acceptance/cleanup, failure isolation, retry, generation retirement, load-source lifetime, history and save receipt. The bounded correction changes only Design session/outbox behavior; it does not alter Factory/Core transaction semantics, other Apps, provider/server canonical admission or retry identity. Normal successful publication still takes zero recovery snapshots. Failed preparation and unavailable disk remain explicit blockers: memory-only work cannot be promised durable across closing the tab, and unresolved invalid sources are retained rather than dropped. Recovery requires correcting the cause before ordinary admission succeeds; export is available when a valid recovery document exists. Disposal settles an already-started preparation using the existing transport lifetime; it does not claim instantaneous network cancellation.
+
+This closes the requested recovery review, not the global reusable-tool plan. No commit, push, PR operation or monitoring was performed. Final Inspector/catalog checks passed all 43 tests (`tmp/recovery-audit-final-inspector.log`); scoped whitespace checks passed. The owned temporary browser servers on 3300/3401/4401 have exited. No further product mutation is planned.

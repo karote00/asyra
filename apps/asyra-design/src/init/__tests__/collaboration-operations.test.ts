@@ -1,3 +1,4 @@
+import { prepareDocumentPublication } from '../../collaboration/document-publication'
 import { applyCanonicalChangesToDocument } from '../../../server/document-canonical-reducer'
 import { createFormalInitialDocument } from '../../collaboration/initial-document'
 import type { CanonicalChange } from '@asyra/core'
@@ -508,7 +509,8 @@ const createHarness = (options: HarnessOptions = {}) => {
     applyCanonicalChanges,
     applyRemoteCanonicalChangeSlices,
     decideRemotePublication,
-    processPublication,
+    processPublication: (source: SharedPublication) =>
+      processPublication(prepareDocumentPublication(source)),
     runRemoteTransaction,
     runRemoteTransactionProgressively,
     settleRemoteSlice
@@ -655,7 +657,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
         publication([computed], 'remote-computed-projection')
       )
     ).toThrow(/unsupported canonical publication batch evidence/i)
-    expect(harness.decideRemotePublication).toHaveBeenCalledOnce()
+    expect(harness.decideRemotePublication).not.toHaveBeenCalled()
     expect(harness.runRemoteTransaction).not.toHaveBeenCalled()
     expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
   })
@@ -1615,7 +1617,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'transformed-publication'
     )
     const harness = createHarness({
-      decideRemotePublication: () => transformed
+      decideRemotePublication: () => prepareDocumentPublication(transformed)
     })
 
     expect(
@@ -1753,7 +1755,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
 
     expect(() => harness.processPublication(make())).toThrow()
-    expect(harness.decideRemotePublication).toHaveBeenCalledOnce()
+    expect(harness.decideRemotePublication).not.toHaveBeenCalled()
     expect(harness.runRemoteTransaction).not.toHaveBeenCalled()
     expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
   })
@@ -1770,6 +1772,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     await expect(
       duplicateHarness.processPublication({
         ...duplicateSource,
+        mode: 'progressive',
         slices: [
           firstSlice,
           {
@@ -1893,6 +1896,7 @@ const persistenceBatch = (
     batchId?: string
     documentId?: string
     expectedDurableSequence?: number
+    raw?: boolean
   }> = {}
 ) => ({
   protocolVersion: 1,
@@ -1905,7 +1909,7 @@ const persistenceBatch = (
     const encodedPublicationFrames = encodePublicationMessageFrames({
       type: CollaborationMessageTypes.SEND_PUBLICATION,
       requestId: `persistence-${item.publicationId}`,
-      publication: item
+      publication: options.raw ? item : prepareDocumentPublication(item)
     }).map((frame) => Buffer.from(frame).toString('base64'))
     return {
       documentId: options.documentId ?? 'document-a',
@@ -2122,17 +2126,20 @@ describe('Asyra Design backend document materialization', () => {
     )
     await expect(
       harness.service.materialize(
-        persistenceBatch([
-          {
-            sequence: 1,
-            publication: publication(
-              [delivery('selection', 'selection.update', {})],
-              'selection-publication'
-            )
-          }
-        ])
+        persistenceBatch(
+          [
+            {
+              sequence: 1,
+              publication: publication(
+                [delivery('selection', 'selection.update', {})],
+                'selection-publication'
+              )
+            }
+          ],
+          { raw: true }
+        )
       )
-    ).rejects.toThrow('unsupported canonical publication batch evidence')
+    ).rejects.toThrow('Invalid canonical operation')
     expect(harness.transact).not.toHaveBeenCalled()
     expect(harness.apply).not.toHaveBeenCalled()
   })

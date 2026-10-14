@@ -362,6 +362,34 @@ describe('collaboration wire protocol', () => {
     ).toEqual(request)
   })
 
+  it('round-trips document compensation using only its publication correlation', () => {
+    const source = createPublication({
+      channel: 'document',
+      eventName: 'applyCanonicalChanges',
+      payload: {
+        version: 1,
+        changes: [
+          {
+            kind: 'property-components',
+            updates: [{ propertyId: 'p', values: { x: 0 } }]
+          }
+        ]
+      }
+    })
+    const request: CollaborationRequestMessage = {
+      type: CollaborationMessageTypes.SEND_PUBLICATION,
+      requestId: 'document-compensation',
+      publication: {
+        ...source,
+        origin: 'rollback-compensation',
+        compensatesPublicationId: 'original'
+      }
+    }
+    expect(
+      decodePublicationMessageFrames(encodePublicationMessageFrames(request))
+    ).toEqual(request)
+  })
+
   it('keeps control messages as ordinary JSON while every publication uses a versioned binary frame', () => {
     const hello = {
       type: CollaborationMessageTypes.HELLO,

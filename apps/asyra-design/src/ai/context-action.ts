@@ -16,6 +16,7 @@ import {
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
 import {
+  type DesignContextQuery,
   designContextFields,
   designContextPageLimit
 } from '../common-apis/design-context'
@@ -195,5 +196,71 @@ export const createDocumentContextReleaseAction = (
         'Retained query release was not acknowledged.'
       )
     return { snapshotId, released: result.released }
+  }
+})
+
+/** Complete region identities for one backend operation; no reusable resource is published. */
+export const createRegionTargetsAction = (
+  read: (query: RetainedContextQuery, signal?: AbortSignal) => unknown
+): AiActionDefinition<
+  Pick<DesignContextQuery, 'bounds' | 'filter' | 'expectedCount'> & {
+    scope: 'region'
+  }
+> => ({
+  ...actionToolSemantics(
+    AiActionNames.RESOLVE_DESIGN_TARGETS,
+    toolResultObject(
+      {
+        delivery: { const: 'transient' },
+        available: { const: true },
+        coordinateSpace: { const: 'parent-local' },
+        total: toolResultCount,
+        elementIds: toolDocumentReferences,
+        missingIds: toolDocumentReferences,
+        elements: { type: 'array', maxItems: 0 },
+        nextOffset: { const: null },
+        snapshotId: false,
+        leaseId: false
+      },
+      [
+        'delivery',
+        'available',
+        'coordinateSpace',
+        'total',
+        'elementIds',
+        'missingIds',
+        'elements',
+        'nextOffset'
+      ]
+    )
+  ),
+  name: AiActionNames.RESOLVE_DESIGN_TARGETS,
+  revision: 1,
+  composition: 'allowed',
+  description:
+    'Resolve complete region identities once for an immediate backend operation. Prefer execute_design_batch target.query to avoid returning IDs to the model. No retained resource, snapshot or lease is created or released. Use read_design_context for reusable references. Ordinary canonical mutation admission remains required.',
+  inputSchema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['scope', 'bounds'],
+    properties: {
+      scope: { const: 'region' },
+      bounds: documentContextSchema.properties.bounds,
+      filter: documentContextSchema.properties.filter,
+      expectedCount: documentContextSchema.properties.expectedCount
+    }
+  },
+  execute: async (query, { signal }) => {
+    signal.throwIfAborted()
+    try {
+      return read(
+        { ...query, result: 'ids', allMatches: true, delivery: 'transient' },
+        signal
+      )
+    } catch (error) {
+      if (error instanceof RetainedQueryError)
+        throw new AiActionExecutionError(error.message)
+      throw error
+    }
   }
 })

@@ -30,6 +30,7 @@ import { createOrganizationAction } from './organization-action'
 import { createDesignEditAction } from './design-edit-action'
 import {
   createDocumentContextAction,
+  createRegionTargetsAction,
   createDocumentContextReleaseAction
 } from './context-action'
 import {
@@ -123,6 +124,7 @@ export const createAiRuntimeInput = (
     }),
     createPreparedDesignAction(undefined, undefined, undefined, evidence),
     createDocumentContextAction(queries.read),
+    createRegionTargetsAction(queries.read),
     createDocumentContextReleaseAction(queries.read),
     createRetainedFillAction(queries),
     createDesignEditAction(),

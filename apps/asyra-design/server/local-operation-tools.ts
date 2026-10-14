@@ -202,6 +202,73 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
   }
 }
 
+const discoveryInputIssue = (args: unknown): string | undefined => {
+  const selectors = ['names', 'query', 'operation', 'operations', 'category']
+  if (
+    !isRecord(args) ||
+    Object.keys(args).some(
+      (key) =>
+        !selectors.includes(key) &&
+        ![
+          'includeSchemas',
+          'refresh',
+          'refreshReason',
+          'view',
+          'schemaPaths',
+          'offset',
+          'registryRevision'
+        ].includes(key)
+    ) ||
+    (args.offset !== undefined &&
+      (!Number.isSafeInteger(args.offset) ||
+        Number(args.offset) < 0 ||
+        (args.category === undefined && args.query === undefined))) ||
+    (args.registryRevision !== undefined &&
+      (!Number.isSafeInteger(args.registryRevision) ||
+        Number(args.registryRevision) < 0 ||
+        (args.category === undefined && args.query === undefined))) ||
+    (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
+    (args.view !== undefined &&
+      (typeof args.view !== 'string' ||
+        !['usage', 'full'].includes(args.view))) ||
+    (args.schemaPaths !== undefined &&
+      (!Array.isArray(args.schemaPaths) ||
+        !args.schemaPaths.length ||
+        args.schemaPaths.some(
+          (path) => typeof path !== 'string' || !path.startsWith('/')
+        ))) ||
+    (args.view !== undefined && args.schemaPaths !== undefined) ||
+    ((args.view !== undefined || args.schemaPaths !== undefined) &&
+      args.names === undefined &&
+      args.operation === undefined &&
+      args.operations === undefined) ||
+    (args.refreshReason !== undefined &&
+      (args.refresh !== true ||
+        typeof args.refreshReason !== 'string' ||
+        !['context-loss', 'delivery-failure', 'missing-fields'].includes(
+          args.refreshReason
+        ))) ||
+    (args.includeSchemas !== undefined &&
+      (typeof args.includeSchemas !== 'boolean' ||
+        args.category === undefined)) ||
+    selectors.filter((key) => args[key] !== undefined).length > 1 ||
+    ['query', 'operation', 'category'].some(
+      (key) =>
+        args[key] !== undefined &&
+        (typeof args[key] !== 'string' || !String(args[key]).trim())
+    ) ||
+    (args.names !== undefined &&
+      (!Array.isArray(args.names) ||
+        args.names.some((v) => typeof v !== 'string'))) ||
+    (args.operations !== undefined &&
+      (!Array.isArray(args.operations) ||
+        !args.operations.length ||
+        args.operations.some((v) => typeof v !== 'string' || !v.trim())))
+  )
+    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+  return undefined
+}
+
 export class LocalOperationPreparationError extends LocalToolInputError {
   constructor(message?: string) {
     super(
@@ -210,6 +277,8 @@ export class LocalOperationPreparationError extends LocalToolInputError {
     )
   }
 }
+
+export const localOperationNamespace = 'design_operations'
 
 export interface NativeToolDescriptor extends LocalToolDefinition {
   registeredName?: string
@@ -550,10 +619,18 @@ export const createLocalOperationTools = (
           AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE
         ].includes(action.name as never)
     )
+  // Explicit review/capture owns evidence processing outside edit batches.
+  const batchActions = registered.filter(
+    (action) =>
+      ![AiActionNames.REVIEW_DESIGN, AiActionNames.INSPECT_DRAWING].includes(
+        action.name as never
+      )
+  )
+  const batchActionNames = new Set(batchActions.map((action) => action.name))
   // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
   const admittedApisByName = new Map(registered.map((api) => [api.name, api]))
   const contextReader = registered.find(
-    (action) => action.name === AiActionNames.READ_DESIGN_CONTEXT
+    (action) => action.name === AiActionNames.RESOLVE_DESIGN_TARGETS
   )
   const contextAlternatives = (
     schema: unknown,
@@ -580,22 +657,21 @@ export const createLocalOperationTools = (
   )
   const contextFields =
     contextCandidates.length === 1 ? contextCandidates[0] : undefined
-  const regionTargetSchema =
-    contextFields?.bounds && contextFields?.allMatches
-      ? {
-          type: 'object',
-          additionalProperties: false,
-          required: ['scope', 'bounds'],
-          properties: {
-            scope: { const: 'region' },
-            bounds: contextFields.bounds,
-            ...(contextFields.filter ? { filter: contextFields.filter } : {}),
-            ...(contextFields.expectedCount
-              ? { expectedCount: contextFields.expectedCount }
-              : {})
-          }
+  const regionTargetSchema = contextFields?.bounds
+    ? {
+        type: 'object',
+        additionalProperties: false,
+        required: ['scope', 'bounds'],
+        properties: {
+          scope: { const: 'region' },
+          bounds: contextFields.bounds,
+          ...(contextFields.filter ? { filter: contextFields.filter } : {}),
+          ...(contextFields.expectedCount
+            ? { expectedCount: contextFields.expectedCount }
+            : {})
         }
-      : undefined
+      }
+    : undefined
   const targetArgumentPathSchema = {
     type: 'array',
     minItems: 1,
@@ -663,7 +739,15 @@ export const createLocalOperationTools = (
           )
         const issue = operationInputIssue(reference.query, regionTargetSchema)
         if (issue) throw new Error(issue)
-        const key = JSON.stringify(reference.query)
+        const key = JSON.stringify(reference.query, (_key, value) =>
+          isRecord(value)
+            ? Object.fromEntries(
+                Object.keys(value)
+                  .sort()
+                  .map((name) => [name, value[name]])
+              )
+            : value
+        )
         queryKeys.set(key, reference.query)
         return resolved.get(key) ?? ['query-admission-target']
       }
@@ -694,23 +778,13 @@ export const createLocalOperationTools = (
               'Region query targets require the plural elementIds field.'
             )
       }
-    const executable = registered.filter(
-      (a) =>
-        ![AiActionNames.REVIEW_DESIGN, AiActionNames.INSPECT_DRAWING].includes(
-          a.name as never
-        )
-    )
+    const executable = batchActions
     const admitted = prepareOperationBatch(operations, executable, resolve)
     if (!queryKeys.size) return admitted
     if (!contextReader) throw new Error('Region context reader is unavailable.')
     for (const [key, query] of queryKeys) {
       signal.throwIfAborted()
-      const argumentsValue = {
-        ...query,
-        result: 'ids',
-        allMatches: true,
-        delivery: 'page'
-      }
+      const argumentsValue = { ...query }
       const issue = operationInputIssue(
         argumentsValue,
         contextReader.inputSchema
@@ -722,7 +796,7 @@ export const createLocalOperationTools = (
         actions: [
           {
             id,
-            name: AiActionNames.READ_DESIGN_CONTEXT,
+            name: AiActionNames.RESOLVE_DESIGN_TARGETS,
             arguments: argumentsValue,
             summary: 'Resolve exact region targets'
           }
@@ -733,11 +807,16 @@ export const createLocalOperationTools = (
       const matches = receipt.actionResults.filter(
         (entry) =>
           entry.actionId === id &&
-          entry.actionName === AiActionNames.READ_DESIGN_CONTEXT
+          entry.actionName === AiActionNames.RESOLVE_DESIGN_TARGETS
       )
       const value = matches.length === 1 ? matches[0].result : undefined
       if (
+        receipt.failure ||
+        receipt.actionResults.length !== 1 ||
         !isRecord(value) ||
+        (isRecord(value.toolOutcome) &&
+          (value.toolOutcome.status !== 'success' ||
+            value.toolOutcome.settlement !== 'completed')) ||
         value.available !== true ||
         value.nextOffset !== null ||
         !Array.isArray(value.elementIds) ||
@@ -881,12 +960,21 @@ export const createLocalOperationTools = (
   // The definitions and index live for this request only.
   let nativeToolsByName: Map<string, NativeToolDescriptor[]> | undefined
   let nativeToolsRevision: number | undefined
+  let nativeCatalogFingerprint: string | undefined
+  let nativeCatalogRevision = 0
   let nativeTools: NativeToolDescriptor[] = []
   const nativeMatches = (name: string): NativeToolDescriptor[] => {
     const revision = options.getNativeToolsRevision?.() ?? 0
     if (!nativeToolsByName || nativeToolsRevision !== revision) {
       nativeToolsByName = new Map()
       nativeTools = options.getNativeTools?.() ?? []
+      // The host counter invalidates reads even after rejected/no-op library work.
+      // Page identity changes only when the ordered published catalog changes.
+      const fingerprint = createHash('sha256')
+        .update(JSON.stringify(nativeTools))
+        .digest('hex')
+      if (fingerprint !== nativeCatalogFingerprint) nativeCatalogRevision++
+      nativeCatalogFingerprint = fingerprint
       for (const tool of nativeTools) {
         for (const key of [tool.name, `${tool.namespace}.${tool.name}`]) {
           const matches = nativeToolsByName.get(key) ?? []
@@ -902,12 +990,52 @@ export const createLocalOperationTools = (
     nativeMatches('')
     return nativeTools
   }
+  const discoveryRevision = () => {
+    nativeInventory()
+    return nativeCatalogRevision
+  }
   const nativeExecution = (tool: NativeToolDescriptor) =>
     tool.execution ?? {
       kind: 'native-tool',
       namespace: tool.namespace,
       tool: tool.name
     }
+  const actionExecution = (action: (typeof registered)[number]) => {
+    if (batchActionNames.has(action.name))
+      return {
+        kind: 'batch-action',
+        tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
+      }
+    const wrappers = nativeMatches(action.name).filter(
+      (tool) =>
+        tool.namespace === localOperationNamespace &&
+        tool.providerExposure !== 'registry'
+    )
+    if (wrappers.length === 1)
+      return { ...nativeExecution(wrappers[0]), argumentField: 'arguments' }
+    return {
+      kind: 'unavailable',
+      reason:
+        'An unambiguous native wrapper is required for explicit inspection.',
+      candidates: wrappers.map((tool) => `${tool.namespace}.${tool.name}`)
+    }
+  }
+  const discoveryGuidance = {
+    capabilities:
+      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Known tools need no repeated lookup.',
+    references:
+      'This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query.'
+  }
+  const nativeMenu = (tool: NativeToolDescriptor) => ({
+    name: tool.name,
+    namespace: tool.namespace,
+    registeredName: tool.registeredName,
+    revision: tool.revision,
+    description: tool.description,
+    effect: tool.effect,
+    composition: tool.composition,
+    execution: nativeExecution(tool)
+  })
   const checkResults = preparation.checkResults ?? createDesignCheckResults()
   const designReview = createLocalDesignReview({
     results: checkResults,
@@ -1825,11 +1953,17 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query does lexical search. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. apis execute as batch items; tools use their native namespace. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  registryRevision: {
+                    type: 'integer',
+                    minimum: 0,
+                    description:
+                      'Returned discovery catalog revision. On a changed catalog restart the selector without offset/revision.'
+                  },
                   offset: {
                     type: 'integer',
                     minimum: 0,
@@ -1894,7 +2028,7 @@ export const createLocalOperationTools = (
                     type: 'string',
                     minLength: 1,
                     description:
-                      'Lexical name or purpose terms, matched against current registered descriptors. Mutually exclusive with names.'
+                      'Capability name or operation-purpose terms such as fill, hierarchy or inspection, matched against current action/native/saved descriptors. Not subject names, photographs or reference-material search; use native web research for those. Mutually exclusive with names.'
                   }
                 }
               }
@@ -1935,15 +2069,7 @@ export const createLocalOperationTools = (
                       properties: {
                         name: {
                           type: 'string',
-                          enum: registered
-                            .filter(
-                              (a) =>
-                                ![
-                                  AiActionNames.REVIEW_DESIGN,
-                                  AiActionNames.INSPECT_DRAWING
-                                ].includes(a.name as never)
-                            )
-                            .map((a) => a.name)
+                          enum: batchActions.map((action) => action.name)
                         },
                         arguments: { type: 'object' },
                         target: {
@@ -2123,27 +2249,49 @@ export const createLocalOperationTools = (
       }
       if (!Array.isArray(value.apis) && !Array.isArray(value.categories))
         return 'API discovery omitted its menu or exact matches'
-      if (value.complete !== undefined) {
+      if (
+        value.complete !== undefined ||
+        value.count !== undefined ||
+        value.offset !== undefined ||
+        value.next !== undefined
+      ) {
         if (
           !Array.isArray(value.apis) ||
+          (value.tools !== undefined && !Array.isArray(value.tools)) ||
           typeof value.complete !== 'boolean' ||
           !Number.isSafeInteger(value.offset) ||
           Number(value.offset) < 0 ||
           !Number.isSafeInteger(value.count) ||
           Number(value.count) < 0 ||
-          Number(value.offset) + value.apis.length > Number(value.count)
+          Number(value.offset) +
+            value.apis.length +
+            (Array.isArray(value.tools) ? value.tools.length : 0) >
+            Number(value.count)
         )
           return 'API discovery returned an invalid page boundary'
-        const end = Number(value.offset) + value.apis.length
-        if (value.complete !== (end === value.count))
+        const returned =
+          value.apis.length +
+          (Array.isArray(value.tools) ? value.tools.length : 0)
+        const end = Number(value.offset) + returned
+        if (
+          value.complete !== (end === value.count) ||
+          (value.complete && value.next !== undefined)
+        )
           return 'API discovery completion disagrees with its page boundary'
         if (
           !value.complete &&
-          (!value.apis.length ||
+          (!returned ||
             !isRecord(value.next) ||
             value.next.tool !== AiDesignToolIds.DESCRIBE_DESIGN_APIS ||
             !isRecord(value.next.arguments) ||
-            value.next.arguments.offset !== end)
+            value.next.arguments.offset !== end ||
+            discoveryInputIssue(value.next.arguments) !== undefined ||
+            (value.next.arguments.category !== undefined &&
+              !categoryChoices.includes(
+                String(value.next.arguments.category)
+              )) ||
+            !Number.isSafeInteger(value.next.arguments.registryRevision) ||
+            Number(value.next.arguments.registryRevision) < 0)
         )
           return 'API discovery omitted a usable continuation'
       }
@@ -2240,71 +2388,17 @@ export const createLocalOperationTools = (
         return JSON.stringify(await preparedReview.review(args, signal))
       }
       if (name === AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
-        const selectors = [
-          'names',
-          'query',
-          'operation',
-          'operations',
-          'category'
-        ]
+        const inputIssue = discoveryInputIssue(args)
+        if (inputIssue || !isRecord(args))
+          throw new LocalOperationPreparationError(
+            inputIssue ?? 'Expected discovery arguments'
+          )
         if (
-          !isRecord(args) ||
-          Object.keys(args).some(
-            (key) =>
-              !selectors.includes(key) &&
-              ![
-                'includeSchemas',
-                'refresh',
-                'refreshReason',
-                'view',
-                'schemaPaths',
-                'offset'
-              ].includes(key)
-          ) ||
-          (args.offset !== undefined &&
-            (!Number.isSafeInteger(args.offset) ||
-              Number(args.offset) < 0 ||
-              (args.category === undefined && args.query === undefined))) ||
-          (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
-          (args.view !== undefined &&
-            (typeof args.view !== 'string' ||
-              !['usage', 'full'].includes(args.view))) ||
-          (args.schemaPaths !== undefined &&
-            (!Array.isArray(args.schemaPaths) ||
-              !args.schemaPaths.length ||
-              args.schemaPaths.some(
-                (path) => typeof path !== 'string' || !path.startsWith('/')
-              ))) ||
-          (args.view !== undefined && args.schemaPaths !== undefined) ||
-          ((args.view !== undefined || args.schemaPaths !== undefined) &&
-            args.names === undefined &&
-            args.operation === undefined &&
-            args.operations === undefined) ||
-          (args.refreshReason !== undefined &&
-            (args.refresh !== true ||
-              typeof args.refreshReason !== 'string' ||
-              !['context-loss', 'delivery-failure', 'missing-fields'].includes(
-                args.refreshReason
-              ))) ||
-          (args.includeSchemas !== undefined &&
-            (typeof args.includeSchemas !== 'boolean' ||
-              args.category === undefined)) ||
-          selectors.filter((key) => args[key] !== undefined).length > 1 ||
-          ['query', 'operation', 'category'].some(
-            (key) =>
-              args[key] !== undefined &&
-              (typeof args[key] !== 'string' || !String(args[key]).trim())
-          ) ||
-          (args.names !== undefined &&
-            (!Array.isArray(args.names) ||
-              args.names.some((v) => typeof v !== 'string'))) ||
-          (args.operations !== undefined &&
-            (!Array.isArray(args.operations) ||
-              !args.operations.length ||
-              args.operations.some((v) => typeof v !== 'string' || !v.trim())))
+          args.registryRevision !== undefined &&
+          args.registryRevision !== discoveryRevision()
         )
           throw new LocalOperationPreparationError(
-            'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+            'Discovery registry changed; restart this selector at offset 0 without registryRevision.'
           )
         const apis = registered
         const details = (api: (typeof apis)[number], includeSchema = true) => {
@@ -2329,10 +2423,7 @@ export const createLocalOperationTools = (
             : undefined
           const descriptor = {
             ...api,
-            execution: {
-              kind: 'batch-action',
-              tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
-            },
+            execution: actionExecution(api),
             ...(recipeDependency ? { recipeDependency } : {}),
             operation: contract ? contract.operation : api.name,
             category: contract ? contract.category : 'design',
@@ -2340,8 +2431,18 @@ export const createLocalOperationTools = (
               ? { effect: contract.effect, result: contract.result }
               : {})
           }
-          const { inputSchema: _schema, ...menu } = descriptor
-          if (!includeSchema) return menu
+          if (!includeSchema)
+            return {
+              name: descriptor.name,
+              description: descriptor.description,
+              ...('revision' in api ? { revision: api.revision } : {}),
+              operation: descriptor.operation,
+              category: descriptor.category,
+              effect: descriptor.effect,
+              result: descriptor.result,
+              execution: descriptor.execution,
+              ...(recipeDependency ? { recipeDependency } : {})
+            }
           return deliverDefinition(
             api.name,
             descriptor,
@@ -2379,29 +2480,28 @@ export const createLocalOperationTools = (
             .map(({ api, operation }) => ({
               name: api.name,
               operation,
-              execution: {
-                kind: 'batch-action',
-                tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
-              }
+              execution: actionExecution(api)
             }))
         }
-        const pageOf = (entries: typeof apis, includeSchema: boolean) => {
+        const pageBoundary = (count: number) => {
           const offset = Number(args.offset ?? 0)
-          if (offset > entries.length)
+          if (offset > count)
             throw new LocalOperationPreparationError(
               'Discovery offset is beyond the current result; restart this selector at offset 0.'
             )
-          const selected = entries.slice(offset, offset + definitionPageSize)
-          const end = offset + selected.length
-          const continuation: Record<string, unknown> = { ...args, offset: end }
+          const end = Math.min(offset + definitionPageSize, count)
+          const continuation: Record<string, unknown> = {
+            ...args,
+            offset: end,
+            registryRevision: discoveryRevision()
+          }
           if (continuation.includeSchemas === false)
             delete continuation.includeSchemas
           return {
-            complete: end === entries.length,
-            count: entries.length,
+            complete: end === count,
+            count,
             offset,
-            apis: selected.map((api) => details(api, includeSchema)),
-            ...(end < entries.length
+            ...(end < count
               ? {
                   next: {
                     tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
@@ -2409,6 +2509,15 @@ export const createLocalOperationTools = (
                   }
                 }
               : {})
+          }
+        }
+        const pageOf = (entries: typeof apis, includeSchema: boolean) => {
+          const page = pageBoundary(entries.length)
+          return {
+            ...page,
+            apis: entries
+              .slice(page.offset, page.offset + definitionPageSize)
+              .map((api) => details(api, includeSchema))
           }
         }
         if (Array.isArray(args.names)) {
@@ -2521,47 +2630,38 @@ export const createLocalOperationTools = (
         if (args.category !== undefined) {
           if (args.category === nativeCategory && options.getNativeTools) {
             const inventory = nativeInventory()
-            const offset = typeof args.offset === 'number' ? args.offset : 0
-            const end = Math.min(offset + definitionPageSize, inventory.length)
-            const tools = inventory.slice(offset, end).map((tool) => {
-              const reference = {
-                name: tool.name,
-                namespace: tool.namespace,
-                registeredName: tool.registeredName,
-                revision: tool.revision
-              }
-              return {
-                ...(args.includeSchemas === true || args.refresh === true
-                  ? deliverDefinition(
-                      `${tool.namespace}.${tool.name}`,
-                      { ...tool },
-                      reference,
-                      args
-                    )
-                  : {
-                      ...reference,
-                      description: tool.description,
-                      effect: tool.effect,
-                      composition: tool.composition
-                    }),
-                execution: nativeExecution(tool)
-              }
-            })
+            const page = pageBoundary(inventory.length)
+            const tools = inventory
+              .slice(page.offset, page.offset + definitionPageSize)
+              .map((tool) => {
+                const reference = {
+                  name: tool.name,
+                  namespace: tool.namespace,
+                  registeredName: tool.registeredName,
+                  revision: tool.revision
+                }
+                return {
+                  ...(args.includeSchemas === true || args.refresh === true
+                    ? deliverDefinition(
+                        `${tool.namespace}.${tool.name}`,
+                        { ...tool },
+                        reference,
+                        args
+                      )
+                    : {
+                        ...reference,
+                        description: tool.description,
+                        effect: tool.effect,
+                        composition: tool.composition
+                      }),
+                  execution: nativeExecution(tool)
+                }
+              })
             return JSON.stringify({
               category: nativeCategory,
               apis: [],
               tools,
-              total: inventory.length,
-              offset,
-              complete: end >= inventory.length,
-              ...(end < inventory.length
-                ? {
-                    next: {
-                      tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-                      arguments: { ...args, offset: end }
-                    }
-                  }
-                : {})
+              ...page
             })
           }
           const entries = admittedApiCategories.get(String(args.category))
@@ -2578,7 +2678,11 @@ export const createLocalOperationTools = (
           })
         }
         if (args.query === undefined)
-          return JSON.stringify({ categories, catalogSize: apis.length })
+          return JSON.stringify({
+            categories,
+            catalogSize: apis.length,
+            guidance: discoveryGuidance
+          })
         const normalize = (value: string) =>
           value
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -2587,13 +2691,29 @@ export const createLocalOperationTools = (
             .replace(/[^\p{L}\p{N}]+/gu, ' ')
             .trim()
         const terms = normalize(String(args.query)).split(' ').filter(Boolean)
-        const matches = apis.filter((api) => {
-          const descriptor = normalize(`${api.name} ${api.description}`)
+        const matchesTerms = (name: string, description: string) => {
+          const descriptor = normalize(`${name} ${description}`)
           return terms.every((term) => descriptor.includes(term))
-        })
+        }
+        const matches = apis.filter((api) =>
+          matchesTerms(api.name, api.description)
+        )
+        const native = nativeInventory().filter((tool) =>
+          matchesTerms(tool.name, tool.description)
+        )
+        const inventory = [
+          ...matches.map((api) => ({ api })),
+          ...native.map((tool) => ({ tool }))
+        ]
+        const page = pageBoundary(inventory.length)
+        const selected = inventory.slice(
+          page.offset,
+          page.offset + definitionPageSize
+        )
         return JSON.stringify({
           catalogSize: apis.length,
-          ...(matches.length
+          guidance: discoveryGuidance,
+          ...(inventory.length
             ? {}
             : {
                 message:
@@ -2604,7 +2724,13 @@ export const createLocalOperationTools = (
                   arguments: {}
                 }
               }),
-          ...pageOf(matches, false)
+          apis: selected.flatMap((entry) =>
+            'api' in entry ? [details(entry.api, false)] : []
+          ),
+          tools: selected.flatMap((entry) =>
+            'tool' in entry ? [nativeMenu(entry.tool)] : []
+          ),
+          ...page
         })
       }
       const evidenceDefinition =
@@ -2958,15 +3084,31 @@ export const createLocalOperationTools = (
             !isRecord(item) ||
             item.status !== 'complete' ||
             item.value !== null ||
-            (isRecord(item.mutationScope) &&
-              item.mutationScope.complete !== true) ||
+            !isRecord(item.toolOutcome) ||
+            item.toolOutcome.status !== 'success' ||
+            item.toolOutcome.settlement !== 'completed' ||
+            Object.keys(item.toolOutcome).some(
+              (key) => !['status', 'settlement'].includes(key)
+            ) ||
+            !isRecord(item.mutationScope) ||
+            item.mutationScope.complete !== true ||
+            !Array.isArray(item.mutationScope.elementIds) ||
+            !Array.isArray(item.mutationScope.removedElementIds) ||
+            Object.keys(item.mutationScope).some(
+              (key) =>
+                !['complete', 'elementIds', 'removedElementIds'].includes(key)
+            ) ||
             (item.application !== undefined &&
               item.application !== 'not-reported') ||
             Object.keys(item).some(
               (key) =>
-                !['status', 'value', 'application', 'mutationScope'].includes(
-                  key
-                )
+                ![
+                  'status',
+                  'value',
+                  'application',
+                  'mutationScope',
+                  'toolOutcome'
+                ].includes(key)
             )
           )
             return true

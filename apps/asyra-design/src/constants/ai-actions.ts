@@ -5,6 +5,7 @@ export const AiActionNames = Object.freeze({
   ORGANIZE_DESIGN: 'organize_design',
   UPDATE_DESIGN_ELEMENT: 'update_design_element',
   READ_DESIGN_CONTEXT: 'read_design_context',
+  RESOLVE_DESIGN_TARGETS: 'resolve_design_targets',
   READ_DESIGN_ATTACHMENT: 'read_design_attachment',
   RELEASE_DESIGN_CONTEXT: 'release_design_context',
   MAP_RETAINED_FILLS: 'map_retained_fills',
@@ -37,5 +38,6 @@ export const AiDrawingDetailSelectionIntents = Object.freeze({
 export const AiBatchOnlyActionNames: readonly string[] = Object.freeze([
   AiActionNames.UPDATE_DESIGN_ELEMENT,
   AiActionNames.SET_ELEMENT_VISIBILITY,
-  AiActionNames.MAP_RETAINED_FILLS
+  AiActionNames.MAP_RETAINED_FILLS,
+  AiActionNames.RESOLVE_DESIGN_TARGETS
 ])

@@ -207,6 +207,12 @@ infrastructure.
   optional collaboration publication during the active transaction
 - delivery timing is independent from `undoable`; non-undoable shared changes
   also default to transaction-end unless immediate delivery is explicit
+- separate state-owner handoffs in the same synchronous immediate enqueue
+  window share one source slice. The existing publication microtask or transaction
+  settlement closes that boundary; an await starts a new boundary. Channel batches
+  retain their original order. Undo, Redo and rollback compensation reuse that
+  source boundary rather than treating internal owner handoffs as independent
+  progressive operations
 - all changes made by one synchronous immediate delivery action remain one
   ordered source boundary. Default progressive delivery groups consecutive
   source boundaries from the same transaction into publication windows of at

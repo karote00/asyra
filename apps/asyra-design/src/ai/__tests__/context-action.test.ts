@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
 import {
   createDocumentContextAction,
+  createRegionTargetsAction,
   createDocumentContextReleaseAction
 } from '../context-action'
 import {
@@ -102,4 +103,45 @@ it('separates live query output from explicit release without weakening either i
     { scope: 'snapshot', snapshotId: 'known', release: true },
     signal
   )
+})
+
+it('keeps transient and retained contracts disjoint through native conversion', () => {
+  const action = createRegionTargetsAction(vi.fn())
+  const query = {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 }
+  }
+  for (const schema of [
+    action.inputSchema,
+    nativeToolInputSchema(action.inputSchema)
+  ]) {
+    expect(operationInputIssue(query, schema)).toBeUndefined()
+    for (const patch of [
+      { allMatches: false },
+      { result: 'elements' },
+      { offset: 0 },
+      { fields: ['x'] },
+      { scope: 'snapshot', snapshotId: 'saved' }
+    ])
+      expect(operationInputIssue({ ...query, ...patch }, schema)).toBeDefined()
+  }
+  const result = {
+    delivery: 'transient',
+    available: true,
+    coordinateSpace: 'parent-local',
+    total: 1,
+    elementIds: ['a'],
+    missingIds: [],
+    elements: [],
+    nextOffset: null
+  }
+  expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(
+      { ...result, snapshotId: 'fake', leaseId: 'fake' },
+      action.outputSchema
+    )
+  ).toBeDefined()
+  const { delivery: _delivery, ...withoutMode } = result
+  expect(operationInputIssue(withoutMode, action.outputSchema)).toBeDefined()
 })

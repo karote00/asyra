@@ -940,7 +940,9 @@ it('retains the original activity objective through a failed clarification and r
     expect(
       projectAiActivity(active.progress, { purpose: active.originalIntent })
         .current
-    ).toEqual({ label: 'AI processing', message: 'Build the roof' })
+    ).toEqual({
+      label: 'Processing your request'
+    })
     return {
       status: 'failed',
       stage: 'provider',

@@ -1,3 +1,4 @@
+import { DocumentPersistenceError } from './document-persistence-error'
 import {
   persistenceSpan,
   type DocumentPersistenceObservation
@@ -11,7 +12,10 @@ import type {
 } from '../src/collaboration/app-protocol-types'
 
 const fail = (message: string): never => {
-  throw new Error(`[document-canonical-reducer] ${message}`)
+  throw new DocumentPersistenceError(
+    'invalid-operation',
+    `[document-canonical-reducer] ${message}`
+  )
 }
 
 const cloneJson = <Value>(value: Value): Value =>

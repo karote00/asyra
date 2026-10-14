@@ -1383,3 +1383,35 @@ it('continues only an unresolved suffix using acknowledged document identities i
     await app.host.dispose()
   }
 })
+
+it('continues discovery through a rejected library submission when the actual catalog is unchanged', async () => {
+  const app = fixture()
+  try {
+    const first = await app.invoke('design_operations.describe_design_apis', {
+      category: 'tools'
+    })
+    expect(first.next).toBeDefined()
+    const revision = app.host.revision
+    const catalog = app.host.definitions()
+    const rejected = structuredClone(proposal)
+    rejected.steps[0].revision = 2
+    const submission = await app.invoke('tool_library.submit_tool', {
+      submissionId: 'rejected-between-pages',
+      proposal: rejected
+    })
+    expect(submission).toMatchObject({ ok: false, code: 'admission' })
+    expect(app.host.revision).toBeGreaterThan(revision)
+    expect(app.host.definitions()).toEqual(catalog)
+    const next = await app.invoke(
+      'design_operations.describe_design_apis',
+      first.next.arguments
+    )
+    expect(next.toolOutcome).toMatchObject({ status: 'success' })
+    expect(next.offset).toBe(first.apis.length + first.tools.length)
+    expect(next.count).toBe(first.count)
+    expect(app.create).not.toHaveBeenCalled()
+    expect(app.select).not.toHaveBeenCalled()
+  } finally {
+    await app.host.dispose()
+  }
+})

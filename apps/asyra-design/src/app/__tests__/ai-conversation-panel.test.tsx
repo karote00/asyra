@@ -28,7 +28,7 @@ const openHistory = (element: HTMLElement) => {
   const details = element.closest('details')
   if (!details) throw new Error('Missing work disclosure')
   act(() => {
-    details.open = true
+    Object.defineProperty(details, 'open', { get: () => true })
     fireEvent(details, new Event('toggle'))
   })
 }
@@ -130,7 +130,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       )
       expect(
         screen.getByRole('status', { name: 'Current activity' }).textContent
-      ).toBe(`AI processing${message}`)
+      ).toBe(message)
       expect(
         within(screen.getByLabelText('Operational progress'))
           .getByText(message)
@@ -154,7 +154,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toBe(false)
   })
 
-  it('retains the completed work subject in the processing phase until settlement', async () => {
+  it('retires completed call work without presenting the original objective as current work', async () => {
     const harness = createPanelHarness()
     render(
       <AiConversationPanel
@@ -197,7 +197,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('AI processingAdjust the roof')
+    ).toBe('Processing your request')
     await act(async () => {
       harness.pending.resolve({ status: 'success' })
     })
@@ -363,6 +363,56 @@ describe('AI Agent conversation panel intent boundary', () => {
       'Separating drawing layers'
     ])
     expect(new Set([...list.children].map((row) => row.className)).size).toBe(1)
+  })
+
+  it('opens an existing overflowing conversation at the latest message', async () => {
+    const harness = createPanelHarness()
+    harness.pending.resolve({ status: 'executed', actionResults: [] })
+    await harness.conversation.submit('Existing drawing')
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(1200)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(500)
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    expect(body.scrollTop).toBe(1200)
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull()
+  })
+
+  it('measures expanded history only after its rows are mounted', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    const list = screen.getByLabelText('Operational progress')
+    const details = screen.getByLabelText('Work history').closest('details')
+    if (!details) throw new Error('Missing history')
+    Object.defineProperties(body, {
+      scrollHeight: { get: () => (list.children.length ? 1200 : 200) },
+      clientHeight: { get: () => 500 }
+    })
+    body.scrollTop = 0
+    fireEvent.scroll(body)
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull()
+    Object.defineProperty(details, 'open', { get: () => true })
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() => expect(list.children.length).toBeGreaterThan(0))
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
   })
 
   it('rechecks whether latest is visible after Activity changes the scroll extent', async () => {

@@ -1,7 +1,26 @@
+import { observeAiAction } from '../runtime-input'
+import { createAiActions } from '../actions'
+import { observeActionBatch } from '../../../server/local-action-observation'
+import { createLocalOperationTools } from '../../../server/local-operation-tools'
+import type { InspectionDependencyChange } from '../../common-apis/inspection-dependencies'
+import { Factory } from '@asyra/factory'
+import { createAiTransactionRunner } from '../transaction'
 import { expect, it, vi } from 'vitest'
-import type { AiMutationExecutor } from '@asyra/ai-agent-runtime'
+import {
+  createAiAgentRuntime,
+  type AiMutationExecutor
+} from '@asyra/ai-agent-runtime'
 vi.mock('../../contexts', () => ({ default: {} }))
-vi.mock('../../common-apis', () => ({}))
+vi.mock('../../common-apis', () => ({
+  hierarchyApis: {},
+  elementApis: {},
+  fillApis: {},
+  strokeApis: {},
+  selectionApis: {},
+  systemContextApis: {},
+  viewportApis: {},
+  transactionApis: {}
+}))
 import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { createBasicApiActions } from '../basic-api-actions'
 import { createDocumentContextAction } from '../context-action'
@@ -427,5 +446,216 @@ it('preserves completed writes when cancellation prevents reference publication'
     expect(app.group).toHaveBeenCalledOnce()
   } finally {
     app.queries.dispose()
+  }
+})
+
+it('publishes structural output through the real runtime wrapper before a dependent edit', async () => {
+  const app = fixture(32)
+  let produced: StructuralReceipt | undefined
+  const runtime = createAiAgentRuntime({
+    provider: {
+      requestActionBatch: async (_input, options) => {
+        if (!options.executeBatch) throw new Error('Missing execution boundary')
+        const receipt = await options.executeBatch({
+          batchId: 'group',
+          actions: [
+            {
+              id: 'group',
+              name: 'api_hierarchy_groupElements',
+              arguments: { elementIds: app.ids },
+              summary: 'Group selected parts'
+            }
+          ]
+        })
+        produced = receipt.actionResults[0]
+          ?.result as unknown as StructuralReceipt
+        expect(produced.delivery).toBeUndefined()
+        expect(produced.retained.total).toBe(32)
+        const original = await options.executeBatch({
+          batchId: 'read',
+          actions: [
+            {
+              id: 'read',
+              name: 'read_design_context',
+              summary: 'Recover original receipt',
+              arguments: {
+                scope: 'snapshot',
+                snapshotId: produced.retained.snapshotId,
+                delivery: 'receipt'
+              }
+            }
+          ]
+        })
+        expect(
+          (original.actionResults[0].result as unknown as ReceiptRead).receipt
+            .value.elementIds
+        ).toEqual(app.ids)
+        return {
+          batchId: 'edit',
+          actions: [
+            {
+              id: 'edit',
+              name: 'api_element_setElementsVisible',
+              arguments: { elementIds: produced.retained, visible: false },
+              summary: 'Hide grouped parts'
+            }
+          ]
+        }
+      }
+    },
+    actionDefinitions: [
+      app.action('api_hierarchy_groupElements'),
+      app.action('api_element_setElementsVisible'),
+      createDocumentContextAction(app.queries.read)
+    ],
+    contextProvider: { getContext: async () => ({}) },
+    permissionPolicy: { evaluate: () => 'allow' },
+    confirmationHandler: { confirm: async () => true },
+    transactionRunner: createAiTransactionRunner({ apis: new Factory() })
+  })
+  try {
+    const result = await runtime.run({
+      intent: 'Group then hide',
+      signal: app.context.signal
+    })
+    expect(result.status).toBe('executed')
+    expect(app.group).toHaveBeenCalledTimes(1)
+    expect(app.edit).toHaveBeenCalledExactlyOnceWith(app.ids, false)
+    expect(app.children).not.toHaveBeenCalled()
+  } finally {
+    await runtime.dispose()
+    app.queries.dispose()
+  }
+})
+
+it('projects real observed fill receipts after preserving complete original mutation scopes', async () => {
+  let listener: ((change?: InspectionDependencyChange) => void) | undefined
+  const writes = vi.fn((elementIds: string[]) => listener?.({ elementIds }))
+  const base = createBasicApiActions(
+    () => ({
+      core: {},
+      hierarchy: {},
+      element: {},
+      fill: { updateFillsAtIndex: writes },
+      stroke: {},
+      selection: {},
+      viewport: {}
+    }),
+    {
+      observe: (next) => {
+        listener = next
+        return () => {
+          listener = undefined
+        }
+      },
+      resolve: () => 'live'
+    }
+  ).find((action) => action.name === 'api_fill_updateFillsAtIndex')
+  if (!base) throw new Error('Missing fill action')
+  const action = observeAiAction(base)
+  const report = createAiActions().find(
+    (item) => item.name === 'report_outcome'
+  )
+  if (!report) throw new Error('Missing final outcome action')
+  const originals: unknown[] = []
+  let compact = ''
+  const runtime = createAiAgentRuntime({
+    provider: {
+      requestActionBatch: async (_input, options) => {
+        const execute = options.executeBatch
+        if (!execute) throw new Error('Missing runtime batch boundary')
+        const tools = createLocalOperationTools(
+          [action],
+          { modelActions: (a) => a, resolveBatch: (b) => b },
+          (batch) =>
+            observeActionBatch(
+              batch,
+              execute,
+              [action],
+              'native-fill',
+              (event, value) => {
+                if (event === 'action_completed') originals.push(value)
+              }
+            )
+        )
+        compact = await tools.call(
+          'execute_design_batch',
+          {
+            inspection: 'defer',
+            operations: Array.from({ length: 16 }, (_, part) => ({
+              name: action.name,
+              arguments: {
+                elementIds: Array.from(
+                  { length: 192 },
+                  (_, i) => `window-${part}-${i}`
+                ),
+                index: 0,
+                patch: { opacity: 0.8 }
+              }
+            }))
+          },
+          new AbortController().signal
+        )
+        return {
+          batchId: 'done',
+          actions: [
+            {
+              id: 'report',
+              name: report.name,
+              arguments: {
+                outcome: 'completed',
+                message: 'Window reflections updated.'
+              },
+              summary: 'Report completed edits'
+            }
+          ]
+        }
+      }
+    },
+    actionDefinitions: [action, report],
+    contextProvider: { getContext: async () => ({}) },
+    permissionPolicy: { evaluate: () => 'allow' },
+    confirmationHandler: { confirm: async () => true },
+    transactionRunner: createAiTransactionRunner({ apis: new Factory() })
+  })
+  try {
+    const outcome = await runtime.run({
+      intent: 'Adjust window reflections',
+      signal: new AbortController().signal
+    })
+    expect(
+      outcome.status,
+      outcome.status === 'failed' ? outcome.message : undefined
+    ).toBe('executed')
+    expect(writes).toHaveBeenCalledTimes(16)
+    expect(originals).toHaveLength(16)
+    for (const original of originals)
+      expect(original).toMatchObject({
+        result: {
+          toolOutcome: { status: 'success', settlement: 'completed' },
+          mutationScope: { complete: true, elementIds: expect.any(Array) }
+        }
+      })
+    expect(
+      originals.reduce(
+        (total: number, item) =>
+          total +
+          (item as { result: { mutationScope: { elementIds: string[] } } })
+            .result.mutationScope.elementIds.length,
+        0
+      )
+    ).toBe(3072)
+    const reply = JSON.parse(compact)
+    expect(reply.actionResults).toEqual([])
+    expect(reply.batchSummary.acknowledgedActions).toEqual([
+      { actionName: action.name, count: 16, application: 'not-reported' }
+    ])
+    // Keep the one actionable pending identity; do not retransmit all mutation IDs.
+    expect(compact.match(/window-/g)).toHaveLength(1)
+    expect(reply.checks.counts.unverified).toBe(3072)
+    expect(compact.length).toBeLessThan(JSON.stringify(originals).length / 10)
+    expect(compact.length).toBeLessThan(2000)
+  } finally {
+    await runtime.dispose()
   }
 })

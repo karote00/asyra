@@ -19,7 +19,7 @@ export type RetainedContextQuery = (
       limit?: number
       release?: boolean
     }
-) & { delivery?: 'page' | 'reference' | 'columns' | 'receipt' }
+) & { delivery?: 'page' | 'reference' | 'columns' | 'receipt' | 'transient' }
 
 export class RetainedQueryError extends Error {}
 
@@ -247,6 +247,18 @@ export const createRetainedDesignContext = (
       revision++
       keys.clear()
     })
+    if (
+      input.delivery === 'transient' &&
+      (input.scope !== 'region' ||
+        input.result !== 'ids' ||
+        input.allMatches !== true ||
+        input.offset !== undefined ||
+        input.limit !== undefined ||
+        (input.fields?.length ?? 0) > 0)
+    )
+      throw new RetainedQueryError(
+        'Transient delivery requires complete region IDs without paging or fields.'
+      )
     if (input.scope === 'snapshot') {
       assertRequest(input.snapshotId, signal)
       if (
@@ -509,8 +521,25 @@ export const createRetainedDesignContext = (
         fields: Object.freeze([...(query.fields ?? [])]),
         result: { ...result, scope: query.scope, available, parentId }
       }
-      retain(snapshot, key, signal)
+      if (delivery !== 'transient') retain(snapshot, key, signal)
     }
+    signal?.throwIfAborted()
+    if (delivery === 'transient')
+      return {
+        ...snapshot.result,
+        delivery,
+        coordinateSpace: snapshot.coordinateSpace,
+        elementIds: [...snapshot.orderedIds],
+        elements: [],
+        observation: {
+          ...work,
+          matchedCount: snapshot.result.total,
+          reused,
+          selectionExecutions: reused ? 0 : 1,
+          retainedRows: 0,
+          fields: snapshot.fields
+        }
+      }
     return {
       ...deliverPage(
         snapshot.snapshotId,

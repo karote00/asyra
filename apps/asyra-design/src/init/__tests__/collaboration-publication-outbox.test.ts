@@ -76,6 +76,103 @@ describe('document publication recovery outbox', () => {
     factory = new IDBFactory()
   })
 
+  it('persists missing predecessors before successors and resumes the complete prefix after reopen', async () => {
+    const storage = createStorage(factory, 'durable-prefix-recovery')
+    const outbox = new DocumentPublicationOutbox({ fileId: 'prefix', storage })
+    await outbox.initialize()
+    await outbox.bindDocumentGeneration(1)
+    const put = vi
+      .spyOn(storage, 'put')
+      .mockRejectedValue(new Error('disk full'))
+    await expect(
+      outbox.appendPreparationFailure(
+        freezePublication(createPublication('first', 1)),
+        'conversion unavailable'
+      )
+    ).rejects.toThrow('IndexedDB')
+    await expect(outbox.append(createPublication('second', 2))).rejects.toThrow(
+      'IndexedDB'
+    )
+    expect(put.mock.calls.map(([record]) => record.publicationId)).toEqual([
+      'first',
+      'first'
+    ])
+    put.mockRestore()
+    await outbox.retryStorage()
+    const reopened = new DocumentPublicationOutbox({
+      fileId: 'prefix',
+      storage
+    })
+    await reopened.initialize()
+    expect(reopened.getState()).toEqual({
+      pendingCount: 2,
+      status: 'conflicted'
+    })
+    expect(reopened.getRecoverablePublications()).toEqual([])
+    await reopened.retryPreparation((source) => freezePublication(source))
+    expect(
+      reopened
+        .getRecoverablePublications()
+        .map(({ publicationId }) => publicationId)
+    ).toEqual(['first', 'second'])
+  })
+
+  it('does not write over unknown storage and merges retained edits after a successful read retry', async () => {
+    const storage = createStorage(factory, 'load-recovery')
+    const initial = new DocumentPublicationOutbox({ fileId: 'load', storage })
+    await initial.initialize()
+    await initial.append(createPublication('older', 1))
+    const load = vi
+      .spyOn(storage, 'load')
+      .mockRejectedValue(new Error('read failed'))
+    const put = vi.spyOn(storage, 'put')
+    const outbox = new DocumentPublicationOutbox({ fileId: 'load', storage })
+    await expect(outbox.initialize()).rejects.toThrow('could not be loaded')
+    await expect(outbox.append(createPublication('newer', 2))).rejects.toThrow()
+    expect(put).not.toHaveBeenCalled()
+    load.mockRestore()
+    await outbox.retryStorage()
+    const reopened = new DocumentPublicationOutbox({ fileId: 'load', storage })
+    await reopened.initialize()
+    expect(
+      reopened
+        .getRecoverablePublications()
+        .map(({ publicationId, appendOrder }) => [publicationId, appendOrder])
+    ).toEqual([
+      ['older', 1],
+      ['newer', 2]
+    ])
+  })
+
+  it('keeps the recovery document through rejected retry, reopen and successful preparation', async () => {
+    const storage = createStorage(factory, 'draft-recovery')
+    const outbox = new DocumentPublicationOutbox({ fileId: 'draft', storage })
+    await outbox.initialize()
+    const draft = {
+      version: '1.0.0',
+      sceneTree: { elements: { local: { name: 'Kept work' } } },
+      props: {}
+    }
+    await outbox.appendPreparationFailure(
+      freezePublication(createPublication('source', 1)),
+      'converter failed',
+      draft
+    )
+    await expect(
+      outbox.retryPreparation(() => {
+        throw new Error('still invalid')
+      })
+    ).rejects.toThrow('still invalid')
+    const reopened = new DocumentPublicationOutbox({ fileId: 'draft', storage })
+    await reopened.initialize()
+    expect(reopened.getRecoveryDocument()).toEqual(draft)
+    await reopened.retryPreparation((source) => freezePublication(source))
+    expect(reopened.getState().status).toBe('pending')
+    expect(reopened.getRecoveryDocument()).toEqual(draft)
+    await reopened.acknowledge({ publicationId: 'source', sequence: 1 })
+    expect(reopened.getRecoveryDocument()).toBeUndefined()
+  })
+
   it('restores immutable publications in file-local append order after reload', async () => {
     const databaseName = 'publication-outbox-reload'
     const first = new DocumentPublicationOutbox({
@@ -399,4 +496,163 @@ describe('document publication recovery outbox', () => {
       record.publication.slices[0]?.batches[0]?.deliveries[0]?.payload
     ).toMatchObject({ after: 6 })
   })
+})
+
+describe('source preparation failure retention', () => {
+  it('restores source failure evidence and blocks subsequent publications in original order', async () => {
+    const factory = new IDBFactory()
+    const storage = () => createStorage(factory, 'preparation-failure-reload')
+    const outbox = new DocumentPublicationOutbox({
+      fileId: 'failed-source',
+      storage: storage()
+    })
+    await outbox.initialize()
+    await outbox.bindDocumentGeneration(3)
+    await outbox.append(createPublication('before-failure', 1))
+    const source = freezePublication(createPublication('invalid-source', 2))
+    await outbox.appendPreparationFailure(
+      source,
+      'unsupported source operation'
+    )
+    await outbox.append(createPublication('after-failure', 3))
+    expect(
+      outbox.getRecoverablePublications().map((record) => record.publicationId)
+    ).toEqual(['before-failure'])
+    expect(outbox.getConflicts()[0]?.publication).toBe(source)
+    await expect(
+      outbox.acknowledge({ publicationId: 'invalid-source', sequence: 2 })
+    ).resolves.toBe(false)
+    await outbox.acknowledge({ publicationId: 'before-failure', sequence: 1 })
+    expect(outbox.getRecoverablePublications()).toEqual([])
+    const reloaded = new DocumentPublicationOutbox({
+      fileId: 'failed-source',
+      storage: storage()
+    })
+    await reloaded.initialize()
+    await reloaded.bindDocumentGeneration(3)
+    expect(reloaded.getState()).toEqual({
+      pendingCount: 2,
+      status: 'conflicted'
+    })
+    expect(reloaded.getConflicts()[0]).toMatchObject({
+      publication: source,
+      failureReason: 'unsupported source operation',
+      appendOrder: 2
+    })
+    expect(reloaded.getRecoverablePublications()).toEqual([])
+    const otherFile = new DocumentPublicationOutbox({
+      fileId: 'other-file',
+      storage: storage()
+    })
+    await otherFile.initialize()
+    expect(otherFile.getState()).toEqual({ pendingCount: 0, status: 'synced' })
+    await reloaded.bindDocumentGeneration(4)
+    expect(reloaded.getState()).toEqual({ pendingCount: 0, status: 'synced' })
+  })
+
+  it('does not let generation rebinding or later successful writes clear a failed retention', async () => {
+    const storage: PublicationOutboxStorage = {
+      load: vi.fn(async () => []),
+      put: vi.fn(async () => undefined),
+      delete: vi.fn(async () => undefined)
+    }
+    const outbox = new DocumentPublicationOutbox({
+      fileId: 'failed-storage',
+      storage
+    })
+    await outbox.initialize()
+    await outbox.bindDocumentGeneration(1)
+    vi.mocked(storage.put).mockRejectedValueOnce(new Error('disk full'))
+    await expect(
+      outbox.appendPreparationFailure(
+        freezePublication(createPublication('unsaved-source', 1)),
+        'preparation failed'
+      )
+    ).rejects.toThrow('IndexedDB')
+    await outbox.bindDocumentGeneration(1)
+    await outbox.append(createPublication('later-edit', 2))
+    expect(outbox.getState()).toEqual({
+      pendingCount: 2,
+      status: 'storage-failed'
+    })
+    expect(outbox.getConflicts()[0]?.publicationId).toBe('unsaved-source')
+    expect(outbox.getRecoverablePublications()).toEqual([])
+  })
+
+  it('does not skip an existing canonical conflict when recovering later edits', async () => {
+    const storage = createStorage(new IDBFactory(), 'conflict-prefix')
+    const outbox = new DocumentPublicationOutbox({
+      fileId: 'conflict-prefix',
+      storage
+    })
+    await outbox.initialize()
+    await outbox.append(createPublication('rejected', 1))
+    await outbox.append(createPublication('dependent', 2))
+    await outbox.retainConflict('rejected', 'missing parent')
+    expect(outbox.getRecoverablePublications()).toEqual([])
+  })
+  it('does not resurrect a previous generation after an initial load failure is repaired', async () => {
+    const storage = createStorage(
+      new IDBFactory(),
+      'generation-after-read-failure'
+    )
+    const old = new DocumentPublicationOutbox({ fileId: 'generation', storage })
+    await old.initialize()
+    await old.bindDocumentGeneration(1)
+    await old.append(createPublication('old-generation', 1))
+    const load = vi
+      .spyOn(storage, 'load')
+      .mockRejectedValueOnce(new Error('read unavailable'))
+    const current = new DocumentPublicationOutbox({
+      fileId: 'generation',
+      storage
+    })
+    await expect(current.initialize()).rejects.toThrow()
+    await current.bindDocumentGeneration(2)
+    await expect(
+      current.append(createPublication('new-generation', 2))
+    ).rejects.toThrow()
+    load.mockRestore()
+    await current.retryStorage()
+    expect(
+      current
+        .getRecoverablePublications()
+        .map(({ publicationId }) => publicationId)
+    ).toEqual(['new-generation'])
+    const reopened = new DocumentPublicationOutbox({
+      fileId: 'generation',
+      storage
+    })
+    await reopened.initialize()
+    expect(
+      reopened
+        .getRecoverablePublications()
+        .map(({ publicationId }) => publicationId)
+    ).toEqual(['new-generation'])
+  })
+})
+
+it('finishes failed generation retirement before retry can release retained publications', async () => {
+  const storage = createStorage(new IDBFactory(), 'generation-retirement-retry')
+  const outbox = new DocumentPublicationOutbox({
+    fileId: 'generation-retirement',
+    storage
+  })
+  await outbox.initialize()
+  await outbox.bindDocumentGeneration(0)
+  await outbox.appendPreparationFailure(
+    freezePublication(createPublication('retired', 1)),
+    'old conflict',
+    { old: true }
+  )
+  vi.spyOn(storage, 'delete').mockRejectedValueOnce(
+    new Error('delete unavailable')
+  )
+  await expect(outbox.bindDocumentGeneration(1)).rejects.toThrow(
+    'bind document generation'
+  )
+  expect(outbox.getRecoveryDocument()).toBeUndefined()
+  await outbox.retryStorage()
+  expect(outbox.getState()).toEqual({ status: 'synced', pendingCount: 0 })
+  expect(await storage.load('generation-retirement')).toEqual([])
 })

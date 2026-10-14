@@ -1455,7 +1455,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           })
           let childSequence = 0
           const actionMutation: AiMutationExecutor | undefined = runMutation
-            ? async (mutate) => {
+            ? async (mutate, settled) => {
                 const executor = runMutation
                 if (!executor) throw new AiExecutionError()
                 const callId = `${action.id}:mutation-${++childSequence}`
@@ -1481,7 +1481,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     } finally {
                       endMutation?.()
                     }
-                  })
+                  }, settled)
                 } finally {
                   if (!admitted) endAdmission?.()
                 }

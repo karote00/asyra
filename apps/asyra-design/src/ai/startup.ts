@@ -101,6 +101,7 @@ export const createAiStartup = (
           [AiActionNames.REVIEW_DESIGN]: 'allow',
           [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'allow',
           [AiActionNames.READ_DESIGN_CONTEXT]: 'allow',
+          [AiActionNames.RESOLVE_DESIGN_TARGETS]: 'allow',
           [AiActionNames.READ_DESIGN_ATTACHMENT]: 'allow',
           [AiActionNames.RELEASE_DESIGN_CONTEXT]: 'allow',
           [AiActionNames.MAP_RETAINED_FILLS]: 'allow',

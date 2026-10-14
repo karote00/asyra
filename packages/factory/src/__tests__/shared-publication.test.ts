@@ -1814,6 +1814,75 @@ describe('Factory action-level shared publication', () => {
     }
   })
 
+  it.each([false, true])(
+    'keeps separate synchronous owner handoffs complete through history replay (grouped=%s)',
+    async (grouped) => {
+      const { factory, publications } = createHarness()
+      factory.registerSharedDataChannel(
+        SharedDataChannelNames.PROPS,
+        new LocalSharedDataChannel()
+      )
+      factory.registerTransactionReplayHandler(
+        EventTypes.UPDATE_PROPERTY,
+        () => true
+      )
+      const group = grouped ? factory.startHistoryGroup() : undefined
+      if (!group) factory.startTransaction()
+      for (let turn = 0; turn < 2; turn++) {
+        const write = () => {
+          factory.updateTransactionBatch([
+            {
+              ...createUpdateEvent(`props-${turn}`, 1),
+              options: {
+                shared: SharedDataChannelNames.PROPS,
+                sharedDelivery: 'immediate'
+              }
+            }
+          ])
+          update(factory, `scene-${turn}`, 2, { sharedDelivery: 'immediate' })
+        }
+        if (group) factory.updateHistoryGroup(group, write)
+        else write()
+        await Promise.resolve()
+      }
+      if (group) factory.endHistoryGroup(group)
+      else factory.endTransaction()
+      expect(factory.getUndoHistoryDepth()).toBe(1)
+      const assertBoundaries = (direction: 'forward' | 'inverse') => {
+        const slices = publications.flatMap(({ slices }) => slices)
+        expect(slices).toHaveLength(2)
+        expect(
+          slices.map(({ batches }) => batches.map(({ channel }) => channel))
+        ).toEqual(
+          Array.from({ length: 2 }, () =>
+            direction === 'forward'
+              ? [
+                  SharedDataChannelNames.PROPS,
+                  SharedDataChannelNames.SCENE_TREE
+                ]
+              : [
+                  SharedDataChannelNames.SCENE_TREE,
+                  SharedDataChannelNames.PROPS
+                ]
+          )
+        )
+        expect(
+          slices.flatMap(({ batches }) =>
+            batches.flatMap(({ deliveries }) => deliveries)
+          )
+        ).toHaveLength(4)
+      }
+      assertBoundaries('forward')
+      publications.length = 0
+      await factory.undo()
+      assertBoundaries('inverse')
+      publications.length = 0
+      await factory.redo()
+      assertBoundaries('forward')
+      factory.transact.reset()
+    }
+  )
+
   it('keeps one immediate canonical owner handoff in one publication slice', async () => {
     const { factory, publications } = createHarness()
     factory.registerSharedDataChannel(

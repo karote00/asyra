@@ -192,6 +192,10 @@ const actionEffects: Record<
     effect: 'read',
     resources: ['document']
   },
+  [AiActionNames.RESOLVE_DESIGN_TARGETS]: {
+    effect: 'read',
+    resources: ['document']
+  },
   [AiActionNames.READ_DESIGN_CONTEXT]: {
     effect: 'read',
     resources: ['document']

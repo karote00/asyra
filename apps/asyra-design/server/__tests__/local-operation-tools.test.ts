@@ -1,8 +1,12 @@
+import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import sharp from 'sharp'
 import type { VisualAssessmentInput } from '../local-visual-assessment'
 import { reviewPlanExample } from '../local-design-review'
 import { runInNewContext } from 'node:vm'
-import { createDocumentContextAction } from '../../src/ai/context-action'
+import {
+  createDocumentContextAction,
+  createRegionTargetsAction
+} from '../../src/ai/context-action'
 import { prepareOperationBatch } from '../local-operation-batch'
 import { describeBasicApiResult } from '../../src/ai/basic-api-results'
 const reviewCriteria = (names: readonly string[]) =>
@@ -3117,6 +3121,7 @@ it('compacts only successful valueless basic mutation acknowledgements and retai
               status: 'complete',
               value: null,
               application: 'not-reported',
+              toolOutcome: { status: 'success', settlement: 'completed' },
               mutationScope: {
                 complete: true,
                 elementIds: [`existing-${index}`],
@@ -4493,7 +4498,7 @@ it('rejects scalar region references inside target arrays before reading', async
   const tools = createLocalOperationTools(
     [
       {
-        name: AiActionNames.READ_DESIGN_CONTEXT,
+        name: AiActionNames.RESOLVE_DESIGN_TARGETS,
         description: 'Read',
         inputSchema: {
           type: 'object',
@@ -4536,7 +4541,7 @@ it.each(['invalid-bounds', 'snapshot', 'ambiguous'])(
   'rejects %s region target admission before any browser exchange',
   async (failure) => {
     const name = basicActionName('deleteElements')
-    const read = createDocumentContextAction()
+    const read = createRegionTargetsAction(vi.fn())
     const inputSchema =
       failure === 'ambiguous'
         ? {
@@ -4599,7 +4604,7 @@ it.each(['invalid-bounds', 'snapshot', 'ambiguous'])(
 it('resolves a region target once internally and supplies all IDs to one plural mutation', async () => {
   const name = basicActionName('deleteElements')
   const ids = Array.from({ length: 600 }, (_, i) => `match-${i}`)
-  const read = createDocumentContextAction()
+  const read = createRegionTargetsAction(vi.fn())
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: batch.actions.map((action) => ({
@@ -4652,8 +4657,6 @@ it('resolves a region target once internally and supplies all IDs to one plural 
   )
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-    result: 'ids',
-    allMatches: true,
     filter: { name: { prefix: 'roof-' } },
     expectedCount: ids.length
   })
@@ -4665,83 +4668,91 @@ it('resolves a region target once internally and supplies all IDs to one plural 
   expect(result.actionResults[0].actionName).toBe(name)
 })
 
-it.each(['incomplete', 'empty', 'cancelled', 'wrong-count'])(
-  'does not mutate after a %s region query',
-  async (failure) => {
-    const controller = new AbortController()
-    const name = basicActionName('deleteElements')
-    const ids = failure === 'empty' ? [] : ['match']
-    const read = {
-      name: AiActionNames.READ_DESIGN_CONTEXT,
-      description: 'Read',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          scope: { type: 'string' },
-          bounds: { type: 'object' },
-          filter: { type: 'object' },
-          result: { type: 'string' },
-          allMatches: { type: 'boolean' },
-          expectedCount: { type: 'integer', minimum: 0 }
-        }
+it.each([
+  'incomplete',
+  'empty',
+  'cancelled',
+  'wrong-count',
+  'unknown-settlement'
+])('does not mutate after a %s region query', async (failure) => {
+  const controller = new AbortController()
+  const name = basicActionName('deleteElements')
+  const ids = failure === 'empty' ? [] : ['match']
+  const read = {
+    name: AiActionNames.RESOLVE_DESIGN_TARGETS,
+    description: 'Read',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scope: { type: 'string' },
+        bounds: { type: 'object' },
+        filter: { type: 'object' },
+        result: { type: 'string' },
+        allMatches: { type: 'boolean' },
+        expectedCount: { type: 'integer', minimum: 0 }
       }
     }
-    const execute = vi.fn(async (batch: AiActionBatch) => {
-      if (failure === 'cancelled') controller.abort()
-      return {
-        context: {},
-        actionResults: batch.actions.map((action) => ({
-          actionId: action.id,
-          actionName: action.name,
-          result:
-            action.name === read.name
-              ? {
-                  available: true,
-                  total: ids.length,
-                  nextOffset: failure === 'incomplete' ? 1 : null,
-                  elementIds: ids,
-                  elements: [],
-                  missingIds: []
-                }
-              : {
-                  status: 'complete',
-                  value: { removed: ids.map((elementId) => ({ elementId })) }
-                }
-        }))
-      }
-    })
-    const tools = createLocalOperationTools(
-      [read, ...basicApiContracts.filter((api) => api.name === name)],
-      { modelActions: (a) => a, resolveBatch: (v) => v },
-      execute
-    )
-    await expect(
-      tools.call(
-        'execute_design_batch',
-        {
-          inspection: 'defer',
-          operations: [
-            {
-              name,
-              arguments: {},
-              target: {
-                field: 'elementIds',
-                query: {
-                  scope: 'region',
-                  bounds: { x: 1, y: 2, width: 3, height: 4 },
-                  ...(failure === 'wrong-count' ? { expectedCount: 2 } : {})
-                }
+  }
+  const execute = vi.fn(async (batch: AiActionBatch) => {
+    if (failure === 'cancelled') controller.abort()
+    return {
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === read.name
+            ? {
+                available: true,
+                ...(failure === 'unknown-settlement'
+                  ? {
+                      toolOutcome: { status: 'unknown', settlement: 'unknown' }
+                    }
+                  : {}),
+                total: ids.length,
+                nextOffset: failure === 'incomplete' ? 1 : null,
+                elementIds: ids,
+                elements: [],
+                missingIds: []
+              }
+            : {
+                status: 'complete',
+                value: { removed: ids.map((elementId) => ({ elementId })) }
+              }
+      }))
+    }
+  })
+  const tools = createLocalOperationTools(
+    [read, ...basicApiContracts.filter((api) => api.name === name)],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  await expect(
+    tools.call(
+      'execute_design_batch',
+      {
+        inspection: 'defer',
+        operations: [
+          {
+            name,
+            arguments: {},
+            target: {
+              field: 'elementIds',
+              query: {
+                scope: 'region',
+                bounds: { x: 1, y: 2, width: 3, height: 4 },
+                ...(failure === 'wrong-count' ? { expectedCount: 2 } : {})
               }
             }
-          ]
-        },
-        controller.signal
-      )
-    ).rejects.toThrow()
-    expect(execute).toHaveBeenCalledTimes(1)
-    expect(execute.mock.calls[0][0].actions[0].name).toBe(read.name)
-  }
-)
+          }
+        ]
+      },
+      controller.signal
+    )
+  ).rejects.toThrow()
+  expect(execute).toHaveBeenCalledTimes(1)
+  expect(execute.mock.calls[0][0].actions[0].name).toBe(read.name)
+})
 
 it('recovers only missing definition fields with explicit provenance and a reusable scoped route', async () => {
   const action = {
@@ -7216,4 +7227,540 @@ it('exposes mechanical inspection activity for the entire bounded read and alway
     ['running', AiActionNames.REVIEW_DESIGN],
     ['completed', AiActionNames.REVIEW_DESIGN]
   ])
+})
+
+it('resolves sixteen region edits through the real query owner with all retained slots pinned', async () => {
+  const signal = new AbortController().signal
+  const source = {
+    getCurrentWorkspaceId: () => 'workspace',
+    getSelectedElementIds: () => [],
+    getElementChildren: () => ({
+      available: true,
+      elementIds: [],
+      total: 0,
+      nextOffset: null
+    }),
+    getElementIdsInBounds: vi.fn((bounds: { x: number }) => [
+      `part-${bounds.x}`
+    ]),
+    getElementMetadata: (id: string) => ({
+      name: id,
+      type: 'rectangle',
+      parentId: 'workspace',
+      lock: false
+    }),
+    getElementComputedData: () => ({})
+  }
+  const store = createRetainedDesignContext(source, () => () => undefined)
+  const region = (x: number) => ({
+    scope: 'region' as const,
+    bounds: { x, y: 0, width: 1, height: 1 }
+  })
+  const pinned = Array.from({ length: 8 }, (_, x) =>
+    store.read(
+      { ...region(x), result: 'ids', allMatches: true, delivery: 'reference' },
+      signal
+    )
+  )
+  const read = createRegionTargetsAction(store.read)
+  const write = basicApiContracts.find(
+    (api) => api.operation === 'fill.updateFillsAtIndex'
+  )
+  if (!write) throw new Error('Missing canonical fill operation')
+  const writes: unknown[] = []
+  const dispatch = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: await Promise.all(
+      batch.actions.map(async (action) => {
+        if (action.name === read.name)
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: (await read.execute(action.arguments as never, {
+              signal
+            })) as AiJsonValue
+          }
+        writes.push(action.arguments)
+        return {
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            status: 'complete',
+            value: null,
+            mutationScope: {
+              complete: true,
+              elementIds: [],
+              removedElementIds: []
+            },
+            toolOutcome: { status: 'success', settlement: 'completed' }
+          } as AiJsonValue
+        }
+      })
+    )
+  }))
+  const tools = createLocalOperationTools(
+    [read, write],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch
+  )
+  try {
+    await tools.call(
+      'execute_design_batch',
+      {
+        inspection: 'defer',
+        operations: Array.from({ length: 17 }, (_, x) => ({
+          name: write.name,
+          arguments: { index: 0, patch: { opacity: 0.8 } },
+          target: {
+            field: 'elementIds',
+            query:
+              x === 16
+                ? { bounds: region(15).bounds, scope: 'region' }
+                : region(x)
+          }
+        }))
+      },
+      signal
+    )
+    expect(writes).toHaveLength(17)
+    expect(
+      writes.map((item) => (item as { elementIds: string[] }).elementIds)
+    ).toEqual(Array.from({ length: 17 }, (_, x) => [`part-${Math.min(x, 15)}`]))
+    expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(16)
+    for (const snapshot of pinned)
+      expect(
+        store.get(snapshot.snapshotId, snapshot.leaseId, signal)
+      ).toBeDefined()
+  } finally {
+    store.dispose()
+  }
+})
+
+it.each([
+  { toolOutcome: { status: 'partial', settlement: 'partial' } },
+  { toolOutcome: { status: 'failed', settlement: 'unknown' } },
+  { toolOutcome: { status: 'unknown', settlement: 'unknown' } },
+  { toolOutcome: { status: 'success', settlement: 'not-started' } },
+  {
+    toolOutcome: {
+      status: 'success',
+      settlement: 'completed',
+      evidence: 'keep'
+    }
+  },
+  { delivery: { status: 'unavailable', message: 'Do not replay' } },
+  {
+    mutationScope: {
+      complete: true,
+      elementIds: [],
+      removedElementIds: [],
+      evidence: 'keep'
+    }
+  }
+])(
+  'preserves non-aggregate canonical acknowledgement evidence: %j',
+  async (extension) => {
+    const name = basicActionName('updateFillsAtIndex')
+    const result = {
+      status: 'complete',
+      value: null,
+      application: 'not-reported',
+      mutationScope: { complete: true, elementIds: [], removedElementIds: [] },
+      toolOutcome: { status: 'success', settlement: 'completed' },
+      ...extension
+    }
+    const dispatch = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: name,
+        result: result as AiJsonValue
+      }))
+    }))
+    const tools = createLocalOperationTools(
+      [{ name, description: name, inputSchema: {} }],
+      { modelActions: (a) => a, resolveBatch: (b) => b },
+      dispatch
+    )
+    const output = JSON.parse(
+      await tools.call(
+        'execute_design_batch',
+        { inspection: 'defer', operations: [{ name, arguments: {} }] },
+        new AbortController().signal
+      )
+    )
+    expect(output.actionResults[0].result).toEqual(result)
+    expect(output.batchSummary.acknowledgedActions).toBeUndefined()
+    expect(dispatch).toHaveBeenCalledTimes(1)
+  }
+)
+
+it('advertises only admitted batch routes and actual explicit inspection wrappers across lookup views', async () => {
+  const actions = [
+    AiActionNames.REVIEW_DESIGN,
+    AiActionNames.INSPECT_DRAWING
+  ].map((name) => ({
+    name,
+    description: 'Mechanical geometry inspection',
+    inputSchema: {
+      type: 'object',
+      properties: { elementId: { type: 'string' } },
+      required: ['elementId']
+    }
+  }))
+  const execute = vi.fn(async () => ({ actionResults: [], context: {} }))
+  const owner = createLocalOperationTools(
+    actions,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    {
+      getNativeTools: () =>
+        owner.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_operations'
+        }))
+    }
+  )
+  const signal = new AbortController().signal
+  const read = async (input: unknown) =>
+    JSON.parse(await owner.call('describe_design_apis', input, signal))
+  for (const name of actions.map((a) => a.name)) {
+    for (const selector of [
+      { names: [name] },
+      { operation: name },
+      { operations: [name], view: 'usage' },
+      { operations: [name], schemaPaths: ['/properties/elementId'] },
+      { names: [name], refresh: true }
+    ]) {
+      const result = await read(selector)
+      expect(result.apis[0].execution).toEqual({
+        kind: 'native-tool',
+        namespace: 'design_operations',
+        tool: name,
+        argumentField: 'arguments'
+      })
+    }
+    await owner.call(name, { arguments: { elementId: 'target' } }, signal)
+  }
+  for (const selector of [
+    { category: 'design' },
+    { query: 'inspection' },
+    { names: ['review_missing'] }
+  ]) {
+    const result = await read(selector)
+    for (const entry of [
+      ...(result.apis ?? []),
+      ...(result.candidates ?? [])
+    ]) {
+      expect(entry.execution.kind).toBe('native-tool')
+      expect(entry.execution.argumentField).toBe('arguments')
+    }
+  }
+  expect(execute).toHaveBeenCalledTimes(2)
+  const batch = owner.definitions.find((d) => d.name === 'execute_design_batch')
+  expect(JSON.stringify(batch?.inputSchema)).not.toContain('review_design')
+})
+
+it('searches compact native capability menus with pagination without consuming exact schemas', async () => {
+  const native = Array.from({ length: 19 }, (_, index) => ({
+    name: `inspect-${index}`,
+    namespace: 'saved_tools',
+    description: 'Inspect geometry measurements',
+    inputSchema: { type: 'object', properties: { target: { type: 'string' } } },
+    ...toolSemantics({
+      effect: 'read',
+      composition: 'control-plane',
+      outputSchema: { type: 'object', description: 'x'.repeat(1000) }
+    })
+  }))
+  const admitted = createLocalOperationTools(
+    [basicApiContracts[0]],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    vi.fn(),
+    { getNativeTools: () => native }
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await admitted.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const first = await read({ query: 'geometry measurements' })
+  expect(first.tools).toHaveLength(16)
+  expect(first.tools[0]).toMatchObject({
+    name: 'inspect-0',
+    execution: { kind: 'native-tool', namespace: 'saved_tools' }
+  })
+  expect(first.tools[0].inputSchema).toBeUndefined()
+  expect(first.tools[0].outputSchema).toBeUndefined()
+  expect(first.complete).toBe(false)
+  const second = await read(first.next.arguments)
+  expect(second.tools).toHaveLength(3)
+  expect(second.complete).toBe(true)
+  const full = await read({ names: ['saved_tools.inspect-18'] })
+  expect(full.tools[0].inputSchema).toEqual(native[18].inputSchema)
+  expect(full.tools[0].definition.state).toBe('included')
+})
+
+it('keeps subject research distinct from capability lookup without automatically routing a query', async () => {
+  const execute = vi.fn()
+  const owner = createLocalOperationTools(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute
+  )
+  const result = JSON.parse(
+    await owner.call(
+      'describe_design_apis',
+      { query: 'an unfamiliar building reference photograph' },
+      new AbortController().signal
+    )
+  )
+  expect(result.apis).toEqual([])
+  expect(result.guidance.capabilities).toContain('operation')
+  expect(result.guidance.references).toContain('native web research')
+  expect(result.guidance.references).toContain('does not search')
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('never substitutes a saved same-name tool for an unavailable explicit action wrapper', async () => {
+  const name = AiActionNames.REVIEW_DESIGN
+  const owner = createLocalOperationTools(
+    [
+      {
+        name,
+        description: 'Mechanical review',
+        inputSchema: { type: 'object' }
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    vi.fn(),
+    {
+      getNativeTools: () => [
+        {
+          name,
+          namespace: 'saved_tools',
+          description: 'A different saved recipe',
+          inputSchema: { type: 'object' },
+          ...toolSemantics({
+            effect: 'read',
+            composition: 'control-plane',
+            outputSchema: { type: 'object' }
+          })
+        }
+      ]
+    }
+  )
+  const result = JSON.parse(
+    await owner.call(
+      'describe_design_apis',
+      { operation: name },
+      new AbortController().signal
+    )
+  )
+  expect(result.apis[0].execution.kind).toBe('unavailable')
+})
+
+it('delivers API, native and mixed discovery pages through the actual invocation boundary', async () => {
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const actions = basicApiContracts.slice(0, 19).map((api) => ({
+    ...api,
+    description: 'Pagination probe capability'
+  }))
+  const native = Array.from({ length: 19 }, (_, index) => ({
+    name: `pagination-${index}`,
+    namespace: 'saved_tools',
+    description: 'Pagination probe capability',
+    inputSchema: { type: 'object' },
+    ...toolSemantics({ type: 'object' }, 'read', [])
+  }))
+  const execute = vi.fn()
+  const owner = createOwner(
+    actions,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    { getNativeTools: () => native }
+  )
+  const definition = owner.definitions.find(
+    (tool) => tool.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const read = async (args: unknown) => {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      args,
+      new AbortController().signal
+    )
+    expect(reply.success, reply.text).toBe(true)
+    return JSON.parse(reply.text)
+  }
+  const menu = await read({})
+  const selectors = [
+    { query: 'pagination probe' },
+    ...menu.categories.map(({ category }: { category: string }) => ({
+      category
+    }))
+  ]
+  for (const selector of selectors) {
+    let page = await read(selector)
+    let delivered = 0
+    const identities: string[] = []
+    const count = page.count
+    do {
+      expect(page.offset).toBe(delivered)
+      expect(page.count).toBe(count)
+      const entries = [...page.apis, ...(page.tools ?? [])]
+      expect(entries.length).toBeLessThanOrEqual(16)
+      identities.push(
+        ...entries.map((entry) => `${entry.namespace ?? 'api'}:${entry.name}`)
+      )
+      delivered += entries.length
+      expect(page.complete).toBe(delivered === count)
+      if (page.complete) break
+      expect(page.next.arguments.offset).toBe(delivered)
+      page = await read(page.next.arguments)
+    } while (delivered < count)
+    expect(page.next).toBeUndefined()
+    expect(new Set(identities).size).toBe(count)
+    expect(await read({ ...selector, offset: count })).toMatchObject({
+      count,
+      offset: count,
+      complete: true,
+      apis: []
+    })
+    const invalid = await invokeLocalTool(
+      owner,
+      definition,
+      { ...selector, offset: count + 1 },
+      new AbortController().signal
+    )
+    expect(invalid.success).toBe(false)
+  }
+  expect(await read({ query: 'absent capability' })).toMatchObject({
+    count: 0,
+    offset: 0,
+    complete: true,
+    apis: [],
+    tools: []
+  })
+  expect(
+    (await read({ names: ['saved_tools.pagination-0'] })).tools[0].definition
+      .state
+  ).toBe('included')
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it.each([
+  { complete: undefined },
+  { count: 2, complete: true },
+  { tools: {} },
+  { count: 0 },
+  { offset: -1 },
+  { offset: 0.5 },
+  { next: { tool: 'describe_design_apis', arguments: { offset: 1 } } },
+  { count: 2, complete: false },
+  ...[
+    { offset: 1 },
+    { offset: 1, query: 'fill', category: 'fill' },
+    { offset: 1, query: '   ' },
+    { offset: 1, query: 'fill', unexpected: true },
+    { offset: 1, category: 'not-a-registered-category' },
+    { offset: 1, query: 'fill', includeSchemas: true }
+  ].map((args) => ({
+    count: 2,
+    complete: false,
+    next: {
+      tool: 'describe_design_apis',
+      arguments: { ...args, registryRevision: 0 }
+    }
+  })),
+  {
+    count: 2,
+    complete: false,
+    next: { tool: 'describe_design_apis', arguments: { offset: 0 } }
+  }
+])('rejects corrupt discovery output at invocation: %j', async (corruption) => {
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const owner = createOwner(
+    [basicApiContracts[0]],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    vi.fn()
+  )
+  const definition = owner.definitions.find(
+    (tool) => tool.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const reply = await invokeLocalTool(
+    {
+      ...owner,
+      call: async () =>
+        JSON.stringify({
+          apis: [],
+          tools: [{ name: 'native' }],
+          count: 1,
+          offset: 0,
+          complete: true,
+          ...corruption
+        })
+    },
+    definition,
+    {},
+    new AbortController().signal
+  )
+  expect(reply.success, reply.text).toBe(false)
+  expect(reply.text).toContain('TOOL_RESULT_INVALID')
+})
+
+it('rejects a changed registry continuation before silently skipping a capability', async () => {
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  let revision = 1
+  const schemaRead = vi.fn(() => ({ type: 'object' }))
+  const native = Array.from({ length: 19 }, (_, index) => ({
+    name: `paged-${index}`,
+    namespace: 'saved_tools',
+    description: 'Pagination capability',
+    get inputSchema() {
+      return schemaRead()
+    },
+    ...toolSemantics({ type: 'object' }, 'read', ['document'])
+  }))
+  const inventory = vi.fn(() => native)
+  const owner = createOwner(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    vi.fn(),
+    { getNativeTools: inventory, getNativeToolsRevision: () => revision }
+  )
+  const definition = owner.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const invoke = (args: unknown) =>
+    invokeLocalTool(owner, definition, args, new AbortController().signal)
+  const first = await invoke({ category: 'tools' })
+  expect(first.success).toBe(true)
+  const page = JSON.parse(first.text)
+  expect((await invoke(page.next.arguments)).success).toBe(true)
+  expect(inventory).toHaveBeenCalledTimes(1)
+  expect(schemaRead).toHaveBeenCalledTimes(19)
+  revision++
+  expect((await invoke(page.next.arguments)).success).toBe(true)
+  expect((await invoke(page.next.arguments)).success).toBe(true)
+  expect(inventory).toHaveBeenCalledTimes(2)
+  expect(schemaRead).toHaveBeenCalledTimes(38)
+  native.shift()
+  revision++
+  const stale = await invoke(page.next.arguments)
+  expect(stale.success).toBe(false)
+  expect(stale.text).toContain('restart')
+  const restarted = await invoke({ category: 'tools' })
+  expect(restarted.success).toBe(true)
+  const fresh = JSON.parse(restarted.text)
+  expect(fresh.count).toBe(18)
+  expect((await invoke(fresh.next.arguments)).success).toBe(true)
+  expect(inventory).toHaveBeenCalledTimes(3)
+  expect(schemaRead).toHaveBeenCalledTimes(56)
 })

@@ -1,10 +1,16 @@
+import * as documentPreparation from '../../collaboration/document-publication'
+import { prepareDocumentPublication } from '../../collaboration/document-publication'
 import 'fake-indexeddb/auto'
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import * as collaborationModule from '@asyra/collaboration'
 import { ProviderFailure } from '@asyra/collaboration'
-import factory, { type SharedPublication } from '@asyra/factory'
-import { EventTypes } from '@asyra/reactive-events'
+import factory, {
+  Factory,
+  LocalSharedDataChannel,
+  type SharedPublication
+} from '@asyra/factory'
+import { EventTypes, TransactionEventTypes } from '@asyra/reactive-events'
 import {
   IDTypes,
   PROPS_ACTIONS,
@@ -13,7 +19,10 @@ import {
 } from '@asyra/utils'
 import * as collaborationOperations from '../../collaboration/publication-processor'
 import { createFormalInitialDocument } from '../../collaboration/initial-document'
-import { DocumentPublicationOutbox } from '../../collaboration/publication-outbox'
+import {
+  DocumentPublicationOutbox,
+  IndexedDbPublicationOutboxStorage
+} from '../../collaboration/publication-outbox'
 import { CollaborationWebSocketProvider } from '../../collaboration/websocket-provider'
 import {
   CollaborationMessageTypes,
@@ -22,6 +31,7 @@ import {
 import {
   INITIAL_COLLABORATION_CONNECTION_STATE,
   createRemotePublicationHandler,
+  createCollaborationDocumentSession,
   disposeCollaboration,
   getActiveCollaborationHandle,
   prepareCollaborationDocumentSession,
@@ -85,7 +95,7 @@ const freezePublication = (
   return publication
 }
 
-const remotePublication = (publicationId: string): SharedPublication => {
+const factoryPublication = (publicationId: string): SharedPublication => {
   const artifactId = `artifact-${publicationId}`
   const batchId = `batch-${publicationId}`
   const deliveryId = `delivery-${publicationId}`
@@ -124,6 +134,9 @@ const remotePublication = (publicationId: string): SharedPublication => {
     ]
   })
 }
+
+const remotePublication = (publicationId: string): SharedPublication =>
+  prepareDocumentPublication(factoryPublication(publicationId))
 
 const bootstrapTailItem = (
   sequence: number,
@@ -676,7 +689,7 @@ it('retains disconnected Factory publications and removes them after reconnect s
   const handle = await prepared.activate()
   await handle.disconnect()
 
-  publish?.(remotePublication('offline-local'))
+  publish?.(factoryPublication('offline-local'))
   await handle.whenIdle()
 
   expect(sendPublication).not.toHaveBeenCalled()
@@ -779,7 +792,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
   await handle.disconnect()
 
   const reconnecting = handle.reconnect()
-  publish?.(remotePublication('queued-before-reconnect'))
+  publish?.(factoryPublication('queued-before-reconnect'))
   reconnectBootstrap.resolve({
     checkpoint: EMPTY_DOCUMENT,
     durableSequence: 0,
@@ -874,12 +887,13 @@ it('retains an acknowledgement-rejected publication as an explicit conflict', as
   })
   const handle = await prepared.activate()
 
-  publish?.(remotePublication('conflicted-local'))
+  publish?.(factoryPublication('conflicted-local'))
   await handle.whenIdle()
 
   expect(handle.getSessionState()).toEqual(
     expect.objectContaining({
-      connection: 'connected',
+      connection: 'disconnected',
+      recoveryAvailable: true,
       pendingCount: 1,
       sync: 'conflicted'
     })
@@ -1045,6 +1059,7 @@ it('settles after remote apply without saving the receiving document', async () 
 })
 
 it('confirms persistence after earlier publications without blocking later publications', async () => {
+  const capture = vi.spyOn(core, 'getCanonicalOwnerSnapshot')
   let publish: ((publication: SharedPublication) => void) | undefined
   vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
     (subscriber) => {
@@ -1078,14 +1093,14 @@ it('confirms persistence after earlier publications without blocking later publi
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
-  publish?.(remotePublication('before-confirmation'))
+  publish?.(factoryPublication('before-confirmation'))
   const confirmation = handle.confirmPersistence()
   await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce())
   expect(send).toHaveBeenCalledWith(
     expect.objectContaining({ publicationId: 'before-confirmation' }),
     expect.any(Function)
   )
-  publish?.(remotePublication('after-confirmation'))
+  publish?.(factoryPublication('after-confirmation'))
   await handle.whenIdle()
   expect(send).toHaveBeenCalledWith(
     expect.objectContaining({ publicationId: 'after-confirmation' }),
@@ -1100,6 +1115,7 @@ it('confirms persistence after earlier publications without blocking later publi
   await expect(confirmation).resolves.toEqual(
     expect.objectContaining({ sequence: 1 })
   )
+  expect(capture).not.toHaveBeenCalled()
 })
 
 it('cancels a queued persistence confirmation without waiting for a pending publication', async () => {
@@ -1129,7 +1145,7 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const handle = await prepared.activate()
-  publish?.(remotePublication('pending-publication'))
+  publish?.(factoryPublication('pending-publication'))
   await vi.waitFor(() => expect(send).toHaveBeenCalledOnce())
   const controller = new AbortController()
   let failure: unknown
@@ -1149,4 +1165,751 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     await handle.whenIdle()
   }
   expect(confirm).not.toHaveBeenCalled()
+})
+
+it('retains a producer conversion failure instead of reporting an unsaved local publication as synced', async () => {
+  const producer = new Factory()
+  producer.registerSharedDataChannel(
+    SharedDataChannelNames.SCENE_TREE,
+    new LocalSharedDataChannel()
+  )
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    producer.subscribeToSharedPublication.bind(producer)
+  )
+  const sourcePublications: SharedPublication[] = []
+  producer.subscribeToSharedPublication((publication) =>
+    sourcePublications.push(publication)
+  )
+  const send = vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'sendPublicationWithAcceptance'
+  )
+  const confirm = vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'confirmPersistence'
+  )
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'file-producer-conversion-failure',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  producer.startTransaction()
+  producer.updateTransaction({
+    type: TransactionEventTypes.UPDATE_TRANSACTION,
+    eventName: EventTypes.UPDATE_PROPERTY,
+    payload: { id: 'position-a', before: 0, after: 1 },
+    options: { shared: SharedDataChannelNames.SCENE_TREE }
+  })
+  // The real Factory isolates observer failures from local settlement.
+  expect(() => producer.endTransaction()).not.toThrow()
+  expect(sourcePublications).toHaveLength(1)
+  await expect(handle.confirmPersistence()).rejects.toThrow(
+    'pending, conflicted or unavailable'
+  )
+  expect(confirm).not.toHaveBeenCalled()
+  await handle.whenIdle()
+  expect(send).not.toHaveBeenCalled()
+  expect(handle.getSessionState()).toMatchObject({
+    pendingCount: 1,
+    sync: 'conflicted'
+  })
+  const retained = new DocumentPublicationOutbox({
+    fileId: 'file-producer-conversion-failure'
+  })
+  await retained.initialize()
+  expect(retained.getConflicts()).toHaveLength(1)
+  expect(retained.getRecoverablePublications()).toHaveLength(0)
+  expect(retained.getConflicts()[0]?.publication).toEqual(sourcePublications[0])
+  expect(retained.getConflicts()[0]?.failureReason).toBeTruthy()
+  producer.registerSharedDataChannel(
+    SharedDataChannelNames.PROPS,
+    new LocalSharedDataChannel()
+  )
+  producer.startTransaction()
+  producer.updateTransaction({
+    type: TransactionEventTypes.UPDATE_TRANSACTION,
+    eventName: EventTypes.UPDATE_PROPERTY,
+    payload: {
+      action: PROPS_ACTIONS.UPDATE_PROPERTY,
+      eventName: EventTypes.UPDATE_PROPERTY,
+      id: 'later-position',
+      key: 'x',
+      before: 0,
+      after: 2
+    },
+    options: { shared: SharedDataChannelNames.PROPS }
+  })
+  producer.endTransaction()
+  await handle.whenIdle()
+  expect(handle.getSessionState()).toMatchObject({
+    pendingCount: 2,
+    sync: 'conflicted'
+  })
+  expect(send).not.toHaveBeenCalled()
+  await disposeCollaboration()
+  const reopened = await prepareCollaborationDocumentSession({
+    fileId: 'file-producer-conversion-failure',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const reopenedHandle = await reopened.activate()
+  await reopenedHandle.whenIdle()
+  expect(reopenedHandle.getSessionState()).toMatchObject({
+    pendingCount: 2,
+    sync: 'conflicted'
+  })
+  await expect(reopenedHandle.confirmPersistence()).rejects.toThrow(
+    'pending, conflicted or unavailable'
+  )
+  expect(send).not.toHaveBeenCalled()
+  expect(confirm).not.toHaveBeenCalled()
+})
+
+it('blocks confirmation and transport after failed preparation retention even through reconnect and later edits', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const send = vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'sendPublicationWithAcceptance'
+  )
+  const confirm = vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'confirmPersistence'
+  )
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'preparation-storage-failure',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  vi.spyOn(
+    IndexedDbPublicationOutboxStorage.prototype,
+    'put'
+  ).mockRejectedValueOnce(new Error('disk full'))
+  const valid = factoryPublication('invalid-for-storage')
+  const invalid = freezePublication({
+    ...valid,
+    slices: valid.slices.map((slice) => ({
+      ...slice,
+      batches: slice.batches.map((batch) => ({
+        ...batch,
+        deliveries: batch.deliveries.map((delivery) => ({
+          ...delivery,
+          eventName: EventTypes.UPDATE_COMPUTED_DATA
+        }))
+      }))
+    }))
+  })
+  publish?.(invalid)
+  await expect(handle.confirmPersistence()).rejects.toThrow(
+    'pending, conflicted or unavailable'
+  )
+  expect(handle.getSessionState()).toMatchObject({
+    pendingCount: 1,
+    sync: 'storage-failed'
+  })
+  await handle.disconnect()
+  await handle.reconnect()
+  publish?.(factoryPublication('later-storage-success'))
+  await handle.whenIdle()
+  expect(handle.getSessionState()).toMatchObject({
+    pendingCount: 2,
+    sync: 'storage-failed'
+  })
+  await expect(handle.confirmPersistence()).rejects.toThrow(
+    'pending, conflicted or unavailable'
+  )
+  expect(send).not.toHaveBeenCalled()
+  expect(confirm).not.toHaveBeenCalled()
+})
+
+it('retains action replay and compensation behind a rejected predecessor without sending them', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const send = vi
+    .spyOn(
+      CollaborationWebSocketProvider.prototype,
+      'sendPublicationWithAcceptance'
+    )
+    .mockRejectedValue(
+      new ProviderFailure(
+        'acknowledgement-failed',
+        'rejected source',
+        undefined,
+        'rejected-predecessor'
+      )
+    )
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'rejected-replay-prefix',
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  publish?.(factoryPublication('rejected-predecessor'))
+  for (const origin of [
+    'action',
+    'undo',
+    'redo',
+    'rollback-compensation'
+  ] as const) {
+    publish?.(
+      freezePublication({
+        ...factoryPublication(`later-${origin}`),
+        origin,
+        ...(origin === 'rollback-compensation'
+          ? { compensatesPublicationId: 'rejected-predecessor' }
+          : {})
+      })
+    )
+  }
+  await handle.whenIdle()
+  expect(send).toHaveBeenCalledOnce()
+  expect(handle.getSessionState()).toMatchObject({
+    pendingCount: 5,
+    sync: 'conflicted'
+  })
+  const reloaded = new DocumentPublicationOutbox({
+    fileId: 'rejected-replay-prefix'
+  })
+  await reloaded.initialize()
+  expect(reloaded.getState()).toEqual({ pendingCount: 5, status: 'conflicted' })
+  expect(reloaded.getRecoverablePublications()).toEqual([])
+})
+
+it('preserves the local recovery document across reconnect and reopen, then resumes canonical saving after preparation is repaired', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
+  const draft = {
+    ...EMPTY_DOCUMENT,
+    props: { savedWork: { id: 'savedWork', type: 'test', value: 17 } }
+  }
+  vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
+  const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+  vi.spyOn(core, 'applyRemoteCanonicalChangeSlices').mockResolvedValue(
+    undefined
+  )
+  const prepare = vi.spyOn(documentPreparation, 'prepareDocumentPublication')
+  prepare.mockImplementationOnce(() => {
+    throw new Error('temporary converter failure')
+  })
+  const send = vi
+    .spyOn(
+      CollaborationWebSocketProvider.prototype,
+      'sendPublicationWithAcceptance'
+    )
+    .mockImplementation(async (publication, consume) => {
+      await consume?.(publication)
+      return { publicationId: publication.publicationId, sequence: 1 }
+    })
+  const receipt = { documentId: 'recovery-complete', durableSequence: 1 }
+  vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'confirmPersistence'
+  ).mockResolvedValue(receipt as never)
+  const mode = {
+    fileId: 'recovery-complete',
+    actorId: 'recovery-actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  }
+  const initial = await prepareCollaborationDocumentSession(mode)
+  const handle = await initial.activate()
+  publish?.(factoryPublication('recoverable-source'))
+  await handle.whenIdle()
+  expect(handle.getRecoveryDocument()).toMatchObject(draft)
+  await handle.reconnect()
+  expect(load).not.toHaveBeenCalled()
+  expect(send).not.toHaveBeenCalled()
+  await disposeCollaboration()
+  const reopened = await prepareCollaborationDocumentSession(mode)
+  expect(reopened.bootstrap.checkpoint).toMatchObject(draft)
+  const reopenedHandle = await reopened.activate()
+  await reopenedHandle.prepareRecovery()
+  await disposeCollaboration()
+  const resumed = await prepareCollaborationDocumentSession(mode)
+  expect(resumed.bootstrap.checkpoint).toEqual(EMPTY_DOCUMENT)
+  const resumedHandle = await resumed.activate()
+  await resumedHandle.whenIdle()
+  expect(send).toHaveBeenCalledTimes(1)
+  expect(resumedHandle.getSessionState()).toMatchObject({
+    sync: 'synced',
+    pendingCount: 0
+  })
+  await expect(resumedHandle.confirmPersistence()).resolves.toEqual(receipt)
+})
+
+it('retains the failed source even when capturing its recovery document also fails', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockImplementation(() => {
+    throw new Error('snapshot unavailable')
+  })
+  vi.spyOn(
+    documentPreparation,
+    'prepareDocumentPublication'
+  ).mockImplementationOnce(() => {
+    throw new Error('converter unavailable')
+  })
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'snapshot-failed',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  expect(() => publish?.(factoryPublication('must-retain'))).not.toThrow()
+  await handle.whenIdle()
+  expect(handle.getSessionState()).toMatchObject({
+    sync: 'conflicted',
+    pendingCount: 1,
+    recoveryAvailable: true
+  })
+  const retained = new DocumentPublicationOutbox({ fileId: 'snapshot-failed' })
+  await retained.initialize()
+  expect(retained.getConflicts()[0]?.publicationId).toBe('must-retain')
+  expect(handle.hasUnpersistedChanges()).toBe(false)
+})
+
+it('isolates a rejected source even when persisting the conflict fails', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+  vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'sendPublicationWithAcceptance'
+  ).mockImplementation(async () => {
+    vi.spyOn(
+      IndexedDbPublicationOutboxStorage.prototype,
+      'put'
+    ).mockRejectedValue(new Error('disk unavailable'))
+    throw new ProviderFailure('acknowledgement-failed', 'rejected')
+  })
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'conflict-retention-failed',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  publish?.(factoryPublication('rejected-source'))
+  await handle.whenIdle()
+  expect(handle.getSessionState()).toMatchObject({
+    sync: 'storage-failed',
+    recoveryAvailable: true
+  })
+  await handle.reconnect()
+  expect(load).not.toHaveBeenCalled()
+})
+
+it('keeps reopened recovery available after failed Reset and clears it only after authoritative Reset succeeds', async () => {
+  const fileId = 'reopened-recovery-reset'
+  const outbox = new DocumentPublicationOutbox({ fileId })
+  await outbox.initialize()
+  await outbox.bindDocumentGeneration(0)
+  await outbox.appendPreparationFailure(
+    factoryPublication('reset-retained'),
+    'invalid source',
+    EMPTY_DOCUMENT
+  )
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId,
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  expect(handle.getSessionState().recoveryAvailable).toBe(true)
+  const reset = vi.mocked(
+    CollaborationWebSocketProvider.prototype.resetDocument
+  )
+  const completeBootstrap = vi.mocked(
+    CollaborationWebSocketProvider.prototype.completeDocumentBootstrap
+  )
+  completeBootstrap.mockClear()
+  reset.mockImplementationOnce(async () => {
+    expect(completeBootstrap).toHaveBeenCalledOnce()
+    throw new Error('Reset unavailable')
+  })
+  await expect(resetCollaborationDocument(fileId)).rejects.toThrow(
+    'Reset unavailable'
+  )
+  expect(getActiveCollaborationHandle()).toBe(handle)
+  const retained = new DocumentPublicationOutbox({ fileId })
+  await retained.initialize()
+  expect(retained.getState().pendingCount).toBe(1)
+  await resetCollaborationDocument(fileId)
+  expect(reset).toHaveBeenCalledTimes(2)
+  expect(getActiveCollaborationHandle()).toBeUndefined()
+  const cleared = new DocumentPublicationOutbox({ fileId })
+  await cleared.initialize()
+  expect(cleared.getState().pendingCount).toBe(0)
+})
+
+it('keeps preparation retry available after reopening evidence whose optional draft capture failed', async () => {
+  const fileId = 'recovery-without-captured-draft'
+  const outbox = new DocumentPublicationOutbox({ fileId })
+  await outbox.initialize()
+  await outbox.bindDocumentGeneration(0)
+  await outbox.appendPreparationFailure(
+    factoryPublication('source-without-draft'),
+    'converter unavailable'
+  )
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId,
+    actorId: 'actor-lifecycle',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  expect(handle.getSessionState()).toMatchObject({
+    recoveryAvailable: true,
+    sync: 'conflicted'
+  })
+  expect(handle.getRecoveryDocument()).toBeUndefined()
+  vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
+  await handle.prepareRecovery()
+  const retained = new DocumentPublicationOutbox({ fileId })
+  await retained.initialize()
+  expect(retained.getRecoverablePublications()).toHaveLength(1)
+})
+
+it('exposes recovery after accepted-source cleanup fails and preserves the exact source for retry', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const draft = {
+    ...EMPTY_DOCUMENT,
+    props: { retained: { id: 'retained', value: 5 } }
+  }
+  vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
+  vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  vi.spyOn(
+    CollaborationWebSocketProvider.prototype,
+    'sendPublicationWithAcceptance'
+  ).mockImplementation(async (publication) => ({
+    publicationId: publication.publicationId,
+    sequence: 1
+  }))
+  const remove = vi
+    .spyOn(IndexedDbPublicationOutboxStorage.prototype, 'delete')
+    .mockRejectedValueOnce(new Error('delete failed'))
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'accepted-cleanup-failed',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  publish?.(factoryPublication('accepted-source'))
+  await handle.whenIdle()
+  expect(handle.getSessionState()).toMatchObject({
+    recoveryAvailable: true,
+    connection: 'disconnected',
+    sync: 'storage-failed',
+    pendingCount: 1
+  })
+  expect(handle.getRecoveryDocument()).toMatchObject(draft)
+  await handle.prepareRecovery()
+  const outbox = new DocumentPublicationOutbox({
+    fileId: 'accepted-cleanup-failed'
+  })
+  await outbox.initialize()
+  expect(
+    outbox.getRecoverablePublications().map((record) => record.publicationId)
+  ).toEqual(['accepted-source'])
+  expect(remove).toHaveBeenCalledOnce()
+})
+
+it('abandons an in-flight reconnect when a source failure establishes a recovery draft', async () => {
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  const draft = {
+    ...EMPTY_DOCUMENT,
+    props: { retained: { id: 'retained', value: 7 } }
+  }
+  vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
+  const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'reconnect-racing-recovery',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  await handle.disconnect()
+  const opened = createDeferred<undefined>()
+  const pending =
+    createDeferred<
+      Awaited<ReturnType<CollaborationWebSocketProvider['openDocumentSession']>>
+    >()
+  vi.mocked(
+    CollaborationWebSocketProvider.prototype.openDocumentSession
+  ).mockImplementationOnce(() => {
+    opened.resolve(undefined)
+    return pending.promise
+  })
+  const reconnecting = handle.reconnect()
+  await opened.promise
+  vi.spyOn(
+    documentPreparation,
+    'prepareDocumentPublication'
+  ).mockImplementationOnce(() => {
+    throw new Error('prepare failed during reconnect')
+  })
+  publish?.(factoryPublication('racing-failure'))
+  pending.resolve({
+    checkpoint: EMPTY_DOCUMENT,
+    durableSequence: 0,
+    headSequence: 0,
+    pendingTail: []
+  })
+  await reconnecting
+  await handle.whenIdle()
+  expect(load).not.toHaveBeenCalled()
+  expect(handle.getRecoveryDocument()).toMatchObject(draft)
+  expect(handle.getSessionState()).toMatchObject({
+    recoveryAvailable: true,
+    sync: 'conflicted',
+    connection: 'disconnected'
+  })
+})
+
+it('does not reload Core or erase history when a live edit is rejected after successful recovery replay', async () => {
+  const fileId = 'live-rejection-after-replay'
+  const outbox = new DocumentPublicationOutbox({ fileId })
+  await outbox.initialize()
+  await outbox.bindDocumentGeneration(0)
+  await outbox.append(
+    prepareDocumentPublication(factoryPublication('old-replay'))
+  )
+  let publish: ((publication: SharedPublication) => void) | undefined
+  vi.spyOn(factory, 'subscribeToSharedPublication').mockImplementation(
+    (subscriber) => {
+      publish = subscriber
+      return () => {
+        publish = undefined
+      }
+    }
+  )
+  vi.spyOn(core, 'applyRemoteCanonicalChangeSlices').mockResolvedValue(
+    undefined
+  )
+  vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(
+    EMPTY_DOCUMENT as never
+  )
+  const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
+  const send = vi
+    .spyOn(
+      CollaborationWebSocketProvider.prototype,
+      'sendPublicationWithAcceptance'
+    )
+    .mockImplementation(async (publication, consume) => {
+      await consume(publication)
+      return { publicationId: publication.publicationId, sequence: 1 }
+    })
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId,
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  expect(handle.getSessionState().sync).toBe('synced')
+  load.mockClear()
+  send.mockRejectedValueOnce(
+    new ProviderFailure('acknowledgement-failed', 'live rejection')
+  )
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  publish?.(factoryPublication('new-live-edit'))
+  await handle.whenIdle()
+  expect(load).not.toHaveBeenCalled()
+  expect(handle.getSessionState()).toMatchObject({
+    recoveryAvailable: true,
+    pendingCount: 1,
+    sync: 'conflicted'
+  })
+})
+
+it('does not permit recovery reload while a new transaction remains open after retention settled', async () => {
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'active-edit-recovery-reload',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(false)
+  await handle.whenIdle()
+  expect(handle.hasUnpersistedChanges()).toBe(true)
+})
+
+it('keeps startup recovery actionable when binding retained records to the document generation fails', async () => {
+  const fileId = 'generation-bind-storage-failure'
+  const outbox = new DocumentPublicationOutbox({ fileId })
+  await outbox.initialize()
+  await outbox.append(
+    prepareDocumentPublication(factoryPublication('unbound-source'))
+  )
+  const put = vi
+    .spyOn(IndexedDbPublicationOutboxStorage.prototype, 'put')
+    .mockRejectedValueOnce(new Error('binding storage failed'))
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId,
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const handle = await prepared.activate()
+  expect(handle.getSessionState()).toMatchObject({
+    recoveryAvailable: true,
+    sync: 'storage-failed'
+  })
+  await handle.prepareRecovery()
+  const retained = new DocumentPublicationOutbox({ fileId })
+  await retained.initialize()
+  expect(retained.getRecoverablePublications()[0]?.documentGeneration).toBe(0)
+  expect(put).toHaveBeenCalledTimes(2)
+})
+
+it('cannot revive an activation after its document session is disposed', async () => {
+  const pending = createDeferred<undefined>()
+  const starting = createDeferred<undefined>()
+  const prepared = await prepareCollaborationDocumentSession({
+    fileId: 'disposed-during-activation',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  vi.mocked(
+    CollaborationWebSocketProvider.prototype.completeDocumentBootstrap
+  ).mockImplementationOnce(async () => {
+    starting.resolve(undefined)
+    await pending.promise
+  })
+  const activation = prepared.activate()
+  const rejected = expect(activation).rejects.toThrow('disposed')
+  await starting.promise
+  await disposeCollaboration()
+  pending.resolve(undefined)
+  await rejected
+  expect(getActiveCollaborationHandle()).toBeUndefined()
+})
+
+it.each(['resolved', 'rejected'] as const)(
+  'retires a Core session disposed during %s preparation without disturbing its successor',
+  async (settlement) => {
+    const pending =
+      createDeferred<
+        Awaited<
+          ReturnType<CollaborationWebSocketProvider['openDocumentSession']>
+        >
+      >()
+    const opening = createDeferred<undefined>()
+    vi.mocked(
+      CollaborationWebSocketProvider.prototype.openDocumentSession
+    ).mockImplementationOnce(() => {
+      opening.resolve(undefined)
+      return pending.promise
+    })
+    const unsubscribe = vi.fn()
+    const session = createCollaborationDocumentSession({
+      fileId: `disposed-preparation-${settlement}`,
+      actorId: 'old-actor',
+      endpoint: 'ws://127.0.0.1:4101/collaboration'
+    })
+    const preparation = Promise.resolve(
+      session.prepare({
+        load: vi.fn(),
+        applyRemoteCanonicalChangeSlices: vi.fn(async () => undefined),
+        subscribeToSharedPublication: () => unsubscribe
+      })
+    )
+    const rejected = expect(preparation).rejects.toThrow(
+      settlement === 'resolved' ? 'disposed' : 'Bootstrap failed'
+    )
+    await opening.promise
+    const disposal = session.dispose()
+    const successor = await prepareCollaborationDocumentSession({
+      fileId: `successor-${settlement}`,
+      actorId: 'new-actor',
+      endpoint: 'ws://127.0.0.1:4101/collaboration'
+    })
+    const active = await successor.activate()
+    if (settlement === 'resolved')
+      pending.resolve({
+        checkpoint: EMPTY_DOCUMENT,
+        durableSequence: 0,
+        headSequence: 0,
+        pendingTail: []
+      })
+    else pending.reject(new Error('Bootstrap failed'))
+    await rejected
+    await disposal
+    expect(unsubscribe).toHaveBeenCalledOnce()
+    expect(getActiveCollaborationHandle()).toBe(active)
+    expect(window.__Collaboration__).toBe(active)
+    await expect(session.activate()).rejects.toThrow()
+  }
+)
+
+it('retires a prepared checkpoint load source when its Core session is disposed', async () => {
+  const session = createCollaborationDocumentSession({
+    fileId: 'disposed-checkpoint-source',
+    actorId: 'actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+  const preparation = await session.prepare({
+    load: vi.fn(),
+    applyRemoteCanonicalChangeSlices: vi.fn(async () => undefined),
+    subscribeToSharedPublication: () => vi.fn()
+  })
+  expect(await preparation?.loadSource?.load()).toEqual(EMPTY_DOCUMENT)
+  await session.dispose()
+  await expect(preparation?.loadSource?.load()).rejects.toThrow('disposed')
 })

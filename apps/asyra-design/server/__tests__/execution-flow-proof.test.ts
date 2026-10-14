@@ -240,9 +240,18 @@ it('execution proof preserves partial lookup full recovery and declaration const
   }
   const execute = vi.fn()
   const tools = createLocalOperationTools(
-    [action],
+    [action, { ...action, name: AiActionNames.REVIEW_DESIGN }],
     { modelActions: (v) => v, resolveBatch: (v) => v },
-    execute
+    execute,
+    {
+      getNativeTools: () =>
+        tools.definitions
+          .filter((tool) => tool.name === AiActionNames.REVIEW_DESIGN)
+          .map((tool) => ({
+            ...tool,
+            namespace: 'design_operations'
+          }))
+    }
   )
   const read = async (args: unknown) =>
     JSON.parse(
@@ -278,6 +287,37 @@ it('execution proof preserves partial lookup full recovery and declaration const
   expect(JSON.stringify(fragment).length).toBeLessThan(
     JSON.stringify(full).length
   )
+  const inspection = await read({ operations: [AiActionNames.REVIEW_DESIGN] })
+  expect(inspection.execution).toEqual({
+    kind: 'native-tool',
+    namespace: 'design_operations',
+    tool: AiActionNames.REVIEW_DESIGN,
+    argumentField: 'arguments'
+  })
+  expect(
+    JSON.stringify(
+      tools.definitions.find(
+        (tool) => tool.name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
+      )?.inputSchema
+    )
+  ).not.toContain(AiActionNames.REVIEW_DESIGN)
+  const menu = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      { query: 'review' },
+      new AbortController().signal
+    )
+  )
+  expect(
+    menu.tools.some(
+      (tool: { name: string }) => tool.name === AiActionNames.REVIEW_DESIGN
+    )
+  ).toBe(true)
+  for (const entry of [...menu.apis, ...menu.tools]) {
+    expect(entry.inputSchema).toBeUndefined()
+    expect(entry.outputSchema).toBeUndefined()
+  }
+  expect(menu.guidance.references).toContain('native web research')
   expect(execute).not.toHaveBeenCalled()
 })
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
@@ -388,7 +428,24 @@ it('execution proof preserves registered native capability envelopes', async ({
             }
           })
         }
-        if (packet.id === 101 && packet.result) {
+        if ((packet.id === 101 || packet.id === 102) && packet.result) {
+          send({
+            id: packet.id + 1,
+            method: 'item/tool/call',
+            params: {
+              threadId: 'proof-thread',
+              turnId: 'proof-turn',
+              callId: `page-${packet.id}`,
+              namespace: 'design_operations',
+              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              arguments:
+                packet.id === 101
+                  ? { query: 'delete elements' }
+                  : { category: 'tools' }
+            }
+          })
+        }
+        if (packet.id === 103 && packet.result) {
           send({
             method: 'item/completed',
             params: {
@@ -492,6 +549,18 @@ it('execution proof preserves registered native capability envelopes', async ({
       properties: { query: { type: 'string' }, names: { type: 'array' } }
     }
   })
+  for (const id of [102, 103]) {
+    const reply = packets.find(
+      (packet) => packet.id === id && packet.result
+    )?.result
+    expect(reply?.success, JSON.stringify(reply)).toBe(true)
+    if (!reply) throw new Error('Missing discovery page')
+    const page = JSON.parse(reply.contentItems[0].text)
+    const end = page.offset + page.apis.length + page.tools.length
+    expect(page.complete).toBe(end === page.count)
+    if (!page.complete) expect(page.next.arguments.offset).toBe(end)
+    else expect(page.next).toBeUndefined()
+  }
   const categoryDiscovery = packets.find(
     (packet) => packet.id === 101 && packet.result
   )?.result
@@ -1351,15 +1420,13 @@ it('execution proof hands a region identity set into one compact plural removal'
   )
   if (!removal) throw new Error('Missing plural removal contract')
   const read = {
-    name: AiActionNames.READ_DESIGN_CONTEXT,
-    description: 'Read region targets',
+    name: AiActionNames.RESOLVE_DESIGN_TARGETS,
+    description: 'Resolve region targets',
     inputSchema: {
       type: 'object',
       properties: {
         scope: { const: 'region' },
         bounds: { type: 'object' },
-        allMatches: { type: 'boolean' },
-        result: { const: 'ids' },
         filter: { type: 'object', properties: { name: { type: 'object' } } },
         expectedCount: { type: 'integer', minimum: 0 }
       }
@@ -1433,8 +1500,7 @@ it('execution proof hands a region identity set into one compact plural removal'
   )
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-    result: 'ids',
-    allMatches: true,
+    scope: 'region',
     expectedCount: ids.length,
     filter: { name: { prefix: 'roof-' } }
   })
@@ -1701,6 +1767,8 @@ it('execution proof confirms a durable sequence without extending it to later ed
 })
 
 it('execution proof preserves concrete work through progress and settlement', async () => {
+  const checkpoints: unknown[] = []
+  let featureCompleted = false
   const execute: AiConversationFeature['execute'] = async (request) => {
     const running = {
       phase: 'provider' as const,
@@ -1746,10 +1814,7 @@ it('execution proof preserves concrete work through progress and settlement', as
         purpose: active.originalIntent
       }).current
     }
-    expect(current()).toEqual({
-      label: 'Checking the drawing',
-      message: 'Inspect roof bounds'
-    })
+    checkpoints.push(current())
     request.progressObserver({
       phase: 'provider',
       attempt: 1,
@@ -1762,10 +1827,7 @@ it('execution proof preserves concrete work through progress and settlement', as
         phase: 'inspecting'
       }
     })
-    expect(current()).toEqual({
-      label: 'Running an operation',
-      message: running.message
-    })
+    checkpoints.push(current())
     const completed = request.progressObserver({
       ...running,
       toolStatus: 'completed',
@@ -1776,22 +1838,15 @@ it('execution proof preserves concrete work through progress and settlement', as
         phase: 'executing'
       }
     })
-    expect(current()).toEqual({
-      label: 'AI processing',
-      message: running.message
-    })
-    expect(completed).toMatchObject({
-      phaseLabel: 'AI processing',
-      activeCallCount: 0,
-      purposeSource: 'retained-segment',
-      purpose: { id: 'roof', revision: 1 }
-    })
+    checkpoints.push(current())
+    checkpoints.push(completed)
     request.progressObserver({
       phase: 'settled',
       attempt: 1,
       summary: 'Failed',
       outcome: 'failed'
     })
+    featureCompleted = true
     return {
       status: 'failed',
       stage: 'execution',
@@ -1804,6 +1859,18 @@ it('execution proof preserves concrete work through progress and settlement', as
   })
   try {
     const result = await controller.submit('Refine the roof')
+    // Assertions must escape the conversation's intentional feature-error boundary.
+    expect(featureCompleted).toBe(true)
+    expect(checkpoints).toEqual([
+      { label: '', message: 'Inspect roof bounds' },
+      { label: '', message: 'Adjusting the roof color' },
+      { label: 'Processing your request' },
+      expect.objectContaining({
+        phaseLabel: 'Processing your request',
+        activeCallCount: 0,
+        purposeSource: 'none'
+      })
+    ])
     expect(result).not.toBeNull()
     if (!result) throw new Error('Missing settled activity')
     expect(controller.getSnapshot().activeTurn).toBeNull()

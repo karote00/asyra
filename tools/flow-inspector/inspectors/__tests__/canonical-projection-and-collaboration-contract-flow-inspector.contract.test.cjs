@@ -45,6 +45,7 @@ const requiredStepIds = [
   'derive-local-computed-projection',
   'record-and-deliver-transaction-batch',
   'project-render-state',
+  'prepare-document-publication',
   'publish-shared-publication',
   'transport-publication-bytes',
   'apply-remote-publication',
@@ -162,7 +163,7 @@ test('realignment Inspector and completed planning authorities resolve', () => {
   assert.match(performancePlan, /Retained architecture artifacts/)
 })
 
-test('Inspector exposes eleven exact single-owner runtime steps', () => {
+test('Inspector exposes twelve exact single-owner runtime steps', () => {
   assert.deepEqual(
     new Set(data.steps.map((item) => item.id)),
     new Set(requiredStepIds)
@@ -198,7 +199,19 @@ test('Inspector exposes eleven exact single-owner runtime steps', () => {
     ...runtimeSection[1].matchAll(/^\d+\.\s+`([^`]+)`/gm)
   ].map((match) => match[1])
   assert.deepEqual(implementationIds, requiredImplementationOrder)
-  assert.deepEqual(new Set(implementationIds), new Set(requiredStepIds))
+  // The completed plan records its original implementation sequence. Current
+  // App source preparation is specified by the active collaboration contract.
+  const preparation = step('prepare-document-publication')
+  assert.deepEqual(preparation.inputs, ['artifact:shared-publication'])
+  assert.deepEqual(preparation.outputs, ['artifact:document-publication', 'artifact:document-preparation-failure'])
+  assert.match(contractText(preparation), /required App callback/)
+  assert.match(contractText(preparation), /observer isolation must not hide/)
+  assert.ok(step('publish-shared-publication').inputs.includes('artifact:document-publication'))
+  assert.ok(data.links.some((link) => link.id === 'document-publication-contract'))
+  assert.match(fs.readFileSync(path.resolve(repoRoot, 'docs/ai/apps/asyra-design/modules/collaboration-reference.md'), 'utf8'),
+    /translates completed Factory evidence.*once, before outbox retention/)
+  assert.match(contractText(preparation), /Receivers consume explicit operations without reconstructing/)
+  assert.ok(data.routes.some((route) => route.from === 'prepare-document-publication' && route.to === 'publish-shared-publication'))
 
   const computedBoundary = step(
     'derive-local-computed-projection'
@@ -954,7 +967,7 @@ test('Collaboration and Provider expose one publication flow', () => {
   assert.match(collaboration, /canonical.*order/i)
   assert.match(
     collaboration,
-    /only Factory-owned SharedPublication.*never derives.*staged status/i
+    /App-prepared source publication.*preserving Factory identity.*never derives.*staged status/i
   )
   assert.doesNotMatch(
     activeCollaboration,

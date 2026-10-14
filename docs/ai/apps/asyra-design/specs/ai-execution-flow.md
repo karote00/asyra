@@ -97,9 +97,21 @@ exact action names, or a category against the current admitted contracts. Empty
 input returns categories and counts, not the entire API catalog. A category may
 opt into `includeSchemas: true` to retrieve its admitted schemas in the same call;
 the flag requires a category. The default category menu stays compact. Optional lexical
-search returns matching schemas and no match returns the category menu; it never
+search returns compact action/native/saved capability menus and no match returns the category menu; it never
 infers capability absence or picks a similar adapter. Selectors are mutually
 exclusive. Each declaration carries purpose, category, input and result meaning.
+Capability lookup does not search external subjects, images or source pages.
+Research uses native web research, followed by reference import when needed.
+Unknown subject terms never imply an unavailable drawing capability. Menus omit
+input/output schemas; exact lookup retrieves them. Native/saved results preserve
+namespace, registered identity and current execution route with shared pagination.
+The batch-admitted action set owns both schema admission and advertised batch
+routes. Explicit mechanical review/capture uses the actual native wrapper and
+its argument field, never a batch route. Missing or ambiguous wrapper registration
+reports unavailable rather than guessing a namespace. Candidate, category,
+query, exact, partial and repeated-definition views obey the same routing owner.
+Use operation selectors for an action schema fragment, or a qualified native name
+for its wrapper fragment; their field paths are intentionally different.
 Lookup indexes live only for that admitted request registry. Known operations
 may be retrieved together with `operations`; use this selector for known semantic
 identities. Exact `names` also accepts uniquely resolving semantic identities
@@ -1219,7 +1231,15 @@ used to fit them into the supported primitive.
 
 ### Retained consumer lifetime
 
-Every delivery admits a request-owned lease before returning a reusable snapshot.
+Every reusable snapshot delivery admits a request-owned lease before returning.
+The batch-only `resolve_design_targets` action is restricted to complete region IDs, without
+paging or property fields. `read_design_context` always retains its handle contract.
+The resolver returns copied identities without snapshot/lease
+handles and does not reserve retained capacity. Internal batch target queries
+use it, deduplicate selectors within that batch and release their copied values
+when preparation ends. A matching retained query may supply those identities
+without acquiring or releasing caller leases. Ordinary mutation admission still
+checks current targets; transient results are not persistent edit authority.
 Leased entries cannot be evicted; exhaustion rejects the new handoff with capacity
 feedback while preserving existing consumers. Explicit release, request settlement,
 cancellation and host disposal release leases. Borrowed consumers do not release
@@ -1361,29 +1381,31 @@ the connection. The host excludes this persistent local data from Git.
 
 ### Purpose lifetime
 
-The original request objective remains valid for the request. Authored request
-commentary describes a current stage; a subsequent authored tool-call purpose
-supersedes that earlier commentary. Completion returns to still-current commentary
-or the original objective, never a superseded stage. A call's own authored purpose
-remains scoped to that live call. Inherited parent/request text is resolved from
-current state rather than copied into the call as authored text. Closing a child
-preserves genuine live parent and independent sibling purposes. Observed phase,
-ordering and stopping/saving/terminal lifecycle take precedence independently.
-Registered operation descriptions are system activity, not model-authored stage
-changes. The provider must publish their existing `kind: system` classification;
-their diagnostic intent/provenance remains recorded as expectedResult and
-expectationSource. Recorded purpose uses the same normalized kind as the UI;
-system activity cannot become authored purpose in the trace. They update observed phases
-without retiring current authored commentary. Genuine new authored work continues
-to supersede an old stage; the consumer must not revive it after call completion.
+Every ordered invocation start and end updates canonical activity state before
+visible deduplication. A completed call's purpose expires. The primary AI publishes
+a short concrete stage intent (target and purpose) through existing public
+commentary before preparing inputs, and replaces it when the stage changes.
+Stage intent is not a claim that drawing is currently being applied. It survives
+child starts/ends and is retired by newer stage commentary, explicit completion,
+retry, saving or terminal settlement. No additional AI evaluates or authors status.
 
-Call purposes retain their authored identity, scope and producer revision through
-phase-only updates. A live child takes precedence over its coordinating ancestor's
-new system event. Concurrent leaves display the nearest shared live purpose, or
-the request objective, with an operation count; the last sibling's text cannot
-represent all concurrent work. Omitted parent metadata on later phases does not
-erase known ancestry. The conversation and panel supply the original objective,
-including clarification continuations and retries, to the same state machine.
+While a stage intent exists, display it as the visible work umbrella. Otherwise,
+display the common genuinely live call purpose. Show concrete purpose without a
+generic processing/phase prefix; changing system phases and child counts must not
+cause repeated announcements for the same purpose. Without authored purpose use
+an honest observed phase, never invented work or the full request as current work.
+All lifecycle events and actual owner phases/counts remain in diagnostics. No timer
+or debounce suppresses events. Stopping, approval, saving and terminal outcomes
+immediately override normal work presentation.
+
+Call purposes retain authored identity, scope and revision across phase-only
+updates. Resolve inheritance from live ancestry, never copy it into a child as
+new authored text. Concurrent leaves use their common purpose; one sibling cannot
+represent unrelated work. Closing a parent closes dependent children, preserves
+independent siblings and rejects late events. Omitted parent metadata preserves
+known ancestry. Request objective remains conversation context, not stage evidence.
+Registered operation descriptions remain system activity; preserve their diagnostic
+expectedResult/expectationSource without promoting them to authored purpose.
 
 The current-purpose preview occupies at most three message lines. Keep its full
 text in the DOM and title for accessibility and inspection; this presentation
@@ -1653,15 +1675,11 @@ later edits require canonical checks, never source approval as canvas proof.
 
 ### Purpose continuity after execution
 
-Completing a call retires its active execution phase, not its established subject.
-While the provider processes results, show the observed processing phase with that
-subject until newer authored work supersedes it. Request commentary, live ancestry
-and unrelated concurrent calls retain their established priorities; the last
-sibling's subject cannot represent all simultaneous work. Retry resets the segment;
-closed/late calls cannot reopen it. Saving, stop and terminal state take precedence.
-Use the same reducer for UI and diagnostic purpose identity/source, phase label
-and active-call count. Preserve authored language without inferring new intent.
-
+Completing a call retires its call-scoped purpose and execution phase. A separately
+authored current stage intent survives; a completed call does not establish one.
+Use the Purpose lifetime contract above for stage replacement, visible deduplication,
+concurrency and lifecycle precedence. Diagnostics retain actual phases and call
+counts even when a stable concrete stage produces no visible text change.
 
 ### Mechanical verification in reusable tasks
 
@@ -1851,3 +1869,24 @@ plane values, not portable recipe literals or durable document identities.
 ### Mechanical inspection transport
 
 Mechanical measurements and dependency validation use bounded exchanges of at most 64 independent exact-target actions. Each target retains its own evidence and finding status. A known fail-fast action failure preserves acknowledged prefix results and may continue only the proven unexecuted read suffix; unknown outcomes remain unverified. Cancellation prevents late adoption and further dispatch. Grouping reads never replays acknowledged document writes or converts missing checks into passes.
+
+
+### Discovery continuation and activity diagnostic consistency
+
+Discovery category/query continuations carry a request-local catalog revision.
+The host invalidation counter refreshes the existing inventory, but only a changed
+ordered descriptor fingerprint advances the catalog revision. Failed/no-op library
+operations leave continuations usable. Compute the fingerprint only on inventory
+refresh, retain no page snapshots and reuse it for unchanged-generation reads.
+The consumer forwards `next.arguments` unchanged. A changed registry refuses the
+stale continuation before returning entries; restart the selector without offset
+or revision. This guards dynamic tool registration/removal without retaining a
+second catalog. Continuation admission uses the same input rules and registered
+category choices as direct invocation, including mutually exclusive selectors.
+
+Activity diagnostic `phaseLabel` represents accepted live leaves, independently
+of the visible authored stage. A coordinator update cannot hide a running child;
+a completed or rejected event cannot describe ongoing execution. Once all calls
+finish the diagnostic phase belongs to the provider. Raw incoming events remain
+recorded for causal analysis. Stage intent is supplied by the primary agent and
+is not evidence that canvas pixels are currently changing.

@@ -8,6 +8,7 @@ import {
   createRectangle,
   getActiveTool,
   getCoreDocumentDigest,
+  getPersistedDocumentDigest,
   getUndoHistoryDepth,
   undo,
   redo,
@@ -392,6 +393,9 @@ test('text answers keep the original reference only on its message and typing ne
     .first()
     .locator('details')
   await firstActivity.locator('summary').click()
+  await expect(firstActivity.getByRole('list')).toContainText(
+    'Reviewing the drawing'
+  )
   const priorActivity = await firstActivity
     .getByRole('listitem')
     .allTextContents()
@@ -535,7 +539,12 @@ for (const width of [360, 1280]) {
     expect(await getActiveTool(page)).toBe('select')
     await page.getByLabel('Message Agent').fill('')
     await expect(message.getByLabel('Your message')).toContainText(intent)
-    await expect(message.getByLabel('Current activity')).toContainText(intent)
+    await expect(message.getByLabel('Current activity')).toHaveText(
+      'Planning the drawing'
+    )
+    await expect(message.getByLabel('Current activity')).not.toContainText(
+      intent
+    )
     await expect(message.getByLabel('Current activity')).not.toContainText(
       'Draw a blue reference shape'
     )
@@ -951,7 +960,6 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByLabel('Design context', { exact: true })
       ).toHaveCount(0)
-      const objective = 'Trace the reference, then change visibility'
       const events = [
         {
           tool: 'research_design_context',
@@ -959,15 +967,15 @@ for (const width of [360, 1280]) {
           phase: 'executing',
           status: 'running',
           label: 'Running an operation',
-          expected: objective
+          expected: ''
         },
         {
           tool: 'research_design_context',
           callId: 'research-1',
           phase: 'executing',
           status: 'completed',
-          label: 'AI processing',
-          expected: objective
+          label: 'Processing your request',
+          expected: ''
         },
         {
           tool: 'prepare_design',
@@ -975,15 +983,15 @@ for (const width of [360, 1280]) {
           phase: 'preparing',
           status: 'running',
           label: 'Preparing geometry',
-          expected: objective
+          expected: ''
         },
         {
           tool: 'prepare_design',
           callId: 'prepare-1',
           phase: 'preparing',
           status: 'completed',
-          label: 'AI processing',
-          expected: objective
+          label: 'Processing your request',
+          expected: ''
         },
         {
           tool: 'provider',
@@ -991,7 +999,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'AI processing',
+          label: '',
           message: '正在加入窗戶光影反射效果'
         },
         {
@@ -999,7 +1007,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'preparing',
           status: 'running',
-          label: 'Preparing geometry',
+          label: '',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1007,7 +1015,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'running',
-          label: 'Updating the canvas',
+          label: '',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1015,7 +1023,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'completed',
-          label: 'AI processing',
+          label: '',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1023,16 +1031,17 @@ for (const width of [360, 1280]) {
           callId: 'base-status',
           phase: 'applying',
           status: 'running',
-          label: 'Updating the canvas',
-          message: 'Base surfaces'
+          label: '',
+          message: 'Applying window reflections',
+          expected: '正在加入窗戶光影反射效果'
         },
         {
           tool: 'apply_prepared_design',
           callId: 'base-status',
           phase: 'applying',
           status: 'completed',
-          label: 'AI processing',
-          expected: 'Base surfaces'
+          label: '',
+          expected: '正在加入窗戶光影反射效果'
         },
         {
           tool: 'provider',
@@ -1040,8 +1049,8 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'AI processing',
-          expected: 'Base surfaces'
+          label: '',
+          expected: '正在加入窗戶光影反射效果'
         },
         {
           tool: 'provider',
@@ -1049,7 +1058,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'AI processing',
+          label: '',
           message: '正在調整屋頂顏色'
         },
         {
@@ -1058,7 +1067,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'AI processing',
+          label: '',
           message: '正在刪除被覆蓋物件'
         },
         {
@@ -1066,7 +1075,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'completed',
-          label: 'AI processing',
+          label: '',
           message: '正在加入窗戶光影反射效果',
           expected: '正在刪除被覆蓋物件'
         },
@@ -1076,7 +1085,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'AI processing',
+          label: '',
           message: '正在隱藏右下角的標記。'
         }
       ]
@@ -1114,7 +1123,7 @@ for (const width of [360, 1280]) {
         )
         const workMessage = event.expected ?? event.message
         await expect(status.locator(':scope > span')).toHaveText([
-          event.label,
+          ...(event.label ? [event.label] : []),
           ...(workMessage ? [workMessage] : [])
         ])
         if (event.callId === 'provider-gap') {
@@ -1125,7 +1134,7 @@ for (const width of [360, 1280]) {
         }
         await expect(current).toHaveCount(1)
         await expect(current).toHaveText(
-          event.expected ?? event.message ?? objective
+          (event.expected ?? event.message) || event.label
         )
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
@@ -1190,6 +1199,10 @@ for (const width of [360, 1280]) {
         )
         await expect(current).toContainText(message)
       }
+      const stableRows = await page
+        .getByLabel('Operational progress')
+        .locator('li')
+        .count()
       for (const tool of [
         'read_design_context',
         'inspect_drawing',
@@ -1211,16 +1224,17 @@ for (const width of [360, 1280]) {
             }) + '\n'
           )
           await expect(status.locator(':scope > span')).toHaveText([
-            toolStatus === 'running' ? 'Checking the drawing' : 'AI processing',
             '正在隱藏右下角的標記。'
           ])
           await expect(current).toHaveText('正在隱藏右下角的標記。')
         }
       }
+      await expect(
+        page.getByLabel('Operational progress').locator('li')
+      ).toHaveCount(stableRows)
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
-        'AI processing',
         longDescription
       ])
       expect(
@@ -1392,6 +1406,30 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })
       ).toHaveCount(0)
+      await page.setViewportSize({ width, height: 400 })
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await expect
+        .poll(() =>
+          feed.evaluate(
+            (element) => element.scrollHeight > element.clientHeight
+          )
+        )
+        .toBe(true)
+      await expect
+        .poll(() =>
+          feed.evaluate(
+            (element) =>
+              element.scrollHeight - element.scrollTop - element.clientHeight
+          )
+        )
+        .toBeLessThanOrEqual(1)
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toHaveCount(0)
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('activity-reopened-latest.png')
+      })
     } finally {
       response?.end()
       server.closeAllConnections()
@@ -1667,6 +1705,8 @@ for (const width of [360, 1280]) {
   test(`native Frame revisions keep independent Undo history and explain a rejected revision at ${width}px`, async ({
     page
   }, testInfo) => {
+    // Nine independent durable checkpoints each retain the real 3-second flush.
+    test.setTimeout(90_000)
     const initial = prepareDesign(
       {
         type: 'frame',
@@ -1723,9 +1763,45 @@ for (const width of [360, 1280]) {
         json: { batchId: `revision-${requests}`, actions: [action] }
       })
     })
-    await page.goto(createTestDocumentIdentity().url)
+    const documentIdentity = createTestDocumentIdentity()
+    await page.goto(documentIdentity.url)
     await waitForAppReady(page)
+    await page.evaluate(async () => {
+      const { startDocumentPublicationCapture } =
+        await import('../src/testing/runtime-access')
+      startDocumentPublicationCapture('frame-revisions')
+    })
     await page.setViewportSize({ width, height: 800 })
+    const assertDurable = async (
+      expected: Awaited<ReturnType<typeof getCoreDocumentDigest>>,
+      stage: string
+    ) => {
+      const publications = await page.evaluate(async () => {
+        const { readTestCapture, readDocumentPublicationDecodeFailures } =
+          await import('../src/testing/runtime-access')
+        return {
+          publications: readTestCapture('frame-revisions'),
+          decodeFailures:
+            readDocumentPublicationDecodeFailures('frame-revisions')
+        }
+      })
+      const evidencePath = testInfo.outputPath(`frame-${stage}.json`)
+      await writeFile(evidencePath, JSON.stringify(publications))
+      await testInfo.attach(`frame-${stage}`, {
+        path: evidencePath,
+        contentType: 'application/json'
+      })
+      expect(
+        publications.decodeFailures,
+        `${stage} must publish complete canonical slices`
+      ).toEqual([])
+      await expect
+        .poll(() => getPersistedDocumentDigest(documentIdentity.fileId), {
+          message: `${stage} must reach the durable document`,
+          timeout: 10000
+        })
+        .toEqual(expected)
+    }
     const snapshots = [await getCoreDocumentDigest(page)]
     const depth = await getUndoHistoryDepth(page)
     await page.getByRole('button', { name: 'Open Agent' }).click()
@@ -1739,6 +1815,7 @@ for (const width of [360, 1280]) {
       await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
       expect(await getUndoHistoryDepth(page)).toBe(depth + i)
       snapshots.push(await getCoreDocumentDigest(page))
+      await assertDurable(snapshots[i], `edit-${i}`)
     }
     await page
       .getByLabel('Message Agent')
@@ -1773,12 +1850,19 @@ for (const width of [360, 1280]) {
     for (let i = 2; i >= 0; i--) {
       await undo(page)
       expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
+      await assertDurable(snapshots[i], `undo-${i}`)
     }
     for (let i = 1; i <= 3; i++) {
       await redo(page)
       expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
+      await assertDurable(snapshots[i], `redo-${i}`)
     }
     expect(requests).toBe(4)
+    // Restore the canvas-ready viewport used at initial bootstrap.
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.reload()
+    await waitForAppReady(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
   })
 }
 

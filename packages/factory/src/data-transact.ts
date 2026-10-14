@@ -941,12 +941,7 @@ class DataTransact {
               (entry) =>
                 entry.shared && entry.options.sharedDelivery === 'immediate'
             )
-      this.deliverSharedEntries(
-        immediateEntries,
-        immediateEntries.length > 0
-          ? `${this.currentArtifactId}:owner-batch:${journalStart}`
-          : undefined
-      )
+      this.deliverSharedEntries(immediateEntries)
       this.queueImmediatePublicationEntries(
         immediateEntries.filter((entry) =>
           entry.shared?.records.some((record) => record.delivered)
@@ -1774,7 +1769,9 @@ class DataTransact {
     entry,
     record
   }: JournalSharedRecordRef): string | undefined {
-    if (entry.options.sharedDelivery === 'immediate') return
+    if (entry.options.sharedDelivery === 'immediate') {
+      return `${this.currentArtifactId}:immediate:${this.immediatePublicationToken}`
+    }
     if (this.activeDeliverySequence?.mode === 'atomic') {
       return this.activeDeliverySequence.slices[0]?.sliceId
     }
@@ -1804,8 +1801,7 @@ class DataTransact {
 
   private prepareSharedDeliveryBatches(
     entries: readonly TransactionJournalEntry[],
-    orderedRecords?: readonly JournalSharedRecordRef[],
-    deliverySliceIdOverride?: string
+    orderedRecords?: readonly JournalSharedRecordRef[]
   ): SharedDeliveryBatch[] {
     const records = orderedRecords ?? this.sharedRecordRefs(entries)
     const preparedBatches: SharedDeliveryBatch[] = []
@@ -1814,7 +1810,6 @@ class DataTransact {
     records.forEach((recordRef) => {
       const sliceId =
         recordRef.record.batch?.sliceId ??
-        deliverySliceIdOverride ??
         this.deliverySliceIdForRecord(recordRef)
       if (!sliceId) return
       if (
@@ -1959,14 +1954,11 @@ class DataTransact {
   }
 
   private deliverSharedEntries(
-    entries: readonly TransactionJournalEntry[],
-    deliverySliceIdOverride?: string
+    entries: readonly TransactionJournalEntry[]
   ): void {
-    this.prepareSharedDeliveryBatches(
-      entries,
-      undefined,
-      deliverySliceIdOverride
-    ).forEach((batch) => this.deliverPreparedSharedBatch(batch))
+    this.prepareSharedDeliveryBatches(entries).forEach((batch) =>
+      this.deliverPreparedSharedBatch(batch)
+    )
   }
 
   private prepareTransactionEndDeliveryIndex(): readonly SharedDeliveryBatch[] {

@@ -25,7 +25,9 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('action summary')
     expect(general).toContain('work purpose and target')
     expect(general).toContain('The App supplies the observed execution phase')
-    expect(general).toContain('Public commentary may announce')
+    expect(general).toContain('Before preparing inputs for a new stage')
+    expect(general).toContain('single tool finishes')
+    expect(general).toContain('Do not claim pixels are changing')
     expect(general).not.toContain('current action and target')
     expect(general).toContain('Window reflections')
     expect(general).toContain('conversation language')
@@ -70,6 +72,17 @@ describe('stage-owned App guidance', () => {
     expect(AI_OPERATION_INSTRUCTIONS).toContain(
       'Frame bounds do not require background paint'
     )
+  })
+  it('separates capability lookup from external subject research and follows exact native routes', () => {
+    expect(general).toContain(
+      'Tool discovery is separate from reference research'
+    )
+    expect(general).toContain('not subject facts, photographs or source pages')
+    expect(general).toContain('category/query menus')
+    expect(general).toContain(
+      'Execute\nknown tools directly without another lookup'
+    )
+    expect(general).toContain('native tools, not execute_design_batch')
   })
   it('routes missing references without source restrictions or mandatory repeated research', () => {
     expect(general).toContain('Research only missing information')

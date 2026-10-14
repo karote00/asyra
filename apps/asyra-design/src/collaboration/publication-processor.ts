@@ -2,11 +2,7 @@ import type {
   ApplyRemoteCanonicalChangeSlicesInput,
   SharedPublication
 } from './app-protocol-types'
-import {
-  canonicalChangesFromOrganizedPublication,
-  organizeRemotePublication,
-  organizeSourceSlice
-} from './operations'
+import { readDocumentPublicationSlices } from './document-publication'
 import { emitDiagnosticCounter, measureBrowserDragPhase } from '@asyra/utils'
 
 export type DecideRemotePublication = (
@@ -35,18 +31,9 @@ export const createPublicationProcessor =
     if (acceptedPublication === false) {
       return false
     }
-    const acceptedOrganization = measureBrowserDragPhase(
-      'collaboration:remote-input-organize',
-      () => organizeRemotePublication(acceptedPublication)
-    )
     const canonicalSlices = measureBrowserDragPhase(
-      'collaboration:remote-canonical-batch-derive',
-      () =>
-        acceptedOrganization.sourceSlices.map((slice) =>
-          canonicalChangesFromOrganizedPublication(
-            organizeSourceSlice(slice, acceptedOrganization)
-          )
-        )
+      'collaboration:remote-canonical-validate',
+      () => readDocumentPublicationSlices(acceptedPublication)
     )
     canonicalSlices.forEach((canonicalChanges) => {
       canonicalChanges.forEach((change) => {

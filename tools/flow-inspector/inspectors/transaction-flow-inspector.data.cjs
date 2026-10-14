@@ -386,6 +386,7 @@
       outputs: ['artifact:transaction-result'],
       conditions: [
         'Committed transaction-end shared changes flush in journal order.',
+        'Separate state-owner handoffs within one synchronous immediate enqueue window share a source slice; the existing microtask or settlement closes that boundary. Preserve ordered channel batches and reuse the same complete boundary for Undo, Redo and compensation. Never merge asynchronous windows or explicit progressive slices.',
         'A registered transaction-end channel append failure before application requests rollback, restores the provisional history transition, leaves no final undo history or user-action-completed effect, and propagates the delivery failure after restoration.',
         'Partially delivered transaction-end changes are compensated in reverse order when a later append fails before application.',
         'Rolled-back immediate local delivery publishes one compensating inverse.',

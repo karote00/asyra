@@ -42,6 +42,7 @@ import type {
 } from '../src/ai/action-batch-protocol'
 import {
   createLocalOperationTools,
+  localOperationNamespace,
   localToolContent,
   localToolResultInstructions,
   type NativeToolDescriptor
@@ -478,7 +479,7 @@ const runLocalAiProvider = async (
         owner: workflow
       },
       {
-        name: 'design_operations',
+        name: localOperationNamespace,
         description:
           'Discover basic design APIs; create, edit, organize and inspect the current canvas through registered operations.',
         owner: operations

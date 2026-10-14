@@ -1,3 +1,10 @@
+/** App payload carried by the generic publication envelope. */
+export const DocumentPublicationContract = {
+  channel: 'document',
+  event: 'applyCanonicalChanges',
+  version: 1
+} as const
+
 export type AppJsonPrimitive = boolean | null | number | string
 
 export type AppJsonValue =

@@ -390,3 +390,88 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
   expect(() => store.get(result.snapshotId)).toThrow(/stale/)
   store.dispose()
 })
+
+it('serves transient region IDs without reserving capacity or changing borrowed pins', () => {
+  const { store, source } = fixture()
+  const signal = new AbortController().signal
+  const query = {
+    scope: 'region' as const,
+    bounds: { x: 0, y: 0, width: 100, height: 100 },
+    result: 'ids' as const,
+    allMatches: true
+  }
+  const retained = Array.from({ length: 8 }, (_, x) =>
+    store.read(
+      { ...query, bounds: { ...query.bounds, x }, delivery: 'reference' },
+      signal
+    )
+  )
+  const reads = source.getElementIdsInBounds.mock.calls.length
+  const borrowed = store.read({ ...query, delivery: 'transient' }, signal)
+  expect(borrowed.elementIds).toEqual(['a', 'b', 'c'])
+  expect(borrowed).not.toHaveProperty('snapshotId')
+  expect(borrowed).not.toHaveProperty('leaseId')
+  expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads)
+  for (let x = 8; x < 24; x++) {
+    const result = store.read(
+      { ...query, bounds: { ...query.bounds, x }, delivery: 'transient' },
+      signal
+    )
+    expect(result.elementIds).toEqual(['a', 'b', 'c'])
+    expect(result).not.toHaveProperty('snapshotId')
+  }
+  expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads + 16)
+  for (const snapshot of retained)
+    expect(
+      store.get(snapshot.snapshotId, snapshot.leaseId, signal).orderedIds
+    ).toEqual(['a', 'b', 'c'])
+  expect(() =>
+    store.read({ ...query, bounds: { ...query.bounds, x: 99 } }, signal)
+  ).toThrow(/capacity/)
+  store.dispose()
+})
+
+it.each([
+  { scope: 'selection' },
+  {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 },
+    result: 'elements',
+    allMatches: true
+  },
+  {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 },
+    result: 'ids'
+  },
+  { scope: 'snapshot', snapshotId: 'missing' }
+])('rejects unsupported transient delivery before selection: %j', (query) => {
+  const { store, source } = fixture()
+  expect(() =>
+    store.read({ ...query, delivery: 'transient' } as never)
+  ).toThrow(/Transient/)
+  expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
+  store.dispose()
+})
+
+it('does not publish transient values when cancellation occurs during the canonical read', () => {
+  const { store, source } = fixture()
+  const controller = new AbortController()
+  source.getElementIdsInBounds = vi.fn(() => {
+    controller.abort()
+    return ['a']
+  })
+  expect(() =>
+    store.read(
+      {
+        scope: 'region',
+        bounds: { x: 0, y: 0, width: 1, height: 1 },
+        result: 'ids',
+        allMatches: true,
+        delivery: 'transient'
+      },
+      controller.signal
+    )
+  ).toThrow()
+  store.dispose()
+})

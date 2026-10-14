@@ -554,6 +554,8 @@ const AiConversationFeed = ({
       setShowJump(false)
     }
   }, [confirmationSnapshot, conversationSnapshot])
+  // Initial following must run before measuring an already overflowing feed.
+  useLayoutEffect(syncScrollPosition, [expandedHistory, syncScrollPosition])
 
   const submitDrawingDetailChoice = useCallback(
     (turnId: string, optionId: AiDrawingDetailOptionId) => {
@@ -653,7 +655,6 @@ const AiConversationFeed = ({
               >
                 <details
                   onToggle={(event) => {
-                    syncScrollPosition()
                     const open = event.currentTarget.open
                     setExpandedHistory((previous) => {
                       const next = new Set(previous)
@@ -716,7 +717,9 @@ const AiConversationFeed = ({
                     aria-label="Current activity"
                     className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
-                    <span>{activity.current.label}</span>
+                    {activity.current.label ? (
+                      <span>{activity.current.label}</span>
+                    ) : null}
                     {activity.current.message ? (
                       <span
                         className="line-clamp-3"

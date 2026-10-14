@@ -198,6 +198,7 @@
               "Deliver original PNG, JPEG and WebP reference bytes at admitted dimensions; advertise and verify the actual Code Mode string-result forwarding contract without MCP content-array assumptions or base64 text output; verify actual model image visibility independently of acquisition; keep canvas snapshot limits scoped to inspection",
               "Distinguish usable output, unavailable preparation and partial receipts from transport completion",
               "Resolve exact semantic operation identities and categories against current admitted schemas; never infer an adapter from lexical similarity",
+              "Batch schema, admission and discovery use the same admitted action set. Explicit review/capture advertises the actual native wrapper and input wrapping; ambiguous or missing registration is unavailable. All lookup/recovery views preserve this route. Compact lexical menus include native/saved capabilities without consuming full schema delivery; reference research stays separate and no query automatically dispatches another tool.",
               "Batch known semantic operations through request-local registry indexes; exact names may resolve unique semantic identities, while ambiguous identities return candidates without choosing an execution route",
               "Advertise registry-derived category choices and return current recovery choices on unknown lookup without a canvas exchange",
               "Classify redundant model routes with explicit replacements while preserving public UI methods and primitive capability coverage",
@@ -205,6 +206,7 @@
               "Resolve prepared target identities at the unique registered argument path; reject conflicts and ambiguity before dispatch; preserve reference order for aligned new-value patches",
               "Validate supplied union discriminators and report only the applicable branch when uniquely selected; preserve ambiguous alternatives",
               "Use native discovery and Code Mode; configured model and effort remain unchanged",
+              "All discovery pages share count/offset/complete/next. Returned continuations carry the request-local catalog revision; host invalidation refreshes the existing inventory, but only changed ordered descriptors advance that revision. Failed/no-op library operations preserve page identity; fingerprint work occurs only on inventory refresh without retaining page snapshots; stale continuations require an explicit selector restart without silently skipping changed entries. Validate continuation arguments through the same input owner and registered category choices. Count returned API and native-tool entries together, reject invalid boundaries and continuations at invocation output, and accept empty complete results. Compact menus do not consume exact-schema delivery.",
               "Keep shared guidance concise and expose task-specific image procedures through discovered tool definitions",
               "Startup guidance defers stage procedures to tool contracts; a ready first part requires no model-authored plan, and chosen spatial projection uses the existing preparation owner without prescribing a viewpoint",
               "The existing combined workflow owns deterministic handoffs, preserves prepared identities and completed step outcomes on later failure, observes each internal call and never replays uncertain writes",
@@ -451,14 +453,14 @@
               "The existing mutation executor reports settlement synchronously after canonical publication and before yielding. Structural group/ungroup/move results publish ordered live membership and immutable full receipts through the existing retained-context owner. Compact delivery exports typed snapshot/lease/count references only after original receipt checking; declared element-list consumers resolve inside synchronous mutation admission. Historical receipt reads do not refresh target authority. Post-write retention/publication failure preserves settlement and cannot replay or authorize a dependent write.",
               "Reviewed attachment parent, workspace and canonical inspection stamp are checked inside the first synchronous mutation callback, after queue admission; reject expired or missing evidence before writes. Own admitted later slices may advance the stamp and retain ordinary per-slice canonical checks; never recheck review after successful mutation or replay it.",
               "Every delivered reusable query snapshot is pinned until explicit release, request settlement, cancellation or disposal. Page and column delivery preserve the same ownership as reference delivery; capacity backpressure preserves accepted consumers. Borrowed leases remain with their caller, locally acquired query mappings release their own leases, and revision checks remain authoritative before one plural write",
-              "AI query delivery defaults to references; explicit page and column reads remain available. Separate control-plane release from query production so successful reads guarantee live handle schemas. The host publishes actual browser snapshot and lease identities, refuses borrowed release and acknowledges terminal remote cleanup; browser request-finally owns cleanup on cancellation.",
+              "AI query delivery defaults to references; explicit page and column reads remain available. Separate control-plane release from query production so successful retained reads guarantee live handle schemas; the separately registered resolve_design_targets action declares a value-only result without changing retained read contracts. The host publishes actual browser snapshot and lease identities, refuses borrowed release and acknowledges terminal remote cleanup; browser request-finally owns cleanup on cancellation.",
               "Retained query references enforce their creating request identity on remote reads, release and mutation consumption; same-workspace foreign handles reject and terminal cleanup affects only that request.",
               "Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural fills and explicit parent-local coordinates",
               "Ordinary creation appends canonical membership without copying prior siblings; public children snapshots remain independent, pre-handoff failures remove attempted membership and accepted handoff retains Factory recovery ownership",
               "Preset UI membership preparation belongs to its observer lifetime and exact published map/flat identities. Structural deltas update affected memberships without rereading unrelated rows; immutable complete flattened output and existing ordering remain. Load, reseed, foreign publication, failure, incomplete membership and disposal invalidate reuse.",
               "Plural subtree deletion shares canonical hierarchy and orphan-property preparation for the call, preserves deleted-instance retention and reversible evidence, and rejects invalid targets before mutation",
               "Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets",
-              "Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write",
+              "Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write. Transient complete-region identity delivery publishes no reusable handle and reserves no retained capacity. A matching retained selection can supply copied identities without changing caller leases; other page/reference/column delivery remains pinned.",
               "Canonical finite name/type/hierarchy/lock predicates filter workspace candidates or current retained snapshot identities before delivery. Refinement repeats no spatial query, preserves independent leases and stale rejection, returns compact references by default and rejects exact expectedCount mismatch before target use.",
               "Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority",
               "Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior",
@@ -782,17 +784,17 @@
               "artifact:visible-outcome"
             ],
             "conditions": [
-              "Keep the stable request objective separate from transient authored commentary; new authored call work supersedes older commentary, and inherited text resolves from live ancestry rather than becoming a copied authored purpose",
-              "After the last live call completes, retain its established work subject independently and show observed provider processing. New authored work supersedes that subject; retries reset it. No completed call remains active. Concurrent work uses shared live ancestry/request purpose rather than the latest sibling. Reducer decisions record selected purpose identity/source, actual phase label and active-call count.",
-              "Keep purpose identity, scope and authored revision across phase-only updates. Live leaves outrank coordinating ancestors; concurrent leaves show their shared live purpose or the original request objective and operation count. Conversation and panel preserve that objective through clarification and retry.",
+              "Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retain it across child calls until replacement, explicit completion, retry or settlement. Never copy inherited text as authored call purpose.",
+              "Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes call-scoped purpose; never retain a completed work subject as current activity. Explicit request-commentary completion retires that purpose. With no authored purpose show only an honest observed phase, not the original objective. Concrete stage intent takes presentation precedence; otherwise use the genuinely live common call purpose. Generic phases and child counts do not change visible entries when purpose is unchanged. Concurrent work uses shared live ancestry/request purpose rather than the latest sibling. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.",
+              "Keep purpose identity, scope and authored revision across phase-only updates. Live leaves outrank coordinating ancestors; concurrent leaves use stage intent or their shared live purpose; preserve actual phases and counts in diagnostics independently of visible deduplication. Conversation and panel preserve that objective through clarification and retry.",
               "Current activity consumes the turn-owned incremental projection; raw progress and collapsed history are not replayed on each publication. Historical snapshots remain point-in-time reads.",
               "Preserve successful work and intended Undo commits",
               "Terminal host and store cleanup are separately observed after active calls settle. Attempt each owner and record errors and duration without replacing the original product result/failure, replaying writes or claiming successful cleanup.",
               "Show settled explanations in the conversation without a duplicate canvas completion/Undo overlay; ordinary toolbar and keyboard history actions remain available",
-              "Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate identical phase-purpose pairs and let lifecycle state override current work",
+              "Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate identical visible purposes and let lifecycle state override current work",
               "The App activity state machine owns legal lifecycle transitions: saving and stopping accept settlement, settled rejects late progress, approval resumes on admitted running progress, and authoritative conversation outcomes remain distinct from provider evidence",
               "Activity provenance is explicit: authored work starts replace older work, system labels and late acknowledgements do not; call identity and producer order survive transport and stale invocation events are ignored",
-              "The provider classifies registered-operation descriptions as system activity while retaining their diagnostic expectedResult/expectationSource. Recorded purpose uses the same normalized kind as UI activity. Only actual public/model-authored work may retire request-stage commentary; the consumer retains existing genuine supersession semantics.",
+              "The provider classifies registered-operation descriptions as system activity while retaining their diagnostic expectedResult/expectationSource. Recorded purpose uses the same normalized kind as UI activity. Only a new request-stage purpose or its explicit completion retires current stage commentary during the same running attempt; individual authored call starts do not retire the stage.",
               "Bound the visible current-purpose message to three lines while preserving full DOM and title text. Presentation does not change source purpose, language, lifecycle or freshness.",
               "Retained query mutations validate membership revision, locks and complete targets inside the synchronous mutation boundary; invalidated or evicted results produce recoverable rejection before writes",
               "Confirm the captured publication sequence through the current document generation and backend durable watermark; keep drawing completion distinct from durable, unavailable and local-only storage",
@@ -2412,8 +2414,13 @@
               "The crdt-7076 sample request uses the same HTTP action-batch interceptor regardless of socket availability. The interceptor reads the checked-in ordered AiActionBatch instruction file directly; Actor A executes it through ordinary Runtime and canonical owners, while a connected Actor B receives only Actor A CRDT publications.",
               "With the socket unavailable, the same HTTP action-batch execution creates all 7,076 canonical elements locally and attempts the same publication route; the failed transport remains recoverable through the ordinary outbox and reports its operation error to the console.",
               "Each accepted remote publication performs canonical apply and one cooperative projection settlement with zero persistence, zero Undo, and zero echo. peer-applied acknowledges canonical and projection completion and never waits for receiver durability.",
-              "The lifecycle gives each immutable Factory publication to the explicit Factory-owned outbox append boundary by identity. The outbox waits for the IndexedDB durable put before socket send but performs no second source-side publication clone or recursive freeze; its generic append boundary still snapshots mutable input.",
+              "The App source adapter prepares one immutable canonical document publication from Factory evidence before outbox retention. The lifecycle gives that immutable document publication to the retained outbox append boundary by identity. The outbox waits for the IndexedDB durable put before socket send but performs no second source-side publication clone or recursive freeze; its generic append boundary still snapshots mutable input.",
+              "The document session retains source preparation failures as non-sendable conflicts in the same file-scoped outbox. Recovery stops at the first conflict; later actions, Undo/Redo and compensation cannot overtake it. Reload retains failures, persistence confirmation rejects them, and reconnect cannot clear an unresolved storage failure.",
+              "Recovery retains a durable prefix and a failure-only immutable Core recovery document. Blocked reopen preserves local edits without server overwrite or inbound peer apply. Explicit retry flushes retained evidence, re-prepares failed sources, and resumes ordinary ordered admission; unresolved failure cannot confirm durability. Optional recovery-document capture failure preserves source evidence and retry; export waits for retention and reports a missing document honestly. Explicit Reset from isolation completes a temporary session handshake and the server barrier before clearing recovery. Normal publications capture no document snapshot.",
+              "Accepted-source cleanup failure enters actionable recovery with exact source identity. Live rejection never reloads Core or clears history; replay restoration is explicit. Reconnect and activation recheck recovery/disposal after asynchronous boundaries. The Core-facing adapter owns pending preparation and expires its checkpoint load source at disposal; failed old sessions cannot clear successor handles. Retry and reopen recheck active edits. Failed generation retirement remains blocked until storage retry completes the authoritative binding; retired-generation drafts cannot replace the current checkpoint.",
               "The server persistence queue separates its bounded admission buffer from each durable HTTP request: at most 256 publications and 256 MiB of accepted evidence may wait behind one in-flight request, while each durable request drains only one contiguous prefix within an 8 MiB soft wire-byte limit and permits one larger indivisible publication to travel alone.",
+              "The backend validates explicit canonical operations, not internal channel ordering. Invalid requests, rejected canonical operations, durable conflicts and storage failures produce distinct error categories without advancing the checkpoint on failure.",
+              "Exact retry identity includes canonical content and semantic source metadata. Acknowledgements confirm the requested batch ending sequence even if the checkpoint has since advanced; failed writes do not advance either content or identity ledgers.",
               "Server canonical deletion materialization preserves the same exact owned-property closure and save evidence while traversing its growing reference queue with one monotonic cursor and one visited set; it never performs repeated array-head compaction for high-detail shared or cyclic property graphs.",
               "When accepted publications temporarily fill the bounded persistence queue, source admission waits for durable capacity and resumes in original sequence without closing the source socket, dropping the request, or changing the publication payload.",
               "The request-time Agent transport remains separate from socket document bootstrap and never doubles as a checkpoint, pending tail, or CRDT state owner.",
@@ -2451,6 +2458,8 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/server/document-materializer.ts",
+              "apps/asyra-design/server/document-persistence-error.ts",
+              "apps/asyra-design/server/__tests__/document-backend-errors.test.ts",
               "apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts",
               "apps/asyra-design/package.json",
               "apps/asyra-design/README.md",
@@ -2474,7 +2483,10 @@
               "apps/asyra-design/src/render-app/collaboration-mode.ts",
               "apps/asyra-design/src/collaboration/lifecycle.ts",
               "apps/asyra-design/src/collaboration/publication-outbox.ts",
+              "apps/asyra-design/src/render-app/document-recovery-controls.tsx",
+              "apps/asyra-design/src/render-app/__tests__/document-recovery-controls.test.tsx",
               "apps/asyra-design/src/init/__tests__/collaboration-publication-outbox.test.ts",
+              "apps/asyra-design/src/init/__tests__/collaboration-lifecycle.test.ts",
               "apps/asyra-design/src/render-app/__tests__/collaboration-mode.test.ts",
               "apps/asyra-design/src/render-app/__tests__/render-app-strict-mode.test.tsx",
               "apps/asyra-design/src/toolbar/tool-button.tsx",
@@ -19478,6 +19490,12 @@
         },
         "links": [
           {
+            "id": "document-publication-contract",
+            "kind": "authority",
+            "label": "Current App document publication contract",
+            "href": "../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md#explicit-canonical-document-publications"
+          },
+          {
             "id": "realignment-plan",
             "kind": "authority",
             "label": "Canonical projection and collaboration contract",
@@ -20123,14 +20141,62 @@
             "failureOwnerStepId": "project-render-state"
           },
           {
+            "id": "prepare-document-publication",
+            "order": 0,
+            "laneId": "collaboration-transport",
+            "title": "Prepare explicit document operations",
+            "ownerPackage": "Asyra Design publication adapter",
+            "purpose": "Translate completed Factory evidence once into the document contract before durable local retention and transport.",
+            "inputs": [
+              "artifact:shared-publication"
+            ],
+            "outputs": [
+              "artifact:document-publication",
+              "artifact:document-preparation-failure"
+            ],
+            "conditions": [
+              "Filter local-only channels and derive ordered canonical changes only at the publishing App boundary.",
+              "Preserve publication, artifact, transaction, semantic slice and publication-level compensation identity; transmit no duplicate raw owner events.",
+              "Retain the prepared immutable publication for retries. Receivers consume explicit operations without reconstructing source channel adjacency.",
+              "Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff."
+            ],
+            "bypasses": [
+              "A publication containing only local channels produces no document publication.",
+              "Invalid source evidence reports an explicit preparation failure to the App document session; it never reaches transport."
+            ],
+            "allowedContributors": [
+              "artifact:shared-publication",
+              "App document channel filter",
+              "canonical source classification"
+            ],
+            "forbiddenContributors": [
+              "receiver-side raw event reconstruction",
+              "transport batch layout as operation semantics",
+              "a second history or state owner"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/collaboration/factory-adapter.ts",
+              "apps/asyra-design/src/collaboration/document-publication.ts",
+              "apps/asyra-design/src/collaboration/operations.ts",
+              "apps/asyra-design/src/testing/runtime-access.ts",
+              "apps/asyra-design/src/init/__tests__/collaboration-factory.test.ts",
+              "apps/asyra-design/src/init/__tests__/document-publication.test.ts"
+            ],
+            "specRefs": [
+              "#collaboration-provider-contract"
+            ],
+            "failureOwnerStepId": "prepare-document-publication"
+          },
+          {
             "id": "publish-shared-publication",
             "order": 1,
             "laneId": "collaboration-transport",
             "title": "Publish one shared publication",
             "ownerPackage": "@asyra/collaboration",
-            "purpose": "Preserve each Factory SharedPublication as one ordered transaction batch through one required outbound Provider call and one required async inbound callback.",
+            "purpose": "Preserve each App-prepared SharedPublication as one ordered transaction batch through one required outbound Provider call and one required async inbound callback.",
             "inputs": [
-              "artifact:shared-publication",
+              "artifact:document-publication",
               "artifact:transport-received-publication"
             ],
             "outputs": [
@@ -20142,7 +20208,7 @@
               "Outbound delivery calls the required Provider.sendPublication path once per publication.",
               "Inbound delivery uses the required Provider.onPublication path with one exclusive async consumer.",
               "The inbound consumer promise remains pending until App canonical apply completes or fails.",
-              "Collaboration consumes only Factory-owned SharedPublication artifacts and never derives a publication from generic staged status.",
+              "Collaboration consumes the App-prepared source publication while preserving Factory identity; it never derives operations or publications from generic staged status.",
               "Generic Collaboration owns no wire grouping, concurrency constant, queue watermark, codec, or retry mode."
             ],
             "bypasses": [
@@ -20151,7 +20217,7 @@
               "Awareness remains a separate ephemeral route."
             ],
             "allowedContributors": [
-              "artifact:shared-publication",
+              "artifact:document-publication",
               "artifact:transport-received-publication",
               "required Provider.sendPublication",
               "required Provider.onPublication",
@@ -20253,7 +20319,8 @@
             "conditions": [
               "One source publication owns exactly one remote Factory transaction and different publications are not merged.",
               "App policy validates the inbound publication before canonical mutation.",
-              "Decode every ordered source slice completely, including work before and after each subtree restore; persistence and live apply consume the same exact insertion entries without guessing a contiguous range.",
+              "Peer apply validates explicit canonical document operations prepared by the publishing App without deriving semantics from transport batch layout.",
+              "Preserve source publication and semantic slice order, exact insertion entries and publication-level compensation identity. Reject raw event payloads at receiving document boundaries without a fallback or checkpoint advancement.",
               "The App submits one remote canonical request through Core and the same prepared Props and Scene mutations.",
               "The App calls exactly one Core.applyCanonicalChanges with one ordered CanonicalChange request for the accepted publication.",
               "A property-only remote follow-up derives computed state locally before Render.",
@@ -20281,6 +20348,8 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/collaboration/factory-adapter.ts",
+              "apps/asyra-design/src/collaboration/document-publication.ts",
+              "apps/asyra-design/src/init/__tests__/document-publication.test.ts",
               "apps/asyra-design/src/collaboration/lifecycle.ts",
               "apps/asyra-design/src/collaboration/operations.ts",
               "apps/asyra-design/src/collaboration/publication-processor.ts",
@@ -20519,11 +20588,30 @@
           {
             "id": "route-factory-publication-to-collaboration",
             "from": "record-and-deliver-transaction-batch",
-            "to": "publish-shared-publication",
+            "to": "prepare-document-publication",
             "kind": "publication",
             "predicate": "Factory produced an eligible staged slice, committed remainder, Undo, Redo, or rollback compensation as one SharedPublication.",
             "producedArtifacts": [
               "artifact:shared-publication"
+            ]
+          },
+          {
+            "id": "route-document-preparation-failure",
+            "from": "prepare-document-publication",
+            "kind": "terminal",
+            "predicate": "Preparation failed; the required App document session callback owns durable non-sendable conflict retention and blocks later dependent sends.",
+            "producedArtifacts": [
+              "artifact:document-preparation-failure"
+            ]
+          },
+          {
+            "id": "route-document-publication-to-collaboration",
+            "from": "prepare-document-publication",
+            "to": "publish-shared-publication",
+            "kind": "publication",
+            "predicate": "The publishing App has prepared explicit ordered document operations with original publication identity.",
+            "producedArtifacts": [
+              "artifact:document-publication"
             ]
           },
           {
@@ -20721,6 +20809,22 @@
             "id": "artifact:shared-publication",
             "ownerStepId": "record-and-deliver-transaction-batch",
             "channel": "Factory required batch shared channel with stable transaction, publication, slice, and compensation identity",
+            "consumerStepIds": [
+              "prepare-document-publication"
+            ],
+            "terminal": false
+          },
+          {
+            "id": "artifact:document-preparation-failure",
+            "ownerStepId": "prepare-document-publication",
+            "channel": "Required App session failure callback with original immutable source and error; durable failure retention belongs to open-socket-authoritative-document-session in the drawing performance flow",
+            "consumerStepIds": [],
+            "terminal": true
+          },
+          {
+            "id": "artifact:document-publication",
+            "ownerStepId": "prepare-document-publication",
+            "channel": "App canonical operations in the existing immutable SharedPublication envelope",
             "consumerStepIds": [
               "publish-shared-publication"
             ],
@@ -33218,6 +33322,7 @@
             ],
             "conditions": [
               "Committed transaction-end shared changes flush in journal order.",
+              "Separate state-owner handoffs within one synchronous immediate enqueue window share a source slice; the existing microtask or settlement closes that boundary. Preserve ordered channel batches and reuse the same complete boundary for Undo, Redo and compensation. Never merge asynchronous windows or explicit progressive slices.",
               "A registered transaction-end channel append failure before application requests rollback, restores the provisional history transition, leaves no final undo history or user-action-completed effect, and propagates the delivery failure after restoration.",
               "Partially delivered transaction-end changes are compensated in reverse order when a later append fails before application.",
               "Rolled-back immediate local delivery publishes one compensating inverse.",
