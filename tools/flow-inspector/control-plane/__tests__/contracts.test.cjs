@@ -494,3 +494,66 @@ test('Design execution admission locates all existing cases within their seven o
     }
   }
 })
+
+test('Render viewport admission retains six exact responsibility locations', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'packages/render/navigation-flow-contracts.json'
+  )
+  assert.equal(
+    contract.specPath,
+    contract.architectureDefinition.authority.specPath
+  )
+  const headings = fs
+    .readFileSync(path.join(root, contract.specPath), 'utf8')
+    .split('\n')
+    .filter((line) => /^#{1,6} /.test(line))
+    .map(
+      (line) => '#' + line.replace(/^#+ /, '').toLowerCase().replace(/ /g, '-')
+    )
+  const step = contract.architectureDefinition.steps.find(
+    (item) => item.id === 'orchestrate-render-adapter'
+  )
+  for (const reference of step.specRefs)
+    assert.ok(headings.includes(reference), reference)
+  assert.equal(contract.cases.length, 6)
+  for (const item of contract.cases) {
+    assert.equal(item.stepId, 'orchestrate-render-adapter')
+    assert.ok(
+      item.implementationPaths?.includes(
+        'packages/render/src/layers/viewport/viewport-layer.ts'
+      ),
+      item.id
+    )
+    for (const file of item.implementationPaths)
+      assert.ok(fs.statSync(path.join(root, file)).isFile())
+  }
+})
+
+test('Render viewport source config runs all unchanged cases without proof environment', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const temporary = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/viewport-config-')
+  )
+  const env = { ...process.env, TMPDIR: temporary }
+  delete env.FLOW_PROOF_SOURCE
+  delete env.FLOW_PROOF_SCENARIO
+  const result = require('node:child_process').spawnSync(
+    process.execPath,
+    [
+      require.resolve('vitest/vitest.mjs'),
+      'run',
+      '--config',
+      'packages/render/src/__tests__/navigation-flow.config.ts',
+      '--reporter=json'
+    ],
+    { cwd: root, env, encoding: 'utf8', timeout: 30000 }
+  )
+  assert.equal(result.status, 0, result.stdout + result.stderr)
+  const report = JSON.parse(result.stdout)
+  assert.equal(report.numPassedTests, 6)
+  assert.equal(report.numFailedTests, 0)
+})

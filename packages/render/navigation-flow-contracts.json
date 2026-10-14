@@ -3,7 +3,7 @@
   "manifestPath": "packages/render/navigation-flow-contracts.json",
   "targetId": "render-engine-boundary",
   "architecturePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
-  "specPath": "docs/ai/framework/packages/render.md",
+  "specPath": "docs/ai/framework/plans/completed/render-engine-boundary-plan.md",
   "testFile": "packages/render/src/__tests__/viewport-layer.test.ts",
   "configFile": "packages/render/src/__tests__/navigation-flow.config.ts",
   "workspaceSources": [
@@ -32,32 +32,54 @@
         {
           "id": "navigation.camera",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer isolates camera transforms without grouping ordinary containers or redrawing geometry"
+          "testName": "ViewportLayer isolates camera transforms without grouping ordinary containers or redrawing geometry",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts",
+            "packages/render/src/types/render-object.ts"
+          ]
         },
         {
           "id": "preserve.1",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer reports the exact number of projected RenderLayer elements without exposing the map"
+          "testName": "ViewportLayer reports the exact number of projected RenderLayer elements without exposing the map",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts",
+            "packages/render/src/layers/scene/render-layer.ts"
+          ]
         },
         {
           "id": "preserve.2",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer forwards the committed sibling index when adding an element"
+          "testName": "ViewportLayer forwards the committed sibling index when adding an element",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts",
+            "packages/render/src/layers/scene/render-layer.ts"
+          ]
         },
         {
           "id": "preserve.3",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer fitBounds centers 'portrait' content in the visible viewport"
+          "testName": "ViewportLayer fitBounds centers 'portrait' content in the visible viewport",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts"
+          ]
         },
         {
           "id": "preserve.4",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer fitBounds centers 'landscape' content in the visible viewport"
+          "testName": "ViewportLayer fitBounds centers 'landscape' content in the visible viewport",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts"
+          ]
         },
         {
           "id": "navigation.optional-capability",
           "stepId": "orchestrate-render-adapter",
-          "testName": "ViewportLayer keeps optional transform hints out of engines that do not advertise them"
+          "testName": "ViewportLayer keeps optional transform hints out of engines that do not advertise them",
+          "implementationPaths": [
+            "packages/render/src/layers/viewport/viewport-layer.ts",
+            "packages/render/src/types/render-object.ts"
+          ]
         }
       ],
       "handoffs": [

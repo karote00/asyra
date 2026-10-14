@@ -42,6 +42,12 @@ function localizationFixture() {
     { recursive: true, force: false }
   )
   for (const file of [
+    'packages/render/navigation-flow-contracts.json',
+    'packages/render/src/__tests__/navigation-flow.config.ts',
+    'packages/render/src/__tests__/viewport-layer.test.ts',
+    'tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs',
+    'docs/ai/framework/packages/render.md',
+    'docs/ai/framework/plans/completed/render-engine-boundary-plan.md',
     'packages/factory/history-replay-flow-contracts.json',
     'packages/factory/src/__tests__/history-replay.config.ts',
     'packages/factory/src/__tests__/factory-journal-history.test.ts',
@@ -57,6 +63,11 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    loadContract(
+      root,
+      undefined,
+      'packages/render/navigation-flow-contracts.json'
+    ),
     executionContract,
     loadContract(root),
     loadContract(
@@ -169,6 +180,32 @@ function localizationFixture() {
       `
       )
     },
+    mutateViewport() {
+      const manifest = JSON.parse(
+        fs.readFileSync(
+          path.join(root, 'packages/render/navigation-flow-contracts.json'),
+          'utf8'
+        )
+      )
+      const { file, from, to } = manifest.scenarios.find(
+        (item) => item.id === 'omit-retention'
+      ).mutation
+      const original = fs.readFileSync(path.join(repository, file), 'utf8')
+      originals.set(file, original)
+      assert.equal(original.split(from).length, 2)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
+    },
+    failViewportSourceEntry() {
+      const file = 'packages/render-engine/src/index.ts'
+      const original = fs.readFileSync(path.join(repository, file), 'utf8')
+      originals.set(file, original)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(
+        path.join(repository, file),
+        original + "\nthrow new Error('Captured render engine entry failed')\n"
+      )
+    },
     mutateReplay(scenario) {
       const contract = JSON.parse(
         fs.readFileSync(
@@ -246,6 +283,11 @@ function localizationFixture() {
         configFile = path.join(
           repository,
           'packages/factory/src/__tests__/history-replay.config.ts'
+        )
+      if (kind === 'viewport')
+        configFile = path.join(
+          repository,
+          'packages/render/src/__tests__/navigation-flow.config.ts'
         )
       if (kind === 'app') configFile = config
       if (kind === 'execution')

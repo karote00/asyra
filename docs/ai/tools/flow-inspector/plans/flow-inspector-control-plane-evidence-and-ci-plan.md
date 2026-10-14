@@ -212,6 +212,92 @@ The documented ordinary command retained 23 mapped results without issues.
 Bounded self-review found no remaining actionable issue. This closes the selected
 coverage slice only; remote CI and merge remain separate from local completion.
 
+## Selected Render viewport coverage - 2026-10-15
+
+Activated after PR #324 merged, based on `2e0164c51`, under the Bounded
+Result-Source Slice. Register the existing six ViewportLayer cases from
+`packages/render/navigation-flow-contracts.json` at the existing
+`render-engine-boundary` / `orchestrate-render-adapter` node. Preserve all case,
+target and observation identities. Exact locations name ViewportLayer and its
+RenderLayer or RenderObjectRuntime collaborators, not concrete engine internals.
+
+Design review: the unchanged tests already detect the declared `omit-retention`
+fault. Their configuration currently requires proof environment variables and
+does not resolve public workspace imports from source. Make that configuration
+usable in an ordinary checkout and captured source with explicit root/subpath
+aliases and one worker; reject undeclared workspace imports. The recording engine
+is a contract test adapter. These cases prove viewport orchestration, not actual
+Pixi output, complete rendering correctness or a diagnosed root cause.
+
+The existing invocation produces original Vitest results; admission supplies exact
+case locations; localization stores the observation; API, CLI and Board consume
+the same retained record. No second runner, mapping registry or schema is needed.
+
+Execution cards (core proof Inspector and CORE_PROOF.md remain authoritative):
+
+1. `admit-proof-contract` / Admission: consume the current Render specification,
+   exact existing test identities and render-engine-boundary architecture; emit
+   admitted precise paths and source-only configuration. Extend this step's
+   boundary to the selected manifest/config, retaining its admission tests.
+   No missing contract may bypass admission. Contributors are existing manifest
+   and architecture only; runtime guessing and UI semantics are forbidden.
+   Gate: admission regression, unchanged six-case baseline and declared negative
+   proof. Stop on unmatched cases or an undetectable mutation.
+2. `localize-test-results` / Ordinary Test Failure Localization: consume admitted
+   mapping and original reporter output; emit immutable observations. Register
+   the selected manifest and extend the existing runtime fixture/tests within
+   this step's allowlist. Incomplete execution has no completed passing authority;
+   no guessed nodes, accepted-baseline changes or dispatch. Prove baseline, fault,
+   recovery, source-entry setup failure, CLI equality and historical retention.
+   Existing shared tests retain unmapped/ambiguous/stale/partial-run obligations.
+3. `render-proof-board` / Board: consume service-owned observations through the
+   existing target route; extend the existing browser test only. Verify node and
+   implementation selection, original error, API equality, recovery and historical
+   selection; inspect desktop/narrow screenshots. No missing evidence is green,
+   no client-side mapping or command execution. Regenerate the existing catalog
+   after the admission boundary changes. Failure owners remain each named step.
+
+Frozen discovery and repair scope is this manifest/config, default registration,
+direct admission/localization/Board tests and fixtures, core Inspector boundary,
+generated catalog and current documentation. Required gates: focused tests,
+full control-plane and Board suites, package tests, selected Render proof and
+original core proof/candidate, naming, CI scope/test placement, scoped lint/format,
+tool typecheck and App/tool build, diff review and exact-head Changeset admission.
+Recheck the matching Inspector before advancing each segment. No runtime edits,
+other package test sets, new producers, rendering optimizations, Playwright/CI
+ingestion, commands, comments or orchestration. An unrelated defect is deferred;
+an in-scope regression is corrected and rechecked. Stop for an ownership conflict
+or required out-of-scope change. This slice does not close the supporting plan.
+
+Local completion: admission and ordinary-startup regressions failed before the
+manifest/config correction; runtime localization initially retained zero mapped
+viewport cases before registration. All six unchanged cases now pass and map;
+the camera fault fails exactly its declared case, source-entry failure retains
+execution evidence without a guessed node, and recovery preserves immutable
+history. The documented ordinary command retained six mapped cases with no issues.
+
+Final scoped suite: 60 passed. Full control-plane: 507 passed, two environment-
+conditional skips. Full Board: 21 passed, two retained-live-evidence skips.
+Desktop/narrow screenshots were inspected. Package tests (12 React, 100 contracts),
+68 scope/placement tests, 15 naming tests, scoped lint/authored formatting,
+generator equality, tool typecheck and 21-task App/tool build passed. The original
+three-flow/five-negative/nine-obligation proof and candidate passed; Render's
+six-case baseline, exact negative and recovery proof passed. Initial App tests
+started before clean-worktree build outputs existed; the complete post-build
+focused and full suites passed without weakening assertions. Bounded final review
+found no remaining actionable issue. This closes only the selected Render slice;
+remote CI and merge remain separate from local completion.
+
+Stage review correction: the viewport manifest previously paired the Render
+package document with architecture section references owned by the completed
+Render-Engine Boundary plan. Align its specification path with the selected
+Inspector authority. A test-first regression proves the previous mismatch and
+checks that every selected step reference resolves to a heading in that document.
+Runtime and Board regressions assert the same retained specification path and
+section. Preserve existing historical records and case identities; new observations
+carry the corrected contract digest. The shared runtime fixture includes the
+selected authoritative document so observation fingerprints remain available.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

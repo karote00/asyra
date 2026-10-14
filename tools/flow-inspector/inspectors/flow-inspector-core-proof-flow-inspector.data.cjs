@@ -619,6 +619,8 @@ const data = {
       implementationBoundary: [
         'packages/factory/flow-contracts.json',
         'packages/factory/history-replay-flow-contracts.json',
+        'packages/render/navigation-flow-contracts.json',
+        'packages/render/src/__tests__/navigation-flow.config.ts',
         'tools/flow-inspector/control-plane/contracts.cjs',
         'tools/flow-inspector/control-plane/__tests__/contracts.test.cjs',
         'apps/asyra-design/undo-redo-flow-contracts.json',
