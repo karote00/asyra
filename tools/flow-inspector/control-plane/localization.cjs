@@ -31,6 +31,7 @@ const validFailureDetails = (value, execution = false) =>
       )
   )
 const DEFAULT_MANIFESTS = [
+  'apps/asyra-design/flow-contracts.json',
   'packages/factory/history-replay-flow-contracts.json',
   'packages/factory/flow-contracts.json',
   'apps/asyra-design/undo-redo-flow-contracts.json'

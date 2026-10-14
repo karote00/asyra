@@ -127,6 +127,91 @@ and candidate proof passed. Bounded final review found no further actionable
 in-scope defect; whole-file strict proof remains intentionally unavailable for
 this partial mapping. Remote CI and merge are separate from local completion.
 
+## Selected Design execution coverage - 2026-10-14
+
+Activated after PR #323 merged, based on `8a3edb7f4`. This bounded slice
+registers the existing 23 execution-owner cases at their seven existing nodes:
+request, compose, prepare, apply, inspect, settle and observe. It retains the
+existing Vitest reporter, manifest, architecture and read/UI owners. No model
+invocation or App/Framework product behavior change is authorized.
+
+Plan review found that the existing proof config can resolve mutable workspace
+dist output instead of captured source and cannot start in a clean checkout.
+The selected config must explicitly resolve the public entries and transitive
+workspace dependencies used by this test closure, reject undeclared workspace
+imports, and run the
+unchanged file with one worker. Source aliases are test execution configuration,
+not another mapping or ownership registry. Baseline and the existing registered-
+tool, access-classification and canonical-evidence fault scenarios must pass
+their expected oracles
+before this source is registered by default. Stop if existing assertions cannot
+detect the selected faults; do not rewrite product tests to manufacture evidence.
+
+Revised feasibility review: direct-entry aliases alone are insufficient because
+basic API contracts import Core and its transitive package exports. The isolated
+config must cover that full source closure, including render-engine exports,
+and reject any later undeclared dependency. The existing capture authority still
+owns which runtime bytes are admitted; the config only resolves test imports.
+No production runtime edit is needed or authorized for this correction.
+
+Execution cards and handoffs:
+
+1. `admit-proof-contract`: refine the existing manifest with exact case source
+   locations inside existing architecture boundaries; retain all identities and
+   handoffs. Inputs are the current specification, cases and public package
+   exports. Outputs are admitted locations and a source-only execution config.
+   Allowed edits are this manifest/config, admission tests and their direct
+   contract documentation. No runtime changes, guessed causes or new case IDs.
+   Prove all 23 unchanged baseline cases and all three declared fault scenarios.
+2. `localize-test-results`: add the manifest to the default list and extend the
+   existing permanent fixture/runtime tests. Inputs are original Vitest results
+   and admitted contracts; output is retained per-case evidence at the proper
+   node. Prove separate and combined faults, original errors, seven-node passing
+   inventory, recovery, immutable historical failures and read API/CLI equality.
+   Preserve existing unknown, duplicate, stale, missing and partial-run rules.
+   No schema, reporter, cache or command-dispatch redesign is authorized.
+3. `render-proof-board`: reuse the existing target page and renderer with real
+   multi-node observations; extend permanent browser regression for node/source
+   selection, simultaneous failures and historical recovery. Inspect screenshots.
+   Regenerate the existing catalog when architecture ownership boundaries change.
+
+Before each segment, reread its exact core Inspector contract and the selected
+execution architecture/spec. The core admission boundary includes this product
+manifest/config; localization and Board use their existing implementation files.
+Failure owners remain admission, localization and rendering respectively; a test
+failure identifies a responsibility boundary, not a proven root cause.
+
+Frozen review scope is the selected manifest/config, default registration,
+existing localization fixture/tests, Board test, direct docs/catalog consumers
+and resulting regressions. Required gates are the focused scenarios, full
+control-plane and Board suites, package tests, original core proof/candidate,
+naming, CI scope/test placement, scoped lint/format, typecheck/build, diff review
+and exact-head Changeset admission. Broader App runtime repairs, new producers,
+Playwright/CI ingestion, model execution, task dispatch, comments and command
+buttons are excluded. Do not close the whole supporting plan for this slice.
+
+Local completion: all 23 unchanged cases passed; three independent negative
+scenarios failed exactly compose, apply and inspect, then recovered on the same
+captured source. Ordinary reporter tests also preserved accumulated failures,
+CLI/API equality and immutable history. The source-entry regression fails with
+the original config (incorrect passing execution), and passes with source-only
+resolution and explicit setup-error evidence. Admission initially failed without
+precise locations; default localization initially left these cases unmapped.
+Review corrected definition-delivery and source-provenance paths to the actual
+called owners and added the workflow entry for ordered composition.
+
+Full control-plane: 502 passed, two conditional skips. After final mapping and
+regression additions, the affected admission/localization suites passed all 56
+cases. Final full Board: 20 passed, two retained-live-evidence skips; desktop and
+narrow screenshots inspected. An initial catalog-frame load timeout overlapped
+a build; the isolated layout recheck and complete post-build Board run passed
+without changing UI assertions or timeouts. Package React tests and 100 contracts,
+68 scope/placement tests, 15 naming tests, scoped lint/format, App/tool typechecks
+and the 21-task build passed. Original core proof and candidate proof passed.
+The documented ordinary command retained 23 mapped results without issues.
+Bounded self-review found no remaining actionable issue. This closes the selected
+coverage slice only; remote CI and merge remain separate from local completion.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

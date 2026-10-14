@@ -621,7 +621,9 @@ const data = {
         'packages/factory/history-replay-flow-contracts.json',
         'tools/flow-inspector/control-plane/contracts.cjs',
         'tools/flow-inspector/control-plane/__tests__/contracts.test.cjs',
-        'apps/asyra-design/undo-redo-flow-contracts.json'
+        'apps/asyra-design/undo-redo-flow-contracts.json',
+        'apps/asyra-design/flow-contracts.json',
+        'apps/asyra-design/server/__tests__/execution-flow.config.ts'
       ],
       specRefs: ['#admission'],
       failureOwnerStepId: 'admit-proof-contract'
