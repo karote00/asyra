@@ -119,6 +119,28 @@ also passed. New HTTP cases preserve query rejection outside the exact read-only
 selector. Remote Linux validation is checked separately after the review update
 is pushed; local success does not replace that result.
 
+## PR 322 second review repair
+
+The bounded follow-up to `0089b009e` repairs two findings. The observation reader
+must retain new failures alongside unresolved prior failures when a duplicate
+identity group executes only partially. A permanent regression first failed on
+the missing new observation, then passed after the reader correction; it also
+checks repeated reads, complete recovery and immutable history.
+
+The Linux Board CI run reached Chrome but failed all three localization browser
+cases. Its job omitted the App build prerequisite already used by the
+control-plane job. The Board job now runs that same dependency-aware build before
+its tests. Browser cases assert the two expected mapped assertion failures before
+checking UI behavior, so import/setup errors cannot stand in for injected faults.
+No renderer semantics, mapping authority, dependencies or deferred features change.
+
+Validation passed: 494 control-plane tests (two platform skips), 16 Board tests
+(two retained-live-evidence skips), package React tests and 100 package contracts,
+68 scope/placement contracts, naming, lint, formatting, typecheck and build. The
+App dependency-aware build completed all 20 tasks. The original three-flow,
+five-negative, nine-obligation proof and candidate proof also passed. Remote CI
+for this correction remains a separate verification after push.
+
 ## Planning baseline and original gaps
 
 Read-only inventory baseline: `0dd9e2c0e779b34a8f4bda66384b9ff10440d2f6`.

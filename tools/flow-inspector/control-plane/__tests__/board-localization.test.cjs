@@ -8,6 +8,17 @@ const { chromium, expect } = require('@playwright/test')
 const { localizationFixture } = require('./localization-runtime-fixture.cjs')
 const { startServer } = require('../server.cjs')
 
+function assertAppFailures(fault) {
+  assert.equal(fault.result.code, 1, fault.result.output)
+  assert.equal(fault.record.cases.length, 2, fault.result.output)
+  for (const item of fault.record.cases) {
+    assert.equal(item.status, 'failed', fault.result.output)
+    assert.equal(item.resolution, 'mapped', JSON.stringify(fault.record.issues))
+    assert.ok(item.failures.length > 0)
+    assert.equal(item.locations[0].stepId, 'select-history-replay')
+  }
+}
+
 async function openBoard(t, fixture) {
   const temporary = path.join(fixture.directory, 'browser')
   fs.mkdirSync(temporary)
@@ -56,7 +67,7 @@ test(
     const { page, server } = await openBoard(t, fixture)
     fixture.mutate('app')
     const fault = await fixture.run('app')
-    assert.equal(fault.result.code, 1)
+    assertAppFailures(fault)
     const errors = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(server.origin + '/history-shortcut')
@@ -114,8 +125,10 @@ test(
     const { page, server } = await openBoard(t, fixture)
     fixture.mutate('app')
     const fault = await fixture.run('app')
+    assertAppFailures(fault)
     fixture.restore()
-    await fixture.run('app')
+    const recovered = await fixture.run('app')
+    assert.equal(recovered.result.code, 0, recovered.result.output)
     let delayed
     const received = new Promise((resolve) => {
       delayed = resolve
@@ -174,8 +187,10 @@ test(
     const { page, server } = await openBoard(t, fixture)
     fixture.mutate('app')
     const fault = await fixture.run('app')
+    assertAppFailures(fault)
     fixture.restore()
-    await fixture.run('app')
+    const recovered = await fixture.run('app')
+    assert.equal(recovered.result.code, 0, recovered.result.output)
     await page.goto(server.origin + '/transaction-atomicity')
     const frame = page.frameLocator('iframe')
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)

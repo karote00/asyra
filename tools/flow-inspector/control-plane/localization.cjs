@@ -382,8 +382,16 @@ function createObservationReader(directory, options = {}) {
           )
           // A filtered invocation supplies skipped siblings, not recovery evidence.
           // An ambiguous group must settle completely before retiring its failures.
-          if (incomplete && previous?.some((item) => item.status === 'failed'))
+          if (
+            incomplete &&
+            previous?.some((item) => item.status === 'failed')
+          ) {
+            current.set(key, [
+              ...previous.filter((item) => item.status === 'failed'),
+              ...items
+            ])
             continue
+          }
           current.set(key, items)
         }
       }

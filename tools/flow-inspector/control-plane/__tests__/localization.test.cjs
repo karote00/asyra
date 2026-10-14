@@ -252,3 +252,55 @@ test('simultaneous runs do not use random UUID ordering to hide a failure', () =
     1
   )
 })
+
+test('partial duplicate groups retain new failures until complete recovery', () => {
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/mixed-identity-')
+  )
+  const first = context()
+  first.startedAt = '2026-10-14T00:00:00.000Z'
+  const oldFailure = localizeReport(root, first, report([failure()]))
+  saveObservation(dir, oldFailure)
+  const next = context()
+  next.startedAt = '2026-10-14T00:00:01.000Z'
+  const newFailure = localizeReport(
+    root,
+    next,
+    report([
+      { ...failure(), failureMessages: ['new failure from the executed case'] },
+      { ...failure(), status: 'skipped', failureMessages: [] }
+    ])
+  )
+  saveObservation(dir, newFailure)
+  const reader = createObservationReader(dir)
+  const failures = () =>
+    reader.list().currentCases.filter((item) => item.status === 'failed')
+  assert.deepEqual(
+    failures().map((item) => item.id),
+    [oldFailure.cases[0].id, newFailure.cases[0].id]
+  )
+  assert.deepEqual(
+    failures().flatMap((item) => item.failures),
+    [
+      'expected Undo to have been called once',
+      'new failure from the executed case'
+    ]
+  )
+  assert.equal(failures().length, 2)
+  const recovered = context()
+  recovered.startedAt = '2026-10-14T00:00:02.000Z'
+  saveObservation(
+    dir,
+    localizeReport(
+      root,
+      recovered,
+      report([
+        { ...failure(), status: 'passed', failureMessages: [] },
+        { ...failure(), status: 'passed', failureMessages: [] }
+      ])
+    )
+  )
+  assert.deepEqual(failures(), [])
+  assert.deepEqual(reader.get(first.id), oldFailure)
+  assert.deepEqual(reader.get(next.id), newFailure)
+})

@@ -2246,7 +2246,8 @@ sources or re-localize cases on polling. Currentness refers to the latest observ
 run for an exact test scope, not continuously current source. Historic results
 remain accessible, and one scope's pass cannot clear another scope's failure.
 Skipped, pending, todo and unknown observations cannot retire an executed failure;
-a partially executed ambiguous identity group keeps its prior failures until
+a partially executed ambiguous identity group exposes newly executed failures
+alongside its prior failures until
 complete execution resolves the group. Equal start timestamps retain concurrent
 results instead of choosing authority by random run-id ordering.
 

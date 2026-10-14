@@ -68,6 +68,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Build Asyra Design for Flow Inspector app proofs
+        run: yarn turbo run react:build --filter=@asyra/asyra-design... --concurrency=2
+
       - name: Verify Flow Inspector board
         env:
           FLOW_PROOF_URL: http://127.0.0.1:4318
