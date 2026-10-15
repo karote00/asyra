@@ -451,3 +451,11 @@ A/B fault inventories and unchanged runner behavior retain their existing eviden
 The stage goal remains explicit selected-case actions and retained investigation
 notes. The next goal remains review/merge and closure of A/B/C, without a new
 mandatory stage or expanded debugging responsibilities.
+
+A second complete Stage C review found that preview hashing inherited JSON
+request field order, so equivalent API/CLI selectors could fail confirmation.
+The action owner now constructs the selector fields in canonical order. A formal
+regression first reproduced unequal digests, then verified matching previews,
+successful confirmation and duplicate suppression after the fix. The bounded
+node-interaction suite covers the repair and its direct execution consumers;
+unchanged Board, build and A/B evidence is reused.

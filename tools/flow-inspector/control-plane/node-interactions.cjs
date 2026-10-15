@@ -189,7 +189,8 @@ function createNodeInteractions(
       manifests.map((manifest) => loadContract(root, undefined, manifest))
     )
     const value = {
-      ...request,
+      runId: request.runId,
+      caseId: request.caseId,
       sourceDigest: source.digest,
       originalSourceDigest: selection.record.source?.digest ?? null,
       contractDigest: selection.contract.digest,

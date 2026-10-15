@@ -836,3 +836,29 @@ test('node interaction implementation belongs to the action owner only', () => {
     )
   }
 })
+
+test('equivalent preview request field orders confirm the same selected rerun', async (t) => {
+  let calls = 0
+  const f = setup(t, {
+    nodeInteractionOptions: {
+      execute: async () => {
+        calls++
+        return { code: 1, reason: 'test runner unavailable', output: '' }
+      }
+    }
+  })
+  const reordered = { caseId: f.selection.caseId, runId: f.selection.runId }
+  const preview = f.service.previewNodeRerun(reordered, LOCAL_ACTOR)
+  const canonical = f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
+  assert.equal(preview.previewDigest, canonical.previewDigest)
+  const request = {
+    ...reordered,
+    requestId: randomUUID(),
+    previewDigest: preview.previewDigest
+  }
+  f.service.startNodeRerun(request, LOCAL_ACTOR)
+  await settled(f.service, f.selection)
+  assert.equal(calls, 1)
+  f.service.startNodeRerun(request, LOCAL_ACTOR)
+  assert.equal(calls, 1)
+})
