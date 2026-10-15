@@ -3,7 +3,7 @@
   "manifestPath": "packages/render-engine-pixi/navigation-flow-contracts.json",
   "targetId": "render-engine-boundary",
   "architecturePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
-  "specPath": "docs/ai/framework/packages/render-engine-pixi.md",
+  "specPath": "docs/ai/framework/plans/completed/render-engine-boundary-plan.md",
   "testFile": "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts",
   "configFile": "packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts",
   "workspaceSources": [
@@ -29,137 +29,218 @@
         {
           "id": "navigation.material",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine shares equivalent gradient resources only for the lifetime of their handles"
+          "testName": "PixiRenderEngine shares equivalent gradient resources only for the lifetime of their handles",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "navigation.camera",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine applies transform domains only to explicitly requested containers"
+          "testName": "PixiRenderEngine applies transform domains only to explicitly requested containers",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.2",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine updates text density for zoom and inherited scale without work on stable flush or pan"
+          "testName": "PixiRenderEngine updates text density for zoom and inherited scale without work on stable flush or pan",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.3",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine materializes literal text and releases only owned text on clear and destroy"
+          "testName": "PixiRenderEngine materializes literal text and releases only owned text on clear and destroy",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.4",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine aligns short text within its explicit layout box"
+          "testName": "PixiRenderEngine aligns short text within its explicit layout box",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.5",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine captures text at target-relative density and restores screen density on success and failure"
+          "testName": "PixiRenderEngine captures text at target-relative density and restores screen density on success and failure",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.6",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine measures native local content without snapshot extraction or world coordinates"
+          "testName": "PixiRenderEngine measures native local content without snapshot extraction or world coordinates",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.7",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine preserves native pixels and captures explicit regions without downsampling"
+          "testName": "PixiRenderEngine preserves native pixels and captures explicit regions without downsampling",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.8",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine extracts the real target at bounded resolution and rejects empty captures"
+          "testName": "PixiRenderEngine extracts the real target at bounded resolution and rejects empty captures",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.9",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine preserves the current bounded device resolution and resize target"
+          "testName": "PixiRenderEngine preserves the current bounded device resolution and resize target",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.10",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine executes the abstract contract through a Pixi-specific test adapter"
+          "testName": "PixiRenderEngine executes the abstract contract through a Pixi-specific test adapter",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.11",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine hit-tests an empty stage before any pointer event without rendering"
+          "testName": "PixiRenderEngine hit-tests an empty stage before any pointer event without rendering",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.12",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine hit-tests the owned stage and maps its target after the event root changes"
+          "testName": "PixiRenderEngine hit-tests the owned stage and maps its target after the event root changes",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.13",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine maps object, draw, viewport, query, resize, frame, and flush commands"
+          "testName": "PixiRenderEngine maps object, draw, viewport, query, resize, frame, and flush commands",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.14",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine omits undefined optional paint fields while preserving explicit alpha"
+          "testName": "PixiRenderEngine omits undefined optional paint fields while preserving explicit alpha",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.15",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine maps the engine-neutral Graphics batching property to Pixi batch mode"
+          "testName": "PixiRenderEngine maps the engine-neutral Graphics batching property to Pixi batch mode",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.16",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine normalizes Pixi pointer events to opaque handles"
+          "testName": "PixiRenderEngine normalizes Pixi pointer events to opaque handles",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.17",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine translates abstract gradient and raster descriptors into Pixi fill resources"
+          "testName": "PixiRenderEngine translates abstract gradient and raster descriptors into Pixi fill resources",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.18",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine updates Pixi mesh geometry and engine-facing object properties"
+          "testName": "PixiRenderEngine updates Pixi mesh geometry and engine-facing object properties",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.19",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine destroys engine-owned mesh geometry without destroying the shared texture"
+          "testName": "PixiRenderEngine destroys engine-owned mesh geometry without destroying the shared texture",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.20",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine creates procedural Pixi resources for radial, angular, and diamond gradients"
+          "testName": "PixiRenderEngine creates procedural Pixi resources for radial, angular, and diamond gradients",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "navigation.lifecycle",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine isolates instances and cleans partial initialization deterministically"
+          "testName": "PixiRenderEngine isolates instances and cleans partial initialization deterministically",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.fractional-0",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine captures fractional bounds 249.98 x 249.99999999999997 without truncating content"
+          "testName": "PixiRenderEngine captures fractional bounds 249.98 x 249.99999999999997 without truncating content",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.fractional-1",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine captures fractional bounds 250.00000000000003 x 250 without truncating content"
+          "testName": "PixiRenderEngine captures fractional bounds 250.00000000000003 x 250 without truncating content",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.fractional-2",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine captures fractional bounds 0.25 x 0.75 without truncating content"
+          "testName": "PixiRenderEngine captures fractional bounds 0.25 x 0.75 without truncating content",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "preserve.fractional-3",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine captures fractional bounds 1024.25 x 512.5 without truncating content"
+          "testName": "PixiRenderEngine captures fractional bounds 1024.25 x 512.5 without truncating content",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         },
         {
           "id": "navigation.frame-delivery",
           "stepId": "execute-render-engine",
-          "testName": "PixiRenderEngine delivers demanded frames without comparing frame timestamps to request time"
+          "testName": "PixiRenderEngine delivers demanded frames without comparing frame timestamps to request time",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         }
       ],
       "handoffs": [

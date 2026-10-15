@@ -41,12 +41,24 @@ function localizationFixture() {
     path.join(repository, 'apps/asyra-design/src'),
     { recursive: true, force: false }
   )
+  const pixiContract = loadContract(
+    root,
+    undefined,
+    'packages/render-engine-pixi/navigation-flow-contracts.json'
+  )
   const recipeContract = loadContract(
     root,
     undefined,
     'packages/ai-agent-runtime/flow-contracts.json'
   )
   for (const file of [
+    ...[
+      'manifestPath',
+      'configFile',
+      'testFile',
+      'architecturePath',
+      'specPath'
+    ].map((key) => pixiContract[key]),
     ...[
       'manifestPath',
       'configFile',
@@ -75,6 +87,7 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    pixiContract,
     recipeContract,
     loadContract(
       root,
@@ -136,6 +149,16 @@ function localizationFixture() {
     if (file)
       originals.set(file, fs.readFileSync(path.join(repository, file), 'utf8'))
   }
+  const pixiManifest = JSON.parse(
+    fs.readFileSync(path.join(root, pixiContract.manifestPath), 'utf8')
+  )
+  const pixiMutation = pixiManifest.scenarios.find(
+    (item) => item.id === 'omit-retention'
+  ).mutation
+  originals.set(
+    pixiMutation.file,
+    fs.readFileSync(path.join(repository, pixiMutation.file), 'utf8')
+  )
   const config = path.join(directory, 'app.config.mjs')
   fs.writeFileSync(
     config,
@@ -199,6 +222,19 @@ function localizationFixture() {
           })
         })
       `
+      )
+    },
+    mutatePixi() {
+      const { file, from, to } = pixiMutation
+      const original = originals.get(file)
+      assert.equal(original.split(from).length, 2)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
+    },
+    restorePixi() {
+      fs.writeFileSync(
+        path.join(repository, pixiMutation.file),
+        originals.get(pixiMutation.file)
       )
     },
     mutateRecipe(id) {
@@ -318,6 +354,8 @@ function localizationFixture() {
         repository,
         'packages/factory/src/__tests__/flow-proof.config.ts'
       )
+      if (kind === 'pixi')
+        configFile = path.join(repository, pixiContract.configFile)
       if (kind === 'recipe')
         configFile = path.join(repository, recipeContract.configFile)
       if (kind === 'history')

@@ -39920,6 +39920,8 @@
               "packages/factory/history-replay-flow-contracts.json",
               "packages/render/navigation-flow-contracts.json",
               "packages/render/src/__tests__/navigation-flow.config.ts",
+              "packages/render-engine-pixi/navigation-flow-contracts.json",
+              "packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts",
               "packages/ai-agent-runtime/flow-contracts.json",
               "packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts",
               "tools/flow-inspector/control-plane/contracts.cjs",
