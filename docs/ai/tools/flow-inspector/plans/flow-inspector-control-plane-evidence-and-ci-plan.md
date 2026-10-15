@@ -555,8 +555,8 @@ The main objective is to localize all 16 unchanged cases in
 `packages/preset/src/__tests__/vector-compound-fill.test.ts`, using its existing
 coverage manifest/config and the `evaluate-vector-material` node on
 `render-delta-update`. Retain the Preset package specification, case IDs, handoffs,
-workspace authority and the existing `omit-evenodd` negative. Seven direct coverage
-cases name `vector-compound-fill.ts`; nine strategy integration cases also name
+workspace authority and the existing `omit-evenodd` negative. Eight direct coverage
+cases name `vector-compound-fill.ts`; eight strategy integration cases also name
 `vector.ts` and `fills.ts`. These are investigation entries, not root-cause claims.
 
 Readiness review: the test invokes the neutral coverage owner directly and through
@@ -624,6 +624,20 @@ Logs are under `tmp/flow-inspector/coverage/`, with emitted permanent-fixture
 artifacts. Final diff/direct-consumer review found no remaining in-scope issue.
 Original runtime, assertions, case identities, handoffs and workspace authority
 remain unchanged. This completes the selected slice only.
+
+PR #329 review correction: the curved-contour oracle calls the compound-fill
+owner directly, so its exact location must exclude vector strategy and paint
+helpers. The original seven/nine split was incorrect; the current inventory is
+eight direct coverage cases and eight strategy integration cases. The strengthened
+admission assertion failed on the overly broad location before the mapping fix.
+This correction retains the original case identity, responsibility node, product
+assertions and runtime. Review stays within admission and its direct consumers.
+Post-correction validation passed: 523 control-plane cases (two conditional skips),
+25 Board cases (two retained-live skips), 12 React and 100 package contracts,
+15 naming cases, 68 scope/placement cases, typecheck, scoped ESLint, formatting,
+generated equality and 21 build tasks. Coverage proof retained all 16 obligations
+and its negative; core proof/candidate also passed. The final bounded review found
+no additional in-scope issue. Logs: `tmp/flow-inspector/coverage/review-329-*.log`.
 
 Next-stage objective: review a bounded existing Design Playwright/CI result source
 for original-report ingestion and exact node localization. Choose its actual

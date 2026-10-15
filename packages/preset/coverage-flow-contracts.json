@@ -157,8 +157,6 @@
           "stepId": "evaluate-vector-material",
           "testName": "projects curved compound contours within the declared subdivision tolerance",
           "implementationPaths": [
-            "packages/preset/src/components/vector.ts",
-            "packages/preset/src/components/fills.ts",
             "packages/preset/src/components/vector-compound-fill.ts"
           ]
         },

@@ -750,7 +750,8 @@ test('Preset compound coverage admission retains exact locations and the explici
     assert.equal(item.stepId, step.id)
     assert.deepEqual(
       item.implementationPaths,
-      item.testName.startsWith('paint-independent vector coverage ')
+      item.testName.startsWith('paint-independent vector coverage ') ||
+        item.id === 'coverage.preserve.14'
         ? ['packages/preset/src/components/vector-compound-fill.ts']
         : [
             'packages/preset/src/components/vector.ts',
