@@ -228,6 +228,17 @@ async function startServer(
             /^\/api\/targets\/([a-f0-9-]{36})$/
           )
           if (targetRoute) return send(200, service.getTarget(targetRoute[1]))
+          const nodeRoute = route.pathname.match(
+            /^\/api\/node-context\/([a-f0-9-]{36})\/([0-9]+)$/
+          )
+          if (nodeRoute)
+            return send(
+              200,
+              service.nodeContext(
+                nodeRoute[1],
+                nodeRoute[1] + ':' + nodeRoute[2]
+              )
+            )
           if (route.pathname === '/api/test-results')
             return send(200, {
               ...service.testResults(),
@@ -324,10 +335,32 @@ async function startServer(
           !timingSafeEqual(Buffer.from(provided), Buffer.from(capability))
         )
           throw new ActionError(403, 'Action is not authorized')
-        let bodyLimit = 4096
+        let bodyLimit = route.pathname === '/api/node-comments' ? 16384 : 4096
         if (route.pathname === '/api/ci/ingest') bodyLimit = 2097152
         if (route.pathname === '/api/targets/decide') bodyLimit = 131072
         const body = await readBody(request, bodyLimit)
+        if (route.pathname === '/api/node-reruns/preview')
+          return send(200, service.previewNodeRerun(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/node-reruns')
+          return send(202, service.startNodeRerun(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/node-comments')
+          return send(200, service.addNodeComment(body, LOCAL_ACTOR))
+        const nodeCancel = route.pathname.match(
+          /^\/api\/node-reruns\/([a-f0-9-]{36})\/cancel$/
+        )
+        if (nodeCancel) {
+          if (
+            !body ||
+            typeof body !== 'object' ||
+            Array.isArray(body) ||
+            Object.keys(body).length
+          )
+            throw new ActionError(400, 'Invalid cancellation request')
+          return send(
+            200,
+            await service.cancelNodeRerun(nodeCancel[1], LOCAL_ACTOR)
+          )
+        }
         const scopedReviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review\/scoped$/
         )

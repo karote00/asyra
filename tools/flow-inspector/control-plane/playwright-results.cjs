@@ -51,9 +51,30 @@ function normalizeReport(root, context, original) {
   const configurations = new Set(
     context.contracts.map((contract) => contract.configFile)
   )
+  let expectedConfig = path.join(root, [...configurations][0] ?? '')
+  if (context.executionConfig) {
+    try {
+      const binding = context.executionConfig
+      if (
+        binding.originalConfigFile !== [...configurations][0] ||
+        typeof binding.digest !== 'string'
+      )
+        throw new Error('Invalid original config binding')
+      expectedConfig = safePath(root, binding.path)
+      if (
+        createHash('sha256')
+          .update(fs.readFileSync(expectedConfig))
+          .digest('hex') !== binding.digest
+      )
+        throw new Error('Execution config changed')
+    } catch {
+      stale = true
+      errors.push('Selected rerun execution config is unavailable or changed')
+    }
+  }
   if (
     configurations.size !== 1 ||
-    original?.config?.configFile !== path.join(root, [...configurations][0])
+    original?.config?.configFile !== expectedConfig
   ) {
     stale = true
     errors.push(
@@ -319,7 +340,8 @@ function begin(
   reportPath,
   environment = process.env,
   command,
-  source = 'functional'
+  source = 'functional',
+  executionConfig
 ) {
   const report = safePath(root, reportPath)
   if (fs.existsSync(report) || fs.existsSync(report + '.context.json'))
@@ -337,6 +359,7 @@ function begin(
     }
   const context = localization.beginObservation(root, {
     manifestPaths: sourceManifestPaths(source),
+    executionConfig,
     command: command ?? {
       ...defaultCommand,
       environment: Object.fromEntries(

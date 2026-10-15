@@ -2444,3 +2444,78 @@ Existing Framework Vitest observations retain their exact selected cases. A
 shared package never marks all consumers failed: only observed failures count;
 passing consumers and unexecuted consumers remain distinct. Partial reruns do
 not erase other failures or alter historical records.
+
+## Node interactions
+
+The local action service owns optional interactions on an explicitly selected
+retained mapped case and its declared node. Read-only localization remains
+available without invoking any interaction. GET context exposes original evidence,
+append-only notes and retained action outcomes; it performs no source capture or
+execution. Evidence links open the immutable original report, not a regenerated
+summary. Invalid, missing or changed references cannot silently retarget notes.
+
+Rerun preview resolves the current admitted mapping for the exact file, full test
+name and project. Only the supported Vitest/Playwright adapters construct argv
+from that mapping. Recorded argv/environment is display-only. Preview includes
+original and current source fingerprints; explicit confirmation pins the current
+fingerprint and mapping. A changed preview is rejected, while source fixes since
+the original failure are supported with a fresh preview. The bounded runner
+executes one selected test with the original config and existing reporter; missing
+results are failures of execution, never success. Execution results link to the
+new ordinary observation, independently of process exit status.
+
+Verify permission is checked before preview or execution effects. A request UUID
+identifies one immutable selection, actor and preview; duplicates return that
+action and conflicting reuse rejects. Service execution exclusion, cancellation,
+time/output bounds and shutdown apply. Interrupted retained actions never resume
+automatically. Record the runner PID on spawn; a still-live recorded process or
+process group blocks new service execution after restart without sending signals
+to an unverified replacement process. Failure to persist the PID aborts execution. Storage failures are visible and cannot acknowledge an unsaved
+comment or launch an unrecorded action.
+
+Comments require `comment` permission and a request UUID, literal text of 1-2000
+characters and a retained case selector. The service supplies actor and timestamp
+and freezes the original run, case and node context separately from evidence.
+Comments are append-only: corrections are additional comments; edit/delete are
+not supported. A changed or missing reference is explicitly historical/unavailable
+when viewed, preserving the original note. No comment changes a verdict or source.
+Local attribution identifies the configured action actor; it is not multi-user
+authentication. Board, HTTP and CLI consume the same service records.
+
+Acceptance requires exact selection, denied/stale/duplicate requests without
+extra work, restart and storage-error behavior, retained source/result linkage,
+literal comments and reference changes, and Board interaction on desktop/narrow
+viewports. Human/AI investigation remains outside this action owner.
+
+Selected Playwright reruns retain an explicit execution-config binding: the
+service-owned wrapper path and content digest plus the admitted original config.
+The wrapper preserves the original product config and test directory, and only
+requires owned servers instead of reusing an unrelated checkout. Ingestion
+requires the exact bound wrapper bytes and original mapping; reports keep their
+actual config path. Ordinary invocations still require their original config.
+A changed/missing wrapper or foreign config is stale evidence, never repaired
+report data. The observation ID is propagated to participant attachments.
+
+HTTP reads use `GET /api/node-context/<run-id>/<case-index>`. Mutations retain
+the existing per-start capability and loopback Host/Origin checks:
+`POST /api/node-reruns/preview` accepts `{runId, caseId}`;
+`POST /api/node-reruns` adds `{requestId, previewDigest}` from the explicit preview;
+`POST /api/node-reruns/<request-id>/cancel` accepts `{}`;
+`POST /api/node-comments` accepts `{runId, caseId, requestId, text}`.
+Service actor permissions remain authoritative and are never taken from JSON.
+The configured local actor has `verify`, `cancel` and `comment` capabilities.
+
+CLI consumers use the running service with `--url <loopback-origin>`:
+`node-context <run-id> <case-id>`, `node-preview <request.json>`,
+`node-rerun <request.json>`, `node-comment <request.json>` and
+`node-cancel <request-id>`. Request files stay inside the selected repository.
+Inspection/submission success is not test success; poll node context and inspect
+`observedStatus`, `issues`, process outcome and the linked ordinary observation.
+The Board exposes the same context next to the selected failed test, including
+retained historical failures. Original report links remain available independently.
+
+Vitest's positional filename filter is substring-based. Selected reruns therefore
+import the original configuration into a service-generated execution config with
+an exact test-file include; other config options and excludes remain intact.
+This prevents copied fixture files from running merely because their suffix
+matches. The original contract config remains the source-fingerprint authority.

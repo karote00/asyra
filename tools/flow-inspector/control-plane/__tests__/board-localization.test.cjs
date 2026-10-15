@@ -1006,3 +1006,90 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       t.diagnostic('Playwright Board evidence: ' + fixture.repository)
     }
   )
+
+test(
+  'node interactions preserve drafts, literal notes and original evidence across API, CLI and Board rerun',
+  { timeout: 90000 },
+  async (t) => {
+    const { main } = require('../cli.cjs')
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.mutate('factory')
+    const fault = await fixture.run('factory')
+    const failed = fault.record.cases.find((item) => item.status === 'failed')
+    assert.ok(failed)
+    const errors = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto(
+      server.origin +
+        '/transaction-atomicity?observation=' +
+        encodeURIComponent(failed.id)
+    )
+    const frame = page.frameLocator('iframe')
+    const panel = frame.locator('#node-interactions')
+    await expect(panel).toBeVisible()
+    const input = panel.getByLabel('Add investigation note')
+    const note =
+      '<img src=x onerror="window.noteExecuted=true"> Owner investigation'
+    await input.fill(note)
+    await page.waitForTimeout(1800)
+    await expect(input).toHaveValue(note)
+    await panel.getByRole('button', { name: 'Save note', exact: true }).click()
+    await expect(input).toHaveValue('')
+    await expect(panel.locator('article')).toContainText(note)
+    assert.equal(await panel.locator('img').count(), 0)
+    const messages = []
+    assert.equal(
+      await main(
+        ['--url', server.origin, 'node-context', fault.record.id, failed.id],
+        { write: (value) => messages.push(value) }
+      ),
+      0
+    )
+    const context = JSON.parse(messages[0])
+    assert.equal(context.comments[0].text, note)
+    assert.equal(context.comments[0].actor, 'local-developer')
+    fixture.restore()
+    await panel
+      .getByRole('button', { name: 'Preview selected test rerun' })
+      .click()
+    await expect(
+      panel.getByRole('button', { name: 'Confirm selected test rerun' })
+    ).toBeVisible()
+    await expect(panel).toContainText(failed.testName)
+    await page.screenshot({
+      path: path.join(fixture.directory, 'node-interactions-desktop.png'),
+      fullPage: true
+    })
+    await panel
+      .getByRole('button', { name: 'Confirm selected test rerun' })
+      .click()
+    await expect(panel).toContainText('Rerun - completed - passed - mapped', {
+      timeout: 15000
+    })
+    await expect(
+      panel.getByRole('link', { name: 'Open rerun report' })
+    ).toHaveAttribute('target', '_blank')
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await panel.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'node-interactions-narrow.png'),
+      fullPage: true
+    })
+    await expect(panel).toContainText(note)
+    const original = await (
+      await fetch(server.origin + '/api/test-results/' + fault.record.id)
+    ).json()
+    assert.equal(
+      original.cases.find((item) => item.id === failed.id).status,
+      'failed'
+    )
+    await page.reload()
+    await expect(frame.locator('#node-interactions')).toContainText(note)
+    assert.deepEqual(errors, [])
+    process.stdout.write(
+      'Node interaction screenshots: ' + fixture.directory + '\n'
+    )
+  }
+)
