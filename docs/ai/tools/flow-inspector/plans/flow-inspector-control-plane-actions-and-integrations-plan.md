@@ -9,6 +9,9 @@ command buttons and comment blocks. The filename remains stable for existing
 links. This is not an agent execution, task planning or delivery-management plan.
 
 Command buttons and comments are deferred, not activated by this document.
+The consolidated roadmap groups them into optional Stage C with one combined
+acceptance boundary; the sections below are internal work areas, not automatic
+separate phases or PRs.
 Existing local execution and GitHub review features remain supported only within
 [their execution contract](../AGENT_EXECUTION.md) and
 [their review contract](../PR_REVIEW.md). No implementation is removed and no

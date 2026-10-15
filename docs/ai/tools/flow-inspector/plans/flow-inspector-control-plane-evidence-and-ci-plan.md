@@ -13,6 +13,18 @@ Their evidence is preserved. Unimplemented mandatory CI protection, independent
 verifier/issuer and remote refusal/recovery demonstrations are removed from this
 plan's current scope; they are not marked complete.
 
+## Consolidated remaining work - 2026-10-15
+
+The roadmap's [consolidated delivery stages](flow-inspector-workflow-control-plane-roadmap.md#consolidated-delivery-stages---2026-10-15)
+own remaining stage scope and complete acceptance: Stage A covers the frozen
+Design functional inventory; Stage B covers collaboration and the selected
+shared Framework inventory. Extend this plan with exact inventories and owner
+contracts at activation, not a new PR-sized phase for each case or test file.
+The Bounded Result-Source Slice below is an internal producer/owner checklist.
+Completed selected slices and their evidence remain valid; their dated
+"next-stage" notes are historical and superseded by the consolidated sequence.
+No implementation or tests are activated by this planning update.
+
 ## Relationship to the Core Milestone
 
 The core plan owns the initial existing Vitest result-to-node path, including

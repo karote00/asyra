@@ -44,28 +44,138 @@ investigation entry point; it does not establish the underlying causal defect.
 - Existing task, permission, execution and baseline-acceptance controls retain
   their current contracts when used. Their expansion is not a localization gate.
 
-## Delivery Sequence
+## Consolidated Delivery Stages - 2026-10-15
 
-1. **Core failure localization:** execute the
-   [localization plan](flow-inspector-verification-coverage-expansion-plan.md).
-   Connect supported existing test results to recorded nodes; expose implementation,
-   failure and rerun context to humans and AI; prove real App and Framework
-   failure/recovery. Begin with its bounded Vitest inputs, not every repository
-   test or every supported runner at once.
-2. **Additional result sources and coverage:** use the
-   [result-source support plan](flow-inspector-control-plane-evidence-and-ci-plan.md)
-   only when adding an explicitly selected producer or test/owner set. Local
-   results do not need a CI service. CI results do not need merge enforcement.
-   This extends the same core path rather than creating another dashboard.
-3. **Optional node interactions:** after the core acceptance cases pass, separately
-   scope command buttons and comment blocks under the
-   [interaction plan](flow-inspector-control-plane-actions-and-integrations-plan.md).
-   Neither is a prerequisite for useful localization.
+This section supersedes the earlier per-case/per-owner delivery sequence and
+historical "next-stage" notes in the supporting plan. Owner steps remain internal
+implementation and review checkpoints, not separate user-facing stages or PRs.
+The user requested planning only: no implementation or test execution is activated.
+Association: this roadmap's Delivery Sequence, now consolidated here; the Flow
+Inspector follow-up owner retains whole-plan closeout responsibility.
 
-The roadmap sequences these plans; it is not an additional implementation plan
-whose estimates or gates should be counted twice. General repository onboarding
-is incremental, not a hidden condition that every test must be mapped before
-the first bounded release can be useful.
+### Current completed capabilities and remaining gaps
+
+Status is taken from existing implementation and review records through PR #331,
+not from new test runs or an assumption that every PR is merged.
+
+- Core ordinary Vitest ingestion, exact case-to-node mapping, original failure
+  context, Board/API/CLI access, per-case recovery and immutable history are
+  implemented. Unknown, ambiguous, stale and execution failures remain explicit.
+- Existing mappings cover Design Undo/Redo shortcuts, Factory transaction and
+  two real History replay cases, Design execution (23 cases), Render viewport
+  (six), reusable-tool composition (four), Pixi adapter (27), Preset vector
+  material (11) and compound coverage (16). These are selected test contracts,
+  not complete package coverage, GPU output or live-provider verification.
+- Design original Playwright/functional CI report ingestion is implemented.
+  PR #331 expands deletion mapping to six Chromium cases and records real
+  fault/recovery and Board parity evidence. It does not cover all Design E2E.
+- Still missing: broad Design feature ownership mappings, separately admitted
+  collaboration result support, and the remaining shared-owner/consumer mappings
+  within an explicitly frozen integration scope. Existing collectors and readers
+  must be reused rather than rebuilt for each test file.
+- Node command buttons and comments remain optional. Automatic diagnosis, repair,
+  ADE, task orchestration and merge enforcement are outside this roadmap.
+
+### Stage A - Complete Design functional failure localization
+
+Outcome: within the selected Design functional suite, a failed existing test
+leads directly to its responsible architecture node and original investigation
+context, across features rather than only deletion examples.
+
+Scope: at activation, freeze the complete case inventory selected by the existing
+Design functional Playwright command/config at that source revision. Review all
+its feature owners together, including deletion siblings, selection, history and
+other features actually present in that inventory. Record exact files, projects,
+case identities and justified exclusions in the existing support plan before
+implementation. Collaboration belongs to Stage B. New product features, unrelated
+runtime repairs and tests added after the frozen revision are not silently added.
+Missing ownership inside the selected scope must be resolved, not excluded merely
+to make the stage pass. This inventory/design work is internal to the stage.
+
+Full acceptance:
+
+1. Every product case in the frozen inventory has reviewed exact ownership and
+   relevant implementation/specification references. Any intentional unsupported
+   case is named with a reason; no omitted file or package-wide guessed mapping.
+2. Original local and existing functional CI reports use the same retained path.
+   All received failures remain readable; foreign, renamed, ambiguous and stale
+   identities stay explicitly unresolved. No extra diagnostic run is required.
+3. Permanent baseline/fault/recovery cases exercise each distinct owner and
+   materially different route, including multiple simultaneous feature failures.
+   Faults fail unchanged product assertions and identify declared responsibility;
+   unrelated nodes remain independent. Mapping identity checks cover all cases.
+4. Board/API/CLI expose identical source, node, implementation, original error,
+   artifacts and rerun context. Partial recovery preserves other failures and
+   historical records; setup errors, retries and incomplete reports cannot pass.
+5. Complete the applicable integration, regression and browser gates once the
+   stage is assembled; inspect desktop/narrow evidence. Deliver one cohesive PR,
+   a supported-scope summary and a reproducible existing-command example.
+
+### Stage B - Complete collaboration and shared Framework localization
+
+Outcome: collaboration and shared Framework failures within a frozen integration
+scope are as directly actionable as local Design failures, without marking every
+consumer broken merely because they share a package.
+
+Scope: freeze the complete existing Design collaboration command's case inventory
+and all cases selected by the existing Framework flow manifests/configs used by
+Stages A/B at activation. Reuse completed mappings; identify actual missing cases
+and consumer edges in one pass. Include Factory/History, Render/Pixi and Preset
+contracts already onboarded where they participate in these flows. Do not expand
+to every package or hypothetical dependent. Admit collaboration's actual report,
+source and participant identity contract before implementation; do not assume the
+functional producer covers it. Resolve exact owners and handoffs in this stage's
+existing support-plan section before production edits.
+
+Full acceptance:
+
+1. Every in-scope case is precisely mapped or explicitly listed as intentionally
+   unsupported with a reviewed reason; all received failures retain original
+   evidence. Participant/project/run identities prevent cross-session attribution.
+2. Existing local and CI collaboration invocations feed the same localization
+   store and Board/API/CLI context without a second execution or mapping registry.
+3. Real shared-owner fault/recovery tests show each observed failing consumer at
+   its declared node, with original evidence. Passing consumers remain passing;
+   unexecuted consumers remain unverified. Potential impact is never a confirmed
+   failure. Include concurrent local/remote failures and partial recovery.
+4. Missing participant output, interrupted runs, stale source and unavailable
+   artifacts remain explicit. Historical records and Stage A behavior survive.
+5. Run the assembled stage's applicable producer, mapping, integration, Board and
+   regression gates; deliver one cohesive PR and a reproducible App/shared-owner
+   demonstration. Report the finite supported inventory and remaining exclusions.
+
+After A/B, close the agreed localization scope; do not invent another mandatory
+stage for each unmapped repository test. Further coverage needs a new explicit
+scope decision. Universal runner and repository coverage is not claimed.
+
+### Stage C - Optional node interactions
+
+Not activated and not required to close A/B. If requested, deliver command
+buttons and comment blocks as one coherent node-interaction stage, using the
+existing interaction plan's safety and persistence contracts.
+
+Full acceptance: selected rerun/open-evidence actions use the existing action
+owner with correct source/test selection, permission denial without effects,
+stale/duplicate handling and visible results; comments persist with attribution
+and node/run context, remain distinct from original evidence, and handle changed
+or missing references and storage errors. Define edit/delete behavior before
+implementation. Both surfaces pass relevant API/Board tests and remain optional:
+localization works without them. No arbitrary shell, automatic repair or task
+creation is included.
+
+### Delivery and validation budget
+
+Default to one PR per complete stage, with local owner-step checkpoints inside
+it. Split delivery only for a concrete dependency or review-size problem, explain
+why, and retain one stage acceptance boundary. Do not rename each file as a stage.
+Run focused checks after affected slices; run required broad gates at the assembled
+stage and before push. Repeat checks only for changed source, a failure or a new
+concrete finding. Finish with one bounded final review; do not recursively review
+unchanged passing work. Existing mandatory gates and safety guards remain intact.
+
+This revision reorganizes plans only. It does not establish implementation
+readiness for the unenumerated future inventories, change current Inspector
+semantics, rerun evidence, activate optional work or authorize remote operations.
 
 ## Definition of Done
 
@@ -109,9 +219,9 @@ useful; universal hosting, packaging and publication are separate work.
 ## Effort and Activation
 
 Previous multi-phase person-week estimates described the superseded product and
-are no longer the remaining-work budget. Estimate a selected localization slice
-from its actual inputs, mappings and validation costs. Optional interactions and
-additional producers are estimated separately after their scope is selected.
+are no longer the remaining-work budget. Estimate a complete consolidated stage from its frozen inventory, missing
+capabilities and validation costs. Internal slices are not separate delivery
+estimates. Optional interactions are estimated only if activated.
 No model-speed estimate or calendar promise is a product acceptance criterion.
 
 Implementation must first review the exact relevant owner steps and contracts,

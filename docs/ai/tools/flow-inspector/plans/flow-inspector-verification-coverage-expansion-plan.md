@@ -35,6 +35,17 @@ are planning changes only: runtime, permissions, architecture steps, acceptance
 authorities and completed delivery records remain unchanged.
 Command buttons and comment blocks are deferred until this path is complete.
 
+## Current completion and handoff - 2026-10-15
+
+The bounded core localization milestone below is implemented and reviewed; do not
+restart Priorities 1-3 as new development. Retain its cases and evidence as the
+regression baseline. Broader functional, collaboration and shared-owner coverage
+is consolidated into roadmap Stages A/B and implemented through the existing
+result-source support plan. Those stages do not claim universal test coverage.
+The earlier inventory and priority wording below records the original task,
+not a list of still-missing core capabilities. Optional interactions remain
+separate and inactive. This update does not perform formal plan closeout.
+
 ## Bounded implementation - 2026-10-14
 
 The next implementation covers Priorities 1-3 for the existing Design Undo/Redo
