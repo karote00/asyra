@@ -148,19 +148,33 @@ async function playwrightFixture(t) {
   return {
     repository,
     sourceFile,
-    fault() {
+    fault(kind = 'deletion') {
+      if (!['deletion', 'path-mode'].includes(kind))
+        throw new Error('Unknown isolated deletion fault')
       fs.writeFileSync(
         sourceFile,
-        source.replace(
-          'elementApis.deleteElement(elementId)',
-          'false && elementApis.deleteElement(elementId)'
-        )
+        kind === 'deletion'
+          ? source.replace(
+              'elementApis.deleteElement(elementId)',
+              'false && elementApis.deleteElement(elementId)'
+            )
+          : source.replace(
+              'if (systemContextApis.getPathEditingMode())',
+              'if (false)'
+            )
       )
     },
     restore() {
       fs.writeFileSync(sourceFile, source)
     },
-    async run() {
+    async run(caseIds = ['design.delete']) {
+      if (!caseIds.length || new Set(caseIds).size !== caseIds.length)
+        throw new Error('Select distinct admitted Playwright cases')
+      const names = caseIds.map((id) => {
+        const item = contract.cases.find((candidate) => candidate.id === id)
+        if (!item) throw new Error('Unknown Playwright case: ' + id)
+        return item.testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      })
       const reportPath = 'tmp/report-' + ++sequence + '.json'
       const args = [
         path.join(root, 'node_modules/playwright/cli.js'),
@@ -169,7 +183,7 @@ async function playwrightFixture(t) {
         'playwright.config.ts',
         'e2e/delete-element.spec.ts',
         '--grep',
-        'Delete Selected Element Delete key removes the single selected element$',
+        '(?:' + names.join('|') + ')$',
         '--workers=1',
         '--retries=0',
         '--reporter=line,json'
