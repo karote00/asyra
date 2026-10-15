@@ -9708,7 +9708,11 @@
               "apps/asyra-design/index.html",
               "apps/asyra-design/src/app/index.tsx",
               "apps/asyra-design/src/contents/contents-panel.tsx",
-              "apps/asyra-design/src/properties/index.tsx"
+              "apps/asyra-design/src/properties/index.tsx",
+              "apps/asyra-design/src/toolbar/index.tsx",
+              "apps/asyra-design/src/toolbar/tool-button.tsx",
+              "apps/asyra-design/src/toolbar/reset-stored-document.ts",
+              "apps/asyra-design/src/toolbar/zoom.tsx"
             ],
             "specRefs": [
               "#start-editor"
@@ -9746,7 +9750,8 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/features/switch-primary-tool/index.ts",
-              "apps/asyra-design/src/common-apis/system-context.ts"
+              "apps/asyra-design/src/common-apis/system-context.ts",
+              "apps/asyra-design/src/toolbar/tool-button.tsx"
             ],
             "specRefs": [
               "#switch-tool"
@@ -10345,7 +10350,8 @@
               "apps/asyra-design/src/features/zoom/index.ts",
               "apps/asyra-design/src/features/pan/index.ts",
               "apps/asyra-design/src/features/zoom-fit/index.ts",
-              "apps/asyra-design/src/common-apis/viewport.ts"
+              "apps/asyra-design/src/common-apis/viewport.ts",
+              "apps/asyra-design/src/toolbar/zoom.tsx"
             ],
             "specRefs": [
               "#navigate-viewport"

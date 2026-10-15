@@ -56,6 +56,11 @@ if [ "$E2E_SUITE" = "functional" ]; then
   if [ -z "${FLOW_CI_REPORT:-}" ]; then
     FLOW_CI_REPORT="$PWD/tmp/flow-ci/functional-$(node -e 'process.stdout.write(require("node:crypto").randomUUID())').json"
   fi
+  # Workspace commands run from the App directory; keep one root-owned destination.
+  case "$FLOW_CI_REPORT" in
+    /*) ;;
+    *) FLOW_CI_REPORT="$PWD/$FLOW_CI_REPORT" ;;
+  esac
   export E2E_SUITE FLOW_CI_REPORT
   node tools/flow-inspector/control-plane/playwright-results.cjs begin "$FLOW_CI_REPORT" functional
   E2E_FUNCTIONAL_OBSERVATION=1

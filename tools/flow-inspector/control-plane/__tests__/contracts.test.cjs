@@ -980,3 +980,48 @@ test('functional responsibility follows the asserted operation across test-file 
     ['apps/asyra-design/index.html']
   )
 })
+
+test('toolbar observations retain the actual reset, control and zoom implementation entries', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/playwright-functional-flow-contracts.json'
+  )
+  const requireEntry = (name, entries) => {
+    const item = contract.cases.find((item) => item.testName === name)
+    assert.ok(item, name)
+    for (const entry of entries)
+      assert.ok(
+        item.implementationPaths.includes(
+          'apps/asyra-design/src/toolbar/' + entry
+        ),
+        name + ': ' + entry
+      )
+  }
+  requireEntry('Asyra Design Tool should render toolbar with controls', [
+    'index.tsx',
+    'tool-button.tsx'
+  ])
+  requireEntry(
+    'Asyra Design Tool should permanently expose Reset for ordinary documents',
+    ['tool-button.tsx', 'reset-stored-document.ts']
+  )
+  requireEntry(
+    'Asyra Design Tool should refresh a storage-free demo to the empty App',
+    ['reset-stored-document.ts']
+  )
+  requireEntry('Asyra Design Tool should have Zoom display in toolbar', [
+    'zoom.tsx'
+  ])
+  requireEntry(
+    'Viewport Navigation should display zoom percentage in toolbar',
+    ['zoom.tsx']
+  )
+  for (const item of contract.cases.filter(
+    (item) =>
+      item.stepId === 'switch-tool' &&
+      item.testName.includes('clicking toolbar button')
+  ))
+    requireEntry(item.testName, ['tool-button.tsx'])
+})

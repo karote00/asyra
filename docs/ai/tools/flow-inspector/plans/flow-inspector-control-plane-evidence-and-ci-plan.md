@@ -1127,3 +1127,62 @@ Next goal: Stage B freezes the complete collaboration command and selected share
 Framework integration inventory, then admits original participant/run results and
 proves observed consumer failures remain independent. It is not started here.
 Stage C command buttons/comments remain optional and unactivated.
+
+### PR 333 bounded Stage A review
+
+Review baseline: `4487105b89205834a1cea351fcef70191f3591e5`. The review
+covers the frozen 412-case inventory, declared operation owners, admission,
+original functional/status invocation handoffs and direct Board/API/CLI consumers.
+Discovery uses the PR diff, current assertions, mapped owners and existing formal
+evidence. Runtime repairs, new suites, Stage B and optional actions remain excluded.
+Reuse unchanged full-suite and consumer evidence; rerun only affected gates.
+
+Admission correction card - `admit-proof-contract`: Stage A acceptance item 1
+and `#start-editor`, `#switch-tool`, `#navigate-viewport` require concrete entries
+for the asserted toolbar/reset/display operations. Current assertions and their
+canonical toolbar implementations are allowed inputs; reviewed case entries and
+matching Inspector boundaries/spec references are the output. No inferred root
+cause or runtime change is permitted. Correct only the functional manifest,
+responsibility Inspector/spec and their permanent admission/owner tests; regenerate
+the catalog. Invalid or missing entry ownership blocks completion. Tests first
+assert toolbar/reset/zoom entries, then exercise the affected original routes
+through the existing isolated fault/recovery harness. Failure owner remains the
+case's declared operation. No cache or new product behavior is introduced.
+
+Localization handoff correction card - `localize-test-results`: the original
+report path is invocation input, not a workspace-relative reinterpretation.
+Resolve the supplied relative path at the root shell owner before handing the
+same absolute path to capture, the App runner, status runner and completion.
+The existing adapter's safe-path admission remains authoritative. Missing reports
+remain unavailable; original failure exits and PID cleanup remain unchanged.
+Allowed edits are `scripts/run-e2e.sh` and its existing workflow-result regressions.
+A hermetic shell regression covers relative/absolute destinations and functional/
+status handoffs without launching product services. No runtime mutation, extra
+report registry or fallback output is allowed. Failure owner is
+`localize-test-results`; completion requires red/green handoff evidence and the
+existing cleanup regression.
+
+Review outcome: two in-scope defects were reproduced and corrected. Toolbar, Reset
+and zoom-display cases now include their concrete operation entries in both
+case mappings and architecture boundaries. Relative `FLOW_CI_REPORT` destinations
+now remain identical across root capture/completion and App-workspace reporters,
+including the isolated status report. Absolute destinations are unchanged.
+
+Validation: the entry regression failed before correction; the relative-path
+handoff regression independently failed before correction. Admission/catalog
+checks passed 57 tests, including unchanged 412-case discovery. Three additional
+original baseline/fault/recovery routes passed (Reset, toolbar selection, zoom
+display), bringing the retained distinct route total to 41. Initial fault probes
+were corrected to target the exact Reset call and the percentage marker actually
+asserted by the original test; original product assertions were not edited.
+Focused producer/configuration/cleanup checks passed five tests; opt-in gates were
+not counted as passing in that run. Scoped lint, naming, catalog generation and
+shell syntax checks passed. Unchanged full functional, Board/API/CLI, core-proof,
+package runtime and typecheck evidence above is retained, not rerun or represented
+as fresh evidence. The generated catalog receives its affected package build.
+
+Final bounded review covers exact file/title/project identity, original failure
+retention, source/configuration rejection, declared investigation entries,
+functional/status lifecycle and unchanged direct consumers. No remaining concrete
+finding was identified in that scope. This does not establish root cause, verify
+the 19 skipped product cases, or expand Stage A into collaboration work.

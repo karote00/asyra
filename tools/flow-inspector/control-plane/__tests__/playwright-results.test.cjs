@@ -818,6 +818,30 @@ test(
 const functionalOwnerProofs = [
   [
     'start-editor',
+    'functional.app.a38c2cc25dac',
+    'toolbar/reset-stored-document.ts',
+    {
+      from: 'await (options.resetDocument ?? resetCollaborationDocument)(fileId)',
+      to: 'void fileId'
+    }
+  ],
+  [
+    'switch-tool',
+    'functional.tool-switching.8d9711a252ce',
+    'toolbar/tool-button.tsx',
+    {
+      from: 'switchPrimaryTool(PrimaryToolType.RECTANGLE)',
+      to: 'void PrimaryToolType.RECTANGLE'
+    }
+  ],
+  [
+    'navigate-viewport',
+    'functional.viewport-navigation.349637b54b83',
+    'toolbar/zoom.tsx',
+    { from: '{(zoom * 100).toFixed(0)}%', to: '{(zoom * 100).toFixed(0)}x' }
+  ],
+  [
+    'start-editor',
     'functional.app.0ed5202f90ef',
     'apps/asyra-design/index.html',
     {

@@ -2009,3 +2009,82 @@ exit 42
     ])
   }
 })
+
+test('functional and status observations share the report destination across workspace commands', () => {
+  const { spawnSync } = require('node:child_process')
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const directory = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/shell-report-path-')
+  )
+  const bin = path.join(directory, 'bin')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(
+    path.join(bin, 'node'),
+    `#!/bin/bash
+if [ "$1" = tools/flow-inspector/control-plane/playwright-results.cjs ]; then
+  echo "$2|$3" >> "$SHELL_OBSERVATION_LOG"
+  exit 0
+fi
+if [ "$1" = --input-type=module ]; then
+  echo '127.0.0.1 4317 http://127.0.0.1:4317 http://127.0.0.1:4319 ws://127.0.0.1:4319/collaboration'
+fi
+exit 0
+`,
+    { mode: 0o755 }
+  )
+  fs.writeFileSync(
+    path.join(bin, 'yarn'),
+    `#!/bin/bash
+if [ -n "\${PLAYWRIGHT_JSON_OUTPUT_NAME:-}" ]; then
+  echo "runner|$PLAYWRIGHT_JSON_OUTPUT_NAME" >> "$SHELL_OBSERVATION_LOG"
+fi
+exit 0
+`,
+    { mode: 0o755 }
+  )
+  for (const relative of [true, false]) {
+    const report = path.join(
+      directory,
+      relative ? 'relative report.json' : 'absolute.json'
+    )
+    const log = report + '.log'
+    const run = spawnSync('/bin/bash', ['scripts/run-e2e.sh'], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 10000,
+      maxBuffer: 8192,
+      env: {
+        ...process.env,
+        PATH: bin + path.delimiter + process.env.PATH,
+        E2E_SUITE: 'functional',
+        SHELL_OBSERVATION_LOG: log,
+        FLOW_CI_REPORT: relative ? path.relative(root, report) : report
+      }
+    })
+    assert.equal(run.status, 0, run.stdout + run.stderr)
+    const handoffs = fs
+      .readFileSync(log, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => {
+        const [kind, file] = line.split('|')
+        return [
+          kind,
+          path.resolve(
+            kind === 'runner' ? path.join(root, 'apps/asyra-design') : root,
+            file
+          )
+        ]
+      })
+    const status = report.replace(/\.json$/, '-status.json')
+    assert.deepEqual(handoffs, [
+      ['begin', report],
+      ['runner', report],
+      ['complete', report],
+      ['begin', status],
+      ['runner', status],
+      ['complete', status]
+    ])
+  }
+})
