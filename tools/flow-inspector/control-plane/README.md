@@ -106,6 +106,9 @@ node node_modules/vitest/vitest.mjs run --config packages/render-engine-pixi/src
 # Existing Preset vector material assertions (11 engine-neutral source cases).
 node node_modules/vitest/vitest.mjs run --config packages/preset/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
+# Existing Preset compound coverage assertions (16 source cases at the same node).
+node node_modules/vitest/vitest.mjs run --config packages/preset/src/__tests__/coverage-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
 # Human and agent clients read the same retained context; no proof lock is needed.
 node tools/flow-inspector/control-plane/cli.cjs test-results
 node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
@@ -181,6 +184,17 @@ clear that unrun failure. Full recovery preserves historical evidence. Public
 source-load errors retain their original evidence without inventing a node.
 These cases prove neutral material/coverage projections and canonical-data
 preservation, not GPU output or complete vector geometry behavior.
+
+The 16 existing Preset compound coverage cases are a default observation source
+through `packages/preset/coverage-flow-contracts.json` on the same
+`evaluate-vector-material` node. Eight direct coverage cases point to
+`vector-compound-fill.ts`; eight strategy integration cases also point to
+`vector.ts` and `fills.ts`. Ordinary and captured runs preserve their original
+source assertions. The existing parity fault locates three distinct evenodd
+failures. Filtered nonzero runs cannot retire them, and coverage recovery cannot
+clear an unrun material failure at the shared node. Full recovery preserves both
+histories; source-load errors remain execution evidence. These cases cover bounded
+neutral coverage semantics and projections, not GPU output or all vector behavior.
 
 Other tests remain explicitly unmapped. Exact implementation
 paths are provided where declared; otherwise the responsible step boundary is

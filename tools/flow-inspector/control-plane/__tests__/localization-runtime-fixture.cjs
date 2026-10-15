@@ -41,6 +41,11 @@ function localizationFixture() {
     path.join(repository, 'apps/asyra-design/src'),
     { recursive: true, force: false }
   )
+  const coverageContract = loadContract(
+    root,
+    undefined,
+    'packages/preset/coverage-flow-contracts.json'
+  )
   const vectorContract = loadContract(
     root,
     undefined,
@@ -57,6 +62,13 @@ function localizationFixture() {
     'packages/ai-agent-runtime/flow-contracts.json'
   )
   for (const file of [
+    ...[
+      'manifestPath',
+      'configFile',
+      'testFile',
+      'architecturePath',
+      'specPath'
+    ].map((key) => coverageContract[key]),
     ...[
       'manifestPath',
       'configFile',
@@ -99,6 +111,7 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    coverageContract,
     vectorContract,
     pixiContract,
     recipeContract,
@@ -182,6 +195,13 @@ function localizationFixture() {
     vectorMutation.file,
     fs.readFileSync(path.join(repository, vectorMutation.file), 'utf8')
   )
+  const coverageMutation = JSON.parse(
+    fs.readFileSync(path.join(root, coverageContract.manifestPath), 'utf8')
+  ).scenarios.find((item) => item.id === 'omit-evenodd').mutation
+  originals.set(
+    coverageMutation.file,
+    fs.readFileSync(path.join(repository, coverageMutation.file), 'utf8')
+  )
   const config = path.join(directory, 'app.config.mjs')
   fs.writeFileSync(
     config,
@@ -246,6 +266,13 @@ function localizationFixture() {
         })
       `
       )
+    },
+    mutateCoverage() {
+      const { file, from, to } = coverageMutation
+      const original = originals.get(file)
+      assert.equal(original.split(from).length, 2)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
     },
     mutateVector() {
       const { file, from, to } = vectorMutation
@@ -394,6 +421,8 @@ function localizationFixture() {
         repository,
         'packages/factory/src/__tests__/flow-proof.config.ts'
       )
+      if (kind === 'coverage')
+        configFile = path.join(repository, coverageContract.configFile)
       if (kind === 'vector')
         configFile = path.join(repository, vectorContract.configFile)
       if (kind === 'pixi')

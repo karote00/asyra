@@ -621,6 +621,8 @@ const data = {
         'packages/factory/history-replay-flow-contracts.json',
         'packages/render/navigation-flow-contracts.json',
         'packages/render/src/__tests__/navigation-flow.config.ts',
+        'packages/preset/coverage-flow-contracts.json',
+        'packages/preset/src/__tests__/coverage-flow.config.ts',
         'packages/preset/navigation-flow-contracts.json',
         'packages/preset/src/__tests__/navigation-flow.config.ts',
         'packages/render-engine-pixi/navigation-flow-contracts.json',
