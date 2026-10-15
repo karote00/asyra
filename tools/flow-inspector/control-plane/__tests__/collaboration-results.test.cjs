@@ -1103,71 +1103,78 @@ test('ordinary guarded skips do not turn a completed collaboration invocation in
   assert.equal(normalizeReport(root, f.context, f.report).report.success, false)
 })
 
-test(
-  'terminating the collaboration wrapper settles its owned runner descendants',
-  { timeout: 15000 },
-  (t) => {
-    const { spawnSync } = require('node:child_process')
-    const directory = fs.mkdtempSync(
-      path.join(root, 'tmp/flow-inspector/collaboration-descendants-')
-    )
-    const bin = path.join(directory, 'bin')
-    fs.mkdirSync(bin)
-    const pidFile = path.join(directory, 'child.pid')
-    fs.writeFileSync(
-      path.join(bin, 'node'),
-      `#!/bin/bash
+for (const [termination, exitCode] of [
+  ['signal', 143],
+  ['success', 0],
+  ['failure', 42]
+])
+  test(
+    'collaboration wrapper settles owned descendants - ' + termination,
+    { timeout: 15000 },
+    (t) => {
+      const { spawnSync } = require('node:child_process')
+      const directory = fs.mkdtempSync(
+        path.join(root, 'tmp/flow-inspector/collaboration-descendants-')
+      )
+      const bin = path.join(directory, 'bin')
+      fs.mkdirSync(bin)
+      const pidFile = path.join(directory, 'child.pid')
+      fs.writeFileSync(
+        path.join(bin, 'node'),
+        `#!/bin/bash
 if [ "$1" = tools/flow-inspector/control-plane/playwright-results.cjs ]; then
   if [ "$2" = begin ]; then echo '{"id":"owned-run"}' > "$3.context.json"; fi
   exit 0
 fi
 exec '${process.execPath}' "$@"
 `,
-      { mode: 0o755 }
-    )
-    fs.writeFileSync(
-      path.join(bin, 'yarn'),
-      `#!/bin/bash
+        { mode: 0o755 }
+      )
+      fs.writeFileSync(
+        path.join(bin, 'yarn'),
+        `#!/bin/bash
 '${process.execPath}' -e 'process.on("SIGTERM", () => {}); require("node:fs").writeFileSync(process.env.OWNED_PID_FILE, String(process.pid)); setInterval(() => {}, 1000)' >/dev/null 2>&1 &
 while [ ! -f "$OWNED_PID_FILE" ]; do sleep 0.01; done
-kill -TERM "$PPID"
-wait
+if [ "$OWNED_EXIT_MODE" = signal ]; then kill -TERM "$PPID"; wait; fi
+if [ "$OWNED_EXIT_MODE" = failure ]; then exit 42; fi
+exit 0
 `,
-      { mode: 0o755 }
-    )
-    t.after(() => {
-      if (fs.existsSync(pidFile)) {
-        try {
-          process.kill(Number(fs.readFileSync(pidFile)), 'SIGKILL')
-        } catch {
-          // A settled child is already absent.
+        { mode: 0o755 }
+      )
+      t.after(() => {
+        if (fs.existsSync(pidFile)) {
+          try {
+            process.kill(Number(fs.readFileSync(pidFile)), 'SIGKILL')
+          } catch {
+            // A settled child is already absent.
+          }
         }
-      }
-    })
-    const result = spawnSync(
-      '/bin/bash',
-      ['scripts/run-collaboration-e2e.sh'],
-      {
-        cwd: root,
-        encoding: 'utf8',
-        timeout: 10000,
-        maxBuffer: 8192,
-        env: {
-          ...process.env,
-          PATH: bin + path.delimiter + process.env.PATH,
-          OWNED_PID_FILE: pidFile,
-          FLOW_CI_REPORT: path.join(directory, 'report.json')
+      })
+      const result = spawnSync(
+        '/bin/bash',
+        ['scripts/run-collaboration-e2e.sh'],
+        {
+          cwd: root,
+          encoding: 'utf8',
+          timeout: 10000,
+          maxBuffer: 8192,
+          env: {
+            ...process.env,
+            PATH: bin + path.delimiter + process.env.PATH,
+            OWNED_PID_FILE: pidFile,
+            OWNED_EXIT_MODE: termination,
+            FLOW_CI_REPORT: path.join(directory, 'report.json')
+          }
         }
-      }
-    )
-    assert.equal(result.status, 143, result.stdout + result.stderr)
-    const pid = Number(fs.readFileSync(pidFile))
-    const state = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], {
-      encoding: 'utf8'
-    }).stdout.trim()
-    assert.ok(
-      !state || state.startsWith('Z'),
-      'Owned runner descendant remains live: ' + pid + ' (' + state + ')'
-    )
-  }
-)
+      )
+      assert.equal(result.status, exitCode, result.stdout + result.stderr)
+      const pid = Number(fs.readFileSync(pidFile))
+      const state = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], {
+        encoding: 'utf8'
+      }).stdout.trim()
+      assert.ok(
+        !state || state.startsWith('Z'),
+        'Owned runner descendant remains live: ' + pid + ' (' + state + ')'
+      )
+    }
+  )

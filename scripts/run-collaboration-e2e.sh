@@ -39,4 +39,4 @@ set -m
 PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn workspace @asyra/asyra-design playwright test --config playwright.collaboration.config.ts "$@" --reporter=line,json &
 COLLABORATION_RUN_PID=$!
 wait "$COLLABORATION_RUN_PID"
-COLLABORATION_RUN_PID=''
+# Retain the group identity for EXIT cleanup even when its leader succeeds.

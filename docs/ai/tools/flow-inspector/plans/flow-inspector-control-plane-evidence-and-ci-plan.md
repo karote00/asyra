@@ -1437,3 +1437,27 @@ before test execution (`Yarn 4.3.1: onCancel handler attached after promise
 settled`). This infrastructure failure is not evidence that Board behavior
 failed; no dependency/runtime upgrade or unrelated workaround is introduced.
 Remote checks for the corrected head must be assessed separately.
+
+### PR #334 repeat review - 2026-10-16
+
+Baseline `7b2469490`; same frozen Stage B scope and discovery methods. Execution
+card: `localize-test-results`, original producer lifetime and finalization. The
+existing regression covered external cancellation but not a successfully exited
+leader with surviving descendants. Extend the permanent test to success,
+nonzero failure and signal exits; preserve the original exit code and settle only
+the owned runner group before finalizing. The new success case fails on the
+baseline; failure and signal cases already pass. Keep the group identity through
+EXIT cleanup instead of discarding it after a successful wait. No runtime,
+identity mapping, reader, dependency or product test changes are required.
+Focused gates are all shell exit/descendant tests, scoped lint, shell syntax and
+catalog contracts after synchronizing the existing ownership statement.
+
+Repeat-review outcome: five focused shell/completion tests and eight catalog
+contracts passed, along with naming (15), scoped ESLint, shell syntax, task
+context and diff checks. The success, nonzero and signal branches preserve their
+original exit codes and leave no live owned descendant. No product E2E or full
+Framework run was repeated because neither product assertions nor ingestion,
+mapping or reader behavior changed. Final bounded review found no further
+concrete issue. Current and next stage goals remain unchanged: complete A/B
+failure localization acceptance, then separately decide whether to activate
+optional Stage C interactions. Remote CI is pending, not locally certified.

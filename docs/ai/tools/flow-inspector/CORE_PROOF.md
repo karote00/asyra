@@ -2404,8 +2404,9 @@ a failed attempt remains visible even when a retry passes. Only a subsequent
 clean invocation can clear it. Missing output, malformed results, interruption,
 skips and unexpected passes cannot establish recovery. Clean guarded skips do
 not imply runner failure when the remaining execution completed; skipped cases
-remain unverified. Collaboration interruption settles the owned runner process
-group, including descendants, before finalizing its observation.
+remain unverified. Every collaboration exit settles the owned runner process
+group, including descendants that outlive a successful leader, before finalizing
+its observation.
 
 Capture source and mappings before the invocation and retain CI repository,
 base/head/integration/run/attempt plus original report, errors and attachment
