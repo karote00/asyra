@@ -1,4 +1,12 @@
 import {
+  prescribedPositionsSchema,
+  type PrescribedPosition
+} from '../src/ai/prescribed-position-contract'
+import {
+  createMechanicalChecks,
+  mechanicalVerificationSchema
+} from './local-mechanical-checks'
+import {
   createLocalImageCheck,
   imageCheckDefinition,
   imageCheckResultSchema,
@@ -11,7 +19,8 @@ import {
 import {
   createDesignCheckResults,
   designCheckResultsSchema,
-  designCheckSummarySchema
+  designCheckSummarySchema,
+  designCheckInputSchema
 } from './design-check-results'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { retainedElementSetSchema } from '../src/ai/basic-api-contracts'
@@ -140,9 +149,17 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
           ],
           items: receipt(true)
         },
-        checks: designCheckSummarySchema
+        checks: designCheckSummarySchema,
+        ...(action.name === AiActionNames.REVIEW_DESIGN
+          ? { mechanicalSelection: designCheckInputSchema }
+          : {})
       },
-      ['actionResults']
+      [
+        'actionResults',
+        ...(action.name === AiActionNames.REVIEW_DESIGN
+          ? ['mechanicalSelection']
+          : [])
+      ]
     )
   if (!('outputSchema' in action))
     return {
@@ -514,6 +531,75 @@ const inspectionStamp = (
           : {})
       }
     : undefined
+const verifyChecksDefinition = {
+  type: 'function',
+  name: AiDesignToolIds.VERIFY_DESIGN_CHECKS,
+  ...toolSemantics(mechanicalVerificationSchema, 'read', [
+    'document',
+    'request'
+  ]),
+  composition: 'allowed' as const,
+  executionAccess: LocalToolAccess.EXCLUSIVE,
+  verification: {
+    statusPath: '/verification/status',
+    progressPath: '/verification/progress'
+  },
+  description:
+    'Verify an exact request-owned mechanical check selection. Reuse current passes, refresh only affected canonical dependencies, and retain independent results on failure. No model or visual judgment. Use the returned current checks for subsequent verification or explicit prescribed repair; never replay initial writes.',
+  inputSchema: designCheckInputSchema
+}
+
+const repairChecksSchema = {
+  ...designCheckInputSchema,
+  required: ['requestId', 'checks', 'policy'],
+  properties: {
+    ...designCheckInputSchema.properties,
+    policy: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['capability', 'positions'],
+      properties: {
+        capability: { type: 'string', enum: ['set-prescribed-child-position'] },
+        positions: prescribedPositionsSchema
+      }
+    }
+  }
+}
+const repairChecksResultSchema = toolResultObject({
+  ...designCheckInputSchema.properties,
+  actionResults: { type: 'array' }
+})
+const repairChecksRecoverySchema = toolResultObject({
+  ...designCheckInputSchema.properties
+})
+const repairChecksDefinition = {
+  type: 'function',
+  name: AiDesignToolIds.REPAIR_DESIGN_CHECKS,
+  ...toolSemantics(repairChecksResultSchema, 'mutation', [
+    'document',
+    'request'
+  ]),
+  partialOutputSchema: repairChecksRecoverySchema,
+  recoveryOutputSchema: {
+    anyOf: [
+      repairChecksRecoverySchema,
+      toolResultObject({
+        available: { const: false },
+        recoverable: { const: true },
+        code: toolResultString,
+        message: toolResultString,
+        stage: { const: 'admission' },
+        settlement: { const: 'not-started' }
+      })
+    ]
+  },
+  composition: 'allowed' as const,
+  executionAccess: LocalToolAccess.EXCLUSIVE,
+  description:
+    'Apply only explicit prescribed child positions for the complete selected container-overflow findings. Supply original parent attachment evidence from read_design_attachment; never substitute a changed basis. Preflight all findings and edits before writes. Return actual receipts and current checks for verification; do not infer visual acceptance or replay initial writes.',
+  inputSchema: repairChecksSchema
+}
+
 const checkResultsDefinition = {
   type: 'function',
   name: AiDesignToolIds.READ_DESIGN_CHECKS,
@@ -1055,6 +1141,7 @@ export const createLocalOperationTools = (
     schemaSource: 'registered-tool-contract',
     execution: nativeExecution(tool)
   })
+  const requestId = options.ownership?.requestId ?? randomUUID()
   const checkResults = preparation.checkResults ?? createDesignCheckResults()
   const designReview = createLocalDesignReview({
     results: checkResults,
@@ -1235,34 +1322,38 @@ export const createLocalOperationTools = (
     const id = measurementId(elementId)
     const previous = checkResults.read({ ids: [id], includePassed: true })
       .items[0]
-    let evidence =
-      previous?.evidence ?? JSON.stringify({ complete: false, findings: [] })
-    if (findings.length) {
-      const prior = previous ? JSON.parse(previous.evidence) : undefined
-      const retained =
-        isRecord(prior) && Array.isArray(prior.findings) ? prior.findings : []
-      evidence = JSON.stringify({
-        complete: false,
-        findings: [
-          ...new Map(
-            [...retained, ...findings].map((finding) => [
-              JSON.stringify(finding),
-              finding
-            ])
-          ).values()
-        ]
-      })
-    }
+    const prior = previous
+      ? checkResults.select([{ checkId: id, revision: previous.revision }])[0]
+      : undefined
+    const retained =
+      prior && !prior.retired && prior.recheck?.kind === 'measurement'
+        ? prior.recheck.findings
+        : []
+    const knownFindings = [
+      ...new Map(
+        [...retained, ...findings].map((finding) => [
+          JSON.stringify(finding),
+          finding
+        ])
+      ).values()
+    ]
+    const evidence = JSON.stringify({
+      complete: false,
+      findings: knownFindings
+    })
     measuredTargets.set(elementId, undefined)
     measurementPending = true
-    checkResults.record({
-      id,
-      origin: 'tool',
-      status: findings.length ? 'fail' : 'unverified',
-      evidence,
-      scope: [elementId],
-      dependencies: { [id]: 'unavailable' }
-    })
+    checkResults.record(
+      {
+        id,
+        origin: 'tool',
+        status: knownFindings.length ? 'fail' : 'unverified',
+        evidence,
+        scope: [elementId],
+        dependencies: { [id]: 'unavailable' }
+      },
+      { kind: 'measurement', elementId, findings: knownFindings }
+    )
   }
   const updateMeasurementState = (
     elementId: string,
@@ -1299,14 +1390,17 @@ export const createLocalOperationTools = (
     }
     const findings = result.findings as unknown[]
     measuredTargets.set(elementId, stamp)
-    checkResults.record({
-      id: measurementId(elementId),
-      origin: 'tool',
-      status: findings.length ? 'fail' : 'pass',
-      evidence: JSON.stringify({ complete, findings }),
-      scope: [elementId],
-      dependencies: { [measurementId(elementId)]: JSON.stringify(stamp) }
-    })
+    checkResults.record(
+      {
+        id: measurementId(elementId),
+        origin: 'tool',
+        status: findings.length ? 'fail' : 'pass',
+        evidence: JSON.stringify({ complete, findings }),
+        scope: [elementId],
+        dependencies: { [measurementId(elementId)]: JSON.stringify(stamp) }
+      },
+      { kind: 'measurement', elementId, findings }
+    )
     measurementPending = false
   }
   const canInspect = registered.some(
@@ -1662,6 +1756,17 @@ export const createLocalOperationTools = (
     measurementPending = !ids.length || current.size !== ids.length
   }
 
+  const mechanicalChecks = createMechanicalChecks({
+    requestId,
+    store: checkResults,
+    validate: measurementsCurrent,
+    measure,
+    refreshPrepared: async (signal, dependencies) => {
+      if (!preparedReview)
+        throw new Error('Prepared check owner is unavailable.')
+      await preparedReview.refresh(signal, dependencies)
+    }
+  })
   const inspect = async (
     elementId: string,
     overview = false,
@@ -1855,7 +1960,7 @@ export const createLocalOperationTools = (
     }
   }
 
-  return {
+  const owner = {
     finishInspection,
     validateCompletion: async (signal?: AbortSignal): Promise<void> => {
       if (!designReview.isAccepted()) return
@@ -1956,7 +2061,13 @@ export const createLocalOperationTools = (
     actionNames: registered.map((action) => action.name),
     definitions: [
       ...(imageCheck ? [imageCheckDefinition] : []),
-      ...(registered.length ? [checkResultsDefinition] : []),
+      ...(registered.length
+        ? [
+            checkResultsDefinition,
+            verifyChecksDefinition,
+            repairChecksDefinition
+          ]
+        : []),
       ...(preparedReview ? [preparedReviewDefinition] : []),
       ...(registered.length
         ? [
@@ -2185,6 +2296,8 @@ export const createLocalOperationTools = (
         return operationInputIssue(value, imageCheckResultSchema)
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS)
         return operationInputIssue(value, designCheckResultsSchema)
+      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS)
+        return operationInputIssue(value, mechanicalVerificationSchema)
       if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
         if (name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
           return value.phase === 'plan' &&
@@ -2334,6 +2447,67 @@ export const createLocalOperationTools = (
       inspectionTargets?: Set<string>
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
+      if (name === AiDesignToolIds.REPAIR_DESIGN_CHECKS) {
+        const issue = operationInputIssue(args, repairChecksSchema)
+        if (issue || !isRecord(args))
+          throw new LocalOperationPreparationError(issue)
+        const { input, findings, targets } =
+          await mechanicalChecks.repairSelection(
+            { requestId: args.requestId, checks: args.checks },
+            signal
+          )
+        const positions = (args.policy as { positions: PrescribedPosition[] })
+          .positions
+        const children = new Map<string, string>()
+        for (const finding of findings) {
+          const previous = children.get(finding.elementId)
+          if (previous && previous !== finding.parentId)
+            throw new LocalOperationPreparationError(
+              'Conflicting parent identities in the selected findings.'
+            )
+          children.set(finding.elementId, finding.parentId)
+        }
+        if (
+          positions.length !== children.size ||
+          new Set(positions.map((item) => item.elementId)).size !==
+            positions.length ||
+          positions.some(
+            (item) =>
+              children.get(item.elementId) !== item.attachmentEvidence.parentId
+          )
+        )
+          throw new LocalOperationPreparationError(
+            'Prescribed positions must cover exactly the pending children and their original parents.'
+          )
+        const evidence = targets.map((id) => {
+          const stamp = measuredTargets.get(id)
+          if (!stamp)
+            throw new LocalOperationPreparationError(
+              'Mechanical evidence is unavailable before repair.'
+            )
+          return stamp
+        })
+        const result = JSON.parse(
+          await owner.call(
+            AiActionNames.APPLY_PRESCRIBED_POSITIONS,
+            {
+              arguments: { positions, evidence },
+              inspection: 'defer',
+              message: 'Applying prescribed positions to checked objects'
+            },
+            signal
+          )
+        )
+        return JSON.stringify({
+          ...result,
+          requestId,
+          checks: checkResults.selection(
+            input.checks.map((item) => item.checkId)
+          )
+        })
+      }
+      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS)
+        return JSON.stringify(await mechanicalChecks.verify(args, signal))
       if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE) {
         if (!imageCheck)
           throw new LocalOperationPreparationError(
@@ -3231,6 +3405,19 @@ export const createLocalOperationTools = (
         receipt = error.receipt
       }
       const deliverReceipt = <T extends AiBatchReceipt>(value: T) => {
+        if (
+          name === AiActionNames.REVIEW_DESIGN &&
+          typeof operationArguments.elementId === 'string'
+        )
+          value = {
+            ...value,
+            mechanicalSelection: {
+              requestId,
+              checks: checkResults.selection([
+                measurementId(operationArguments.elementId)
+              ])
+            }
+          }
         if (hasUnresolvedMutationScope())
           value = {
             ...value,
@@ -3314,6 +3501,13 @@ export const createLocalOperationTools = (
           )
             continue
           const matches = acknowledgements.get(submitted.id) ?? []
+          if (
+            matches.length === 0 &&
+            receipt.failure?.settlement === 'not-started' &&
+            receipt.failure.actionId === submitted.id &&
+            receipt.failure.actionName === submitted.name
+          )
+            continue
           if (
             matches.length !== 1 ||
             matches[0].actionName !== submitted.name ||
@@ -3484,6 +3678,7 @@ export const createLocalOperationTools = (
       return deliverReceipt(receipt)
     }
   }
+  return owner
 }
 
 // This recipe is tested against native Code Mode's actual dynamic-tool adapter.

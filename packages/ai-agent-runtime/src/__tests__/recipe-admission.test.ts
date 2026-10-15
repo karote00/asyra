@@ -1182,3 +1182,46 @@ describe('bounded repair admission', () => {
     expect(admit().ok).toBe(false)
   })
 })
+
+it('admits fresh leased handles without accepting captured or plain request values', () => {
+  const artifact = { type: 'string', 'x-runtime-value': 'request-artifact' }
+  const request = { type: 'string', 'x-runtime-value': 'request' }
+  expect(
+    admitStructured(artifact, artifact, { kind: 'input', path: '' }).ok
+  ).toBe(true)
+  expect(
+    admitStructured(artifact, request, { kind: 'input', path: '' }).ok
+  ).toBe(false)
+  expect(
+    admitStructured(request, artifact, { kind: 'input', path: '' }).ok
+  ).toBe(false)
+  expect(
+    admitStructured(artifact, number, { kind: 'literal', value: 'captured' }).ok
+  ).toBe(false)
+})
+
+it('preserves unique request selections through finite recipe input schemas', () => {
+  const schema = {
+    type: 'array',
+    minItems: 1,
+    uniqueItems: true,
+    items: { type: 'string', 'x-runtime-value': 'request' }
+  }
+  expect(admitStructured(schema, schema, { kind: 'input', path: '' }).ok).toBe(
+    true
+  )
+  expect(
+    admitStructured(
+      schema,
+      { ...schema, uniqueItems: false },
+      { kind: 'input', path: '' }
+    ).ok
+  ).toBe(false)
+  expect(
+    admitStructured(
+      schema,
+      { ...schema, uniqueItems: 'true' },
+      { kind: 'input', path: '' }
+    ).ok
+  ).toBe(false)
+})

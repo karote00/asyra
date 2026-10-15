@@ -71,7 +71,7 @@ export const createInspectionDependencies = (source: {
     dependencies.clear()
     ancestors.clear()
   }
-  return {
+  const owner = {
     capture(
       target: string,
       region: InspectionRegion | undefined,
@@ -119,6 +119,20 @@ export const createInspectionDependencies = (source: {
       for (const id of memberDependencies) link(dependencies, id, receiptId)
       for (const id of receipt.ancestors) link(ancestors, id, receiptId)
       return { receiptId, revision }
+    },
+    currentAttachment(
+      stamp: { receiptId?: string; revision: number },
+      parentId: string
+    ): boolean {
+      const receipt = stamp.receiptId
+        ? receipts.get(stamp.receiptId)
+        : undefined
+      return (
+        !!receipt &&
+        receipt.target === parentId &&
+        receipt.attachment !== undefined &&
+        owner.current(stamp)
+      )
     },
     current(stamp: { receiptId?: string; revision: number }) {
       const receiptId = stamp.receiptId
@@ -228,4 +242,5 @@ export const createInspectionDependencies = (source: {
       clear()
     }
   }
+  return owner
 }

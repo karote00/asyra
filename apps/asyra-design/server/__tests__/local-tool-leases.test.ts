@@ -9,7 +9,10 @@ import {
   localToolReferences
 } from '../local-tool-leases'
 
-const reference = { type: 'string', 'x-runtime-value': 'request' } as const
+const reference = {
+  type: 'string',
+  'x-runtime-value': 'request-artifact'
+} as const
 const value = { type: 'number' } as const
 
 it('keeps dependency-local schema references resolvable in a typed recovery envelope', () => {
@@ -339,4 +342,44 @@ it('admits all artifact aliases before publishing any of them', async () => {
   await open(host, 'ok', undefined, 'first', reference)
   await host.release({ requestId: 'r', callId: 'ok' })
   await host.dispose()
+})
+
+it('passes request data through real leases while retaining explicitly nested artifacts', async () => {
+  const host = setup()
+  const schema = {
+    type: 'object',
+    'x-runtime-value': 'request',
+    properties: {
+      requestId: { type: 'string', 'x-runtime-value': 'request' },
+      revision: { type: 'integer' },
+      handle: reference
+    },
+    required: ['requestId', 'revision']
+  }
+  const data = { requestId: 'r', revision: 2 }
+  await open(host, 'data', undefined, data, schema)
+  await host.retain({
+    requestId: 'r',
+    fromCallId: 'data',
+    value: data,
+    outputSchema: schema
+  })
+  const release = vi.fn()
+  host.publish({ handle: 'live', callId: 'data', release })
+  await host.retain({
+    requestId: 'r',
+    fromCallId: 'data',
+    value: { ...data, handle: 'live' },
+    outputSchema: schema
+  })
+  await host.release({ requestId: 'r', callId: 'data' })
+  expect(release).not.toHaveBeenCalled()
+  await expect(
+    open(host, 'missing', undefined, { ...data, handle: 'absent' }, schema)
+  ).rejects.toThrow(/unavailable/)
+  expect(() => localToolReferences({ ...data, handle: {} }, schema)).toThrow(
+    /opaque string/
+  )
+  await host.dispose()
+  expect(release).toHaveBeenCalledOnce()
 })

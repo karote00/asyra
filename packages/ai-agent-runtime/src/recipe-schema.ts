@@ -13,7 +13,7 @@ interface RecipeConstraints {
   maxLength?: number
   minItems?: number
   maxItems?: number
-  'x-runtime-value'?: 'request' | 'document' | 'secret'
+  'x-runtime-value'?: 'request' | 'request-artifact' | 'document' | 'secret'
 }
 
 export type RecipeSchema = RecipeConstraints &
@@ -45,7 +45,7 @@ const keysByType: Record<
   string[]
 > = {
   object: ['properties', 'required', 'additionalProperties'],
-  array: ['items', 'minItems', 'maxItems'],
+  array: ['items', 'minItems', 'maxItems', 'uniqueItems'],
   string: ['minLength', 'maxLength'],
   number: ['minimum', 'maximum'],
   integer: ['minimum', 'maximum'],
@@ -70,7 +70,7 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
     )
   if (
     value['x-runtime-value'] !== undefined &&
-    !['request', 'document', 'secret'].includes(
+    !['request', 'request-artifact', 'document', 'secret'].includes(
       value['x-runtime-value'] as string
     )
   )
@@ -129,7 +129,14 @@ export const readRecipeSchema = (value: unknown, depth = 0): RecipeSchema => {
       readRecipeSchema(child, depth + 1)
     )
   }
-  if (type === 'array') readRecipeSchema(value.items, depth + 1)
+  if (type === 'array') {
+    if (
+      value.uniqueItems !== undefined &&
+      typeof value.uniqueItems !== 'boolean'
+    )
+      throw new Error('Expected boolean uniqueItems')
+    readRecipeSchema(value.items, depth + 1)
+  }
   return { ...value, raw: value } as unknown as RecipeSchema
 }
 
@@ -214,7 +221,9 @@ export const readRegisteredRecipeSchema = (root: unknown): RecipeSchema => {
     const annotation = value['x-runtime-value']
     if (
       annotation !== undefined &&
-      !['request', 'document', 'secret'].includes(String(annotation))
+      !['request', 'request-artifact', 'document', 'secret'].includes(
+        String(annotation)
+      )
     )
       throw new Error('Unknown runtime value annotation')
     const metadata = annotation

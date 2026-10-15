@@ -149,7 +149,9 @@ it.each(['success', 'partial', 'failed'] as const)(
       type: 'object',
       required: ['handle'],
       additionalProperties: false,
-      $defs: { handle: { type: 'string', 'x-runtime-value': 'request' } },
+      $defs: {
+        handle: { type: 'string', 'x-runtime-value': 'request-artifact' }
+      },
       properties: { handle: { $ref: '#/$defs/handle' } }
     }
     const semantics = toolSemantics(
@@ -7858,4 +7860,124 @@ it('rejects a changed registry continuation before silently skipping a capabilit
   expect((await invoke(fresh.next.arguments)).success).toBe(true)
   expect(inventory).toHaveBeenCalledTimes(3)
   expect(schemaRead).toHaveBeenCalledTimes(56)
+})
+
+it('validates aggregate verification and refuses repair of an already passed selection through the common boundary', async () => {
+  let findings: unknown[] = []
+  const dispatch = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result:
+        action.name === AiActionNames.REVIEW_DESIGN
+          ? {
+              available: true,
+              complete: true,
+              findings,
+              evidence: {
+                sessionId: 'session',
+                revision: 1,
+                receiptId: 'target'
+              }
+            }
+          : { current: true, status: 'complete', appliedElementIds: ['child'] }
+    }))
+  }))
+  const owner = createLocalOperationTools(
+    [
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+      AiActionNames.APPLY_PRESCRIBED_POSITIONS
+    ].map((name) => ({
+      name,
+      description: name,
+      inputSchema: { type: 'object' }
+    })),
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    dispatch
+  )
+  const signal = new AbortController().signal
+  const review = JSON.parse(
+    await owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'target' } },
+      signal
+    )
+  )
+  expect(
+    JSON.parse(
+      await owner.call(
+        AiDesignToolIds.VERIFY_DESIGN_CHECKS,
+        review.mechanicalSelection,
+        signal
+      )
+    )
+  ).toMatchObject({ verification: { status: 'pass' } })
+  await expect(
+    owner.call(
+      AiDesignToolIds.REPAIR_DESIGN_CHECKS,
+      {
+        ...review.mechanicalSelection,
+        policy: {
+          capability: 'set-prescribed-child-position',
+          positions: [
+            {
+              elementId: 'child',
+              x: 1,
+              y: 1,
+              attachmentEvidence: {
+                parentId: 'target',
+                workspaceId: 'workspace',
+                evidence: { sessionId: 'session', revision: 1 }
+              }
+            }
+          ]
+        }
+      },
+      signal
+    )
+  ).rejects.toThrow(/pending repair/)
+  expect(
+    dispatch.mock.calls.flatMap(([batch]) =>
+      batch.actions.map((action) => action.name)
+    )
+  ).not.toContain(AiActionNames.APPLY_PRESCRIBED_POSITIONS)
+  findings = [
+    { kind: 'container-overflow', elementId: 'child', parentId: 'target' }
+  ]
+  const pending = JSON.parse(
+    await owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'target' } },
+      signal
+    )
+  )
+  const repaired = JSON.parse(
+    await owner.call(
+      AiDesignToolIds.REPAIR_DESIGN_CHECKS,
+      {
+        ...pending.mechanicalSelection,
+        policy: {
+          capability: 'set-prescribed-child-position',
+          positions: [
+            {
+              elementId: 'child',
+              x: 1,
+              y: 1,
+              attachmentEvidence: {
+                parentId: 'target',
+                workspaceId: 'workspace',
+                evidence: { sessionId: 'session', revision: 1 }
+              }
+            }
+          ]
+        }
+      },
+      signal
+    )
+  )
+  expect(repaired.requestId).toBe(pending.mechanicalSelection.requestId)
+  expect(repaired.actionResults[0].result.appliedElementIds).toEqual(['child'])
+  expect(repaired.checks).toHaveLength(1)
 })

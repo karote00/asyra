@@ -1415,3 +1415,77 @@ it('continues discovery through a rejected library submission when the actual ca
     await app.host.dispose()
   }
 })
+
+it('retains typed known findings when a later canonical measurement is unavailable', async () => {
+  const f = inspectionHandoffFixture()
+  const finding = {
+    kind: 'container-overflow',
+    elementId: 'child',
+    parentId: 'frame',
+    right: 20
+  }
+  f.state.findings = [finding]
+  const first = await f.review('frame')
+  f.state.unavailable = true
+  f.state.findings = []
+  const next = await f.review('frame')
+  const current = f.checkResults.select(next.mechanicalSelection.checks)[0]
+  expect(current.retired).toBe(false)
+  if (current.retired) throw new Error('Unexpected retirement')
+  expect(current.recheck).toMatchObject({
+    kind: 'measurement',
+    findings: [finding]
+  })
+  expect(current.result.status).not.toBe('pass')
+  expect(next.mechanicalSelection.checks[0].revision).toBeGreaterThan(
+    first.mechanicalSelection.checks[0].revision
+  )
+})
+
+it.each(['not-started', 'unknown'] as const)(
+  'retains precise %s write settlement after an exact action rejection',
+  async (settlement) => {
+    let attempts = 0
+    const owner = createLocalOperationTools(
+      [
+        {
+          name: AiActionNames.UPDATE_DESIGN_ELEMENT,
+          description: 'Edit',
+          inputSchema: {}
+        }
+      ],
+      { modelActions: (value) => value, resolveBatch: (value) => value },
+      async (batch) => {
+        attempts++
+        const action = batch.actions[0]
+        return requireBatchSuccess(
+          batch,
+          {
+            actionResults: [],
+            context: {},
+            failure: {
+              code: 'REJECTED',
+              message: 'Preflight rejected',
+              stage: 'execution',
+              actionId: action.id,
+              actionName: action.name,
+              actionExecutionMs: 0,
+              settlement,
+              contextFresh: true
+            }
+          },
+          0
+        )
+      }
+    )
+    const call = () =>
+      owner.call(
+        AiActionNames.UPDATE_DESIGN_ELEMENT,
+        { arguments: { elementId: 'child', properties: { x: 10 } } },
+        new AbortController().signal
+      )
+    await call()
+    await call()
+    expect(attempts).toBe(settlement === 'not-started' ? 2 : 1)
+  }
+)

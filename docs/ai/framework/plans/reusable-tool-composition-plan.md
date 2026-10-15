@@ -1,17 +1,399 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: Stage 1 is complete locally and authorized for one push after source integration and applicable local checks. Stage 2 is authorized for plan review only, after that push.
+Status: Stage 2 implementation and owner integration are complete. The current
+delivery request permits one Stage 2 push after current-main integration gates,
+followed by local Stage 3 planning review only.
 
 ## Current authority and stop boundary
 
-The current request authorizes publishing the completed Stage 1 work, including its
-reviewed persistence/history correction and permanent integration evidence. Fetch and
-integrate current main, preserve unrelated changes and pass affected local checks
-before this one push. Then review and update the Stage 2 plan only and report an
-execution brief. Stage 2 planning edits remain local and unpushed. No Stage 2
-implementation, live 101, model requests, monitoring, PR creation or merge is authorized.
-App model and effort remain unchanged. Earlier execution cards are historical outcomes,
-not permission to restart their automatic workflows.
+Deliver the completed Stage 2 and retained Stage 1/Inspector corrections as defined
+below. Preserve primary-agent visual review, accumulated results, Factory history
+and persistence recovery. After delivery, review only the current Stage 3 plan and
+its direct Stage 1/2 handoffs. Do not implement Stage 3/4, run live 101, call models,
+create a PR, merge or resume monitoring. Later plan edits remain local. Historical
+execution cards document earlier decisions and do not authorize new work.
+
+### Stage 2 delivery authorization and integration - 2026-10-16
+
+The user authorizes pushing the completed Stage 2 and retained Stage 1/Inspector
+corrections now. This supersedes only their earlier local-only delivery restriction.
+After this push, review and amend Stage 3 planning locally; no Stage 3 implementation,
+live 101, model calls, further push or monitoring is authorized.
+
+Integrate main 3f91e39fed0a97b87b6f254f1b2febc221d44afb before delivery.
+Preserve its collaboration observations and authoritative history case identities;
+retain this branch's three no-op replay cases and exact fault sets. Resolve only
+these integration overlaps, regenerate the existing catalog, and run affected
+Inspector/Factory/browser contract gates. Runtime source hashes from the prior
+review are unchanged; retain their evidence rather than repeating unrelated gates.
+Use the inspected remote source e0d52ddefedb941ed18d5b324130b2e4b51455bc as the
+exact force-with-lease guard after the required rebase. Remote divergence is the
+previously published equivalent pre-rebase series, not additional remote work.
+
+### Stage 2 delivery inventory correction - 2026-10-16
+
+The newly integrated collaboration inventory test failed against the branch's
+existing cases: one recovery title changed and five recovery/compensation cases
+were not yet mapped. Compare the actual configured Playwright list (22 cases)
+with the current collaboration Inspector before editing. Its recovery owner
+already owns retained drafts, outbox reconciliation and generation barriers;
+remote apply owns peer compensation. Preserve existing case identities, map
+these cases once with actual minimum participant counts (one or two), and
+regenerate the catalog. No runtime, test behavior or Stage 3 implementation
+changes. The exact inventory/admission tests must pass with all existing cases;
+this cannot be closed by removing cases or relaxing equality.
+
+### Stage 2 delivery observation timing correction - 2026-10-16
+
+The complete original command passed 19 cases with three declared skips, but the
+strict localization consumer rejected the recovery case: App readiness can precede
+replacement collaboration-session identity after Retry. The new main observation
+helper attached null as if it were a participant. The complete configured command
+is the failing formal regression; the product assertions remain unchanged.
+
+Owner: existing original-run observation helper, covered by the collaboration
+manifest's observationInputs, not the product recovery owner. Readiness must wait
+within a bounded timeout for the actual collaboration handle identity before
+attaching participant evidence. Do not invent actors, omit required participant
+counts, relax normalization or replay product operations. Missing identity must
+fail the observation explicitly. Implementation boundary is
+`apps/asyra-design/e2e/collaboration-observation.ts`; preserve identity checks,
+source invalidation and original case assertions. Run the complete observed collaboration command, including the actual recovery
+case, plus helper invalidation tests. This is main-integration tooling correction, not Stage 3.
+
+### Stage 2 observation iteration review - 2026-10-16
+
+Re-audit after the first observation correction: Playwright waitForFunction tests
+predicate truthiness without awaiting it (installed coreBundle predicate call).
+An async predicate is a truthy Promise even when its eventual identity is null.
+Keep the existing strict participant normalizer. Use test-runner async polling of
+the resolved page evaluation instead. Add a focused original-command proof of the
+same recovery case by parameterizing the existing command/report assertion; keep
+its complete 22-case variant. Run that short proof before repeating the complete
+command. No product operation, timeout for product cases or outcome semantics change.
+
+### Stage 2 delivery integration outcome - 2026-10-16
+
+The integrated source preserves the 590 previously reviewed Design/Runtime/Factory
+source files byte-for-byte. Current-main integration changed observation contracts
+and the test helper, not Stage 2 product behavior. Evidence in `tmp/stage2-push/`:
+
+- Factory 300 tests; Runtime, Design and Inspector builds passed.
+- Final contract/catalog 49 tests, collaboration normalizer 13 tests, naming 15
+  tests, delivery metadata 18 tests and applicable lint passed.
+- Four direct collaboration/history/recovery E2Es passed; the configured real
+  History Board failure/recovery proof passed. Existing runner and original-case
+  localization checks passed; earlier inventory failures remain failed evidence.
+- The focused recreated-session observation passed (25.7 s). The complete observed
+  collaboration command then passed (218.3 s): 19 product cases, three declared
+  opt-in skips, all 22 mapped with valid original participant evidence. Both earlier
+  null-identity reports remain failed; a formatting-interrupted run is not a pass.
+- Current-source Design candidate `207e7115-8d29-449d-b266-1ca586c87129` passed.
+  Rebinding the same Stage 2 obligations to accepted integration baseline 88 produced
+  assessment `13d75332-52e0-4288-b4e5-45fbe9994023`, current and eligible. The old
+  baseline-87 assessment is stale, not completion evidence for the integration.
+
+The final delivery must still verify its actual committed head, changeset and exact
+remote lease. No live 101, provider request, Stage 3 product change or CI monitoring
+was performed. The subsequent Stage 3 planning review remains local after push.
+
+### Stage 1/2 integration review - 2026-10-16
+
+- Objective: recheck the current Stage 2 diff and direct Stage 1 consumers, including
+  accumulated passes, current-request peer changes, failure recovery, history,
+  compensation, resend and document reload. No Stage 3, live model, 101, push or monitoring.
+- Inspector comparison: existing inspect-current-stage owns scoped canonical
+  freshness and result retention; apply owns guarded writes; Factory and document
+  settlement retain their existing history/durability owners. No new routing or
+  compatibility contract is authorized. Current admission remains the baseline.
+- Before edits: review found that the real aggregate integration already checks
+  a passive collaboration peer and durable Undo/Redo, but does not change that peer
+  while the same host request retains successful results. Strengthen that existing
+  formal case with a peer mutation and peer Undo, exact remeasurement targets and
+  unchanged independent result revisions. Do not infer a product bug until reproduced.
+- Mutation boundary: the existing integration case and this plan/handoff; any
+  reproduced direct regression is fixed test-first in its existing admitted owner.
+- Gates: complete inspection/action integration, existing Factory replay/transaction
+  suites, browser collaboration/history/recovery consumers, server canonical reducer
+  and persistence queue, applicable lint/types and current Inspector evidence.
+  Review error settlement and recovery paths in source as well as assertions.
+- Stop: report only this bounded stage review; retained historical evidence is not a
+  substitute for an affected gate, and no fixture failure is labeled a product bug.
+
+### Stage 1/2 integration review outcome - 2026-10-16
+
+The review found a missing combined integration assertion, not a reproduced new
+production defect. The existing successful aggregate case now holds the real host
+request open while a peer changes the repaired third region. Verification reopens
+exactly that region, performs one canonical measurement, and retains all seven
+independent pass records/revisions. Peer Undo restores the geometry; one more
+measurement restores the pass under a newer revision. The original AI Undo/Redo,
+peer convergence, authoritative saved digest and page reload assertions still pass.
+The test records actual dispatched measurement targets, not just returned values.
+Only this existing formal test and plan/handoff changed in this review.
+
+Source review covered current schemas/selection provenance, prewrite guards versus
+writer errors, partial/cancelled acknowledgements, typed repair coverage, result
+currency/retirement, shared editor callers, ordinary Factory history/publication,
+and exact persistence retries. Primary-agent inspection remains separate from tool
+success. No parallel interpreter, second store, compatibility branch or new policy
+was added. Existing accepted runtime/architecture evidence remains current; no
+new production behavior was needed to close this review.
+
+Fresh evidence under `tmp/stage2-review/`:
+
+- `peer-e2e.log`: the strengthened real-peer case passes independently.
+- `integration-full.log`: complete inspection suite, 12 passed / 2 original opt-in
+  skips. The command's nonmatching action-suite filename selected no action tests;
+  action usage was therefore run separately and is not claimed by this log.
+- `action-usage.log`: all 22 registered action usage cases pass.
+- `collaboration-recovery.log`: 9 existing real-browser cases pass: blocked local
+  draft isolation; finite batch history; reconnect; remote nested-group Undo/Redo;
+  visible rollback compensation and reload; preparation failure with retained edits,
+  reload/retry and later save; IndexedDB prefix recovery; accepted-source cleanup
+  failure and replay. These use actual peers and the document backend.
+- `factory.log`: all 300 Factory tests pass; `core-history.log`: 6 history tests pass.
+- `recovery-consumers.log`: 269 existing collaboration, publication outbox, recovery
+  controls and transaction tests pass. `server-owners.log`: 291 check/repair,
+  composition, receipt, canonical reducer and backend persistence tests pass.
+- `browser-ai.log`: all 586 browser AI tests pass. Some suites overlap; counts are
+  reported individually, not added into a synthetic coverage total.
+- `browser-types.log`, `server-types.log`, `lint.log`, `naming.log`: production
+  TypeScript, changed-test lint and all 15 naming checks pass. Diff whitespace passes.
+- `assessment.json`: existing assessment b784e46f-6ecf-47e4-8585-0d69097cbe3c remains
+  current=true and eligible=true on unchanged runtime source. The strengthened E2E
+  evidence above is additional evidence, not fabricated Inspector case execution.
+
+No live model/101, Stage 3, commit, push or monitoring was performed. Test servers
+remain Playwright-owned and are checked for exit before reporting completion.
+
+### Stage 2 local completion - 2026-10-16
+
+The existing registry, invoke boundary, request check store and Runtime finite
+iteration now connect native mechanical selection -> aggregate verify -> explicitly
+prescribed guarded repair -> fresh selection -> verify. Current independent passes
+are retained, typed unavailable findings survive failed reads, and only changed
+selected dependencies are measured. No extra model, interpreter, result store,
+compatibility route, inferred repair or automatic policy rebasing was introduced.
+Primary visual acceptance and document durability remain independent obligations.
+
+Final review exercised producer/consumer schemas and resource lifetimes, actual
+request identity, stale revision/currency admission, complete pending coverage,
+parent-local attachment basis, locks, partial reads, cancellation, unknown writes,
+retirement, repeated progress and real downstream history/persistence. It corrected
+known prewrite rejection classification without relabeling writer errors. The final
+browser case explicitly changes the parent in a canonical transaction, rejects old
+evidence, obtains new evidence and an explicitly renewed policy, completes repair,
+and verifies Undo/Redo, a collaboration peer, saved digest and reload. Other seven
+selected passes retain their evidence without remeasurement. The test uses the same
+requireBatchSuccess adapter as the actual provider; failed receipts are not mistaken
+for successful dispatch. Earlier malformed fixture/setup failures remain failed
+logs, not product-regression evidence.
+
+Final evidence (`tmp/stage2/`):
+
+- Runtime `runtime-final.log`: full 376 passed; runtime source unchanged afterward.
+- Design server `server-recovery-final.log`: 1,234 passed, 9 original opt-in skips.
+- Design browser AI `browser-recovery-final.log`: full 586 passed.
+- `browser-integration-final.log`: complete inspection/action-usage suites, 33 passed
+  and 2 original conditional skips before the last known-rejection correction.
+- `mechanical-recovery-final-e2e.log`: all five real aggregate integration modes
+  passed on the final correction (success, changed basis, no progress, cancellation
+  after write, interrupted reply after write). `action-recovery-final-e2e.log`: the
+  current public action success/invalid/cancel/mixed-ID usage case passed again.
+- `prewrite-red.log`, `prewrite-consumer-red.log` fail the specific product assertions;
+  `prewrite-green.log` passes all 55 affected tests. Other red/green owner evidence
+  remains in this directory. No failed run is reclassified as passed.
+- Production browser and AI-server TypeScript, focused lint, 15 naming checks and
+  8 generated catalog tests pass. `git diff --check` passes. A command using the
+  nonexistent tsconfig.server.json was corrected to the actual tsconfig.ai-server.json;
+  it is not a production type failure or passing evidence.
+- Final Design candidate `3d151d8f-2f78-41b0-832d-aab7e51b6daf`: 34 mapped cases pass.
+  Review `03e53793edfc7be6407d1b1e12fc1ba4d7cc4a19b8bbd511f9ef724b4eed8e65`
+  has no blockers. Target `88a3a548-937e-4487-9094-533cb8dc29bf`, allocation 1,
+  assigns all current obligations to their seven existing owner steps.
+  Assessment `b784e46f-6ecf-47e4-8585-0d69097cbe3c` is completed, current and eligible;
+  every owner and incoming handoff passes on the same runtime source, retaining the
+  accepted baseline revision 87. Earlier development-only targets remain pending
+  historical evidence; they were never completion proof. No baseline was published.
+
+Limit: this stage supports prescribed existing-child position repair for supported
+container-overflow findings. Creative choices, other repair families and primary
+visual judgment remain with the primary AI; Stage 3 delegation and Stage 4 reuse
+are not implemented or authorized by this completion. No live AI/101 was run and no
+performance/first-frame claim is made. Test services exited; local changes and .env
+remain. Do not push, restore monitoring or proceed to the next stage.
+
+### Stage 2 admission card - 2026-10-16
+
+- Owner routes: Design `inspect` and `apply`, existing Runtime recipe invocation.
+- Inputs: request-owned exact check selection, canonical recheck descriptors and
+  dependency receipts; explicit prescribed repair policy.
+- Outputs: typed verification status/progress and complete current selection;
+  acknowledged repair/partial/recovery receipts; no fabricated visual acceptance.
+- Conditions: exact request/revision/origin admission, current dependency guards,
+  bounded coalesced reads, supported complete repair coverage, owner-confirmed
+  retirement, retained independent results, no replay of initial writes.
+- Boundaries: existing check-result store and producers, operation-tool coordinator,
+  canonical browser review/repair actions, existing host/schema/Runtime consumers;
+  their formal tests, spec, Inspector and generated catalog. No second store,
+  interpreter, creative repair, nested model or compatibility branch.
+- Admission: update inspect/apply exact conditions and supported mapping admission;
+  structural acceptance is not proof of unimplemented behavior. Add executable
+  product cases and source-bound evidence in each owner slice; final actual Runtime
+  and browser/save/reload tests must pass before Stage 2 completion.
+- Gates: naming, owner regressions, native/common invocation and finite-recipe
+  integration, actual browser/local dependency/partial/cancellation/history/save
+  recovery cases, affected lint/types. No unrelated full local CI.
+- Stop/replan: an unsupported owner or lifecycle assumption must be resolved at the
+  current bounded slice before continuing; never infer success from an old green run.
+
+### Stage 2 lifetime handoff card - 2026-10-16
+
+- First incorrect owner: Design's schema-driven lease walker treats every request
+  value as an opaque artifact. Canonical inspection stamps are request-owned objects;
+  check selections will have the same lifetime without any artifact release operation.
+- Current contract: `x-runtime-value: request` denotes transient request data;
+  `request-artifact` denotes an explicitly leased opaque handle. Both reject captured
+  recipe literals/defaults and require compatible typed bindings. Document and secret
+  identities keep their current rules. No legacy request-as-artifact fallback.
+- Owners: Runtime `admit` proves the annotation and exact dependency fingerprint;
+  Design host `invoke` opens/retains/releases only declared artifact handles. Actual
+  preparation/query/image handle producers migrate together with the walker. Plain
+  inspection stamps and check selections remain request data; nested artifact fields
+  still undergo lease validation. Changed dependency fingerprints invalidate saved
+  recipes until ordinary current-contract admission succeeds.
+- Boundaries: recipe schema and admission tests/spec/Inspector; Design common tool
+  schema, lease walker and host integration tests. No new storage or identity guessing.
+- Proof: first reproduce plain request input/output failing leases, fresh compatible
+  artifact binding rejected by admission, and captured artifact literals rejected;
+  then prove real lease transfer, sibling refusal and cleanup still hold. Follow with
+  existing composition and review integrations before advancing to aggregate checks.
+- Self-review: lifetime and resource ownership are independent responsibilities.
+  A generic annotation preserves typed binding and host ownership without fake leases
+  for record IDs, name-based exemptions, or weakening existing artifact validation.
+
+### Stage 2 check provenance card - 2026-10-16
+
+- Owner: Design `inspect`; canonical check producers -> request check store ->
+  aggregate verifier. Keep public evidence as a summary, never parse it for dispatch.
+- Store exact typed measurement/prepared descriptors beside the current record;
+  expose detached private selections only to the coordinator. Public reads return
+  compact check identity/revision projections. A retired tool record retains its
+  last revision and owner reason; missing, recreated and main-agent records cannot
+  masquerade as retired mechanical success.
+- Admission validates the entire nonempty unique selection before work. Invalidation
+  changes freshness but preserves identity; producing new evidence advances revision.
+  Re-recording an identical descriptor and result reuses the revision. Retirement is
+  canonical owner action, never inferred from a failed lookup.
+- Tests: exact revision, duplicate/mixed selection, retirement/recreation, detached
+  descriptors, no evidence parsing, unaffected pass retention and producer handoff.
+- Review: use the existing store and its dependency graph. No second result registry,
+  global invalidation or model calls. Runtime host supplies its actual request ID;
+  a standalone operation owner has its own request scope for direct formal tests.
+
+### Stage 2 aggregate verification and prescribed repair card - 2026-10-16
+
+- Owner sequence: `inspect` validates complete current selection and refreshes only
+  typed selected dependencies; `apply` admits explicit positions and dispatches a
+  guarded canonical browser action; Runtime consumes the existing status/progress
+  interface. No model or new interpreter participates.
+- Producer handoff: successful native `review_design` receipts include a required
+  `mechanicalSelection` with actual request ID and nonempty check selection. Existing
+  check summaries remain summaries. Aggregate results return the same selected IDs
+  with current revisions; partial results retain this projection for read-only retry.
+- Review correction: explicit positions also carry the existing
+  `PreparedAttachmentEvidence` (parent/workspace/basis stamp). Parent ID alone cannot
+  guard a changed coordinate basis. Policies bind this original evidence, never a
+  newly substituted basis. The existing attachment reader supplies it. No inferred
+  positions or automatic policy refresh. Invalid basis returns to primary decision.
+- Implementation boundaries: `local-mechanical-checks.ts`, existing operation tools,
+  check store and typed producers; `prescribed-position-action.ts`, shared edit
+  preparation, existing browser action registration and evidence owner; their exact
+  tests/spec/Inspector. Preflight every edit using the existing editor's authoritative
+  validation before any write, then run in the existing synchronous mutation boundary.
+- Verify proofs: supported current passes avoid remeasurement; one changed region
+  preserves unrelated passes; incomplete/failed/cancelled refresh retains independent
+  results; progress excludes revision/time; terminal retirement remains selectable;
+  unsupported descriptors/findings return decision-required, never auto-pass.
+- Repair proofs: full finding/policy coverage, duplicate/foreign/expired/locked targets,
+  queue-time dependency changes and parent changes reject before writes; current
+  receipts, partial settlement and cancellation preserve actual history/save behavior.
+  Integration must use real host/registry/Runtime and real browser persistence, not
+  replace the canonical checker or writer with a mocked success.
+
+### Stage 2 handoff iteration review - 2026-10-16
+
+Real browser integration reached actual native review, request ownership admission,
+and guarded repair admission. An invalid complete-set policy was correctly refused
+before writes, but the declared repair recovery schema required retained selection
+on every failure. The host therefore replaced the correct admission failure with
+`TOOL_HANDOFF_FAILED/unknown`. Correct the output union at its definition owner:
+explicit admission/not-started failures need no retained write result; execution
+partial/recovery requires the acknowledged current selection. Do not loosen host
+validation or infer that unknown outcomes were not started. Add a native-host proof
+before repeating the browser flow. The first browser attempt also corrected its test
+oracle from wrapper `success` to the actual delivered `toolOutcome`; that was not a
+product behavior change.
+
+The actual browser flow also exercised the App startup permission table: the new
+registered reversible action was correctly denied because its allow entry was
+missing. The existing all-registered-actions startup test reproduces this omission.
+Include startup permission wiring and its existing tests in this same apply-owner
+card; preserve deny-by-default for unknown actions.
+
+The native response validator also classified aggregate verification as an action
+receipt despite its declared read-only check schema. A formal native-host proof now
+requires the exact verification output through the common boundary; bind that
+validator to the existing declared verification schema, not an empty action array.
+
+The exact unique selection schema also exposed a Runtime contract gap: registered
+schemas preserve `uniqueItems`, but fresh recipe/state schemas reject the same
+keyword. Extend the existing array subset to admit and validate this boolean
+constraint, retaining implication checks and host runtime validation. Formal tests
+must reject missing/false uniqueness when the consumer requires it and malformed
+annotation values. This does not increase a work limit or bypass duplicate checks.
+
+Attachment receipt identity is checked by its canonical dependency owner, not just
+currency: a current capture for another target or a non-attachment capture cannot
+approve this parent. The ordinary one-argument `current` API remains unchanged;
+`currentAttachment` is the explicit typed operation. Existing callers passing
+`current` to Array.map exposed why adding an optional positional argument there was
+incorrect; the owner API now keeps these responsibilities separate.
+
+### Stage 2 failure and currency closure - 2026-10-16
+
+The same-source real browser cases now cover successful repair, repeated-progress
+stop, cancellation after an acknowledged write and delivery interruption after an
+acknowledged write. They use the actual host, Runtime recipe, browser actions,
+Factory/history, peer collaboration and document backend/reload. Fault injection
+happens after the actual write, not in a mocked mutation. No live model is invoked.
+The existing startup test caught a missing new-action allow entry before closure.
+
+Review found two further prewrite/read-boundary gaps: a changed revision during
+asynchronous admission must remain a known rejection, and findings without current
+canonical receipts cannot declare repairability. Revalidate independently completed
+reads after a partial read, retain typed prior findings on unavailable measurements,
+and return the complete current selection with pending findings. New regressions
+failed before their owner fixes. Neither verification nor recovery replays writes.
+
+### Stage 2 known prewrite rejection recovery - 2026-10-16
+
+Owner: existing `apply` browser guard and operation receipt consumer. The initial parent-basis integration failure was a malformed test fixture call to
+Core's plural property API, not evidence of a browser preflight rejection. Correct
+the fixture to actual elementId/values updates and assert the first rejection's
+settlement before retry. Separate formal regressions reproduced two real gaps:
+preflight throws an unclassified error and the operation consumer marks an explicit
+not-started receipt as unknown scope. Preserve the failed fixture evidence and do
+not use it as proof of the product root cause. Preflight must explicitly report the existing input-contract
+rejection before any mutation; execution errors after that boundary remain unknown.
+The operation consumer must honor an exact failed-action not-started receipt without
+inventing a missing mutation scope; acknowledged earlier actions still contribute.
+No automatic policy rebasing, permission bypass, unknown-write retry or new state.
+Boundaries: prescribed-position action, operation receipt consumer, their formal
+regressions, existing spec/Inspector and functional case mapping. Gates: known-vs-
+unknown failure tests and actual parent change -> rejection -> fresh prescribed
+policy -> repair -> Undo/Redo -> peer/save/reload. No additional repair family.
 
 ### Stage 1 Factory follow-up review card - 2026-10-15
 
@@ -600,6 +982,201 @@ unrelated passing reports into a whole-system pass. Neither `inspect-to-compose`
 continuation stays within tools; a new design choice returns to the primary agent.
 Update those predicates/cases to remove ambiguity before implementing continuation.
 
+#### Stage 2 execution review - 2026-10-15
+
+This reviewed design is authorized for Stage 2 implementation. Stage 1 remains
+the prerequisite. Development target c49b050d-be3d-4279-888b-4c1558a2f6ce records
+pending obligations, not completion or performance proof. Inspector cleanup is
+a separate predecessor tooling slice.
+
+**Fixed objective.** Close explicitly selected mechanical obligations through the
+existing Design check owner and real Runtime finite iteration, preserve unrelated
+passed evidence, and return actionable incomplete work without repeating prior
+writes. Primary-agent visual judgments, creative choices and final document
+settlement remain separate. Suitable direct operations do not require recipes.
+
+**Review findings and resolved design.**
+
+1. The proposed checker is not enough: the existing basic repair API can write
+   prescribed values but cannot guard an entire verification result. Add one
+   Design-owned `repair_design_checks` adapter in the existing apply route. Its
+   input declares the complete acknowledged `checks`, the supported repair
+   capability and explicit repair policy. It resolves findings from the canonical
+   check owner, preflights all pending findings and live dependencies, then invokes
+   existing App/Core mutation APIs. Runtime never selects domain repairs.
+2. Existing records retain human-readable `evidence` and generic scope; neither
+   diagnostic text nor ID prefixes are sufficient recheck instructions. Producers
+   must attach typed owner-owned recheck descriptors to tool records: checker kind,
+   canonical target/source identity, current dependency receipt and supported
+   finding payload. Keep these within the existing request-owned check store and
+   existing artifact lifetimes, not a second result store or a scene copy. Public
+   compact results need not expose the internal payload. A producer without a
+   complete supported descriptor yields decision-required, never a guessed scan.
+3. Runtime always checks again after a repair. The previous instruction to omit an
+   empty verification after all targets retire is incompatible with that loop.
+   Preserve the nonempty selected logical obligations, including owner-confirmed
+   terminal retirement records, through the final check. Keep terminal provenance
+   and the last acknowledged revision in the existing store; do not infer retirement
+   from an absent lookup. Recreated IDs advance revision and invalidate old receipts.
+   The final checker can pass an all-retired selection explicitly; Runtime needs
+   no special empty-state bypass. Retirement never approves dependent visual work.
+4. Counts, fresh record revisions and unchanged source bounds alone cannot prove
+   progress. Derive the stable token from normalized selected obligation identity,
+   unresolved finding kind/arguments and applicability, excluding receipt versions,
+   timestamps and observation counters. Exact revision admission and live dependency
+   validation remain independent requirements. Repeated/cyclic unresolved work
+   stops through Runtime's existing progress guard.
+5. A generic tool-origin result is not automatically a repairable geometry result.
+   Preparation, attachment/reference applicability, canvas measurements and image
+   metrics keep their actual recheck owners. Dispatch supported deterministic reads
+   through those owners; unavailable source, unsupported repairs and unknown write
+   settlement remain exact decisions. Never call the primary model or an assessor
+   from a mechanical checker or repair adapter. Primary-agent records cannot be
+   silently selected as mechanical work or promoted by geometry success.
+6. A check record becoming stale without changing revision is already possible.
+   Capture canonical dependency receipts before asynchronous reads and validate
+   again before recording results and before each write boundary. Serialize only
+   the existing leaf mutation boundary; the coordinator cannot hold the host barrier
+   while waiting for a child. Do not use the viewport or a global display revision
+   as local currency. A file load changes the canonical session and invalidates
+   request artifacts; pan/zoom alone does not change geometry dependencies.
+7. The repair receipt, not the initial input or earlier check result, supplies the
+   next iteration selection. Include every selected pass, pending record and terminal
+   retirement. Preserve unrelated passes. A repair that creates new affected
+   obligations must report that closure; the first supported repair cannot create
+   objects, reparent, delete, alter shared styles or implicitly broaden its scope.
+   Partial/unknown receipts are never successful successor bindings.
+8. Mechanical pass is not task completion. After the loop, primary-agent visual
+   fail/correct/pass still works, previously passed unaffected units accumulate,
+   and settle independently confirms document publication/persistence. Recipe
+   eligibility and library save success do not substitute for either condition.
+
+**Exact first repair.** Use the already demonstrated container-overflow case with
+an explicitly authorized parent-local position for existing children. The primary
+agent supplies the prescribed values/policy; tools check coverage and apply them.
+Do not automatically clamp positions, resize a parent, guess aesthetics, move an
+unrelated child, or convert text overflow into the same repair. The adapter rejects
+mixed unsupported findings before the first write. It verifies the child/parent,
+current geometry, permitted fields and that all remaining findings fit this repair.
+Overlapping selected roots must not duplicate the same physical mutation. Both
+measurement and repair use actual canonical App operations, not fixture state.
+Additional repair families are separate future capabilities, not a Stage 2 claim.
+The current low-level review's `repairable` label is not aggregate repair admission:
+only typed findings with this implemented capability may enter the new repair path.
+
+**Public handoff.** `verify_design_checks` takes a closed nonempty unique selection
+`{ requestId, checks: [{ checkId, revision }] }` resolved only in the current
+invocation's request/document ownership. The producer returns the actual host
+request identity with its acknowledged selection; the consumer compares it with
+its invocation context before reading records. IDs/revisions alone are insufficient
+because logical IDs can repeat in a fresh request. Unknown or conflicting identities, main-agent origins,
+and expired cross-request artifacts reject without writes. Its completed value
+contains required typed `verification.status` and nonempty string `progress`, the
+same `requestId`, complete acknowledged `checks`, compact results, explicit terminal retirements,
+and exact unresolved reason/capability data. The existing common outcome separately
+carries success/partial/failed and settlement. Decision-required is a completed
+check result, not an exception that erases independent findings. Runtime may stop
+iteration, but the caller must still receive those retained findings/recovery through
+its existing stopped-work output path. An unavailable or cancelled check cannot be
+bound as a successful verification. Partial schemas must be registered and tested
+through the native host and saved-composition consumer, not only TypeScript objects.
+If independent checks have already advanced retained revisions before another check
+fails, recovery returns their acknowledged selection plus the exact incomplete work.
+A stale-input rejection may expose the current selection for an explicit new check;
+it must not silently accept the stale input or make a partial value success-bindable.
+Recovery never replays the recipe's initial writes.
+
+Request identity, check IDs/revisions and the corresponding recipe state are
+annotated with Runtime's existing `x-runtime-value: request`; canonical element IDs
+keep their `document` lifetime. Do not label plain check IDs as leased artifacts.
+Admission must reject captured request literals in saved recipes. Current producer
+outputs explicitly expose the ready-to-bind `checks` projection from record `id`
+fields, avoiding a model-side renaming/enumeration step. The exact same projection
+is used by verification and repair, with no parallel selection authority.
+
+The first repair policy is closed:
+`{ capability: "set-prescribed-child-position", positions: [{ elementId, x, y, attachmentEvidence }] }`.
+Input also carries `requestId` and complete `checks`. Positions must be unique and
+cover exactly the pending eligible children under the parent identities recorded in
+the admitted checks. A concurrent parent/basis change invalidates that authorization
+and requires a fresh policy decision; do not reinterpret old coordinates under a
+new parent. The owner validates against current App geometry constraints and the explicit policy, then
+issues existing canonical edits; it does not infer coordinates from diagnostic text.
+The checker declares this capability only when its typed findings support it; a
+caller still must supply a matching authorized policy. Unsupported source/visual/text
+findings cannot accidentally enter this branch.
+
+`repair_design_checks` returns the existing mutation receipt and the complete current
+selection for a subsequent verification. The adapter must not fabricate pass itself. Existing post-write mechanical work
+may already produce current records; the next aggregate verifier must reuse those
+same receipts instead of measuring them again.
+All input admission and coverage checks finish before writes; later cancellation or
+owner failure retains exactly acknowledged writes and existing Undo/compensation.
+Unknown settlement goes to existing document recovery, never verification-as-repair.
+A retry of checking is read-only; a write retry resumes only a proven unexecuted
+suffix under the existing recovery contract. If that suffix cannot be established,
+return a decision and do not rerun the recipe's initial steps.
+
+**Execution order within Stage 2.**
+
+| Slice | Owner and producer -> consumer | Required proof before advancing |
+| --- | --- | --- |
+| 2.1 Contract admission | Existing Design inspect/apply routes and Runtime invoke contract | Synchronize this schema/retirement/repair design into the product spec and exact Inspector cases; pin current source. Structural admission does not claim behavior. No new generic interpreter or second registry. |
+| 2.2 Typed check provenance | Existing preparation/measurement/reference producers -> `design-check-results.ts` -> inspect | Current-only owner descriptors; exact retired versus unknown/recreated IDs; partial updates retain other passes; reads of old evidence are not implicit approvals. |
+| 2.3 Aggregate verification | Existing `local-operation-tools.ts` inspection coordinator -> canonical check owner -> real host | Coalesce overlapping reads, reuse current measurements, chunk bounded work, validate before publishing, retain completed independent results on failure; complete typed native output matches Runtime verification input. |
+| 2.4 Guarded known repair | Verification receipts + explicit policy -> Design apply -> actual App mutation APIs | Full pending-set guard before writes, no duplicate target edits, correct parent-local coordinates, acknowledged receipt selection, real Undo/Redo and save/reload; mixed or stale inputs cause no writes. |
+| 2.5 Real Runtime closure | Actual admitted recipe -> registered checker/repair -> final caller -> primary judgment/settle | One real repair cycle, no progress/cycle/budget stops, lossless partial/cancel recovery and output ownership. Preserve Stage 1 primary visual and persistence behavior on the same source. |
+
+Before each slice, read its current Inspector owner and write the existing Step
+Execution Card. New identifiers must pass naming checks before propagation. A new
+producer may be changed only with its direct consumer in the same bounded slice;
+never publish a half-migrated descriptor. Superseded contracts are removed, not
+kept as hidden compatibility branches. Stage 3 model guidance/discovery and Stage 4
+library/presentation changes remain outside this implementation authorization.
+
+**Integration acceptance, not just units.** Use the existing public host/registry,
+real browser actions, canonical store, real Runtime and actual document backend;
+script only the model boundary. The fixed cases cover:
+
+- Direct edit -> mechanical result with deferred screenshot; primary-agent visual
+  fail/correct/pass and accumulated passes remain intact.
+- Saved recorded-101 scope with eight passed regions, one changed window region,
+  supported local repair and retained seven passes; compare identical input work
+  counts and dependencies, not total drawing node counts or model time.
+- Actual admitted container repair -> current receipt -> second verification ->
+  primary judgment -> document acknowledgement -> exact reload and peer convergence.
+- Already-passed and all-retired selections; absent versus recreated targets;
+  duplicate/mixed revisions, wrong origin/request, expired source/artifact and
+  unsupported/mixed repair capability; no partial input admission or first write.
+- Ancestor transform, shared-property change, regional membership and requirement
+  changes invalidate their actual dependents. Pan/zoom does not; no blanket pass
+  retention when there is a real broad dependency change.
+- Concurrent edit, Undo/Redo, collaboration or cancellation while checking and
+  between check and repair; independently completed work is retained, stale success
+  and successor writes are blocked, and safe read recovery stays within pending scope.
+- First repair failure, failure after acknowledged writes, unknown settlement,
+  retention/cleanup failure and subsequent recovery. Preserve actual receipts and
+  strict save admission; never replay initial creation or relabel an unknown write.
+- Stable no-op and A/B/A progress, exhausted finite budget, incompatible saved tool
+  dependency revision, and malformed/partial outputs. Return stopped-work details
+  to the caller even when Runtime terminates the loop.
+- Actual Factory batching, successful no-op History replay, compensation, exact
+  retransmission, subsequent edit/save and reload remain valid. Reuse prior evidence
+  only for identical source closure; do not combine unrelated green reports.
+
+Instrumentation must assert zero extra model calls, measured owner work counts,
+unique checked targets and no duplicate mutation/publication. Existing current-purpose
+start/end attribution must remain truthful through real repair children and cancellation;
+this is a regression obligation, not a new status architecture. Focused package tests,
+lint/types and these integration cases close the stage. No live 101 is needed.
+
+Self-review: the former empty-selection bypass, implicit repair-capability guard and
+string-parsing recheck gaps are now resolved in the planned contract. Feasibility
+rests on existing finite Runtime iteration, registry/invoke, check store and App
+mutation/persistence owners. The public aggregate/repair adapters and typed provenance are implemented locally
+under the admitted Stage 2 card. Completion remains pending final same-source
+integration, types/lint and contract proof. Structural admission alone is not closure.
+
 #### Exact decisions required by the corrected mechanical design
 
 - Keep `read_design_checks` as a retained-results/freshness read; do not hide a repair
@@ -691,7 +1268,7 @@ flows, exact test identities and incoming handoff cases. Use current supported
 contract/target/work admission, pin the accepted contract and reviewed candidate,
 and keep future obligations pending. Do not reuse old candidate IDs after this
 rebase without current source assessment. No target is created or baseline accepted
-by this plan-only review. The new whole-target proof must bind one captured source
+by this plan-only review. The Stage 2 whole-target proof must bind one captured source
 and include new behavior, prerequisites, integration and preservation; old merged
 PRs or old test contracts cannot substitute for current prerequisite evidence.
 
@@ -5316,3 +5893,109 @@ Browser evidence is a lineage, not inflated case totals: all 19 collaboration ca
 Source review followed the actual App/Core session entry, immutable source preparation, ordered retention, acceptance/cleanup, failure isolation, retry, generation retirement, load-source lifetime, history and save receipt. The bounded correction changes only Design session/outbox behavior; it does not alter Factory/Core transaction semantics, other Apps, provider/server canonical admission or retry identity. Normal successful publication still takes zero recovery snapshots. Failed preparation and unavailable disk remain explicit blockers: memory-only work cannot be promised durable across closing the tab, and unresolved invalid sources are retained rather than dropped. Recovery requires correcting the cause before ordinary admission succeeds; export is available when a valid recovery document exists. Disposal settles an already-started preparation using the existing transport lifetime; it does not claim instantaneous network cancellation.
 
 This closes the requested recovery review, not the global reusable-tool plan. No commit, push, PR operation or monitoring was performed. Final Inspector/catalog checks passed all 43 tests (`tmp/recovery-audit-final-inspector.log`); scoped whitespace checks passed. The owned temporary browser servers on 3300/3401/4401 have exited. No further product mutation is planned.
+
+### Stage 1 push integration - current functional responsibility inventory
+
+Latest main introduced exhaustive functional discovery after Stage 1 validation.
+The rebased source adds 32 cases and renames one existing case; the old inventory
+fails exact discovery equality. This metadata-only slice maps those actual cases
+to their canonical owner entries and retains exact inventory equality. The saved
+large-document membership case belongs to Preset data-channel projection, not Pixi.
+Inputs are current discovered titles and existing source/spec contracts; outputs
+are exact case mappings and a semantic projection responsibility. No production
+behavior, Stage 2 work, model call, live 101 or CI monitoring is authorized here.
+Allowed files are the functional manifest, responsibility spec/Inspector, generated
+catalog, and their formal inventory/fault-proof tests. Gates: current discovery,
+catalog/contracts, owner mapping coverage, and isolated real membership owner
+fault/recovery. Existing product gates retain evidence only for identical files.
+Stop on a product regression or an unmapped owner; do not weaken existing oracles.
+
+### Authorized Inspector cleanup correction - 2026-10-15
+
+Owner: Core Proof `execute-proof-run`, existing `runner.cjs` process settlement.
+A real saved-document owner proof passed normally and detected the deliberately
+broken owner, but final group cleanup reported EPERM as a spawn failure after the
+runner had already exited. Two attempts reproduced it; there were no surviving
+members when subsequently inspected. Do not ignore EPERM unconditionally or change
+product assertions. Prove the already-empty group case separately from surviving
+or unobservable groups; retain the actual child exit and fail closed on unresolved
+cleanup. Inputs remain owned process identity, exit, deadline and cancellation;
+output remains runner result plus accurate failure classification. No new execution
+permissions, fallback product result, cache or process takeover.
+
+Allowed slice: runner, permanent runner regressions, exact execution spec/Inspector,
+and generated catalog. First fail formal regressions, then correct settlement and
+run runner cases plus the actual unchanged saved-document positive/fault/recovery
+sequence. Preserve deadlines, fail-fast, source ownership and cleanup. Runtime App
+behavior and Stage 2 implementation remain excluded. This user authorization
+explicitly withdraws the previous push; retain changes locally.
+
+Cleanup iteration review: the actual denied group still had a macOS `?E` member
+(exiting) when the leader closed. The initial immediate-absence correction therefore
+correctly did not certify settlement, but the state parser also rejected that valid
+transient state. Do not treat exiting/unknown state as gone. Reuse the existing
+250 ms cleanup grace for bounded independent observations and accept only actual
+absence. A surviving, malformed or unavailable group still fails. Permanent coverage
+must distinguish transient exit, permanent live members and missing observation;
+rerun the real unchanged positive/fault/recovery sequence after this bounded change.
+
+The restored workspace case twice timed out after normal and injected-failure cases
+completed correctly; its Vite process remained at one CPU core after HMR source
+replacement. Workspace owner proofs compare isolated source versions, not live HMR.
+Restart only the fixture-owned Vite process between those versions, await cleanup,
+preserve every run log and keep the original test assertions, source restoration,
+backend ownership and all existing deadlines. This harness correction is within the
+authorized Inspector cleanup/integration scope, not a product or budget change.
+
+Final fixture-consumer review found that teardown and source-version restart awaited
+runner settlement but ignored its explicit cleanup error. The permanent fixture test
+failed on this behavior before correction. Both paths now use the same fixture-owned
+settlement helper: abort all selected services, await all outcomes, and report any
+rejected promise or explicit cleanup failure. A cancellation without cleanup error is
+normal. This does not turn an unresolved process into a passing proof or skip cleanup
+of the other services. Evidence: `tmp/stage1-push/fixture-settlement-red.log` and
+`fixture-settlement-green.log`. Final direct-consumer proof is recorded below.
+
+
+### Inspector correction and Stage 2 planning outcome - 2026-10-16
+
+The current cleanup implementation preserves the actual expected negative exit and
+settles only an independently observed empty process group. It never accepts a live,
+malformed or unavailable group as cleaned up. The fixture now reports cleanup errors
+and uses a fresh Vite module graph for each isolated workspace source version.
+The unchanged normal/fault/recovery proofs pass for both saved-document membership
+and Factory group-history. No product assertion, timeout, canonical save validation,
+App implementation or Stage 2 runtime behavior was changed in this tooling slice.
+
+Final evidence under `tmp/stage1-push/`:
+
+- `cleanup-contracts-closed.log`: 93 passed, 44 existing opt-in cases skipped.
+  Includes the complete runner suite, contract discovery and default Playwright
+  report/fault/recovery integration. This does not claim all opt-in owners ran.
+- `fixture-consumer-proof.log`: saved-document membership and group-history each
+  passed their real normal/fault/recovery sequence; owner coverage assertion passed
+  (3 tests). The deliberate fault remains failed evidence and recovery is a new run.
+- `fixture-settlement-final.log`: both permanent settlement regressions passed after
+  the equivalent lint-only control-flow cleanup; the original red evidence remains.
+- `catalog-closed.log`: all 8 generated-catalog contracts passed. The functional
+  inventory has exact mappings for 443 discovered cases; enumeration is not a claim
+  that all 443 browser cases executed in this turn.
+- `cleanup-lint-final.log`, `context-closed.log`: focused lint and task context passed.
+  `naming-closed.log`: all 15 naming checks passed.
+- Earlier failed setup/cleanup/HMR runs remain failed. The final implementation
+  changes after browser proof were an equivalent ternary-to-if rewrite and explicit
+  Node timer import, verified by the affected fixture tests and lint.
+
+All final proof fixture teardown completed. An older interrupted fixture's orphaned
+services were separately verified by PID, process group, cwd and listener, then
+stopped; details are in `service-cleanup.txt`. Local `.env` and all evidence remain.
+No service belonging to another project was stopped.
+
+Stage 2 review traced actual producer records, inspect/apply owners, Runtime
+admission/iteration, common outcomes, partial recovery, primary judgments and
+persistence. The execution review above now explicitly covers request ownership,
+typed recheck descriptors, complete pending-set repair guards, parent-coordinate
+basis, terminal retirement, stable progress, fresh successor selections and
+independent mechanical/visual/durability completion. That was the Stage 2 planning checkpoint. The later Current authority and Stage 2
+local completion sections above supersede its execution stop; they do not authorize
+Stage 3, model calls, live 101, push or monitoring.

@@ -96,6 +96,7 @@ export const createAiStartup = (
         permissionRules: {
           ...basicApiPermissionRules,
           [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
+          [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: 'allow',
           [AiActionNames.ORGANIZE_DESIGN]: 'allow',
           [AiActionNames.ARRANGE_DESIGN]: 'allow',
           [AiActionNames.REVIEW_DESIGN]: 'allow',

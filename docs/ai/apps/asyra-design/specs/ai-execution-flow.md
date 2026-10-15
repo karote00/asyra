@@ -1967,18 +1967,24 @@ receipts; `ovalPathIds` is rejected, never translated or silently ignored.
 ### Mechanical closure interface
 
 The existing inspect owner exposes `verify_design_checks` through the common tool
-registry. This is the Stage 2 contract, not a claim of current availability.
-Input is a closed object `{ checks: [{ checkId, revision }] }`: a nonempty unique
+registry. The same request-owned result store supplies native and composed callers.
+Input is a closed object `{ requestId, checks: [{ checkId, revision }] }`: the
+actual host request identity plus a nonempty unique
 selection of request-owned tool-origin check identities and their exact retained
-revisions. Scope, canonical target and dependencies come from those owned records,
+revisions. Compare `requestId` to the invocation owner before resolving records;
+logical check IDs can repeat in another request. Successful native `review_design` output includes `mechanicalSelection` with the
+same request identity and ready-to-bind selection; aggregate output carries
+`requestId` and the complete `checks` selection directly. Mark this selection as Runtime
+request-lifetime input; it cannot be captured as saved recipe literals. Scope,
+canonical target and typed recheck descriptors come from those owned records,
 never model-authored arbitrary IDs, a viewport, diagnostic text or a second store.
 Existing transport/iteration budgets apply; work is chunked internally. A selection
 with unknown, mixed ownership, wrong origin or conflicting revision is rejected
 before checking or mutation. The operation never mutates the document.
 
-Successful output contains `verification: { status, progress }`, `results` in the
-existing compact check-result format, and exact unresolved check identities/revisions,
-reason codes and recovery. `status` is `pass`, `repairable` or `decision-required`;
+Successful output contains the same `requestId`, `verification: { status, progress }`,
+`results` in the existing compact check-result format, and exact unresolved check identities/revisions,
+reasons, typed pending findings and recovery. `status` is `pass`, `repairable` or `decision-required`;
 `progress` is a nonempty stable string identifying normalized unresolved mechanical
 work for the selected logical obligations. It excludes result revisions, fresh receipt
 IDs, timing, counters and viewport state. Equal unresolved work produces equal progress,
@@ -1994,7 +2000,11 @@ only invalidates dependencies without changing revisions, it still returns that 
 selection for canonical revalidation. Partial/unknown repairs cannot supply a successor
 success binding.
 Canonical retirement is reported explicitly; a repairable result always retains a
-nonempty selection. All-retired work may pass without another empty verification call.
+nonempty selection. Preserve confirmed terminal retirements within the selected
+logical obligations so Runtime can perform its mandatory next check on a nonempty
+selection. All-retired work passes only after this explicit terminal verification;
+missing IDs do not prove retirement. Keep terminal provenance in the same request
+check owner, and reject old selections when an identity is recreated.
 A stale result revision is a recoverable input conflict, not permission to drop an
 obligation or restart initial writes. Exact revision matching alone is not currency:
 existing dependency invalidation can change status without advancing that revision. Pass requires
@@ -2004,12 +2014,29 @@ Repairable requires every remaining finding to have an owner-declared mechanical
 repair capability. The inspect owner returns their exact capability IDs and structured
 finding arguments; it cannot infer which recipe called it. An admitted recipe must
 cover that complete set. Because Runtime executes its finite repair list without
-domain branching, the Design repair owner validates that set and current finding
-receipts before any repair write. A mismatched or mixed unsupported set stops with
+domain branching, `repair_design_checks` validates the complete set, request identity,
+current finding receipts and explicit repair policy before any write. Each prescribed
+position includes current `attachmentEvidence` from `read_design_attachment`; its
+canonical receipt must belong to the stated parent and workspace. The synchronous
+mutation owner rechecks that original basis and preflights all ordinary edits before
+the first write. The first
+supported policy sets prescribed parent-local positions for eligible existing
+children with container-overflow findings, through the existing App APIs. It does
+not infer positions, resize ancestors or support arbitrary finding families. A mismatched or mixed unsupported set stops with
 exact unresolved work and no repair writes. Runtime validates registered schemas,
 bindings and budgets; it does not infer dynamic domain coverage from status alone.
 Findings without a declared repair require a primary-agent decision. Empty work after canonical deletion can
 retire only the deleted target's own obligation, not dependent visual criteria.
+
+Known admission failures return `not-started` without a fabricated write receipt.
+This includes queue-time read-only preflight rejection before the first write.
+An exact failed action identity with no acknowledgement and explicit not-started
+settlement does not create unknown mutation scope. Fresh evidence and an explicitly
+renewed policy may proceed; errors from writers retain their actual unknown/partial
+settlement and cannot be reclassified by this preflight boundary.
+After execution starts, partial/recovery carries the actual receipt and complete
+current check selection. The owner result validator must use the verification
+schema for checks, not require action acknowledgements from a read-only verifier.
 
 Partial/cancelled/unavailable outcomes retain independently acknowledged results and
 exact outstanding identities; they are not successful verification bindings. Before

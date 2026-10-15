@@ -1,3 +1,4 @@
+import { createPrescribedPositionAction } from './prescribed-position-action'
 import {
   createAiToolContract,
   createAiToolMiddleware,
@@ -131,6 +132,7 @@ export const createAiRuntimeInput = (
     createOrganizationAction(),
     createArrangementAction(),
     createDesignReviewAction(reviewer, evidence),
+    createPrescribedPositionAction(evidence),
     createAiInspectionAction(undefined, evidence),
     createDesignAttachmentAction(evidence),
     createInspectionValidationAction(evidence)

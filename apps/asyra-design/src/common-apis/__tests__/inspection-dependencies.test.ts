@@ -142,3 +142,17 @@ it('does not revive a receipt invalidated while a pending region query flushes c
   })
   expect(owner.current(stamp)).toBe(false)
 })
+
+it('binds an attachment receipt to its actual parent rather than any current capture', () => {
+  const owner = createInspectionDependencies({
+    parent: () => undefined,
+    region: () => [],
+    attachment: (id) => id
+  })
+  const a = owner.capture('a', undefined, 0, { signature: 'a', chain: ['a'] })
+  const ordinary = owner.capture('a', undefined, 0)
+  expect(owner.currentAttachment(a, 'a')).toBe(true)
+  expect(owner.currentAttachment(a, 'b')).toBe(false)
+  expect(owner.currentAttachment(ordinary, 'a')).toBe(false)
+  expect(owner.current(a)).toBe(true)
+})

@@ -91,7 +91,33 @@ export const runActionUsageCase = async (
     const attachment = await invoke('read_design_attachment', {
       parentId: root
     })
+    const mechanical =
+      name === 'apply_prescribed_positions'
+        ? await invoke('review_design', { elementId: root })
+        : undefined
     const cases: Record<string, Usage> = {
+      apply_prescribed_positions: {
+        input: {
+          evidence: [mechanical?.evidence],
+          positions: [
+            {
+              elementId: a,
+              x: 20,
+              y: 20,
+              attachmentEvidence: {
+                parentId: attachment.parentId,
+                workspaceId: attachment.workspaceId,
+                evidence: attachment.evidence
+              }
+            }
+          ]
+        },
+        check: (r) => {
+          equal(r.appliedElementIds, [a])
+          equal(props(a).x, 20)
+          equal(props(a).y, 20)
+        }
+      },
       apply_prepared_design: {
         input: { design: additional },
         check: (r) => {
@@ -356,6 +382,33 @@ export const runActionUsageCase = async (
       string,
       { input: Result; check?: (r: Result) => void }
     > = {
+      apply_prescribed_positions: {
+        input: {
+          evidence: [mechanical?.evidence],
+          positions: [
+            {
+              elementId: a,
+              x: 20,
+              y: 20,
+              attachmentEvidence: {
+                parentId: attachment.parentId,
+                workspaceId: attachment.workspaceId,
+                evidence: attachment.evidence
+              }
+            },
+            {
+              elementId: missing,
+              x: 10,
+              y: 10,
+              attachmentEvidence: {
+                parentId: attachment.parentId,
+                workspaceId: attachment.workspaceId,
+                evidence: attachment.evidence
+              }
+            }
+          ]
+        }
+      },
       apply_prepared_design: { input: { design } },
       review_design: {
         input: { elementId: missing },
@@ -479,6 +532,7 @@ export const runActionUsageCase = async (
           `${name} failed with a programming error instead of a domain rejection`
         )
         const expectedRejections: Record<string, RegExp> = {
+          apply_prescribed_positions: /Prescribed parent changed/,
           apply_prepared_design: /A design object already exists/,
           review_design: /Inspection dependency no longer exists/,
           inspect_drawing: /Inspection dependency no longer exists/,

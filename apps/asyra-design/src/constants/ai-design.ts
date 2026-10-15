@@ -16,5 +16,7 @@ export const AiDesignToolIds = Object.freeze({
   REVIEW_PREPARED_DESIGN: 'review_prepared_design',
   CHECK_DRAWING_IMAGE: 'check_drawing_image',
   READ_DESIGN_CHECKS: 'read_design_checks',
+  VERIFY_DESIGN_CHECKS: 'verify_design_checks',
+  REPAIR_DESIGN_CHECKS: 'repair_design_checks',
   REVIEW_DRAWING: 'review_drawing'
 } as const)

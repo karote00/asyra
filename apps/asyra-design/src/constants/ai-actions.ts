@@ -1,6 +1,7 @@
 export const AiActionNames = Object.freeze({
   APPLY_PREPARED_DESIGN: 'apply_prepared_design',
   REVIEW_DESIGN: 'review_design',
+  APPLY_PRESCRIBED_POSITIONS: 'apply_prescribed_positions',
   ARRANGE_DESIGN: 'arrange_design',
   ORGANIZE_DESIGN: 'organize_design',
   UPDATE_DESIGN_ELEMENT: 'update_design_element',

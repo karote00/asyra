@@ -65,10 +65,51 @@ export const designCheckSummarySchema = toolResultObject(
   ['counts', 'visitedResults']
 )
 
+export interface DesignCheckSelection {
+  checkId: string
+  revision: number
+}
+
+/** Canonical producer metadata; diagnostic prose is never executable provenance. */
+export type DesignCheckRecheck =
+  | { kind: 'measurement'; elementId: string; findings: readonly unknown[] }
+  | { kind: 'prepared'; artifactId: string; recipeRevision: string }
+
+export const designCheckSelectionSchema = {
+  type: 'array',
+  minItems: 1,
+  uniqueItems: true,
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['checkId', 'revision'],
+    properties: {
+      checkId: { ...toolResultString, 'x-runtime-value': 'request' },
+      revision: { type: 'integer', minimum: 1, 'x-runtime-value': 'request' }
+    }
+  }
+}
+
+export const designCheckInputSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['requestId', 'checks'],
+  properties: {
+    requestId: { ...toolResultString, 'x-runtime-value': 'request' },
+    checks: designCheckSelectionSchema
+  }
+}
+
 /** Request-owned evidence, not document state or an authority to replay writes. */
 export const createDesignCheckResults = () => {
-  const results = new Map<string, DesignCheckResult>()
-  const retiredRevisions = new Map<string, number>()
+  const results = new Map<
+    string,
+    DesignCheckResult & { recheck?: DesignCheckRecheck }
+  >()
+  const retiredRevisions = new Map<
+    string,
+    { revision: number; reason: string; origin: DesignCheckResult['origin'] }
+  >()
   const preparedLineages = new Map<string, string>()
   const latestPrepared = new Map<string, string>()
   const counts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
@@ -109,7 +150,11 @@ export const createDesignCheckResults = () => {
   const remove = (result: DesignCheckResult, reason: string) => {
     const id = result.id
     invalidate([`check:${id}`], reason)
-    retiredRevisions.set(id, result.revision)
+    retiredRevisions.set(id, {
+      revision: result.revision,
+      reason,
+      origin: result.origin
+    })
     counts[result.status]--
     pendingIds.delete(id)
     results.delete(id)
@@ -121,6 +166,50 @@ export const createDesignCheckResults = () => {
   }
   const owner = {
     invalidate,
+    selection(ids: readonly string[]): DesignCheckSelection[] {
+      return ids.map((checkId) => {
+        const record = results.get(checkId) ?? retiredRevisions.get(checkId)
+        if (!record || record.origin !== 'tool')
+          throw new Error('Unknown mechanical check.')
+        return { checkId, revision: record.revision }
+      })
+    },
+    select(selection: readonly DesignCheckSelection[]) {
+      if (!selection.length)
+        throw new Error('Mechanical selection must be nonempty.')
+      if (
+        new Set(selection.map((item) => item.checkId)).size !== selection.length
+      )
+        throw new Error('Mechanical selection must contain unique check IDs.')
+      return selection.map(({ checkId, revision }) => {
+        const result = results.get(checkId)
+        const retired = retiredRevisions.get(checkId)
+        const record = result ?? retired
+        if (!record || record.origin !== 'tool')
+          throw new Error('Unknown mechanical check.')
+        if (!Number.isSafeInteger(revision) || record.revision !== revision)
+          throw new Error(
+            'Mechanical check revision changed; retrieve the current selection.'
+          )
+        if (result) {
+          const { recheck, ...publicResult } = result
+          return {
+            checkId,
+            revision,
+            retired: false as const,
+            result: structuredClone(publicResult),
+            recheck: structuredClone(recheck)
+          }
+        }
+        if (!retired) throw new Error('Mechanical check disappeared.')
+        return {
+          checkId,
+          revision,
+          retired: true as const,
+          reason: retired.reason
+        }
+      })
+    },
     dependencyKeys(prefix: string): string[] {
       return [...dependents.keys()].filter((key) => key.startsWith(prefix))
     },
@@ -221,16 +310,19 @@ export const createDesignCheckResults = () => {
           !('kind' in finding) ||
           finding.kind !== 'text-metrics-required'
       )
-      owner.record({
-        id,
-        origin: 'tool',
-        status: failures.length ? 'fail' : 'pass',
-        evidence: failures.length
-          ? JSON.stringify(failures)
-          : 'Compiler geometry, keys, references and explicit numeric constraints passed.',
-        scope: [artifactId],
-        dependencies: { [dependency]: recipeRevision }
-      })
+      owner.record(
+        {
+          id,
+          origin: 'tool',
+          status: failures.length ? 'fail' : 'pass',
+          evidence: failures.length
+            ? JSON.stringify(failures)
+            : 'Compiler geometry, keys, references and explicit numeric constraints passed.',
+          scope: [artifactId],
+          dependencies: { [dependency]: recipeRevision }
+        },
+        { kind: 'prepared', artifactId, recipeRevision }
+      )
       if (current && current !== lineage) {
         const duplicateId = `prepared:${current}:data`
         const duplicate = results.get(duplicateId)
@@ -254,7 +346,12 @@ export const createDesignCheckResults = () => {
       latestPrepared.set(lineage, artifactId)
       return lineage
     },
-    record(value: Omit<DesignCheckResult, 'revision' | 'reason'>) {
+    record(
+      value: Omit<DesignCheckResult, 'revision' | 'reason'>,
+      recheck?: DesignCheckRecheck
+    ) {
+      if (recheck && value.origin !== 'tool')
+        throw new Error('Only mechanical checks have recheck provenance.')
       const previous = results.get(value.id)
       if (previous && previous.origin !== value.origin)
         throw new Error('A result cannot change its origin.')
@@ -286,6 +383,7 @@ export const createDesignCheckResults = () => {
         previous &&
         previous.status === value.status &&
         previous.evidence === value.evidence &&
+        JSON.stringify(previous.recheck) === JSON.stringify(recheck) &&
         previous.deferredDecision === value.deferredDecision &&
         JSON.stringify(previous.supersedes) ===
           JSON.stringify(value.supersedes) &&
@@ -305,9 +403,14 @@ export const createDesignCheckResults = () => {
       if (value.status === 'pass') pendingIds.delete(value.id)
       else pendingIds.add(value.id)
       const revision =
-        (previous?.revision ?? retiredRevisions.get(value.id) ?? 0) + 1
+        (previous?.revision ?? retiredRevisions.get(value.id)?.revision ?? 0) +
+        1
       retiredRevisions.delete(value.id)
-      results.set(value.id, { ...structuredClone(value), revision })
+      results.set(value.id, {
+        ...structuredClone(value),
+        revision,
+        ...(recheck ? { recheck: structuredClone(recheck) } : {})
+      })
       for (const key of Object.keys(value.dependencies)) {
         const ids = dependents.get(key) ?? new Set<string>()
         ids.add(value.id)
@@ -326,8 +429,10 @@ export const createDesignCheckResults = () => {
         visitedResults++
         if (!result) continue
         selectedCounts[result.status]++
-        if (options.includePassed || result.status !== 'pass')
-          items.push(structuredClone(result))
+        if (options.includePassed || result.status !== 'pass') {
+          const { recheck: _recheck, ...publicResult } = result
+          items.push(structuredClone(publicResult))
+        }
       }
       return {
         counts: { ...(options.ids ? selectedCounts : counts) },

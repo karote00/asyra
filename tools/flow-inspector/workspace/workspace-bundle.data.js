@@ -292,6 +292,9 @@
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-live.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-mechanical-checks.ts",
+              "apps/asyra-design/src/ai/prescribed-position-contract.ts",
+              "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
               "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
               "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
@@ -322,6 +325,9 @@
               "apps/asyra-design/src/ai/organization-action.ts",
               "apps/asyra-design/src/ai/design-edit-action.ts",
               "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/prescribed-position-action.ts",
+              "apps/asyra-design/src/ai/__tests__/prescribed-position-action.test.ts",
+              "apps/asyra-design/src/common-apis/design-edit.ts",
               "apps/asyra-design/src/ai/context-action.ts",
               "apps/asyra-design/src/ai/__tests__/context-action.test.ts",
               "apps/asyra-design/src/constants/ai-actions.ts",
@@ -454,6 +460,9 @@
               "artifact:execution-receipt"
             ],
             "conditions": [
+              "repair_design_checks consumes requestId, the complete current tool-check selection and explicit set-prescribed-child-position policy. Preflight every pending finding, unique exact child coverage, captured parent-local basis bound by the canonical attachment receipt to the exact parent/workspace, current canonical dependency receipts and ordinary permissions before any write. Mixed/unsupported findings and stale policy stop without mutation. Invoke existing App/Core mutations; no guessed positions, reparent, deletion or implicit scope expansion.",
+              "Read-only queue-time repair preflight reports an input rejection before writing. Exact failed-action identity plus not-started settlement and no acknowledgement preserves known no-write recovery; unknown or partial writer failures still retain unresolved mutation scope. Fresh explicitly prescribed policy may retry, never automatic rebasing or write replay.",
+              "Check repair returns actual settlement and the complete fresh successor selection. Later cancellation/owner failure preserves acknowledged writes, Undo and canonical recovery; partial/unknown output never supplies success bindings or repeats initial recipe writes. Reuse post-write owner checks rather than scan twice. Coordinator never holds the leaf scheduler barrier while awaiting a child.",
               "Element selection checks all requested identities at the common element-selection owner inside synchronous mutation admission. Any nonexistent target rejects the whole replacement, preserving prior selection and Undo history. The App action and basic element selection/toggle routes share this owner; generic Core and vector channels retain their separate contracts.",
               "The existing mutation executor reports settlement synchronously after canonical publication and before yielding. Structural group/ungroup/move results publish ordered live membership and immutable full receipts through the existing retained-context owner. Compact delivery exports typed snapshot/lease/count references only after original receipt checking; declared element-list consumers resolve inside synchronous mutation admission. Historical receipt reads do not refresh target authority. Post-write retention/publication failure preserves settlement and cannot replay or authorize a dependent write.",
               "Reviewed attachment parent, workspace and canonical inspection stamp are checked inside the first synchronous mutation callback, after queue admission; reject expired or missing evidence before writes. Own admitted later slices may advance the stamp and retain ordinary per-slice canonical checks; never recheck review after successful mutation or replay it.",
@@ -504,6 +513,15 @@
             ],
             "implementationBoundary": [
               "apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts",
+              "apps/asyra-design/src/ai/prescribed-position-action.ts",
+              "apps/asyra-design/src/ai/prescribed-position-contract.ts",
+              "apps/asyra-design/src/ai/__tests__/prescribed-position-action.test.ts",
+              "apps/asyra-design/src/common-apis/design-edit.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-edit.test.ts",
+              "apps/asyra-design/src/common-apis/inspection-dependencies.ts",
+              "apps/asyra-design/src/common-apis/__tests__/inspection-dependencies.test.ts",
+              "apps/asyra-design/e2e/fixtures/action-usage-cases.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
               "packages/ai-agent-runtime/src/types.ts",
               "apps/asyra-design/server/local-query-artifacts.ts",
               "apps/asyra-design/server/__tests__/local-query-artifacts.test.ts",
@@ -574,6 +592,8 @@
               "apps/asyra-design/server/local-image-tools.ts",
               "apps/asyra-design/server/local-design-tools.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-mechanical-checks.ts",
+              "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
               "apps/asyra-design/server/local-operation-batch.ts",
               "apps/asyra-design/server/local-design-workflow.ts",
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
@@ -603,11 +623,9 @@
               "apps/asyra-design/src/ai/__tests__/runtime-integration.test.ts",
               "apps/asyra-design/e2e/local-ai-provider.spec.ts",
               "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
-              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
               "apps/asyra-design/src/common-apis/selection.ts",
               "apps/asyra-design/src/common-apis/__tests__/selection.test.ts",
               "apps/asyra-design/e2e/action-usage.spec.ts",
-              "apps/asyra-design/e2e/fixtures/action-usage-cases.ts",
               "apps/asyra-design/src/common-apis/transaction.ts",
               "apps/asyra-design/src/common-apis/fills.ts",
               "apps/asyra-design/src/common-apis/gradient-handle-geometry.ts",
@@ -651,7 +669,9 @@
               "artifact:prepared-review"
             ],
             "conditions": [
-              "Tool-first correction contract: primary-agent pixel judgments and deterministic checks share current dependency-aware results; no independent drawing assessor. Stage 2 verify_design_checks consumes exact owned check IDs/revisions and returns required status/nonempty stable-string progress and current selected revisions with compact results; stale, partial or cancelled reads never bind successful verification. Read_design_checks remains a read, not a hidden repair loop.",
+              "Tool-first correction: verify_design_checks consumes the actual requestId and a nonempty unique exact-revision tool-origin check selection. Recheck descriptors and dependency receipts come from the same request check owner, never diagnostic strings, ID prefixes, viewport or a second store. Wrong request, origin, unknown identity and conflicting revision reject before work.",
+              "Aggregate checking reuses current owner evidence and coalesces overlapping stale reads under existing budgets. Validate canonical dependencies before publishing after asynchronous work. Return required verification status and stable nonempty normalized unresolved-work progress, requestId and every acknowledged selected revision including independent passes and confirmed terminal retirements. Missing lookup is not retirement; recreated identity rejects old revisions. Incomplete results retain exact completed/pending selections but cannot bind success.",
+              "Mechanical repairability requires an actually supported typed capability for every remaining finding. Unsupported/source/visual work remains decision-required. Runtime uses the repair receipt selection for its mandatory next check; all-retired selection remains nonempty until explicit terminal verification. Repeated or cyclic progress stops without replay. Mechanical pass does not establish visual judgment, recipe eligibility or document durability. No nested model invocation; read_design_checks remains a read.",
               "Primary correction handoffs use current shared pending results, preserving evidence outside the submitted subset. Later failed structure judgments revoke final acceptance without discarding unrelated passes; structure recovery alone never grants final acceptance. Published judgments also govern existing-content review without a preceding mutation.",
               "Stage 2 repair capability coverage belongs to the Design repair owner before writes, not generic Runtime or the checker guessing its caller. Bind successor check selections from acknowledged current revisions; receipt refresh alone is not semantic progress.",
               "Mechanical reads and freshness validation use bounded exact-target exchanges, preserve acknowledged independent results, and continue only a proven unexecuted read suffix after fail-fast failure. Missing, duplicated or cancelled results never become passed evidence.",
@@ -746,11 +766,17 @@
               "apps/asyra-design/server/ai-domain-prompt.ts",
               "apps/asyra-design/server/__tests__/design-review-stages.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-mechanical-checks.ts",
+              "apps/asyra-design/src/ai/prescribed-position-contract.ts",
+              "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
               "apps/asyra-design/src/common-apis/design-review.ts",
               "apps/asyra-design/src/common-apis/inspection.ts",
               "apps/asyra-design/src/ai/inspection.ts",
               "apps/asyra-design/src/ai/inspection-schema.ts",
               "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/prescribed-position-action.ts",
+              "apps/asyra-design/src/ai/__tests__/prescribed-position-action.test.ts",
+              "apps/asyra-design/src/common-apis/design-edit.ts",
               "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
               "packages/core/src/core.ts",
               "packages/core/src/index.ts",
@@ -10217,7 +10243,9 @@
               "apps/asyra-design/src/toolbar/index.tsx",
               "apps/asyra-design/src/toolbar/tool-button.tsx",
               "apps/asyra-design/src/toolbar/reset-stored-document.ts",
-              "apps/asyra-design/src/toolbar/zoom.tsx"
+              "apps/asyra-design/src/toolbar/zoom.tsx",
+              "apps/asyra-design/src/collaboration/websocket-provider.ts",
+              "apps/asyra-design/src/collaboration/collaboration-transport-worker.ts"
             ],
             "specRefs": [
               "#start-editor"
@@ -10337,7 +10365,8 @@
               "apps/asyra-design/src/common-apis/selection.ts",
               "apps/asyra-design/src/controllers/canvas-hierarchy-target.ts",
               "apps/asyra-design/src/contents/contents-panel.tsx",
-              "apps/asyra-design/src/contents/layer-selection.ts"
+              "apps/asyra-design/src/contents/layer-selection.ts",
+              "apps/asyra-design/src/ai/actions.ts"
             ],
             "specRefs": [
               "#select-elements"
@@ -10897,7 +10926,8 @@
               "apps/asyra-design/src/app/ai-conversation-panel.tsx",
               "apps/asyra-design/src/app/ai-conversation-navigation.tsx",
               "apps/asyra-design/src/ai/conversation.ts",
-              "apps/asyra-design/src/ai/activity-state.ts"
+              "apps/asyra-design/src/ai/activity-state.ts",
+              "apps/asyra-design/src/ai/tool-library-management.ts"
             ],
             "specRefs": [
               "#present-conversation"
@@ -10938,7 +10968,8 @@
               "apps/asyra-design/src/features/ai-agent/index.ts",
               "apps/asyra-design/src/ai/startup.ts",
               "apps/asyra-design/src/ai/transaction.ts",
-              "apps/asyra-design/src/ai/design-actions.ts"
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/actions.ts"
             ],
             "specRefs": [
               "#execute-agent-request"
@@ -11023,7 +11054,8 @@
               "apps/asyra-design/src/ai/prepared-design-admission.ts",
               "apps/asyra-design/src/ai/design-actions.ts",
               "apps/asyra-design/src/ai/design-edit-action.ts",
-              "apps/asyra-design/server/design-preparation.ts"
+              "apps/asyra-design/server/design-preparation.ts",
+              "apps/asyra-design/src/ai/actions.ts"
             ],
             "specRefs": [
               "#apply-prepared-design"
@@ -11061,9 +11093,14 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "apps/asyra-design/server/local-mechanical-checks.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/src/ai/prescribed-position-action.ts",
               "apps/asyra-design/src/common-apis/inspection.ts",
               "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-              "apps/asyra-design/src/ai/inspection.ts"
+              "apps/asyra-design/src/ai/inspection.ts",
+              "apps/asyra-design/server/local-design-review.ts",
+              "apps/asyra-design/src/ai/review-action.ts"
             ],
             "specRefs": [
               "#inspect-design"
@@ -11461,6 +11498,46 @@
               "#present-layer-hierarchy"
             ],
             "failureOwnerStepId": "present-layer-hierarchy"
+          },
+          {
+            "id": "project-ui-membership",
+            "order": 33,
+            "laneId": "framework",
+            "title": "Project canonical UI membership",
+            "ownerPackage": "@asyra/preset",
+            "purpose": "Publish ordered flattened UI membership from canonical scene changes without rereading unchanged rows.",
+            "inputs": [
+              "Canonical element map and flattened identities",
+              "Changed memberships and load/observer lifetime"
+            ],
+            "outputs": [
+              "artifact:project-ui-membership-outcome"
+            ],
+            "conditions": [
+              "Preserve exact membership order through create, Undo, Redo and load; reuse unchanged membership within its valid observer and published-identity lifetime."
+            ],
+            "bypasses": [
+              "Cold, replaced or invalidated canonical sources rebuild membership before reuse."
+            ],
+            "allowedContributors": [
+              "Canonical scene publication and Preset data-channel projection"
+            ],
+            "forbiddenContributors": [
+              "Renderer geometry as canonical membership",
+              "Diagnostics as product state"
+            ],
+            "cacheDimensions": [
+              "observer lifetime",
+              "published element-map identity",
+              "published flat identity"
+            ],
+            "implementationBoundary": [
+              "packages/preset/src/subscriptions/data-channel.ts"
+            ],
+            "specRefs": [
+              "#project-ui-membership"
+            ],
+            "failureOwnerStepId": "project-ui-membership"
           }
         ],
         "routes": [
@@ -11742,6 +11819,15 @@
             "producedArtifacts": [
               "artifact:group-history-members-outcome"
             ]
+          },
+          {
+            "id": "project-ui-membership-complete",
+            "from": "project-ui-membership",
+            "kind": "terminal",
+            "predicate": "Canonical membership is published or its invalid source is rejected.",
+            "producedArtifacts": [
+              "artifact:project-ui-membership-outcome"
+            ]
           }
         ],
         "artifacts": [
@@ -11966,6 +12052,13 @@
             "id": "artifact:present-layer-hierarchy-outcome",
             "ownerStepId": "present-layer-hierarchy",
             "channel": "Visible Layers rows and disclosure state",
+            "consumerStepIds": [],
+            "terminal": true
+          },
+          {
+            "id": "artifact:project-ui-membership-outcome",
+            "ownerStepId": "project-ui-membership",
+            "channel": "Canonical UI context publication",
             "consumerStepIds": [],
             "terminal": true
           }
@@ -31678,6 +31771,7 @@
               "artifact:admitted-recipe"
             ],
             "conditions": [
+              "Distinguish transient request values from request-artifact lease handles. Both forbid captured literals/defaults and require compatible typed bindings; host leases inspect only explicit artifact annotations, including nested handles. Exact dependency fingerprints reject saved recipes with superseded schemas.",
               "Prove finite typed bindings and exact eligible dependencies without executing operations.",
               "Admit optional bounded repair iteration only with owner-declared read/prepare verification paths, required typed status/progress, closed state and guaranteed final receipt. Prove every possible repair dependency and worst-case step budget; reject forward/internal-output escape and captured state before writes.",
               "Project only guaranteed registered output fields; unused opaque siblings do not invalidate known fields. Preserve open-object, union discriminator, ordered prefixItems with minItems presence, uniqueness and runtime-value constraints; reject ambiguous or opaque used bindings before writes. Intersect common object constraints and every closed property set; resolve local $defs lazily within one schema graph, preserve strict bounds and patterns, and reject uncertain recursive proofs. Undeclared fields of open registered objects require fresh typed input; they cannot hide captured literal runtime state."
@@ -43542,7 +43636,8 @@
             "conditions": [
               "Scoped contained execution requires executionSource format 2, contained-native-typescript-v2, an exact runtimeAuthorityDigest link and the existing verification/configuration links. Retain runtime authority format, digest and contract-scope digest in runner identity without re-reading manifests. Legacy authority absence keeps format 1 behavior.",
               "Contained derived execution consumes the source-owned fixed configuration/bootstrap roles and exact verification/configuration relationship without re-admitting source. Execute the captured bootstrap with the native loader under the existing OS sandbox; reject missing/unsupported closure or unavailable containment before dispatch, with no caller argv/configuration/process override or ordinary fallback. Return existing report/identity and process settlement; post-run source integrity remains the publisher responsibility.",
-              "Refuse observation-only Playwright mappings before dispatch. Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity."
+              "Refuse observation-only Playwright mappings before dispatch. Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity.",
+              "Preserve actual child exit separately from group cleanup. A denied signal is settled only after bounded process observation proves the owned group absent; surviving or unobservable groups remain non-passing cleanup errors, and deadlines/cancellation retain their cause."
             ],
             "bypasses": [
               "Denied requests never reach execution; a process failure produces a non-passing runner result."

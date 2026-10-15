@@ -82,7 +82,7 @@ describe('local semantic design tools', () => {
       composition: 'allowed',
       outputSchema: {
         properties: {
-          artifactId: { 'x-runtime-value': 'request' }
+          artifactId: { 'x-runtime-value': 'request-artifact' }
         }
       }
     })
@@ -92,7 +92,9 @@ describe('local semantic design tools', () => {
         properties: {
           targets: {
             items: {
-              properties: { artifactId: { 'x-runtime-value': 'request' } }
+              properties: {
+                artifactId: { 'x-runtime-value': 'request-artifact' }
+              }
             }
           }
         }

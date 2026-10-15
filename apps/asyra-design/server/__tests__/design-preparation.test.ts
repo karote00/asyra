@@ -20,6 +20,7 @@ it('publishes failed draft diagnostics for request repair and releases their act
   }[] = []
   const assertOwned = vi.fn()
   const session = createDesignPreparationSession(undefined, undefined, {
+    requestId: 'r',
     publish: (handle, release, validate, lifetime) => {
       published.push({ handle, release, validate, lifetime })
     },
@@ -1437,6 +1438,7 @@ describe('prepared artifact host ownership', () => {
     const leases = createLocalToolLeases({ requestId: 'r', capacity: 12 })
     let callId: string | undefined = 'child'
     const session = createDesignPreparationSession(undefined, undefined, {
+      requestId: 'r',
       publish: (handle, release, validate) =>
         leases.publish({ handle, callId, release, validate }),
       publishAliases: leases.publishAliases,
@@ -1458,7 +1460,10 @@ describe('prepared artifact host ownership', () => {
         input,
         inputSchema: inputSchema as never
       })
-    const reference = { type: 'string', 'x-runtime-value': 'request' } as const
+    const reference = {
+      type: 'string',
+      'x-runtime-value': 'request-artifact'
+    } as const
     await open('parent')
     await open('child', 'parent')
     const prepared = session.prepare(draft())
@@ -1500,6 +1505,7 @@ describe('prepared artifact host ownership', () => {
   it('removes newly compiled source when ownership publication is refused', () => {
     let rejectedId = ''
     const session = createDesignPreparationSession(undefined, undefined, {
+      requestId: 'r',
       publish: (handle) => {
         rejectedId = handle
         throw new Error('ownership capacity')
@@ -1556,6 +1562,7 @@ it('keeps cancellation and failed artifact publication out of retained source pa
   ).rejects.toThrow()
   expect(session.checkResults.read({ includePassed: true }).items).toEqual([])
   const failed = createDesignPreparationSession(undefined, undefined, {
+    requestId: 'r',
     publish: () => {
       throw new Error('Publication unavailable')
     },

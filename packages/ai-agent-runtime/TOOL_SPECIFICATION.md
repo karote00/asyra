@@ -243,6 +243,10 @@ work stops without replay or save eligibility. Domain checks do not imply visual
 acceptance. Runtime validates every dependency and the worst-case step expansion
 before execution; each leaf still uses the same secured invocation and leases.
 
+Public recipe array schemas support `uniqueItems` as a boolean constraint. Bindings
+into a unique selection must guarantee uniqueness; removing or weakening this
+constraint is not an accepted substitute for matching the registered contract.
+
 Only dependencies explicitly marked composition-eligible by their host can enter
 a recipe. Control-plane tools remain ineligible. This is shared contract metadata,
 not a tool-name list. Metadata derives from the actual dependency graph; a model
@@ -275,8 +279,10 @@ All constraints on the selected value remain enforced. Unsupported keywords on a
 used value, optional source paths and uncertain assignability return actionable
 issues. Invocation still uses the host's complete original schema. This does not
 claim general JSON Schema implication or infer structure from live product data.
-The `x-runtime-value` schema annotation identifies `request`, `document` and
-`secret` values. A binding may forward a compatible typed value from fresh input
+The `x-runtime-value` schema annotation identifies transient `request` data,
+leased `request-artifact` handles, `document` identities and `secret` values.
+Hosts resolve leases only for explicitly annotated artifact handles, including
+nested handles; request-owned data does not imply a resource lease. A binding may forward a compatible typed value from fresh input
 or a prior output; a recipe may not persist a literal or default of that type.
 The host owns correct annotations; Runtime does not infer document identity from
 string spelling. Ordinary primitive invocation does not require the restricted

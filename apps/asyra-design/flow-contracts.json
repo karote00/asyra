@@ -320,6 +320,31 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-design-review.ts"
           ]
+        },
+        {
+          "id": "inspect.mechanical-selection",
+          "stepId": "inspect",
+          "testName": "execution proof preserves exact mechanical selection and canonical retirement",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-check-results.ts"
+          ]
+        },
+        {
+          "id": "inspect.aggregate-contract",
+          "stepId": "inspect",
+          "testName": "execution proof exposes aggregate verification and guarded repair at the existing operation owner",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "inspect.mechanical-native-handoff",
+          "stepId": "inspect",
+          "testName": "execution proof preserves a rejected mechanical repair as not-started across native ownership",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-mechanical-checks.ts"
+          ]
         }
       ],
       "handoffs": [

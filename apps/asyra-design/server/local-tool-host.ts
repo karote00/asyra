@@ -74,6 +74,7 @@ export const createLocalToolHost = (options: {
   })
   const schedule = createLocalToolScheduler(options.signal)
   const ownership: LocalToolOwnership = {
+    requestId: options.requestId,
     publish: (handle, release, validate, lifetime) =>
       leases.publish({
         handle,

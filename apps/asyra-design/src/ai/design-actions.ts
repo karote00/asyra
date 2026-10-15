@@ -22,7 +22,7 @@ import { AiActionNames } from '../constants'
 import core from '../contexts'
 import { admitPreparedDesign } from './prepared-design-admission'
 import {
-  inspectionEvidenceSchema,
+  preparedAttachmentEvidenceSchema,
   type PreparedAttachmentEvidence
 } from './inspection-evidence'
 import type { PreparedDesign } from './prepared-design'
@@ -110,17 +110,7 @@ export const createPreparedDesignAction = (
     required: ['design'],
     properties: {
       design: { type: 'object' },
-      attachmentEvidence: {
-        type: 'object',
-        'x-runtime-value': 'request',
-        additionalProperties: false,
-        required: ['parentId', 'workspaceId', 'evidence'],
-        properties: {
-          parentId: { type: 'string', minLength: 1 },
-          workspaceId: { type: 'string', minLength: 1 },
-          evidence: inspectionEvidenceSchema
-        }
-      },
+      attachmentEvidence: preparedAttachmentEvidenceSchema,
       parentId: { type: 'string', minLength: 1 },
       response: { type: 'string', enum: ['compact', 'full'] }
     }

@@ -10,7 +10,7 @@ export const toolResultString = { type: 'string', minLength: 1 }
 export const toolRequestReference = {
   ...toolResultString,
   maxLength: 160,
-  'x-runtime-value': 'request'
+  'x-runtime-value': 'request-artifact'
 }
 export const toolDocumentReference = {
   ...toolResultString,
@@ -184,6 +184,10 @@ const actionEffects: Record<
     resources: ['document']
   },
   [AiActionNames.UPDATE_DESIGN_ELEMENT]: {
+    effect: 'mutation',
+    resources: ['document']
+  },
+  [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: {
     effect: 'mutation',
     resources: ['document']
   },

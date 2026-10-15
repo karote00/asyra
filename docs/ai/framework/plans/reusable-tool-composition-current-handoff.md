@@ -1,109 +1,90 @@
 # Reusable Tool Composition - Current Handoff
 
-## Current status and authority
+## Authority and location
 
-Stage 1 integration closure and the explicitly authorized history/persistence fix are
-complete locally. Stop here. Do not start Stage 2, run live Taipei 101, call a model,
-push, resume monitoring or use subagents. No automatic PR/merge goal remains active.
-App model and effort remain unchanged. No old compatibility path is authorized.
+Stage 2 is locally complete. The current request authorizes its delivery push,
+then Stage 3 plan review only. No Stage 3 implementation, live 101, model calls,
+subsequent planning push, PR, merge, monitoring or subagents are authorized. Preserve all local changes and
+`.env`. No new stage or old automation may override this boundary.
 
-- Repository: `/Users/asa/Desktop/workspace/asra`.
 - Worktree: `/Users/asa/Desktop/workspace/asra/.worktrees/ai-reusable-tool-design`.
 - Branch: `codex/ai-reusable-tool-design`.
-- HEAD: `844a5d27c8251d961761973eb348b3124ab36af9`; changes remain uncommitted.
-- Observed origin/main: `09e9efd6d64b56dd81ee451c6d8b89e5e463a4e7`.
-- Reuse this dirty worktree and preserve prior task changes and local `.env` files.
-- Active plan: `reusable-tool-composition-plan.md`, Current authority, Stage 1
-  integration closure card, authorized history correction card and final outcome.
-- Task context: `tmp/task-context.json`. No fetch/rebase/push occurred in this slice.
+- HEAD: `213c13405f952733ec7cde407d1024f0509af445`.
+- Integrated main: `3f91e39fed0a97b87b6f254f1b2febc221d44afb`.
+- Plan: `reusable-tool-composition-plan.md`, Current authority and Stage 2 local
+  completion. Historical execution cards are evidence, not current instructions.
+- Stage 1 Factory/history correction and Inspector cleanup remain preserved.
 
 ## Effective contracts
 
-- Primary AI owns creative decisions and visual judgments of delivered evidence.
-- Tools own deterministic checks, canonical dependency validation and retained results.
-  Preparation and drawing-review tools cannot start an independent AI assessor.
-- Deferred screenshots still run mechanical checks. Actual public tools and browser
-  actions use the common registry/invoke and canonical result store.
-- Partial review retains other pending findings and exact unrelated passed results.
-  Local dependency changes invalidate affected evidence only; pan/zoom does not.
-- Later failed structure judgment revokes final acceptance. Structure recovery alone
-  is insufficient; primary judgment must close current obligations, including when
-  reviewing existing content without an earlier mutation.
-- Validation-only, rejected and cancelled work cannot publish approval. Unavailable
-  capture requires corrected evidence; retry does not replay prior document writes.
-- Vector conversion uses `componentMappings` and eligible analysis receipts only.
-- Stage 2 `verify_design_checks` remains a future specified contract, not an implemented
-  tool or permission to begin another stage.
-- Factory owns History and replay. Successful local no-op replay still settles the
-  retained shared-delivery obligation; only actual mutation needs local restoration.
-  Thrown owner failure cannot settle that failed delivery. App translates publication
-  evidence and backend validates ordered document changes; neither fabricates history.
+- Primary AI owns creative choices and visual judgments. Tools perform deterministic
+  checks without calling an independent AI. Mechanical, visual and durability
+  completion are distinct.
+- Native `review_design` returns request-owned `mechanicalSelection`. The same
+  registry exposes `verify_design_checks` and `repair_design_checks`; Runtime alone
+  interprets finite recipes. No second registry, interpreter or result store.
+- Selection contains actual requestId and exact checkId/revision pairs. Producer
+  descriptors and canonical dependency receipts determine scope. Independent passes
+  survive local changes. Unknown/partial evidence cannot grant a pass; known findings
+  survive failed reads. Retirement remains explicit and owner-confirmed.
+- Repair requires complete supported pending coverage and explicitly prescribed
+  child-local positions with original parent/workspace attachment evidence. Guards
+  and ordinary edit preparation run synchronously before all writes. Changed basis
+  requires fresh evidence and explicitly renewed policy, never guessed rebasing.
+- Known read-only preflight rejection reports not-started; the exact failed-action
+  receipt does not create unknown mutation scope. Writer/transport errors preserve
+  actual partial or unknown settlement. No automatic write replay.
+- Repair returns the complete current selection. Runtime detects no progress and
+  retains acknowledged partial work, cancellation, Undo and ordinary save recovery.
+- `x-runtime-value: request` means transient plain data. `request-artifact` explicitly
+  marks leased handles. Both reject saved literals; nested handles retain their actual
+  ownership/cleanup. Saved dependencies require current schema fingerprints.
+- Stage 1 deferred capture still performs mechanical checks. Partial primary review
+  retains independent passes; failed structure revokes final visual acceptance.
+- Factory owns History/shared delivery; successful no-op replay settles delivery,
+  while actual writes alone need local restoration. Backend validation stays intact.
 
-## Root cause and correction
+## Verification and evidence
 
-Escape had already cleared selection. Undo therefore returned a successful local
-no-op for selection while removing the rectangle correctly. Factory gated shared
-readiness on `applied`, blocking the same source slice's element removal publication.
-Redo then published same-ID creation and backend correctly rejected it with 422.
-The fix separates replay success/shared delivery from mutation-only restoration in
-`packages/factory/src/data-transact.ts`. No backend validation was relaxed.
+All evidence is under `tmp/stage2/`; exact test lineage and earlier Stage 1 proof are
+in the plan. Runtime 376, Design server 1,234 (9 existing opt-in skips), browser AI
+586 passed. Full inspection/action-usage integration passed 33 with 2 conditional
+skips before the last bounded correction; the final five aggregate success/failure
+modes and the public prescribed-action usage case passed afterward. Those modes use
+real Runtime/host, browser/Core, history, collaboration peer, persistence and reload.
+Only the model boundary is scripted. No model or live 101 was executed.
 
-## Formal integration and verification
+Production TypeScript, focused lint, naming (15), catalog (8) and diff checks pass.
+Final candidate `3d151d8f-2f78-41b0-832d-aab7e51b6daf` passes all 34 flow cases.
+Target `88a3a548-937e-4487-9094-533cb8dc29bf` revision 1 assigns all current owner
+obligations. Assessment `b784e46f-6ecf-47e4-8585-0d69097cbe3c` is current and eligible,
+with every owner and case-backed handoff passing on the same source and preserved
+baseline. Earlier empty-allocation targets are development admission only.
+No remote/baseline publication occurred. Test-owned ports 3300/3401/4401 exited.
 
-`apps/asyra-design/e2e/ai-inspection-evidence.spec.ts` exercises real host/registry,
-browser runtime, rendered receipts, canonical check store, partial review, failure,
-cancellation, local invalidation and durable completion. Scripted primary-agent
-responses replace only the model boundary; middle owners are production code.
+## Latest Stage 1/2 review
 
-The history case uses actual UI create/Escape/Undo/Redo, a second collaboration
-client, real persistence confirmation, exact backend/local digest comparison and
-actual reload. Factory tests prove synchronous/progressive no-op handoffs plus failure,
-rollback and retry. Existing batching, compensation and History suites also pass.
+The follow-up review strengthened the existing real-browser aggregate case with a
+peer mutation and peer Undo while the same host request retains its passed checks.
+Only the third region is remeasured, once per change; the other seven pass records
+and revisions remain identical. Original AI history, persisted digest and reload
+still pass. No new production defect was reproduced and no production source was
+changed in this review.
 
-Evidence under `tmp/stage1-integration/`:
+Fresh evidence is in `tmp/stage2-review/`: inspection integration 12 passed / 2
+original opt-in skips; all 22 action usage cases; 9 collaboration/recovery E2Es;
+Factory 300; Core history 6; recovery consumers 269; server owners 291; browser AI
+586; production browser/server types, lint, naming 15 and diff checks. Counts overlap
+and must not be summed. Recovery E2Es cover retained edits across preparation or
+IndexedDB failure, reload, retry, subsequent saving, compensation, replay and peers.
+Existing Inspector assessment remains current=true/eligible=true on unchanged
+runtime source. Only the existing integration test and plan/handoff changed.
+Stop before Stage 3. No commit/push, monitoring, live model or 101 was performed.
 
-- `browser-built-history.log`: whole evidence file, 7 passed / 2 existing opt-in skips.
-- `browser-history-peer.log`: extended two-client history/save/reload case passed.
-- `factory-final.log`: full Factory suite, 299 passed.
-- `core-history-consumers.log`: 36 passed.
-- `persistence-browser-consumers.log`: 123 passed using the declared jsdom environment.
-- `owners.log`: review, operation and check store, 285 passed.
-- `types-final.log`, `factory-build.log`, `lint-final-correction.log`,
-  `history-test-lint.log`, `naming-final-correction.log`: applicable checks passed.
-- `inspector-readiness-closed.log`: 53 catalog/admission tests passed.
-- `history-closeout-proof.log`: same-source baseline, three exact defect injections,
-  recovery, 17 obligations. Old no-op defect is detected by all three new cases.
-- `design-final-candidate.log`: current Design source proof, 31 cases passed.
-- `inspection-lifecycle-publications.json`: preserved original failing wire evidence.
+## Next-stage boundary
 
-The first post-fix browser attempt still used old Factory dist; build preceded the
-successful actual-browser verification. A preliminary browser-consumer run used the
-wrong Node environment; corrected jsdom run passed. Those earlier failures remain
-failures. An exploratory legacy E2E typing command still has pre-existing errors;
-only the declared production TypeScript gate is claimed green. No full CI or live101
-was run. Test-owned 3300/3401/4401 services were cleaned up.
-
-## Latest Factory follow-up review
-
-The subsequent complete bounded review passed locally. No additional production
-change was required. Fixed the persistence Inspector bypass wording to distinguish
-ordinary no-op mutation from retained History settlement, then regenerated the catalog.
-Added permanent published-prefix/no-op compensation, retry and Redo coverage in
-`packages/factory/src/__tests__/shared-publication.test.ts`.
-
-Latest evidence is `tmp/stage1-integration/review-*`: Factory 300, Core 36,
-publication/collaboration/lifecycle 123, backend 24, real socket retry 2,
-Stage 1 browser 7 plus 2 existing opt-in skips, collaboration browser 10,
-Inspector catalog/admission 53. Production types, Factory build, lint, naming
-and task context passed. The browser runs include actual peers, failure recovery,
-subsequent editing, persistence confirmation and reload. No 409/422 was present
-in the successful browser logs. See the latest plan outcome for exact files and
-non-product setup failures; do not treat earlier failed attempts as successful.
-No new model request, Stage 2, push or monitoring occurred.
-
-## Next conversation
-
-Read this file, the current plan boundary, current AGENTS and exact Inspector owner
-before editing. Stage 1 is finished; obtain the user's next-stage instruction. Do not
-resume historical full-goal automations, repeat live101, or reinterpret old plan cards
-as new authorization. Preserve all existing local work.
+Stage 2 supports prescribed existing-child positioning for container-overflow;
+it is not a generic creative repair engine. Stage 3 delegation/guidance and Stage 4
+reuse require the user's next instruction. Do not infer real-model preference or
+performance improvement from these deterministic integration tests. Do not resume
+older goals, push instructions, complete-101 runs or monitoring from history.

@@ -3146,3 +3146,157 @@ it('execution proof uses only current conversion and primary judgment contracts'
   ).toMatchObject({ accepted: true })
   expect.soft(spawn).not.toHaveBeenCalled()
 })
+
+it('execution proof preserves exact mechanical selection and canonical retirement', () => {
+  const checks = createDesignCheckResults()
+  const revision = checks.record({
+    id: 'local-check',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Current geometry',
+    dependencies: {}
+  })
+  expect(checks.select([{ checkId: 'local-check', revision }])).toHaveLength(1)
+  checks.retire('local-check', 'Canonical target removed')
+  expect(
+    checks.select([{ checkId: 'local-check', revision }])[0]
+  ).toMatchObject({ retired: true })
+  expect(() => checks.select([{ checkId: 'unknown', revision: 1 }])).toThrow()
+  const next = checks.record({
+    id: 'local-check',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Recreated geometry',
+    dependencies: {}
+  })
+  expect(next).toBeGreaterThan(revision)
+  expect(() => checks.select([{ checkId: 'local-check', revision }])).toThrow()
+})
+
+it('execution proof exposes aggregate verification and guarded repair at the existing operation owner', () => {
+  const operations = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.REVIEW_DESIGN,
+        description: 'Review',
+        inputSchema: { type: 'object' }
+      }
+    ],
+    {
+      modelActions: (value) => value,
+      resolveBatch: (value) => value
+    },
+    vi.fn()
+  )
+  const verify = operations.definitions.find(
+    (tool) => tool.name === 'verify_design_checks'
+  )
+  const repair = operations.definitions.find(
+    (tool) => tool.name === 'repair_design_checks'
+  )
+  expect(verify).toMatchObject({
+    verification: {
+      statusPath: '/verification/status',
+      progressPath: '/verification/progress'
+    }
+  })
+  expect(repair).toBeDefined()
+})
+
+it('execution proof preserves a rejected mechanical repair as not-started across native ownership', async () => {
+  const { createLocalToolHost } = await import('../local-tool-host')
+  const checks = createDesignCheckResults()
+  const revision = checks.record({
+    id: 'opaque',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'No automatic repair',
+    dependencies: {}
+  })
+  const execute = vi.fn()
+  const host = createLocalToolHost({
+    requestId: 'r',
+    signal: new AbortController().signal,
+    capacity: 4,
+    receiptCapacity: 4,
+    artifactCapacity: 4,
+    limits: {
+      bytes: 12000,
+      steps: 10,
+      bindings: 100,
+      bindingDepth: 32,
+      issues: 10
+    },
+    store: {
+      read: async () => undefined,
+      list: async () => [],
+      write: async () => {
+        throw new Error('Unexpected save')
+      }
+    },
+    createGroups: (ownership) => [
+      {
+        name: 'design_operations',
+        description: 'Mechanical checks',
+        owner: createLocalOperationTools(
+          [
+            {
+              name: AiActionNames.REVIEW_DESIGN,
+              description: 'Review',
+              inputSchema: { type: 'object' }
+            }
+          ],
+          {
+            modelActions: (value) => value,
+            resolveBatch: (value) => value,
+            checkResults: checks
+          },
+          execute,
+          { ownership }
+        )
+      }
+    ]
+  })
+  try {
+    const verified = await host.invoke({
+      name: 'design_operations.verify_design_checks',
+      input: {
+        requestId: 'r',
+        checks: [{ checkId: 'opaque', revision }]
+      }
+    })
+    expect(JSON.parse(verified.text)).toMatchObject({
+      toolOutcome: { status: 'success' },
+      verification: { status: 'decision-required' }
+    })
+    const reply = await host.invoke({
+      name: 'design_operations.repair_design_checks',
+      input: {
+        requestId: 'r',
+        checks: [{ checkId: 'opaque', revision }],
+        policy: {
+          capability: 'set-prescribed-child-position',
+          positions: [
+            {
+              elementId: 'child',
+              x: 1,
+              y: 1,
+              attachmentEvidence: {
+                parentId: 'parent',
+                workspaceId: 'workspace',
+                evidence: { sessionId: 's', revision: 0 }
+              }
+            }
+          ]
+        }
+      }
+    })
+    expect(JSON.parse(reply.text)).toMatchObject({
+      code: 'PREPARATION_REJECTED',
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(execute).not.toHaveBeenCalled()
+  } finally {
+    await host.dispose()
+  }
+})

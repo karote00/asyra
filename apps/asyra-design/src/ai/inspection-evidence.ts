@@ -23,3 +23,15 @@ export const inspectionEvidenceSchema = {
     receiptId: { type: 'string', minLength: 1 }
   }
 }
+
+export const preparedAttachmentEvidenceSchema = {
+  type: 'object',
+  'x-runtime-value': 'request',
+  additionalProperties: false,
+  required: ['parentId', 'workspaceId', 'evidence'],
+  properties: {
+    parentId: { type: 'string', minLength: 1 },
+    workspaceId: { type: 'string', minLength: 1 },
+    evidence: inspectionEvidenceSchema
+  }
+}

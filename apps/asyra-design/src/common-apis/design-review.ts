@@ -33,6 +33,7 @@ interface ReviewApis {
   ): readonly { elementId: string; bounds: Bounds | null }[]
 }
 interface ReviewFinding {
+  parentId?: string
   kind: string
   elementId: string
   left?: number
@@ -220,6 +221,7 @@ export const createDesignReviewer = (
                 node.findings.push({
                   kind: 'container-overflow',
                   elementId: id,
+                  ...(data.parentId ? { parentId: data.parentId } : {}),
                   ...excess
                 })
             }

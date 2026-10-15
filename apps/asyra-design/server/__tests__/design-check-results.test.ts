@@ -443,3 +443,47 @@ it('discards only untouched declaration placeholders and validates the whole rem
     )
   }
 })
+
+it('admits a complete detached mechanical selection and rejects mixed ownership', () => {
+  const store = createDesignCheckResults()
+  const value = {
+    id: 'part',
+    origin: 'tool' as const,
+    status: 'pass' as const,
+    evidence: 'Not a dispatch language',
+    dependencies: { geometry: 'v1' }
+  }
+  const descriptor = {
+    kind: 'measurement' as const,
+    elementId: 'part',
+    findings: []
+  }
+  const revision = store.record(value, descriptor)
+  store.record({ ...value, id: 'visual', origin: 'main-agent' })
+  expect(() =>
+    store.select([
+      { checkId: 'part', revision },
+      { checkId: 'visual', revision: 1 }
+    ])
+  ).toThrow(/mechanical/)
+  expect(() =>
+    store.select([
+      { checkId: 'part', revision },
+      { checkId: 'part', revision }
+    ])
+  ).toThrow(/unique/)
+  expect(() => store.select([])).toThrow(/nonempty/)
+  const selected = store.select([{ checkId: 'part', revision }])
+  expect(selected[0]).toMatchObject({ recheck: descriptor })
+  descriptor.elementId = 'changed'
+  expect(store.select([{ checkId: 'part', revision }])[0]).toMatchObject({
+    recheck: { elementId: 'part' }
+  })
+  expect(store.read({ includePassed: true }).items[0]).not.toHaveProperty(
+    'recheck'
+  )
+  store.invalidate(['geometry'], 'Changed')
+  expect(store.select([{ checkId: 'part', revision }])[0]).toMatchObject({
+    result: { status: 'stale' }
+  })
+})

@@ -272,6 +272,8 @@ export const createInspectionEvidence = (
   }
   const owner = {
     isCurrent,
+    isAttachmentCurrent: (stamp: unknown, parentId: string) =>
+      isCurrent(stamp) && dependencies.currentAttachment(stamp, parentId),
     attachment: async (parentId?: string): Promise<Record<string, unknown>> => {
       startObserving()
       const start = revision

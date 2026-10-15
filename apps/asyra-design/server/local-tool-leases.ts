@@ -2,6 +2,7 @@ import type { AiRecipeLeaseAdapter } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from './operation-input-schema'
 
 export interface LocalToolOwnership {
+  readonly requestId: string
   publish(
     handle: string,
     release: () => void | Promise<void>,
@@ -47,7 +48,7 @@ export const localToolReferences = (
       }
       visit(item, target, depth + 1)
     }
-    if (shape['x-runtime-value'] === 'request') {
+    if (shape['x-runtime-value'] === 'request-artifact') {
       if (typeof item === 'string') {
         result.add(item)
         return
