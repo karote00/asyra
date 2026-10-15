@@ -1093,3 +1093,50 @@ test(
     )
   }
 )
+
+test(
+  'node context ignores a delayed poll after a newer saved note is displayed',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.mutate('factory')
+    const fault = await fixture.run('factory')
+    const failed = fault.record.cases.find((item) => item.status === 'failed')
+    await page.goto(
+      server.origin + '/transaction-atomicity?observation=' + failed.id
+    )
+    const panel = page.frameLocator('iframe').locator('#node-interactions')
+    await expect(panel).toContainText('Reference: available')
+    let releaseOld,
+      readCount = 0
+    let resolveOld
+    const oldRead = new Promise((resolve) => {
+      resolveOld = resolve
+    })
+    await page.route('**/api/node-context/**', async (route) => {
+      readCount++
+      if (readCount === 1) {
+        const response = await route.fetch()
+        releaseOld = () => route.fulfill({ response })
+        resolveOld()
+      } else if (readCount === 2) {
+        await route.continue()
+      } else {
+        // Keep subsequent polling from hiding the stale-response regression.
+        await route.abort()
+      }
+    })
+    await oldRead
+    const note = 'Latest saved investigation note'
+    await panel.getByLabel('Add investigation note').fill(note)
+    await panel.getByRole('button', { name: 'Save note', exact: true }).click()
+    await expect(panel.locator('article')).toContainText(note)
+    await releaseOld()
+    await page.waitForTimeout(200)
+    assert.ok(
+      (await panel.textContent()).includes(note),
+      'Late polling must not erase a saved note'
+    )
+  }
+)

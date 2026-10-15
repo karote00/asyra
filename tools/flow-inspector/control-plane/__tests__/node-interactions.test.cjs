@@ -821,3 +821,18 @@ test('restart refuses new execution while an interrupted runner may still be ali
   )
   assert.throws(() => f.service.start({}, LOCAL_ACTOR), /running/)
 })
+
+test('node interaction implementation belongs to the action owner only', () => {
+  const inspector = require('../../inspectors/flow-inspector-core-proof-flow-inspector.data.cjs')
+  for (const file of [
+    'tools/flow-inspector/control-plane/node-interactions.cjs',
+    'tools/flow-inspector/control-plane/__tests__/node-interactions.test.cjs'
+  ]) {
+    assert.deepEqual(
+      inspector.steps
+        .filter((step) => step.implementationBoundary.includes(file))
+        .map((step) => step.id),
+      ['serve-proof-actions']
+    )
+  }
+})

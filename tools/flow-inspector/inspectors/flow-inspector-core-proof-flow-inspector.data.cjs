@@ -205,8 +205,6 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/flow-target.cjs',
-        'tools/flow-inspector/control-plane/node-interactions.cjs',
-        'tools/flow-inspector/control-plane/__tests__/node-interactions.test.cjs',
         'tools/flow-inspector/control-plane/service.cjs',
         'tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs',
         'tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs',
@@ -926,6 +924,8 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'tools/flow-inspector/control-plane/node-interactions.cjs',
+        'tools/flow-inspector/control-plane/__tests__/node-interactions.test.cjs',
         'tools/flow-inspector/control-plane/service.cjs',
         'tools/flow-inspector/control-plane/store.cjs',
         'tools/flow-inspector/control-plane/server.cjs',

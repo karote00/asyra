@@ -203,6 +203,7 @@
         let pending = false,
           preview = null,
           rerunId = null,
+          contextRevision = 0,
           commentId = window.crypto.randomUUID(),
           signature = ''
         const current = () =>
@@ -224,10 +225,17 @@
           return value
         }
         const update = async () => {
-          const value = await get(
-            '/api/node-context/' + item.runId + '/' + item.id.split(':')[1]
-          )
-          if (!current()) return
+          const revision = ++contextRevision
+          let value
+          try {
+            value = await get(
+              '/api/node-context/' + item.runId + '/' + item.id.split(':')[1]
+            )
+          } catch (error) {
+            if (current() && revision === contextRevision) throw error
+            return
+          }
+          if (!current() || revision !== contextRevision) return
           const next = JSON.stringify(value)
           if (next === signature) return
           signature = next

@@ -434,3 +434,20 @@ were not rerun as new Stage C obligations.
 Next goal: review and merge this cohesive Stage C PR, then close the agreed A/B/C
 scope. Further coverage or interaction capabilities need a new explicit scope
 decision; no mandatory Stage D is introduced.
+
+### Stage C PR review - 2026-10-16
+
+Reviewed the complete Stage C selection/source/configuration path, authorization,
+execution exclusion and retention, historical note context, and Board/API/CLI
+consumers. Corrected the node-interaction implementation boundary from
+`manage-flow-target` to its actual `serve-proof-actions` owner. Added a permanent
+owner contract assertion. A browser regression also reproduced a delayed poll
+replacing newly saved notes with an older context; the Board now discards stale
+responses and stale errors using a per-selection request revision.
+
+Both regressions failed before their fixes and passed afterward. The existing
+Stage C Board interaction case was rerun with the ordering regression; unaffected
+A/B fault inventories and unchanged runner behavior retain their existing evidence.
+The stage goal remains explicit selected-case actions and retained investigation
+notes. The next goal remains review/merge and closure of A/B/C, without a new
+mandatory stage or expanded debugging responsibilities.
