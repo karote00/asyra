@@ -2,70 +2,32 @@ Never record completed plans here.
 
 # Flow Inspector Plans
 
-Direction aligned on 2026-10-11: help humans and AI move directly from a failed
-test to its recorded responsibility node, implementation location and original
-failure evidence. Eliminate repeated discovery; debugging and repair remain the
-human or AI's work. The roadmap no longer requires an agent/task/delivery system.
+## Active and Future Work
 
-## Current delivery stages - 2026-10-15
+No implementation stage is currently activated. The agreed failure-localization
+and optional node-interaction scope is closed following the merges of Stages
+A/B/C. See the [completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
+for the bounded outcome, original acceptance evidence and remaining limitations.
+Detailed completion history belongs in `plans/completed/`, not this active index.
 
-The core failure-to-node path is implemented. Stage A merged as PR #333
-with its frozen 412-case inventory; validation and
-remaining execution limits are recorded in the supporting plan. Follow the roadmap's
-[consolidated stages](plans/flow-inspector-workflow-control-plane-roadmap.md#consolidated-delivery-stages---2026-10-15):
+Further runner or mapping coverage, interactions or operational features require
+a new explicit product decision with a bounded inventory and acceptance criteria.
+There is no mandatory Stage D and no automatically queued per-case follow-up.
 
-1. Stage A: complete the frozen Design functional test inventory's localization.
-2. Stage B: complete collaboration and selected shared Framework localization.
-3. Stage C: selected-case rerun actions and append-only node/run comments,
-   activated by the user on 2026-10-16 as one complete stage.
+## Product Direction and Authority
 
-A/B include full end-to-end acceptance, not one PR per mapping or owner. Exact
-inventories are frozen before implementation. Stage B merged as PR #334 with 17 collaboration identities and 87 selected Framework cases.
-Its whole-stage validation is recorded in the existing result-source plan.
-Stage C now completes the separately requested optional interactions. After its
-review/merge, close the agreed A/B/C scope; no further mandatory stage is queued.
-Historical slice notes do not schedule more stages.
+Help humans and AI move from an existing failed test directly to its recorded
+responsibility node, implementation location and original evidence. Investigation
+and repair remain their work. Mapped coverage does not imply passing product
+behavior, universal test support or proof of a root cause.
 
-## Core Mainline
-
-- [Test Failure Localization](plans/flow-inspector-verification-coverage-expansion-plan.md)
-  owns the initial ordinary-test ingestion, mappings, usable failure context and
-  real App/Framework failure-and-recovery acceptance cases.
-- [Failure Localization Roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md)
-  owns product scope, sequencing and completion boundaries. It is not a separate
-  implementation backlog to count twice.
-
-## Supporting Coverage Expansion
-
-- [Test Result Source Support](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
-  covers separately selected additional runners, CI producers and test sets.
-  Reuse the core result-to-node path. Receiving CI failures does not require
-  required-check configuration, a protected verifier or merge enforcement.
-
-## Optional After Core Acceptance
-
-- [Node Interactions](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
-  supports the activated Stage C bounded command buttons and comment blocks.
-  Neither is required for read-only localization. Both must reduce actions at an already located
-  node, not introduce task planning or automatic repair.
-
-## Removed from the Mainline
-
-Unimplemented task decomposition/dispatch, provider expansion, remote execution
-reconciliation, agent budget orchestration, ticket/PR synchronization, delivery
-management, protected merge enforcement, team work tracking and hosting are
-withdrawn from the current backlog. They are not merely waiting to become
-mandatory later phases. Reintroduction requires a separate product decision.
-
-Existing functionality and its runtime contracts remain intact. Completed work
-is not reopened; unfinished historical full-phase requirements are not falsely
-marked complete. Dated records are preserved in the roadmap and supporting
-plans, with links to their accepted closeout evidence.
-
-## Authority and Activation
-
-The current [Core Proof](CORE_PROOF.md), [static Inspector contract](FLOW_INSPECTOR.md),
+The living [Core Proof](CORE_PROOF.md), [static Inspector contract](FLOW_INSPECTOR.md),
 [local execution contract](AGENT_EXECUTION.md) and [review contract](PR_REVIEW.md)
-remain authoritative for implemented behavior. Repository development rules
-remain unchanged. The planning revision grants no implementation, remote action,
-publication or deployment authority. All existing plan filenames stay stable.
+remain authoritative. Existing controls retain their behavior. Original planning
+paths remain stable as historical scope/evidence references; they are not active
+backlogs. Repository development rules remain unchanged.
+
+Task dispatch, provider expansion, remote reconciliation, agent budget management,
+ticket/PR synchronization, delivery management, protected merge enforcement,
+team tracking and hosting remain outside the agreed scope. Their unfinished
+historical requirements are not marked complete or silently reactivated.

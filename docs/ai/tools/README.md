@@ -13,7 +13,7 @@ Current tools:
   evidence verification, semantic review, and failure summaries.
 
 - [`flow-inspector/`](flow-inspector/README.md) - static architecture contract
-  viewer and the planned workflow control plane.
+  viewer, implemented test-failure localization and optional node interactions.
 
 Each tool folder owns its purpose, architecture, operational boundaries, plans,
 tool-scoped decision history, and public tool contracts when they exist.
