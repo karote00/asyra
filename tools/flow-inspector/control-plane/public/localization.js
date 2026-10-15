@@ -164,6 +164,244 @@
             )
           )
       }
+      let refreshInteractions = null
+      const drafts = new Map()
+      const mountInteractions = (item) => {
+        const section = node('section')
+        section.id = 'node-interactions'
+        const status = node('p')
+        status.setAttribute('role', 'status')
+        const previewButton = node('button', 'Preview selected test rerun')
+        const confirmButton = node('button', 'Confirm selected test rerun')
+        confirmButton.hidden = true
+        const previewText = node('pre')
+        const actions = node('div')
+        const comments = node('div')
+        const label = node('label', 'Add investigation note')
+        const input = node('textarea')
+        input.maxLength = 2000
+        input.value = drafts.get(item.id) || ''
+        label.append(input)
+        const add = node('button', 'Save note')
+        section.append(
+          node('h4', 'Node interactions'),
+          status,
+          previewButton,
+          previewText,
+          confirmButton,
+          actions,
+          node('h4', 'Investigation notes'),
+          node(
+            'p',
+            'Append-only local notes, separate from original test evidence. Add a new note to correct an earlier one.'
+          ),
+          comments,
+          label,
+          add
+        )
+        details.append(section)
+        let pending = false,
+          preview = null,
+          rerunId = null,
+          contextRevision = 0,
+          commentId = window.crypto.randomUUID(),
+          signature = ''
+        const current = () =>
+          !disposed && chosen === item.id && section.isConnected
+        const selection = { runId: item.runId, caseId: item.id }
+        const post = async (url, body) => {
+          const session = await get('/api/session')
+          const response = await fetch(url, {
+            method: 'POST',
+            signal: lifetime.signal,
+            headers: {
+              'content-type': 'application/json',
+              'x-proof-capability': session.capability
+            },
+            body: JSON.stringify(body)
+          })
+          const value = await response.json()
+          if (!response.ok) throw new Error(value.error || 'Node action failed')
+          return value
+        }
+        const update = async () => {
+          const revision = ++contextRevision
+          let value
+          try {
+            value = await get(
+              '/api/node-context/' + item.runId + '/' + item.id.split(':')[1]
+            )
+          } catch (error) {
+            if (current() && revision === contextRevision) throw error
+            return
+          }
+          if (!current() || revision !== contextRevision) return
+          const next = JSON.stringify(value)
+          if (next === signature) return
+          signature = next
+          status.textContent = 'Reference: ' + value.reference
+          comments.replaceChildren(
+            ...value.comments.map((comment) => {
+              const entry = node('article')
+              entry.append(
+                node('p', comment.actor + ' - ' + comment.createdAt),
+                node('pre', comment.text)
+              )
+              return entry
+            })
+          )
+          actions.replaceChildren(
+            ...value.actions.map((action) => {
+              const entry = node('article')
+              entry.append(
+                node(
+                  'p',
+                  'Rerun - ' +
+                    action.status +
+                    ' - ' +
+                    (action.observedStatus || 'pending') +
+                    ' - ' +
+                    (action.resolution || 'not assessed')
+                ),
+                node(
+                  'pre',
+                  [
+                    action.id,
+                    action.error,
+                    ...(action.issues || []),
+                    action.process?.reason,
+                    action.process?.output
+                  ]
+                    .filter(Boolean)
+                    .join('\n')
+                )
+              )
+              if (action.resultRunId) {
+                const link = node('a', 'Open rerun report')
+                link.href = '/api/test-results/' + action.resultRunId
+                link.target = '_blank'
+                link.rel = 'noopener noreferrer'
+                entry.append(link)
+              }
+              if (action.status === 'running') {
+                const cancel = node('button', 'Cancel rerun')
+                cancel.addEventListener(
+                  'click',
+                  () =>
+                    act(async () => {
+                      await post(
+                        '/api/node-reruns/' + action.id + '/cancel',
+                        {}
+                      )
+                      await update()
+                    }),
+                  { signal: lifetime.signal }
+                )
+                entry.append(cancel)
+              }
+              return entry
+            })
+          )
+        }
+        const act = async (callback) => {
+          if (pending || !current()) return
+          pending = true
+          previewButton.disabled = confirmButton.disabled = add.disabled = true
+          try {
+            await callback()
+          } catch (error) {
+            if (current()) status.textContent = error.message
+          } finally {
+            pending = false
+            if (current())
+              previewButton.disabled =
+                confirmButton.disabled =
+                add.disabled =
+                  false
+          }
+        }
+        input.addEventListener(
+          'input',
+          () => {
+            drafts.set(item.id, input.value)
+            commentId = window.crypto.randomUUID()
+          },
+          { signal: lifetime.signal }
+        )
+        previewButton.addEventListener(
+          'click',
+          () =>
+            act(async () => {
+              preview = null
+              confirmButton.hidden = true
+              const value = await post('/api/node-reruns/preview', selection)
+              if (!current()) return
+              preview = value
+              rerunId = window.crypto.randomUUID()
+              previewText.textContent = [
+                'Test: ' + value.test.name,
+                'File: ' + value.test.file,
+                'Project: ' + (value.test.project || '(default)'),
+                'Runner: ' + value.command.runner,
+                'Original run scope fingerprint: ' + value.originalSourceDigest,
+                'Selected rerun scope fingerprint: ' + value.sourceDigest,
+                'cwd: ' + value.command.cwd,
+                'Arguments: ' + JSON.stringify(value.command.args)
+              ].join('\n')
+              confirmButton.hidden = false
+              status.textContent =
+                'Review the selected test and current source before confirming.'
+            }),
+          { signal: lifetime.signal }
+        )
+        confirmButton.addEventListener(
+          'click',
+          () =>
+            act(async () => {
+              if (!preview) return
+              await post('/api/node-reruns', {
+                ...selection,
+                requestId: rerunId,
+                previewDigest: preview.previewDigest
+              })
+              if (!current()) return
+              confirmButton.hidden = true
+              preview = null
+              await update()
+            }),
+          { signal: lifetime.signal }
+        )
+        add.addEventListener(
+          'click',
+          () =>
+            act(async () => {
+              const text = input.value
+              const requestId = commentId
+              await post('/api/node-comments', {
+                ...selection,
+                requestId,
+                text
+              })
+              if (!current()) return
+              if (input.value === text) {
+                input.value = ''
+                drafts.delete(item.id)
+                commentId = window.crypto.randomUUID()
+              }
+              await update()
+            }),
+          { signal: lifetime.signal }
+        )
+        refreshInteractions = async () => {
+          if (!current() || pending) return
+          try {
+            await update()
+          } catch (error) {
+            if (current()) status.textContent = error.message
+          }
+        }
+        refreshInteractions()
+      }
       const show = async (item) => {
         chosen = item.id
         try {
@@ -264,6 +502,7 @@
           evidence.target = '_blank'
           evidence.rel = 'noopener noreferrer'
           details.append(evidence)
+          if (item.resolution === 'mapped') mountInteractions(item)
           locate(item)
         } catch (error) {
           if (!disposed && chosen === item.id)
@@ -361,6 +600,7 @@
         if (busy || disposed) return
         busy = true
         try {
+          await refreshInteractions?.()
           const next = await get('/api/test-results')
           if (disposed) return
           const nextSignature = JSON.stringify(next)

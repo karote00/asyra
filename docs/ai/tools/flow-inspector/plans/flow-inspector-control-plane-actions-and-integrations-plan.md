@@ -8,7 +8,8 @@ is proven, optionally reduce actions needed at an already located node through
 command buttons and comment blocks. The filename remains stable for existing
 links. This is not an agent execution, task planning or delivery-management plan.
 
-Command buttons and comments are deferred, not activated by this document.
+The user activated complete Stage C on 2026-10-16 from merged PR #334.
+The roadmap Stage C activation contract freezes the scope and acceptance cases.
 The consolidated roadmap groups them into optional Stage C with one combined
 acceptance boundary; the sections below are internal work areas, not automatic
 separate phases or PRs.
@@ -25,8 +26,10 @@ interactions. A button or comment must shorten that path, not require a new
 workflow or substitute for missing mappings.
 
 Before each optional slice, select the supported operation, exact owner, read or
-write effects, evidence binding and permanent acceptance cases. The decisions
-below are future design inputs, not assertions of implemented capability.
+write effects, evidence binding and permanent acceptance cases. The current decisions and implementation contract are recorded in
+[Node interactions](../CORE_PROOF.md#node-interactions): exact selected-case
+rerun preview/confirmation and append-only attributed node/run notes.
+Editing and deletion are unsupported; corrections use a new note.
 
 ## Optional Command Buttons
 

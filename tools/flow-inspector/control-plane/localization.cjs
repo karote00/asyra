@@ -131,6 +131,9 @@ function beginObservation(root, options = {}) {
     source,
     contracts,
     issues,
+    ...(options.executionConfig
+      ? { executionConfig: structuredClone(options.executionConfig) }
+      : {}),
     command: options.command ?? null
   }
   saveObservation(observationDirectory(root), {

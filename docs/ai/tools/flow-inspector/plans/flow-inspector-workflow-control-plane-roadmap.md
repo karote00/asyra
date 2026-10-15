@@ -12,7 +12,7 @@ The consolidated roadmap supersedes the earlier small delivery slices. The user
 subsequently activated the complete Stage A from merged main; its frozen inventory,
 implementation and validation are recorded in the existing result-source support
 plan. Stage A merged as PR #333. The user activated the complete Stage B from
-that merged main; optional Stage C remains inactive.
+that merged main; Stage B merged as PR #334. The user activated complete Stage C on 2026-10-16.
 
 ## Product Objective
 
@@ -52,7 +52,7 @@ historical "next-stage" notes in the supporting plan. Owner steps remain interna
 implementation and review checkpoints, not separate user-facing stages or PRs.
 The original consolidation was planning-only. Stage A was subsequently activated
 as one complete implementation and merged. Stage B was separately activated
-from that main; Stage C remains inactive.
+from that main and merged as PR #334; Stage C is now activated.
 Association: this roadmap's Delivery Sequence, now consolidated here; the Flow
 Inspector follow-up owner retains whole-plan closeout responsibility.
 
@@ -122,7 +122,7 @@ Full acceptance:
 
 ### Stage B - Complete collaboration and shared Framework localization
 
-Status: locally complete from merged PR #333; pending PR review and remote CI.
+Status: merged as PR #334.
 The frozen 17 collaboration / 87 Framework inventory and evidence live in the
 result-source support plan. The complete stage is delivered as one PR after scoped validation.
 
@@ -163,9 +163,10 @@ scope decision. Universal runner and repository coverage is not claimed.
 
 ### Stage C - Optional node interactions
 
-Not activated and not required to close A/B. If requested, deliver command
-buttons and comment blocks as one coherent node-interaction stage, using the
-existing interaction plan's safety and persistence contracts.
+Activated on 2026-10-16 from merged PR #334. Deliver command buttons and
+comment blocks as one coherent node-interaction stage. The bounded contract
+below supersedes historical interaction-plan ambitions for this stage.
+Status: locally implemented and reviewed; PR review and remote CI remain separate.
 
 Full acceptance: selected rerun/open-evidence actions use the existing action
 owner with correct source/test selection, permission denial without effects,
@@ -345,3 +346,116 @@ integration assessment, explicit target acceptance and captured full-runtime
 product evidence are complete for one local owner and repository. Existing
 strict verification and completed records remain unchanged; multi-repository,
 team and protected external enforcement stay deferred.
+
+## Stage C activation and bounded execution contract
+
+Owner: Flow Inspector follow-up owner. Base: merged PR #334.
+Scope: service-owned selected-case rerun preview/confirmation, retained action
+results, original-evidence links, and append-only comments on retained mapped
+node/run contexts. Comments are explicitly attributed local notes, not trusted
+identity authentication or original test evidence. Corrections are new comments;
+editing and deletion are unsupported. Missing/changed references stay readable
+and explicit rather than moving notes to another node.
+
+Only current admitted Vitest/Playwright case mappings select commands. Never
+execute recorded argv or client-provided paths/environment. Preview captures the
+current mapped-input fingerprint and displays original/current source; confirmation
+rejects changed preview source/mapping. Fixing source since the original failure
+is allowed after a fresh preview. Requests are idempotent, bounded, mutually
+exclusive with existing service execution and retain interrupted/error outcomes.
+Original result observations and accepted baseline authority remain unchanged.
+
+Required cases: exact file/title/project selection; original-source change and
+preview-source drift; unknown/unmapped/retired references; denied actions with
+zero effects; duplicate/conflicting request IDs; restart and storage errors;
+runner failure/cancellation; append-only attribution and context after restart;
+Board/API/CLI parity, literal text rendering, desktop/narrow evidence and continued
+localization without interactions. Reuse ordinary reporters and bounded runner.
+No runtime App/Framework change, arbitrary shell, task creation, repair, agent
+dispatch, new dependencies, or new mandatory coverage stage.
+
+Owner segments: `localize-test-results` validates explicitly bound execution
+configurations while retaining original runner reports; `serve-proof-actions` owns
+admission, retention and execution;
+`render-proof-board` consumes those completed projections and forwards explicit
+intent. Step cards use CORE_PROOF's Node interactions contract and the core-proof
+Inspector's matching inputs/outputs/conditions/boundaries. Allowed contributors
+are retained observations, current admitted mappings and existing bounded runner;
+recorded commands and client-derived eligibility are forbidden. Their existing
+step IDs remain failure owners. No computation cache is introduced: preview
+captures once, confirmation rechecks once, reads never recapture or rerun.
+
+Before each segment, recheck those contracts. Formal node-interaction tests,
+existing service/server/CLI and localization regressions, Board tests, catalog
+generation, tool lint/typecheck/build and required repository admission gates
+close the assembled stage. Stop on an unresolved owner/spec mismatch or a
+necessary out-of-scope mutation. Final review covers this diff, direct consumers
+and these gates only. After C, review/merge and close the agreed A/B/C scope;
+further coverage or interactions require an explicit new product decision.
+
+### Stage C bounded iteration - exact runner selection
+
+The original App integration test demonstrated that Vitest normalizes both
+relative and absolute CLI filters to substring selection, executing copied
+fixtures as well as the requested file. Replace filename-only filtering with a
+service-generated execution config that imports the original config and limits
+`test.include` to the exact selected file while preserving the remaining options.
+This is the same action owner and selected-case contract, not a scope expansion.
+The permanent App test must prove one executed case despite copied fixtures;
+Framework selection and original-config behavior remain regression obligations.
+Playwright retains its separately bound wrapper for owned server isolation.
+
+### Stage C local acceptance - 2026-10-16
+
+Delivered the complete selected-case interaction flow in one branch: service
+preview/confirmation, exact Vitest/Playwright selection, owned runner lifecycle,
+immutable original-report links, retained outcomes, and attributed append-only
+node/run notes through Board/API/CLI. Notes preserve historical context and
+remain separate from assertions. Edits/deletion and automatic repairs are excluded.
+
+Permanent node-interaction cases cover actual Factory/App Vitest and collaboration
+Playwright execution, permissions, exact selection, source/mapping drift, duplicate
+requests, caller mutation, cancellation, restart/live-runner exclusion, Unicode
+input, corrupt/unwritable storage and persistence failures. The Board case checks
+drafts, literal text, rerun confirmation/recovery and machine parity at desktop
+and narrow widths. Generated screenshot artifacts were inspected.
+
+Local validation: the existing control-plane CI file set passed 569 cases with
+55 existing opt-in/platform/evidence-dependent skips; the new interaction cases
+were run separately with focused repeats only for affected repairs. Board suites
+passed 29 cases with two existing retained live-provider/GitHub-evidence skips.
+The first non-localization Board invocation lacked the local Chrome channel;
+only those affected files were rerun with the existing installed Chrome. Tool
+React tests (12), tool contracts (100), CI routing/workspace contracts (108),
+scoped lint, naming, typecheck/build, catalog generation, core proof and candidate
+verification passed. Full A/B fault inventories and live external integrations
+were not rerun as new Stage C obligations.
+
+Next goal: review and merge this cohesive Stage C PR, then close the agreed A/B/C
+scope. Further coverage or interaction capabilities need a new explicit scope
+decision; no mandatory Stage D is introduced.
+
+### Stage C PR review - 2026-10-16
+
+Reviewed the complete Stage C selection/source/configuration path, authorization,
+execution exclusion and retention, historical note context, and Board/API/CLI
+consumers. Corrected the node-interaction implementation boundary from
+`manage-flow-target` to its actual `serve-proof-actions` owner. Added a permanent
+owner contract assertion. A browser regression also reproduced a delayed poll
+replacing newly saved notes with an older context; the Board now discards stale
+responses and stale errors using a per-selection request revision.
+
+Both regressions failed before their fixes and passed afterward. The existing
+Stage C Board interaction case was rerun with the ordering regression; unaffected
+A/B fault inventories and unchanged runner behavior retain their existing evidence.
+The stage goal remains explicit selected-case actions and retained investigation
+notes. The next goal remains review/merge and closure of A/B/C, without a new
+mandatory stage or expanded debugging responsibilities.
+
+A second complete Stage C review found that preview hashing inherited JSON
+request field order, so equivalent API/CLI selectors could fail confirmation.
+The action owner now constructs the selector fields in canonical order. A formal
+regression first reproduced unequal digests, then verified matching previews,
+successful confirmation and duplicate suppression after the fix. The bounded
+node-interaction suite covers the repair and its direct execution consumers;
+unchanged Board, build and A/B evidence is reused.

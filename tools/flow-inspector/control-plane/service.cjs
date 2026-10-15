@@ -31,10 +31,13 @@ const { createTargetOwner, TARGET_POLICY } = require('./flow-target.cjs')
 const { TASK_POLICY } = require('./agent-contract.cjs')
 const { containmentAvailable } = require('./agent-verifier.cjs')
 
+const { createNodeInteractions } = require('./node-interactions.cjs')
+
 const LOCAL_ACTOR = Object.freeze({
   id: 'local-developer',
   capabilities: Object.freeze([
     'verify',
+    'comment',
     'cancel',
     'prepare-mapping',
     'decide-mapping',
@@ -92,6 +95,7 @@ function createService(
     ciAdmission = null,
     observationPath = observationDirectory(repositoryRoot),
     agentOptions = {},
+    nodeInteractionOptions = {},
     deliveryAdapter = null
   } = {}
 ) {
@@ -103,6 +107,7 @@ function createService(
   const repository = fs.realpathSync(repositoryRoot)
   safePath(repositoryRoot, path.relative(repositoryRoot, observationPath))
   const observations = createObservationReader(observationPath)
+  let nodeInteractions
   const store = openStore(directory)
   const immutable = (value) => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -690,7 +695,12 @@ function createService(
     if (!reviewAction && reviews?.active())
       throw new ActionError(409, 'A delivery review is active')
     if (closed) throw new ActionError(409, 'Service is closing')
-    if (active || activeAssessment || tasks?.activeId())
+    if (
+      active ||
+      activeAssessment ||
+      tasks?.activeId() ||
+      nodeInteractions?.isActive()
+    )
       throw new ActionError(409, 'An attempt or task is already running')
   }
   const objectRequest = (request, keys) => {
@@ -729,7 +739,12 @@ function createService(
       requireIdle: () => {
         if (reviews?.active())
           throw new ActionError(409, 'A delivery review is active')
-        if (closed || active || activeAssessment)
+        if (
+          closed ||
+          active ||
+          activeAssessment ||
+          nodeInteractions?.isActive()
+        )
           throw new ActionError(
             409,
             'An attempt is running or service is closing'
@@ -1863,7 +1878,31 @@ function createService(
       })
     })
   }
+  nodeInteractions = createNodeInteractions(repositoryRoot, {
+    ...nodeInteractionOptions,
+    directory,
+    observations,
+    requireIdle,
+    ErrorType: ActionError
+  })
   return {
+    nodeContext: (runId, caseId) => nodeInteractions.context(runId, caseId),
+    previewNodeRerun(request, actor) {
+      authorize(actor, 'verify')
+      return nodeInteractions.preview(request)
+    },
+    startNodeRerun(request, actor) {
+      authorize(actor, 'verify')
+      return nodeInteractions.start(request, actor.id)
+    },
+    cancelNodeRerun(id, actor) {
+      authorize(actor, 'cancel')
+      return nodeInteractions.cancel(id)
+    },
+    addNodeComment(request, actor) {
+      authorize(actor, 'comment')
+      return nodeInteractions.comment(request, actor.id)
+    },
     testResults: () => observations.list(),
     testResult: (id) => observations.get(id),
     startTargetAssessment(request, actor) {
@@ -2883,6 +2922,7 @@ function createService(
     async close() {
       closed = true
       try {
+        await nodeInteractions.close()
         if (activeAssessment)
           await stopAssessment(activeAssessment.id, LOCAL_ACTOR)
         await reviews.close()

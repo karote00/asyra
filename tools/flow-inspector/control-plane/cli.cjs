@@ -288,6 +288,11 @@ async function main(
     scenario: [1, 2],
     prove: [0],
     'test-results': [0, 1],
+    'node-context': [2],
+    'node-preview': [1],
+    'node-rerun': [1],
+    'node-comment': [1],
+    'node-cancel': [1],
     status: [0],
     show: [1],
     cancel: [1],
@@ -301,8 +306,58 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | test-results [run-id] | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
+      'Usage: cli.cjs [--manifest product-proof.json | --url loopback-origin] serve | test-results [run-id] | node-context run-id case-id | node-preview request.json | node-rerun request.json | node-comment request.json | node-cancel request-id | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
     )
+  if (command.startsWith('node-')) {
+    if (!origin)
+      throw new Error(
+        'Node interactions require --url for the running local action service'
+      )
+    const address = parseLocalUrl(origin)
+    let route, body
+    if (command === 'node-context') {
+      const [runId, caseId] = parameters
+      if (
+        !caseId.startsWith(runId + ':') ||
+        !/^\d+$/.test(caseId.slice(runId.length + 1))
+      )
+        throw new Error('Invalid node context')
+      route =
+        '/api/node-context/' +
+        encodeURIComponent(runId) +
+        '/' +
+        caseId.slice(runId.length + 1)
+    } else if (command === 'node-cancel') {
+      route =
+        '/api/node-reruns/' + encodeURIComponent(parameters[0]) + '/cancel'
+      body = {}
+    } else {
+      body = JSON.parse(
+        fs.readFileSync(safePath(repositoryRoot, parameters[0]), 'utf8')
+      )
+      route = {
+        'node-preview': '/api/node-reruns/preview',
+        'node-rerun': '/api/node-reruns',
+        'node-comment': '/api/node-comments'
+      }[command]
+    }
+    const options = { signal: AbortSignal.timeout(10000) }
+    if (body !== undefined) {
+      const session = await fetch(address.origin + '/api/session')
+      if (!session.ok) throw new Error('Node action session unavailable')
+      options.method = 'POST'
+      options.headers = {
+        'content-type': 'application/json',
+        'x-proof-capability': (await session.json()).capability
+      }
+      options.body = JSON.stringify(body)
+    }
+    const response = await fetch(address.origin + route, options)
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error ?? 'Node interaction failed')
+    write(JSON.stringify(result, null, 2))
+    return 0
+  }
   if (command === 'test-results') {
     const {
       createObservationReader,

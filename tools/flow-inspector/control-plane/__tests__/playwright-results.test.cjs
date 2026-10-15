@@ -1223,3 +1223,33 @@ test(
     }
   }
 )
+
+test('selected rerun config admission requires the exact original mapping and retained wrapper bytes', (t) => {
+  const fs = require('node:fs')
+  const { createHash } = require('node:crypto')
+  const directory = path.join(
+    root,
+    'tmp/flow-inspector/config-binding-' + require('node:crypto').randomUUID()
+  )
+  fs.mkdirSync(directory, { recursive: true })
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const file = path.join(directory, 'selected.config.ts')
+  fs.writeFileSync(file, 'export default {}')
+  const bound = context()
+  bound.executionConfig = {
+    path: path.relative(root, file),
+    originalConfigFile: contract.configFile,
+    digest: createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+  }
+  const original = report()
+  original.config.configFile = file
+  assert.equal(normalizeReport(root, bound, original).options.stale, false)
+  assert.equal(normalizeReport(root, context(), original).options.stale, true)
+  const changed = structuredClone(bound)
+  changed.executionConfig.originalConfigFile = 'unrelated.config.ts'
+  assert.equal(normalizeReport(root, changed, original).options.stale, true)
+  fs.appendFileSync(file, '\n// changed')
+  assert.equal(normalizeReport(root, bound, original).options.stale, true)
+  fs.unlinkSync(file)
+  assert.equal(normalizeReport(root, bound, original).options.stale, true)
+})

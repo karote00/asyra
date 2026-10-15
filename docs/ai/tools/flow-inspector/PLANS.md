@@ -16,15 +16,15 @@ remaining execution limits are recorded in the supporting plan. Follow the roadm
 
 1. Stage A: complete the frozen Design functional test inventory's localization.
 2. Stage B: complete collaboration and selected shared Framework localization.
-3. Stage C: optional command buttons and comments, only on a separate request.
+3. Stage C: selected-case rerun actions and append-only node/run comments,
+   activated by the user on 2026-10-16 as one complete stage.
 
 A/B include full end-to-end acceptance, not one PR per mapping or owner. Exact
-inventories are frozen before implementation. Stage B is now activated as one
-complete stage: 17 collaboration identities and 87 selected Framework cases.
+inventories are frozen before implementation. Stage B merged as PR #334 with 17 collaboration identities and 87 selected Framework cases.
 Its whole-stage validation is recorded in the existing result-source plan.
-After A/B acceptance, close the agreed localization scope; optional C requires
-a separate request. Historical
-slice notes do not schedule more stages.
+Stage C now completes the separately requested optional interactions. After its
+review/merge, close the agreed A/B/C scope; no further mandatory stage is queued.
+Historical slice notes do not schedule more stages.
 
 ## Core Mainline
 
@@ -45,8 +45,8 @@ slice notes do not schedule more stages.
 ## Optional After Core Acceptance
 
 - [Node Interactions](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
-  scopes future command buttons and comment blocks. Neither is activated or
-  required for core completion. Both must reduce actions at an already located
+  supports the activated Stage C bounded command buttons and comment blocks.
+  Neither is required for read-only localization. Both must reduce actions at an already located
   node, not introduce task planning or automatic repair.
 
 ## Removed from the Mainline
