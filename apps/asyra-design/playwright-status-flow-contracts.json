@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "runner": "playwright",
+  "manifestPath": "apps/asyra-design/playwright-status-flow-contracts.json",
+  "targetId": "design-functional",
+  "architecturePath": "tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs",
+  "specPath": "docs/ai/apps/asyra-design/specs/functional-failure-responsibilities.md",
+  "testFile": "apps/asyra-design/e2e/status-toast-visual.spec.ts",
+  "configFile": "apps/asyra-design/playwright.status-toast.config.ts",
+  "negativeCaseIds": [],
+  "externalInputs": [],
+  "workspaceSources": [
+    {
+      "name": "@asyra/asyra-design",
+      "inputs": ["src/**", "server/**"],
+      "entry": null
+    }
+  ],
+  "flows": [
+    {
+      "id": "functional-show-session-status",
+      "title": "Show document session status",
+      "goal": "Expose offline session state while preserving local editing and Reset.",
+      "stepIds": ["show-session-status"],
+      "cases": [
+        {
+          "id": "functional.session-status",
+          "stepId": "show-session-status",
+          "testFile": "apps/asyra-design/e2e/status-toast-visual.spec.ts",
+          "testName": "reports initial socket unavailability once while keeping the App editable",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/render-app/index.tsx",
+            "apps/asyra-design/src/render-app/status-toast-stack.tsx"
+          ]
+        }
+      ],
+      "handoffs": []
+    }
+  ],
+  "defaultNegativeScenario": null,
+  "scenarios": []
+}

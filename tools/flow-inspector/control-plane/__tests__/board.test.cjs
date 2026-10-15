@@ -1778,7 +1778,10 @@ test(
     const previousTemporary = process.env.TMPDIR
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     const server = await startServer(root, {
-      serviceOptions: { directory: path.join(artifacts, 'runs') }
+      serviceOptions: {
+        directory: path.join(artifacts, 'runs'),
+        observationPath: path.join(artifacts, 'observations')
+      }
     })
     let browser
     try {

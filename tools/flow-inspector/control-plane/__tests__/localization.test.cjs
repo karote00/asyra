@@ -416,3 +416,59 @@ test('a source-stale passing observation cannot retire a recorded failure', (t) 
   )
   assert.equal(reader.get(first.id).cases[0].status, 'failed')
 })
+
+test('exact per-case files select the recorded location rather than the manifest default', () => {
+  const ctx = context()
+  const selected = structuredClone(contract)
+  selected.cases[0].testFile = 'apps/asyra-design/e2e/selection.spec.ts'
+  ctx.contracts = [selected]
+  const relocated = localizeReport(
+    root,
+    ctx,
+    report([failure()], selected.cases[0].testFile)
+  )
+  assert.equal(relocated.cases[0].resolution, 'mapped')
+  const wrongFile = localizeReport(root, ctx, report([failure()]))
+  assert.equal(wrongFile.cases[0].resolution, 'unmapped')
+})
+
+test('source fingerprints include each exact case file once and preserve unmoved suite inputs', () => {
+  const selected = structuredClone(contract)
+  const extra = 'apps/asyra-design/e2e/selection.spec.ts'
+  selected.cases.forEach((item) => {
+    item.testFile = extra
+  })
+  const result = require('../localization.cjs').sourceFingerprint(root, [
+    selected
+  ])
+  assert.equal(result.files.filter((file) => file.path === extra).length, 1)
+  assert.equal(
+    result.files.filter((file) => file.path === selected.testFile).length,
+    1
+  )
+})
+
+test('a capture reads repeated per-case source inputs only once', () => {
+  const selected = structuredClone(contract)
+  const extra = 'apps/asyra-design/e2e/selection.spec.ts'
+  selected.cases.forEach((item) => {
+    item.testFile = extra
+  })
+  const lstat = fs.lstatSync
+  let inspections = 0
+  fs.lstatSync = (...args) => {
+    if (args[0] === path.join(root, extra)) inspections++
+    return lstat(...args)
+  }
+  try {
+    const { sourceFingerprint } = require('../localization.cjs')
+    sourceFingerprint(root, [{ ...selected, cases: [selected.cases[0]] }])
+    const singleInputWork = inspections
+    assert.ok(singleInputWork > 0)
+    inspections = 0
+    sourceFingerprint(root, [selected, selected])
+    assert.equal(inspections, singleInputWork)
+  } finally {
+    fs.lstatSync = lstat
+  }
+})

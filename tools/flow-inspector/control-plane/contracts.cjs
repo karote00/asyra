@@ -262,6 +262,14 @@ function admitContract(manifest, architecture) {
         selected.has(item.stepId) && nonempty(item.testName),
         'missing case mapping'
       )
+      if (Object.hasOwn(item, 'testFile'))
+        requireCondition(
+          observationOnly &&
+            canonicalRelativePath(item.testFile) &&
+            !/[?*[\]{}]/.test(item.testFile) &&
+            /\.spec\.[cm]?[jt]sx?$/.test(item.testFile),
+          'invalid case test file'
+        )
       if (Object.hasOwn(item, 'implementationPaths')) {
         unique(item.implementationPaths, 'implementation locations')
         requireCondition(

@@ -66,7 +66,7 @@ const data = {
       conditions: [
         'Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.',
         'Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.',
-        'Design Playwright ingestion consumes a pre-execution source context and original JSON once. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures.',
+        'Design Playwright ingestion selects the functional or isolated status source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures.',
         'Retain atomic per-run records and reuse admitted read projections until files change.'
       ],
       bypasses: [
@@ -606,7 +606,7 @@ const data = {
       ],
       outputs: ['artifact:admitted-proof-contract'],
       conditions: [
-        'Explicit Playwright manifests admit observation-only exact case mappings with empty scenarios/negative obligations and no default negative scenario. Unknown runner kinds are rejected; ordinary proof manifests retain their existing Vitest contract.',
+        'Explicit Playwright manifests admit observation-only exact case mappings with empty scenarios/negative obligations and no default negative scenario. Observation-only cases may select an exact canonical testFile within the repository; executable proof cases cannot override their suite file. Unknown runner kinds are rejected; ordinary proof manifests retain their existing Vitest contract.',
         'A selected terminal step with no incoming artifact routes admits an explicit empty handoff list; steps with incoming routes still require every handoff. Optional case implementationPaths must be exact relative paths within the selected step boundary; projectName is an optional exact runner project identity.',
         'Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.',
         'Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.',
@@ -639,6 +639,10 @@ const data = {
         'packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts',
         'tools/flow-inspector/control-plane/contracts.cjs',
         'apps/asyra-design/playwright-flow-contracts.json',
+        'apps/asyra-design/playwright-functional-flow-contracts.json',
+        'apps/asyra-design/playwright-status-flow-contracts.json',
+        'tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs',
+        'docs/ai/apps/asyra-design/specs/functional-failure-responsibilities.md',
         'tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs',
         'tools/flow-inspector/control-plane/__tests__/contracts.test.cjs',
         'apps/asyra-design/undo-redo-flow-contracts.json',

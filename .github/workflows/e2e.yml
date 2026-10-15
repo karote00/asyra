@@ -152,13 +152,6 @@ jobs:
           E2E_MANUAL_BALANCED_AI_CORRECTNESS: ${{ inputs.run_balanced_ai_correctness }}
         run: node scripts/balanced-ai-correctness-scope.mjs >> "$GITHUB_OUTPUT"
 
-      - name: Capture Design observation source
-        env:
-          E2E_SUITE: functional
-          FLOW_CI_REPORT: ${{ github.workspace }}/tmp/flow-ci/design.json
-          RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
-        run: node tools/flow-inspector/control-plane/playwright-results.cjs begin tmp/flow-ci/design.json
-
       - name: Run E2E Tests
         env:
           E2E_SUITE: functional
@@ -166,17 +159,13 @@ jobs:
           RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
         run: bash scripts/run-e2e.sh
 
-      - name: Localize original Design results
-        if: ${{ always() }}
-        run: node tools/flow-inspector/control-plane/playwright-results.cjs complete tmp/flow-ci/design.json
-
       - name: Retain Design observation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: design-observations-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            tmp/flow-ci/design.json
+            tmp/flow-ci/*.json
             tmp/flow-inspector/test-results/
             apps/asyra-design/test-results/
           if-no-files-found: warn
