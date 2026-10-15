@@ -30,6 +30,18 @@ const validFailureDetails = (value, execution = false) =>
           typeof text === 'string'
       )
   )
+const validRetainedArtifacts = (value) =>
+  Array.isArray(value) &&
+  value.every(
+    (item) =>
+      item &&
+      ['name', 'originalPath', 'retainedPath', 'digest'].every(
+        (key) => typeof item[key] === 'string'
+      ) &&
+      /^[a-f0-9]{64}$/.test(item.digest) &&
+      Number.isSafeInteger(item.size) &&
+      item.size >= 0
+  )
 const DEFAULT_MANIFESTS = [
   'packages/preset/coverage-flow-contracts.json',
   'packages/preset/navigation-flow-contracts.json',
@@ -174,6 +186,9 @@ function localizeReport(root, context, report, options = {}) {
         ...(validFailureDetails(failureDetails)
           ? { failureDetails: structuredClone(failureDetails) }
           : {}),
+        ...(typeof options.runnerDetails?.[index]?.[assertionIndex] === 'string'
+          ? { runnerDetails: options.runnerDetails[index][assertionIndex] }
+          : {}),
         file: relative(root, suite.name),
         projectName,
         testName: assertion.fullName,
@@ -262,14 +277,20 @@ function localizeReport(root, context, report, options = {}) {
       ? { executionFailureDetails: structuredClone(executionFailureDetails) }
       : {}),
     issues,
+    ...(validRetainedArtifacts(options.retainedArtifacts)
+      ? { retainedArtifacts: structuredClone(options.retainedArtifacts) }
+      : {}),
     cases,
-    report
+    report: Object.hasOwn(options, 'originalReport')
+      ? options.originalReport
+      : report
   }
 }
 function completeObservation(root, context, report, options = {}) {
   let stale = true
   try {
     stale =
+      options.stale === true ||
       !context.source ||
       sourceFingerprint(root, context.contracts).digest !==
         context.source.digest
@@ -308,6 +329,8 @@ function validCase(item, runId) {
     ) &&
     ['mapped', 'unmapped', 'ambiguous', 'stale'].includes(item.resolution) &&
     strings(item.failures) &&
+    (!Object.hasOwn(item, 'runnerDetails') ||
+      typeof item.runnerDetails === 'string') &&
     (!Object.hasOwn(item, 'failureDetails') ||
       validFailureDetails(item.failureDetails)) &&
     Array.isArray(item.locations) &&
@@ -365,6 +388,8 @@ function createObservationReader(directory, options = {}) {
           record.authority !== 'observation-only' ||
           !['running', 'completed'].includes(record.phase) ||
           !Array.isArray(record.cases) ||
+          (Object.hasOwn(record, 'retainedArtifacts') &&
+            !validRetainedArtifacts(record.retainedArtifacts)) ||
           !strings(record.issues) ||
           (Object.hasOwn(record, 'executionFailureDetails') &&
             !validFailureDetails(record.executionFailureDetails, true)) ||
@@ -430,7 +455,9 @@ function createObservationReader(directory, options = {}) {
             continue
           }
           const incomplete = items.some(
-            (item) => !['passed', 'failed'].includes(item.status)
+            (item) =>
+              item.resolution === 'stale' ||
+              !['passed', 'failed'].includes(item.status)
           )
           // A filtered invocation supplies skipped siblings, not recovery evidence.
           // An ambiguous group must settle completely before retiring its failures.

@@ -28,6 +28,7 @@
       "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/container-double-click-selection-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.data.cjs",
@@ -19308,6 +19309,125 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "id": "design-deletion",
+      "slug": "design-deletion",
+      "title": "Design Deletion",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "design-deletion",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "design-deletion",
+          "kind": "app",
+          "title": "Design Deletion",
+          "subtitle": "Single-selection deletion responsibility"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/features/delete-element.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
+          "semanticOwner": "Asyra Design",
+          "inspectorOwner": "Asyra Design"
+        },
+        "links": [
+          {
+            "id": "product-contract",
+            "kind": "authority",
+            "label": "Delete behavior",
+            "href": "../../../docs/ai/apps/asyra-design/features/delete-element.md"
+          }
+        ],
+        "lanes": [
+          {
+            "id": "app",
+            "title": "App Deletion",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "delete-selected-element",
+            "order": 1,
+            "laneId": "app",
+            "title": "Delete the selected element",
+            "ownerPackage": "@asyra/asyra-design",
+            "purpose": "Route an eligible single-selection Delete action through the App element API in one transaction.",
+            "inputs": [
+              "Delete shortcut snapshot",
+              "current path-editing state and selected IDs",
+              "App element, selection and system-context APIs"
+            ],
+            "outputs": [
+              "artifact:deletion-outcome"
+            ],
+            "conditions": [
+              "For exactly one selected element outside path-editing mode, clear selection and invoke element deletion within the transaction.",
+              "After successful deletion, reevaluate the hovered element at the current pointer position."
+            ],
+            "bypasses": [
+              "Path editing or selection count other than one leaves element deletion unchanged.",
+              "An unsuccessful element API deletion has no successful deletion result."
+            ],
+            "allowedContributors": [
+              "App deletion feature",
+              "App common APIs",
+              "Core transaction API"
+            ],
+            "forbiddenContributors": [
+              "test observations as product state",
+              "direct test-driven mutation of runtime output"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/features/delete-element/index.ts",
+              "apps/asyra-design/src/common-apis/element/apis.ts",
+              "apps/asyra-design/src/common-apis/selection.ts",
+              "apps/asyra-design/src/common-apis/system-context.ts",
+              "apps/asyra-design/e2e/test-utils.ts"
+            ],
+            "specRefs": [
+              "#behavior"
+            ],
+            "failureOwnerStepId": "delete-selected-element"
+          }
+        ],
+        "routes": [
+          {
+            "id": "deletion-complete",
+            "from": "delete-selected-element",
+            "kind": "terminal",
+            "predicate": "The eligible action settles or is bypassed.",
+            "producedArtifacts": [
+              "artifact:deletion-outcome"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:deletion-outcome",
+            "ownerStepId": "delete-selected-element",
+            "channel": "App feature result",
+            "consumerStepIds": [],
+            "terminal": true
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": []
       }
     },
     {
@@ -39336,7 +39456,7 @@
             "purpose": "Retain ordinary test observations and resolve responsibility without granting conformance.",
             "inputs": [
               "artifact:admitted-proof-contract",
-              "original Vitest case report, runner-normalized error details and project identities",
+              "original Vitest or Design Playwright case report, runner-normalized error details and project identities",
               "run identity and mapped working-tree input fingerprints"
             ],
             "outputs": [
@@ -39345,6 +39465,7 @@
             "conditions": [
               "Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.",
               "Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.",
+              "Design Playwright ingestion consumes a pre-execution source context and original JSON once. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures.",
               "Retain atomic per-run records and reuse admitted read projections until files change."
             ],
             "bypasses": [
@@ -39352,6 +39473,7 @@
             ],
             "allowedContributors": [
               "opt-in Vitest reporter",
+              "Design Playwright original-report adapter and existing functional CI invocation",
               "existing product proof manifest and architecture",
               "local read-only service and CLI"
             ],
@@ -39364,6 +39486,11 @@
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/localization.cjs",
               "tools/flow-inspector/control-plane/vitest-reporter.mjs",
+              "tools/flow-inspector/control-plane/playwright-results.cjs",
+              "tools/flow-inspector/control-plane/__tests__/playwright-results.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/playwright-results-fixture.cjs",
+              "scripts/run-e2e.sh",
+              ".github/workflows/e2e.yml",
               "tools/flow-inspector/control-plane/__tests__/localization.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/localization-runtime-fixture.cjs"
@@ -39898,6 +40025,7 @@
               "artifact:admitted-proof-contract"
             ],
             "conditions": [
+              "Explicit Playwright manifests admit observation-only exact case mappings with empty scenarios/negative obligations and no default negative scenario. Unknown runner kinds are rejected; ordinary proof manifests retain their existing Vitest contract.",
               "A selected terminal step with no incoming artifact routes admits an explicit empty handoff list; steps with incoming routes still require every handoff. Optional case implementationPaths must be exact relative paths within the selected step boundary; projectName is an optional exact runner project identity.",
               "Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.",
               "Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.",
@@ -39929,6 +40057,8 @@
               "packages/ai-agent-runtime/flow-contracts.json",
               "packages/ai-agent-runtime/src/__tests__/recipe-flow.config.ts",
               "tools/flow-inspector/control-plane/contracts.cjs",
+              "apps/asyra-design/playwright-flow-contracts.json",
+              "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
               "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs",
               "apps/asyra-design/undo-redo-flow-contracts.json",
               "apps/asyra-design/flow-contracts.json",
@@ -40060,7 +40190,7 @@
             "conditions": [
               "Scoped contained execution requires executionSource format 2, contained-native-typescript-v2, an exact runtimeAuthorityDigest link and the existing verification/configuration links. Retain runtime authority format, digest and contract-scope digest in runner identity without re-reading manifests. Legacy authority absence keeps format 1 behavior.",
               "Contained derived execution consumes the source-owned fixed configuration/bootstrap roles and exact verification/configuration relationship without re-admitting source. Execute the captured bootstrap with the native loader under the existing OS sandbox; reject missing/unsupported closure or unavailable containment before dispatch, with no caller argv/configuration/process override or ordinary fallback. Return existing report/identity and process settlement; post-run source integrity remains the publisher responsibility.",
-              "Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity."
+              "Refuse observation-only Playwright mappings before dispatch. Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity."
             ],
             "bypasses": [
               "Denied requests never reach execution; a process failure produces a non-passing runner result."

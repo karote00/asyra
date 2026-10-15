@@ -387,3 +387,32 @@ test('run-level assertion details retain context and reject malformed evidence',
     assert.throws(() => reader.get(record.id), /Invalid observation/)
   }
 })
+
+test('a source-stale passing observation cannot retire a recorded failure', (t) => {
+  const dir = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/localization-')
+  )
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const firstContext = context()
+  firstContext.startedAt = '2026-01-01T00:00:00.000Z'
+  const first = localizeReport(root, firstContext, report([failure()]))
+  saveObservation(dir, first)
+  const next = context()
+  next.startedAt = '2026-01-01T00:00:01.000Z'
+  saveObservation(
+    dir,
+    localizeReport(
+      root,
+      next,
+      report([{ ...failure(), status: 'passed', failureMessages: [] }]),
+      { stale: true }
+    )
+  )
+  const reader = createObservationReader(dir)
+  assert.equal(
+    reader.list().currentCases.filter((item) => item.status === 'failed')
+      .length,
+    1
+  )
+  assert.equal(reader.get(first.id).cases[0].status, 'failed')
+})

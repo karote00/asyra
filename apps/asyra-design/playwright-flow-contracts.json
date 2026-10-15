@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "runner": "playwright",
+  "manifestPath": "apps/asyra-design/playwright-flow-contracts.json",
+  "targetId": "design-deletion",
+  "architecturePath": "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
+  "specPath": "docs/ai/apps/asyra-design/features/delete-element.md",
+  "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
+  "configFile": "apps/asyra-design/playwright.config.ts",
+  "negativeCaseIds": [],
+  "externalInputs": [],
+  "workspaceSources": [
+    {
+      "name": "@asyra/asyra-design",
+      "inputs": ["src/**"],
+      "entry": null
+    }
+  ],
+  "flows": [
+    {
+      "id": "design-deletion",
+      "title": "Design deletion",
+      "goal": "Locate an original single-selection Delete failure at its declared responsibility.",
+      "stepIds": ["delete-selected-element"],
+      "cases": [
+        {
+          "id": "design.delete",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Delete key removes the single selected element",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    }
+  ],
+  "defaultNegativeScenario": null,
+  "scenarios": []
+}

@@ -788,3 +788,47 @@ test('Preset compound coverage source config runs all unchanged cases without pr
   assert.equal(report.numPassedTests, 16)
   assert.equal(report.numFailedTests, 0)
 })
+
+test('Playwright observations admit exact cases without inventing executable proof scenarios', async () => {
+  const input = structuredClone({ manifest, architecture })
+  input.manifest.runner = 'playwright'
+  input.manifest.negativeCaseIds = []
+  input.manifest.scenarios = []
+  input.manifest.defaultNegativeScenario = null
+  const contract = admitContract(input.manifest, input.architecture)
+  assert.equal(contract.runner, 'playwright')
+  assert.deepEqual(contract.scenarios, [])
+  const { runVerification } = require('../runner.cjs')
+  await assert.rejects(() => runVerification({ contract }), /observation-only/)
+  for (const runner of [null, 'unknown', '']) {
+    input.manifest.runner = runner
+    assert.throws(
+      () => admitContract(input.manifest, input.architecture),
+      /runner/
+    )
+  }
+})
+
+test('Design Playwright mapping identifies the unchanged Chromium deletion case and exact App sources', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/playwright-flow-contracts.json'
+  )
+  assert.equal(contract.runner, 'playwright')
+  assert.equal(contract.cases.length, 1)
+  const item = contract.cases[0]
+  assert.equal(item.projectName, 'chromium')
+  assert.equal(item.stepId, 'delete-selected-element')
+  assert.equal(
+    item.testName,
+    'Delete Selected Element Delete key removes the single selected element'
+  )
+  assert.match(
+    fs.readFileSync(path.join(root, contract.testFile), 'utf8'),
+    /test\('Delete key removes the single selected element'/
+  )
+  for (const file of item.implementationPaths)
+    assert.ok(fs.existsSync(path.join(root, file)), file)
+})
