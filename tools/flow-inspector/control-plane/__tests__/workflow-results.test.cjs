@@ -1387,7 +1387,6 @@ test('workflow waits on reusable producers and always collects after failed test
   for (const name of [
     'Collect Design flow results',
     'Collect collaboration flow results',
-    'Localize original Design results',
     'Retain Design observation evidence'
   ]) {
     const step = e2e
@@ -1396,25 +1395,35 @@ test('workflow waits on reusable producers and always collects after failed test
     assert.ok(step, name)
     assert.match(step, /if: \$\{\{ always\(\) \}\}/, name)
   }
-  assert.ok(
-    e2e.indexOf('name: Capture Design observation source') <
-      e2e.indexOf('name: Run E2E Tests')
-  )
-  assert.match(e2e, /playwright-results\.cjs begin tmp\/flow-ci\/design\.json/)
+  const runner = fs.readFileSync(path.join(root, 'scripts/run-e2e.sh'), 'utf8')
   assert.match(
-    e2e,
-    /playwright-results\.cjs complete tmp\/flow-ci\/design\.json/
+    runner,
+    /playwright-results\.cjs begin "\$FLOW_CI_REPORT" functional/
   )
+  assert.match(runner, /playwright-results\.cjs complete "\$FLOW_CI_REPORT"/)
+  assert.match(
+    runner,
+    /playwright-results\.cjs begin "\$E2E_STATUS_REPORT" status/
+  )
+  assert.match(runner, /playwright-results\.cjs complete "\$E2E_STATUS_REPORT"/)
+  assert.ok(
+    runner.indexOf('complete "$FLOW_CI_REPORT"') <
+      runner.indexOf('test:e2e:status-toast')
+  )
+  assert.match(runner, /PLAYWRIGHT_JSON_OUTPUT_NAME="\$E2E_STATUS_REPORT"/)
+  assert.doesNotMatch(
+    e2e,
+    /name: Capture Design observation source|name: Localize original Design results/
+  )
+  assert.match(e2e, /tmp\/flow-ci\/\*\.json/)
   assert.match(e2e, /tmp\/flow-inspector\/test-results\//)
-  for (const name of ['Capture Design observation source', 'Run E2E Tests']) {
-    const step = e2e
-      .split('      - name: ' + name + '\n')[1]
-      .split('      - name: ')[0]
-    assert.match(
-      step,
-      /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
-    )
-  }
+  const step = e2e
+    .split('      - name: Run E2E Tests\n')[1]
+    .split('      - name: ')[0]
+  assert.match(
+    step,
+    /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
+  )
   assert.match(main, /localization-runtime,playwright-results,snapshot/)
 
   assert.match(e2e, /workflow-results.cjs collect design/)
@@ -1937,4 +1946,66 @@ test('positional supervised file selections preserve exact aggregate evidence', 
     assess([], { workspaceResults: [record] }, scope).status,
     'passed'
   )
+})
+
+test('functional observation cleanup preserves original build failure and termination status', () => {
+  const { spawnSync } = require('node:child_process')
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const directory = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/shell-observation-')
+  )
+  const bin = path.join(directory, 'bin')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(
+    path.join(bin, 'node'),
+    `#!/bin/bash
+if [ "$1" = tools/flow-inspector/control-plane/playwright-results.cjs ]; then
+  echo "$2" >> "$SHELL_OBSERVATION_LOG"
+  exit 0
+fi
+if [ "$1" = --input-type=module ]; then
+  echo '127.0.0.1 4317 http://127.0.0.1:4317 http://127.0.0.1:4319 ws://127.0.0.1:4319/collaboration'
+  exit 0
+fi
+exit 99
+`,
+    { mode: 0o755 }
+  )
+  fs.writeFileSync(
+    path.join(bin, 'yarn'),
+    `#!/bin/bash
+if [ "$SHELL_OBSERVATION_MODE" = terminate ]; then
+  kill -TERM "$PPID"
+  exit 0
+fi
+exit 42
+`,
+    { mode: 0o755 }
+  )
+  for (const [mode, code] of [
+    ['failure', 42],
+    ['terminate', 143]
+  ]) {
+    const log = path.join(directory, mode + '.log')
+    const result = spawnSync('/bin/bash', ['scripts/run-e2e.sh'], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 10000,
+      maxBuffer: 8192,
+      env: {
+        ...process.env,
+        PATH: bin + path.delimiter + process.env.PATH,
+        E2E_SUITE: 'functional',
+        FLOW_CI_REPORT: path.join(directory, mode + '.json'),
+        SHELL_OBSERVATION_LOG: log,
+        SHELL_OBSERVATION_MODE: mode
+      }
+    })
+    assert.equal(result.status, code, result.stdout + result.stderr)
+    assert.deepEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), [
+      'begin',
+      'complete'
+    ])
+  }
 })

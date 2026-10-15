@@ -2366,7 +2366,12 @@ existing owners. New result-source integrations are outside this milestone.
 
 The Design functional runner may retain its original Playwright JSON alongside
 ordinary observations. Its manifest declares `runner: "playwright"`, exact
-repository test file, full describe/test title and project. It has no proof
+repository test file, full describe/test title and project. An observation case
+may declare its own canonical repository-relative `testFile`; omission selects
+the manifest test file. Per-case selectors are not admitted for executable proof
+contracts. Source capture includes every selected case file, and localization
+compares that exact file rather than treating a manifest as a file-wide mapping.
+It has no proof
 scenarios; the proof runner must refuse it before execution. This is an
 observation mapping, not a new accepted verification target.
 
@@ -2375,10 +2380,24 @@ deletion responsibility: single-selection Delete, Backspace, no selection,
 path-editing mode, mode enabled without an editing vector, and mode disabled
 with an editing vector. The original `design.delete` identity remains stable.
 The manifest owns the exact full titles, project and implementation entries.
-Group deletion, undo/redo, rollback, hover and point-splitting cases remain
-unmapped until their distinct responsibilities are reviewed. Setup and unknown
-failures are retained without invented product ownership. Multiple failed cases
-may share a node; a clean rerun retires only the cases it actually completes.
+The complete Stage A inventory adds 405 cases through
+`playwright-functional-flow-contracts.json` and one separate status-toast case
+through `playwright-status-flow-contracts.json`: 412 Chromium cases in total.
+They cover 32 declared functional responsibilities, including distinct App and
+Framework investigation entries. Per-case implementation paths identify the
+asserted operation; file names alone do not determine responsibility. The product
+profile is `specs/functional-failure-responsibilities.md` in the Design docs.
+Conditional and unavailable cases retain their skipped/unverified status.
+Expected failures (`test.fail`) retain actual failed assertions even when the
+original runner exits successfully; they never establish recovery.
+
+The existing functional shell owns both local and CI capture/finalization. It
+captures before build/setup, completes on failure or interruption, preserves the
+original nonzero exit status, and retains functional attachments before starting
+the separate status invocation. Configuration selection is explicit and captured
+before execution; functional and status reports cannot borrow each other's
+mapping/configuration. Setup and unknown failures remain without invented
+product ownership. A clean rerun retires only the cases it actually completes.
 Adding mappings never rewrites or retroactively resolves retained history.
 All retries and repeat executions remain original evidence;
 a failed attempt remains visible even when a retry passes. Only a subsequent

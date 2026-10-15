@@ -840,20 +840,56 @@ test(
   }
 )
 
-for (const caseId of ['design.delete', 'design.backspace'])
+for (const { caseId, targetId, stepId, secondCaseId } of [
+  {
+    caseId: 'design.delete',
+    targetId: 'design-deletion',
+    stepId: 'delete-selected-element'
+  },
+  {
+    caseId: 'design.backspace',
+    targetId: 'design-deletion',
+    stepId: 'delete-selected-element'
+  },
+  {
+    caseId: 'functional.selection.5b2869cee128',
+    targetId: 'design-functional',
+    stepId: 'move-elements',
+    secondCaseId: 'functional.properties.ee7ea52ee1d0'
+  }
+])
   test(
     'original Design Playwright failure exposes identical source, attempts and retained artifacts on the Board - ' +
       caseId,
-    { timeout: 150000 },
+    { timeout: 240000 },
     async (t) => {
       const { playwrightFixture } = require('./playwright-results-fixture.cjs')
       const { observationDirectory } = require('../localization.cjs')
       const fixture = await playwrightFixture(t)
-      fixture.fault()
+      if (secondCaseId) {
+        fixture.faultOperation(
+          caseId,
+          'apps/asyra-design/src/features/move-elements/feature.ts',
+          'moveElementsSession.onUpdate'
+        )
+        fixture.faultOperation(
+          secondCaseId,
+          'apps/asyra-design/src/common-apis/fills.ts',
+          'fillApis.addFills'
+        )
+      } else fixture.fault()
       const fault = await fixture.run([caseId])
       assert.equal(fault.result.code, 1, fault.result.output)
       assert.equal(fault.record.cases[0].resolution, 'mapped')
       assert.equal(fault.record.cases[0].locations[0].caseId, caseId)
+      if (secondCaseId) {
+        const independent = await fixture.run([secondCaseId])
+        assert.equal(independent.result.code, 1, independent.result.output)
+        assert.equal(
+          independent.record.cases[0].locations[0].stepId,
+          'edit-fills'
+        )
+      }
       const previous = process.env.TMPDIR
       process.env.TMPDIR =
         process.env.RUNNER_TEMP || path.join(fixture.repository, 'browser')
@@ -880,13 +916,18 @@ for (const caseId of ['design.delete', 'design.backspace'])
       })
       const errors = []
       page.on('pageerror', (error) => errors.push(error.message))
-      await page.goto(server.origin + '/design-deletion')
+      await page.goto(server.origin + '/' + targetId)
       const frame = page.frameLocator('iframe')
-      await expect(frame.locator('#test-result-failures button')).toHaveCount(1)
-      await frame.locator('#test-result-failures button').click()
+      await expect(frame.locator('#test-result-failures button')).toHaveCount(
+        secondCaseId ? 2 : 1
+      )
+      await frame
+        .locator('#test-result-failures button')
+        .filter({ hasText: fault.record.cases[0].testName })
+        .click()
       await expect(
         frame.locator(
-          '[data-step-id="delete-selected-element"].is-selected.observation-failed'
+          '[data-step-id="' + stepId + '"].is-selected.observation-failed'
         )
       ).toHaveCount(1)
       const machine = await (
@@ -940,6 +981,19 @@ for (const caseId of ['design.delete', 'design.backspace'])
       fixture.restore()
       const recovery = await fixture.run([caseId])
       assert.equal(recovery.result.code, 0, recovery.result.output)
+      if (secondCaseId) {
+        await expect(frame.locator('#test-result-failures button')).toHaveCount(
+          1
+        )
+        await expect(
+          frame.locator('[data-step-id="edit-fills"].observation-failed')
+        ).toHaveCount(1)
+        await expect(
+          frame.locator('[data-step-id="move-elements"].observation-failed')
+        ).toHaveCount(0)
+        const remaining = await fixture.run([secondCaseId])
+        assert.equal(remaining.result.code, 0, remaining.result.output)
+      }
       await expect(frame.locator('#test-result-failures button')).toHaveCount(0)
       await expect(frame.locator('.observation-failed')).toHaveCount(0)
       await frame.locator('#test-result-history').selectOption(fault.record.id)

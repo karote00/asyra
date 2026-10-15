@@ -872,3 +872,258 @@ both Design service builds and unchanged generated catalog passed. Original
 core proof/candidate retained three flows, five negatives and nine obligations.
 Exact-head Changeset admission and remote CI are reported separately with the PR.
 This closes only the selected six-case slice, not all Design mapping coverage.
+
+## Stage A - Complete Design functional localization - 2026-10-15
+
+Status: locally complete and ready for review; remote CI and merge remain
+separate. Base: `09e9efd6d64b56dd81ee451c6d8b89e5e463a4e7`. This is one complete roadmap Stage A,
+not another per-file delivery slice. One final PR owns the entire stage.
+
+Frozen discovery: the ordinary `playwright.config.ts` Chromium inventory with
+`E2E_SKIP_PERFORMANCE=true` and the separate `playwright.status-toast.config.ts`
+invocation called by `scripts/run-e2e.sh`. Formal Playwright discovery found 411
+cases in 39 files, plus one status-toast case: 412 total. The failed first
+list-only attempt lacked clean-worktree workspace build output; after the
+unchanged 21-task build, discovery completed without errors. Discovery does not
+execute product tests and is not passing behavior evidence.
+
+| Test file under `apps/asyra-design/e2e/` | Cases |
+| ---------------------------------------- | ----: |
+| `ai-composer-layout.spec.ts`             |     6 |
+| `ai-conversation-flow.spec.ts`           |    24 |
+| `ai-conversation-navigation.spec.ts`     |     2 |
+| `ai-drawing-performance.spec.ts`         |     1 |
+| `ai-inspection-evidence.spec.ts`         |     7 |
+| `app.spec.ts`                            |    10 |
+| `basic-api-actions.spec.ts`              |   155 |
+| `context-menu.spec.ts`                   |     4 |
+| `conversational-ai.spec.ts`              |     1 |
+| `delete-element.spec.ts`                 |    12 |
+| `design-construction.spec.ts`            |     5 |
+| `design-containers.spec.ts`              |     2 |
+| `design-organization.spec.ts`            |     1 |
+| `drawing-inspection.spec.ts`             |     1 |
+| `editable-design-variants.spec.ts`       |     6 |
+| `editable-design.spec.ts`                |     1 |
+| `element-creation.spec.ts`               |     7 |
+| `fill-patch.spec.ts`                     |    13 |
+| `gradient-fill-handles.spec.ts`          |     4 |
+| `gradient-fill-render.spec.ts`           |     6 |
+| `group-hierarchy.spec.ts`                |     4 |
+| `group-interaction.spec.ts`              |     6 |
+| `indexed-design-query.spec.ts`           |     5 |
+| `large-document-navigation.spec.ts`      |     1 |
+| `layer-tree-reparent-reorder.spec.ts`    |     1 |
+| `local-ai-provider.spec.ts`              |    21 |
+| `mesh-material.spec.ts`                  |    10 |
+| `native-text.spec.ts`                    |     1 |
+| `oval.spec.ts`                           |     7 |
+| `pen-tool.spec.ts`                       |    25 |
+| `properties.spec.ts`                     |    20 |
+| `retained-navigation.spec.ts`            |     3 |
+| `selection.spec.ts`                      |    11 |
+| `tool-switching.spec.ts`                 |     4 |
+| `transaction-history-groups.spec.ts`     |     1 |
+| `undo-redo.spec.ts`                      |    10 |
+| `vector-gradient-fill.spec.ts`           |     1 |
+| `vector-render-invariants.spec.ts`       |     3 |
+| `viewport-navigation.spec.ts`            |     9 |
+| `status-toast-visual.spec.ts`            |     1 |
+
+All listed identities remain accounted for, including opt-in cases. Existing
+performance/provider/replay guards are preserved. Cases requiring external replay
+inputs retain explicit unavailable evidence until supplied; skipped cases never
+count as tested. Collaboration-suite files, CRDT 7076, endpoint performance,
+render-delta performance and `*.local.spec.ts` are not selected by this functional
+command and belong outside this frozen stage. A collaboration interaction already
+inside a listed functional case is not removed merely because of its topic.
+
+Authorized changes: product-owned exact observation mappings and their architecture
+contracts/spec references; the existing original-report adapter and invocation
+wiring needed to cover both functional configurations; admission/localization
+fixtures and permanent tests; Board consumer proofs; generated catalog and direct
+documentation; tool Changeset. Product assertions, runtime behavior, collaboration
+producer and optional node actions remain unchanged. Discovery is fixed to these
+cases, their semantic owners, current mapping/admission/ingestion and direct
+Board/API/CLI/CI consumers. Necessary product defects stop the affected work for
+scope resolution instead of silently becoming runtime repair projects.
+
+Acceptance is the roadmap's complete Stage A contract: exact inventory accounting,
+reviewed responsibility and implementation references, original local/CI ingestion,
+real baseline/fault/recovery per distinct owner/route, simultaneous independent
+failures, partial recovery, unchanged historical evidence and Board/API/CLI parity.
+Unknown/foreign/stale cases and incomplete executions must stay explicit. No
+additional diagnostic run is required to locate an original failure.
+
+Internal execution order: (1) review the complete case-to-owner architecture and
+admission contract, preserving the six existing deletion identities; (2) extend
+the existing ingestion source selection and functional/status-toast invocation
+handoffs; (3) prove whole-stage failure, recovery and consumer parity. Each owner
+segment gets its execution card here before edits. Gates are focused admission,
+identity/source/report regressions, permanent original-runtime fault/recovery,
+full frozen functional baseline, Board browser parity, existing control-plane and
+package regression, naming, scope/placement, scoped lint/format/typecheck, affected
+builds, generated catalog equality, original core proof/candidate, task preflight
+and exact-head Changeset admission. Reuse unchanged build evidence; broad gates
+run at the assembled stage, not after every mapping. Repeat only affected gates
+following a real change or failure. Final review covers this diff and its direct
+consumers. No push or PR before the complete stage satisfies these conditions.
+
+Admission execution card: `admit-proof-contract` consumes the frozen discovery,
+current App/Framework specifications and exact owner source. It emits reviewed
+observation-only mappings and architecture references. Conditions: exact
+file/full-title/project identity, concrete implementation entries inside the
+selected owner boundary, no proof scenarios, no inferred root cause. Bypasses:
+none for invalid ownership; unsupported execution stays explicitly unverified.
+Allowed contributors are product-owned manifests and current semantic contracts;
+UI guesses and runtime-result-derived ownership are forbidden. The implementation
+boundary adds the functional/status observation manifests, their responsibility
+Inspector/specification and permanent admission tests. A case-level test-file
+selector extends existing admission rather than creating one manifest and copied
+architecture per file; omitted selectors retain the existing manifest test file.
+Source fingerprints must include every selected test file. Existing deletion
+case identities and target remain unchanged. Gate: exact discovery accounting,
+unique identities, valid paths/spec references, invalid selector rejection and
+no observation runner execution. Stop for unresolved owner semantics before
+production admission/collector edits. Cache dimensions remain empty.
+
+Localization execution card: `localize-test-results` consumes admitted exact
+case-file selectors and the original runner report, and produces immutable
+localized observations. Select functional or status configuration before execution;
+a report cannot choose a different source contract after execution. Functional
+uses the existing deletion manifest plus the complete functional manifest; status
+uses its dedicated manifest. Capture each unique source/test input once per
+fingerprint and resolve each observation once at ingestion. Readers reuse retained
+records without remapping. Extend the existing adapter, localization and original
+runtime fixtures/tests plus `scripts/run-e2e.sh` and its existing CI invocation.
+Unknown source selection, missing output, mismatched configuration and changed
+source retain explicit errors and cannot clear failures. No arbitrary configuration,
+new result registry, accepted-proof authority or product mutation is introduced.
+Focused gates prove per-case file attribution/fingerprints, configuration isolation,
+original report retention, partial recovery and source-selection rejection. Failure
+owner is `localize-test-results`; no retained computation cache is added.
+
+Whole-stage evidence review: the unchanged functional command completed with exit
+zero and all 412 discovered cases accounted for, including the separate status
+configuration. Five gradient cases are explicitly `test.fail` in the original
+suite. Their actual failed assertions must remain failed observations even though
+Playwright regards them as expected; they are not passing localization evidence.
+The full-command proof's initial all-passed assumption is therefore invalid.
+Correct that proof against original expected/actual attempt outcomes and replay
+its retained report for verification rather than repeat the full command. Preserve
+all five original errors; unrelated rendering fixes remain outside Stage A.
+
+The initial owner proof also selected a title/root-only startup assertion that
+cannot detect a RenderApp fault. Use the existing ready-layout assertion for that
+route, and include the HTML bootstrap in the title/root case's declared boundary.
+Review Layers disclosure separately from canvas targeting and tool-switch cases
+separately from Pen geometry. These are corrections within the frozen inventory,
+not additional product cases. Complete the remaining owner proofs before the
+whole-stage Board and final gates. This review changes neither product assertions
+nor runner failure guards, and does not authorize unrelated runtime repairs.
+
+Isolation harness correction: preserve the original E2E import/data closure,
+including `test-data` and the action batch sample explicitly read by the Agent
+interceptor. Missing sample setup is an execution failure, never owner evidence.
+The inspection invalidation case exercises `createInspectionEvidence.capture`,
+not `inspectionApis.inspect`; target that operation and retain a separate rendered
+inspection route proof. The status configuration keeps its original owned server,
+Yarn command and reuse guard; copy installed Yarn metadata and link existing
+installed dependencies inside the fixture, without adding or installing tools.
+
+Board execution card: `render-proof-board` consumes the immutable observations
+from multiple independent original Design cases. Reuse the existing Board/API/CLI
+surfaces and render the exact mapped source, step, paths, errors, attempts and
+artifacts. Verify two active feature failures, partial recovery, full recovery and
+immutable history at desktop and narrow widths. No client-side remapping, root
+cause inference or command execution is permitted. Only the existing browser
+proof file and generated catalog change; production rendering changes require a
+specific failing consumer assertion. The gate is original runtime failures plus
+Board/API/CLI equality and inspected screenshots. Failure owner remains
+`render-proof-board`; no new cache or product runtime dependency is introduced.
+
+The first Agent fault selector waited for its original 30-second timeout; macOS
+then rejected the runner's descendant cleanup with `kill EPERM`. That attempt is
+not passing proof and the cleanup guard remains unchanged. Use the existing
+partial-refinement case for the same `registerAiAgentFeature.api.execute` fault:
+its unchanged partial-outcome assertion detects the disabled operation within the
+ordinary assertion timeout. This bounds the localization proof without altering
+product expectations, raising timeouts or accepting failed process cleanup.
+
+### Original functional baseline and explicit unverified cases
+
+The original command completed successfully: 387 passed, 19 skipped and five
+expected failures in the functional report; the isolated status case passed.
+All 412 observations resolved exactly. Expected failures remain failed in the
+Inspector. This is localization evidence, not a claim that these existing
+gradient defects were repaired or that skipped cases ran. The retained-report
+proof verifies exact original outcomes without rerunning the 17-minute command.
+
+The following original conditional cases remain mapped but execution-unverified
+in this baseline; no case was dropped from admission:
+
+| File                                | Exact full title                                                                                      | Original skip reason                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `ai-conversation-flow.spec.ts`      | profiles canonical prepared vector application with 16 items                                          | explicit owner profiling                                                       |
+| `ai-conversation-flow.spec.ts`      | profiles canonical prepared vector application with 320 items                                         | explicit owner profiling                                                       |
+| `ai-conversation-flow.spec.ts`      | profiles canonical prepared vector application with 1280 items                                        | explicit owner profiling                                                       |
+| `ai-drawing-performance.spec.ts`    | Conversational AI drawing performance profile separates a 16-item product span from harness wall time | explicit performance profiling only                                            |
+| `ai-inspection-evidence.spec.ts`    | recorded action stream preserves drawable targets during incremental construction                     | Provide a project-local recorded action replay manifest.                       |
+| `ai-inspection-evidence.spec.ts`    | saved drawing keeps a complete snapshot after public regrouping                                       | Provide a retained project-local document for deterministic inspection replay. |
+| `app.spec.ts`                       | Asyra Design Tool should refresh a storage-free demo to the empty App                                 | requires the storage-free demo App configuration                               |
+| `app.spec.ts`                       | Asyra Design local-only startup keeps local editing available without server communication            | requires the endpoint-free App build                                           |
+| `design-construction.spec.ts`       | local subscription constructs and reviews an editable layout from a brief                             | Requires the local subscription provider                                       |
+| `indexed-design-query.spec.ts`      | indexes the preserved full Taipei 101 without repeated document scans                                 | Explicit large-document milestone                                              |
+| `large-document-navigation.spec.ts` | preserves the full document while profiling navigation work                                           | Explicit large-document milestone                                              |
+| `local-ai-provider.spec.ts`         | local subscription creates an editable text drawing through the real Agent panel                      | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription creates an editable image drawing through the real Agent panel                     | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription continues a text-only drawing after a detail choice                                | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription traces the reference logo at 240px without its separate mark                       | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription uses acknowledged drawing IDs for a dependent edit in one undo                     | Requires a local subscription                                                  |
+| `local-ai-provider.spec.ts`         | local subscription receives fresh images during repeated refinement                                   | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription reproduces a named logo through reference tools without an attachment              | Requires an explicitly enabled local subscription                              |
+| `local-ai-provider.spec.ts`         | local subscription discovers APIs to reflect and center an existing vector                            | Requires local subscription                                                    |
+
+### Stage A local acceptance and next stage
+
+Primary goal: remove repeated discovery after an original Design functional test
+fails by retaining its exact responsibility node, implementation entry and
+original evidence. This is localization, not automated diagnosis or repair.
+
+- All 412 frozen identities are admitted: six unchanged deletion cases and 406
+  cases on 32 independent functional responsibility nodes. The normal and status
+  configurations remain isolated; unknown, stale and ambiguous identities cannot
+  borrow a mapping.
+- Thirty-eight original baseline/fault/recovery routes passed in isolated copies,
+  covering every declared functional owner and additional bootstrap, Layers
+  selection, direct Fill/vector API, rendered inspection and redo entries.
+  Original assertions were unchanged. Only affected failed proofs were repeated.
+- The original full functional command completed once. Its exact retained report
+  and status report passed the corrected outcome verification. Product source,
+  original tests and configurations were not changed; later mapping corrections
+  were verified by exact discovery/owner tests rather than another full run.
+- The complete control-plane regression passed 553 tests with 42 explicit skips;
+  38 skipped owner proofs were exercised separately above. Full-command and
+  retained-report gates were also exercised explicitly; unrelated opt-in retained
+  external-evidence checks remain unclaimed.
+- Board localization, recovery and history tests passed, including two distinct
+  feature failures and partial recovery with API/CLI equality. The broader Board
+  suite passed using installed Chrome after isolating the catalog-link test from
+  ambient observations. Two unrelated retained external-provider/GitHub checks
+  remain skipped. Desktop and narrow failure evidence was inspected.
+- Package tests (12 React and 100 contracts), naming (15), scope/placement (68), scoped lint/format,
+  typecheck/build, generated catalog and task preflight passed. The original
+  core proof passed three flows, five negative scenarios and nine obligations;
+  the original candidate passed. Signal cleanup has permanent red/green coverage.
+
+The final review was bounded to admission, captured source/configuration,
+original command cleanup, mappings, direct Board/API/CLI consumers and the frozen
+gates. No App/Framework production behavior, original test assertion, dependency,
+collaboration producer or optional action was changed. Commit-dependent Changeset
+admission and remote CI remain separate delivery checks, not inferred from these
+local results.
+
+Next goal: Stage B freezes the complete collaboration command and selected shared
+Framework integration inventory, then admits original participant/run results and
+proves observed consumer failures remain independent. It is not started here.
+Stage C command buttons/comments remain optional and unactivated.

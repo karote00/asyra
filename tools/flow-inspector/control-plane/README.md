@@ -1018,41 +1018,54 @@ eligible assessment and preview; the service never selects a replacement.
 
 ### Design Playwright result ingestion
 
-The functional Design CI job now retains the original Playwright JSON as ordinary
-observation evidence. It captures the source and mapping before the existing
-`bash scripts/run-e2e.sh` invocation, then finalizes even after a failed command.
-It does not rerun tests or change the existing workflow-results aggregate.
+The existing functional shell owns original-report capture and finalization for
+both local execution and CI. It captures source before build/setup, retains
+observations even on failure, preserves termination/failure status, and copies
+functional attachments before the separate status-toast invocation clears the
+Playwright output directory. It performs no extra diagnostic test run.
 
-The mapping selects six unchanged Chromium cases in `e2e/delete-element.spec.ts`:
-Delete, Backspace, no selection, path-editing mode, mode enabled without an
-editing vector, and mode disabled with an editing vector. Each exact full title
-resolves to target `design-deletion`, step `delete-selected-element`, with its
-retained implementation entries. Other cases and foreign projects remain
-explicitly unmapped. A passing sibling does not clear a different failing case
-on the same node. Historical observations retain their original mapping. This
-is observation-only and cannot run through the Vitest proof dispatcher.
+Stage A maps 412 exact Chromium identities: the six existing deletion cases retain
+`design-deletion` / `delete-selected-element`; 405 other functional cases and one
+isolated status-toast case use `design-functional` with 32 reviewed responsibility
+nodes. The product-owned manifests declare exact file, full title, project and
+implementation entries. Conditional/skipped cases remain unverified; the five
+existing expected gradient failures remain failed observations. Foreign, renamed,
+ambiguous and source-stale identities remain explicit. A passing sibling cannot
+clear another case; history is never remapped. These observation contracts cannot
+run through the Vitest proof dispatcher.
 
-For a local functional run, choose a new report path each time and retain the
-original command's exit status:
+Run the original functional command once:
 
 ```bash
-export E2E_SUITE=functional
-export FLOW_CI_REPORT="$PWD/tmp/flow-ci/design-local-1.json"
-node tools/flow-inspector/control-plane/playwright-results.cjs begin "$FLOW_CI_REPORT" || exit $?
-set +e
-bash scripts/run-e2e.sh
-result=$?
-node tools/flow-inspector/control-plane/playwright-results.cjs complete "$FLOW_CI_REPORT"
-exit "$result"
+E2E_SUITE=functional bash scripts/run-e2e.sh
 ```
 
-Inspect the returned observation UUID with `cli.cjs test-results <run-id>`, or
-open `/design-deletion` on the existing local Board. The same record includes
-original error text, runner version, project identity, attempts, source
-fingerprints and CI repository/base/head/integration/run/attempt when present.
-The Board removes terminal styling only for presentation. It does not infer a
-root cause or execute a repair. Failed retries remain failures until a later
-clean invocation; incomplete or source-stale observations cannot clear failures.
+The script creates a unique report path under `tmp/flow-ci/`. To select an explicit
+path, set `FLOW_CI_REPORT` to a fresh repository-local JSON path. The status report
+uses the same name with `-status.json`. Do not wrap the script with another
+`begin`/`complete` pair. For an independently owned original invocation, the
+adapter accepts `begin <report-path> functional|status` before execution and
+`complete <report-path>` afterward; the selected source must match its actual
+Playwright configuration.
+
+Inspect each returned observation UUID with `cli.cjs test-results <run-id>`, or
+open `/design-functional` or `/design-deletion` on the existing Board. Source,
+implementation paths, original assertion/stack, runner attempts, artifacts and
+rerun context come from the same immutable record exposed by API and CLI. A
+failed test selects its recorded responsibility, not an inferred root cause.
+Recovery clears only cleanly rerun cases; other failures and history remain.
+
+Permanent original-owner fault/recovery proofs run explicitly at the complete
+stage checkpoint, using isolated source copies and unchanged product assertions:
+
+```bash
+FLOW_DESIGN_OWNER_PROOF=true node --test tools/flow-inspector/control-plane/__tests__/playwright-results.test.cjs
+```
+
+The full original functional-command proof is separately enabled with
+`FLOW_DESIGN_FUNCTIONAL_PROOF=true`. Both gates preserve runner limits and process
+ownership. Their default skipped state is not passing runtime evidence. Existing
+control-plane and Board regression commands remain applicable.
 
 CI uploads `design-observations-<run>-<attempt>` with a seven-day retention period.
 Download that artifact into the repository root, preserving its directory layout,

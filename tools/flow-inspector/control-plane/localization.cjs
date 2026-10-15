@@ -63,6 +63,7 @@ const identity = (item) =>
 function sourceFingerprint(root, contracts) {
   const inputs = new Set(['package.json', 'yarn.lock'])
   const add = (input) => {
+    if (inputs.has(input)) return
     const file = safePath(root, input)
     if (!fs.existsSync(file))
       throw new Error('Missing mapped observation input: ' + input)
@@ -81,6 +82,7 @@ function sourceFingerprint(root, contracts) {
       'configFile'
     ])
       add(contract[key])
+    for (const item of contract.cases) if (item.testFile) add(item.testFile)
     for (const step of contract.runtimeScope.steps)
       for (const boundary of step.implementationBoundary)
         add(boundary.replace(/\/\*\*$/, ''))
@@ -214,7 +216,7 @@ function localizeReport(root, context, report, options = {}) {
       contract.cases
         .filter(
           (candidate) =>
-            contract.testFile === item.file &&
+            (candidate.testFile ?? contract.testFile) === item.file &&
             candidate.testName === item.testName &&
             (candidate.projectName ?? '') === item.projectName
         )

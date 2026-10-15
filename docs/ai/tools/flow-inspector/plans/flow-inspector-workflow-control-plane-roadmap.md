@@ -8,10 +8,10 @@ future work. Historical Phase 3-6 requirements are not the current completion
 criteria. Removing unimplemented requirements from the mainline does not mean
 they were implemented or that the original full phases were completed.
 
-This documentation-only revision updates the roadmap, three unfinished plans,
-the plan index and the documentation entry point. Runtime contracts, architecture
-steps, existing controls, repository development rules and completed records
-remain unchanged. No implementation or remote operation is activated.
+The consolidated roadmap supersedes the earlier small delivery slices. The user
+subsequently activated the complete Stage A from merged main; its frozen inventory,
+implementation and validation are recorded in the existing result-source support
+plan. Stage B and optional Stage C require their own activation.
 
 ## Product Objective
 
@@ -49,14 +49,16 @@ investigation entry point; it does not establish the underlying causal defect.
 This section supersedes the earlier per-case/per-owner delivery sequence and
 historical "next-stage" notes in the supporting plan. Owner steps remain internal
 implementation and review checkpoints, not separate user-facing stages or PRs.
-The user requested planning only: no implementation or test execution is activated.
+The original consolidation was planning-only. Stage A was subsequently activated
+as one complete implementation; this does not activate Stage B or C.
 Association: this roadmap's Delivery Sequence, now consolidated here; the Flow
 Inspector follow-up owner retains whole-plan closeout responsibility.
 
 ### Current completed capabilities and remaining gaps
 
-Status is taken from existing implementation and review records through PR #331,
-not from new test runs or an assumption that every PR is merged.
+Earlier completed coverage is recorded through PR #331. The Stage A implementation
+candidate extends it as described below; local validation is distinct from PR
+review, CI completion and merge.
 
 - Core ordinary Vitest ingestion, exact case-to-node mapping, original failure
   context, Board/API/CLI access, per-case recovery and immutable history are
@@ -67,16 +69,22 @@ not from new test runs or an assumption that every PR is merged.
   material (11) and compound coverage (16). These are selected test contracts,
   not complete package coverage, GPU output or live-provider verification.
 - Design original Playwright/functional CI report ingestion is implemented.
-  PR #331 expands deletion mapping to six Chromium cases and records real
-  fault/recovery and Board parity evidence. It does not cover all Design E2E.
-- Still missing: broad Design feature ownership mappings, separately admitted
-  collaboration result support, and the remaining shared-owner/consumer mappings
+  The Stage A candidate covers all 412 frozen Chromium identities, preserving the
+  six existing deletion mappings and adding 32 functional responsibility nodes.
+  Original expected failures remain failed and skipped cases remain unverified;
+  coverage does not mean all underlying product behavior passes.
+- Still missing: separately admitted collaboration result support and the
+  remaining shared-owner/consumer mappings
   within an explicitly frozen integration scope. Existing collectors and readers
   must be reused rather than rebuilt for each test file.
 - Node command buttons and comments remain optional. Automatic diagnosis, repair,
   ADE, task orchestration and merge enforcement are outside this roadmap.
 
 ### Stage A - Complete Design functional failure localization
+
+Status: locally complete, pending PR review and remote CI. See the Stage A
+activation and acceptance record in the result-source support plan. Stage B is
+the next implementation goal after review.
 
 Outcome: within the selected Design functional suite, a failed existing test
 leads directly to its responsible architecture node and original investigation
@@ -173,9 +181,9 @@ stage and before push. Repeat checks only for changed source, a failure or a new
 concrete finding. Finish with one bounded final review; do not recursively review
 unchanged passing work. Existing mandatory gates and safety guards remain intact.
 
-This revision reorganizes plans only. It does not establish implementation
-readiness for the unenumerated future inventories, change current Inspector
-semantics, rerun evidence, activate optional work or authorize remote operations.
+Stage A uses its explicitly frozen inventory and acceptance contract in the
+supporting plan. Future inventories remain unenumerated until activation; the
+roadmap alone does not activate optional work or authorize remote operations.
 
 ## Definition of Done
 

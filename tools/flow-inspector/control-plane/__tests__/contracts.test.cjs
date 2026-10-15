@@ -851,3 +851,132 @@ test('Design Playwright mapping admits only the six reviewed Chromium deletion c
       assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
   }
 })
+
+test('observation cases admit exact per-case files and reject unsafe or non-observation selectors', () => {
+  const manifest = require('../../../../apps/asyra-design/playwright-flow-contracts.json')
+  const architecture = require('../../inspectors/design-deletion-flow-inspector.data.cjs')
+  const input = structuredClone(manifest)
+  const selected = input.flows[0].cases[0]
+  selected.testFile = 'apps/asyra-design/e2e/selection.spec.ts'
+  const contract = admitContract(input, architecture)
+  assert.equal(contract.cases[0].testFile, selected.testFile)
+  assert.equal(contract.cases[1].testFile, undefined)
+  assert.ok(Object.isFrozen(contract.cases[0]))
+  for (const file of [
+    null,
+    '',
+    '../escaped.spec.ts',
+    '/escaped.spec.ts',
+    'apps//test.spec.ts',
+    'apps/../test.spec.ts',
+    'apps/*.spec.ts',
+    'apps\\test.spec.ts'
+  ]) {
+    selected.testFile = file
+    assert.throws(() => admitContract(input, architecture), /case test file/)
+  }
+  assert.throws(
+    () =>
+      admit(({ manifest }) => {
+        manifest.flows[0].cases[0].testFile =
+          'apps/asyra-design/e2e/selection.spec.ts'
+      }),
+    /case test file/
+  )
+})
+
+test('the complete functional discovery has one exact responsibility per case, including isolated status', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const { spawnSync } = require('node:child_process')
+  const { sourceManifestPaths } = require('../playwright-results.cjs')
+  const collect = (source, configFile, expectedCount) => {
+    const contracts = sourceManifestPaths(source).map((file) =>
+      loadContract(root, undefined, file)
+    )
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(root, 'node_modules/playwright/cli.js'),
+        'test',
+        '--config',
+        configFile,
+        '--list',
+        '--reporter=json'
+      ],
+      {
+        cwd: path.join(root, 'apps/asyra-design'),
+        env: {
+          ...process.env,
+          PLAYWRIGHT_JSON_OUTPUT_NAME: '',
+          PLAYWRIGHT_JSON_OUTPUT_FILE: '',
+          CI: 'true',
+          E2E_SKIP_PERFORMANCE: 'true',
+          E2E_CRDT_7076: 'false'
+        },
+        encoding: 'utf8',
+        timeout: 30000,
+        maxBuffer: 4 * 1024 * 1024
+      }
+    )
+    assert.equal(result.status, 0, result.stderr + result.stdout.slice(-2000))
+    const report = JSON.parse(result.stdout)
+    assert.deepEqual(report.errors, [])
+    const observed = []
+    const walk = (suite, titles = []) => {
+      for (const spec of suite.specs ?? [])
+        for (const project of spec.tests)
+          observed.push(
+            JSON.stringify([
+              'apps/asyra-design/e2e/' + spec.file,
+              [...titles, spec.title].join(' '),
+              project.projectName
+            ])
+          )
+      for (const child of suite.suites ?? [])
+        walk(child, [...titles, child.title])
+    }
+    for (const suite of report.suites) walk(suite)
+    const expected = contracts.flatMap((contract) =>
+      contract.cases.map((item) => {
+        assert.ok(item.implementationPaths.length > 0)
+        for (const file of item.implementationPaths)
+          assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
+        return JSON.stringify([
+          item.testFile ?? contract.testFile,
+          item.testName,
+          item.projectName
+        ])
+      })
+    )
+    assert.equal(expected.length, expectedCount)
+    assert.equal(new Set(expected).size, expected.length)
+    assert.deepEqual(observed.sort(), expected.sort())
+  }
+  collect('functional', 'playwright.config.ts', 411)
+  collect('status', 'playwright.status-toast.config.ts', 1)
+})
+
+test('functional responsibility follows the asserted operation across test-file boundaries', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/playwright-functional-flow-contracts.json'
+  )
+  const selected = (id) => contract.cases.find((item) => item.id === id)
+  assert.equal(
+    selected('functional.pen-tool.db4841244256').stepId,
+    'switch-tool'
+  )
+  const disclosure = selected('functional.group-hierarchy.caf2f297812e')
+  assert.equal(disclosure.stepId, 'present-layer-hierarchy')
+  assert.ok(
+    disclosure.implementationPaths.includes(
+      'apps/asyra-design/src/contents/GroupDisclosure.tsx'
+    )
+  )
+  assert.deepEqual(
+    selected('functional.app.0ed5202f90ef').implementationPaths,
+    ['apps/asyra-design/index.html']
+  )
+})

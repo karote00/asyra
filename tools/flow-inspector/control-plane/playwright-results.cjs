@@ -5,6 +5,17 @@ const { createHash } = require('node:crypto')
 const { safePath } = require('./snapshot.cjs')
 const localization = require('./localization.cjs')
 const manifestPath = 'apps/asyra-design/playwright-flow-contracts.json'
+const sourceManifestPaths = (source = 'functional') => {
+  if (source === 'functional')
+    return [
+      manifestPath,
+      'apps/asyra-design/playwright-functional-flow-contracts.json'
+    ]
+  if (source === 'status')
+    return ['apps/asyra-design/playwright-status-flow-contracts.json']
+  throw new Error('Unsupported Design Playwright source')
+}
+
 const string = (value) => typeof value === 'string'
 const errorDetails = (error) =>
   Object.fromEntries(
@@ -35,9 +46,12 @@ function normalizeReport(root, context, original) {
     errors.push(
       'Playwright report root does not match the observed Design checkout'
     )
+  const configurations = new Set(
+    context.contracts.map((contract) => contract.configFile)
+  )
   if (
-    original?.config?.configFile !==
-    path.join(root, 'apps/asyra-design/playwright.config.ts')
+    configurations.size !== 1 ||
+    original?.config?.configFile !== path.join(root, [...configurations][0])
   ) {
     stale = true
     errors.push(
@@ -233,15 +247,24 @@ function normalizeReport(root, context, original) {
     }
   }
 }
-function begin(root, reportPath, environment = process.env, command) {
+function begin(
+  root,
+  reportPath,
+  environment = process.env,
+  command,
+  source = 'functional'
+) {
   const report = safePath(root, reportPath)
   if (fs.existsSync(report) || fs.existsSync(report + '.context.json'))
     throw new Error('Use a fresh report path for each Playwright invocation')
   const context = localization.beginObservation(root, {
-    manifestPaths: [manifestPath],
+    manifestPaths: sourceManifestPaths(source),
     command: command ?? {
-      cwd: '.',
-      argv: ['bash', 'scripts/run-e2e.sh'],
+      cwd: source === 'status' ? 'apps/asyra-design' : '.',
+      argv:
+        source === 'status'
+          ? ['yarn', 'test:e2e:status-toast']
+          : ['bash', 'scripts/run-e2e.sh'],
       environment: Object.fromEntries(
         [
           'CI',
@@ -412,19 +435,31 @@ function complete(root, reportPath) {
 }
 if (require.main === module) {
   try {
-    const [action, reportPath] = process.argv.slice(2)
-    if (!['begin', 'complete'].includes(action) || !reportPath)
-      throw new Error(
-        'Usage: playwright-results.cjs begin|complete <fresh-report-path>'
-      )
-    const result = (action === 'begin' ? begin : complete)(
-      process.cwd(),
-      reportPath
+    const [action, reportPath, source = 'functional', ...extra] =
+      process.argv.slice(2)
+    if (
+      !['begin', 'complete'].includes(action) ||
+      !reportPath ||
+      extra.length ||
+      (action === 'complete' && process.argv.length > 4)
     )
+      throw new Error(
+        'Usage: playwright-results.cjs begin <fresh-report-path> [functional|status] or complete <report-path>'
+      )
+    const result =
+      action === 'begin'
+        ? begin(process.cwd(), reportPath, process.env, undefined, source)
+        : complete(process.cwd(), reportPath)
     process.stdout.write('Flow Inspector observation: ' + result.id + '\n')
   } catch (error) {
     process.stderr.write(error.message + '\n')
     process.exitCode = 1
   }
 }
-module.exports = { normalizeReport, begin, complete, manifestPath }
+module.exports = {
+  normalizeReport,
+  begin,
+  complete,
+  manifestPath,
+  sourceManifestPaths
+}

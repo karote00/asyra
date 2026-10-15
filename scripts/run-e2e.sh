@@ -7,6 +7,60 @@ case "$E2E_SUITE" in
   *) echo "Unknown E2E_SUITE: $E2E_SUITE" >&2; exit 2 ;;
 esac
 
+E2E_APP_SERVER_PID=''
+E2E_COLLABORATION_SERVER_PID=''
+E2E_DOCUMENT_BACKEND_PID=''
+E2E_DOCUMENT_BACKEND_URL='http://127.0.0.1:4201'
+E2E_FUNCTIONAL_OBSERVATION=0
+E2E_STATUS_OBSERVATION=0
+E2E_STATUS_REPORT=''
+
+# Cleanup function to kill the separately-owned background server processes.
+cleanup() {
+  E2E_EXIT_CODE=$?
+  if [ "$E2E_FUNCTIONAL_OBSERVATION" = 1 ]; then
+    if ! node tools/flow-inspector/control-plane/playwright-results.cjs complete "$FLOW_CI_REPORT"; then
+      if [ "$E2E_EXIT_CODE" = 0 ]; then E2E_EXIT_CODE=1; fi
+    fi
+  fi
+  if [ "$E2E_STATUS_OBSERVATION" = 1 ]; then
+    if ! node tools/flow-inspector/control-plane/playwright-results.cjs complete "$E2E_STATUS_REPORT"; then
+      if [ "$E2E_EXIT_CODE" = 0 ]; then E2E_EXIT_CODE=1; fi
+    fi
+  fi
+  if [ -n "$E2E_APP_SERVER_PID" ]; then
+    echo "Stopping App server (PID: $E2E_APP_SERVER_PID)..."
+    kill "$E2E_APP_SERVER_PID" 2>/dev/null || true
+    wait "$E2E_APP_SERVER_PID" 2>/dev/null || true
+  fi
+  if [ -n "$E2E_COLLABORATION_SERVER_PID" ]; then
+    echo "Stopping Collaboration server (PID: $E2E_COLLABORATION_SERVER_PID)..."
+    kill "$E2E_COLLABORATION_SERVER_PID" 2>/dev/null || true
+    wait "$E2E_COLLABORATION_SERVER_PID" 2>/dev/null || true
+  fi
+  if [ -n "$E2E_DOCUMENT_BACKEND_PID" ]; then
+    echo "Stopping Document backend (PID: $E2E_DOCUMENT_BACKEND_PID)..."
+    kill "$E2E_DOCUMENT_BACKEND_PID" 2>/dev/null || true
+    wait "$E2E_DOCUMENT_BACKEND_PID" 2>/dev/null || true
+  fi
+  trap - EXIT INT TERM
+  exit "$E2E_EXIT_CODE"
+}
+
+# Trap exit signals to ensure cleanup
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [ "$E2E_SUITE" = "functional" ]; then
+  if [ -z "${FLOW_CI_REPORT:-}" ]; then
+    FLOW_CI_REPORT="$PWD/tmp/flow-ci/functional-$(node -e 'process.stdout.write(require("node:crypto").randomUUID())').json"
+  fi
+  export E2E_SUITE FLOW_CI_REPORT
+  node tools/flow-inspector/control-plane/playwright-results.cjs begin "$FLOW_CI_REPORT" functional
+  E2E_FUNCTIONAL_OBSERVATION=1
+fi
+
 read -r E2E_HOST E2E_PORT E2E_APP_URL \
   E2E_COLLABORATION_HEALTH_URL E2E_COLLABORATION_WEBSOCKET_URL <<< "$(
   node --input-type=module -e "
@@ -33,36 +87,6 @@ read -r E2E_HOST E2E_PORT E2E_APP_URL \
     )
   "
 )"
-
-E2E_APP_SERVER_PID=''
-E2E_COLLABORATION_SERVER_PID=''
-E2E_DOCUMENT_BACKEND_PID=''
-E2E_DOCUMENT_BACKEND_URL='http://127.0.0.1:4201'
-
-# Cleanup function to kill the separately-owned background server processes.
-cleanup() {
-  E2E_EXIT_CODE=$?
-  if [ -n "$E2E_APP_SERVER_PID" ]; then
-    echo "Stopping App server (PID: $E2E_APP_SERVER_PID)..."
-    kill "$E2E_APP_SERVER_PID" 2>/dev/null || true
-    wait "$E2E_APP_SERVER_PID" 2>/dev/null || true
-  fi
-  if [ -n "$E2E_COLLABORATION_SERVER_PID" ]; then
-    echo "Stopping Collaboration server (PID: $E2E_COLLABORATION_SERVER_PID)..."
-    kill "$E2E_COLLABORATION_SERVER_PID" 2>/dev/null || true
-    wait "$E2E_COLLABORATION_SERVER_PID" 2>/dev/null || true
-  fi
-  if [ -n "$E2E_DOCUMENT_BACKEND_PID" ]; then
-    echo "Stopping Document backend (PID: $E2E_DOCUMENT_BACKEND_PID)..."
-    kill "$E2E_DOCUMENT_BACKEND_PID" 2>/dev/null || true
-    wait "$E2E_DOCUMENT_BACKEND_PID" 2>/dev/null || true
-  fi
-  trap - EXIT INT TERM
-  exit "$E2E_EXIT_CODE"
-}
-
-# Trap exit signals to ensure cleanup
-trap cleanup EXIT INT TERM
 
 # 1. Build project
 echo "Step 1: Building project..."
@@ -129,5 +153,18 @@ else
   yarn test:e2e:asyra-design
 fi
 
+# Retain functional attachments before the next Playwright invocation clears its output.
+if [ "$E2E_FUNCTIONAL_OBSERVATION" = 1 ]; then
+  E2E_FUNCTIONAL_OBSERVATION=0
+  node tools/flow-inspector/control-plane/playwright-results.cjs complete "$FLOW_CI_REPORT"
+  E2E_STATUS_REPORT="${FLOW_CI_REPORT%.json}-status.json"
+  node tools/flow-inspector/control-plane/playwright-results.cjs begin "$E2E_STATUS_REPORT" status
+  E2E_STATUS_OBSERVATION=1
+fi
+
 echo "Final step: Running isolated unavailable-service status toast test..."
-yarn workspace @asyra/asyra-design test:e2e:status-toast
+if [ "$E2E_STATUS_OBSERVATION" = 1 ]; then
+  PLAYWRIGHT_JSON_OUTPUT_NAME="$E2E_STATUS_REPORT" yarn workspace @asyra/asyra-design test:e2e:status-toast --reporter=line,json
+else
+  yarn workspace @asyra/asyra-design test:e2e:status-toast
+fi
