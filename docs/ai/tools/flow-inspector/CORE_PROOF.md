@@ -2300,6 +2300,17 @@ source-load errors retain their original evidence without inventing a node.
 These cases prove neutral material/coverage projections and canonical-data
 preservation, not GPU output or complete vector geometry behavior.
 
+The 16 existing Preset compound coverage cases are a default observation source
+through `packages/preset/coverage-flow-contracts.json` on the same
+`evaluate-vector-material` node. Seven direct coverage cases point to
+`vector-compound-fill.ts`; nine strategy integration cases also point to
+`vector.ts` and `fills.ts`. Ordinary and captured runs preserve their original
+source assertions. The existing parity fault locates three distinct evenodd
+failures. Filtered nonzero runs cannot retire them, and coverage recovery cannot
+clear an unrun material failure at the shared node. Full recovery preserves both
+histories; source-load errors remain execution evidence. These cases cover bounded
+neutral coverage semantics and projections, not GPU output or all vector behavior.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and

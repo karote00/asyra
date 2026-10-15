@@ -750,3 +750,92 @@ test(
     t.diagnostic('Vector Board evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'Compound coverage Board preserves independent failures on the shared material node',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    const { page, server } = await openBoard(t, fixture)
+    fixture.mutateVector()
+    const material = await fixture.run('vector')
+    assert.equal(material.result.code, 1, material.result.output)
+    fixture.restore()
+    fixture.mutateCoverage()
+    const fault = await fixture.run('coverage')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failures = fault.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.equal(failures.length, 3)
+    await page.goto(server.origin + '/render-delta-update')
+    const frame = page.frameLocator('iframe')
+    const buttons = frame.locator('#test-result-failures button')
+    await expect(buttons).toHaveCount(4)
+    await expect(frame.locator('.observation-failed')).toHaveCount(1)
+    const details = frame.locator('#test-result-detail')
+    for (const item of failures) {
+      await frame
+        .getByRole('button', { name: item.testName + ' - mapped', exact: true })
+        .click()
+      await expect(
+        frame.locator('[data-step-id="evaluate-vector-material"].is-selected')
+      ).toHaveCount(1)
+      await expect(details).toContainText(
+        'Contract: docs/ai/framework/packages/preset.md'
+      )
+      await expect(details).toContainText(
+        'packages/preset/src/components/vector-compound-fill.ts'
+      )
+      await expect(details).toContainText(item.failures[0])
+      for (const field of ['expected', 'actual'])
+        assert.equal(
+          await details
+            .locator('[data-failure-field="' + field + '"]')
+            .textContent(),
+          item.failureDetails[0][field]
+        )
+    }
+    assert.deepEqual(
+      await (
+        await fetch(server.origin + '/api/test-results/' + fault.record.id)
+      ).json(),
+      fault.record
+    )
+    await page.screenshot({
+      path: path.join(fixture.directory, 'coverage-desktop.png'),
+      fullPage: true
+    })
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await details.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: path.join(fixture.directory, 'coverage-narrow.png'),
+      fullPage: true
+    })
+    const partial = await fixture.run('coverage', [
+      '--testNamePattern',
+      'preserves declared nonzero coverage'
+    ])
+    assert.equal(partial.result.code, 0, partial.result.output)
+    await expect(buttons).toHaveCount(4)
+    fixture.restore()
+    const coverage = await fixture.run('coverage')
+    assert.equal(coverage.result.code, 0, coverage.result.output)
+    await expect(buttons).toHaveCount(1)
+    await expect(buttons.first()).toContainText(
+      material.record.cases.find((item) => item.status === 'failed').testName
+    )
+    await expect(frame.locator('.observation-failed')).toHaveCount(1)
+    const complete = await fixture.run('vector')
+    assert.equal(complete.result.code, 0, complete.result.output)
+    await expect(buttons).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await expect(buttons).toHaveCount(3)
+    await buttons.first().click()
+    await expect(frame.locator('.observation-failed')).toHaveCount(1)
+    await expect(details).toContainText(failures[0].failures[0])
+    t.diagnostic('Coverage Board evidence: ' + fixture.directory)
+  }
+)

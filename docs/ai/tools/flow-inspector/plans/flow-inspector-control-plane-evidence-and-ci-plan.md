@@ -548,6 +548,88 @@ fixture artifact paths. Final bounded review preserved case identities, assertio
 route/handoff/source authority, package spec references and product runtime. No
 remaining in-scope findings; this coverage slice is complete, not the whole plan.
 
+## Selected Preset compound coverage - 2026-10-15
+
+Activated after PR #328 merged at `f1cdb4a4b`, under Bounded Result-Source Slice.
+The main objective is to localize all 16 unchanged cases in
+`packages/preset/src/__tests__/vector-compound-fill.test.ts`, using its existing
+coverage manifest/config and the `evaluate-vector-material` node on
+`render-delta-update`. Retain the Preset package specification, case IDs, handoffs,
+workspace authority and the existing `omit-evenodd` negative. Seven direct coverage
+cases name `vector-compound-fill.ts`; nine strategy integration cases also name
+`vector.ts` and `fills.ts`. These are investigation entries, not root-cause claims.
+
+Readiness review: the test invokes the neutral coverage owner directly and through
+the existing vector strategy. Its public Core/Render/Utils source closure is the
+same 14-package closure as the material config. Ordinary execution must default
+to the local source and baseline, resolve exact public roots and reject undeclared
+workspace imports. Captured proof retains its admitted source authority. No new
+runner, runtime registry, dependency, geometry change or assertion rewrite.
+
+Original Vitest results -> admitted exact identity/path mapping -> immutable
+observations -> existing API/CLI/Board is the complete flow. The parity fault must
+fail exactly the three existing evenodd cases. A filtered passing nonzero case
+must not clear these failures. With a retained material hit fault at the same
+node, coverage recovery must clear only coverage failures; material recovery then
+clears the last failure. Historical results remain immutable and public-source
+load errors remain execution failures without an invented node.
+
+Owner execution cards retain the complete conditions, bypasses, contributors,
+references and failure owners of the core proof Inspector and CORE_PROOF.md:
+
+1. `admit-proof-contract` / Admission consumes the existing coverage manifest,
+   architecture and cases, and outputs admitted exact paths and source config.
+   Add only coverage manifest/config to this owner boundary. Test-first absent
+   paths and proof-only startup. Preserve route/source authority; no guessed
+   ownership or weakening of accepted proof. Stop on an owner/spec mismatch.
+2. `localize-test-results` / Ordinary Test Failure Localization consumes admitted
+   mappings and original runner results. Add this source to existing defaults and
+   extend the permanent fixture/runtime tests for baseline, parity fault, filtered
+   rerun, material/coverage isolation, full recovery, source-load failure and CLI
+   equality. No new cache, inferred diagnosis, accepted baseline or dispatch.
+3. `render-proof-board` / Board consumes service-owned observations and existing
+   canvas identity. Extend the permanent Board test for three coverage failures
+   and one material failure on one node, API equality, exact paths/spec/assertion,
+   coverage-only recovery, final recovery and historical selection. Inspect desktop
+   and narrow screenshots. Reuse the existing renderer; no client-side mapping.
+
+Freeze mutations to coverage manifest/config, core admission boundary, default
+registry, existing admission/runtime/Board tests and fixture, generated catalog,
+localization docs, Changeset and this plan. Review methods are current contract/
+source comparison, diff/direct consumers and permanent positive/negative tests.
+Exclude other producers, product runtime, geometry changes, commands and comments.
+Any necessary out-of-scope correction stops implementation.
+
+Gates: admission/localization red-green, focused and full control-plane/Board
+suites, selected coverage proof, core proof/candidate, package tests, naming,
+scoped lint/format, typecheck, scope/test-placement, generated equality, App/tool
+build and exact-head Changeset admission. This closes only the selected slice.
+
+Completion evidence: admission regressions first failed for missing exact paths
+and proof-only startup; runtime regressions first failed before registration.
+All 16 unchanged cases now pass and map. The original parity fault fails exactly
+three registered cases, while filtered nonzero execution preserves them. Retained
+material and coverage failures share one node without clearing each other during
+partial recovery. Full recovery preserves immutable historical records; public
+Core source-load errors retain original execution evidence without a guessed node.
+Board/API/CLI parity and desktop/narrow screenshots passed.
+
+Focused admission/localization/runtime: 76 passed. Full control-plane: 523 passed,
+two environment-conditional skips. Full Board: 25 passed, two retained-live-evidence
+skips. Package: 12 React and 100 contract tests; scope/test-placement: 68; naming: 15. Scoped ESLint, formatting, typecheck, generated equality and App/tool build
+(21 tasks) passed. Core proof/candidate passed (three flows, five negatives, nine
+obligations); coverage proof passed (one flow, one negative, 16 obligations).
+The documented reporter invocation passed 16 cases with 16 mappings and no issues.
+Logs are under `tmp/flow-inspector/coverage/`, with emitted permanent-fixture
+artifacts. Final diff/direct-consumer review found no remaining in-scope issue.
+Original runtime, assertions, case identities, handoffs and workspace authority
+remain unchanged. This completes the selected slice only.
+
+Next-stage objective: review a bounded existing Design Playwright/CI result source
+for original-report ingestion and exact node localization. Choose its actual
+report format, cases and owner before implementation; protected delivery, command
+buttons and comments remain deferred.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

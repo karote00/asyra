@@ -821,3 +821,120 @@ test(
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
 )
+
+test(
+  'ordinary compound coverage retains three failures and isolates material recovery at the shared node',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('coverage')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 16)
+    assert.deepEqual(baseline.record.issues, [])
+    assert.ok(
+      baseline.record.cases.every((item) => item.resolution === 'mapped')
+    )
+    fixture.mutateVector()
+    const material = await fixture.run('vector')
+    assert.equal(material.result.code, 1, material.result.output)
+    const materialFailures = material.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.equal(materialFailures.length, 1)
+    fixture.restore()
+    fixture.mutateCoverage()
+    const fault = await fixture.run('coverage')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failures = fault.record.cases.filter(
+      (item) => item.status === 'failed'
+    )
+    assert.deepEqual(failures.map((item) => item.locations[0]?.caseId).sort(), [
+      'coverage.cross.evenodd',
+      'coverage.holes.evenodd',
+      'coverage.overlap'
+    ])
+    for (const item of failures) {
+      assert.equal(item.locations[0].targetId, 'render-delta-update')
+      assert.equal(item.locations[0].stepId, 'evaluate-vector-material')
+      assert.equal(
+        item.locations[0].specPath,
+        'docs/ai/framework/packages/preset.md'
+      )
+      assert.deepEqual(item.locations[0].implementationPaths, [
+        'packages/preset/src/components/vector-compound-fill.ts'
+      ])
+      assert.ok(
+        item.failureDetails.some(
+          (error) =>
+            error.message && error.stack && error.expected && error.actual
+        )
+      )
+    }
+    const currentFailures = () =>
+      fixture.reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed')
+    const ids = (items) => items.map((item) => item.id).sort()
+    assert.deepEqual(
+      ids(currentFailures()),
+      ids([...materialFailures, ...failures])
+    )
+    const partial = await fixture.run('coverage', [
+      '--testNamePattern',
+      'preserves declared nonzero coverage'
+    ])
+    assert.equal(partial.result.code, 0, partial.result.output)
+    assert.equal(
+      partial.record.cases.filter((item) => item.status === 'passed').length,
+      1
+    )
+    assert.deepEqual(
+      ids(currentFailures()),
+      ids([...materialFailures, ...failures])
+    )
+    const output = []
+    assert.equal(
+      await main(['test-results', fault.record.id], {
+        repositoryRoot: fixture.repository,
+        write: (line) => output.push(line)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(output.join('')), fault.record)
+    fixture.restore()
+    const recovery = await fixture.run('coverage')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+    assert.deepEqual(ids(currentFailures()), ids(materialFailures))
+    const complete = await fixture.run('vector')
+    assert.equal(complete.result.code, 0, complete.result.output)
+    assert.equal(currentFailures().length, 0)
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+    assert.deepEqual(fixture.reader.get(material.record.id), material.record)
+    t.diagnostic('Coverage evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'Compound coverage execution uses public Core source and retains setup failure without a guessed node',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.failVectorSourceEntry()
+    const fault = await fixture.run('coverage')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.match(fault.record.issues.join(' '), /Captured Core source failed/)
+    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
+    fixture.restore()
+    const recovery = await fixture.run('coverage')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(
+      recovery.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      16
+    )
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+  }
+)

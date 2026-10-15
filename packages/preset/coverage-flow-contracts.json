@@ -29,82 +29,148 @@
         {
           "id": "coverage.holes.nonzero",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage preserves declared nonzero coverage for same-winding holes"
+          "testName": "paint-independent vector coverage preserves declared nonzero coverage for same-winding holes",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.holes.evenodd",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage preserves declared evenodd coverage for same-winding holes"
+          "testName": "paint-independent vector coverage preserves declared evenodd coverage for same-winding holes",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.overlap",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage resolves evenodd overlap and nested islands without double filling"
+          "testName": "paint-independent vector coverage resolves evenodd overlap and nested islands without double filling",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.cross.nonzero",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using nonzero coverage"
+          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using nonzero coverage",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.cross.evenodd",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using evenodd coverage"
+          "testName": "paint-independent vector coverage splits self-crossings and coincident edges using evenodd coverage",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.empty.nonzero",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage keeps empty nonzero coverage empty"
+          "testName": "paint-independent vector coverage keeps empty nonzero coverage empty",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.empty.evenodd",
           "stepId": "evaluate-vector-material",
-          "testName": "paint-independent vector coverage keeps empty evenodd coverage empty"
+          "testName": "paint-independent vector coverage keeps empty evenodd coverage empty",
+          "implementationPaths": [
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.7",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (false)"
+          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (false)",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.8",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (true)"
+          "testName": "solid nonzero compound Vector projection keeps opposite-winding holes transparent regardless of path order (true)",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.9",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection fills same-winding interiors exactly once and keeps hit testing consistent"
+          "testName": "solid nonzero compound Vector projection fills same-winding interiors exactly once and keeps hit testing consistent",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.10",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection preserves nested islands"
+          "testName": "solid nonzero compound Vector projection preserves nested islands",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.11",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (false)"
+          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (false)",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.12",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (true)"
+          "testName": "solid nonzero compound Vector projection resolves crossing contour winding without overlapping translucent faces (true)",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.13",
           "stepId": "evaluate-vector-material",
-          "testName": "solid nonzero compound Vector projection splits slabs at diagonal crossings rather than only contour vertices"
+          "testName": "solid nonzero compound Vector projection splits slabs at diagonal crossings rather than only contour vertices",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.14",
           "stepId": "evaluate-vector-material",
-          "testName": "projects curved compound contours within the declared subdivision tolerance"
+          "testName": "projects curved compound contours within the declared subdivision tolerance",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "coverage.preserve.15",
           "stepId": "evaluate-vector-material",
-          "testName": "prepares one fill geometry shared by rendering and repeated hit queries"
+          "testName": "prepares one fill geometry shared by rendering and repeated hit queries",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         }
       ],
       "handoffs": [
