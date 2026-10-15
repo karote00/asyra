@@ -6,7 +6,18 @@
   "specPath": "docs/ai/framework/packages/factory.md",
   "testFile": "packages/factory/src/__tests__/factory-journal-history.test.ts",
   "configFile": "packages/factory/src/__tests__/history-replay.config.ts",
-  "negativeCaseIds": ["replay.ordered-action", "replay.staged-values"],
+  "negativeCaseIds": [
+    "replay.ordered-action",
+    "replay.staged-values",
+    "history.90c1fbd29755",
+    "history.7d96f5d33001",
+    "history.6c31100f5251",
+    "history.1dcdd4ddc7f6",
+    "history.62418a7b00e1",
+    "history.13bb8b0a23fc",
+    "history.694ddfd8f6f5",
+    "history.99e545778d60"
+  ],
   "externalInputs": [],
   "flows": [
     {
@@ -32,6 +43,141 @@
             "packages/factory/src/factory.ts",
             "packages/factory/src/data-transact.ts"
           ]
+        },
+        {
+          "id": "history.99e545778d60",
+          "stepId": "replay-history-action",
+          "testName": "Factory journal-backed action history keeps staging metadata local and publishes one final-to-initial shared Undo bundle",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "record-history-action",
+      "title": "Record one canonical History action",
+      "goal": "Record ordinary append-only events or owner-issued replace-latest candidates while preserving exact event order and metadata.",
+      "stepIds": ["record-history-action"],
+      "cases": [
+        {
+          "id": "history.bddfdd3e2a47",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history keeps update equivalent to a batch of one",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.694ddfd8f6f5",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history trusts changing owner payload metadata in a replace-latest candidate",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.90c1fbd29755",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history keeps replace-latest options without an owner candidate as ordinary History",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.7d96f5d33001",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history keeps earlier option-only owner events before later candidate staging",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.6c31100f5251",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history retains the latest owner event per key when later candidate bundles omit unchanged fields",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.1dcdd4ddc7f6",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history keeps ordinary History append-only when replace-latest is absent",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.62418a7b00e1",
+          "stepId": "record-history-action",
+          "testName": "Factory journal-backed action history keeps an ordinary final normalization ordered after one staged gesture bundle",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "rollback-history-action",
+      "title": "Roll back uncommitted History",
+      "goal": "Reverse every applied journal entry on rollback without creating a committed History action; empty actions remain empty.",
+      "stepIds": ["rollback-history-action"],
+      "cases": [
+        {
+          "id": "history.fe55d54047a7",
+          "stepId": "rollback-history-action",
+          "testName": "Factory journal-backed action history creates no history action for an empty or rolled-back transaction",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.13bb8b0a23fc",
+          "stepId": "rollback-history-action",
+          "testName": "Factory journal-backed action history rolls back every applied staged sample without creating History",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "settle-staged-delivery",
+      "title": "Settle staged delivery",
+      "goal": "Publish the canonical staged sequence through a delivery-only handle and invalidate that handle after settlement.",
+      "stepIds": ["settle-staged-delivery"],
+      "cases": [
+        {
+          "id": "history.0764cc22eac9",
+          "stepId": "settle-staged-delivery",
+          "testName": "Factory journal-backed action history keeps progressive delivery on a delivery-only handle and one history action",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
+        },
+        {
+          "id": "history.289a5e2ab061",
+          "stepId": "settle-staged-delivery",
+          "testName": "Factory journal-backed action history rejects a stale delivery handle after its transaction settles",
+          "implementationPaths": [
+            "packages/factory/src/factory.ts",
+            "packages/factory/src/data-transact.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -49,7 +195,13 @@
       "title": "Incorrect inverse replay order",
       "expectedFailedCaseIds": [
         "replay.ordered-action",
-        "replay.staged-values"
+        "replay.staged-values",
+        "history.90c1fbd29755",
+        "history.7d96f5d33001",
+        "history.6c31100f5251",
+        "history.1dcdd4ddc7f6",
+        "history.62418a7b00e1",
+        "history.13bb8b0a23fc"
       ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
@@ -60,7 +212,17 @@
     {
       "id": "inverse-regression",
       "title": "Incorrect inverse value",
-      "expectedFailedCaseIds": ["replay.staged-values"],
+      "expectedFailedCaseIds": [
+        "replay.staged-values",
+        "history.694ddfd8f6f5",
+        "history.90c1fbd29755",
+        "history.7d96f5d33001",
+        "history.6c31100f5251",
+        "history.1dcdd4ddc7f6",
+        "history.62418a7b00e1",
+        "history.13bb8b0a23fc",
+        "history.99e545778d60"
+      ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
         "from": "inversePayload.after = (payload as { before?: unknown }).before",

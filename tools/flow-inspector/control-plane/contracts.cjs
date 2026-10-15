@@ -113,6 +113,19 @@ function admitContract(manifest, architecture) {
         manifest.defaultNegativeScenario === null,
       'Playwright is observation-only'
     )
+  if (Object.hasOwn(manifest, 'observationInputs')) {
+    requireCondition(
+      observationOnly,
+      'observation inputs require an observation contract'
+    )
+    unique(manifest.observationInputs, 'observation inputs')
+    requireCondition(
+      manifest.observationInputs.every(
+        (file) => canonicalRelativePath(file) && !/[?*[\]{}]/.test(file)
+      ),
+      'invalid observation input'
+    )
+  }
   const manifestPath = Object.hasOwn(manifest, 'manifestPath')
     ? manifest.manifestPath
     : MANIFEST_PATH
@@ -262,6 +275,14 @@ function admitContract(manifest, architecture) {
         selected.has(item.stepId) && nonempty(item.testName),
         'missing case mapping'
       )
+      if (Object.hasOwn(item, 'minimumParticipants'))
+        requireCondition(
+          observationOnly &&
+            Number.isInteger(item.minimumParticipants) &&
+            item.minimumParticipants > 0 &&
+            item.minimumParticipants <= 32,
+          'invalid participant count'
+        )
       if (Object.hasOwn(item, 'testFile'))
         requireCondition(
           observationOnly &&
@@ -469,6 +490,7 @@ function admitContract(manifest, architecture) {
     specPath: manifest.specPath,
     testFile: manifest.testFile,
     configFile: manifest.configFile,
+    observationInputs: [...(manifest.observationInputs ?? [])],
     digest: digest({ manifest, architecture }),
     runtimeScope: { ...runtimeScope, digest: digest(runtimeScope) },
     flows,

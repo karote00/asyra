@@ -339,7 +339,7 @@ test(
     assert.equal(failures.length, 8)
     assert.equal(
       failures.filter((item) => item.resolution === 'mapped').length,
-      2
+      8
     )
     await page.goto(server.origin + '/history-replay')
     const frame = page.frameLocator('iframe')
@@ -349,7 +349,7 @@ test(
     await expect(
       frame.locator('[data-step-id="replay-history-action"].is-selected')
     ).toHaveCount(1)
-    await expect(frame.locator('.observation-failed')).toHaveCount(1)
+    await expect(frame.locator('.observation-failed')).toHaveCount(3)
     const details = frame.locator('#test-result-detail')
     await expect(details).toContainText('packages/factory/src/data-transact.ts')
     const machine = await (

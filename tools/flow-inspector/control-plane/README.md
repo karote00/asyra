@@ -88,7 +88,7 @@ yarn workspace @asyra/asyra-design exec vitest run --environment jsdom --maxWork
 # Existing Factory transaction assertions and their source-owned config.
 node node_modules/vitest/vitest.mjs run --config packages/factory/src/__tests__/flow-proof.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
-# Existing Factory History replay assertions (all 14 cases; two mapped).
+# Existing Factory History replay assertions (all 14 cases mapped).
 node node_modules/vitest/vitest.mjs run --config packages/factory/src/__tests__/history-replay.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
 # Existing Design execution assertions (23 cases across seven nodes; no live model).
@@ -134,11 +134,10 @@ working tree is continuously verified. Old architecture versions never color
 new canvas nodes.
 
 The mapping scope includes the two Design shortcut cases, registered Factory
-transaction cases and two Factory journal-backed History replay cases. History
-observations cover whole-action order and staged inverse/forward values, not
-complete App state or rendering. The other twelve tests in that file are retained
-as unmapped observations. Its partial manifest is not an accepted-proof target:
-strict `prove` reports unregistered siblings as unexpected, even when skipped.
+transaction cases and all 14 Factory journal-backed History cases. History
+observations cover recording, rollback, staged-delivery settlement and replay,
+not complete App state or rendering. Exact mappings preserve the original two
+replay identities; mapping completeness alone grants no accepted baseline.
 The 23 existing Design execution cases map to request, compose, prepare, apply,
 inspect, settle and observe, with exact implementation locations. Their isolated
 config uses source entries and rejects undeclared workspace dependencies; no
@@ -1076,10 +1075,55 @@ architecture versions must match the canvas to select a node. Retained attachmen
 paths and SHA-256 digests are shown in the detail panel. No automatic GitHub
 fetch, remote command execution or delivery policy is added.
 
-Reports are bounded to 4 MiB; attachment copies are bounded to 64 MiB each and
+Reports are bounded to 4 MiB (32 MiB for collaboration); localized records
+retain their existing 32 MiB limit, with over-budget results explicitly unavailable; attachment copies are bounded to 64 MiB each and
 256 MiB per observation. Missing, unsupported or oversized input produces an
 explicit issue, never a passing result. Original producer reports and test-results
 are also uploaded, including when observation ingestion cannot admit them.
 Attachment paths outside the producer output directory or through symlinks are
 not read. Inline attachment bodies remain in the original JSON. Completed records
 and copied attachments survive later test-results cleanup.
+
+### Stage B - Collaboration and selected shared Framework scope
+
+The original collaboration configuration has 17 Chromium identities: 14 ordinary
+cases and three original high-detail/media opt-ins. All map to five declared
+operation nodes. Opt-in skips are unverified, not passes. The original command
+captures its own source/manifest before running and finalizes the same report:
+
+```bash
+yarn workspace @asyra/asyra-design test:e2e:collaboration
+```
+
+Its test-only readiness observation attaches the actual document, room and actor
+identity with the invocation UUID, test ID, project and retry. Missing or foreign
+attachments cannot clear a failure. An operation is an investigation entry point,
+not proof of which participant caused the failure. CI archives the original
+report, context, observations and Playwright output even when the command fails.
+The producer report limit is 32 MiB; the stored observation remains bounded at
+32 MiB after normalization. Over-budget evidence stays explicitly unavailable;
+the original producer file is not modified. Existing functional/status limits
+and attachment guards remain unchanged.
+
+Seven selected Framework configurations cover 87 original cases: Factory
+publication 9, Factory History 14, Render viewport 6, Pixi navigation 27, Preset
+navigation 11, Preset coverage 16 and Agent recipe 4. These are bounded contracts,
+not universal package or dependent coverage. Only original observed failures
+color nodes; a shared dependency never marks passing or unexecuted consumers
+failed. Partial recovery changes only rerun cases and keeps immutable history.
+
+The permanent stage tests support focused, explicit proof execution:
+
+```bash
+FLOW_COLLABORATION_PROOF=true node --test tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs
+FLOW_SHARED_FRAMEWORK_PROOF=true node --test --test-name-pattern='complete selected Framework' tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs
+FLOW_COLLABORATION_FULL_PROOF=true node --test --test-name-pattern='complete original collaboration command' tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs
+FLOW_PROOF_URL=http://127.0.0.1:4318 FLOW_COLLABORATION_SHARED_PROOF=true node --test --test-name-pattern='one shared Factory fault' tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs
+```
+
+The last proof applies one isolated Factory fault, runs the unchanged Framework
+and collaboration assertions, compares Board/API/CLI evidence, and demonstrates
+independent recovery and historical failures. It owns and closes its local
+services. Original product assertions and runtime sources are not weakened.
+After A/B acceptance, the agreed localization scope closes. Optional Stage C
+command buttons/comments require a separate request.

@@ -66,7 +66,8 @@ const data = {
       conditions: [
         'Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.',
         'Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.',
-        'Design Playwright ingestion selects the functional or isolated status source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures.',
+        'Design Playwright ingestion selects the functional, isolated status or collaboration source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures. Clean skips remain unverified without implying a failed invocation; Every collaboration exit settles the owned runner group before observation finalization, including descendants that outlive a successful leader.',
+        'Collaboration observations retain actual document/room/actor identities per run, original test identity, project and retry. Missing or mismatched participant evidence cannot establish recovery; joint failures never infer which actor caused them. Fingerprint declared observation input files separately from product ownership. Collaboration reports are bounded at 32 MiB; other Playwright reports retain 4 MiB. A localized envelope exceeding the existing 32 MiB storage limit becomes explicit unavailable evidence, without recovery authority; original producer output stays untouched.',
         'Retain atomic per-run records and reuse admitted read projections until files change.'
       ],
       bypasses: [
@@ -88,6 +89,14 @@ const data = {
         'tools/flow-inspector/control-plane/localization.cjs',
         'tools/flow-inspector/control-plane/vitest-reporter.mjs',
         'tools/flow-inspector/control-plane/playwright-results.cjs',
+        'scripts/run-collaboration-e2e.sh',
+        'scripts/ci-relationships.json',
+        'scripts/__tests__/ci-scope.test.mjs',
+        'apps/asyra-design/package.json',
+        'apps/asyra-design/e2e/collaboration-observation.ts',
+        'apps/asyra-design/e2e/collaboration.spec.ts',
+        'apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts',
+        'tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/playwright-results.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/playwright-results-fixture.cjs',
         'scripts/run-e2e.sh',
@@ -606,7 +615,7 @@ const data = {
       ],
       outputs: ['artifact:admitted-proof-contract'],
       conditions: [
-        'Explicit Playwright manifests admit observation-only exact case mappings with empty scenarios/negative obligations and no default negative scenario. Observation-only cases may select an exact canonical testFile within the repository; executable proof cases cannot override their suite file. Unknown runner kinds are rejected; ordinary proof manifests retain their existing Vitest contract.',
+        'Explicit Playwright manifests admit observation-only exact case mappings with empty scenarios/negative obligations and no default negative scenario. Observation-only cases may select an exact canonical testFile within the repository; executable proof cases cannot override their suite file. Observation-only manifests may declare unique canonical observation input files without globs and cases may require an integer participant count from 1 to 32. Unknown runner kinds are rejected; ordinary proof manifests retain their existing Vitest contract.',
         'A selected terminal step with no incoming artifact routes admits an explicit empty handoff list; steps with incoming routes still require every handoff. Optional case implementationPaths must be exact relative paths within the selected step boundary; projectName is an optional exact runner project identity.',
         'Retain the declared canonical product manifest path and require explicit loading to match it. Historical Factory manifests without a path retain their original identity. Negative transformations name exact runtime files in selected step implementation boundaries, never verification-role files, tests or escaped paths; actual runtime membership is checked independently by source admission before execution.',
         'Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.',
@@ -627,6 +636,7 @@ const data = {
       implementationBoundary: [
         'packages/factory/flow-contracts.json',
         'packages/factory/history-replay-flow-contracts.json',
+        'tools/flow-inspector/inspectors/history-replay-flow-inspector.data.cjs',
         'packages/render/navigation-flow-contracts.json',
         'packages/render/src/__tests__/navigation-flow.config.ts',
         'packages/preset/coverage-flow-contracts.json',
@@ -641,6 +651,10 @@ const data = {
         'apps/asyra-design/playwright-flow-contracts.json',
         'apps/asyra-design/playwright-functional-flow-contracts.json',
         'apps/asyra-design/playwright-status-flow-contracts.json',
+        'apps/asyra-design/playwright-collaboration-flow-contracts.json',
+        'tools/flow-inspector/inspectors/design-collaboration-flow-inspector.data.cjs',
+        'docs/ai/apps/asyra-design/specs/collaboration-failure-responsibilities.md',
+        'tools/flow-inspector/control-plane/__tests__/collaboration-results.test.cjs',
         'tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs',
         'docs/ai/apps/asyra-design/specs/functional-failure-responsibilities.md',
         'tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs',

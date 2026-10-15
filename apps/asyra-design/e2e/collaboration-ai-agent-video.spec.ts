@@ -1,3 +1,4 @@
+import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
 import {
   chromium,
   expect,
@@ -16,8 +17,7 @@ import {
   getPersistedDocumentCheckpoint,
   getUndoHistoryDepth,
   redo,
-  undo,
-  waitForAppReady
+  undo
 } from './test-utils'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
 

@@ -1,0 +1,273 @@
+{
+  "version": 2,
+  "runner": "playwright",
+  "manifestPath": "apps/asyra-design/playwright-collaboration-flow-contracts.json",
+  "targetId": "design-collaboration",
+  "architecturePath": "tools/flow-inspector/inspectors/design-collaboration-flow-inspector.data.cjs",
+  "specPath": "docs/ai/apps/asyra-design/specs/collaboration-failure-responsibilities.md",
+  "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+  "configFile": "apps/asyra-design/playwright.collaboration.config.ts",
+  "negativeCaseIds": [],
+  "externalInputs": [],
+  "workspaceSources": [
+    {
+      "name": "@asyra/asyra-design",
+      "inputs": ["src/**", "server/**"],
+      "entry": null
+    }
+  ],
+  "flows": [
+    {
+      "id": "collaboration-observe-session-state",
+      "title": "Observe session transitions",
+      "goal": "Publish connection transitions once without treating initial connection as recovery.",
+      "stepIds": ["observe-session-state"],
+      "cases": [
+        {
+          "id": "collaboration.53ef421b45ea",
+          "stepId": "observe-session-state",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "keeps only the initial none-to-connected transition silent",
+          "projectName": "chromium",
+          "minimumParticipants": 1,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/render-app/status-toast-stack.tsx"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "collaboration-recover-document-session",
+      "title": "Recover document session",
+      "goal": "Reconcile the file-scoped outbox against the authoritative checkpoint and generation while retaining local edits.",
+      "stepIds": ["recover-document-session"],
+      "cases": [
+        {
+          "id": "collaboration.c2714ac930be",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "does not replay a prior-generation removal after document Reset",
+          "projectName": "chromium",
+          "minimumParticipants": 1,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        },
+        {
+          "id": "collaboration.9cf96f5aab38",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "keeps the room live when a retained source publication cannot apply during recovery",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        },
+        {
+          "id": "collaboration.8acdca44e4e1",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "two real Asyra Design windows converge while connected and catch up through reconnect bootstrap",
+          "projectName": "chromium",
+          "minimumParticipants": 3,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "collaboration-publish-history-members",
+      "title": "Publish finite History members",
+      "goal": "Publish canonical finite members while preserving one local Undo and Redo action.",
+      "stepIds": ["publish-history-members"],
+      "cases": [
+        {
+          "id": "collaboration.177573d4138b",
+          "stepId": "publish-history-members",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "16-item server response publishes each finite member with one Undo and Redo entry",
+          "projectName": "chromium",
+          "minimumParticipants": 1,
+          "implementationPaths": ["packages/factory/src/data-transact.ts"]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "collaboration-apply-remote-publication",
+      "title": "Apply remote canonical publication",
+      "goal": "Validate received publications and apply canonical slices through Core without adding receiver History or echo publications.",
+      "stepIds": ["apply-remote-publication"],
+      "cases": [
+        {
+          "id": "collaboration.3f2d3af556ad",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts",
+          "testName": "proves the high-detail progressive CRDT correctness flow without generating media",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.2f979be7d124",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts",
+          "testName": "keeps two connected Actors converged through one complete high-detail cat Undo and Redo",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.eb7430a1f2a3",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts",
+          "testName": "records two live CRDT clients while Agent creates the same cat",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.346bc959eb44",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "16-item AI response converges through the ordinary two-actor publication path",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.b5b76954367b",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "320-item AI response converges through the ordinary cooperative two-actor path",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.28f190cab432",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "1,280-item cat prefix measures ordinary cooperative two-actor creation",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.03d7453c8d61",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "remote undo restores an exact nested Group with and without local tombstones",
+          "projectName": "chromium",
+          "minimumParticipants": 3,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.c1b6dd47b799",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "remote Group redo preserves exact hierarchy and world geometry",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.725d04270994",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "vector creation and anchor movement converge through the canonical collaboration pipeline",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.5df26618ce28",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "partial Fill updates preserve computed and UI fields on both peers through Undo and Redo",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    },
+    {
+      "id": "collaboration-forward-live-publication",
+      "title": "Forward live canonical publication",
+      "goal": "Forward committed document-channel publications while preserving immediate gesture frames and canonical order.",
+      "stepIds": ["forward-live-publication"],
+      "cases": [
+        {
+          "id": "collaboration.2c9f508bc240",
+          "stepId": "forward-live-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "mouse-down create and drag frames reach peer canonical state before pointer-up",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/factory-adapter.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        },
+        {
+          "id": "collaboration.5d672d94c3ba",
+          "stepId": "forward-live-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "pen drag-to-add publishes real topology and curve frames before pointer-up",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/factory-adapter.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
+        }
+      ],
+      "handoffs": []
+    }
+  ],
+  "defaultNegativeScenario": null,
+  "scenarios": [],
+  "observationInputs": ["apps/asyra-design/e2e/collaboration-observation.ts"]
+}

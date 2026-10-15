@@ -42,7 +42,11 @@
         "apps/asyra-design/e2e/collaboration.spec.ts",
         "apps/asyra-design/e2e/collaboration-ai-agent-video.spec.ts"
       ],
-      "supportInputs": ["apps/asyra-design/e2e/**", "scripts/run-e2e.sh"],
+      "supportInputs": [
+        "apps/asyra-design/e2e/**",
+        "scripts/run-e2e.sh",
+        "scripts/run-collaboration-e2e.sh"
+      ],
       "localCommand": {
         "executable": "yarn",
         "args": [
@@ -255,6 +259,7 @@
         "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
         "docs/ai/tools/flow-inspector/CORE_PROOF.md",
         "scripts/run-e2e.sh",
+        "scripts/run-collaboration-e2e.sh",
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
         "docs/ai/workflows/local-affected-validation.md",
