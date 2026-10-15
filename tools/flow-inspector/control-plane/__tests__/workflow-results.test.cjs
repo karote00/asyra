@@ -1384,7 +1384,39 @@ test('workflow waits on reusable producers and always collects after failed test
   assert.doesNotMatch(validateEnvironment, /FLOW_/)
   assert.match(e2e, /workflow_call:/)
   assert.doesNotMatch(e2e.split('permissions:')[0], /pull_request:/)
-  assert.equal((e2e.match(/if: \$\{\{ always\(\) \}\}/g) || []).length, 2)
+  for (const name of [
+    'Collect Design flow results',
+    'Collect collaboration flow results',
+    'Localize original Design results',
+    'Retain Design observation evidence'
+  ]) {
+    const step = e2e
+      .split('      - name: ' + name + '\n')[1]
+      ?.split('      - name: ')[0]
+    assert.ok(step, name)
+    assert.match(step, /if: \$\{\{ always\(\) \}\}/, name)
+  }
+  assert.ok(
+    e2e.indexOf('name: Capture Design observation source') <
+      e2e.indexOf('name: Run E2E Tests')
+  )
+  assert.match(e2e, /playwright-results\.cjs begin tmp\/flow-ci\/design\.json/)
+  assert.match(
+    e2e,
+    /playwright-results\.cjs complete tmp\/flow-ci\/design\.json/
+  )
+  assert.match(e2e, /tmp\/flow-inspector\/test-results\//)
+  for (const name of ['Capture Design observation source', 'Run E2E Tests']) {
+    const step = e2e
+      .split('      - name: ' + name + '\n')[1]
+      .split('      - name: ')[0]
+    assert.match(
+      step,
+      /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
+    )
+  }
+  assert.match(main, /localization-runtime,playwright-results,snapshot/)
+
   assert.match(e2e, /workflow-results.cjs collect design/)
   assert.match(e2e, /workflow-results.cjs collect collaboration/)
 })

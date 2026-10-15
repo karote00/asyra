@@ -1015,3 +1015,54 @@ complete preview, source difference, trusted Changeset, bounded work result and
 integration result before using the existing explicit confirmation. A stale target,
 new attempt, changed assessment, revoked task or unavailable source requires a fresh
 eligible assessment and preview; the service never selects a replacement.
+
+### Design Playwright result ingestion
+
+The functional Design CI job now retains the original Playwright JSON as ordinary
+observation evidence. It captures the source and mapping before the existing
+`bash scripts/run-e2e.sh` invocation, then finalizes even after a failed command.
+It does not rerun tests or change the existing workflow-results aggregate.
+
+The initial mapping is the unchanged Chromium single-selection Delete case in
+`e2e/delete-element.spec.ts`. Its responsibility node is `design-deletion` /
+`delete-selected-element`; other cases remain explicitly unmapped. This mapping
+is observation-only and cannot run through the Vitest proof dispatcher.
+
+For a local functional run, choose a new report path each time and retain the
+original command's exit status:
+
+```bash
+export E2E_SUITE=functional
+export FLOW_CI_REPORT="$PWD/tmp/flow-ci/design-local-1.json"
+node tools/flow-inspector/control-plane/playwright-results.cjs begin "$FLOW_CI_REPORT" || exit $?
+set +e
+bash scripts/run-e2e.sh
+result=$?
+node tools/flow-inspector/control-plane/playwright-results.cjs complete "$FLOW_CI_REPORT"
+exit "$result"
+```
+
+Inspect the returned observation UUID with `cli.cjs test-results <run-id>`, or
+open `/design-deletion` on the existing local Board. The same record includes
+original error text, runner version, project identity, attempts, source
+fingerprints and CI repository/base/head/integration/run/attempt when present.
+The Board removes terminal styling only for presentation. It does not infer a
+root cause or execute a repair. Failed retries remain failures until a later
+clean invocation; incomplete or source-stale observations cannot clear failures.
+
+CI uploads `design-observations-<run>-<attempt>` with a seven-day retention period.
+Download that artifact into the repository root, preserving its directory layout,
+so JSON records and their UUID-owned attachment directories are under
+`tmp/flow-inspector/test-results/`. The existing reader can then inspect them;
+this does not authenticate downloaded evidence or accept conformance. Recorded
+architecture versions must match the canvas to select a node. Retained attachment
+paths and SHA-256 digests are shown in the detail panel. No automatic GitHub
+fetch, remote command execution or delivery policy is added.
+
+Reports are bounded to 4 MiB; attachment copies are bounded to 64 MiB each and
+256 MiB per observation. Missing, unsupported or oversized input produces an
+explicit issue, never a passing result. Original producer reports and test-results
+are also uploaded, including when observation ingestion cannot admit them.
+Attachment paths outside the producer output directory or through symlinks are
+not read. Inline attachment bodies remain in the original JSON. Completed records
+and copied attachments survive later test-results cleanup.

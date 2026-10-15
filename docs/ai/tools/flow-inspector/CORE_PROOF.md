@@ -2361,3 +2361,36 @@ failures per step, unknown tests, in-flight edits, unavailable reports, setup
 errors, independent scopes and retained history; Board/machine equality and
 unchanged-poll read counts. The test runner and package runtime remain their
 existing owners. New result-source integrations are outside this milestone.
+
+### Design Playwright Observations
+
+The Design functional runner may retain its original Playwright JSON alongside
+ordinary observations. Its manifest declares `runner: "playwright"`, exact
+repository test file, full describe/test title and project. It has no proof
+scenarios; the proof runner must refuse it before execution. This is an
+observation mapping, not a new accepted verification target.
+
+The initial case maps single-selection Delete to the Design deletion feature's
+responsibility boundary. Setup and unknown failures are retained without invented
+product ownership. All retries and repeat executions remain original evidence;
+a failed attempt remains visible even when a retry passes. Only a subsequent
+clean invocation can clear it. Missing output, malformed results, interruption,
+skips and unexpected passes cannot establish recovery.
+
+Capture source and mappings before the invocation and retain CI repository,
+base/head/integration/run/attempt plus original report, errors and attachment
+references. Archive original report and test-results with observations in CI.
+Matching fingerprints establish observed integrity, not authenticity or complete
+runtime provenance. Imported observations retain their recorded architecture and
+source; readers must not remap them to current code. Existing Board/API/CLI share
+the same records. No CI policy, delivery permission or automatic execution is
+introduced.
+
+Original attachment references remain in the report; available file attachments
+are copied once into the observation UUID directory with their size and SHA-256.
+Later runs cannot overwrite them. Missing, symlinked or out-of-output references
+remain explicit issues. Reports above 4 MiB, attachments above 64 MiB each or
+256 MiB total are unsupported and never become passing evidence. CI retains the
+original producer output alongside observations. Source-stale passing records
+cannot retire prior failures. Read-only display may remove terminal styling;
+retained report/error bytes remain original.

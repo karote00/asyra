@@ -681,3 +681,93 @@ The user separately activated [local isolated agent execution](../AGENT_EXECUTIO
 while retaining all deferred Phase 4 enforcement requirements. Earlier statements
 that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
 decision grants no merge, publication, protection or Phase 6 authority.
+
+## Selected Design Playwright results - 2026-10-15
+
+Activated from merged PR #329, base `efbd96ab0999940851d8bb5ebd254a4ad9309b2d`.
+The producer is the existing functional Design invocation in `scripts/run-e2e.sh`
+and its original Playwright JSON report (`FLOW_CI_REPORT`). Preserve that run;
+do not execute a second suite to obtain localization data. The initial exact
+mapping is Chromium's `Delete Selected Element Delete key removes the single
+selected element` in `apps/asyra-design/e2e/delete-element.spec.ts`. Other cases
+remain visible and unmapped. The deletion feature is an investigation entry,
+not a claim that an E2E failure proves a defect in that feature.
+
+Plan review: the existing workflow-results collector is a bounded CI aggregate,
+not a lossless test report. Preserve its behavior and consume the original JSON
+separately at the existing localization owner. Capture mapping and source before
+execution; retain report, runner/project/retry/repeat identities and CI repository,
+base/head/integration/run/attempt. Finalize even when the test command fails.
+Keep failed retry attempts visible until a later clean invocation. Missing output,
+setup errors, interrupted, skipped and malformed cases cannot establish recovery.
+A report from another source or changed mapped input cannot claim a current node.
+Retain original attachment references and archive the original test-results with
+CI observations; unavailable bytes must be explicit, never fabricated.
+
+The mapping is observation-only and cannot be executed by the Vitest proof
+runner. Reuse manifest admission and exact architecture responsibility, with an
+explicit runner contract. No new accepted baseline, source authenticity claim,
+remote dispatcher, automatic downloader, diagnostic inference or product change.
+Read API/CLI and Board consume the same retained record and source identity.
+
+Execution cards (reread each matching Inspector step before its segment):
+
+1. `admit-proof-contract`: inputs are the existing deletion behavior, unchanged
+   Playwright case and source boundary; output is an observation-only manifest
+   and deletion responsibility architecture. Extend contract admission and proof
+   runner refusal, their tests, catalog and direct docs. No product runtime edits.
+   Verify exact identity, paths, admission and refusal before ingestion work.
+2. `localize-test-results`: inputs are the pre-execution source/mapping context
+   and original JSON; output is immutable ordinary observation evidence. Extend
+   localization, a Design Playwright adapter, existing CI/script wiring and tests.
+   Normalize once per completed invocation; existing reader owns cached admission.
+   Test failures/retries, unknown/duplicate cases, malformed/missing reports,
+   setup/interruption, source change, partial/full recovery and immutable history.
+   Preserve original report and error fields. Do not infer omitted values or nodes.
+3. `render-proof-board`: show producer/run identity and retained attempt context
+   alongside current original errors; use existing API, CLI and canvas. Extend
+   formal Board tests with received Playwright evidence and inspect desktop/narrow
+   screenshots. No commands, comments, new dashboard or client-side mapping.
+
+Frozen mutation scope is these tool owners, their tests, Design observation
+manifest, CI/script wiring and direct contracts/docs/catalog/Changeset. Discovery
+is limited to the selected producer, admission, source capture, direct readers,
+renderer and their regression suites. Stop for unresolved source identity or
+ownership, dropped failures, required out-of-scope product fixes, or unavailable
+required gates. Preserve Vitest and existing CI aggregate behavior on the same
+source. Gates: adapter and real Playwright report generation; original selected
+Design baseline/failure/recovery; full control-plane/Board suites, package tests,
+core proof/candidate, naming, scope/placement, lint/format/typecheck/build,
+generated catalog, diff review and exact-head Changeset admission.
+
+Next-stage objective: expand exact mappings within the retained Design report
+only after this producer's failure-to-node path is proven; then evaluate the
+separate collaboration producer. Commands and comments remain deferred.
+
+Fixture feasibility revision: the isolated browser proof must copy the App's
+CSS configuration as well as source, server and test inputs. Initial attempts
+stopped at an over-anchored Playwright grep and a missing Tailwind config before
+reaching the product assertion. Keep the unchanged ordinary config/case, bounded
+PID-owned Vite/document/collaboration services and explicit ports. Resolve the
+actual startup input closure before retrying; do not patch App startup or test
+assertions. This refines test setup inside the same selected producer scope.
+
+Local completion: the unchanged Chromium Delete case passed, failed under an
+isolated deletion fault at the declared node, then passed after restoration.
+Original report/error representations, retry identities and copied attachment
+bytes survive recovery; API and CLI return the Board's same record. Permanent
+negative tests cover missing/malformed output, foreign configuration/source,
+ambiguous identities, CI identity mismatch and unavailable artifacts. Review
+fixed stale passing records retiring failures, omitted primary error stacks,
+malformed-identity failure loss and incomplete CI rerun context. The existing
+Vitest presentation and CI aggregate remain unchanged.
+
+Full control-plane: 537 passed, two conditional skips. Full Board: 26 passed,
+two retained-live-evidence skips. Desktop, narrow and expanded-attempt screenshots
+were inspected. Package tests (12 React and 100 contracts), naming (15), CI scope/
+placement (68), lint, formatting, typecheck, generated catalog and the 21-task
+build passed. Original core proof/candidate retained three flows, five negative
+scenarios and nine obligations. Final focused producer/workflow checks cover the
+last CI context correction. Required exact-head Changeset admission and remote
+publication are recorded with the PR; remote CI remains separate from local
+completion. The broader support plan is still open for its next bounded slice.

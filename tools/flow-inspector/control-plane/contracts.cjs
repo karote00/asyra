@@ -98,6 +98,21 @@ const freeze = (value) => {
 
 function admitContract(manifest, architecture) {
   requireCondition(manifest?.version === 2, 'unsupported mapping version')
+  const runner = Object.hasOwn(manifest, 'runner') ? manifest.runner : 'vitest'
+  requireCondition(
+    ['vitest', 'playwright'].includes(runner),
+    'unsupported runner'
+  )
+  const observationOnly = runner === 'playwright'
+  if (observationOnly)
+    requireCondition(
+      Array.isArray(manifest.negativeCaseIds) &&
+        manifest.negativeCaseIds.length === 0 &&
+        Array.isArray(manifest.scenarios) &&
+        manifest.scenarios.length === 0 &&
+        manifest.defaultNegativeScenario === null,
+      'Playwright is observation-only'
+    )
   const manifestPath = Object.hasOwn(manifest, 'manifestPath')
     ? manifest.manifestPath
     : MANIFEST_PATH
@@ -330,17 +345,18 @@ function admitContract(manifest, architecture) {
     cases.map((item) => item.testName),
     'test names'
   )
-  unique(manifest.negativeCaseIds, 'negative proof cases')
+  if (!observationOnly) unique(manifest.negativeCaseIds, 'negative proof cases')
   requireCondition(
     manifest.negativeCaseIds.every((id) =>
       cases.some((item) => item.id === id)
     ),
     'unknown negative proof case'
   )
-  unique(
-    manifest.scenarios?.map((scenario) => scenario.id),
-    'scenario ids'
-  )
+  if (!observationOnly)
+    unique(
+      manifest.scenarios?.map((scenario) => scenario.id),
+      'scenario ids'
+    )
   const selectedStepIds = new Set(
     manifest.flows.flatMap((flow) => flow.stepIds)
   )
@@ -398,12 +414,13 @@ function admitContract(manifest, architecture) {
     }
   })
   requireCondition(
-    scenarios.some((scenario) => scenario.id === 'baseline') &&
-      scenarios.some(
-        (scenario) =>
-          scenario.id === manifest.defaultNegativeScenario &&
-          scenario.id !== 'baseline'
-      ),
+    observationOnly ||
+      (scenarios.some((scenario) => scenario.id === 'baseline') &&
+        scenarios.some(
+          (scenario) =>
+            scenario.id === manifest.defaultNegativeScenario &&
+            scenario.id !== 'baseline'
+        )),
     'missing registered scenario'
   )
   for (const key of [
@@ -430,6 +447,7 @@ function admitContract(manifest, architecture) {
     )
   return freeze({
     version: manifest.version,
+    runner,
     definition: structuredClone(manifest),
     architectureDefinition: structuredClone(architecture),
     mappingVersion: digest(manifest),

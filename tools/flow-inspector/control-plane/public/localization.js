@@ -25,7 +25,11 @@
       }
       // eslint-disable-next-line no-control-regex
       const terminalStyles = /\u001b\[[0-9;]*m/g
-      const appendFailureDetails = (container, errors) => {
+      const appendFailureDetails = (
+        container,
+        errors,
+        stripTerminal = false
+      ) => {
         if (!errors?.length)
           container.append(
             node('p', 'Structured assertion details were not recorded.')
@@ -51,7 +55,8 @@
             )
             // Remove terminal styling only in presentation; retain original evidence.
             const text =
-              key === 'diff'
+              key === 'diff' ||
+              (stripTerminal && ['message', 'stack'].includes(key))
                 ? error[key].replace(terminalStyles, '')
                 : error[key]
             const value = node('pre', text)
@@ -174,7 +179,9 @@
               'Test: ' + item.file,
               'Project: ' + (item.projectName || '(default)'),
               'Original failure:',
-              ...item.failures,
+              ...item.failures.map((text) =>
+                item.runnerDetails ? text.replace(terminalStyles, '') : text
+              ),
               ...item.locations.flatMap((location) => [
                 'Flow: ' + location.flowId,
                 'Step: ' + location.stepId,
@@ -208,7 +215,50 @@
             ].join('\n')
           )
           details.append(pre)
-          appendFailureDetails(details, item.failureDetails)
+          appendFailureDetails(
+            details,
+            item.failureDetails,
+            Boolean(item.runnerDetails)
+          )
+          if (item.runnerDetails) {
+            const attempts = node('details')
+            attempts.append(
+              node(
+                'summary',
+                'Playwright attempts and original runner context'
+              ),
+              node('pre', item.runnerDetails)
+            )
+            details.append(
+              node(
+                'p',
+                'Runner: Playwright - ' +
+                  (record.report?.config?.version || 'version unavailable')
+              ),
+              attempts
+            )
+          }
+          if (record.retainedArtifacts?.length) {
+            details.append(node('h5', 'Retained run artifacts'))
+            for (const artifact of record.retainedArtifacts)
+              details.append(
+                node(
+                  'pre',
+                  [
+                    artifact.name,
+                    'File: ' + artifact.retainedPath,
+                    'SHA-256: ' + artifact.digest,
+                    'Bytes: ' + artifact.size
+                  ].join('\n')
+                )
+              )
+            details.append(
+              node(
+                'p',
+                'Artifact bytes are retained with this observation. CI downloads must preserve the artifact directory alongside the JSON record.'
+              )
+            )
+          }
           const evidence = node('a', 'Open retained report and context')
           evidence.href = '/api/test-results/' + record.id
           evidence.target = '_blank'

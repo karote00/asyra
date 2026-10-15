@@ -244,6 +244,8 @@ async function runVerification({
   onSpawn,
   processRunner = runProcess
 }) {
+  if (contract.runner === 'playwright')
+    throw new Error('Playwright contracts are observation-only')
   if (!contract.scenarios.some((item) => item.id === scenario))
     throw new Error('Unknown proof scenario')
   const requireFromRepository = createRequire(

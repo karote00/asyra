@@ -839,3 +839,111 @@ test(
     t.diagnostic('Coverage Board evidence: ' + fixture.directory)
   }
 )
+
+test(
+  'original Design Playwright failure exposes identical source, attempts and retained artifacts on the Board',
+  { timeout: 150000 },
+  async (t) => {
+    const { playwrightFixture } = require('./playwright-results-fixture.cjs')
+    const { observationDirectory } = require('../localization.cjs')
+    const fixture = await playwrightFixture(t)
+    fixture.fault()
+    const fault = await fixture.run()
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.equal(fault.record.cases[0].resolution, 'mapped')
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR =
+      process.env.RUNNER_TEMP || path.join(fixture.repository, 'browser')
+    let server, browser
+    t.after(async () => {
+      await browser?.close()
+      await server?.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    })
+    server = await startServer(path.resolve(__dirname, '../../../..'), {
+      url: process.env.FLOW_PROOF_URL,
+      serviceOptions: {
+        directory: path.join(fixture.repository, 'proof-runs'),
+        observationPath: observationDirectory(fixture.repository)
+      }
+    })
+    browser = await chromium.launch({
+      channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
+      downloadsPath: path.join(fixture.repository, 'browser')
+    })
+    const page = await browser.newPage({
+      viewport: { width: 1800, height: 1200 }
+    })
+    const errors = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto(server.origin + '/design-deletion')
+    const frame = page.frameLocator('iframe')
+    await expect(frame.locator('#test-result-failures button')).toHaveCount(1)
+    await frame.locator('#test-result-failures button').click()
+    await expect(
+      frame.locator(
+        '[data-step-id="delete-selected-element"].is-selected.observation-failed'
+      )
+    ).toHaveCount(1)
+    const machine = await (
+      await fetch(server.origin + '/api/test-results/' + fault.record.id)
+    ).json()
+    assert.deepEqual(machine, fault.record)
+    const { main } = require('../cli.cjs')
+    const cliOutput = []
+    assert.equal(
+      await main(['--url', server.origin, 'test-results', fault.record.id], {
+        write: (value) => cliOutput.push(value)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(cliOutput.join('')), machine)
+    await expect(frame.locator('#test-result-detail')).toContainText(
+      // eslint-disable-next-line no-control-regex
+      machine.cases[0].failures[0].replace(/\x1b\[[0-9;]*m/g, '')
+    )
+    await expect(frame.locator('#test-result-detail')).toContainText(
+      'Playwright attempts and original runner context'
+    )
+    await expect(frame.locator('#test-result-detail')).toContainText(
+      machine.cases[0].runnerDetails
+    )
+    await expect(frame.locator('#test-result-detail')).toContainText(
+      machine.retainedArtifacts[0].retainedPath
+    )
+    await page.screenshot({
+      path: path.join(fixture.repository, 'board-desktop.png'),
+      fullPage: true
+    })
+    const attempts = frame.locator('#test-result-detail details')
+    await attempts.locator('summary').click()
+    await attempts.scrollIntoViewIfNeeded()
+    await expect(attempts.locator('pre')).toBeVisible()
+    await page.screenshot({
+      path: path.join(fixture.repository, 'board-attempts.png'),
+      fullPage: true
+    })
+    await page.setViewportSize({ width: 850, height: 1100 })
+    await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+    await frame.locator('#test-result-controls').scrollIntoViewIfNeeded()
+    await expect(frame.locator('#test-result-detail')).toBeVisible()
+    await page.screenshot({
+      path: path.join(fixture.repository, 'board-narrow.png'),
+      fullPage: true
+    })
+    fixture.restore()
+    const recovery = await fixture.run()
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    await expect(frame.locator('#test-result-failures button')).toHaveCount(0)
+    await expect(frame.locator('.observation-failed')).toHaveCount(0)
+    await frame.locator('#test-result-history').selectOption(fault.record.id)
+    await expect(frame.locator('#test-result-failures button')).toHaveCount(1)
+    await frame.locator('#test-result-failures button').click()
+    await expect(frame.locator('#test-result-detail')).toContainText(
+      machine.cases[0].runnerDetails
+    )
+    assert.deepEqual(errors, [])
+    t.diagnostic('Playwright Board evidence: ' + fixture.repository)
+  }
+)
