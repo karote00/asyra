@@ -1023,9 +1023,13 @@ observation evidence. It captures the source and mapping before the existing
 `bash scripts/run-e2e.sh` invocation, then finalizes even after a failed command.
 It does not rerun tests or change the existing workflow-results aggregate.
 
-The initial mapping is the unchanged Chromium single-selection Delete case in
-`e2e/delete-element.spec.ts`. Its responsibility node is `design-deletion` /
-`delete-selected-element`; other cases remain explicitly unmapped. This mapping
+The mapping selects six unchanged Chromium cases in `e2e/delete-element.spec.ts`:
+Delete, Backspace, no selection, path-editing mode, mode enabled without an
+editing vector, and mode disabled with an editing vector. Each exact full title
+resolves to target `design-deletion`, step `delete-selected-element`, with its
+retained implementation entries. Other cases and foreign projects remain
+explicitly unmapped. A passing sibling does not clear a different failing case
+on the same node. Historical observations retain their original mapping. This
 is observation-only and cannot run through the Vitest proof dispatcher.
 
 For a local functional run, choose a new report path each time and retain the

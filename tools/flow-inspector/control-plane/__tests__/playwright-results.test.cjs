@@ -72,6 +72,114 @@ function locate(input, ctx = context()) {
   const normalized = normalizeReport(root, ctx, input)
   return localizeReport(root, ctx, normalized.report, normalized.options)
 }
+test('expanded Design cases require exact file, full title and project while siblings stay unresolved', () => {
+  for (const item of contract.cases) {
+    const input = report()
+    const spec = input.suites[0].suites[0].specs[0]
+    spec.title = item.testName.replace('Delete Selected Element ', '')
+    const mapped = locate(input).cases[0]
+    assert.equal(mapped.resolution, 'mapped', item.id)
+    assert.equal(mapped.locations[0].caseId, item.id)
+    assert.deepEqual(
+      mapped.locations[0].implementationPaths,
+      item.implementationPaths
+    )
+    for (const change of ['file', 'title', 'project']) {
+      const other = structuredClone(input)
+      const changed = other.suites[0].suites[0].specs[0]
+      if (change === 'file') changed.file = 'selection.spec.ts'
+      if (change === 'title') changed.title += ' renamed'
+      if (change === 'project') changed.tests[0].projectName = 'firefox'
+      const unresolved = locate(other)
+      assert.equal(
+        unresolved.cases[0].resolution,
+        'unmapped',
+        item.id + ' ' + change
+      )
+      assert.equal(unresolved.cases[0].status, 'failed')
+      assert.deepEqual(unresolved.report, other)
+    }
+    spec.tests.push(structuredClone(spec.tests[0]))
+    assert.ok(
+      locate(input).cases.every((entry) => entry.resolution === 'ambiguous')
+    )
+  }
+  const unknown = report()
+  unknown.suites[0].suites[0].specs[0].title =
+    'delete action supports undo and redo'
+  assert.equal(locate(unknown).cases[0].resolution, 'unmapped')
+})
+
+test(
+  'six unchanged Design cases preserve shared-node failures through partial and complete recovery',
+  { timeout: 210000 },
+  async (t) => {
+    const { playwrightFixture } = require('./playwright-results-fixture.cjs')
+    const {
+      createObservationReader,
+      observationDirectory
+    } = require('../localization.cjs')
+    const fixture = await playwrightFixture(t)
+    const ids = contract.cases.map((item) => item.id)
+    const baseline = await fixture.run(ids)
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.deepEqual(
+      baseline.record.cases.map((item) => item.locations[0]?.caseId).sort(),
+      [...ids].sort()
+    )
+    assert.ok(
+      baseline.record.cases.every(
+        (item) => item.status === 'passed' && item.resolution === 'mapped'
+      )
+    )
+    fixture.fault()
+    const failures = []
+    for (const id of ['design.delete', 'design.backspace']) {
+      const observed = await fixture.run([id])
+      assert.equal(observed.result.code, 1, observed.result.output)
+      assert.equal(observed.record.cases.length, 1)
+      assert.equal(observed.record.cases[0].status, 'failed')
+      assert.equal(observed.record.cases[0].locations[0].caseId, id)
+      failures.push(observed.record)
+    }
+    const reader = createObservationReader(
+      observationDirectory(fixture.repository)
+    )
+    const failedIds = () =>
+      reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed')
+        .map((item) => item.locations[0].caseId)
+        .sort()
+    assert.deepEqual(failedIds(), ['design.backspace', 'design.delete'])
+    fixture.restore()
+    const partial = await fixture.run(['design.backspace'])
+    assert.equal(partial.result.code, 0, partial.result.output)
+    assert.deepEqual(failedIds(), ['design.delete'])
+    fixture.fault('path-mode')
+    const guard = await fixture.run(['design.delete-path-mode-without-vector'])
+    assert.equal(guard.result.code, 1, guard.result.output)
+    assert.equal(guard.record.cases[0].status, 'failed')
+    assert.equal(
+      guard.record.cases[0].locations[0].caseId,
+      'design.delete-path-mode-without-vector'
+    )
+    failures.push(guard.record)
+    assert.deepEqual(failedIds(), [
+      'design.delete',
+      'design.delete-path-mode-without-vector'
+    ])
+    fixture.restore()
+    const recovery = await fixture.run(ids)
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.cases.length, ids.length)
+    assert.deepEqual(failedIds(), [])
+    for (const record of failures)
+      assert.deepEqual(reader.get(record.id), record)
+    t.diagnostic('Expanded Design evidence: ' + fixture.repository)
+  }
+)
+
 test('Design original report preserves a failed retry, errors and exact node through existing localization', () => {
   const input = report()
   const results = input.suites[0].suites[0].specs[0].tests[0].results
@@ -286,6 +394,36 @@ function observationFixture(t) {
     }
   }
 }
+
+test('new case mappings never retroactively resolve an earlier unmapped observation', (t) => {
+  const fs = require('node:fs')
+  const fixture = observationFixture(t)
+  const manifestPath = path.join(fixture.repository, contract.manifestPath)
+  const current = fs.readFileSync(manifestPath, 'utf8')
+  const previous = JSON.parse(current)
+  previous.flows[0].cases = previous.flows[0].cases.filter(
+    (item) => item.id === 'design.delete'
+  )
+  fs.writeFileSync(manifestPath, JSON.stringify(previous))
+  const input = report()
+  input.suites[0].suites[0].specs[0].title =
+    'Backspace key removes the single selected element'
+  const original = fixture.start().finish(input)
+  assert.equal(original.cases[0].resolution, 'unmapped')
+  fs.writeFileSync(manifestPath, current)
+  const next = fixture.start().finish(input)
+  assert.equal(next.cases[0].resolution, 'mapped')
+  assert.equal(next.cases[0].locations[0].caseId, 'design.backspace')
+  const {
+    createObservationReader,
+    observationDirectory
+  } = require('../localization.cjs')
+  const reader = createObservationReader(
+    observationDirectory(fixture.repository)
+  )
+  assert.deepEqual(reader.get(original.id), original)
+  assert.deepEqual(reader.get(next.id), next)
+})
 
 test('structurally incomplete reports cannot retire failures regardless of traversal order', (t) => {
   const fixture = observationFixture(t)

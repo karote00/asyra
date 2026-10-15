@@ -780,3 +780,83 @@ adapter now withholds recovery when traversal or attachment retention is
 incomplete, preserves original failures and reports, and still permits a later
 complete clean invocation to retire the failure without rewriting history.
 The selected mapping and next-stage scope remain unchanged.
+
+## Selected Design deletion case mappings - 2026-10-15
+
+Activated from merged PR #330 at `5fe936e745087966674914cd29b31ea4aea006e9`.
+This bounded expansion maps six existing Chromium cases in
+`apps/asyra-design/e2e/delete-element.spec.ts` to the existing
+`design-deletion` / `delete-selected-element` responsibility. Preserve the
+original `design.delete` identity and add exact identities for Backspace,
+no selection, path-editing mode, mode enabled without an editing vector, and
+mode disabled with an editing vector. The mapping is an investigation entry,
+not a root-cause verdict or complete dependency attribution.
+
+Design review: the current feature owns all selected eligibility decisions and
+routes both keyboard deletion shortcuts through the same element API. Its
+existing Inspector already declares those inputs, execution condition, bypasses
+and source boundary. No new runtime step or collector is needed. The original
+report normalizer retains full test titles/projects; admission and localization
+already support multiple exact cases on one node. Readers reuse immutable
+records, and the Board consumes those records without remapping. Preserve old
+observations and mapping digests; do not retroactively resolve unknown history.
+
+Do not map the other tests merely because they share a file. Group deletion,
+undo/redo, validation rollback, hover behavior and vector-point splitting need
+separately reviewed responsibility boundaries. No product code, test assertions,
+CI policy, result adapter, commands, comments or collaboration ingestion changes
+are authorized by this slice. Exact filename, full title and project remain
+mandatory. Unknown, renamed, duplicate and foreign-project results retain their
+existing explicit unresolved semantics.
+
+Execution cards:
+
+1. `admit-proof-contract`: consume the unchanged six product cases, deletion
+   feature/spec and existing Inspector. Extend only the observation manifest,
+   admission tests and direct documentation. The existing no-scenario runner
+   refusal and implementation-boundary checks remain mandatory. Admission must
+   retain six unique exact identities without widening to the entire file.
+2. `localize-test-results`: consume original reports captured before execution;
+   extend the permanent isolated Playwright fixture and its tests, not the
+   production adapter. Run all six unchanged cases, inject bounded deletion and
+   path-mode faults into the copied canonical feature, prove original failed
+   assertions resolve to the existing node, then prove per-case partial and full
+   recovery while preserving original reports and history. Keep runner fail-fast,
+   process ownership, timeout and output guards; do not disable them to get a
+   complete report. Use separate original invocations when failures stop a run.
+   Verify exact identity rejection and unmapped siblings using received reports.
+3. `render-proof-board`: extend the existing browser proof to cover the new
+   Backspace mapping as well as Delete, using the same retained API/CLI records.
+   Inspect desktop/narrow screenshots and test historical recovery. No UI-side
+   mapping, new controls or renderer changes.
+
+Mutation scope is the selected manifest, those existing test/fixture owners,
+direct docs and a tool Changeset. Discovery is limited to the selected cases,
+canonical deletion owner, admission/localization and read consumers. Existing
+source capture, runner and caching contracts remain unchanged. Stop for a new
+product defect, missing ownership, unavailable required gate or mapping that
+requires a different producer contract. Gates: naming before/after identifiers;
+manifest admission, exact identity negatives, real baseline/fault/partial/full
+recovery, full control-plane and Board, package tests, lint/format/typecheck,
+Design/service builds, CI scope/placement, original core proof/candidate,
+generated catalog consistency, task-context and exact-head Changeset admission.
+
+Next-stage objective: select additional Design feature owners and their exact
+case sets before expanding across test files; evaluate collaboration as a
+separate producer afterward. Buttons and comments remain deferred.
+
+Local completion: all six unchanged Chromium cases passed. Isolated Delete,
+Backspace and path-mode faults produced original failed assertions at the
+existing responsibility node. A Backspace-only recovery retained the Delete
+failure; a later full recovery preserved all historical records. Exact-identity
+negative tests and the old-unmapped/new-mapped history case passed. Both Delete
+and Backspace Board tests matched API/CLI records; desktop and narrow Backspace
+screenshots were inspected. No product or production adapter repair was needed.
+
+Full control-plane: 542 passed, two conditional skips. Full Board: 27 passed,
+two retained external-evidence skips. Package tests (12 React and 100 contracts),
+naming (15), scope/placement (68), lint, formatting, typecheck, the 21-task build,
+both Design service builds and unchanged generated catalog passed. Original
+core proof/candidate retained three flows, five negatives and nine obligations.
+Exact-head Changeset admission and remote CI are reported separately with the PR.
+This closes only the selected six-case slice, not all Design mapping coverage.

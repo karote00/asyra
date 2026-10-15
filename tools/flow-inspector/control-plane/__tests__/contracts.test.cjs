@@ -809,7 +809,7 @@ test('Playwright observations admit exact cases without inventing executable pro
   }
 })
 
-test('Design Playwright mapping identifies the unchanged Chromium deletion case and exact App sources', () => {
+test('Design Playwright mapping admits only the six reviewed Chromium deletion cases', () => {
   const root = path.resolve(__dirname, '../../../..')
   const contract = loadContract(
     root,
@@ -817,18 +817,37 @@ test('Design Playwright mapping identifies the unchanged Chromium deletion case 
     'apps/asyra-design/playwright-flow-contracts.json'
   )
   assert.equal(contract.runner, 'playwright')
-  assert.equal(contract.cases.length, 1)
-  const item = contract.cases[0]
-  assert.equal(item.projectName, 'chromium')
-  assert.equal(item.stepId, 'delete-selected-element')
-  assert.equal(
-    item.testName,
-    'Delete Selected Element Delete key removes the single selected element'
+  const expected = [
+    ['design.delete', 'Delete key removes the single selected element'],
+    ['design.backspace', 'Backspace key removes the single selected element'],
+    [
+      'design.delete-no-selection',
+      'Delete key is a no-op when nothing is selected'
+    ],
+    ['design.delete-path-editing', 'Delete is blocked in path-editing mode'],
+    [
+      'design.delete-path-mode-without-vector',
+      'Delete is blocked when path-editing mode is true even without editing vector id'
+    ],
+    [
+      'design.delete-outside-path-mode',
+      'Delete is allowed when path-editing mode is false even if editing vector id exists'
+    ]
+  ]
+  assert.deepEqual(
+    contract.cases.map((item) => [item.id, item.testName]),
+    expected.map(([id, name]) => [id, 'Delete Selected Element ' + name])
   )
-  assert.match(
-    fs.readFileSync(path.join(root, contract.testFile), 'utf8'),
-    /test\('Delete key removes the single selected element'/
-  )
-  for (const file of item.implementationPaths)
-    assert.ok(fs.existsSync(path.join(root, file)), file)
+  const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+  for (const item of contract.cases) {
+    assert.equal(item.projectName, 'chromium')
+    assert.equal(item.stepId, 'delete-selected-element')
+    assert.ok(
+      source.includes(
+        "test('" + item.testName.replace('Delete Selected Element ', '') + "'"
+      )
+    )
+    for (const file of item.implementationPaths)
+      assert.ok(fs.statSync(path.join(root, file)).isFile(), file)
+  }
 })

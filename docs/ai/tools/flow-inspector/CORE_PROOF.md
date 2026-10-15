@@ -2370,9 +2370,17 @@ repository test file, full describe/test title and project. It has no proof
 scenarios; the proof runner must refuse it before execution. This is an
 observation mapping, not a new accepted verification target.
 
-The initial case maps single-selection Delete to the Design deletion feature's
-responsibility boundary. Setup and unknown failures are retained without invented
-product ownership. All retries and repeat executions remain original evidence;
+Six Chromium cases in `delete-element.spec.ts` map to the existing Design
+deletion responsibility: single-selection Delete, Backspace, no selection,
+path-editing mode, mode enabled without an editing vector, and mode disabled
+with an editing vector. The original `design.delete` identity remains stable.
+The manifest owns the exact full titles, project and implementation entries.
+Group deletion, undo/redo, rollback, hover and point-splitting cases remain
+unmapped until their distinct responsibilities are reviewed. Setup and unknown
+failures are retained without invented product ownership. Multiple failed cases
+may share a node; a clean rerun retires only the cases it actually completes.
+Adding mappings never rewrites or retroactively resolves retained history.
+All retries and repeat executions remain original evidence;
 a failed attempt remains visible even when a retry passes. Only a subsequent
 clean invocation can clear it. Missing output, malformed results, interruption,
 skips and unexpected passes cannot establish recovery.

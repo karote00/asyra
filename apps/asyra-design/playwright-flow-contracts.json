@@ -33,6 +33,64 @@
             "apps/asyra-design/src/common-apis/element/apis.ts",
             "apps/asyra-design/src/common-apis/selection.ts"
           ]
+        },
+        {
+          "id": "design.backspace",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Backspace key removes the single selected element",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts"
+          ]
+        },
+        {
+          "id": "design.delete-no-selection",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Delete key is a no-op when nothing is selected",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts"
+          ]
+        },
+        {
+          "id": "design.delete-path-editing",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Delete is blocked in path-editing mode",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "design.delete-path-mode-without-vector",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Delete is blocked when path-editing mode is true even without editing vector id",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "design.delete-outside-path-mode",
+          "stepId": "delete-selected-element",
+          "testName": "Delete Selected Element Delete is allowed when path-editing mode is false even if editing vector id exists",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/selection.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
         }
       ],
       "handoffs": []
