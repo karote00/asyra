@@ -92,6 +92,41 @@ const isRemovePropertyDelivery = (
   }>
 > => Boolean(delivery && delivery.eventName === EventTypes.REMOVE_PROPERTY)
 
+const sceneDeliveryFamily = (delivery: SharedPublicationDelivery): string => {
+  if (
+    delivery.eventName === EventTypes.ADD_ELEMENT ||
+    delivery.eventName === EventTypes.ADD_ELEMENTS
+  )
+    return EventTypes.ADD_ELEMENTS
+  if (
+    delivery.eventName === EventTypes.REMOVE_ELEMENT ||
+    delivery.eventName === EventTypes.REMOVE_ELEMENTS
+  )
+    return EventTypes.REMOVE_ELEMENTS
+  return delivery.eventName
+}
+
+const splitSceneOperationRuns = (
+  batch: SharedPublicationBatch
+): SharedPublicationBatch[] => {
+  if (batch.channel !== SharedDataChannelNames.SCENE_TREE) return [batch]
+  const runs: SharedPublicationDelivery[][] = []
+  let previousFamily: string | undefined
+  for (const delivery of batch.deliveries) {
+    const family = sceneDeliveryFamily(delivery)
+    if (
+      family !== previousFamily ||
+      delivery.eventName === EventTypes.CHANGE_SUBTREE
+    )
+      runs.push([])
+    runs[runs.length - 1].push(delivery)
+    previousFamily = family
+  }
+  return runs.map((deliveries) =>
+    Object.freeze({ ...batch, deliveries: Object.freeze(deliveries) })
+  )
+}
+
 export const organizeRemotePublication = (
   publication: SharedPublication
 ): OrganizedRemotePublication => {
@@ -113,7 +148,7 @@ export const organizeRemotePublication = (
   }
 
   for (const slice of slices) {
-    const sliceBatches = slice.batches
+    const sliceBatches = slice.batches.flatMap(splitSceneOperationRuns)
     batchesBySlice.set(slice, sliceBatches)
     if (sliceBatches.length === 0) {
       throw new Error(
@@ -326,9 +361,18 @@ const classifyElementDataBatch = (
   )
 }
 
+const hierarchyMoveFromDelivery = (
+  delivery: SharedPublicationDelivery
+): Extract<CanonicalChange, { kind: 'hierarchy-moves' }> =>
+  Object.freeze({
+    kind: 'hierarchy-moves',
+    moves: (delivery.payload as { readonly moves: readonly HierarchyMove[] })
+      .moves
+  })
+
 const classifyHierarchyMoveBatch = (
   batch: SharedPublicationBatch
-): readonly HierarchyMove[] | null => {
+): readonly Extract<CanonicalChange, { kind: 'hierarchy-moves' }>[] | null => {
   if (
     !batch.deliveries.some(
       ({ eventName }) => eventName === EventTypes.MOVE_ELEMENTS
@@ -339,12 +383,7 @@ const classifyHierarchyMoveBatch = (
   if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
     throw new Error('[collaboration] invalid hierarchy-move batch evidence')
   }
-  return Object.freeze(
-    batch.deliveries.flatMap(
-      ({ payload }) =>
-        (payload as { readonly moves: readonly HierarchyMove[] }).moves
-    )
-  )
+  return Object.freeze(batch.deliveries.map(hierarchyMoveFromDelivery))
 }
 
 const classifySubtreeRemovalBatch = (
@@ -430,7 +469,10 @@ const classifyCanonicalCreationBatch = (
   )
   let observedPropertyOwnerCount = 0
   const sourceEntries: AddRemoveElementEntry[] = []
-  const hierarchyMoves: HierarchyMove[] = []
+  const hierarchyMoves: Extract<
+    CanonicalChange,
+    { kind: 'hierarchy-moves' }
+  >[] = []
   let hierarchyMoveObserved = false
 
   for (const delivery of sceneBatch.deliveries) {
@@ -444,10 +486,7 @@ const classifyCanonicalCreationBatch = (
       return null
     }
     hierarchyMoveObserved = true
-    hierarchyMoves.push(
-      ...(delivery.payload as { readonly moves: readonly HierarchyMove[] })
-        .moves
-    )
+    hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
   const entries = orderTrustedElementEntries(sourceEntries, sceneBatch)
   for (const entry of entries) {
@@ -471,12 +510,7 @@ const classifyCanonicalCreationBatch = (
     })
   ]
   if (hierarchyMoves.length > 0) {
-    changes.push(
-      Object.freeze({
-        kind: 'hierarchy-moves',
-        moves: Object.freeze(hierarchyMoves)
-      })
-    )
+    changes.push(...hierarchyMoves)
   }
   return Object.freeze({
     changes: Object.freeze(changes),
@@ -499,7 +533,10 @@ const classifyCanonicalRemovalBatch = (
 
   const removals: RemoteCanonicalElementRemoval[] = []
   const sourceEntries: AddRemoveElementEntry[] = []
-  const hierarchyMoves: HierarchyMove[] = []
+  const hierarchyMoves: Extract<
+    CanonicalChange,
+    { kind: 'hierarchy-moves' }
+  >[] = []
   let removalObserved = false
   for (const delivery of sceneBatch.deliveries) {
     const entries = canonicalElementEntriesFromDelivery(delivery, 'remove')
@@ -511,10 +548,7 @@ const classifyCanonicalRemovalBatch = (
     if (removalObserved || delivery.eventName !== EventTypes.MOVE_ELEMENTS) {
       return null
     }
-    hierarchyMoves.push(
-      ...(delivery.payload as { readonly moves: readonly HierarchyMove[] })
-        .moves
-    )
+    hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
   for (const entry of orderTrustedElementEntries(sourceEntries, sceneBatch)) {
     removals.push(
@@ -546,12 +580,7 @@ const classifyCanonicalRemovalBatch = (
 
   const changes: CanonicalChange[] = []
   if (hierarchyMoves.length > 0) {
-    changes.push(
-      Object.freeze({
-        kind: 'hierarchy-moves',
-        moves: Object.freeze(hierarchyMoves)
-      })
-    )
+    changes.push(...hierarchyMoves)
   }
   changes.push(
     Object.freeze({
@@ -695,12 +724,7 @@ const createRemoteApplySteps = (
     }
     const hierarchyMoves = classifyHierarchyMoveBatch(batch)
     if (hierarchyMoves) {
-      changes.push(
-        Object.freeze({
-          kind: 'hierarchy-moves',
-          moves: hierarchyMoves
-        })
-      )
+      changes.push(...hierarchyMoves)
       batchIndex += 1
       continue
     }

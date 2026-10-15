@@ -528,13 +528,11 @@ describe('explicit history groups', () => {
     factory.undo()
     expect(takeIds()).toEqual([
       ['last-element', 'last-property'],
-      ['immediate'],
-      ['first-element', 'first-property']
+      ['immediate', 'first-element', 'first-property']
     ])
     factory.redo()
     expect(takeIds()).toEqual([
-      ['first-property', 'first-element'],
-      ['immediate'],
+      ['first-property', 'first-element', 'immediate'],
       ['last-property', 'last-element']
     ])
   })

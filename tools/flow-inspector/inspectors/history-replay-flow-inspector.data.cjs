@@ -49,6 +49,7 @@ const data = {
       conditions: [
         'Undo delivers inverse events in reverse order; Redo delivers forward events in original order.',
         'A staged gesture replays its first-before/latest-after values as one action.',
+        'A successful local no-op settles retained History shared evidence so changed siblings can publish; it adds no local rollback restoration. A thrown owner failure cannot settle its delivery.',
         'Successful replay moves the source entry between stacks without creating another ordinary action.'
       ],
       bypasses: [

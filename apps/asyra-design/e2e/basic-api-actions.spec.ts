@@ -241,6 +241,11 @@ test.describe('real registered basic actions', () => {
     test(contract.name, async ({ page }) => {
       await page.goto(createTestDocumentIdentity().url)
       await waitForAppReady(page)
+      await page.waitForFunction(async () => {
+        const { isBasicApiFixtureReady } =
+          await import('../e2e/fixtures/basic-api-cases')
+        return isBasicApiFixtureReady()
+      })
       const error = await page.evaluate(async (name) => {
         const { createBasicApiCases } =
           await import('../e2e/fixtures/basic-api-cases')
@@ -252,6 +257,8 @@ test.describe('real registered basic actions', () => {
           return error instanceof Error
             ? `${error.message} ${String(error.cause ?? '')}`
             : String(error)
+        } finally {
+          cases.dispose()
         }
       }, contract.name)
       expect(error).toBeNull()

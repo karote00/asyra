@@ -1911,3 +1911,15 @@ it('admits persistence confirmation only with exact nonnegative sequence and gen
       parseCollaborationClientMessage({ ...message, ...patch })
     ).toBeUndefined()
 })
+
+it('accepts only the exact checkpoint preparation control milestone', () => {
+  expect(
+    parseCollaborationServerMessage({ type: 'bootstrap-checkpoint-ready' })
+  ).toEqual({ type: 'bootstrap-checkpoint-ready' })
+  expect(
+    parseCollaborationServerMessage({
+      type: 'bootstrap-checkpoint-ready',
+      checkpoint: {}
+    })
+  ).toBeUndefined()
+})

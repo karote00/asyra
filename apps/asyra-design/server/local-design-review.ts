@@ -18,11 +18,6 @@ import {
 } from './local-reference-decisions'
 import { isDeepStrictEqual } from 'node:util'
 import {
-  validateVisualAssessment,
-  type VisualAssessment,
-  type VisualAssessmentContext
-} from './local-visual-assessment'
-import {
   createDesignFacts,
   designFactsSchema,
   designCalculationsSchema
@@ -206,7 +201,7 @@ const designReviewProperties = {
           minLength: 1,
           maxLength: 256,
           description:
-            'Stable regional check identity within the criterion. Retain its original image target/crop scope; additional corroborating images do not redefine it, but remain invalidation dependencies; omit for the whole-criterion judgment. Other units remain independent.'
+            'Stable regional check identity within the criterion. Retain its original image target/crop scope; new evidence scope requires explicit supersession; same-scope recaptures preserve it; omit for the whole-criterion judgment. Other units remain independent.'
         },
         supersedes: {
           type: 'object',
@@ -527,7 +522,7 @@ export const designEvidenceDefinitions = [
     revision: 4,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -569,7 +564,6 @@ const validateReferenceIndexes = (indexes: unknown): number[] => {
 export const createLocalDesignReview = (
   options: {
     results?: ReturnType<typeof createDesignCheckResults>
-    independentAssessment?: boolean
     resolveSources?: (sources: string[]) => string[]
     validateReferences?: (
       indexes: number[],
@@ -689,11 +683,6 @@ export const createLocalDesignReview = (
   let acceptedIds: string[] = []
   let lastReviewIds: string[] = []
   let issue = 'The drawing has not been checked against the requested result.'
-  let unresolvedOverall: { phase: string; evidence: string } | undefined
-  const unresolvedCriteria = new Map<
-    string,
-    { phase: string; evidence: string }
-  >()
   const inspections = new Map<
     string,
     {
@@ -1054,20 +1043,18 @@ export const createLocalDesignReview = (
       }
     },
     recordCalculations: facts.recordCalculations,
-    correctionContext(
-      inspectionIds: string[] = [],
-      checks: {
-        criterionId: string
-        status: string
-        evidence: string
-      }[] = previousChecks
-    ) {
+    correctionContext(inspectionIds: string[] = []) {
+      const checks = results
+        .read()
+        .items.filter(
+          (item) =>
+            item.origin === 'main-agent' && item.criterionId !== undefined
+        )
       const criterionIds = new Set([
         ...pendingCriterionIds(),
-        ...unresolvedCriteria.keys(),
-        ...checks
-          .filter((check) => check.status !== 'pass')
-          .map((check) => check.criterionId)
+        ...checks.flatMap((check) =>
+          check.criterionId ? [check.criterionId] : []
+        )
       ])
       return {
         diagnosticOnly: true,
@@ -1075,13 +1062,11 @@ export const createLocalDesignReview = (
         referenceDecisions: references.snapshot(),
         requiresFreshReview: !accepted,
         revision,
-        ...(unresolvedOverall ? { overall: { ...unresolvedOverall } } : {}),
         criteria: [...criterionIds].map((criterionId) => ({
           criterionId,
           evidence: [
             ...new Set(
               [
-                unresolvedCriteria.get(criterionId)?.evidence,
                 ...checks
                   .filter(
                     (check) =>
@@ -1120,137 +1105,6 @@ export const createLocalDesignReview = (
             : []
         })
       }
-    },
-    comparisonContext(
-      phase: string,
-      fullReview = false
-    ): VisualAssessmentContext {
-      if (!plan) throw new Error('Record the review plan first.')
-      const criteria = plan.criteria
-      let ids = pendingCriterionIds()
-      if (
-        fullReview ||
-        accepted ||
-        (options.independentAssessment && ids.length === 0)
-      )
-        ids = Object.keys(plan.criteria)
-      if (phase === 'structure') ids = plan.structureCriteria
-      const retainedFacts = factSnapshots().filter((fact) =>
-        [...factBindings.values()].some(
-          (binding) =>
-            binding.factId === fact.id && ids.includes(binding.criterionId)
-        )
-      )
-      const cited = new Set(retainedFacts.flatMap((fact) => fact.sources))
-      const decisions = references
-        .snapshot()
-        .filter(
-          (decision) =>
-            (plan?.referenceImageIndexes ?? []).includes(
-              decision.attachmentIndex
-            ) || cited.has(decision.referenceId)
-        )
-      return {
-        criteria: Object.fromEntries(
-          ids
-            .filter((id) => criteria[id].verification === 'visual')
-            .map((id) => [id, { requirement: criteria[id].requirement }])
-        ),
-        referenceImageIndexes: (plan.referenceImageIndexes ?? []).filter(
-          (index) =>
-            decisions.some(
-              (decision) =>
-                decision.attachmentIndex === index &&
-                ids.some((id) =>
-                  references.applicable(decision.referenceId, id)
-                )
-            )
-        ),
-        requirementRevision: references.revision(),
-        referenceDecisions: decisions,
-        unverifiedSourceFacts: retainedFacts.filter(
-          (fact) => fact.evidence.status === 'unverified'
-        ),
-        sourceFacts: retainedFacts.flatMap((fact) => {
-          if (fact.status !== 'valid' || fact.evidence.status === 'unverified')
-            return []
-          const criterionIds = [
-            ...new Set(
-              [...factBindings.values()]
-                .filter(
-                  (binding) =>
-                    binding.factId === fact.id &&
-                    ids.includes(binding.criterionId) &&
-                    criteria[binding.criterionId].verification === 'visual'
-                )
-                .map((binding) => binding.criterionId)
-            )
-          ]
-          if (!criterionIds.length) return []
-          return [
-            {
-              id: fact.id,
-              criterionIds,
-              statement: fact.statement,
-              scope: fact.scope,
-              sources: fact.sources,
-              verification: fact.verification,
-              freshness: fact.freshness,
-              evidence: fact.evidence
-            }
-          ]
-        }),
-        ...(unresolvedOverall || unresolvedCriteria.size
-          ? {
-              previousFindings: {
-                ...(unresolvedOverall &&
-                (phase === 'visual' || unresolvedOverall.phase === 'structure')
-                  ? { overall: { ...unresolvedOverall } }
-                  : {}),
-                criteria: Object.fromEntries(
-                  [...unresolvedCriteria].filter(([id]) => ids.includes(id))
-                )
-              }
-            }
-          : {})
-      }
-    },
-    comparisonIsCurrent(
-      context: VisualAssessmentContext,
-      phase: string,
-      fullReview = false
-    ): boolean {
-      return isDeepStrictEqual(
-        context,
-        this.comparisonContext(phase, fullReview)
-      )
-    },
-    retainAssessment(
-      phase: string,
-      value: VisualAssessment,
-      current: boolean,
-      fullReview = false
-    ): VisualAssessment {
-      const result = validateVisualAssessment(
-        value,
-        this.comparisonContext(phase, fullReview).criteria
-      )
-      if (result.overall.status !== 'pass')
-        unresolvedOverall = { phase, evidence: result.overall.evidence }
-      else if (
-        current &&
-        (phase === 'visual' || unresolvedOverall?.phase === phase)
-      )
-        unresolvedOverall = undefined
-      for (const check of result.checks) {
-        if (check.status !== 'pass')
-          unresolvedCriteria.set(check.criterionId, {
-            phase,
-            evidence: check.evidence
-          })
-        else if (current) unresolvedCriteria.delete(check.criterionId)
-      }
-      return result
     },
     factTargets: () => [
       ...new Set(
@@ -1380,11 +1234,10 @@ export const createLocalDesignReview = (
         throw new Error(
           'Only structure and visual review candidates can be validated.'
         )
-      return this.record(value, undefined, { validateOnly: true })
+      return this.record(value, { validateOnly: true })
     },
     record(
       value: unknown,
-      independent?: VisualAssessment,
       recordOptions: { validateOnly?: boolean } = {}
     ): Record<string, unknown> {
       if (!record(value)) throw new Error('Review arguments must be an object.')
@@ -1734,6 +1587,22 @@ export const createLocalDesignReview = (
           )
         if (check.unitId === undefined) continue
         const key = visualCheckIdentity(check)
+        const imageIds: string[] = check.inspectionIds ?? value.inspectionIds
+        const enclosingIds = imageIds.filter((id) => {
+          const image = inspections.get(id)
+          return (
+            image &&
+            !image.region &&
+            imageIds.some((otherId) => {
+              const other = inspections.get(otherId)
+              return other?.region && other.target === image.target
+            })
+          )
+        })
+        if (enclosingIds.length)
+          throw new Error(
+            `Regional check ${check.criterionId}/${check.unitId} mixes whole-target and local evidence. Keep whole-target inspections ${enclosingIds.join(', ')} on a separate whole-view criterion; explicitly resubmit this unit with only its required local inspections. No judgments were recorded.`
+          )
         const scope = [
           ...new Set<string>(
             (check.inspectionIds ?? value.inspectionIds).map((id: string) => {
@@ -1748,7 +1617,9 @@ export const createLocalDesignReview = (
           .items[0]
         const originalScope = unitScopes.get(key)
         const changedScope =
-          originalScope?.some((item) => !scope.includes(item)) ?? false
+          originalScope !== undefined &&
+          (originalScope.length !== scope.length ||
+            originalScope.some((item) => !scope.includes(item)))
         if (check.supersedes !== undefined) {
           const exactReplay =
             !changedScope &&
@@ -1878,27 +1749,8 @@ export const createLocalDesignReview = (
           coverage: effective.coverage
         }
 
-      const needsIndependent =
-        options.independentAssessment &&
-        (structure || final) &&
-        Object.keys(
-          this.comparisonContext(String(value.phase), additions.length > 0)
-            .criteria
-        ).length > 0
-      const independentAssessment = independent
-        ? this.retainAssessment(
-            String(value.phase),
-            independent,
-            true,
-            additions.length > 0
-          )
-        : undefined
-      const independentlyAccepted =
-        !needsIndependent ||
-        (independentAssessment?.overall.status === 'pass' &&
-          !!independentAssessment?.checks.every(
-            (check) => check.status === 'pass'
-          ))
+      // A published judgment also governs review-only requests for existing content.
+      reviewRequired = true
       for (const [id, detail] of nextDeferred)
         if (
           deferredDetails.has(id) &&
@@ -1948,14 +1800,18 @@ export const createLocalDesignReview = (
         })
       }
       if (structure) {
-        if (additions.length) {
-          accepted = false
-          issue = 'Deferred details require a current final visual review.'
-        }
         deferredDetails = nextDeferred
-        structureAccepted =
-          independentlyAccepted &&
-          checks.every((check) => check.status === 'pass')
+        structureAccepted = checks.every((check) => check.status === 'pass')
+        if (!structureAccepted || additions.length) {
+          accepted = false
+          acceptedIds = []
+          issue = !structureAccepted
+            ? `The drawing still needs adjustment: ${checks
+                .filter((check) => check.status !== 'pass')
+                .map((check) => `${check.criterionId}: ${check.evidence}`)
+                .join('; ')}`
+            : 'Deferred details require a current final visual review.'
+        }
         return {
           phase: 'structure',
           results: results.read(),
@@ -1964,10 +1820,9 @@ export const createLocalDesignReview = (
           revision,
           accepted: false,
           readyForDetail: structureAccepted,
-          independentAssessment,
           checks,
           inspectionIds: value.inspectionIds,
-          correction: this.correctionContext(value.inspectionIds, checks)
+          correction: this.correctionContext(value.inspectionIds)
         }
       }
       deferredDetails = nextDeferred
@@ -2006,7 +1861,7 @@ export const createLocalDesignReview = (
       ]
       const unresolvedUnits = effective.unresolvedUnits
       const requiredCoverage = effective.coverage
-      accepted = readyForCompletion && independentlyAccepted
+      accepted = readyForCompletion
       acceptedIds = accepted ? effective.inspectionIds : []
       const unmet = checks
         .filter((check) => check.status !== 'pass')
@@ -2028,18 +1883,6 @@ export const createLocalDesignReview = (
           'Current whole-view and requested native detail evidence remain required.'
         )
       unmet.push(...referenceIssues())
-      if (!independentlyAccepted)
-        unmet.push(
-          ...(independentAssessment?.overall.status !== 'pass' &&
-          independentAssessment?.overall
-            ? [independentAssessment.overall.evidence]
-            : []),
-          ...(independentAssessment?.checks
-            .filter((check) => check.status !== 'pass')
-            .map((check) => `${check.criterionId}: ${check.evidence}`) ?? [
-            'Independent visual assessment is not available.'
-          ])
-        )
       if (!final)
         unmet.push(
           'A final assessment of all requested criteria is still required.'
@@ -2072,10 +1915,9 @@ export const createLocalDesignReview = (
         regressions,
         revision,
         accepted: this.isAccepted(),
-        independentAssessment,
         checks,
         inspectionIds: value.inspectionIds,
-        correction: this.correctionContext(value.inspectionIds, checks)
+        correction: this.correctionContext(value.inspectionIds)
       }
     },
     getStructureIssue(): string | undefined {
@@ -2090,13 +1932,7 @@ export const createLocalDesignReview = (
       if (mechanical) return mechanical
       if ((revision === 0 && !reviewRequired) || accepted) return undefined
       return plan
-        ? [
-            issue,
-            unresolvedOverall?.evidence,
-            ...[...unresolvedCriteria.values()].map(({ evidence }) => evidence)
-          ]
-            .filter(Boolean)
-            .join(' ')
+        ? issue
         : 'The drawing was created, but its requested quality was not verified against the original request and its review criteria.'
     }
   }

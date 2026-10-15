@@ -129,6 +129,7 @@
         ],
         outputs: ['artifact:recipe-receipt'],
         conditions: [
+          'The host owns aggregate mechanical verdict semantics. Consume only registered verification status/nonempty string progress and admitted finite repairs; host repair owners guard actual domain capability coverage before writes; partial results never enter success bindings. No-progress, unsupported findings and cancellation stop successors without model calls or product-write replay.',
           'Pin the admitted graph and invoke each node through the common middleware; host schedules only leaves. Transfer exported references before child cleanup. Supply pinned input and selected output schemas to host lease ownership; never infer references by field names.',
           'Execute admitted bounded repair with initial writes once, typed current state, owner check verdict and actual iteration provenance. Count nested worst-case work before writes; stop on decision, repeated progress, budget, cancellation or non-success, exporting actual validated recovery without replay or eligibility.',
           'Observe pinned tool revision and admitted parent recipe name/revision/step ID on child lifecycle events. Do not invent admitted provenance for a rejected root; diagnostic metadata does not change execution authority.',

@@ -1,3 +1,4 @@
+import recordedPurpose from './fixtures/recorded-101/purpose.json'
 import sharp from 'sharp'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
@@ -26,7 +27,6 @@ import { parseExecutionRecord } from '@asyra/ai-agent-runtime/node'
 import {
   checkLocalAiProvider,
   requestLocalAiAssessment,
-  requestLocalVisualAssessment,
   requestLocalAiActionBatch
 } from '../local-ai-provider'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -4221,96 +4221,6 @@ it('binds the call digest to the schema actually advertised to native discovery'
   }
 })
 
-it('isolates visual assessment from drawing conclusions and returns validated findings with image inputs', async () => {
-  const result = {
-    overall: {
-      status: 'fail',
-      evidence: 'The requested solid form is unfolded.'
-    },
-    checks: [
-      {
-        criterionId: 'shape',
-        status: 'fail',
-        evidence: 'The two walls appear unfolded.'
-      }
-    ]
-  }
-  const server = fakeServer({ output: JSON.stringify(result) })
-  spawn.mockReturnValue(server.child)
-  const response = await requestLocalVisualAssessment(
-    {
-      request:
-        'Draw a solid tower from an elevated view looking down, with visible top surfaces.',
-      phase: 'structure',
-      criteria: { shape: { requirement: 'solid tower' } },
-      referenceImageIndexes: [1],
-      sourceFacts: [
-        {
-          id: 'massing',
-          criterionIds: ['shape'],
-          statement: 'Tower massing',
-          scope: 'Construction image; facade detail unknown',
-          sources: ['reference:1'],
-          verification: 'Checked visible outline'
-        }
-      ],
-      images: [{ role: 'overview', dataUrl: 'data:image/png;base64,YQ==' }]
-    },
-    {
-      model: 'selected-model',
-      executable: 'codex',
-      sourceRevision: 'fixture-revision',
-      sourceFingerprint: 'f'.repeat(64),
-      sourceIdentityStatus: 'captured',
-      sourceRequestId: 'parent-visual',
-      parentCallId: 'review-call',
-      sourceSpanId: 'visual-wait'
-    }
-  )
-  expect(response).toEqual(result)
-  const thread = server.packets.find(
-    ({ method }) => method === 'thread/start'
-  )?.params
-  expect(thread?.dynamicTools).toEqual([])
-  expect(thread?.baseInstructions).toContain('Independently compare')
-  expect(thread?.config).toMatchObject({
-    web_search: 'disabled',
-    'features.code_mode': false,
-    model_reasoning_effort: 'medium'
-  })
-  const turn = server.packets.find(
-    ({ method }) => method === 'turn/start'
-  )?.params
-  expect(turn?.input).toEqual(
-    expect.arrayContaining([
-      { type: 'image', url: 'data:image/png;base64,YQ==' }
-    ])
-  )
-  const submitted = (turn?.input as { type: string; text?: string }[]).find(
-    (entry) => entry.type === 'text'
-  )
-  expect(JSON.parse(submitted?.text ?? '{}').input.intent).toBe(
-    'Draw a solid tower from an elevated view looking down, with visible top surfaces.'
-  )
-  expect(JSON.parse(submitted?.text ?? '{}').input.context).toMatchObject({
-    referenceImageIndexes: [1],
-    sourceFacts: [
-      expect.objectContaining({
-        scope: 'Construction image; facade detail unknown'
-      })
-    ]
-  })
-  expect(retainedRecords[0]).toMatchObject({
-    purpose: 'visual-assessment',
-    sourceRevision: 'fixture-revision',
-    sourceFingerprint: 'f'.repeat(64),
-    sourceIdentityStatus: 'captured',
-    sourceRequestId: 'parent-visual',
-    parentCallId: 'review-call',
-    sourceSpanId: 'visual-wait'
-  })
-})
-
 it.each(['completed', 'cancelled'] as const)(
   'retains actual provider delegation and settlement ownership for %s',
   async (outcome) => {
@@ -4475,8 +4385,8 @@ it('publishes registered operation intent with explicit provenance', async () =>
   })
 })
 
-it('retains actual public stage through registered preparation in the activity projection', async () => {
-  const stage = 'Base surfaces and window reflections'
+it('settles public stage after its root tool cohort before later inspection', async () => {
+  const stage = recordedPurpose.item.text
   const child = fakeServer({
     commentary: stage,
     toolCall: true,
@@ -4533,14 +4443,245 @@ it('retains actual public stage through registered preparation in the activity p
   expect(observations.some((entry) => entry.status === 'running')).toBe(true)
   expect(observations.some((entry) => entry.status === 'completed')).toBe(true)
   for (const entry of observations) {
-    expect(entry.message).toBe(stage)
-    let label = 'Current task'
+    expect(entry.message).toBe(
+      entry.status === 'running' ? stage.trim() : undefined
+    )
+    let label = 'Processing your request'
     if (entry.status === 'running')
       label = ['queued', 'admission'].includes(entry.phase ?? '')
         ? 'Preparing operation - Preparing the design'
         : 'Preparing the design'
     expect(entry.label).toBe(label)
   }
+})
+
+it.each(['success', 'failure'] as const)(
+  'retires recorded purpose after its last root call on %s without clearing its replacement',
+  async (outcome) => {
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    spawn.mockReturnValue(server.child)
+    const releases: (() => void)[] = []
+    const executeBatch = vi.fn(
+      async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+        await new Promise<void>((resolve) => releases.push(resolve))
+        if (outcome === 'failure') throw new Error('Recorded operation failed')
+        return {
+          context: {},
+          actionResults: batch.actions.map((action) => ({
+            actionId: action.id,
+            actionName: action.name,
+            result: { status: 'complete' }
+          }))
+        }
+      }
+    )
+    const projection = createAiActivityProjection({
+      purpose: 'Draw the entire Taipei101'
+    })
+    const events: {
+      tool: string
+      status: string
+      activity?: { callId?: string }
+    }[] = []
+    const result = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'select_elements',
+            description: 'Select',
+            inputSchema: { type: 'object' }
+          }
+        ]
+      },
+      {
+        environment,
+        executeBatch,
+        onProgress: (event) => {
+          events.push(event)
+          projection.append({
+            attempt: 1,
+            phase: 'provider',
+            summary: 'Owner activity',
+            tool: event.tool,
+            toolStatus: event.status,
+            message: event.message,
+            activity: event.activity
+          })
+        }
+      }
+    )
+    await untilTurn(server.packets)
+    server.notify('item/completed', { item: recordedPurpose.item })
+    const call = (id: number) =>
+      server.send({
+        id,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: `cohort-${id}`,
+          tool: 'select_elements',
+          arguments: { arguments: { elementIds: ['shape'] } }
+        }
+      })
+    call(801)
+    call(802)
+    server.notify('item/started', {
+      item: {
+        id: 'overlapping-research',
+        type: 'webSearch',
+        status: 'inProgress',
+        action: { type: 'search', query: 'Taipei101' }
+      }
+    })
+    await vi.waitFor(() => expect(releases.length).toBeGreaterThan(0))
+    releases[0]()
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === 801)).toBe(true)
+    )
+    expect(
+      events.filter(
+        (event) =>
+          event.tool === 'public-progress' && event.status === 'completed'
+      )
+    ).toHaveLength(0)
+    const next = {
+      ...recordedPurpose.item,
+      id: 'next-stage',
+      text: 'Inspect the corrected crown'
+    }
+    server.notify('item/completed', { item: next })
+    await vi.waitFor(() => expect(releases).toHaveLength(2))
+    releases[1]()
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === 802)).toBe(true)
+    )
+    expect(projection.result().current?.message).toBe(next.text)
+    server.notify('item/completed', {
+      item: {
+        id: 'overlapping-research',
+        type: 'webSearch',
+        status: 'completed',
+        action: { type: 'search', query: 'Taipei101' }
+      }
+    })
+    expect(projection.result().current?.message).toBe(next.text)
+    call(803)
+    await vi.waitFor(() => expect(releases).toHaveLength(3))
+    releases[2]()
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === 803)).toBe(true)
+    )
+    expect(projection.result().current?.message).toBeUndefined()
+    expect(
+      events
+        .filter(
+          (event) =>
+            event.tool === 'public-progress' && event.status === 'completed'
+        )
+        .map((event) => event.activity?.callId)
+    ).toEqual(['next-stage'])
+    server.finish()
+    await result
+  }
+)
+
+it('settles native research purpose before a later App call and preserves overlapping research', async () => {
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  spawn.mockReturnValue(server.child)
+  const projection = createAiActivityProjection({ purpose: 'Draw Taipei101' })
+  const events: { tool: string; status: string }[] = []
+  const result = requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+      ]
+    },
+    {
+      environment,
+      executeBatch: vi.fn(),
+      onProgress: (event) => {
+        events.push(event)
+        projection.append({
+          attempt: 1,
+          phase: 'provider',
+          summary: 'Owner activity',
+          tool: event.tool,
+          toolStatus: event.status,
+          message: event.message,
+          activity: event.activity
+        })
+      }
+    }
+  )
+  await untilTurn(server.packets)
+  server.notify('item/completed', { item: recordedPurpose.item })
+  const research = (id: string, status: 'started' | 'completed') =>
+    server.notify(`item/${status}`, {
+      item: {
+        id,
+        type: 'webSearch',
+        status: status === 'started' ? 'inProgress' : 'completed',
+        action: { type: 'search', query: 'Taipei101' }
+      }
+    })
+  research('research-a', 'started')
+  research('research-b', 'started')
+  research('research-a', 'completed')
+  expect(projection.result().current?.message).toBe(
+    recordedPurpose.item.text.trim()
+  )
+  research('research-b', 'completed')
+  expect(projection.result().current?.message).toBeUndefined()
+  expect(
+    events.filter(
+      (event) =>
+        event.tool === 'public-progress' && event.status === 'completed'
+    )
+  ).toHaveLength(1)
+  research('research-b', 'completed')
+  expect(
+    events.filter(
+      (event) =>
+        event.tool === 'public-progress' && event.status === 'completed'
+    )
+  ).toHaveLength(1)
+  server.notify('item/completed', {
+    item: {
+      ...recordedPurpose.item,
+      id: 'after-research-purpose',
+      text: 'Prepare the next part'
+    }
+  })
+  // A delayed duplicate start must not reopen an already completed native call.
+  research('research-b', 'started')
+  server.send({
+    id: 891,
+    method: 'item/tool/call',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      callId: 'after-research',
+      tool: 'prepare_design',
+      arguments: {
+        draft: {
+          type: 'frame',
+          name: 'Part',
+          width: 20,
+          height: 20,
+          children: [{ type: 'rect', name: 'Body', width: 10, height: 10 }]
+        }
+      }
+    }
+  })
+  await vi.waitFor(() =>
+    expect(server.packets.some((packet) => packet.id === 891)).toBe(true)
+  )
+  expect(projection.result().current?.message).toBeUndefined()
+  server.finish()
+  await result
 })
 
 it('records registered review intent without declaring a new authored stage', async () => {

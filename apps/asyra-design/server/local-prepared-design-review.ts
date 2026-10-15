@@ -16,16 +16,16 @@ import { AiDesignToolIds } from '../src/constants/ai-design'
 import { LocalToolAccess } from './local-tool-scheduler'
 import { operationInputIssue } from './operation-input-schema'
 import {
-  type VisualAssessment,
-  type VisualAssessmentContext
-} from './local-visual-assessment'
+  type DesignCheckAssessment,
+  type DesignCheckContext
+} from './design-check-contract'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 const identity = (value: unknown): string =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
 
-export interface PreparedRecipeContext extends VisualAssessmentContext {
+export interface PreparedRecipeContext extends DesignCheckContext {
   sourceAssertions?: unknown[]
 }
 export interface PreparedAttachment {
@@ -50,7 +50,7 @@ export interface PreparedRecipePacket extends PreparedRecipeContext {
     sourceChanged: boolean
     evidenceCurrent: boolean
     coverage: PreparedRecipePacket['coverage']
-    assessment: VisualAssessment
+    assessment: DesignCheckAssessment
   }
   deterministicFindings: unknown[]
   elementCount: number
@@ -139,7 +139,7 @@ export const createPreparedDesignReview = (options: {
 }) => {
   const results = options.results ?? createDesignCheckResults()
   const latestArtifacts = new Map<string, string>()
-  const cache = new Map<string, VisualAssessment>()
+  const cache = new Map<string, DesignCheckAssessment>()
   const artifactReviews = new Map<
     string,
     {
@@ -150,10 +150,10 @@ export const createPreparedDesignReview = (options: {
       evidenceCurrent: boolean
       status: string
       coverage: PreparedRecipePacket['coverage']
-      assessment: VisualAssessment
+      assessment: DesignCheckAssessment
       conflict?: {
         coverage: PreparedRecipePacket['coverage']
-        assessment: VisualAssessment
+        assessment: DesignCheckAssessment
         deterministicFindings: unknown[]
       }
     }

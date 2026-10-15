@@ -99,6 +99,12 @@ infrastructure.
 - computed patch inversion writes top-level keys and record ids as own enumerable
   data properties, so legal special names such as `__proto__` survive undo/redo
   instead of invoking inherited object setters
+- successful replay settles its retained shared-delivery obligation even when the
+  local owner already has the requested value. A local semantic no-op does not
+  prove that the shared projection or remote consumer received that history step;
+  it cannot block changed siblings in the same source slice. Only acknowledged
+  local mutation contributes a rollback restoration plan. Thrown owner failure
+  does not settle the failed shared-delivery obligation.
 - replay does not create another ordinary undo commit
 - rollback, undo, and redo share the same inverse/replay primitives while keeping
   different history and lifecycle effects
@@ -202,7 +208,12 @@ infrastructure.
 - every shared channel implements one exact `appendBatch(...)` /
   `observeBatch(...)` contract; scalar conveniences delegate to batch-of-one
   and do not create a second canonical delivery path
-- `sharedDelivery: 'transaction-end'` buffers delivery until outer commit
+- `sharedDelivery: 'transaction-end'` buffers delivery until outer commit unless a
+  later immediate mutation requires that preceding journal prefix. An immediate
+  boundary drains all earlier eligible shared changes in canonical order, with
+  effective immediate delivery and the same synchronous source slice. It cannot
+  overtake deferred prerequisites. Undo/Redo and compensation retain that effective
+  delivery evidence; pure deferred transactions remain commit-only.
 - `sharedDelivery: 'immediate'` completes local shared-channel delivery and
   optional collaboration publication during the active transaction
 - delivery timing is independent from `undoable`; non-undoable shared changes

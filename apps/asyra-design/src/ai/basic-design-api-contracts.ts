@@ -499,7 +499,7 @@ const toggleSelectionApi = defineBasicApi({
 
 const selectElementsApi = defineBasicApi({
   description:
-    'Replace the element selection with all supplied IDs at once; an empty array clears it.',
+    'Replace the element selection with existing IDs at once; any nonexistent ID rejects the entire replacement and preserves the current selection. An empty array clears it.',
   owner: 'selection',
   method: 'selectElements',
   effect: 'selection',

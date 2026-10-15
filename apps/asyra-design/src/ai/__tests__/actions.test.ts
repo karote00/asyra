@@ -1,10 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import core from '../../contexts'
+import { selectionApis } from '../../common-apis/selection'
 import {
   AiActionError,
   AiActionNames,
   createAiActions,
   type AiActionApis
 } from '../actions'
+
+const originalMetadata = core.getElementMetadata
+const originalSelection = core.selectElements
+afterEach(() => {
+  core.getElementMetadata = originalMetadata
+  core.selectElements = originalSelection
+})
 
 const actionApis = (): AiActionApis => ({
   changeElementGeometry: vi.fn(),
@@ -199,6 +208,80 @@ describe('Asyra Design AI actions', () => {
       sharedDelivery: 'immediate',
       undoable: true
     })
+  })
+
+  it.each([['missing'], ['shape-1', 'missing'], ['missing', 'shape-1']])(
+    'rejects unavailable selection targets atomically: %j',
+    async (...ids) => {
+      const apis = actionApis()
+      let selected = ['previous']
+      core.getElementMetadata = vi.fn((id) =>
+        id === 'shape-1'
+          ? ({ id, type: 'rect' } as ReturnType<typeof core.getElementMetadata>)
+          : undefined
+      )
+      const write = vi.fn((next: string[]) => {
+        selected = next
+      })
+      core.selectElements = write
+      apis.selectElements = selectionApis.selectElements
+      const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+      await expect(
+        action.execute({ elementIds: ids }, executionContext())
+      ).rejects.toThrow('Selection target does not exist: missing')
+      expect(selected).toEqual(['previous'])
+      expect(write).not.toHaveBeenCalled()
+      await expect(
+        action.execute({ elementIds: ['shape-1'] }, executionContext())
+      ).resolves.toMatchObject({ selectedCount: 1 })
+      expect(selected).toEqual(['shape-1'])
+    }
+  )
+
+  it('checks target existence at the scheduled mutation boundary', async () => {
+    const apis = actionApis()
+    let exists = true
+    core.getElementMetadata = vi.fn((id) =>
+      exists
+        ? ({ id, type: 'rect' } as ReturnType<typeof core.getElementMetadata>)
+        : undefined
+    )
+    const write = vi.fn(() => undefined)
+    core.selectElements = write
+    apis.selectElements = selectionApis.selectElements
+    const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+    await expect(
+      action.execute(
+        { elementIds: ['removed'] },
+        {
+          ...executionContext(),
+          runMutation: async (mutate) => {
+            exists = false
+            return mutate()
+          }
+        }
+      )
+    ).rejects.toThrow('Selection target does not exist: removed')
+    expect(write).not.toHaveBeenCalled()
+  })
+
+  it('rejects cancellation while queued before selecting any targets', async () => {
+    const apis = actionApis()
+    const controller = new AbortController()
+    const action = actionByName(AiActionNames.SELECT_ELEMENTS, apis)
+    await expect(
+      action.execute(
+        { elementIds: ['shape-1'] },
+        {
+          signal: controller.signal,
+          runMutation: async (mutate) => {
+            controller.abort()
+            return mutate()
+          }
+        }
+      )
+    ).rejects.toBeInstanceOf(AiActionError)
+    expect(apis.selectElements).not.toHaveBeenCalled()
   })
 
   it('checks abort before requesting a common API mutation', async () => {

@@ -4,7 +4,10 @@ import {
   type AiToolStoreEntry
 } from '@asyra/ai-agent-runtime'
 import { createLocalToolLibrary } from '../local-tool-library'
-import { createLocalToolLibraryTools } from '../local-tool-library-tools'
+import { createLocalToolLibraryTools as createOwner } from '../local-tool-library-tools'
+import { withToolContractAssertions } from './tool-contract-assertions'
+const createLocalToolLibraryTools = (...args: Parameters<typeof createOwner>) =>
+  withToolContractAssertions(createOwner(...args))
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
   nativeToolInputSchema,
@@ -27,6 +30,7 @@ const fixture = () => {
   })
   const entries = new Map<string, AiToolStoreEntry>()
   let version = 0
+  let storageUnavailable = false
   const signal = new AbortController().signal
   const schedule = createLocalToolScheduler(signal)
   const library = createLocalToolLibrary({
@@ -46,6 +50,7 @@ const fixture = () => {
       read: async (key) => entries.get(key),
       list: async () => [...entries.values()],
       write: async (input) => {
+        if (storageUnavailable) throw new Error('Storage unavailable')
         if (entries.get(input.key)?.version !== input.expectedVersion)
           throw Error('conflict')
         const entry = {
@@ -81,7 +86,16 @@ const fixture = () => {
       invokeLocalTool(owner, definition, input, signal)
     )
   }
-  return { library, owner, execute, call, entries }
+  return {
+    library,
+    owner,
+    execute,
+    call,
+    entries,
+    failStorage: (value: boolean) => {
+      storageUnavailable = value
+    }
+  }
 }
 const proposal = {
   format: 1,
@@ -226,4 +240,45 @@ it('does not promote a model-authored receipt or accept unknown controls', async
   ).rejects.toThrow()
   for (const definition of owner.definitions)
     expect(definition.composition).toBe('control-plane')
+})
+
+it('retries failed storage through save_tool without repeating successful product work', async () => {
+  const { call, execute, failStorage, entries } = fixture()
+  await call(AiDesignToolIds.SUBMIT_TOOL, {
+    submissionId: 'storage-recovery',
+    proposal
+  })
+  failStorage(true)
+  const applied = JSON.parse(
+    (
+      await call(AiDesignToolIds.INVOKE_TOOL, {
+        name: proposal.name,
+        revision: 1,
+        input: 23
+      })
+    ).text
+  )
+  expect(applied).toMatchObject({
+    execution: { status: 'success', value: 23 },
+    storage: { status: 'unsaved' }
+  })
+  expect(applied.receiptId).toBeTypeOf('string')
+  expect(execute).toHaveBeenCalledTimes(1)
+  failStorage(false)
+  const saved = JSON.parse(
+    (
+      await call(AiDesignToolIds.SAVE_TOOL, {
+        name: proposal.name,
+        revision: 1,
+        receiptId: applied.receiptId
+      })
+    ).text
+  )
+  expect(saved).toMatchObject({ status: 'saved', availability: 'eligible' })
+  expect(
+    [...entries.values()].some(
+      (entry) => entry.record.availability === 'eligible'
+    )
+  ).toBe(true)
+  expect(execute).toHaveBeenCalledTimes(1)
 })

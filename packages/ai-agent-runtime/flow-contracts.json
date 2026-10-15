@@ -69,27 +69,42 @@
         {
           "id": "admit.iteration",
           "stepId": "admit",
-          "testName": "recipe proof admits bounded state repair only from domain verification contracts"
+          "testName": "recipe proof admits bounded state repair only from domain verification contracts",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/recipe-admission.ts"
+          ]
         },
         {
           "id": "invoke.iteration",
           "stepId": "invoke",
-          "testName": "recipe proof repairs once per unresolved state and returns actual stopped progress"
+          "testName": "recipe proof repairs once per unresolved state and returns actual stopped progress",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/recipe-execution.ts"
+          ]
         },
         {
           "id": "register.iteration",
           "stepId": "register",
-          "testName": "recipe proof refuses nested repair expansion before publishing the candidate"
+          "testName": "recipe proof refuses nested repair expansion before publishing the candidate",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-library.ts"
+          ]
         },
         {
           "id": "persist.iteration",
           "stepId": "persist",
-          "testName": "recipe proof saves and reloads the complete bounded iteration without replay"
+          "testName": "recipe proof saves and reloads the complete bounded iteration without replay",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-store.ts"
+          ]
         },
         {
           "id": "persist.iteration-resume",
           "stepId": "persist",
-          "testName": "resumes a bounded candidate privately without executing or losing its iteration"
+          "testName": "resumes a bounded candidate privately without executing or losing its iteration",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-store.ts"
+          ]
         }
       ],
       "handoffs": [

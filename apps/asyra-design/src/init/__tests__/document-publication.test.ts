@@ -3,6 +3,12 @@ import type {
   CanonicalChange,
   SharedPublication
 } from '../../collaboration/app-protocol-types'
+import { applyCanonicalChangesToDocument } from '../../../server/document-canonical-reducer'
+import { createFormalInitialDocument } from '../../collaboration/initial-document'
+import {
+  prepareDocumentPublication,
+  readDocumentPublicationSlices
+} from '../../collaboration/document-publication'
 import { createPublicationProcessor } from '../../collaboration/publication-processor'
 
 const required = <T>(value: T | undefined): T => {
@@ -303,3 +309,214 @@ it('prepares element changes without transporting local execution options', asyn
   ])
   expect(change.options).toEqual({ undoable: true })
 })
+
+for (const context of ['standalone', 'creation', 'removal'] as const) {
+  it.each(['action', 'undo', 'redo', 'rollback-compensation'] as const)(
+    `preserves sequential moves of the same element inside one %s transport batch - ${context}`,
+    (origin) => {
+      const document = createFormalInitialDocument()
+      const element = (id: string) => ({
+        id,
+        name: id,
+        type: 'rect',
+        parentId: 'workspace',
+        visible: true,
+        lock: false
+      })
+      document.sceneTree.elements.a = element('a')
+      document.sceneTree.elements.b = element('b')
+      document.sceneTree.elements.workspace.children = ['a', 'b']
+      const changes: CanonicalChange[] = [
+        {
+          kind: 'hierarchy-moves',
+          moves: [
+            {
+              elementId: 'a',
+              before: { parentId: 'workspace', index: 0 },
+              after: { parentId: 'workspace', index: 1 }
+            }
+          ]
+        },
+        {
+          kind: 'hierarchy-moves',
+          moves: [
+            {
+              elementId: 'a',
+              before: { parentId: 'workspace', index: 1 },
+              after: { parentId: 'workspace', index: 0 }
+            }
+          ]
+        }
+      ]
+      const source: SharedPublication = {
+        ...publication(false),
+        origin,
+        ...(origin === 'rollback-compensation'
+          ? { compensatesPublicationId: 'forward' }
+          : {}),
+        slices: [
+          {
+            sliceId: 'moves',
+            orderedIds: ['first', 'second'],
+            batches: [
+              {
+                batchId: 'moves',
+                channel: 'sceneTree',
+                deliveries: changes.map((change, index) => {
+                  if (change.kind !== 'hierarchy-moves')
+                    throw new Error('Missing move fixture')
+                  return {
+                    deliveryId: index === 0 ? 'first' : 'second',
+                    eventName: 'moveElements',
+                    orderedIds: ['a'],
+                    payload: { moves: change.moves }
+                  }
+                })
+              }
+            ]
+          }
+        ]
+      }
+      const expectedChanges = [...changes]
+      const batches = [...source.slices[0].batches]
+      const moves = batches[0]
+      if (context === 'creation') {
+        const data = {
+          ...element('created'),
+          props: { position: 'created-position' }
+        }
+        const properties = [
+          { id: 'created-position', type: 'position', x: 0, y: 0 }
+        ]
+        const entry = { data, parentId: 'workspace', index: 2 }
+        expectedChanges.unshift({
+          kind: 'element-creation',
+          entries: [entry],
+          properties
+        })
+        batches[0] = {
+          ...moves,
+          deliveries: [
+            {
+              deliveryId: 'create',
+              eventName: 'addElement',
+              orderedIds: ['created'],
+              payload: entry
+            },
+            ...moves.deliveries
+          ]
+        }
+        batches.unshift({
+          batchId: 'properties',
+          channel: 'props',
+          deliveries: [
+            {
+              deliveryId: 'properties',
+              eventName: 'addProperty',
+              orderedIds: ['created-position'],
+              payload: { data: properties }
+            }
+          ]
+        })
+      }
+      if (context === 'removal') {
+        const entry = { data: element('b'), parentId: 'workspace', index: 1 }
+        expectedChanges.push({ kind: 'element-removal', removals: [entry] })
+        batches[0] = {
+          ...moves,
+          deliveries: [
+            ...moves.deliveries,
+            {
+              deliveryId: 'remove',
+              eventName: 'removeElement',
+              orderedIds: ['b'],
+              payload: entry
+            }
+          ]
+        }
+      }
+      const prepared = prepareDocumentPublication({
+        ...source,
+        slices: [{ ...source.slices[0], batches }]
+      })
+      const decoded = readDocumentPublicationSlices(prepared).flat()
+      expect(decoded).toEqual(expectedChanges)
+      expect(applyCanonicalChangesToDocument(document, decoded)).toEqual(
+        applyCanonicalChangesToDocument(document, expectedChanges)
+      )
+      expect(() =>
+        applyCanonicalChangesToDocument(document, changes.slice(1))
+      ).toThrow(/stale/)
+    }
+  )
+}
+
+it.each([false, true])(
+  'preserves mixed move and element-data delivery order - reverse %s',
+  (reverse) => {
+    const document = createFormalInitialDocument()
+    const element = {
+      id: 'a',
+      name: 'Before',
+      type: 'rect',
+      parentId: 'workspace',
+      visible: true,
+      lock: false
+    }
+    document.sceneTree.elements.a = element
+    document.sceneTree.elements.b = { ...element, id: 'b' }
+    document.sceneTree.elements.workspace.children = ['a', 'b']
+    const moves = [
+      {
+        elementId: 'a',
+        before: { parentId: 'workspace', index: 0 },
+        after: { parentId: 'workspace', index: 1 }
+      }
+    ]
+    const update = {
+      id: 'a',
+      action: 'updateElementData' as const,
+      eventName: 'updateElementData',
+      changes: [{ key: 'name' as const, before: 'Before', after: 'After' }]
+    }
+    const deliveries = [
+      {
+        deliveryId: 'move',
+        orderedIds: ['a'],
+        eventName: 'moveElements',
+        payload: { moves }
+      },
+      {
+        deliveryId: 'rename',
+        orderedIds: ['a'],
+        eventName: 'updateElementData',
+        payload: update
+      }
+    ]
+    const expected: CanonicalChange[] = [
+      { kind: 'hierarchy-moves', moves },
+      { kind: 'element-data', changes: [update] }
+    ]
+    if (reverse) {
+      deliveries.reverse()
+      expected.reverse()
+    }
+    const source: SharedPublication = {
+      ...publication(false),
+      slices: [
+        {
+          sliceId: 'mixed',
+          orderedIds: ['a'],
+          batches: [{ batchId: 'mixed', channel: 'sceneTree', deliveries }]
+        }
+      ]
+    }
+    const decoded = readDocumentPublicationSlices(
+      prepareDocumentPublication(source)
+    ).flat()
+    expect(decoded).toEqual(expected)
+    const saved = applyCanonicalChangesToDocument(document, decoded)
+    expect(saved.sceneTree.elements.workspace.children).toEqual(['b', 'a'])
+    expect(saved.sceneTree.elements.a.name).toBe('After')
+  }
+)

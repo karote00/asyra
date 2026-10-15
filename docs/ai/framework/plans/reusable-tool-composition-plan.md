@@ -1,8 +1,1538 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: CHECKPOINT REQUESTED - deterministic handoff corrections verified; complete tool usage coverage and live acceptance remain incomplete.
+Status: Stage 1 is complete locally and authorized for one push after source integration and applicable local checks. Stage 2 is authorized for plan review only, after that push.
 
 ## Current authority and stop boundary
+
+The current request authorizes publishing the completed Stage 1 work, including its
+reviewed persistence/history correction and permanent integration evidence. Fetch and
+integrate current main, preserve unrelated changes and pass affected local checks
+before this one push. Then review and update the Stage 2 plan only and report an
+execution brief. Stage 2 planning edits remain local and unpushed. No Stage 2
+implementation, live 101, model requests, monitoring, PR creation or merge is authorized.
+App model and effort remain unchanged. Earlier execution cards are historical outcomes,
+not permission to restart their automatic workflows.
+
+### Stage 1 Factory follow-up review card - 2026-10-15
+
+- Objective: review the no-op replay correction across normal transactions, batches,
+  collaboration, Undo/Redo, compensation, retry and Stage 1 inspect-to-settle.
+- Fixed discovery: current Factory replay/shared-publication owners and their formal
+  suites; direct Core history consumers; Design publication, persistence queue,
+  collaboration recovery and existing real-browser inspection integration. Inspect
+  current source and contracts, not removed implementations or historical behavior.
+- Exact owner routes: History `replay-history-action`, persistence
+  `settle-local-publication`, and Design `inspect` -> `settle`. Review buffered and
+  already-published failures separately. Canonical restoration and remote delivery
+  compensation have different inputs; a local no-op is not proof of remote state.
+- Allowed edits: focused permanent tests and first incorrect owner on these routes,
+  their exact specs/Inspector contracts, this plan and current handoff. No Stage 2,
+  model requests, live 101, push, monitoring, new compatibility or new dependency.
+- Gates: Factory and direct consumer suites; real browser inspection/history with
+  peer and durable reload; affected production types/build, lint/naming and exact
+  Inspector admission. Reuse unchanged prior evidence with explicit attribution.
+- Completion: review actual input/output and failure recovery, preserve strict
+  backend admission, distinguish newly reproduced defects from preventive coverage,
+  and report residual limits without claiming all possible states were enumerated.
+
+Self-review: no new product capability is needed. The persistence bypass wording
+must distinguish an ordinary unrecorded no-op from successful retained History
+settlement; otherwise it conflicts with the upstream reviewed replay contract.
+Published-prefix compensation needs an explicit no-op sibling proof in addition to
+existing buffered-failure coverage. Both checks stay inside the authorized owners.
+
+### Factory follow-up review outcome - 2026-10-15
+
+The bounded upstream/downstream review found no additional production defect in the
+successful-no-op replay correction. No production implementation was changed in this
+review. One persistence Inspector bypass was ambiguous: ordinary no-op mutation and
+retained History settlement are different contracts. The bypass now states that
+separation and retains the document-channel filter; the generated catalog is updated.
+
+Permanent preventive coverage now exercises a no-op sibling after publication,
+followed by a later owner failure, reverse linked compensation, retained Undo entry,
+retry and Redo. Local restoration touches only changed owners; shared compensation
+restores the previously delivered state, which need not equal the local no-op state.
+The new case passed without a production change. Its first draft configured the same
+transaction delivery policy more than once and correctly failed admission; that test
+setup was corrected, not the product guard.
+
+Code review followed replay success versus mutation acknowledgement, batch/source
+ordering, provisional History settlement, acknowledged compensation correlation,
+document-channel filtering, canonical insertion validation, retained outbox/recovery,
+and exact in-flight backend retry. Invalid duplicate creation still fails canonical
+admission; no backend validation or recovery guard was removed. Stage 1 review still
+uses the actual host/registry/browser/store/settlement route and no independent AI.
+
+Current-source evidence under `tmp/stage1-integration/`:
+
+- `review-factory.log`: full Factory suite, 300 passed; `review-factory-build.log` passed.
+- `review-core.log`: 36 direct Core history/persistence tests passed.
+- `review-browser-consumers.log`: 123 publication, collaboration and lifecycle tests passed.
+- `review-backend.log`: 24 canonical reducer and persistence queue tests passed.
+- `review-inspection-e2e.log`: 7 actual-browser Stage 1 cases passed, 2 existing recorded
+  fixture opt-in cases skipped. Includes peer equality, durable confirmation and reload,
+  partial results, stale/cancelled/unavailable evidence, repair and completion.
+- `review-collaboration-cases.log`: 10 existing actual-browser collaboration cases
+  passed. Covers finite batches, reconnect, Group restore/Redo, partial Fill, published
+  compensation and durable reload, preparation/IndexedDB/accepted-cleanup recovery,
+  subsequent edits and peer preservation. No persistence 409/422 appeared in either
+  successful browser log. The first discovery command used ordinary Playwright config,
+  which excludes collaboration; its `No tests found` result is not a passing run.
+- `review-retransmission.log`: 2 real socket-server cases passed, proving publication
+  retry deduplication and exact ordered backend-batch retry after rejection.
+- `review-types.log`, `review-lint.log`, `review-naming.log` and
+  `review-task-context.log`: declared production types, changed-file lint, naming
+  (15 tests) and task association passed.
+- `review-catalog.log`: 53 catalog/admission tests passed.
+
+Prior accepted same-source History defect-injection and Design flow evidence remains
+supporting evidence; this review does not relabel it as a new execution. No speculative
+fallback, compatibility route, additional state owner or Stage 2 implementation was
+introduced. All current bounded gates passed. Keep the work local and stop after this
+review; no live 101, push, monitoring or automatic next-stage execution.
+
+### Stage 1 integration closure card - 2026-10-15
+
+The current request authorizes integration-level proof and direct defect correction
+only. This card supersedes earlier completion claims for the same stage.
+
+- Owner route: inspect-to-settle; upstream common host admission and actual App
+  runtime action execution, downstream canonical result store, subsequent review,
+  completion settlement and public runtime outcome.
+- Authority: spec `#tool-first-correction-contract`; Inspector inspect conditions,
+  existing implementation boundaries and inspect-to-settle route. No new capability.
+- Inputs: actual registered action contracts, deterministic scripted primary-agent
+  judgments, real rendered inspection receipts and canonical change notifications.
+- Outputs: retained passed/pending records, scoped freshness rejection/recovery and
+  a completion outcome consistent with all current obligations.
+- Allowed contributors: existing registry/invoke, operation owner, check store,
+  browser runtime, canonical evidence owner and real document APIs. No extra AI,
+  compatibility route, fabricated receipt, replacement store or Stage 2 aggregate.
+- Boundary: existing `e2e/ai-inspection-evidence.spec.ts`, corresponding operation
+  and review tests; direct canonical-owner fixes only after a failing regression.
+  Plan and current Inspector evidence references may be updated within this route.
+- Integration completion requires real producer outputs admitted by real consumers:
+  public invocation -> validation/dispatch -> browser action/evidence -> retained
+  store -> subsequent partial review/read -> settlement -> runtime outcome.
+  Script only primary-agent decisions and external transport faults. Do not mock
+  middle owners, their freshness verdicts, check results or completion verdicts.
+- Required sequences: existing-content review without a mutation; pass -> later
+  failure -> blocked completion -> partial repair -> completed; pending evidence
+  outside the submitted subset and unchanged passes retained; local document edit
+  invalidates affected evidence only; stale/unavailable/cancelled reads cannot
+  publish approval and a safe retry does not replay document writes.
+- Gates: actual browser integration plus affected existing owner/host suites,
+  production TypeScript, changed-file lint, naming and Inspector contract checks.
+  Count mapped cases as evidence bindings, never semantic completeness by itself.
+- Review each sequence against actual state and public outcomes, not test names.
+  A test passing without a production change is preventive integration coverage,
+  not proof that a newly reproduced defect was fixed.
+- Stop after Stage 1 closure and a current-only new-chat handoff. No Stage 2,
+  live 101, model requests, push or monitoring. Preserve existing local work.
+
+Self-review: this boundary covers real ownership and failure/recovery handoffs without
+building a second execution mechanism. The scripted model is the external boundary;
+all product intermediates remain production implementations. Browser integration is
+required where renderer evidence, runtime transactions or canonical invalidation are
+involved. Existing targeted cancellation tests remain supporting evidence only.
+
+Integration finding (resolved by the correction outcome below): the existing create/Undo/Redo/Core-load browser
+case passed while persistence repeatedly rejected duplicate creation IDs (422).
+Adding a required durable confirmation reproduces failure BEFORE Core load. The
+earlier hypothesis that direct Core load caused the rejection is disproven; do not
+use it as a root-cause statement. Preserve the strengthened failing test and actual
+canonical publication artifact. The new public tool review/partial recovery/local
+invalidation/settlement case passes with durable completion. Do not conflate that
+pass with the independent history/persistence failure. The user explicitly authorized expanding this round to the history/persistence owner; Stage 2 remains excluded.
+
+### Integration evidence and current stop - 2026-10-15
+
+- New real browser/host/store/settlement case passes, including real durable
+  `report_outcome`. Both before-dispatch cancellation and cancellation after actual
+  browser validation preserve retained records. Corrected capture recovers unavailable
+  images; one local edit preserves the other criterion's exact passed record. No
+  product implementation change was needed for these newly exercised paths.
+- Existing owner suites: 285 passed; declared production TypeScript passed; changed
+  test lint passed; naming 15 passed; Inspector catalog/admission 53 passed.
+- Earlier whole-file 7 passed / 2 opt-in skips is not clean persistence evidence:
+  backend logs exposed a failure. Adding mandatory durable confirmation turns that
+  previously invisible problem into a formal failing test. The correction outcome below records its subsequent passing verification.
+- `tmp/stage1-integration/browser-publications.log` records the strengthened failure.
+  `inspection-lifecycle-publications.json` preserves five actual publications:
+  creation -> properties -> Undo properties -> Redo same-ID creation -> properties.
+  The Undo publication has no inverse element removal. The backend then rejects
+  duplicate creation. This localizes the broken producer/consumer handoff; it does
+  not yet identify the implementation line responsible. No validation was relaxed.
+- Exploratory E2E TypeScript configuration remains failed on pre-existing source/test
+  helper typing outside the declared production gate; no errors remain in this turn's
+  added integration block. Do not label that exploratory command successful.
+- Current-only continuation: `reusable-tool-composition-current-handoff.md`.
+  All test-owned 3300/3401/4401 listeners exited. No Stage 2, live101, model request,
+  push or resumed monitoring. The authorized correction now includes the separate history/persistence owner. Do not reuse historical automatic merge goals.
+
+### Authorized history-to-persistence correction card - 2026-10-15
+
+- Objective: repair the reproduced create -> Undo -> Redo -> durable save failure,
+  then prove reload and unchanged Stage 1 review handoffs. Stage 2 remains excluded.
+- Inspectors: History Replay `replay-history-action` -> document persistence
+  `settle-local-publication` -> backend materialization. Factory owns inverse/forward
+  replay and shared evidence; App translates publication evidence; backend validates
+  ordered document changes. No owner may silently drop a required removal.
+- Inputs: real UI action, committed journal, inverse replay, exact publications.
+  Outputs: matching local/remote/durable state with one reversible history action.
+- Discovery: compare local Undo state, raw Factory publications and App translation;
+  inspect only the first incorrect owner and its direct consumers. Do not assume
+  Factory is wrong merely because the final backend rejection is visible.
+- Allowed edits: the implicated canonical replay/publication owner and its existing
+  tests, actual browser history/persistence integration, related spec/Inspector and
+  plan. No backend validation relaxation, artificial inter-action delay, guessed
+  removals, compatibility fallback or whole-document repair snapshot.
+- First retain the current failing durable browser assertion; add a focused permanent
+  producer/consumer regression before any production fix. Verify batching, progressive
+  and synchronous history, failure compensation and retries through affected tests.
+- Gates: affected owner suites, actual create/Undo/Redo/save/reload integration and
+  existing review integration, production types, lint, naming and Inspector proof.
+- Stop: Stage 1 handoff only; no model calls, live 101, Stage 2, push or monitoring.
+
+Self-review: the failure is now explicitly authorized. Local state and wire evidence
+must agree before blaming persistence. Preserve existing invalid-input/retry rejection;
+use actual state owners and backend, not replacement history or a permissive reducer.
+
+Root cause confirmed: after Escape, selection inverse succeeds without changing local
+state. Factory replay gated both restoration and retained publication readiness on
+`applied`, leaving the creation slice unready while local element removal succeeded.
+Redo republishes creation; the backend correctly rejects its duplicate. Both ordinary
+and progressive focused history cases fail before the fix with missing publications.
+The correction separates successful replay delivery from mutation-only restoration;
+retained historical evidence still reaches its shared consumer, and thrown replay
+failures remain unready. No backend or App translation exception is needed.
+
+### Stage 1 integration and history correction outcome - 2026-10-15
+
+Completed the authorized slice. The production fix changes Factory replay readiness,
+not backend validation or the document format. Successful owner replay settles its
+retained shared delivery even when the local value already matches. Only actual
+mutation registers rollback restoration. No selection-specific exception, duplicate-ID
+bypass, artificial delay, compatibility path or replacement history was introduced.
+
+Permanent regression evidence:
+
+- `factory-journal-history.test.ts`: synchronous and progressive no-op sibling cases;
+  real state and exact inverse/forward publications; failed mixed replay restores only
+  changed owners, preserves History, publishes no premature batch and can retry.
+- `ai-inspection-evidence.spec.ts`: real UI creation, Escape, Undo and Redo; second
+  independent collaboration client sees each change; durable confirmation and backend
+  digest match local state; actual reload restores the exact saved document.
+- The same file's public tool integration crosses real host/registry/browser actions,
+  evidence storage, partial repair, cancellation, scoped invalidation and durable
+  settlement. Only primary-agent decisions and external faults are scripted.
+- Full Factory suite: 299 passed. Core history/persistence consumers: 36 passed.
+  App collaboration/publication consumers: 123 passed; server reducer/queue tests
+  passed in the prior node run. Existing review/operation/store suites: 285 passed.
+- Actual browser evidence suite: 7 passed, 2 existing opt-in recorded-replay skips;
+  the subsequently extended two-client history/save/reload case also passed. No
+  live101 or model request was run. No persistence rejection appears in final runs.
+- Production TypeScript, Factory build, changed-file lint, naming (15), and Inspector
+  catalog/admission (53) passed. No push, monitoring or Stage 2 work occurred.
+
+Source-bound proof: History candidate and accepted review are recorded in
+`tmp/stage1-integration/history-closeout-{candidate,accepted}.log`; final proof
+`history-closeout-proof.log` passes baseline, three exact defect injections and
+recovery on the same source, with 17 obligations. The History manifest now binds all
+existing cases in its declared test suite; the current verifier correctly rejected
+previously unregistered siblings, including skipped tests. Exact order/value negative
+expectations were expanded to include those existing assertions; none were removed.
+The old no-op defect injection fails the three new handoff/recovery cases exactly.
+Design source candidate `dd343c3d-5a46-4133-bd0c-26e98afe95c3` passed its 31 cases.
+
+Validation limitations and corrected attempts: the first browser rerun used the old
+compiled Factory dependency and still failed; rebuilding the actual package resolved
+that source mismatch before the successful run. An exploratory browser-consumer run
+used Node instead of its declared jsdom environment; the corrected environment passed.
+Earlier failed/unknown logs remain failed/unknown and are not counted as green.
+The exploratory legacy E2E typecheck remains outside the declared production gate.
+No broad repository CI, visual 101 acceptance or remote state is claimed.
+
+Final self-review traced changed replay completion through projection, App filtering,
+remote application, strict backend materialization and actual reload. Failure keeps
+restoration and publication responsibilities distinct; existing compensation, batching,
+History groups and direct Core consumers remain covered. UI/model review contracts
+remain unchanged. Stop here and use the current-only handoff for the next conversation.
+
+### Stage 1 follow-up review card - 2026-10-15
+
+Current authorization is a bounded Stage 1 review and correction, plus read-only
+Stage 2 implementation inspection and contract repair. Do not start Stage 2 code.
+Review the current primary judgment path (validation, receipt admission, retained
+results, correction handoff, completion), prepared checks, canonical vector conversion,
+and explicit diagnostic provider separation. Include invalid input, partial reviews,
+local invalidation, retry and unaffected-pass retention, not only the removal tests.
+
+- Active owner: inspect; spec `#tool-first-correction-contract` and existing
+  inspect-to-compose / inspect-to-settle routes. The canonical result store owns
+  judgment status/evidence; correction output must preserve pending findings and
+  completion must not retain a prior approval after a newer failed judgment.
+- Allowed edits: local-design-review and its formal tests/proof; directly affected
+  spec/plan/Inspector contracts and generated catalog. Other Stage 1 consumers are
+  read/review/test only unless a direct regression is reproduced first.
+- Stage 2 contract review compares actual Runtime admission, binding, iteration,
+  cancellation and recovery with the proposed aggregate interface. Repair contract
+  mismatches only; no new tool, interpreter, provider or compatibility behavior.
+- Gates: regression-first owner tests, existing review/prepared/check-store/host
+  integration, production typecheck, changed-file lint, naming and source-bound
+  Inspector proof. Reuse unchanged vector/browser evidence, unless edits reach those
+  consumers. No live 101, model requests, push or monitoring.
+- Stop after the bounded handoffs pass review and applicable gates. Future aggregate
+  execution remains pending; admitted contracts are not future runtime acceptance.
+
+### Stage 1 follow-up review outcome - 2026-10-15
+
+The review found and fixed three inspect-owner defects in the current primary-agent
+handoff: partial submissions omitted other pending evidence; a newer structure failure
+could leave final acceptance true; judgments of existing content could be ignored by
+settlement when this request had made no edit. Formal regressions failed first in
+`tmp/tool-first-stage1-review/red.log` and `read-only-red.log`. Correction output now
+reads the canonical pending store, structure failures revoke final acceptance, and
+published judgments activate the existing review requirement. No duplicate store or
+compatibility route was introduced. Validation-only/rejected submissions stay inert;
+structure recovery requires a final primary judgment; unrelated passes retain their
+exact records. Existing-content review does not require a synthetic mutation.
+
+Review traced schema -> operation host -> validation-only candidate -> asynchronous
+canonical receipt validation -> publication -> correction/read -> completion settlement,
+including cancellation, unavailable/stale evidence, partial criteria, reference/fact
+changes, regional units and deferred work. The actual operation-consumer case now proves
+completion refuses a later structure failure and resumes after correction with retained
+passes. Source proof also covers that transition. An unused assessor mock in an existing
+proof was replaced by an assertion on the actual mocked provider spawn boundary.
+
+Stage 2 review corrected the numeric progress mismatch, specified revision handoff from
+the last successful repair receipt, and placed dynamic repair-capability coverage at
+the Design repair owner before writes. Actual Runtime admission/execution/partial and
+cycle paths were inspected; generic Runtime remains unchanged. These are contract
+repairs only. Stage 2 runtime implementation and its new aggregate acceptance are pending.
+
+Final evidence under `tmp/tool-first-stage1-review/`:
+
+- `integration-final.log`: 534 passed, three original conditional skips across seven
+  existing review, prepared, store, operation, provider, host and composition suites.
+  This includes four new regression cases and the strengthened real host settlement
+  case, plus existing local invalidation, accumulation and failure recovery cases.
+- `types-final.log`: both production TypeScript projects passed. `lint-final.log`:
+  zero errors, one existing console warning in the proof fixture. Naming passed.
+- `inspector-final.log`: 53 catalog/admission tests passed. Design captured candidate
+  `34bf8a84-071d-4e81-bb40-e27821194386`, source
+  `1aa0243e67964a6e6d2074b6dc56f2a755fc47b29fe843bf8da66627063d73f0`,
+  all 31 cases passed; accepted review
+  `5b296cda8c7c792bc8d93bfd739d30b341f4fe411a3dc2f8166a80d43673f055`.
+- Runtime captured candidate `500530fb-0eeb-42b5-8dc9-41ae12b05bfc`, source
+  `7bcf338a29bacaf02b2c8122044a135ea9ec49547c5bad2523e5b97a9afde60e`,
+  all nine existing lifecycle cases passed; accepted review
+  `892bf19fe1dcbad13144c00d9dd0a111085bf8611d4486e841578bfac4530b77`.
+- The first filtered host invocation passed its selected case but failed the suite's
+  all-advertised-tool coverage guard because other cases were filtered out. The guard
+  was preserved and the complete suite passed; `host-focused.log` remains failed.
+  No failed run is relabeled green. Unchanged canonical-vector/browser evidence from
+  the preceding stage is retained; no browser/persistence/runtime mutation was made.
+
+Bounded closure: current Stage 1 handoffs have no unresolved finding in the reviewed
+routes and applicable gates. This is not a universal correctness guarantee, future
+Stage 2 runtime acceptance, performance measurement or document persistence redesign.
+No live 101, model request, push, monitoring or later-stage implementation occurred.
+
+### Stage 1 execution card - 2026-10-15
+
+- Owner segments: inspect removes the independent drawing assessor and refactors
+  its still-used evidence types; observe removes its exclusive provider entry;
+  compose removes the obsolete vector argument at schema/normalization/dispatch.
+  Complete each segment before advancing. No generic Runtime implementation change.
+- Contract: AI execution spec `#tool-first-correction-contract`; existing Inspector
+  inspect/observe/compose nodes and prepare-to-inspect, inspect-to-compose,
+  inspect-to-settle routes. Failure stays with the existing owner.
+- Inputs: canonical criteria, primary-agent judgments, inspection receipts and
+  componentMappings with eligible analysis receipts. Outputs retain current typed
+  results and unresolved findings, without an independent-assessor verdict.
+- Conditions: canonical freshness/coverage and pre-write schema checks remain;
+  no fallback aliases, implicit extra model, new interpreter or widened limits.
+  Explicit post-run diagnostic assessment remains separate and supported.
+- Allowlist: local-design-review, local-prepared-design-review and neutral check
+  contract; local-operation-tools image type consumer; local-ai-provider and its
+  exclusive assessment helper; local-vector-artifact/local-image-tools and domain
+  prompt; their existing formal tests, vector provider E2E fixture, package test
+  inventory; directly corresponding spec, plan, Inspector manifests/data/catalog.
+- Discovery frozen to those identifiers, direct callers and existing proof cases.
+  Do not expand into retention, status, load/save or future mechanical-loop repairs.
+- Test first: reject obsolete vector input; remove exported assessor capability;
+  preserve primary visual failure/recovery and ordinary mechanical/prepared checks.
+  Add the actual Stage 1 handoff case to the existing Design proof manifest.
+- Gates: applicable server suites, canonical vector provider consumer, production
+  server/browser typechecks, changed-file lint, naming, Inspector structural
+  admission and source-bound candidate proof. Future acceptance cases stay pending.
+- Stop: after Stage 1 self-review and gates. Do not claim model adoption, first-frame
+  improvement or completion of future stages. No push or resumed monitoring.
+
+### Stage 1 admission and owner review
+
+The revised Design and Runtime manifests pass the existing `loadContract` structural
+admission. This admits the declared architecture, not future executable completion.
+The inspect owner case `inspect.current-contract` covers canonical conversion,
+obsolete-input rejection, primary fail/stale/fresh-pass handoffs and absence of an
+independent provider capability. Its initial execution failed on all six removal
+assertions (`tmp/tool-first-stage1/red-all.log`) before production changes.
+
+Readiness self-review: owner inputs/outputs, conditions/bypasses, contributors,
+failure owners and current consumers are consistent for Stage 1. Stage 2's exact
+aggregate API and Stage 2-4 handoff cases are specified but remain unimplemented;
+no target or runtime acceptance is claimed for them. Stage 1 preserves the current
+canonical check store and explicit post-run diagnostic service. The selected base
+is the rebased task HEAD, which already contains this plan; task-context preflight
+passes. No main, remote or unrelated task state is changed.
+
+Inspect segment: 106 existing/current tests pass after removing the second assessor
+and moving required neutral prepared-check types into `design-check-contract.ts`.
+Retired tests exercised the removed independent scorer; reference selection, source
+assertions, retained primary failures and local pass accumulation now exercise their
+current owner APIs. No compatibility method remains. Observe and compose segments
+remove their exclusive provider entry and alias; direct integration gates follow.
+
+### Admission consumer correction
+
+The applicable Inspector admission tests exposed stale fixture expectations: Design
+still expected 23 cases (current 31, including this stage's one new case), and Runtime
+expected one case per owner/four tests although its current manifest has nine cases.
+This is a direct contract-consumer correction within admission scope: update exact
+case counts and unique owner membership while retaining source/test-name/path/spec
+and actual execution checks. No Inspector admission rule or runtime is weakened.
+The failing formal run is retained in `tmp/tool-first-stage1/inspector-tests.log`.
+
+### Stage 1 completion and bounded self-review - 2026-10-15
+
+Completed only current-contract cleanup. Removed the independent visual provider,
+its options/result fields, unused comparison/retention API, scorer prompt/validator
+and exclusive live/unit cases. Required prepared-check context/results now have a
+neutral current contract. Primary judgments continue through the existing check
+store; explicit post-run diagnostics remain supported. Removed the oval alias from
+schema, normalization, host consumer, prompt and current examples. Canonical mapping
+and eligibility remain unchanged; rejected legacy requests do not consume artifacts.
+Saved historical reference images were preserved, with their obsolete run instruction
+removed. No compatibility adapter, alternate registry or model setting was added.
+
+Self-review covered input admission -> existing conversion/inspection owner -> primary
+failure and recovery -> current retained results, provider export/call sites, canonical
+schema/native descriptions, actual browser drawing/Undo consumers, source assertion
+freshness, and exact Inspector locations. Formal red evidence preceded removal.
+The old independent-mode tests are retired; useful reference/source/local-pass cases
+now call current owners. The inert assessor injection mock was removed because an
+ignored callback is not proof that a checker cannot invoke a model. Current source
+proof explicitly asserts no provider spawn, and existing prepared/deferred checks
+remain executable. No unresolved Stage 1 failure remains in the bounded gates.
+
+Evidence (all under `tmp/tool-first-stage1/`):
+
+- `integration-tests.log`: 604 passed, 3 existing conditional skips; eleven current
+  server suites cover provider/host, schemas, primary/prepared review, mappings and
+  operation/composition consumers. `image-final.log`: 23 passed after strengthening
+  actual valid-artifact rejection/reuse, not an already-invalid receipt fixture.
+- `vector-e2e.log`: two real browser cases passed in 23.7 seconds, with mocked provider
+  responses: native Oval creation and fresh captures after repeated edits with one
+  Undo. Inspected generated screenshots. Playwright-owned 3300/3401/4401 processes
+  exited; no listening test server remains. No model, live 101 or recording run.
+- `types.log`: both declared production TypeScript projects passed. `lint.log`:
+  no errors, four existing console warnings; `lint-final.log`: no errors/warnings
+  for the final adjusted consumers. `naming-final.log` and task-context passed.
+- `inspector-verified.log`: 53 admission/catalog tests passed. Earlier failed counts
+  and missing exact case-location assertions remain in their failure logs; final
+  corrections add current locations rather than weakening the assertions.
+- Design candidate `ed666dd1-bb7f-49f6-a9b3-c0fab0ef102f`, source
+  `fdf5f4949165041cc78baf08d8cca84af7ce2eac83305cf78a7bee83901f6dd6`,
+  31 owner cases passed; reviewed contract accepted as
+  `8af9466bffc2e36a5a5aef28db29007370d80447f0cfb8fa05bf7d792b3689fa`.
+- Runtime candidate `d522a442-dda3-4148-94f6-234aab71292c`, source
+  `a605c21abdf277d815119e96731ae6a04226a7124de6fbc3ebcdc6aca30e8017`,
+  nine lifecycle cases passed; reviewed contract accepted as
+  `6ffd0c037cc084faa5e8b5c5c40970446384b029c9976712b603b35c613ab651`.
+
+Contract acceptance is not whole-target completion or a cross-flow source-equivalence
+claim. Stage 2 aggregate verification/iteration, Stage 3 delegation and Stage 4 reuse/
+settlement acceptance remain pending. This stage makes no first-frame or model-time
+improvement claim. Changes remain local and unpushed; monitoring stays disabled.
+
+### Latest Flow Inspector review - 2026-10-15
+
+Reviewed after rebasing onto `origin/main` at
+`5fe936e74` (local HEAD `844a5d27c`). This is a plan-only review, including the
+current dirty source; previous source-bound passes do not prove the rebased source.
+Use the existing Flow Inspector workflow, not an additional readiness registry.
+
+Actual supported-tool reads and structural admission:
+
+- `cli.cjs test-results`: no retained ordinary test observations in this checkout.
+  An empty list is not a passing execution or absence of historical defects.
+- `cli.cjs --manifest apps/asyra-design/flow-contracts.json status`:
+  mapping revision 83, no active run; Runtime manifest status: revision 21,
+  no active run. Both `targets` reads contain no admitted target records.
+- The existing `loadContract` admission accepts the current Design, Runtime and
+  Design Playwright manifests. This proves structural consistency only, not the
+  proposed changes, implementation correctness or whole-target acceptance.
+- Current source manifests contain 30 Design cases across seven nodes and nine
+  Runtime cases across four nodes. Counts in older overview prose are not the
+  current case inventory. The new Playwright observation manifest maps only the
+  single-selection Delete case. It has no proof scenarios and cannot establish
+  AI workflow, save/reload or whole-target conformance.
+
+The latest localization tooling retains original failures/retries and source
+fingerprints; unmapped, stale, missing and interrupted evidence remain explicit.
+Use its ordinary reporter/importer on applicable future formal runs without
+rerunning tests solely to collect observations. Do not invent mappings for an
+unrelated case. Required new product cases belong in their real owner proof
+manifests before claiming that those handoffs are verified.
+
+#### Review findings resolved in this plan
+
+1. **Missing owners:** the earlier planning card named only Design compose/inspect
+   and Runtime observe. Execution also depends on Design request/prepare/apply/settle
+   and the separate Runtime admit/register/invoke/persist contract. They are explicit
+   below; no domain dependency repair moves into generic Runtime.
+2. **Premature tool-first guidance:** prefer a workflow only after its exact declared
+   check, output, lifecycle and recovery paths are executable. Stage 2 now closes
+   mechanical execution before Stage 3 changes delegation guidance and proves
+   discovery/authoring against that verified route.
+3. **Missing aggregate check handoff:** `read_design_checks` returns retained counts
+   and records, with freshness validation. It has no registered verification verdict.
+   `review_design` currently verifies one target subtree. Runtime iteration requires
+   a registered `statusPath`/`progressPath`, values pass/repairable/decision-required,
+   and a finite declared repair list; it cannot infer a dynamic checker or repair
+   strategy from a list of stale records. Stage 2 must close this domain contract,
+   not label the existing read tool as an aggregate checker.
+4. **Completion states were conflated:** successful invocation, current mechanical
+   results, primary-agent visual acceptance, saved recipe eligibility and durable
+   document saving are separate. None implies the next; settle owns the visible
+   outcome and captured document publication acknowledgement.
+5. **Recovery lifetime was underspecified:** request-local evidence/leases may support
+   retry in that request, not resurrection after reload. Saved recipe definitions and
+   document checkpoints have different durable owners. Missing transient authority
+   requires reacquisition; it must not trigger mutation replay or fake current passes.
+6. **Activity wording could preserve stale work:** the current settle contract retires
+   commentary with its root cohort. Do not extend completed-call text to fill idle
+   time. Request-stage purpose must have an explicit authored identity/lifetime; any
+   intended change to cohort retirement must update spec and Inspector before code.
+7. **Evidence coverage was overstated:** independent node passes and ordinary test
+   localization cannot prove a cross-owner workflow. New cases must explicitly prove
+   required routes, success, partial completion, interruption and recovery on one
+   captured source. No older test contract is retained merely to certify a replacement.
+
+#### Execution-order review and direction constraints
+
+Review result: preserve the direction and existing owners, but execute mechanical
+closure before promoting tool-first delegation. Before Stage 1 code changes, align
+the thin contract and affected Inspector routes for the complete sequence; this is
+existing readiness work, not another implementation stage or new architecture.
+
+The fixed direction is primary-agent intent/creative choices/recipe authorship and
+visual judgment, with deterministic execution/checking/declared repairs delegated
+to tools. Actual changed dependencies determine invalidation. One canonical registry,
+invocation path and check store remain authoritative; superseded behavior is removed.
+
+Stage 1 remains the first production change. Remove only superseded paths and update
+all their current callers atomically within the owner slice; do not leave a broken
+intermediate flow or delete useful shared capabilities. Independent post-run diagnostics
+are separate current behavior, not a dormant drawing assessor to retain for compatibility.
+
+Stage 2 proves the mechanical loop with an admitted fixture recipe and real host
+consumers. Stage 3 then proves lookup/specification/submission/invocation and makes
+all instruction layers prefer that working capability. Stage 4 verifies durable reuse
+and complete visible/document settlement. Existing save, cancellation, event and
+resource contracts are prerequisites in every stage, not deferred implementation.
+
+Do not turn tool-first into recipe-first: known suitable workflows and single edits
+execute directly; a missing composition is authored only when existing capabilities
+cannot already perform it. No arbitrary camera/style choice, invented geometry repair,
+extra reviewer model or exhaustive pre-drawing plan is introduced. Ready coherent parts
+may render before later parts are designed. Mechanical checks do not impose additional
+visual polish or force the primary agent to inspect each batch.
+
+A checked scope is complete only for its declared current obligations; the whole task
+still needs all applicable mechanical and visual obligations. No local pass promotes
+whole-document success. Check results accumulate for their valid lifetime; revisiting
+an unrelated region is not required. Both tool and primary-agent findings use the
+existing dependency-aware store without silently downgrading previous obligations.
+
+Stage exit requires its own behavior plus actual upstream/downstream consumers and
+failure recovery. New lifecycle events carry identity/ordering from the first emitting
+slice; Stage 4 tests presentation end to end rather than retrofitting provenance.
+Same-request retry, cancellation and recovery cannot be postponed to final integration.
+Recheck affected existing preservation cases at each boundary; reserve the full
+integrated suite for the completed sequence, not every edit.
+
+That planning review authorized no implementation and claimed no model-adoption or timing result; the later Stage 1 authority above supersedes its stop boundary.
+The aggregate check's exact public schema, owner route and executable cases still require
+formal admission before its production slice. Do not repeat whole-plan review as a
+substitute for that bounded contract work, and do not claim admission already exists.
+
+#### Stage connections and owner boundaries
+
+| Stage | Producer -> owner -> consumer | Concrete exit condition |
+| --- | --- | --- |
+| 1 - Current-contract cleanup | Current product requirements -> Design inspect/compose; provider observation adapter -> current registry, caller, documentation and tests | Removed assessor/alias paths are unreachable; current component mappings and primary-agent review still work. Shared neutral evidence helpers remain only when a current consumer needs them. |
+| 2 - Mechanical closure | Prepared artifact -> inspect admission -> apply receipt with actual mutation scope -> Design inspect -> Runtime invoke verdict or Design compose decision | Checks close the affected mechanical obligations, preserve unrelated passes and return usable recovery; no second AI or model-per-record coordination. Prove a known admitted repair through the existing Runtime before changing model guidance. Unsupported repairs return a decision without redoing initial writes. |
+| 3 - Delegation contract and guidance | Request scope/purpose + registry inventory -> Design compose -> Runtime admit then register -> the verified Stage 2 invocation route | Native and saved discovery use the same current registry; invalid recipes never dispatch; exact schemas, instruction layers and examples lead to real direct/composed host execution. Deterministic provider fixtures prove integration, not actual model preference. |
+| 4a - Reuse and storage | Runtime invoke receipt -> Runtime persist with Design host storage -> next request compose/admit/invoke | Save-only retry and fresh-request reuse work with new inputs; no transient IDs in saved definitions; unavailable dependencies never silently select an older revision. |
+| 4b - Visible settlement | Request purpose + ordered tool events + inspect outcome + document publication -> Design settle; Runtime observe records -> panel and persisted document | Truthful current purpose, explicit unresolved/partial outcome, independently confirmed document durability, and exact reload. Recipe storage is not document durability. |
+
+These are sequential plan stages, not five combined implementation edits. Each
+owner change gets the existing Step Execution Card and allowlist. Stage 4a and 4b
+are separate owner segments. Stage 2 itself progresses inspect contract, apply
+receipt consumer, then invocation integration; do not patch all three at once.
+Already-working accepted behavior is preserved and proven, not needlessly rewritten.
+
+Use the actual Design routes `prepared-review-to-apply`, `apply-to-inspect`,
+`inspect-to-compose`, `inspect-to-settle`, `apply-to-settle` and `settle-to-result`.
+Runtime lifecycle is a separate admitted flow; Design's registered leaf adapter is
+its cross-flow integration boundary. Keep the two existing targets distinct; the
+supported target owner binds one flow, not an invented cross-flow target. Design
+integration cases must invoke the real Runtime public APIs through the host and
+prove their receipts/resources at the consumer. Runtime cases independently prove
+its generic contract. Capture their required source closure consistently; the same
+Git HEAD alone does not establish equal dirty runtime source. Do not combine two
+unrelated passing reports into a whole-system pass. Neither `inspect-to-compose` nor
+`apply-to-compose` implies a mandatory new model turn: deterministic declared
+continuation stays within tools; a new design choice returns to the primary agent.
+Update those predicates/cases to remove ambiguity before implementing continuation.
+
+#### Exact decisions required by the corrected mechanical design
+
+- Keep `read_design_checks` as a retained-results/freshness read; do not hide a repair
+  loop or model call behind it. The existing Design inspection coordinator must
+  own a bounded aggregate mechanical operation, exposed through the same registry
+  with an explicit invocation contract. Its specification must declare selected
+  check identities/current scope, a registered verification verdict and progress,
+  and typed successful/partial/recovery output. Choose its public identity within
+  the existing review owner before coding; no parallel check store or interpreter.
+  This is a required contract change, not a claim that today's API already supports it.
+- Resolve selected tool-origin obligations to canonical targets through their actual
+  owners. Refresh changed dependency receipts and coalesce overlapping measurements;
+  do not let the model parse diagnostic strings or enumerate every stale result.
+  Missing/deleted/unknown targets remain distinct. Deleted targets retire only the
+  appropriate obligation; they do not prove dependent visual criteria.
+- Recheck affected obligations at the coherent invocation boundary. Standalone writes
+  retain the current spec's before-return checks; ordered intermediate parts may
+  coalesce only until that invocation ends. Do not postpone mandatory checks until
+  final screenshots, or recheck the whole tree after every internal leaf.
+- The aggregate operation does not manufacture generic repair logic. Its required
+  output names the supported mechanical findings and current progress; an admitted
+  recipe supplies the matching repair behavior and typed state. A defect class with
+  no such repair remains decision-required. First acceptance covers a real known
+  repair plus unsupported, mixed and no-progress cases, not an arbitrary drawing
+  repair promise. Keep required user criteria independent from optional polish.
+- Aggregate pass requires complete current supported mechanical coverage. Repairable
+  names only owner-declared capabilities for all remaining findings; inspect cannot
+  infer its calling recipe. Before repair writes, the Design repair owner guards the
+  complete capability set and current finding receipts against that recipe's declared
+  repairs. Mismatch stops without mutation; unsupported findings are decision-required. Runtime executes the declared
+  finite repair list; it does not invent conditions, loops, tool choices or fixes.
+- Capture dependency versions before asynchronous inspection and validate them before
+  publishing results. A concurrent edit, Undo/Redo or collaboration change cannot
+  promote stale work to pass. Preserve unaffected evidence; retry only bounded safe
+  reads. Unknown scope remains unresolved and cannot be guessed from the viewport.
+- Pan/zoom must not invalidate canonical geometry passes. Screen-dependent images
+  still obey their own evidence identity; preserving a geometry pass cannot authorize
+  reuse of an obsolete screenshot or reference applicability decision.
+
+#### Stage 2 handoff review correction - 2026-10-15
+
+Contract-only repair, no Stage 2 implementation: actual Runtime admission and execution
+require a nonempty string progress token, not the previously specified count. Normalize
+unresolved work independent of record revisions/receipt refresh and retain repeated-state
+cycle detection. Diagnostic counts remain separate. The next round binds the complete
+remaining selection and exact revisions from the last successful repair receipt
+(check output supplies the repair input). A repair can advance check records as well
+as geometry, so a pre-repair snapshot is insufficient. It never reuses the initial
+version list or silently omits passed/retired obligations. Dependency validation
+is still required because invalidation can leave the record revision unchanged.
+
+Generic Runtime executes a finite repair list and cannot check semantic finding coverage.
+The host checker declares capabilities; the Design repair owner must guard full coverage
+and freshness before any write. This closes the previously unspecified caller-knowledge
+assumption without adding dynamic Runtime routing. Stage 2 exit cases must exercise the
+real Runtime contract, changed receipt versions, no-op/cyclic repairs, mismatched/mixed
+capabilities, cancellation and partial results. Source/attachment review, canvas geometry
+and pixel checks keep their distinct actual owners; an unavailable recheck remains a
+decision with exact pending work rather than a fabricated pass. No aggregate runtime
+acceptance is claimed by this documentation repair.
+
+#### Failure recovery and final acceptance
+
+- Admission/schema/revision failure: no writes; return exact issues and retrieve the
+  current contract. Repair submission is not execution and not save eligibility.
+- Check/read failure: preserve independently completed checks, mark the incomplete
+  scope unresolved and retry only reads known not to have completed coherently.
+- Partial writes or Stop: stop successors, preserve actual receipts/Undo and let
+  settlement finish its owned cleanup. Recovery takes acknowledged identities and
+  only the unexecuted suffix; a successful later read cannot reconcile unknown writes.
+- Output retention failure after a completed write: return its truthful settlement;
+  never feed partial output to success bindings or replay the write. If a valid
+  recovery handle could not be retained, say so and use the existing authoritative
+  document recovery boundary, not an invented receipt or increased capacity.
+- Save failure: recipe save-only retry requires the real receipt while available;
+  after request/process loss, only the durable library record proves availability.
+  Document save recovery uses its publication journal/checkpoint independently.
+  Request-local passes/handles are reacquired after load, not silently restored.
+- Cleanup failure: attempt independent host/store cleanup without replacing the
+  product outcome. Retain bounded diagnostic/recovery evidence; do not reopen
+  finished invocations to hide leaks or turn unavailable persistence into success.
+- User-visible completion: current required mechanical and visual evidence plus the
+  appropriate durable-document outcome. Recipe-storage failure is reported separately
+  and does not redraw or mislabel the canvas result. Partial/unavailable status must
+  remain available when any required condition cannot be established.
+
+Before production implementation, align the affected product spec, both Inspector
+flows, exact test identities and incoming handoff cases. Use current supported
+contract/target/work admission, pin the accepted contract and reviewed candidate,
+and keep future obligations pending. Do not reuse old candidate IDs after this
+rebase without current source assessment. No target is created or baseline accepted
+by this plan-only review. The new whole-target proof must bind one captured source
+and include new behavior, prerequisites, integration and preservation; old merged
+PRs or old test contracts cannot substitute for current prerequisite evidence.
+
+Required integrated cases include: canonical direct edit; new recipe admission and
+bounded repair; saved recipe with new inputs; eight visual passes followed by stale
+mechanical closure; one-region versus real broad edits; partial group/reorder output
+with no duplicate writes; cancellation and concurrent edit during check; library
+save-only retry and reload with expired transient handles; document save failure,
+recovery, Undo/Redo and fresh reload; concurrent purpose retirement and late events.
+Use saved 101 evidence in formal cases, without replaying model calls. Maintain
+existing ordinary failure localization for mapped cases and add owner-correct proof
+coverage for required missing cases. No 101 or provider probe is run in this review.
+
+Self-review result: the direction and stage dependency order are consistent after
+these changes. Implementation readiness remains conditional on admitting the revised
+aggregate inspection contract and its exact cross-owner proof cases; structural
+admission of today's manifests is not a claim that the new design is already proven.
+
+### Evidence and root-cause assessment
+
+Source: saved run `tmp/ai-recording/runs/reusable-tools-1792056357036/analysis.md`
+and its actual tool input/output evidence. First frame was 106.825 seconds; the run
+stopped at 900 seconds. There were 79 top-level tool calls occupying 32.539 seconds
+in union, and zero submit/invoke/save/manage library calls. The remaining time is
+outside those tool intervals, not a measurement of pure model reasoning. Eight visual
+criteria passed, but 19 stale mechanical obligations remained near termination.
+Generic status occupied 697.256 seconds. No extra checking model was invoked.
+
+The pre-Stage 1 source supported these conclusions (the two obsolete routes below are now removed):
+
+- `ai-domain-prompt.ts` teaches patterns and recipes, but makes iteration optional
+  and returns unresolved check coordination to the primary agent after stops.
+- `local-ai-provider.ts` additionally encourages composing calls and computing
+  intermediate inputs inside Code Mode. Ad hoc execution is available without a
+  clear preference for admitted, reusable orchestration. These instruction layers
+  must agree; changing one prompt paragraph is insufficient.
+- `local-tool-library-tools.ts` exposes working submit/invoke/save controls. Existing
+  acceptance proves availability, not that the primary agent delegates a real
+  multi-step task or that its mechanical completion closes without per-check turns.
+- `local-design-review.ts` still implements optional independent assessment, although
+  the current production constructor does not enable it. Old tests maintain that
+  mode. `ovalPathIds` remains an accepted parallel input to `componentMappings`.
+- The trace proves lack of recipe use, not why the model privately chose each call.
+  Broad visual invalidation in this run included actual edits across tiers and glass;
+  it is not evidence that every broad invalidation was erroneous.
+
+### Planning card and architecture alignment
+
+Owner routes reviewed: all seven Design execution nodes in
+`tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs`, plus Runtime
+`admit/register/invoke/persist` in
+`tools/flow-inspector/inspectors/reusable-tool-composition-flow-inspector.data.cjs`;
+canonical recipe types/execution and the existing library controls. Current routes already
+require one registry/invoke boundary, typed outcomes, exact dependency ownership,
+no extra AI in mechanical checks and distinct mechanical/visual/storage outcomes.
+The observe route still mentions isolated visual comparison evidence; removing
+that obsolete provider route requires synchronizing its exact consumers, not
+retaining it merely to satisfy a historical Inspector clause.
+
+Planning inputs are current source, current contracts and saved execution evidence;
+output is this bounded correction sequence. Only this plan is edited in this segment.
+No readiness or successful source assessment is claimed for unimplemented changes.
+Before each implementation slice, update the directly affected product clauses and
+Inspector contract together, then write its execution card and formal cases.
+
+### Ordered correction slices
+
+#### 1. Remove superseded behavior; refactor still-required capabilities
+
+This is the first implementation priority, before prompt optimization.
+
+- Remove the independent-assessment option, acceptance branch, output fields and
+  tests requiring a second visual assessor from the drawing review path. Remove the
+  visual-assessment-only provider entry and its exclusive helpers/tests after tracing
+  all current callers. Primary-agent visual judgments remain in the common check
+  store; tools cannot award artistic approval.
+- Remove `ovalPathIds` from schema, normalization, prompt, examples and consumers.
+  Preserve oval conversion through the canonical `componentMappings` contract and
+  actual analysis eligibility. Do not accept aliases or silently convert old inputs.
+- Preserve current stale mechanical refresh and receipt cleanup in their existing owners;
+  these are current behaviors, not obsolete capabilities to delete. Any further
+  mechanical-loop correction belongs to Stage 2, not this cleanup.
+- Keep explicitly requested execution-report assessment separate: the current CLI
+  calls `requestLocalAiAssessment` for post-run diagnostics. It is a different
+  supported operation, not permission for a drawing/checking route to call AI.
+  Prove it cannot be reached by mechanical preflight or iteration.
+- Audit only the affected routes and their direct callers for duplicate input/output
+  formats and bypasses. Synchronize schemas, tests, docs and Inspector; do not keep
+  dead branches, flags or old-format tests as compatibility. Preserve original saved
+  evidence without rewriting historical records.
+
+Gate: current canonical oval behavior passes; obsolete input is rejected before
+mutation; independent assessor route is absent; ordinary mechanical and primary-agent
+review behavior survives, with zero provider calls from check/iteration execution.
+
+#### 2. Close deterministic work inside existing owners
+
+The invocation coordinator passes typed data to existing prepare/apply/inspect owners;
+Runtime remains domain-neutral. Inputs include actual target handles, current dependency
+receipts and declared check/repair bindings. Never infer target identity from arbitrary
+field names or feed an entire scene to compensate for missing scope.
+
+Implement the aggregate inspection contract and its verification adapter described
+in the latest review before binding it into Runtime iteration. A retained-results
+read alone is not that contract.
+
+The inspection owner resolves pending/stale mechanical obligations by their actual
+changed dependencies, batches bounded reads and retains unaffected passes. Rechecking
+and allowed repairs may iterate without another AI request. Stable failure, unsupported
+geometry, missing evidence, no progress, cancellation, exhausted budget or unknown
+mutation settlement returns an explicit unresolved outcome, not success. Nonplanar
+creative geometry is not automatically repaired by inventing a different shape.
+
+The returned existing typed outcome must distinguish completed writes, failed or
+unexecuted steps, current mechanical findings, retained visual passes/stale visual
+criteria, recovery handles and storage status. Mechanically complete is not visually
+accepted. The primary agent receives current rendered evidence and only unresolved
+visual/design decisions; its corrections re-enter the same dependency-aware flow.
+A successful visual judgment must not silently imply mechanical completion.
+
+Resource lifetime follows actual consumers. Transfer exported handles before releasing
+intermediates; preserve borrowed/sibling pins. If delivery fails after acknowledged
+writes, retain the receipt and retry delivery/cleanup where supported, never replay
+writes. Do not increase retention limits or add a separate progress/check store.
+
+Use an explicitly authored formal fixture recipe to verify a known repair through
+the existing admission/invocation path; no live model is needed to establish this
+prerequisite. This fixture cannot be used as proof that the primary model chooses
+the recipe. Do not change model-facing delegation instructions in this stage.
+
+Gate: replay the saved eight-visual-passes/stale-mechanical sequence with canonical
+current input/output. Prove closure or an actionable decision without per-check model
+calls. Separately prove one-region edits preserve unrelated passes, broad real edits
+invalidate their real dependencies, and pan/zoom does not invalidate semantic passes.
+Exercise capacity pressure after successful grouping without repeating the mutations.
+
+#### 3. Make tool-first delegation consistent and executable
+
+The primary agent owns intent, scope, creative choices, parameters, visual acceptance
+and authoring missing recipes. The existing Runtime invocation/library owns admitted
+execution and persistence. Do not add a second registry, AI planner or interpreter.
+
+Use this decision order consistently in App prompt, provider instructions, discovery,
+selected tool usage and examples:
+
+1. Reuse a known current capability contract; otherwise discover compact capabilities,
+   including eligible saved tools. Reference research is a different operation.
+2. Use an existing suitable domain workflow or eligible composition for deterministic
+   multi-step work. A genuinely single-step operation remains a direct invocation.
+3. If primitives cover the need but no workflow does, retrieve their exact contracts
+   and the canonical recipe specification; author parameterized bindings, checks,
+   permitted repairs and a finite stop condition, then submit for admission.
+4. Correct admission issues before execution. Invoke the admitted exact revision with
+   fresh inputs; the runtime performs the graph and declared iteration.
+5. If a required primitive or safe repair is absent, report that specific capability
+   gap or return a design decision. Do not fabricate a route or use JS callbacks.
+
+Stage 3 consumes the verified Stage 2 mechanical contract; guide the model only to
+its supported execution and recovery paths. Existing save/settlement contracts must
+remain valid now; Stage 4 provides their full cross-request and whole-flow proof,
+not permission to defer correctness. Do not advertise unverified aggregate behavior.
+
+Code Mode is an invocation/data-binding surface, not an alternative recurring
+orchestrator that sends each intermediate result back for model coordination. Preserve
+backend patterns, projections and retained handles; do not force a recipe for trivial
+edits or force whole-building planning before a ready first part can be rendered.
+
+Gate: verify the actual assembled instructions and advertised definitions together,
+then exercise discovery -> exact schema -> admission -> invocation through the real
+host. Cover direct, saved, newly composed, invalid and unavailable cases. Prompt-string
+assertions alone cannot prove model behavior; deterministic tests prove the supported
+path, and any later real-provider probe must report observed choices separately.
+
+#### 4. Preserve purpose, save eligibility and cross-request reuse
+
+Activity uses the same request/recipe/step causality as invocation. Lifecycle start/end
+updates remain complete; presentation filtering may avoid flicker without hiding real
+changes. Between tool calls preserve only a genuinely live authored task purpose with a
+truthful phase; retire completed cohorts under the reviewed settle contract, not a
+completed leaf or an invented claim of drawing. Unknown purpose cannot be
+fabricated. Concurrent completion must not clear another active task's purpose.
+
+Successful eligible execution attempts durable saving through the existing library.
+Save failure returns a genuine receipt for save-only retry, without repeating drawing.
+Candidates are not advertised as proven usable. A fresh request discovers an eligible
+revision and invokes it with new parameters; document IDs and request-local handles
+must not be captured as reusable literals. Invalid dependencies, suspension, removal,
+failed storage and cancellation retain their declared current-contract behavior.
+
+Gate: host-level save failure/retry/reopen/discovery/invoke with fresh values; exact
+outcome and no duplicate mutation assertions. Replay recorded generic-status handoffs,
+parallel calls, stop and late events through the real activity consumers. Add no new
+model call to produce status text or certify recipe eligibility.
+
+### Self-review, verification and completion boundary
+
+The fixed seven-category review below applies to every slice and all direct consumers.
+Review found and incorporated these necessary limits: single-step calls remain valid;
+unsupported creative repairs return to the primary agent; visual acceptance and save
+eligibility stay distinct; diagnostics do not authorize automatic assessment; settled
+writes cannot be replayed to recover output; and changed dependency scope, not pass
+count or target count, determines invalidation.
+
+Use permanent cases derived from saved tool input/output plus controlled adverse
+ordering. Keep production registry, admission, dispatcher, check store and persistence
+in the integration path; mock only external provider/network failure boundaries where
+needed. Run existing affected suites, lint and production typechecks, including current
+save/reload, Undo/Redo and collaboration regressions for any changed mutation boundary.
+Record work counts, provider-call counts, actual outputs and preserved passes; node
+count and a later green retry are not improvement evidence.
+
+Do not make another expensive live 101 the primary bug detector. No live provider
+probe is authorized by this planning update. A later explicitly requested acceptance
+must retain the independent 900-second forced stop, recording and evidence preservation.
+Runtime correctness does not guarantee model selection or a completion-time target;
+those require observed evidence and must be reported without conflating them.
+
+Implementation completion requires the four slices and their connected failure/recovery
+cases, not merely registered tools or isolated green tests. Current result: plan reviewed,
+implementation pending. No production, test or Inspector file was changed in this segment.
+
+## Earlier review evidence (not current execution instructions)
+
+### Stable comprehensive review scope and completion standard
+
+Review the same complete current paths on every iteration: evidence publication
+through accumulated review results, provider events through current activity, and
+initial document connection through recovery, editing, persistence and fresh load.
+The following categories are mandatory together, not selectable review themes:
+
+- User behavior: ordinary, sequential, overlapping, reentrant, cancelled, retried
+  and reopened operations; accepted behavior outside each correction must survive.
+- Contracts: exact input/output shapes, identity, ordering, ownership, lifetimes,
+  successful/partial/failed outcomes and their actual upstream/downstream consumers.
+- Invariants: distinguish states made impossible by canonical ownership from
+  untrusted external states requiring rejection. Do not duplicate validation or
+  invent fallback state to compensate for a missing owner contract.
+- Recovery: inspect each asynchronous failure and interruption boundary, retained
+  edits/evidence, cleanup, compensation and replay. Recovery must permit further
+  edits and acknowledged persistence followed by an exact fresh reload.
+- Architecture: preserve Asyra public/event boundaries, one semantic owner,
+  incremental/batch work, Undo/Redo and collaboration; avoid parallel registries,
+  mutable canonical mirrors, unrequested compatibility and fixture-specific paths.
+- Work and resources: trace real repeated computation and retained outputs,
+  invalidation, subscriptions, queues, workers, rooms and disposals.
+- Verification: inspect current implementation and existing consumers, not only
+  new tests. Use deterministic adverse ordering and actual saved-file integration.
+  An unexplained failed run blocks completion even if later repeats pass.
+
+This expands review depth across the authorized handoffs, not mutation scope to
+unrelated repository features. Before each new correction, identify the first
+incorrect owner and test it red; review its full contract before implementation.
+Document concrete unresolved limits rather than claiming every hypothetical
+execution is proven. No live101, model calls, push or monitoring.
+
+### Cancellation isolation review
+
+Repeat the fixed seven-category review for the checkpoint cancellation correction,
+including the existing consumers and unchanged persistence/Undo/Redo/recovery paths.
+Review shared initialization, existing-room admission, failure/timeout/close ordering,
+peer identity, Reset, shutdown and accepted-write ownership. No production expansion,
+new deadline, model run, push or monitoring is authorized by this review.
+
+Verification card: existing socket tests separately prove read cancellation and
+persistence. Add one permanent combined real-socket/real-backend case: hold a write,
+start and cancel a different peer's checkpoint read, queue a healthy peer's next
+publication, release the write, retry an accepted identity, confirm durability, and
+reload the exact persisted checkpoint. Use controlled network boundaries only;
+retain the production reducer, file store and protocol. Re-run the full socket
+suite and direct lifecycle/publication/status consumers, then the existing saved
+file recovery test. If this reveals a defect, prove it before changing its owner.
+
+Cancellation isolation review outcome: no further production regression was found.
+The new permanent combined test uses the real socket server, canonical document
+operations, backend materializer and file store, with a network proxy controlling
+only one read and one write. Cancelling the joining reader releases its admission;
+two healthy Actors remain connected, the second publication can be accepted while
+the first write is pending, and durability confirmation remains pending until the
+writes succeed. Retrying the first publication returns sequence 1 without another
+write. A new connection then receives the exact persisted document at sequence 2
+with no pending tail. Existing shared-waiter, actual-timeout, partial-body, Reset,
+backpressure, peer failure and persistence tests remain green.
+
+The first combined test draft incorrectly equated accepted with durable and reused
+an intentionally opaque transport payload against the real semantic backend. The
+fixture was corrected to the current canonical document protocol and separate
+acceptance/durability assertions. Those failures are not product regressions and
+are retained in the diagnostic logs; no validation or production behavior was
+changed to satisfy the fixture. Lint also required explicit globalThis.fetch in
+this Node test; the corrected focused case and lint both passed.
+
+Verified this review: complete socket suite 31 passed
+(`tmp/review-cancellation-socket-all.log`), provider/queue 196 passed with 3 original
+conditional skips (`tmp/review-cancellation-server.log`), and 15 complete direct
+consumer files 404 passed (`tmp/review-cancellation-consumers.log`). The final
+combined case passed again after the explicit-global correction
+(`tmp/review-cancellation-combined-current.log`). Production typechecks, focused
+lint and 15 naming tests passed. Both saved-document browser scenarios passed
+(`tmp/review-cancellation-recovery.log`), including recovery, further edits,
+Undo/Redo, regional pass retention, confirmed persistence and exact reload; only
+the recovery scenario's intentional initial backend error was observed. Existing
+source proof at digest `16b900c067eb867f0d030c773a3ef45ab63aca1478a325b9fcdeef96fde08fd7`
+and mapping 83 is retained: this review changed only the formal socket test and
+this plan, not production or Inspector semantics. Scope stayed at the current
+handoffs; no new model call, live101, commit, push or monitoring was performed.
+
+### Repeat of the fixed comprehensive review
+
+Review the same seven categories above against the three current corrections,
+including timeout-to-resource-release rather than only timeout-to-UI failure.
+Keep the same bounded owner paths, existing local work and no-live101/no-push/
+no-monitoring boundaries. Reuse prior unchanged evidence; add deterministic
+regressions for any newly discovered missing handoff.
+
+Open-document-session cancellation card: a socket closing or timing out must
+release its pending checkpoint read and admission. Shared room initialization
+must retain work while another waiter exists, but cancel and retire it when its
+last waiter leaves. A subsequent connection must start a fresh read, not await
+an abandoned promise. A cancelled old initialization must never publish a room
+over a successor. Existing-room reads belong to their joining peer and must
+release the serialized admission on cancellation, without discarding live peers
+or pending persistence. Propagate cancellation through the existing HTTP client
+readCheckpoint method; do not cancel persistence writes or introduce retries,
+new deadlines, fallback checkpoints or duplicate authoritative rooms.
+
+Self-review and tests before implementation: reproduce a held initial read and a
+held existing-room read with a disconnected caller; healthy successors must finish
+without releasing the old backend response. Verify one cancelled shared waiter
+does not cancel the surviving waiter or duplicate backend reads. Keep backend
+failure, real duplicate Actor, Reset, bounded progress, replay/Undo/Redo and
+persistence tests. Only repair the existing socket/read ownership boundary.
+
+Repeat review outcome: one additional cancellation defect was reproduced before
+implementation. Closing the socket only ended the client-visible session; a held
+HTTP checkpoint read still retained either the initialization promise or the
+existing room admission. A healthy reconnect therefore waited on abandoned work.
+The initial-room and existing-room regressions both failed before the correction
+(`tmp/review-repeat-cancel-red.log`) and passed afterward. Read cancellation now
+propagates through HTTP headers and response-body decoding. Shared initialization
+has per-waiter ownership; only the last cancelled waiter aborts it. Identity guards
+prevent the abandoned initializer from removing or publishing over its successor.
+No deadline was raised, write cancelled, fallback added or integrity check removed.
+
+All seven fixed review categories were revisited together. Reviewed normal and
+adverse input, exact bootstrap milestones, room admission/retirement, actor identity,
+shared-reader ownership, queue cleanup, existing persistence writes, outbox recovery,
+Undo/Redo, compensation and resend; the real socket suite includes actual timeout,
+partial-body cancellation and surviving shared-waiter cases. Producer purpose
+settlement and activity projection still agree on closed identities and replacement
+ownership. Canonical dependency receipts, region membership and review consumers
+still retain unrelated passes; viewport changes do not invalidate content receipts.
+No additional production changes were required in those latter two paths. Existing
+Factory/package owners remain unchanged by this correction; no parallel canonical
+state, new compatibility path, polling or model work was introduced.
+
+Current-source validation:
+
+- Complete real socket server suite: 30 passed; tests observe actual backend
+  connection closure before attempting the successor, not only caller rejection
+  (`tmp/review-repeat-socket-final.log`).
+- Complete provider/persistence queue files: 196 passed, 3 original conditional
+  skips (`tmp/review-repeat-server.log`). Nine direct activity, session, protocol,
+  outbox, recovery UI and inspection files: 300 passed
+  (`tmp/review-repeat-consumers.log`). Six publication, Factory, transaction and
+  recording-outbox files: 104 passed (`tmp/review-repeat-publication.log`).
+- Existing saved-document browser integration: both normal and failed-initial-read
+  recovery passed, including exact canonical contents, local edits, Undo/Redo,
+  unrelated regional pass retention, acknowledged persistence and exact fresh
+  reload. Elapsed complete scenarios were 49.013s and 47.830s, not AI drawing times.
+  The recovery case contains only its injected initial backend 500; both cases have
+  no subsequent browser errors (`tmp/review-repeat-recovery.log`, E2E
+  `recorded-reload.json` result artifacts). Real timeout cancellation is proved separately
+  by the socket suite; the browser fixture injects a failed read, not a stalled read.
+- Production typechecks, focused lint, naming 15 tests and Inspector catalog 15
+  tests passed. The generated catalog reflects the current socket contract.
+- Current source digest
+  `16b900c067eb867f0d030c773a3ef45ab63aca1478a325b9fcdeef96fde08fd7`:
+  candidate `cd497a01-4af7-499c-8aa6-066623d799f6`, accepted review
+  `a37155a82cc0ccd16cfc1937baef88e2ebf079154b92a4903344faf8941b7a8c`,
+  mapping revision 83. Same-source positive, four exact negative scenarios and
+  recovery `31593c9a-feb3-4311-bc0b-0f9459711444` passed 30 obligations
+  (`tmp/review-repeat-proof.log`). Deliberate negative failures remain negative.
+
+No unresolved regression was found within these reviewed handoffs and gates.
+This is bounded source/integration evidence, not a guarantee for every possible
+external failure. Test-owned ports 3300/3401/4401 were released. No live101, model
+calls, commit, push or monitoring occurred.
+
+### Concurrent handoff and reconnect follow-up review
+
+Current scope: review the previous native-research purpose and closed-peer
+admission corrections with their direct producer/consumer and persistence paths.
+No live101, model, commit, push or monitoring. Preserve existing local changes.
+
+Settle card: test replayed/late native research events after completion, overlapping
+App calls, purpose replacement and terminal failure. Both producer and projector
+must agree that a completed invocation cannot become active again in that request.
+Use the existing request-owned purpose lifecycle; no new presentation heuristics.
+
+Open-document-session card: hold a joining peer's checkpoint read while the last
+registered peer disconnects. Verify one authoritative room remains through queued
+admission, live duplicate-Actor refusal, publication ordering, persistence and
+subsequent reconnect. Review normal empty-room cleanup, failed/cancelled admission,
+durability callback and Reset. If reproduced, fix room ownership at the shared
+admission/retirement boundary, not by accepting duplicate Actors or replaying data.
+
+Self-review: test-first both suspected races. Keep ordinary validation, deadlines,
+sequence cutoff and replacement ownership. Run complete affected provider/server
+suites, direct activity and session consumers, types/lint/naming, and the existing
+saved-document failure/edit/Undo/Redo/save/reload proof. Stop after these handoffs
+and their direct regressions are verified; do not expand into unrelated owners.
+
+Recovery gate iteration: the real saved-file recovery gate intermittently fails
+with the provider's bounded handshake timeout. A passing run is not closure.
+Persist its actual worker stage/timing/failure evidence in the permanent E2E
+artifact before deciding the next owner correction. Do not raise timeouts or
+change data integrity admission. Keep the replayed research and room retirement
+regressions green. Review the evidence against the finite bootstrap-stage contract.
+
+Bootstrap-stage correction card (open-document-session): the saved checkpoint's
+first complete reply takes approximately 4.76 seconds in a passing sample and
+crosses the existing five-second stall guard in failing recoveries. Checkpoint
+read/preparation and reply encoding/transfer currently have no observed boundary.
+Add one canonical BOOTSTRAP_CHECKPOINT_READY control milestone after successful
+admission and before encoding the full READY payload. The real worker validates
+it and emits one checkpoint-ready stage between first control receipt and full
+bootstrap decode. No periodic heartbeat, time increase, editable state, receipt,
+checkpoint data, second transport or fallback is introduced. A valid READY still
+owns connection completion; a progress marker alone never does. Duplicate or
+post-ready markers fail; stale-generation events and repeated diagnostics cannot
+extend a deadline. Keep the server hello deadline and all current integrity checks.
+
+Self-review: the checkpoint read is bounded by the existing socket-open deadline;
+marker receipt and checkpoint validation advance only finite stages; remaining
+encoding/transfer/decode remains bounded separately. No marker on read failure or
+rejected Actor. All normal/absent checkpoints share the same path. Test wire shape,
+real worker handoff, timeout behavior, actual server order, current session suites
+and saved-file recovery/edit/Undo/Redo/persistence/reload before closure.
+
+### Comprehensive handoff review closure
+
+The fixed review categories above were applied across current producer/consumer
+code, existing adverse-path tests, and actual saved-document integration. Findings
+were corrected at three current owners:
+
+1. Provider purpose settlement retained completed native identities. A replayed
+   native search start previously joined a new purpose after completion, keeping
+   it visible after the real next operation ended. Request-local tombstones now
+   match the activity projector's closed-call semantics. Concurrent App/native
+   work, purpose replacement, repeated completion, failure and terminal cleanup
+   were checked; old completions cannot retire replacement work.
+2. Socket room retirement now counts queued and executing admissions. A last
+   peer disconnect previously removed a room while a replacement checkpoint was
+   loading; the orphaned room could accept an Actor also admitted to a new room.
+   Admission ownership is acquired synchronously and released in finally on every
+   outcome. Peers, outstanding admissions and undurable publications all prevent
+   idle retirement; successful cleanup is proven by a fresh backend read. Reset
+   still owns its explicit generation replacement, not an idle-retirement bypass.
+3. Large-checkpoint recovery exposed a real bounded-timeout failure, not a room
+   identity failure. Preparation plus transfer/decode exceeded the original
+   single socket-open deadline. The canonical one-time checkpoint-ready control
+   milestone now separates completed preparation from remaining transfer/decode.
+   Both remain bounded at the existing durations; no recurring heartbeat, larger
+   timeout or relaxed checkpoint validation. Exact shape, repeated/late marker
+   failure, stale/reordered progress and progress-without-READY timeout are tested.
+
+Architecture and adverse-path review: activity remains request/attempt-owned;
+publication acceptance, bootstrap consumption and persistence acknowledgement
+remain distinct. Progress cannot authorize edits or certify durability. Admission
+serialization and peer duplicate refusal preserve one current room authority.
+Failure/closed peers release ownership without discarding undurable work. Existing
+source settlement, backpressure, failed peer writes, Reset and confirmation tests
+were run. The current lifecycle's reconnect queue, retained publication cutoff,
+recovery isolation, compensation and retry paths were inspected with their direct
+tests; no extra state registry or replacement framework path was introduced.
+
+Local evidence review still preserves unaffected regional passes, invalidates
+changed members/ancestors and actual entrants/exits, and rejects mixed whole/local
+judgments atomically. A changed unit scope needs exact explicit supersession.
+Viewport navigation does not mutate canonical dependencies; unknown canonical
+changes remain conservatively invalid rather than guessing unaffected results.
+The saved-file browser proof exercises actual receipt creation, local mutation,
+Undo/Redo, unrelated pass identity retention, new local pass accumulation,
+persistence confirmation and identical fresh reload, not a fake persistence mock.
+
+Final evidence:
+
+- `tmp/review-handoff-server.log`: 196 provider/persistence-queue tests passed,
+  3 original conditional skips.
+- `tmp/review-handoff-milestone-server.log`: all 26 real socket tests passed.
+- `tmp/review-handoff-final-consumers.log`: all 300 tests across nine current
+  activity, protocol, worker/provider, lifecycle/outbox/recovery and inspection
+  dependency/evidence files passed. The contained protocol/worker set also passed
+  all 117 cases independently after the milestone change.
+- `tmp/review-handoff-milestone-recovery.log`: both real saved-document normal
+  and initial-failure recovery/edit/Undo/Redo/save/reload cases passed, with zero
+  unexpected errors. Each case persists worker stage timings and console errors
+  as `recorded-reload.json`; the deliberate initial backend failure is separate.
+  Normal load measured preparation 2.240s and remaining transfer/decode 3.734s;
+  recovered load measured 2.081s and 3.030s respectively. These are observations,
+  not performance thresholds or node-count improvement claims.
+- Final production browser/server types pass. Focused lint has no errors (existing
+  console warnings only); naming and Inspector/catalog each pass 15 cases.
+- `tmp/review-handoff-final-proof.log`: current-source baseline, four exact
+  negative scenarios and recovery pass all 30 obligations. Source digest
+  `34b18b93bdfdcb0acebf8ecc02753abbe8d19ace86e1ca0c3a8cf085aa61a3e0`, mapping
+  revision 82, recovery `b6b68aac-ca0f-435f-8696-20974faddf7a`.
+
+Failed evidence is preserved: native replay and room lifetime red regressions;
+several pre-milestone real recovery runs timing out; three milestone protocol/
+worker reds and the server ordering red. A later passing recovery was not used
+as closure until the intermittent timeout was explained and corrected. Two added
+negative-test assertions initially used a nested failure shape instead of the
+actual flat worker response; their oracles were corrected, not product admission.
+The first final catalog command used incorrect test paths and did not run; the
+correct existing catalog/contract files then all passed.
+
+Limit: this verifies the defined current handoffs and adverse cases, not every
+possible machine speed, provider behavior or repository feature. Genuine stalled
+or slower-than-budget stages still fail explicitly and retain normal recovery;
+progress does not suppress failures. No new live101 or model invocation, commit,
+push, monitoring or unrelated App changes occurred. Temporary test ports were
+released; existing environment files remain. HEAD is unchanged at
+`e0d52ddefedb941ed18d5b324130b2e4b51455bc`.
+
+### Recorded repair follow-through review
+
+Review the existing inspect, settle and open-document-session routes end to end,
+including their current callers, failure paths and existing tests, not only the
+new regressions. Preserve the authorized scope and all existing local changes.
+No live101, model call, commit, push or monitoring.
+
+- Inspect: trace evidence publication, dependency validation, result admission,
+  accumulated coverage, supersession and completion. Prove unaffected passes
+  retain identity while changed scopes and invalid evidence remain unresolved.
+- Settle: include native research events as well as App tool invocation events;
+  verify finite purpose ownership, overlapping calls, replacement, failure and
+  terminal settlement through the actual activity projection. A native search
+  currently emits activity outside the purpose cohort; add a failing formal
+  producer/consumer regression before changing that owner.
+- Bootstrap: exercise an actual failed initial saved-document handshake, retry
+  in the same App, exact checkpoint recovery, mutation, Undo/Redo, durable save
+  and fresh reload. Existing successful-load and fake-worker timeout proofs do
+  not establish this combined recovery path. Keep all finite timeout guards.
+
+Self-review: native research is observable provider work, not an App write or
+permission bypass. Join its lifecycle to the same purpose owner without creating
+another activity registry. Preserve overlapping root operations and never let an
+old completion retire a replacement purpose. Failure injection belongs in the
+formal browser test transport, not production behavior or the stored document.
+Run affected owner suites, direct consumer tests, types/lint, naming and the
+saved-file browser proof; expand mutations only for reproduced direct failures.
+
+Follow-through bootstrap step card: the formal delayed-checkpoint server test
+reproduces a closed socket being registered after its awaited backend read. The
+same actor's recovery is then rejected as already connected. Repair the existing
+open-document-session admission owner: a peer must still be open before queued
+bootstrap work and after its final awaited checkpoint read, before reserving the
+actor. Preserve the room queue/cutoff and real duplicate-live-actor rejection.
+Verify the real server regression, existing server contracts and the saved-file
+browser failure/retry/edit/save/reload path. No deadline increase or retry bypass.
+
+### Follow-through review closure
+
+Reviewed current producer/consumer code and existing tests for browser dependency
+receipts, server judgment admission/result accumulation/completion, provider root
+activity and presentation, socket admission, App reconnect/outbox replay, and
+persistence confirmation. Two additional production defects were reproduced and
+fixed at their existing owners:
+
+1. Native web-search completion bypassed purpose retirement. Both App calls and
+   native research now join the same finite purpose cohort. Concurrent research,
+   overlapping App calls, replacement commentary, failure and duplicate completion
+   preserve their correct lifetime. No additional model or purpose inference.
+2. A socket closed during an awaited checkpoint read could later reserve its
+   Actor, making the replacement connection fail as already connected. Admission
+   now checks peer lifetime before queued work and after the awaited read, before
+   reservation. Real live-Actor duplicate checks and sequence cutoff stay intact.
+
+The saved-document browser test now feeds actual capture receipts into the
+production review-result owner. A real crown edit plus Undo/Redo invalidates the
+whole view and crown only; base receipts and its passed result/revision remain.
+Submitting only a corrected crown fixture accumulates its pass without certifying
+stale whole-view criteria. These fixture verdicts are not claimed as automated
+visual judgments. The same test also covers a genuine initial backend-read
+failure, same-page reconnect to the exact saved checkpoint, subsequent edits,
+Undo/Redo, durable confirmation and exact reload. Expected initial errors are
+explicitly asserted/retained; unexpected errors and all recovery errors fail.
+
+Validation on the final production source:
+
+- `tmp/review-recorded-server.log`: 465 passed, 3 original conditional skips,
+  including the complete provider, review-stage, result-store and operation suites.
+- `tmp/review-recorded-consumers.log`: 275 passed across activity/conversation,
+  evidence/dependencies, protocol/provider and document lifecycle.
+- `tmp/review-recorded-socket-all.log`: all 25 real socket-server tests passed,
+  including the delayed-reader regression, multi-peer and persistence contracts.
+- `tmp/review-recorded-recovery-final.log`: full saved-file failure/reconnect/
+  edit/Undo/Redo/save/reload passed; `review-recorded-normal-and-ui.log`: normal
+  saved-file handoff and both 360/1280 activity cases passed (3 cases).
+- Production browser/server typecheck passed; focused lint has no errors and
+  four existing console warnings. Naming and Inspector/catalog each pass 15.
+- `tmp/review-recorded-proof.log`: same-source baseline, four exact negative
+  scenarios and recovery passed all 30 obligations. Source
+  `f9aee6dae1ff042b65c7c9bfe697ba06b898583fe32e1d14b2ce710fd19efe17`,
+  accepted mapping revision 80, recovery `54daf11d-3bf1-4b2a-bd43-a4f957c3b041`.
+
+Red evidence is retained in `review-native-purpose-red.log` and
+`review-bootstrap-closed-red.log`. An initial browser interception attempt did
+not intercept worker WebSockets and failed its injection assertion; it was
+replaced with a controlled actual backend-read failure, not a product workaround.
+The first follow-up provider fixture omitted its registered preparation capability;
+its fixture was corrected without weakening admission. These failed runs remain
+failed. No live101, model call, commit, push or monitoring occurred. No additional
+production edits were needed for local invalidation after the combined proof. Both final
+360/1280 App screenshots were inspected from `apps/asyra-design/tmp/review-purpose-ui`;
+the current label follows the new inspection and the completed subject remains
+only in history. The final two UI cases passed in `review-recorded-ui-artifacts.log`.
+Ports 3300/3401/4401 have no remaining listeners; persistent environment files
+were preserved. HEAD remains `e0d52ddefedb941ed18d5b324130b2e4b51455bc`.
+
+### Recorded failure repair - bounded plan and self-review
+
+Replay the saved public tool inputs/results, activity events and exact document.
+Permanent fixtures retain provenance and hashes; tests must not depend on ignored
+run folders. Work through existing owners, one slice at a time:
+
+1. Inspect owner: visual judgment admission must distinguish local obligations
+   from whole-view evidence. Prevent a regional verdict from acquiring incidental
+   whole-target dependencies; never silently discard evidence actually needed by
+   a cross-region judgment. Preserve separate whole-view coverage, exact local
+   identity, sparse accumulated passes, reference invalidation and explicit redesign.
+   Review the recorded mixed base/overview submission and prove corrected local
+   evidence survives crown edits, while affected and whole-view checks invalidate.
+2. Settle owner: trace commentary through provider start/end events into the
+   activity machine. Give each authored stage an actual finite execution lifetime;
+   no guessing completion from prose, timers or a tool-name exception. Preserve
+   concurrent/nested calls, cancellation, failure, retries, authored language and
+   honest observed operation labels. Replay the recorded repair-to-inspection seam.
+3. Bootstrap owner: replay the exact saved document through the real backend,
+   collaboration transport and fresh browser. Measure checkpoint read, encoding,
+   transfer/decoding and application before selecting the first incorrect owner.
+   Preserve reserved sequence cutoff, pending tail, stale generation refusal,
+   cancellation, integrity and later save/reload. Do not raise a deadline to hide
+   unbounded work or route around the authoritative session.
+
+Allowed changes: these Design owners and their direct supported framework
+consumers only if reproduced evidence requires them, permanent formal fixtures/
+tests, exact specs/Inspector contracts and this plan. Discovery is limited to the
+recorded handoffs and direct callers/consumers. Run red regressions first, then
+focused tests, complete affected owner suites, types/lint/naming and a saved-file
+browser replay. Do not re-run unrelated gates or generate a new drawing. Review
+failure/recovery, work counts, current contracts and all three handoffs together
+before closure; passing tests alone cannot waive a recorded failure.
+
+Self-review: an overview of an isolated crown is legitimate local evidence; do not
+ban every overview or infer semantic regions from element names. A broad evidence
+set must be narrowed explicitly, not quietly certified. Commentary is authored
+intent, not proof of activity; its lifetime must be tied to actual provider work.
+Bootstrap failure is not data loss: the saved checkpoint equals the original.
+Reproduce on current source because intervening transport changes may already
+alter the path. Preserve older failures and label preventive proofs honestly.
+
+First step card: `inspect`, current AI execution spec evidence/completion and
+Inspector inspect step. Inputs: delivered image scope/stamp, declared criterion/
+unit, explicit check dependencies and mutation receipts. Outputs: admitted current
+scoped judgments, retained unaffected passes and actionable invalid-input recovery.
+Only review/evidence owners may establish dependencies; no extra AI, guessed IDs
+or visual approval from geometry. Boundary: local-design-review and formal
+design-review-stages/recorded replay fixtures, exact spec/Inspector description.
+Reject invalid scope before writes and preserve prior accepted results. Stop and
+revise this card if current evidence cannot distinguish local from cross-region
+scope; do not hide that uncertainty in a cache or fallback.
+
+Inspect slice: saved original review input now fails before correction and the
+101-test owner suite passes after correction (`recorded-review-{red,green}.log`).
+The replay proves refusal preserves all prior results, explicit local resubmission
+accumulates passes, crown/whole-view invalidation preserves base result identity,
+and a real base dependency change invalidates it. Browser-issued dependency
+validation remains to be replayed with the full preserved document below.
+
+Next step card: `settle`, provider progress adapter to the existing activity
+machine and current-purpose projection. Commentary has no natural completion in
+the recorded protocol; bind it to the next root tool cohort and explicitly retire
+it after all calls in that cohort settle, before later tools can inherit it.
+Concurrent calls share the cohort, nested calls remain under their actual root,
+and a newer commentary cannot be cleared by an older call. A cohort is execution
+ownership, not inference that the whole user objective is complete. Authored tool
+messages continue to own their call lifetime. No prose parsing, timeout, tool-name
+exception, extra model, or synthetic success. Allowed files: local-ai-provider,
+activity-state, their formal producer/consumer tests, exact spec/Inspector. Inputs
+are existing commentary and invocation start/end events; output is ordered explicit
+purpose completion plus current actual operation. Prove the recorded repair seam,
+concurrent/replacement/failure behavior and unchanged active-call retention. Review
+raw diagnostics independently of visible-history deduplication.
+
+Settle focused producer/consumer regression is red before the change and green
+with finite cohort settlement; provider suite 175 pass / 3 existing skips.
+Replacement/concurrency replay and presentation checks remain final slice gates.
+
+Bootstrap reproduction card: existing document-session transport and App lifecycle
+own the reserved checkpoint/tail handoff. Inputs are the immutable saved 101
+checkpoint and file/actor identity; output is exact loaded canonical document,
+synced session and later durable edits. Record packet/owner timings without an AI
+request. First add a guarded permanent saved-file browser case and reproduce on
+current source before choosing production changes. Existing integrity/timeout and
+process ownership guards remain. Boundary: Design collaboration transport/server,
+App bootstrap and their direct formal tests/fixtures only as evidence requires.
+Do not conflate old handshake failure with new application failure, or seed the
+browser directly around the transport. Recovery must use real durable storage.
+
+Bootstrap decision after recorded measurement: worker received the full frame at
+4974.6ms, decoded at 5543.2ms and delivered to main at 6520ms. The existing 5000ms
+aggregate watchdog cancels a progressing valid session. Keep 5000ms per finite
+observed stage: worker/socket opening, awaiting the first bootstrap frame,
+decoding/validation, and main-thread handoff. Only strictly ordered one-time
+socket-open/first-frame/validated-bootstrap events renew that watchdog; diagnostics,
+duplicates, reordered and stale-generation events cannot extend it. This is bounded
+progress (at most four waits), not a heartbeat or a raised total timeout disguised
+as performance. No wire encoding, source data or load validation changes. Maintain
+terminal failure, cancellation and reserved tail semantics. Saved-file E2E and
+fake-clock stall cases must prove both success and bounded failure. First formal
+stage regression fails before implementation. Add the actual transport Worker to
+the existing open-document-session Inspector boundary. This fixes functional
+reload; no load-speed improvement is claimed without before/after timing evidence.
+
+### Recorded-failure repair - final review and local evidence
+
+The three scoped repairs are complete. This is not a new live drawing acceptance,
+a claim that every future input is correct, or a load-speed claim.
+
+- **Local judgment dependencies:** the saved submission cited a whole-target
+  image alongside base crops, so its base pass genuinely depended on crown edits.
+  The inspect owner now refuses this ambiguous mixed unit atomically, explains the
+  required split, and preserves prior results. Explicit local-only resubmission
+  accumulates passes; unit scope expansions/replacements require exact supersession.
+  A whole image of an isolated crown and explicit cross-region obligations remain
+  valid. No cited evidence is silently discarded, no dependency is inferred from
+  names, and no additional AI is called.
+- **Current purpose:** recorded native commentary lacked completion, so its
+  request-scoped repair intent survived later inspection. The provider owns a
+  finite root-call cohort and emits explicit completion when that cohort settles.
+  Concurrent/nested calls, failure and replacement identities are preserved. The
+  existing activity machine consumes those events; distinct concurrent observed
+  operations now retain their names rather than only a generic count. The request
+  objective and historical purposes are never promoted back into current work.
+- **Large reload:** exact saved JSON is 183,494,673 bytes. Actual Worker replay
+  received the 183,494,794-byte bootstrap at 4974.6ms, finished decode at 5543.2ms,
+  and delivered at 6520ms. The old total 5000ms connection timer killed this valid
+  progressing session. Finite stage stall guards preserve the same per-stage
+  duration and all parser/cutoff/cancellation contracts. No checkpoint fallback,
+  data trimming, wire-format change or larger timeout constant was introduced.
+  Review additionally exposed a missing-phase progress event matching an exhausted
+  phase array. The formal fake-clock case failed first; an explicit finite-stage
+  bound now prevents malformed events from renewing the final deadline.
+
+Permanent replay fixtures: server `fixtures/recorded-101/{review-handoff,purpose}.json`
+and E2E `fixtures/recorded-101/{document.fixture.gz,manifest.json}`. The document
+manifest records both raw and canonical SHA-256. No test depends on ignored live
+run folders. The large fixture gate is opt-in (`E2E_LARGE_DOCUMENT=true`); ordinary
+CI does not acquire a machine-speed acceptance threshold.
+
+Evidence under `tmp/`:
+
+- `recorded-review-{red,green}.log`: original mixed-scope input fails first;
+  **101** owner tests then pass, including unchanged result identity/revision,
+  actual affected dependency invalidation and explicit scope redesign.
+- `recorded-provider-final.log`: **177 passed / 3 existing conditional skips**,
+  including exact saved commentary, concurrent completion, replacement and failed
+  tool cohorts. `recorded-browser-owners-final.log`: **179 passed** across
+  presentation (**66**) and protocol/provider (**113**); its separate lifecycle
+  file was initially invoked with the wrong Node environment, not passed.
+  `recorded-lifecycle-final.log`: correct declared jsdom environment, **69 passed**
+  across lifecycle and inspection dependency/evidence owners.
+- `recorded-server-final.log`: **1174 passed**, one test-oracle whitespace failure,
+  **10 conditional skips** including the new opt-in large fixture. The raw saved
+  commentary includes a trailing newline; the existing presentation contract trims
+  it. The corrected oracle is included in the full provider rerun above. Preserve
+  this initial failed log; do not relabel it as a green complete-suite run.
+- `recorded-bootstrap-stage-red.log` and
+  `recorded-bootstrap-invalid-phase-red.log`: both reproduced before their fixes.
+  `recorded-bootstrap-closeout.log`: final **113** protocol/provider tests pass,
+  with reordered, duplicate, stale, missing-phase and diagnostics non-extension.
+  `recorded-bootstrap-exact-final.log`: exact full saved payload round-trip passes;
+  read 744.5ms, encode 774.9ms, decode 618.1ms in this local diagnostic. These are
+  observations, not portable performance thresholds.
+- `recorded-reload-red.log`: real cold session failed with handshake timeout and
+  provisional empty workspace. `recorded-reload-complete2.log` and the saved-file
+  case in `recorded-e2e-final.log`: full canonical hash equals the source, real
+  crown fill edit invalidates crown/whole-view but retains base, pan/zoom and
+  crown Undo/Redo retain base, authoritative persistence confirms, and fresh
+  reload exactly equals the edited canonical hash. No direct browser fixture
+  injection bypasses the socket bootstrap. The initial strengthened digest helper
+  omitted await on Core.save; corrected before its green full-content proof.
+- `recorded-e2e-final.log`: recorded large reload plus small multi-tier dependency
+  browser tests pass. The two UI cases initially interleaved their new completed-
+  purpose case before an existing active-purpose history-deduplication scenario.
+  Separate those lifecycle scenarios without changing or dropping assertions.
+  `recorded-status-ui-final.log`: **2 passed**, 360px/1280px, old purpose absent
+  during the next inspection, historic content and existing following/deduplication
+  checks preserved. No production change was made for this fixture ordering.
+- `recorded-types-closeout.log`: browser/server production typechecks pass.
+  `recorded-lint-closeout.log`, `recorded-bootstrap-lint-closeout.log` and
+  `recorded-e2e-lint-final.log`: zero errors; existing/diagnostic console warnings
+  remain explicitly reported. `recorded-naming-final.log`: **15 passed**.
+- `recorded-inspector-closeout.log`: **15** current contract/catalog tests pass.
+  Formal candidate admission exposed one duplicate basic-api fixture boundary in
+  the prior apply contract; removed only that duplicate, regenerated the catalog.
+  `recorded-source-proof.log`: baseline, **4 exact negative scenarios**, recovery,
+  **30 obligations** pass on captured source. A final capture after the missing-
+  phase transport guard is recorded separately below.
+
+Final source closure: `recorded-source-proof-closeout.log` passes all 30
+obligations, four exact negatives and recovery on source
+`18d4f6cc4815dcd15e1bad51f8715adb52c3f6c2dfd6cc12fbc43874d0345195`,
+recovery `a3dd395d-e661-41e5-8d92-c9e1bfc78148`, mapping revision 79.
+Final whitespace check passes. Test-owned ports 3300/3401/4401 have no listeners.
+HEAD remains `e0d52ddefedb941ed18d5b324130b2e4b51455bc`; no commit or push.
+
+Visual evidence: explicit `APP_URL=http://127.0.0.1:3300`, isolated collaboration
+3401 and backend 4401; file scope `ai-conversation-flow.spec.ts`, grep
+`current activity matches`, one worker. Actual App panel uses deterministic
+streamed fixture events, with no drawing/model invocation. Screenshots
+`test-results/ai-conversation-flow-*/settled-purpose-next-inspection.png` at
+360px/1280px were opened and reviewed: current text is `Reviewing the drawing`,
+old purpose appears only in history, and the composer/status remain within the
+panel. This proves lifecycle presentation, not AI visual accuracy. Test-owned
+services exit after the gate; persistent .env is preserved.
+
+Final review covered tool discovery instructions/schema to atomic judgment
+admission, result identity/accumulation and invalidation, real browser-issued
+scope dependencies, native lifecycle to activity projection/UI, malformed/stalled
+transport to cleanup, and canonical load/edit/history/save/reload. Scope/result
+errors remain recoverable and cannot silently certify a pass. No model calls,
+new live101, commit, push, monitoring or unrelated framework changes were made in
+this repair. Previous dirty selection/publication work remains intact.
+
+## Historical checkpoints - superseded execution instructions
+
+The following sections retain prior decisions and evidence. They do not authorize
+new execution or override the current stop boundary above.
 
 Repair the four observed handoffs from recorded run reusable-tools-1791997243736:
 discovery selection/representation, visual unit identity/evidence, incremental
@@ -36,6 +1566,362 @@ tests and the saved live inputs. Never treat mock success outputs or schema-only
 checks as proof of real execution. Exclude model calls, live101, monitoring and
 additional remote operations. Missing cases and reproduced failures remain visible
 until addressed; this checkpoint does not close them.
+
+## All-tool usage verification - active local task
+
+Scope: every current Design browser action and native host tool, including
+registry-only basic operations and reusable-library controls. Inventory must derive
+from current canonical definitions. Existing semantic owner cases remain authoritative;
+add missing public-boundary rejection, cancellation, recovery and producer-consumer
+cases rather than replacing owners with successful mocks. No production redesign,
+model calls, live101, push or monitoring. Known live findings remain open.
+
+Compose owner card: current Inspector compose contract and AI execution spec own
+advertised input/output admission, exact dispatch, failure settlement and artifact
+handoffs. Start with existing real-browser basic-api cases and native invocation
+suites. Inputs are canonical definitions and explicit owner-specific valid cases;
+outputs are actual successful receipts or structured rejection/cancellation, with
+unchanged document/selection on rejected calls and subsequent valid recovery.
+Existing concrete owners and public invocation middleware may contribute. Guessed
+arguments, relaxed schemas, fabricated successes and test-name counting may not.
+Edit only formal tests/fixtures and test runner registration, plus this plan and
+necessary current verification mapping. Shared transport-only tests are not proof
+of domain effects. Per-tool semantic oracles and failure/recovery checks must remain
+visible. Focused suite, lint, typecheck and naming close each slice; unknown coverage
+or known failing behavior prevents an all-tools-complete claim.
+
+Self-review: the existing basic cases already assert actual canonical effects and
+registry equality, but their malformed-input check only calls a schema helper and
+their cancellation check does not verify preserved state or a later successful use.
+Strengthen that same fixture through the production observed action boundary before
+valid execution. Server owner tests require a separate real-owner usage inventory;
+wrapper exception injection cannot substitute for those cases. Test-only changes
+do not authorize altering production semantics to make a new test pass.
+
+### Selection correction and complete tool review - current authorization
+
+The current user authorizes repairing selection and findings from the current
+all-tool review. This supersedes the earlier test-only mutation restriction.
+No live101, model requests, push or monitoring. Review the canonical 152 basic
+operations, 21 browser actions and 25 native tools through their current definitions,
+public invocation, concrete owner, receipts and direct consumers. Inspect admission,
+domain rejection, cancellation, partial settlement, ownership, recovery and test
+oracles; do not infer end-to-end coverage from injected transport errors or counts.
+Discovery is limited to those inventories, their direct implementations/consumers,
+formal tests and recorded failures. No unrelated application or framework redesign.
+
+Compose/apply owner card: `select_elements` accepts existing element identities;
+validate the entire set inside the synchronous mutation boundary before selection
+changes. Missing-only and mixed sets reject without changing prior selection;
+valid calls must agree with canonical selection and allow recovery after rejection.
+The Core selection channel remains the transaction/replay authority. The App action
+owns its existing-element precondition, using the existing element lookup API;
+no duplicate type registry, fallback selection, compatibility or automatic retry.
+Allowed edits: action implementation, direct tests and current spec/plan as needed.
+Failure uses the common execution-error/settlement path. Focused action regressions
+must fail before the fix, then pass with real browser selection and unchanged
+saved state. Review upstream discovery/schema and downstream batch/recipe receipts.
+Run relevant owner suites, all Design AI/server suites, real registered-tool browser
+usage, typecheck, lint and naming. Stop at unresolved contract contradictions or
+unrelated scope; do not claim every possible input is covered by passing suites.
+
+Self-review: validating before an asynchronous scheduler is insufficient. Verify
+inside its actual callback, without an await between lookup and selection. Core's
+low-level selection is intentionally generic; do not impose App-specific document
+existence rules on vector channels or framework consumers. Tests must start with
+nonempty prior selection, include both mixed-ID orders and a later valid call.
+
+#### Selection owner review iteration
+
+The direct-consumer review found the registry-only basic selection and toggle
+routes use the same common selection API. Correcting only the named App action
+would leave a bypass. Move existing-element admission to that common API, before
+Core transaction publication; keep generic Core and vector channels unchanged.
+The App action translates only the specific selection-domain error into its
+recoverable execution error. Test both public routes, all-invalid and both mixed
+orders, selection/Undo preservation and subsequent corrected use. The common API
+and its direct consumers/tests are the bounded apply-owner correction; no new
+registry or duplicate validation pass. Typed domain rejection prevents unexpected
+programming exceptions from becoming expected usage-test success.
+
+#### Review of existing verification consumers
+
+Stricter domain oracles exposed that missing review/image dependencies and missing
+replacement compositions reject through their owners rather than returning a
+no-change receipt. Verify each exact owner rejection and preserve state, not an
+arbitrary exception. SceneTree explicitly rejects reused active identities before
+creation. This is test correction to current owner contracts, not new fallback.
+The broad local gate also found one obsolete debug-Window assertion in the existing
+collaboration lifecycle test. Its adjacent supported `getActiveCollaborationHandle`
+identity assertion proves the same successor ownership; remove the redundant
+prohibited debug access without changing production lifecycle or the assertion.
+A separate local server gate lost its built executable while concurrent browser
+setup rebuilt that same output directory. Run build-owning gates sequentially;
+retain that failure and do not change product behavior or retry individual actions.
+
+### Test-fixture iteration
+
+Repeated full basic-usage runs failed during fixture construction, before the
+selected tool executed: the workspace was empty after an earlier external
+readiness observation. A toolbar/canvas or an earlier ready poll is not a fixture
+mutation precondition. Revised test setup waits on the actual Core workspace and
+active synced document session inside the fixture, then starts creation in that
+same synchronous continuation. This never retries a product action. Preserve the
+failed logs; the observation does not establish the cause of the intervening
+workspace transition. Add domain-level missing-target/artifact probes before valid
+recovery, beyond generic null-input and pre-cancellation checks. Do not relax any
+product contract or expand into initialization redesign.
+
+### All-tool review findings and limits
+
+Reviewed the current canonical inventory and direct producer/consumer paths, not
+only new tests: basic adapters and ordered return alignment; App admission and
+transaction settlement; native schema/operation discovery; preparation/workflow
+repair; retained queries, image artifacts and release/borrowing; reference download
+and decode boundaries; library admission, invocation and save-only recovery;
+mechanical/visual evidence and activity consumers. The selection defect affected
+both the named action and common/basic entry points. Fix at the shared App owner;
+Core generic channels and other apps are unchanged.
+
+Usage verification now rejects unexpected programming exceptions and checks exact
+owner refusal reasons. Native fixtures assert the actual public failure receipt
+before preserving their direct-owner exception assertions. Real browser probes
+verify missing/mixed IDs, prior selection, no added Undo entry, corrected use and
+Undo/Redo. All registered basic and App operations have concrete effect/read oracles;
+native suites combine real owner logic with explicitly mocked network/browser/model
+boundaries. Those mocks are not live external acceptance. Unknown tools cannot be
+hidden by a fixed list: canonical inventory equality and per-owner successful-use
+checks fail omissions. Null-input/pre-cancellation tests alone are not evidence for
+every domain failure; existing concrete owner regression suites remain required.
+
+The prior recorded Taipei101 findings remain open: overly broad image evidence can
+invalidate local acceptance, authored purpose can remain stale, and large-document
+fresh bootstrap timed out. Existing unit suites do not close these recorded end-to-end
+failures. This selection correction and all-tool review must not be reported as
+proof that those three problems are repaired. Reuse the saved inputs/checkpoint for
+those subsequent regressions; do not generate another live101 for this task.
+
+### Selection correction verification and open review finding
+
+Selection correction is locally verified. The broad review is **not an all-green
+system claim**. Current evidence (all logs under project `tmp/`):
+
+- `select-elements-red.log`: four original action regressions fail before repair.
+  `select-common-red.log`: four common-selection regressions fail before the
+  shared-owner correction. `select-review-selection-final.log`: 20 pass, including
+  mixed-order rejection, scheduled target disappearance and queued cancellation.
+- `select-review-final-browser.log`: **173 pass** (21 App actions and 152 basic
+  APIs), with real state/effect oracles and strict expected domain refusals.
+  Selection-specific checks preserve nonempty selection and Undo depth, then prove
+  valid recovery, Undo and Redo. Both named and basic selection entrances execute.
+- `select-review-server.log`: **1,172 pass / 9 existing conditional skips**;
+  exact current native inventory includes 25 tools. Live provider tests stay off.
+- `select-review-final-ai.log`: **581 pass**; subsequent new queued-cancellation
+  case is included in the 20-test final focused selection run above.
+- `select-review-final-local.log`: **152 Node tests and 587 Vitest tests pass**.
+  Build-owning checks ran sequentially after browser setup completed.
+- `select-review-runtime.log`: **374 Runtime tests pass**.
+- `select-review-flow-proof-node.log`: **30 pass** using the formal Node environment;
+  the earlier jsdom invocation was an incorrect test environment, not a product
+  regression. `select-review-catalog.log`: **8 pass** after normal generation.
+- Typecheck passes. Scoped complete owner lint has **0 errors / 7 existing
+  console warnings**; edited selection test formatting is clean. Naming **15 pass**.
+- `select-review-interactions.log`: **21 pass / 1 fail**. Existing finite-history
+  grouped hierarchy E2E fails saved-state equality after Undo. The backend also
+  rejects publication with HTTP422, `hierarchy move evidence ... is stale`.
+  `select-review-history-baseline.log` reproduces both failures with the original
+  HEAD selection/action files. The runner restores the correction byte-for-byte
+  in finally. This proves the failure predates this selection correction; it does
+  not prove its underlying persistence cause. Do not omit or waive this failure.
+
+P1 finding at the previous checkpoint (now repaired and verified below): multiple nested grouping/moving/ungrouping operations in
+one history member cannot complete the existing persistence/Undo proof. The exact
+formal case remains `e2e/transaction-history-groups.spec.ts`, with reducer rejection
+at `server/document-canonical-reducer.ts` hierarchy before-index validation.
+Its producer/publication/reducer evidence needs a bounded persistence-owner repair;
+do not weaken backend validation or call the complete tool system verified. The
+three previously recorded live101 issues above also remain open. No live101,
+model call, commit, push or monitoring occurred in this correction/review task.
+
+### Review finding repair - ordered hierarchy publication
+
+User authorization now includes repairing review findings. Freeze this slice on
+nested grouping/movement/removal in a finite history member: canonical mutation,
+Factory publication order, App preparation, backend materialization, Undo/Redo,
+peer application and saved reload must agree. Keep existing validation, atomic
+rollback, compensation and retries. No live101, push, monitoring or model calls.
+
+Step card - diagnose the first incorrect ordered-evidence owner. Product contracts:
+Factory transaction history groups and shared publications; Design collaboration
+reference and socket-authoritative document session. Inspector routes:
+`prepare-document-publication` in canonical-projection-and-collaboration and the
+Factory transaction publication/replay owners if source order is already wrong.
+Inputs are actual completed source deliveries; output is the same ordered canonical
+effect at local replay, peer and backend. Transport grouping cannot redefine
+operation semantics. No new document/history mirror, stale-evidence bypass,
+selection workaround or retry of product operations. Read only those owners,
+direct consumers, their formal suites and the existing failing E2E. Allowed edits
+are the first incorrect owner, direct regression tests, exact contract docs/flow
+and this plan. Existing baseline E2E already fails before implementation; capture
+its actual source/prepared evidence before selecting a correction. Add a small
+permanent regression at that owner before production edits, then prove the real
+browser saved checkpoint, Undo/Redo, peer and fresh reload. Run affected full owner
+tests, types, lint and naming sequentially for build-owning gates.
+
+Self-review: do not infer a reducer fault from its rejection, or treat local Undo
+and backend 422 as necessarily one defect. Explicit immediate and deferred delivery
+may interact; preserve source operation boundaries and check both action and
+reverse replay. No weakening malformed or stale evidence rejection. Stop and
+replan at the same bounded owner if the first hypothesis is disproved.
+
+#### Confirmed Factory ordering owner
+
+The saved actual source (`tmp/hierarchy-publications-red.json`) publishes ungroup
+and regroup before the earlier deferred move. The backend correctly rejects that
+impossible order. This precedes document conversion. Work on transaction Inspector
+`settle-local-shared-projection`, whose boundary is Factory source/tests. The fix
+must make an immediate boundary drain the prior eligible journal prefix in order;
+retain one synchronous source window, rollback evidence and exactly-once delivery.
+Effective shared delivery of that prefix becomes immediate, while undoable/shared
+and rollbackable options remain unchanged. Track the consumed prefix rather than
+rescanning all prior entries on every write. Pure deferred transactions remain
+commit-only; explicit progressive boundaries cannot be bypassed. Formal tests must
+prove action, Undo/Redo, cancellation compensation and independent transactions;
+then rerun the actual grouped-hierarchy browser proof before advancing. No backend
+validation change is authorized or needed by this finding.
+
+#### Factory slice verification and downstream review
+
+Factory 295 tests pass, build passes, and the enhanced real-browser case passes
+(26.5s): grouped/Undo/Redo checkpoints exactly equal live canonical data, an
+independent peer converges, fresh reload matches, and a post-reload edit saves and
+reloads. Logs `hierarchy-factory-all3.log`, `hierarchy-factory-build2.log`,
+`hierarchy-browser-durable.log`. The temporary initial regression incorrectly used
+commit:false, then assumed unpublished synchronous work produced wire compensation;
+corrected it to the formal outcome and explicit published/unpublished cases.
+Existing immediate-window expectations now assert the actual dependency order.
+
+Next owner card: `prepare-document-publication` (canonical-projection Inspector),
+Design collaboration reference ordered source delivery contract. Review the direct
+consumer's merging of multiple MOVE_ELEMENTS deliveries within one transport batch.
+Each delivery's moves are simultaneous; separate deliveries are sequential and may
+move the same identity again. Preserve those boundaries through prepare/read/reducer,
+including creation/removal classifier paths. Allowed inputs are source slices and
+ordered deliveries, output is exact ordered CanonicalChange operations; no new
+wire grammar or receiver reconstruction. Add formal regression in the existing
+allowlisted document-publication tests before any adapter correction. Check same
+source action/Undo/Redo/compensation and stale evidence rejection. No Factory or
+backend semantic redesign in this next slice.
+
+#### Adapter iteration - heterogeneous channel batches
+
+The same-owner direct review proved a second adapter defect: MOVE_ELEMENTS and
+UPDATE_ELEMENT_DATA in one Scene batch are misclassified together by a `some`
+check. Both delivery orders fail the new formal cases. Normalize only Scene
+transport batches into consecutive operation-family runs before classification;
+keep source-slice and delivery order, combine scalar/plural add or remove families,
+and keep subtree events individual. Props relationship evidence remains together
+at its existing owner. This is not a new wire format or receiver reconstruction.
+Verify creation/move/removal paths and mixed raw-data operations, then rerun the
+existing owner suites and browser chain. Earlier pass evidence predates this
+adapter correction and does not close it.
+
+#### Ordered publication repair - final local verification
+
+The P1 hierarchy finding is closed for this source. Three proven causes were
+corrected: Factory immediate delivery overtook an earlier deferred prerequisite;
+the document adapter flattened sequential moves into a simultaneous move set;
+and heterogeneous Scene batches were classified as a single operation family.
+Backend stale-evidence validation remains unchanged. The final review checked
+effective versus caller options, consumed-prefix lifetime/reset, pure deferred
+transactions, explicit progressive boundaries, failed channel delivery, rollback
+before/after publication, Undo/Redo, source-slice identity, property association,
+and ordered mixed operations. No compatibility branch or alternate wire grammar
+was introduced.
+
+Final evidence, under `tmp/` unless noted:
+
+- `hierarchy-browser-complete.log`: **202 passed**, covering all registered basic
+  and App actions, selection, group hierarchy/interaction, and finite history.
+  The enhanced finite-history case verifies exact backend checkpoint equality
+  after commit/Undo/Redo, an independent peer, fresh reload, and another edit/save/
+  reload after recovery. No live model or Taipei101 run was used.
+- `hierarchy-factory-closeout.log`: **296 passed**; current Factory build passes.
+  Core **268**, Scene Tree **211**, Preset **212** also pass on the Factory fix.
+- `hierarchy-design-local-final.log`: **152 Node + 601 Vitest passed** on the
+  final adapter. `hierarchy-design-ai.log`: **582 passed** and
+  `hierarchy-design-server.log`: **1,172 passed / 9 existing conditional skips**
+  precede the final adapter-only correction; relevant adapter/reducer consumers
+  were subsequently reverified in the local suite and browser gate.
+- `hierarchy-types-final.log`, `hierarchy-lint-closeout.log`: pass;
+  `hierarchy-naming-closeout.log`: **15 passed**. Inspector transaction/catalog
+  **25** and canonical-projection contract **13** tests pass. Diff whitespace
+  check passes. The generated catalog was regenerated through its normal owner.
+- `hierarchy-factory-source-proof-final.log`: current captured-source baseline,
+  **7 exact negative scenarios**, and recovered baseline pass, covering **11
+  obligations / 3 flows**. Source digest
+  `5e8c4d1c722fa8ad0107088112f0bc907df2aac6a07bcc54d02844e3c0f42161`;
+  candidate `50aa43df-1676-45cd-b029-13f80df2000d`, accepted contract review
+  `fddcf0730ec0e893539a8aa2ac36af7ff3da851153d76d61b6a1165453af3104`.
+  The initial proof was correctly refused until the changed architecture contract
+  was reviewed through candidate/contract acceptance; it is not a runtime failure
+  or a waived gate. Original red regression logs remain preserved.
+
+This closes the selection and newly diagnosed ordered-publication findings, not
+the previously recorded Taipei101 image-dependency, stale-purpose and large-load
+failures listed above. No commit, push, monitoring or extra AI invocation. HEAD
+remains `e0d52ddefedb941ed18d5b324130b2e4b51455bc`.
+
+### Prior test-only verification results
+
+The pre-test checkpoint was pushed as `e0d52ddef`. Before the selection correction, changes after
+that checkpoint were tests, fixtures and this plan; no new production implementation,
+model invocation, live101, remote push or monitoring was performed.
+
+- Canonical browser inventory: 152 basic operations and 21 App actions. The basic
+  fixture now runs invalid input, pre-cancellation, unchanged document/selection,
+  then a successful real owner call and its existing per-operation semantic oracle.
+  Structural operations use the actual retained-context owner and dispose it.
+- Canonical native inventory: 25 built-in tools, including four library controls.
+  Exact inventory equality catches missing registration/testing scope. Native owner
+  suites require successful public-boundary usage for every advertised built-in;
+  each valid owner fixture also proves null-input and cancellation rejection without
+  executing its owner, followed by exact input/output validation and one dispatch.
+  Existing per-tool domain guards, partial outcomes and recovery assertions remain.
+  Mocked external boundaries are not represented as end-to-end product execution.
+- New App action suite uses real runtime definitions, Core, transaction runner,
+  renderer, retained queries and document service. It asserts domain effects and
+  producer-consumer receipts. Eighteen applicable actions additionally exercise
+  unavailable targets/artifacts or conflicting prepared identities before valid
+  recovery. Clarification/detail-choice are request-only controls; completion uses
+  real persistence confirmation, with persistence-failure behavior also covered by
+  the existing action suite.
+- `tmp/tool-usage-basic-atomic.log`: **152 passed**.
+- `tmp/tool-usage-actions-domain.log`: **20 passed, 1 failed**. The failure is a
+  product defect, not a fixture exemption: `select_elements` returns selectedCount=1
+  for a nonexistent ID while the effective existing selected-object count is zero.
+  The current implementation in `src/ai/actions.ts` reports the requested array
+  length. Preserve this regression and do not label this task all-green. The earlier
+  valid-target run passed all 21 App actions on the same production source.
+- `tmp/tool-usage-server-all.log`: **1,172 passed, 9 existing conditional skips**.
+  The subsequent inventory-only update passed all 59 invocation tests in
+  `tmp/tool-usage-inventory.log`; no production source changed.
+- `tmp/tool-usage-ai-all.log`: **572 passed**.
+- `tmp/tool-usage-ownership.log`: **65 passed**, covering query/image ownership and
+  actual registry/composition handoffs.
+- New save-only recovery test fails durable storage after successful invocation,
+  saves the retained receipt on recovery, verifies eligible state and proves the
+  product executor ran exactly once. New layer-conversion case uses the real tracer
+  and hands separated paths to actual drawing preparation.
+
+Review corrections: three old operation fixtures returned empty acknowledgements
+for submitted work; public result validation correctly rejects that. Fixtures now
+return one acknowledgement per submitted action, retaining argument/order assertions.
+The prior basic fixture omitted retained structural delivery. Node-side oracle types
+stay local to the test rather than importing a browser barrel into server compilation.
+Earlier failed runs are retained and are not described as passes. This test work does
+not resolve the previously recorded live101 local-invalidation, activity freshness or
+large-document reload findings, nor prove every possible input combination.
 
 ## Recorded handoff correction - 2026-10-15
 
@@ -329,16 +2215,16 @@ Stages 1 through 7 are pushed. Stage 8 completes the integrated review and local
 package validation; its final delivery contains only test wiring, the current UI
 oracle and this closeout. Each stage used a separate reviewed goal.
 
-| Stage | Outcome | Required evidence |
-| --- | --- | --- |
-| 0 - Baseline | Remove stale execution instructions and preserve existing work. | Unverified checkpoint pushed; clean tracked worktree before Stage 1. |
-| 1 - Check timing | Deferring images does not skip mechanical checks. | A coherent write boundary publishes first, then checks without a model or screenshot; results reach the existing store and consumer. |
-| 2 - Local acceptance | Regional passes satisfy explicit required coverage. | Change one of eight regions; preserve unrelated passes and reopen actual cross-region dependencies without dropping required units. |
-| 3 - Direct delivery | Structural outputs transfer usable retained sets. | Group-to-edit uses a handle without model-side ID expansion; full outcomes, ownership, stale recovery and Undo remain intact. |
-| 4 - Mechanical repair | One real defect is repaired through an admitted finite recipe. | Check/repair/recheck succeeds without replay; decision-required, no progress, cancellation and partial outcomes stop correctly. |
-| 5 - Model handoff | The primary AI selects capabilities and continues unresolved work. | Discovery, recipe reuse/creation, decision return and a new execution segment work together; saving does not replay writes. |
-| 6 - Activity | Purpose, phase and recorded classification agree. | Cleanup cannot replace design purpose; late events cannot revive closed work; UI and profiler consume normalized facts. |
-| 7 - Image checks | Comparable local evidence receives deterministic analysis. | Explicit coordinate mapping, scope and baseline; meaningful defects detected, unsupported comparisons reported, valid results reused. |
+| Stage                     | Outcome                                                             | Required evidence                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 - Baseline              | Remove stale execution instructions and preserve existing work.     | Unverified checkpoint pushed; clean tracked worktree before Stage 1.                                                                                |
+| 1 - Check timing          | Deferring images does not skip mechanical checks.                   | A coherent write boundary publishes first, then checks without a model or screenshot; results reach the existing store and consumer.                |
+| 2 - Local acceptance      | Regional passes satisfy explicit required coverage.                 | Change one of eight regions; preserve unrelated passes and reopen actual cross-region dependencies without dropping required units.                 |
+| 3 - Direct delivery       | Structural outputs transfer usable retained sets.                   | Group-to-edit uses a handle without model-side ID expansion; full outcomes, ownership, stale recovery and Undo remain intact.                       |
+| 4 - Mechanical repair     | One real defect is repaired through an admitted finite recipe.      | Check/repair/recheck succeeds without replay; decision-required, no progress, cancellation and partial outcomes stop correctly.                     |
+| 5 - Model handoff         | The primary AI selects capabilities and continues unresolved work.  | Discovery, recipe reuse/creation, decision return and a new execution segment work together; saving does not replay writes.                         |
+| 6 - Activity              | Purpose, phase and recorded classification agree.                   | Cleanup cannot replace design purpose; late events cannot revive closed work; UI and profiler consume normalized facts.                             |
+| 7 - Image checks          | Comparable local evidence receives deterministic analysis.          | Explicit coordinate mapping, scope and baseline; meaningful defects detected, unsupported comparisons reported, valid results reused.               |
 | 8 - Integrated acceptance | Verify the complete staged contract through existing package tests. | Cross-stage success, partial failure, cancellation, dependency invalidation, ownership and reuse; all affected package suites pass. No new live101. |
 
 ## Cross-stage handoff and failure rules
@@ -522,7 +2408,6 @@ This proves deterministic timing and handoff behavior, not a new first-frame or
 full-drawing wall-time improvement. Broader acceptance/dependency/status work is
 still assigned to later stages and has not been declared complete.
 
-
 ### Stage 1 re-review - inspect boundary correction card
 
 Scope remains the inspect owner and its compose-to-inspect route in the existing
@@ -541,7 +2426,6 @@ capture cancellation, missing canonical check evidence and targets removed befor
 the coherent batch boundary. Prove failing cases before production edits, then run the
 focused Stage 1 tests, server types/lint/naming and current Inspector proof.
 No compatibility paths, new lifecycle owner, later-stage work, push or monitoring.
-
 
 ### Stage 1 re-review outcome
 
@@ -591,7 +2475,6 @@ The final bounded diff/consumer review has no remaining blocking Stage 1 finding
 This is not certification of later stages or live Taipei 101 speed. Changes remain
 local and uncommitted; no push, monitoring, full local CI or live model test ran.
 
-
 ### Stage 1 additional review - canonical receipt handoffs
 
 Freeze this iteration to the existing inspect owner and compose-to-inspect route.
@@ -615,7 +2498,6 @@ The inspect owner must deliver its handled failure through the existing common
 failure envelope, keeping the canonical receipt plus tail. Do not redesign the
 generic invocation observer or discard its behavior for unhandled exceptions.
 A permanent observer-enabled test must fail before this correction.
-
 
 ### Stage 1 additional review outcome
 
@@ -664,7 +2546,6 @@ The final review covers this Stage 1 diff and its direct receipt consumers, not
 later-stage result-lifecycle redesign or live performance. No new AI call, full
 local CI, live 101, commit, push, monitoring or next stage was started. No remaining
 blocking finding was identified inside this bounded review.
-
 
 ### Stage 1 comprehensive review contract
 
@@ -982,6 +2863,7 @@ Output-contract revision 3 replaces affected basic mutation and retained-mapping
 revision 2; current admission rejects replaced dependencies before any write.
 
 Final focused evidence:
+
 - `tmp/stage1-full-scope-final.log`: 330 server tests passed, including real adapter,
   recipe/operation handoffs, lifecycle and unknown-settlement regression cases.
 - `tmp/stage1-close-consumers.log`: 270 direct consumer tests passed, three existing
@@ -1040,7 +2922,6 @@ and failing-mechanical-result payload sizes; scoped retained reads; standalone,
 ordered and reusable-tool output compatibility; focused tests/types/lint/naming and
 same-source proof. No full CI/live101/push/monitoring or later-stage implementation.
 
-
 The terminal-scope regression also covers missing transport acknowledgement,
 incomplete coverage, later successful geometry checks and fresh-request isolation.
 The common failure envelope must preserve an owner's explicit recoverable=false;
@@ -1071,6 +2952,7 @@ diagnostic collection runs only for unsuccessful unknown outcomes missing eviden
 Its new regression failed before the owner-order correction and passed afterward.
 
 Final evidence:
+
 - `tmp/stage1-recovery-verified.log`: 611 passed, three existing conditional skips,
   13 affected owner/consumer files. No full local CI or live101 was run.
 - `tmp/stage1-recovery-types-verified.log`: declared production/server typechecks
@@ -1090,7 +2972,6 @@ No second state owner, new tool, execution interpreter, model call, compatibilit
 layer or limit increase was added. No performance timing claim follows from these
 tests. That review preceded the separately authorized push at `62127de41`;
 it does not authorize another push or monitoring.
-
 
 ## Stage 2 - Cumulative regional acceptance
 
@@ -1270,7 +3151,6 @@ semantics. Those contracts are now explicit. At that historical checkpoint imple
 was green. The checkpoint was reported before implementation. Later execution and
 verification are recorded below; no performance improvement is claimed. No push, CI monitoring, full local CI, live101 or next-stage work.
 
-
 ### Stage 2 declaration slice - bounded iteration
 
 The reviewed plan was reported before implementation resumed under the active goal.
@@ -1289,7 +3169,6 @@ exact unresolved criteria and retention of valid local work. Independent supplie
 assessment tests retain exact criterion coverage, following current pending scope;
 no additional model invocation is introduced. Work remains in the first inspect
 slice; operation transport, final settlement and public handoff closure are pending.
-
 
 ### Stage 2 operation handoff card - inspect
 
@@ -1310,7 +3189,6 @@ review are production owners). This adds an end-to-end consumer case to that tes
 browser production behavior is not rewritten. Extend existing operation/proof tests
 for transport failures and bounded accumulation, then update exact public contracts.
 No extra model, scene copy, geometry evaluator or new result store is permitted.
-
 
 ### Stage 2 bounded iteration - coherent accumulated validation
 
@@ -1333,7 +3211,6 @@ step already owns these files. Validate cancellation, malformed acknowledgements
 missing fence, drift and stable >24 accumulation, then recheck exact schemas and
 same-source proof. The red case is a correctness failure, not a performance result.
 
-
 Consumer closure review: the runtime-input completeness fixture assumed a shared
 revision 2 for nearly every browser action. Current basic mutation wrappers and
 retained-fill tools already publish owner revision 3. Re-audit confirmed no runtime
@@ -1344,7 +3221,6 @@ versions and canonical/native schemas have their own direct contract test. Do no
 keep extending an unrelated tool-name list or downgrade current contracts to make
 the old assertion pass. Consumer fixture changes are inside this handoff closure;
 no additional production owner was changed.
-
 
 ### Stage 2 completion - 2026-10-13
 
@@ -1367,6 +3243,7 @@ setting changed. No second acceptance ledger, compatibility branch, automatic
 retry loop, extra model invocation or limit increase was introduced.
 
 Validation evidence:
+
 - `tmp/stage2-server-verified.log`: nine focused server/consumer files, 602 passed,
   three pre-existing conditional skips. This is not the full local CI.
 - Browser owner/dependency/action tests: 37 passed in
@@ -1397,7 +3274,6 @@ prove semantic completeness of an AI-authored plan or replace the primary agent'
 visual judgment. No service was started, no push/monitoring occurred, and the next
 stage has not started.
 
-
 ### Stage 2 comprehensive correction - inspect
 
 Authorized objective: audit and repair the existing second-stage declaration,
@@ -1410,6 +3286,7 @@ ownership/lifetime, sparse accumulation, final completeness, failures/cancellati
 public schemas, work counts and superseded instructions; no repository-wide audit.
 
 Read-only review identified three cases to prove before production changes:
+
 - Deferred visual decisions are saved only when the entire result is accepted, so
   valid sparse work can be lost. Store their dependency-bound verdicts in the same
   check owner; retain their explicit disposition as result metadata, not a second
@@ -1435,7 +3312,6 @@ production types, focused lint/naming, catalog and same-source proof. Final revi
 checks the changed contracts and all discovered cases once; report actual remaining
 limits separately from defects and backlog.
 
-
 ### Stage 2 comprehensive correction completion - 2026-10-13
 
 Three permanent regressions failed before production correction: sparse deferred
@@ -1459,6 +3335,7 @@ adoption or measured Taipei 101 speed is made. No further concrete finding remai
 within this frozen second-stage review. Later-stage backlog remains unimplemented.
 
 Final evidence:
+
 - Server union: 606 passed, three original conditional skips. Five unchanged direct
   consumer suites passed in `tmp/stage2-audit-server.log`; its two failed fixtures
   remain failed evidence. Those fixtures omitted an authoritative move scope or the
@@ -1488,7 +3365,6 @@ No service, live model or recording was started. No full CI, push, PR, monitorin
 or next-stage implementation occurred. Work remains in the original worktree,
 uncommitted and unpushed. The stage goal is ready to close; the whole plan is not.
 
-
 ## Stage 3 - Direct structural delivery
 
 ### Frozen contract and reviewed design
@@ -1506,6 +3382,7 @@ redesign, new tool interpreter/store, rendering, query invalidation redesign,
 model/limit changes, compatibility route or later-stage repair orchestration.
 
 Review resolved these gaps before implementation:
+
 1. Group/ungroup currently have opaque owner receipts; explicitly declare their
    result kinds and exact ordered live target semantics. Moves use acknowledged
    moved IDs, grouping uses grouped children, ungroup uses released children.
@@ -1628,6 +3505,7 @@ hierarchy or metadata reread. This is payload/work-count evidence, not a model
 latency claim.
 
 Verification on the final production source:
+
 - Browser owners and consumers: 79 tests passed (`tmp/stage3-browser-final.log`).
 - Server ownership, dispatch and recipe consumers: 242 tests passed
   (`tmp/stage3-server-final.log`).
@@ -1667,7 +3545,6 @@ This closes only that contract, not the independent persistence issue or later
 stages. No full local CI, live101, remote push or monitoring was run for Stage 3.
 Stop here; Stage 4 requires a new user instruction and its own reviewed goal.
 
-
 ## Persistence 409 correction - diagnosis and bounded contract
 
 User authority: diagnose and repair the observed real group/edit/Undo/Redo
@@ -1693,7 +3570,6 @@ framework batching change or synthetic success. Next implementation card and
 goal follow confirmed cause and reviewed solution. Completion requires formal
 red/green regression, actual durable acknowledgement and a fresh reload equality
 check, plus adjacent malformed-input, ownership, retry and typed-source gates.
-
 
 ### Confirmed cause and implementation plan review
 
@@ -1745,7 +3621,6 @@ registered operations, save acknowledgement and exact fresh-page reload after
 action, Undo and Redo; positive and exact-negative same-source Factory proof.
 Include publication work-count assertions and retained evidence. No full CI,
 performance mega-suite, model invocation, monitoring, remote operation or Stage4.
-
 
 ### Persistence correction re-review - restore sequence completeness
 
@@ -1810,7 +3685,6 @@ caller's Factory/remote transaction policy and cannot create local Undo or echo.
 Prove the existing stale-prefix regression still fails correctly with options
 present, and rerun the real live/durable/reload oracle. No transport rewrite,
 new actor mode or save fallback is authorized by this finding.
-
 
 ### Persistence correction closeout - reviewed local evidence
 
@@ -1880,7 +3754,6 @@ Final gates:
 Test-owned ports 3300/3401/4401 are closed. Local .env and prior Stage 3 changes
 are preserved. No push, monitoring, live model run, full local CI or Stage 4 was
 performed. Stop at this completed local correction for user review.
-
 
 ## Stage 3 review correction - complete direct consumers and partial delivery
 
@@ -2095,7 +3968,6 @@ A prompt test still expecting old final=false wording was aligned to current
 accumulation/completion wording while preserving the local-work-retention check.
 No production executor changed and no AI was launched.
 
-
 ## Stage 6 - Normalized activity evidence
 
 ### Reviewed Step Execution Card
@@ -2126,7 +3998,6 @@ coordinator, language change or whole-repository discovery. Review found existin
 state machine owns the required lifetimes; only the inconsistent producer and its
 contract need correction. Push after these gates and bounded self-review.
 
-
 ### Stage 6 closure
 
 Actual provider/UI regression failed before the fix: kind was system while trace
@@ -2144,7 +4015,6 @@ Evidence: tmp/stage6-{red,provider,presentation,tsc,lint,proof,catalog-test}.log
 Self-review confirmed authored labels, cleanup, live ancestry, terminal precedence
 and late-event refusal remain owned by the existing state machine. No other App
 uses this Design provider adapter. No live model or broad CI was run.
-
 
 ## Stage 7 - Deterministic aligned image checks
 
@@ -2200,7 +4070,6 @@ lint/naming, formal flow proof and generated catalog equality. Add tests to an
 already included formal suite; no local-only tests. Self-review all entry/exit and
 failure paths before push. Stage 8 runs affected package complete suites.
 
-
 ### Stage 7 self-review correction
 
 A formal recovery test showed that recording an unsupported first overview also
@@ -2210,7 +4079,6 @@ native region exists. Once bound it cannot change. This resolves the same pendin
 obligation, not a new ledger or acceptance bypass. Added formal red/green coverage
 before correcting the owner. Also separated caller checkId from store resultId so
 returned arguments continue the same check without accidental prefix duplication.
-
 
 ### Stage 7 closure
 
@@ -2239,20 +4107,17 @@ final currency validation, partial/unverified paths, cancellation before publica
 and independent-region reuse. This is bounded aligned pixel evidence, not semantic
 photo matching or a speed claim for an entire model drawing. No live101.
 
-
 Stage 7 closure correction: inspected the captured negative result and confirmed
 exactly the original three stale-evidence obligations plus inspect.regional-pixels
 failed. Add the new dependent obligation to this scenario's expected set, preserving
 all original cases and mutations. No production/test assertion relaxation. Re-run
 positive, all exact negatives and recovery before the corrective push and Stage 8.
 
-
 Corrective verification completed: tmp/stage7-negative-proof.log reports all 30
 obligations, four exact negative scenarios and recovery passing (11.699 seconds).
 Accepted review d6291bbed817cc5cf0ccf754ae06e947aabf416e7393f1cbc32ad6565df99657.
 The earlier full-proof failure remains recorded separately; it is not reused as a
 pass. This correction changes only the exact scenario expectation and plan record.
-
 
 ## Stage 8 - Complete package acceptance
 
@@ -2309,18 +4174,18 @@ log remains failed (`tmp/stage8-design-all.log`: 547 passed, one failed).
 
 The full ordinary affected-package suites passed on the final implementation:
 
-| Package / consumer | Verified result | Local evidence |
-| --- | --- | --- |
-| AI Agent Runtime | 356 tests | `tmp/stage8-runtime-all.log` |
-| Factory | 289 tests | `tmp/stage8-factory-all.log` |
-| Core | 268 tests | `tmp/stage8-core-all.log` |
-| SceneTree | 211 tests | `tmp/stage8-scene-tree-all.log` |
-| Preset | 212 tests | `tmp/stage8-preset-all.log` |
-| Design | 12 boundary, 548 AI browser, 1,121 server, 152 script and 540 local tests; 9 original opt-in skips | `tmp/stage8-boundary-final.log`, `tmp/stage8-design-ai-green.log`, `tmp/stage8-design-server-all.log`, `tmp/stage8-design-local-all.log` |
-| Sim | 13 supervisor, 874 ordinary and 9 guarded heavy/representative/witness tests; 77 original conditional skips | `tmp/stage8-sim-all.log`, `tmp/test-supervision/1791916198975037000-89058/` |
-| Office | Complete 14-test suite | `tmp/stage8-office-all.log` |
-| Starter | Complete 44-test suite | `tmp/stage8-starter-all.log` |
-| FieldScope | 8 supervisor and 6 direct bootstrap/history/shortcut tests | `tmp/stage8-fieldscope-direct.log` |
+| Package / consumer | Verified result                                                                                             | Local evidence                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| AI Agent Runtime   | 356 tests                                                                                                   | `tmp/stage8-runtime-all.log`                                                                                                             |
+| Factory            | 289 tests                                                                                                   | `tmp/stage8-factory-all.log`                                                                                                             |
+| Core               | 268 tests                                                                                                   | `tmp/stage8-core-all.log`                                                                                                                |
+| SceneTree          | 211 tests                                                                                                   | `tmp/stage8-scene-tree-all.log`                                                                                                          |
+| Preset             | 212 tests                                                                                                   | `tmp/stage8-preset-all.log`                                                                                                              |
+| Design             | 12 boundary, 548 AI browser, 1,121 server, 152 script and 540 local tests; 9 original opt-in skips          | `tmp/stage8-boundary-final.log`, `tmp/stage8-design-ai-green.log`, `tmp/stage8-design-server-all.log`, `tmp/stage8-design-local-all.log` |
+| Sim                | 13 supervisor, 874 ordinary and 9 guarded heavy/representative/witness tests; 77 original conditional skips | `tmp/stage8-sim-all.log`, `tmp/test-supervision/1791916198975037000-89058/`                                                              |
+| Office             | Complete 14-test suite                                                                                      | `tmp/stage8-office-all.log`                                                                                                              |
+| Starter            | Complete 44-test suite                                                                                      | `tmp/stage8-starter-all.log`                                                                                                             |
+| FieldScope         | 8 supervisor and 6 direct bootstrap/history/shortcut tests                                                  | `tmp/stage8-fieldscope-direct.log`                                                                                                       |
 
 All five changed framework packages compiled successfully. Design server/browser,
 Sim, Office, FieldScope and Starter package typechecks passed. Full changed-owner
@@ -2354,7 +4219,6 @@ claim, model change, PR operation or monitoring was performed. Local evidence an
 recordings remain ignored. Final delivery follows the user's per-stage push
 authorization after the actual-head metadata checks.
 
-
 ## Live workload correction - 2026-10-14
 
 ### Evidence, scope and reviewed connections
@@ -2374,6 +4238,7 @@ and their formal tests. No geometry, model, scene-tree, document transaction or
 other-App redesign. Runtime fixes include direct consumers when necessary.
 
 Implementation sequence:
+
 1. Inspect: exchange bounded groups of independent exact-target checks and stamp
    validations through the existing batch route, preserving every target result.
    Do not replace targets with a containing group or widen dependency invalidation.
@@ -2513,7 +4378,6 @@ completed backend save streams. It does not claim all handoff friction is gone.
 Workloads differ across runs; no total-time speedup ratio is asserted. Services
 are closed, local evidence preserved, no push or monitoring resumed.
 
-
 Push checkpoint - 2026-10-14: user authorized publication before a read-only
 review of remaining receipt, query-lifetime and response-delivery issues.
 Current-source gates passed: Runtime 362 tests; Design server 407 tests with
@@ -2532,7 +4396,6 @@ The public documentation gate also detected generated API/guide indexes behind
 the current source. Existing generation synchronized the new exported byte
 bound and guide hashes; validation passes for 41 pages, 19 guides, 291 local
 links and 135 API references (`tmp/push-101-repairs/docs-final.log`).
-
 
 ## Post-live handoff corrections - 2026-10-14
 
@@ -2604,7 +4467,6 @@ checks if contracts change. No entire local CI or full101. Retain failed evidenc
 as failed. Completion requires all four handoffs verified with remaining limits
 reported; leave changes local and monitoring disabled.
 
-
 ### Handoff correction review evidence
 
 Runtime apply regression failed on both missing notification and swallowed
@@ -2634,7 +4496,6 @@ Remaining closure is current-source integrated regression/type/lint verification
 including failure/cancellation and original receipt preservation. This is not a
 new live101 speed claim and is not measured by scene node count.
 
-
 ### Query handoff iteration - preserve typed composition
 
 The existing real query-to-fill recipe rejected the draft union output: changing
@@ -2658,7 +4519,6 @@ query-to-fill composition test is the preservation oracle. New resolver tests
 prove no capacity reservation, no fake handles, input/native equivalence and
 failure before writes. Re-run ownership/operation/query tests, types/lint/naming
 before closing. This supersedes the draft output-union detail above.
-
 
 Registration consumer review: the existing startup test detects the new action
 missing from the explicit App permission policy. Add only this canonical read
@@ -2793,7 +4653,6 @@ Stop if the canonical input/output or owner cannot support the promised route;
 revise this bounded contract before further implementation. Finish with local
 review and a report, not remote operations or automatic monitoring.
 
-
 ### Settle handoff review refinement
 
 Focused reducer tests passed, but the real panel integration exposed a direct
@@ -2815,7 +4674,6 @@ The first mixed node/browser invocation was an invalid environment invocation;
 it is not passing product evidence. Subsequent corrected browser failures and
 E2E failures remain recorded as failures until the bounded corrections pass.
 
-
 The subsequent full activity E2E passed the event sequence and current marker,
 then exposed a direct panel handoff: opening history measured scroll extent
 before lazily mounted rows existed, so Jump to latest stayed absent. A permanent
@@ -2823,7 +4681,6 @@ single-toggle regression uses rendered row presence as its height oracle and
 fails on the current panel. Move this existing measurement after history layout;
 do not change follow policy, add polling or weaken E2E assertions. This bounded
 consumer correction is necessary to preserve the same affected activity view.
-
 
 ### Discovery and activity correction closure
 
@@ -2875,13 +4732,11 @@ correction removes demonstrated route/status defects; it does not claim measured
 model-time or end-to-end speed improvement. No new full101, full local CI, push
 or monitoring was performed. Final review is closed at the scoped report.
 
-
 Final metadata check: task-context initially selected the new local subsection,
 which cannot exist in the committed base. Its association now uses the existing
 Current authority and stop boundary heading; that heading explicitly selects this
 bounded correction. Preflight and public documentation validation passed. No
 base/history rewrite or scope expansion was used to satisfy the check.
-
 
 ### Product-facing processing label - 2026-10-14
 
@@ -2909,7 +4764,6 @@ production tsc and focused ESLint passed. The only production change in this
 follow-up is the provider display literal; lifecycle and purpose selection are
 unchanged. Existing dirty work is preserved. No commit, push, full CI, live 101
 rerun or monitoring was performed.
-
 
 ## Pagination and concrete activity correction - 2026-10-14
 
@@ -2977,7 +4831,6 @@ visible deduplication. Native `total` is replaced by canonical `count`; no legac
 fallback or second catalog is introduced. Empty/end pages, registry changes,
 concurrent work, missing purpose, old events and lifecycle overrides are covered.
 
-
 ### Correction verification and closeout
 
 - Discovery regression first failed through invokeLocalTool; final owner suite:
@@ -3027,6 +4880,7 @@ Scope remains discovery pagination and current activity. No live model, full101,
 push, monitoring, dependency changes or unrelated owner work.
 
 Review findings and execution cards:
+
 - Compose: output admission currently checks the continuation offset but not the
   successor input contract. Reuse the discovery input validator for continuation
   validation. A registry change between pages can also silently skip entries;
@@ -3053,7 +4907,6 @@ Gates: focused formal regressions red before production changes; affected server
 and activity consumer tests, production typecheck, focused lint/naming, generated
 catalog consistency and same-source Flow proof. Reuse unchanged visual evidence.
 Review only these changes and their direct consumers before closing.
-
 
 ### Handoff review verification and stop
 
@@ -3121,6 +4974,7 @@ shape stays unchanged. Focused tests, consumer suites, lint/types and current
 source proof close this slice; no full101 or model invocation.
 
 Second review closure:
+
 - Confirmed the old progress/settlement test passed with its assertion inside the
   caught feature callback, then failed once checkpoints were asserted outside that
   boundary (`second-review-hidden-assertion-before/red.log`). Corrected the stale
@@ -3167,6 +5021,7 @@ The mount regression failed with scrollTop 0 instead of the latest position. The
 Reviewed all 28 modified files and direct current producers/consumers, not only pagination and status regressions. The read covered discovery schemas/routes and dynamic catalog identity; transient region selection and retained leases; batch preflight/target admission; runtime settlement callback and original/compact receipt delivery; cancellation/partial outcomes and persistence consumers; activity ancestry/retry/terminal projection; feed/history lifecycle; prompt/spec/Inspector agreement and changed test oracles. Existing ownership remains canonical; no second registry, new interpreter, timer or cached document copy was added.
 
 Findings:
+
 - Confirmed panel mount regression: the new expansion measurement ran before initial follow-latest and disabled following for an existing overflowing feed. Formal mount test failed with scrollTop 0; reordered existing layout effects. Both real-browser widths now cover reopening at a short viewport, alongside expansion/collapse and manual following.
 - Confirmed false-green test: the observed compact fill receipt proof returned an invalid empty final action batch; all writes completed but Runtime finished failed. A new final-status assertion exposed the failure. The fixture now uses the existing canonical report_outcome action, matching the production provider; no production admission was weakened.
 - Strengthened settlement-failure proof: exact events are asserted outside the caught callback, so an earlier assertion failure cannot masquerade as the intended settlement failure. This is an oracle improvement, not another demonstrated runtime defect.
@@ -3219,18 +5074,18 @@ The fix uses the existing enqueue-window token for immediate slice identity acro
 
 Verification on this implementation:
 
-| Evidence | Result | Location |
-| --- | --- | --- |
-| Actual pre-fix publication and failure | Reproduced normal revision before Undo; Scene/Props split | `tmp/persistence-409-publications.json`, `tmp/persistence-409-capture.log` |
-| Permanent Factory regression before fix | Both ordinary/grouped cases failed with four slices instead of two | `tmp/persistence-409-factory-red.log` |
-| Complete Factory tests | 292 passed | `tmp/persistence-409-factory-all.log` |
-| Core direct owner/transaction consumers | 42 passed | `tmp/persistence-409-core.log` |
-| App decoder/materializer, reducer, queue, adapter and AI transaction tests | 82 passed | `tmp/persistence-409-consumers.log` |
-| Frame revisions at 1280px | Three edits, three Undo, three Redo each durably equal; reload equal | Desktop case passed in `tmp/persistence-409-real-e2e.log` |
-| Frame revisions at 360px | Same nine durable checks and reload passed | `tmp/persistence-409-narrow-e2e.log` |
-| Existing real grouped structural flow | Each history transition persisted and fresh-loaded; passed | `tmp/persistence-409-structural-e2e.log` |
-| Factory same-source positive/negative/recovery | 3 flows, 7 exact negative scenarios, 11 obligations passed | `tmp/persistence-409-factory-proof.log` |
-| Quality checks | Factory/App types, focused lint, 15 naming checks, catalog contract and diff whitespace passed | `tmp/persistence-409-{factory-types,app-types,lint-final,naming,catalog-test}.log` |
+| Evidence                                                                   | Result                                                                                         | Location                                                                           |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Actual pre-fix publication and failure                                     | Reproduced normal revision before Undo; Scene/Props split                                      | `tmp/persistence-409-publications.json`, `tmp/persistence-409-capture.log`         |
+| Permanent Factory regression before fix                                    | Both ordinary/grouped cases failed with four slices instead of two                             | `tmp/persistence-409-factory-red.log`                                              |
+| Complete Factory tests                                                     | 292 passed                                                                                     | `tmp/persistence-409-factory-all.log`                                              |
+| Core direct owner/transaction consumers                                    | 42 passed                                                                                      | `tmp/persistence-409-core.log`                                                     |
+| App decoder/materializer, reducer, queue, adapter and AI transaction tests | 82 passed                                                                                      | `tmp/persistence-409-consumers.log`                                                |
+| Frame revisions at 1280px                                                  | Three edits, three Undo, three Redo each durably equal; reload equal                           | Desktop case passed in `tmp/persistence-409-real-e2e.log`                          |
+| Frame revisions at 360px                                                   | Same nine durable checks and reload passed                                                     | `tmp/persistence-409-narrow-e2e.log`                                               |
+| Existing real grouped structural flow                                      | Each history transition persisted and fresh-loaded; passed                                     | `tmp/persistence-409-structural-e2e.log`                                           |
+| Factory same-source positive/negative/recovery                             | 3 flows, 7 exact negative scenarios, 11 obligations passed                                     | `tmp/persistence-409-factory-proof.log`                                            |
+| Quality checks                                                             | Factory/App types, focused lint, 15 naming checks, catalog contract and diff whitespace passed | `tmp/persistence-409-{factory-types,app-types,lint-final,naming,catalog-test}.log` |
 
 Final Factory recovery candidate `b524c5f5-8bf4-48fa-82ef-899aa86264f1`, source `5dd5152c8d2697caf06482bbb765d0e8158908ae1fd7c3b21db6d6d32484983c`, mapping revision 5. The negative mutation for split immediate boundaries detects this defect; forbidden commit and omitted compensation also correctly fail the new compensation assertion. No assertion was removed to make the source pass.
 
@@ -3296,11 +5151,9 @@ Producer/peer review: 73 existing and new focused cases pass after fixtures now 
 
 The existing durable retry check compares only publication IDs and sequence numbers. A new actual-HTTP regression proves changed canonical payload under the same durable identity is incorrectly acknowledged. Retain a digest of canonical operation content and semantic source metadata, excluding request IDs, transport batch IDs and frame fragmentation. Compare it before acknowledging any durable retry. A checkpoint without a digest must not be treated as proof of an identical operation; new publications may extend that checkpoint and record their own digests. This preserves saved document data without accepting old raw publications or fabricating retry equality. Digest capture is per incoming publication, never a full-document scan.
 
-
 #### Integration review - compensation framing and capture consumers
 
 The real HTTP compensation regression exposes another receiving boundary: binary frame decoding duplicated the former per-delivery compensation requirement. Centralize this shape predicate across envelope and both existing codec layouts; document publications correlate compensation at publication level, while generic owner-event transport retains its own contract. Add an exact binary round-trip regression before the fix. The collaboration E2E capture helper must pass raw Factory evidence through the actual producer adapter before testing the remote consumer. Its observed rejection is not a production fallback requirement. Stop the broad run, preserve its failure, complete these bounded corrections and focused proofs, then repeat the complete collaboration suite.
-
 
 Receiver validation also preserves finite signed-zero coordinates supported by the existing binary codec. A formal red case exposed accidental use of the stricter JSON-lossless predicate. Reuse its structural traversal with the numeric policy made explicit; JSON control/frame optimization still rejects signed zero while document operation validation accepts it. Stored JSON document semantics treat both zeros identically, as before; retry identity follows the saved document value semantics. Non-finite values remain rejected.
 
@@ -3310,21 +5163,17 @@ The original 14 collaboration cases passed, but real grouped visibility changes 
 
 The additional real compensation case uses the existing gesture publication policy (`batchPublications: false`) to make its prefix visible before rollback. The initial fixture used ordinary coalesced delivery and therefore had no visible prefix to compensate; correcting the fixture to this existing policy requires no product timing or threshold change.
 
-
 #### Architecture review closure
 
 The architecture now gives source preparation its own actual App owner step between Factory publication and generic Collaboration, rather than describing producer work on the remote apply node. The existing transport envelope stays generic. The shared remote/persistence validator and retry content identity are documented in the active App collaboration module; generated Inspector data is synchronized through the existing generator. Captured document-publication diagnostics now read the same current wire contract, while explicitly captured Factory evidence is prepared through the producer before remote-consumer assertions. Formal scripts include the new publication and HTTP persistence tests.
-
 
 Final direct-consumer review also checked the existing Props mutation contract: `id` and `type` are immutable during value replacement. The new canonical document boundary must reject such replacement attempts and reserved record keys before peer or backend apply. Three red cases now pin that requirement; creation components continue to carry their required identity/type. This is a fixed wire identity constraint, not a second property schema registry.
 
 One Frame validation attempt overlapped source formatting and produced an invalid empty in-memory digest during Redo; that run is retained as failed and is not acceptance evidence. The final browser run uses frozen production sources after all format/type checks. Earlier successful Frame cases do not replace the final run.
 
-
 #### Exact retry acknowledgement handoff
 
 Final inspection of the direct persistence consumer found a real contract mismatch: materializer retries returned the current document watermark, while `completeSuccessfulBatch` requires the exact requested batch ending sequence. An actual HTTP red case retries sequence 1 after sequence 2 is durable and receives 2. Acknowledge the requested already-durable range, leaving the stored watermark unchanged. Prove the same response through the actual persistence queue with both retained publications; it must remain editable, advance in order and not replay canonical writes. This changes only the already-durable retry response; new commits and invalid conflicts retain their existing behavior.
-
 
 A later collaboration run stopped on unexpected browser navigation during the 320-item Undo observation. It is retained as failed; the navigation trigger was not established by the emitted stack. Final acceptance runs after all edits, generation and builds settle, with no concurrent writers and failure trace retention. No retry allowance, assertion relaxation or navigation-error suppression is added.
 
@@ -3337,13 +5186,11 @@ A later collaboration run stopped on unexpected browser navigation during the 32
 - Final source review covered source preparation, common peer/backend validation, binary compensation correlation, content identity, exact retry acknowledgements, failure atomicity, local execution-option exclusion and immutable property identity. Framework Factory and generic transport ownership remain unchanged by this task; earlier unchanged direct-consumer evidence above is retained rather than rerun.
 - Playwright-owned ports 3300/3401/4401 have no remaining listeners. Local configuration and unrelated worktree changes are preserved. This bounded persistence task is complete locally; no live101, model call, push, PR operation or monitoring was performed.
 
-
 #### Follow-up review - persistence handoffs and browser navigation
 
 Scope: re-review the explicit document producer, all receiving/bootstrap paths, queue/store identity and failure settlement, ordinary batch/history/compensation consumers, and the failed 320-item browser case. Discovery uses current source/direct call sites, bounded diffs and retained logs; no unrelated framework or AI behavior changes. Preserve semantic slices, no peer history/echo, atomic durable commit, exact retry identity and acknowledged range. No live101, push or monitoring.
 
 Review card: the existing 320-item collaboration E2E owns diagnostic observation of both browser contexts. Its previous failure has no retained trace (the configuration traces only first retries); later successful tests replaced the default result directory. Capture actual document request initiators, main-frame navigation reasons/commits and Vite reload messages before navigation, attach them even on failure, and assert that creation/Undo/Redo does not navigate. Reproduce with an isolated cold Vite cache and frozen source. Keep original assertions, timeouts and fail-fast. This is test-observation coverage, not a product/Inspector semantic change; no runtime route expansion or navigation suppression. If the historical trigger cannot be proven, distinguish reproduced causes from the missing historical evidence.
-
 
 #### Follow-up review findings - local completion claim withdrawn
 
@@ -3355,9 +5202,7 @@ Review card: the existing 320-item collaboration E2E owns diagnostic observation
 - Permanent E2E observation now records document request initiators, requested navigation reasons, main-frame commits and development-server reload/update messages, asserts one navigation per actor for the 320-item case, and saves the evidence inside the test output directory even with the line reporter. This neither retries failed operations nor suppresses navigation errors. The previous cache was preserved inside `tmp/persistence-review-vite-cache-before`; the current cache is generated normally.
 - Review conclusion: the persistence change is not ready to be declared fully correct until the P1 is repaired and the new regression passes. The historical navigation root cause is an explicit evidence limit, not a fixed bug. No live101, push, PR or monitoring.
 
-
 Follow-up verification: the complete lifecycle suite reports 20 existing cases passed and the new source-conversion regression failed (1/21); this is a known open failure, not a green gate. Scoped test lint and naming pass. The final line-reporter 320-item run passed in 54.9 seconds and its JSON evidence remains on disk with exactly one initial document request/commit per actor and no requested navigation or development-server reload. Logs: `tmp/persistence-review-lifecycle-all.log`, `tmp/persistence-review-lint-final.log`, `tmp/persistence-review-naming-final.log`, `tmp/persistence-review-evidence-browser.log`; permanent output under `tmp/persistence-review-evidence-results/`. No product implementation changes were made during this review.
-
 
 #### Factory-to-document preparation failure handoff - bounded repair
 
@@ -3379,7 +5224,6 @@ Browser review iteration: the full collaboration run stopped in the existing ret
 
 Final direct-consumer review found the browser capture reader would decode the new failure envelope as a document publication and lose its source ID/reason. A permanent adapter/capture regression first proves `unknown` plus a generic envelope error, then verifies the original source ID and preparation error are retained without trying document decode. No production tool or status schema changes. The isolated-peer recovery case passes (19.6s); all browser source is frozen again for the final full collaboration suite after these focused corrections.
 
-
 #### Factory-to-document failure handoff - scoped closure
 
 The previously open P1 is repaired in the publishing App/session/outbox boundaries. Factory and Core production settlement are unchanged. The required preparation-failure callback retains immutable source identity and error as a non-sendable conflict; ordinary document delivery remains canonical-only. Ordered recovery stops at conflicts, including a rejection arising during the current drain. Subsequent action/replay/compensation records remain pending behind the failure. Confirmation is serialized after retention and never requests a provider receipt while the session is conflicted or storage-failed. Reload restores durable failures and later records without reapplying raw evidence. IndexedDB write failure retains memory evidence and explicit storage-failed status; it is not a promise that failed disk writes survive closing the tab. Reconnect and successful later writes cannot erase that failure. Explicit Reset/file-generation handling remains unchanged.
@@ -3387,6 +5231,7 @@ The previously open P1 is repaired in the publishing App/session/outbox boundari
 Final review covered the changed producer, every adapter caller, outbox storage/load/generation/acknowledgement, lifecycle enqueue/drain/confirmation/disposal/reconnect, direct peer canonical consumers, and existing Factory/Core History and compensation paths. No further in-scope blocking finding remains. The browser diagnostic capture now preserves the actual source ID/error. The recovery E2E's independent peer uses an independent IndexedDB context; same-context tabs intentionally retain the same file-scoped failures. No raw transport fallback, added local canonical store, history mutation, automatic source replay, model call or timeout increase was introduced.
 
 Evidence:
+
 - Original real-Factory lifecycle regression and new outbox/adapter cases were red before owner implementation: `tmp/factory-handoff-red.log`, `factory-handoff-outbox-red.log`, `factory-handoff-adapter-red.log`.
 - Design direct-consumer suites: 219 passed across eight files (`tmp/factory-handoff-consumers-final.log`). Subsequent diagnostic-only correction was red then all seven adapter/capture cases passed (`tmp/factory-handoff-diagnostic-{red,green}.log`); 220 distinct cases across the combined same-production-owner evidence, not 226.
 - Factory shared publication/flow: 72 passed (`tmp/factory-handoff-framework.log`); Core facade/history/persistence: 20 passed (`tmp/factory-handoff-core.log`); backend reducer/reset/error/retry queue: 42 passed (`tmp/factory-handoff-backend.log`).
@@ -3395,7 +5240,6 @@ Evidence:
 
 No live101, push, PR operation or monitoring. This closes only the authorized failure-handoff repair, not the entire reusable-tool plan. The earlier historical navigation initiator remains unproven; this passing traced run does not retroactively identify it.
 
-
 #### Failure recovery completion - revised bounded task
 
 The previous handoff closure is superseded for recovery completeness. Retaining a conflict is an intermediate safety state, not completion. The user-visible endpoint is: preserve edits, reopen them, retry after the cause is corrected, drain in original order, receive durable confirmation, and reopen the saved result. A permanently invalid source must remain explicit and downloadable; Reset is never recovery.
@@ -3403,6 +5247,7 @@ The previous handoff closure is superseded for recovery completeness. Retaining 
 Scope: Design publication adapter, outbox, document lifecycle, recovery presentation and their formal tests/spec/Inspector. Factory transaction/history and server canonical validation remain authoritative and unchanged. No live101, model calls, push, monitoring, dependency change or alternate server overwrite path. Review follows producer -> retention -> reopen -> recovery -> source acceptance -> durability -> reload, including peer changes, Undo/Redo, compensation, duplicate delivery, repeated storage failure and disposal. No unrelated cleanup.
 
 Design review decisions:
+
 - Outbox storage writes preserve a durable prefix: after a write fails, no later record may be stored without the missing predecessors. Retry flushes retained memory in order; storage recovery cannot merely clear a flag. An unsuccessful initial load must not permit writes over unknown persisted records.
 - Preparation conflicts retain their source category. Retry invokes the same canonical preparation owner; canonical admission conflicts retry through the existing provider/apply boundary. No unchecked raw send, skipped record, changed publication identity or automatic conflict deletion.
 - A blocked session preserves a read-only recovery document captured from the existing Core canonical snapshot API. Only failure/recovery paths capture this document; ordinary publications retain their existing incremental route. This is an outbox-owned recovery artifact, not another editable authority or server checkpoint. The latest retained recovery document is the local reopen source while blocked. The session isolates live inbound delivery during this state rather than applying peer changes over a divergent draft. It never replaces the shared server document with the draft.
@@ -3418,16 +5263,13 @@ Recovery outbox slice: the three new regressions failed before implementation (s
 
 Owner card - document session recovery integration: same Inspector step and Recovery completion spec. Inputs are the outbox's retained failure category, canonical recovery document and prepared publication prefix. Output is a blocked-but-readable local document or ordinary canonical replay followed by durable confirmation. The session uses Core's existing snapshot/load APIs only on failure/reopen; it pauses inbound traffic while a divergent recovery document is active. Preparation uses the exact existing adapter function. Retry must persist evidence before allowing a fresh authoritative bootstrap; it cannot silently skip unsupported sources. UI consumes session recovery state and invokes explicit retry/export, with no independent write authority. Allowlist extends the same session step to direct recovery presentation/tests. Formal gate: transient conversion failure -> local draft -> reconnect preserving it -> reopen -> preparation repaired -> ordinary source acceptance -> persistence receipt. Existing publication/undo/retry tests remain required. Initial test setup used a nonexistent processor export and was corrected to the actual Core apply facade before collecting the behavioral red result.
 
-
 Recovery integration self-review: the real browser case completed faulted real drawing + Undo/Redo + reopen + rejected retry + export + repaired retry + independent peer merge + durable receipt + second reload (25.4s). This is evidence for the happy recovery endpoint, not closeout. Additional failure-during-recovery cases proved snapshot exceptions could escape before retention, conflict storage rejection could skip isolation, and initial-load repair could resurrect an obsolete generation. Add bounded regressions before correcting those exact owner paths. Keep source retention independent of optional snapshot capture, isolate in finally even when storage fails, and apply the authoritative Reset generation to recovered stored records. No broadened framework or backend change.
-
 
 Recovery final integration review: the full 16-case collaboration suite passed. A direct-consumer audit found explicit Reset assumes an active socket, whereas a safely reopened recovery draft deliberately owns none. Preserve explicit Reset by opening a short-lived authoritative session when isolated; clear retained evidence only after server acknowledgement, and retain the active recovery handle on Reset failure. Export must wait for queued retention before reading the recovery artifact. These are bounded lifecycle/presentation corrections under the same Inspector owner, not a new recovery protocol. Prove both regressions before production changes, then recheck ordinary collaboration, recovery, compensation and durable reload.
 
 Recovery failure-boundary follow-up: optional canonical recovery-document capture may fail while the source evidence is safely retained. Reopen must still expose explicit preparation retry; absence of the optional document must not suppress recovery controls. The regression was red before changing the startup conflict predicate. Download reports the missing document honestly, while canonical source retry remains available. The storage E2E assertion was corrected to the public wrapped storage error rather than the injected inner DOMException; no production validation was relaxed.
 
 Reset transport review: opening the temporary session is not sufficient; the existing provider requires the explicit bootstrap-consumed handshake before Reset. This short-lived Reset-only session does not hydrate or overwrite the local draft. Its failure retains the recovery handle and evidence. Prove the handshake ordering and real reopened-recovery Reset separately. Also strengthen the recovery endpoint with a new edit after recovery and its second durable reload, and register the new presentation tests in the existing package test:local entry.
-
 
 #### Failure recovery completion - verified endpoint
 
@@ -3436,6 +5278,7 @@ The bounded completion endpoint is now exercised through real browser edits, ret
 The final review traced source callbacks, optional capture failure, queue settlement, storage load/put/delete/generation, preparation/re-admission, disconnect/reconnect/reopen, duplicate acknowledgement, live peers, UI retry/download/unload, confirmation, disposal and explicit Reset. Normal publication still captures zero recovery snapshots. Factory/Core production code and backend validation were not changed in this recovery slice. Existing provider/operations/protocol and actual batch/Group/vector/Fill/Undo/Redo/compensation tests remain evidence for direct consumers. Recovery controls are registered in the package's existing test:local command.
 
 Evidence and lineage:
+
 - Durable prefix/load/recovery regressions, optional capture/conflict-storage failure, stale generation, Reset/export ordering and missing-draft retry were red before their bounded owner fixes. Logs: `tmp/recovery-prefix-red.log`, `recovery-review-red.log`, `recovery-generation-red.log`, `recovery-reset-export-red.log`, `recovery-no-draft-red.log`, `recovery-reset-handshake-red.log`. Setup-only runs are not behavior evidence.
 - Final direct-consumer unit/integration run: 254 passed across 13 files (`tmp/recovery-final-consumers.log`). Includes lifecycle 28, outbox 17, provider 50, adapter 7, protocol 62, operations 45, document publication 15, publication feature 5, render startup 12, recovery UI 2, and Reset/mode 11. Earlier overlapping green runs are not additional tests.
 - Complete real collaboration suite: 17 passed in 3.6 minutes (`tmp/recovery-closure-browser.log`, `tmp/recovery-closure-browser-results/`). After its direct Reset transport follow-up, the four affected endpoints passed in 47.2 seconds (`tmp/recovery-final-endpoints.log`, `tmp/recovery-final-endpoints-results/`), including the new isolated Reset case and strengthened post-recovery edit. The final small production delta is confined to the temporary Reset session handshake; all unchanged complete-suite paths retain their prior proof. This is 18 distinct browser cases, not 21.
@@ -3448,27 +5291,21 @@ No live101, model calls, push, commit, PR changes or monitoring. This closes onl
 
 Final metadata closeout: Inspector/catalog 43 passed, naming 15 passed, scoped lint zero errors with 13 explicit console warnings, and scoped whitespace check passed. The test:local entry includes the new recovery UI suite. Temporary browser services on 3300/3401/4401 exited after the final endpoint run. All test artifacts remain local. No new candidate/target assessment or global plan completion is claimed by this bounded recovery report.
 
-
 #### Recovery completion - asynchronous boundary review
 
 This requested review reopens the bounded recovery task, not the full composition plan. Follow source publication -> preparation -> durable outbox -> source acceptance/ack cleanup -> reopen/retry -> later edits/confirmation, including in-flight reconnect, failed storage binding, disposal, history and rollback compensation. Read actual producers/consumers and deferred failure paths rather than relying on prior green totals. Scope remains the Design session/outbox/recovery controls and direct formal tests/spec/Inspector; no Factory/Core behavior change, server validation weakening, live101, push or monitoring.
 
 Owner card: open-socket-authoritative-document-session, collaboration-reference.md / Recovery completion. Inputs: canonical/source publications, generation/bootstrap, ordered storage outcomes, source acknowledgements, active transaction boundary and session lifetime. Outputs: preserved current draft/source order, actionable recovery, valid replay, durable confirmation without collateral history reset. No async continuation may overwrite a recovery draft or revive a disposed session. Live publication rejection is not replay failure and cannot reload Core. Acknowledgement cleanup failure must enter recovery just like append failure. Reload admission must recheck active edits after asynchronous retention. Storage-generation binding failure remains recoverable without replaying a retired generation. Allowed contributors/boundaries are the existing session/outbox/Core public transaction/snapshot APIs, current recovery controls, their tests and contract documents. Forbidden: raw send, dropped evidence, blanket Core reload, weakening backend validation or new transaction authority. Failure owner: session. Prove deferred failures red, fix within owner, then direct-consumer unit/types/lint and real collaboration/Undo/Redo/compensation/storage-reload E2E. Stop and replan on an inconsistent generation/replay contract; do not add alternate persistence paths.
 
-
 The async-boundary review found six failure categories, proved by seven red regressions: accepted-source deletion failure; reconnect overtaking recovery; live rejection after prior replay resetting history; active edits beginning during recovery; incomplete generation retirement/startup binding failure; and activation reviving after disposal. The fixes stay in the session and outbox owners. The 52 owner tests pass after correction. The real browser proof now covers accepted-source cleanup failure, subsequent edits and Undo/Redo, exact-identity replay, a new live rejection after replay, preserved Undo/Redo, another recovery, a subsequent edit, persistence receipt and durable reload with a second actor. Its first run stopped at a test-only bare module import in page.evaluate; the fixture now injects at the served provider module boundary and the whole case passes (28.1s). No production test switch or validation bypass was added.
 
 Review of neighboring ownership: source preparation/Factory publication and canonical operations are unchanged by this slice; send precedes durable outbox cleanup; a failed cleanup retains exact identity; replay reuses server idempotency rather than constructing a new source; recovery snapshot work remains failure-only; current generation binding must finish before releasing storage failure; recovery/disposal cannot be overridden by an awaited connection result. Complete direct-consumer and browser regression gates remain pending below. This does not claim global plan completion or perfect handling of arbitrary storage loss.
 
-
 Continuation within the same owner card: the Core-facing session adapter also awaits preparation before assigning its handle. Direct source inspection found that disposing during this wait can miss the pending controller; the deprecated preparation helper's cancellation test does not prove this actual App entry point. Add formal successful/failed delayed-bootstrap tests through createCollaborationDocumentSession, preserve a successor session's global handle, then correct adapter lifetime ownership before final closure. No Core/Factory mutation or new persistence path. The first complete browser pass is preserved separately; rerun affected startup/recovery endpoints after this closure, not unchanged batch workload cases.
-
 
 The actual Core-facing adapter tests exposed both delayed-success revival and delayed-failure clearing of a successor's window handle. Both failed before correction (`tmp/recovery-audit-core-session-red.log`). The adapter now owns pending preparation, rejects preparation/activation after disposal, settles its controller and scopes global cleanup to its own identity. Lifecycle plus Strict Mode tests: 48 passed (`tmp/recovery-audit-core-session-green.log`). The complete collaboration browser suite passed all 19 cases before this final adapter change (`tmp/recovery-audit-browser.log`, 4.1m); affected startup/recovery endpoint rerun and final current-source consumer gates follow. No success is inferred from a predecessor run for an altered endpoint.
 
-
 The final load-source handoff check also proved that an already returned checkpoint loader remained callable after session disposal. The permanent regression fails on that behavior (`tmp/recovery-audit-load-source-red.log`); the same session lifetime now guards load as well as prepare/activate. This is not a second cancellation authority: the existing App session owns all three entry points. The 8 affected browser endpoints passed after the pending-preparation adapter fix (`tmp/recovery-audit-final-browser.log`, 1.4m). The final guard changes only calls on an already disposed source; final owner/direct-consumer checks and ordinary startup browser proof close it below.
-
 
 ##### Asynchronous recovery review - bounded closeout
 

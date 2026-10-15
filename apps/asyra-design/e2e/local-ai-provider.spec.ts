@@ -774,7 +774,7 @@ test('backend-selected circles become native Ovals through the ordinary Agent ac
     compositionRole: 'Native circle',
     bounds: { x: 50, y: 50, width: 240, height: 240 },
     excludePathIds: [],
-    ovalPathIds: ['path-1']
+    componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
   })
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
@@ -838,7 +838,7 @@ test('rendered inspection is fresh after repeated edits and remains one Undo', a
     compositionRole: 'Review drawing',
     bounds: { x: 50, y: 50, width: 100, height: 100 },
     excludePathIds: [],
-    ovalPathIds: ['path-1']
+    componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
   })
   const id = drawing.slices[0].descriptors[0].id
   const receipts: {

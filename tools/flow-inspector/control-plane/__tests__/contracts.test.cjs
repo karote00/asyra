@@ -447,7 +447,7 @@ test('History replay admission maps existing Factory cases to their runtime owne
     'packages/factory/history-replay-flow-contracts.json'
   )
   assert.equal(contract.targetId, 'history-replay')
-  assert.equal(contract.cases.length, 14)
+  assert.equal(contract.cases.length, 17)
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
   for (const item of contract.cases) {
     assert.ok(
@@ -470,8 +470,39 @@ test('History replay admission maps existing Factory cases to their runtime owne
   }
   assert.equal(contract.runtimeScope.steps[0].ownerPackage, '@asyra/factory')
   assert.deepEqual(
-    contract.scenarios.map((item) => item.expectedFailedCaseIds.length),
-    [0, 8, 9]
+    contract.scenarios.map((item) => item.expectedFailedCaseIds),
+    [
+      [],
+      [
+        'replay.ordered-action',
+        'replay.staged-values',
+        'history.90c1fbd29755',
+        'history.7d96f5d33001',
+        'history.6c31100f5251',
+        'history.1dcdd4ddc7f6',
+        'history.62418a7b00e1',
+        'history.13bb8b0a23fc'
+      ],
+      [
+        'replay.staged-values',
+        'replay.noop-synchronous',
+        'replay.noop-progressive',
+        'history.694ddfd8f6f5',
+        'history.90c1fbd29755',
+        'history.7d96f5d33001',
+        'history.6c31100f5251',
+        'history.1dcdd4ddc7f6',
+        'history.62418a7b00e1',
+        'history.13bb8b0a23fc',
+        'history.99e545778d60',
+        'replay.noop-failure-recovery'
+      ],
+      [
+        'replay.noop-synchronous',
+        'replay.noop-progressive',
+        'replay.noop-failure-recovery'
+      ]
+    ]
   )
 })
 
@@ -482,7 +513,7 @@ test('Design execution admission locates all existing cases within their seven o
     undefined,
     'apps/asyra-design/flow-contracts.json'
   )
-  assert.equal(contract.cases.length, 23)
+  assert.equal(contract.cases.length, 31)
   assert.deepEqual(
     [...new Set(contract.cases.map((item) => item.stepId))].sort(),
     ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
@@ -573,7 +604,7 @@ test('Reusable composition admission retains four exact owner locations', () => 
     contract.architectureDefinition.authority.specPath
   )
   assert.deepEqual(
-    contract.cases.map((item) => item.stepId),
+    [...new Set(contract.cases.map((item) => item.stepId))],
     ['admit', 'register', 'invoke', 'persist']
   )
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
@@ -617,7 +648,7 @@ test('Reusable composition source config runs all unchanged cases without proof 
   )
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
-  assert.equal(report.numPassedTests, 4)
+  assert.equal(report.numPassedTests, 9)
   assert.equal(report.numFailedTests, 0)
 })
 

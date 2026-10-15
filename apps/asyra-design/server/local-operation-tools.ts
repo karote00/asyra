@@ -32,7 +32,6 @@ import {
 } from './local-prepared-design-review'
 import type { ReferenceIdentity } from './local-reference-decisions'
 import sharp from 'sharp'
-import type { VisualAssessmentInput } from './local-visual-assessment'
 import {
   LocalToolInputError,
   localToolOutcome,
@@ -1187,7 +1186,10 @@ export const createLocalOperationTools = (
 
   const inspectionImages = new Map<
     string,
-    VisualAssessmentInput['images'][number] & ImageCheckInspection
+    {
+      role: 'reference' | 'overview' | 'detail'
+      dataUrl: string
+    } & ImageCheckInspection
   >()
   let reviewTargetId = options.reviewTargetId
   const reviewScope = new Set(

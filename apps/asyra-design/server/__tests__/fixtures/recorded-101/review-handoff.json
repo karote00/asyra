@@ -1,0 +1,274 @@
+{
+  "sourceRun": "reusable-tools-1792002035768",
+  "plan": {
+    "phase": "plan",
+    "method": "Editable projected 2D faces and surface grids. World units are cm, scale=1 px/cm, orthographic elevated three-quarter camera azimuth 35°, elevation 25°. Overall 508m and 62.4m tower footprint sourced; intermediate dimensions estimated from photographs, not surveyed drawings.",
+    "references": [
+      "https://www.onenessarchitects.com/project/Taipei-101",
+      "https://global.ctbuh.org/resources/papers/1650-Poon_2004_StructuralDesignTaipei.pdf"
+    ],
+    "detailRequired": true,
+    "criteria": {
+      "whole": {
+        "requirement": "Entire Taipei 101 base to spire, distinctive bamboo silhouette",
+        "description": "Complete isolated tower with eight projecting modules, tapering lower shaft and crown/spire; no scenery or labels.",
+        "verification": "visual"
+      },
+      "view": {
+        "requirement": "Fixed elevated three-quarter view, visible tops, consistent perspective",
+        "description": "Consistent projected two visible sides and top ledges throughout.",
+        "verification": "visual"
+      },
+      "detail": {
+        "requirement": "Highly detailed realistic architecture, windows, frames and ornamentation",
+        "description": "Native glazing, frame subdivisions, tier ledges, corner ornaments, medallions and entrance; realistic light/shade.",
+        "verification": "visual",
+        "requiredUnits": ["base", "tiers", "crown"]
+      },
+      "scale": {
+        "requirement": "Real-world dimensions at 1cm=1px before projection",
+        "description": "50800cm total height, 6240cm base footprint; scale 1 and consistent projection; intermediate photographic estimates identified.",
+        "verification": "data"
+      },
+      "editable": {
+        "requirement": "Editable 2D shapes",
+        "description": "All drawn features are native editable vectors, no raster.",
+        "verification": "data"
+      }
+    }
+  },
+  "capture": {
+    "phase": "visual",
+    "final": false,
+    "inspections": [
+      {
+        "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+        "view": "overview"
+      },
+      {
+        "elementId": "design-a7be00f4-7bdb-479f-bb48-46d3495e2aef-0",
+        "view": "overview"
+      },
+      {
+        "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+        "view": "detail",
+        "region": {
+          "x": 10350,
+          "y": 24500,
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      {
+        "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+        "view": "detail",
+        "region": {
+          "x": 7250,
+          "y": 37200,
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      {
+        "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+        "view": "detail",
+        "region": {
+          "x": 4350,
+          "y": 48300,
+          "width": 1024,
+          "height": 1024
+        }
+      }
+    ]
+  },
+  "images": [
+    {
+      "available": true,
+      "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+      "image": {
+        "type": "snapshot",
+        "width": 310,
+        "height": 1024,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 15218,
+          "height": 50319
+        }
+      },
+      "partial": false,
+      "imageScope": "overview",
+      "background": "#ffffff",
+      "evidence": {
+        "sessionId": "e1e2817e-c895-4043-b9b4-bc025e785df1",
+        "receiptId": "ed428a0f-c879-4646-8d99-ca6853c4dc40",
+        "revision": 43750
+      },
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed"
+      },
+      "inspectionId": "73c11205-26f7-4329-b202-c274bbaccf22",
+      "revision": 8
+    },
+    {
+      "available": true,
+      "elementId": "design-a7be00f4-7bdb-479f-bb48-46d3495e2aef-0",
+      "image": {
+        "type": "snapshot",
+        "width": 439,
+        "height": 1024,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 5014,
+          "height": 11697
+        }
+      },
+      "partial": false,
+      "imageScope": "overview",
+      "background": "#ffffff",
+      "evidence": {
+        "sessionId": "e1e2817e-c895-4043-b9b4-bc025e785df1",
+        "receiptId": "5c8cf581-b76a-46c8-a0f5-648f2911490e",
+        "revision": 43750
+      },
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed"
+      },
+      "inspectionId": "d69d3682-4fdb-4cea-82f8-712ec436722c",
+      "revision": 8
+    },
+    {
+      "available": true,
+      "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+      "image": {
+        "type": "snapshot",
+        "width": 1024,
+        "height": 1024,
+        "bounds": {
+          "x": 10350,
+          "y": 24500,
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "partial": true,
+      "imageScope": "region",
+      "background": "#ffffff",
+      "evidence": {
+        "sessionId": "e1e2817e-c895-4043-b9b4-bc025e785df1",
+        "receiptId": "6a4c121d-ec18-46b4-b90f-5fc5110f9418",
+        "revision": 43750
+      },
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed"
+      },
+      "inspectionId": "896604ae-6e15-4459-9909-5beeefda4dc1",
+      "revision": 8
+    },
+    {
+      "available": true,
+      "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+      "image": {
+        "type": "snapshot",
+        "width": 1024,
+        "height": 1024,
+        "bounds": {
+          "x": 7250,
+          "y": 37200,
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "partial": true,
+      "imageScope": "region",
+      "background": "#ffffff",
+      "evidence": {
+        "sessionId": "e1e2817e-c895-4043-b9b4-bc025e785df1",
+        "receiptId": "65b6d932-2e1b-4bc9-8579-9415df4deb25",
+        "revision": 43750
+      },
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed"
+      },
+      "inspectionId": "11c01dcd-9b7e-4e49-9d0f-0317ecb10167",
+      "revision": 8
+    },
+    {
+      "available": true,
+      "elementId": "design-449c8033-dc2d-4773-828d-41813e84269a-0",
+      "image": {
+        "type": "snapshot",
+        "width": 1024,
+        "height": 1024,
+        "bounds": {
+          "x": 4350,
+          "y": 48300,
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "partial": true,
+      "imageScope": "region",
+      "background": "#ffffff",
+      "evidence": {
+        "sessionId": "e1e2817e-c895-4043-b9b4-bc025e785df1",
+        "receiptId": "ad5f9298-8e34-455a-85dc-8a1958bfc685",
+        "revision": 43750
+      },
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed"
+      },
+      "inspectionId": "3d81ba44-1dc7-43b5-99ab-3122b5d360a6",
+      "revision": 8
+    }
+  ],
+  "judgment": {
+    "phase": "visual",
+    "final": false,
+    "inspectionIds": [
+      "73c11205-26f7-4329-b202-c274bbaccf22",
+      "d69d3682-4fdb-4cea-82f8-712ec436722c",
+      "896604ae-6e15-4459-9909-5beeefda4dc1",
+      "11c01dcd-9b7e-4e49-9d0f-0317ecb10167",
+      "3d81ba44-1dc7-43b5-99ab-3122b5d360a6"
+    ],
+    "checks": [
+      {
+        "criterionId": "whole",
+        "status": "pass",
+        "inspectionIds": ["73c11205-26f7-4329-b202-c274bbaccf22"],
+        "evidence": "Entire tower from podium through eight flared tiers to spire is visible on an unpainted surround; no scenery or explanatory labels."
+      },
+      {
+        "criterionId": "view",
+        "status": "pass",
+        "inspectionIds": ["73c11205-26f7-4329-b202-c274bbaccf22"],
+        "evidence": "Elevated three-quarter view consistently shows two sides and roof ledges; verticals stay parallel under the fixed orthographic camera."
+      },
+      {
+        "criterionId": "detail",
+        "unitId": "crown",
+        "status": "fail",
+        "inspectionIds": ["d69d3682-4fdb-4cea-82f8-712ec436722c"],
+        "evidence": "Crown rib full roof plates wrongly occlude the crown glazing and part of lantern; replace full plate tops with thin perimeter ledges and restore proper depth."
+      },
+      {
+        "criterionId": "detail",
+        "unitId": "base",
+        "status": "pass",
+        "inspectionIds": [
+          "73c11205-26f7-4329-b202-c274bbaccf22",
+          "11c01dcd-9b7e-4e49-9d0f-0317ecb10167",
+          "3d81ba44-1dc7-43b5-99ab-3122b5d360a6"
+        ],
+        "evidence": "Base has tapered stone piers, doors, glazing, metallic frames, circular square-hole medallions, podium roof joints and entrance canopy; no background props."
+      }
+    ]
+  }
+}

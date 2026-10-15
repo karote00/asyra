@@ -249,6 +249,7 @@ interface RoomState {
   pendingPublications: SequencedDocumentPublication[]
   headSequence: number
   admissionTail: Promise<void>
+  pendingAdmissions: number
   resetting: boolean
 }
 
@@ -306,7 +307,13 @@ interface InboundFrameAdmissionResult {
 }
 
 const rooms = new Map<string, RoomState>()
-const roomInitializations = new Map<string, Promise<RoomState>>()
+interface RoomInitialization {
+  readonly controller: AbortController
+  readonly promise: Promise<RoomState>
+  waiters: number
+}
+
+const roomInitializations = new Map<string, RoomInitialization>()
 
 const failureMessage = (error: unknown): CollaborationFailurePayload => ({
   code: error instanceof SocketServerFailure ? error.code : 'transport-failed',
@@ -520,69 +527,108 @@ const encodePublicationFramesForStorage = (
     )
   )
 
-const getOrCreateRoom = async (fileId: string): Promise<RoomState> => {
+const getOrCreateRoom = async (
+  fileId: string,
+  signal: AbortSignal
+): Promise<RoomState> => {
+  signal.throwIfAborted()
   const existing = rooms.get(fileId)
   if (existing) return existing
-  const pending = roomInitializations.get(fileId)
-  if (pending) return pending
-
-  const initialization = (async (): Promise<RoomState> => {
-    const bootstrapCheckpoint =
-      await documentPersistenceClient.readCheckpoint(fileId)
-    const roomReference: { current?: RoomState } = {}
-    const persistenceQueue = createDocumentPersistenceQueue({
-      documentId: fileId,
-      initialDurableSequence: bootstrapCheckpoint.durableSequence,
-      flushIntervalMs: persistenceFlushIntervalMs,
-      retryIntervalMs: persistenceRetryIntervalMs,
-      maxPublicationCount: persistenceMaxPublicationCount,
-      maxSerializedBytes: persistenceMaxSerializedBytes,
-      sendBatch: (batch) => documentPersistenceClient.sendBatch(batch),
-      onFailure: (failure) => {
-        console.error(
-          JSON.stringify({ event: 'document_persistence_failed', ...failure })
+  let pending = roomInitializations.get(fileId)
+  if (!pending) {
+    const controller = new AbortController()
+    const promise = (async (): Promise<RoomState> => {
+      const bootstrapCheckpoint =
+        await documentPersistenceClient.readCheckpoint(
+          fileId,
+          controller.signal
         )
-      },
-      onDurableSequenceChange: (durableSequence) => {
-        const room = roomReference.current
-        if (!room) return
-        room.pendingPublications = room.pendingPublications.filter(
-          ({ sequence }) => sequence > durableSequence
-        )
-        if (
-          room.peers.size === 0 &&
-          room.pendingPublications.length === 0 &&
-          rooms.get(fileId) === room
-        ) {
-          room.persistenceQueue.dispose()
-          rooms.delete(fileId)
+      controller.signal.throwIfAborted()
+      const roomReference: { current?: RoomState } = {}
+      const persistenceQueue = createDocumentPersistenceQueue({
+        documentId: fileId,
+        initialDurableSequence: bootstrapCheckpoint.durableSequence,
+        flushIntervalMs: persistenceFlushIntervalMs,
+        retryIntervalMs: persistenceRetryIntervalMs,
+        maxPublicationCount: persistenceMaxPublicationCount,
+        maxSerializedBytes: persistenceMaxSerializedBytes,
+        sendBatch: (batch) => documentPersistenceClient.sendBatch(batch),
+        onFailure: (failure) => {
+          console.error(
+            JSON.stringify({ event: 'document_persistence_failed', ...failure })
+          )
+        },
+        onDurableSequenceChange: (durableSequence) => {
+          const room = roomReference.current
+          if (!room) return
+          room.pendingPublications = room.pendingPublications.filter(
+            ({ sequence }) => sequence > durableSequence
+          )
+          retireIdleRoom(room)
         }
+      })
+      const room: RoomState = {
+        fileId,
+        peers: new Map(),
+        acceptedPublications: new Map(),
+        pendingPublications: [],
+        persistenceQueue,
+        bootstrapCheckpointSeed: bootstrapCheckpoint,
+        documentGeneration: bootstrapCheckpoint.documentGeneration,
+        headSequence: bootstrapCheckpoint.durableSequence,
+        admissionTail: Promise.resolve(),
+        pendingAdmissions: 0,
+        resetting: false
       }
-    })
-    const room: RoomState = {
-      fileId,
-      peers: new Map(),
-      acceptedPublications: new Map(),
-      pendingPublications: [],
-      persistenceQueue,
-      bootstrapCheckpointSeed: bootstrapCheckpoint,
-      documentGeneration: bootstrapCheckpoint.documentGeneration,
-      headSequence: bootstrapCheckpoint.durableSequence,
-      admissionTail: Promise.resolve(),
-      resetting: false
+      roomReference.current = room
+      rooms.set(fileId, room)
+      return room
+    })()
+    const initialization: RoomInitialization = {
+      controller,
+      promise,
+      waiters: 0
     }
-    roomReference.current = room
-    rooms.set(fileId, room)
-    return room
-  })()
-  roomInitializations.set(fileId, initialization)
-  try {
-    return await initialization
-  } finally {
-    if (roomInitializations.get(fileId) === initialization) {
-      roomInitializations.delete(fileId)
+    pending = initialization
+    roomInitializations.set(fileId, initialization)
+    const forget = () => {
+      if (roomInitializations.get(fileId) === initialization)
+        roomInitializations.delete(fileId)
     }
+    void promise.then(forget, forget)
   }
+  const initialization = pending
+  initialization.waiters += 1
+  return new Promise<RoomState>((resolveRoom, rejectRoom) => {
+    let settled = false
+    const release = (): boolean => {
+      if (settled) return false
+      settled = true
+      signal.removeEventListener('abort', abort)
+      initialization.waiters -= 1
+      if (
+        initialization.waiters === 0 &&
+        roomInitializations.get(fileId) === initialization
+      ) {
+        roomInitializations.delete(fileId)
+        initialization.controller.abort()
+      }
+      return true
+    }
+    const abort = () => {
+      if (release()) rejectRoom(signal.reason)
+    }
+    signal.addEventListener('abort', abort, { once: true })
+    initialization.promise.then(
+      (room) => {
+        if (release()) resolveRoom(room)
+      },
+      (error) => {
+        if (release()) rejectRoom(error)
+      }
+    )
+    if (signal.aborted) abort()
+  })
 }
 
 const notifyCapacityWaiters = (peer: PeerSession, available: boolean): void => {
@@ -632,6 +678,19 @@ const waitForFrameCapacity = async (
   )
 }
 
+const retireIdleRoom = (room: RoomState): boolean => {
+  if (
+    room.peers.size !== 0 ||
+    room.pendingAdmissions !== 0 ||
+    room.pendingPublications.length !== 0 ||
+    rooms.get(room.fileId) !== room
+  )
+    return false
+  room.persistenceQueue.dispose()
+  rooms.delete(room.fileId)
+  return true
+}
+
 const removePeer = (peer: PeerSession): void => {
   if (peer.closed) return
   const wasReady = peer.ready
@@ -653,15 +712,7 @@ const removePeer = (peer: PeerSession): void => {
       })
     }
   }
-  if (
-    room.peers.size === 0 &&
-    room.pendingPublications.length === 0 &&
-    rooms.get(room.fileId) === room
-  ) {
-    room.persistenceQueue.dispose()
-    rooms.delete(room.fileId)
-    return
-  }
+  if (retireIdleRoom(room)) return
   if (room.peers.size === 0) void room.persistenceQueue.flushNow()
 }
 
@@ -787,7 +838,11 @@ const enqueueRoomAdmission = <T>(
   room: RoomState,
   task: () => Promise<T>
 ): Promise<T> => {
-  const result = room.admissionTail.then(task, task)
+  room.pendingAdmissions += 1
+  const result = room.admissionTail.then(task, task).finally(() => {
+    room.pendingAdmissions -= 1
+    retireIdleRoom(room)
+  })
   room.admissionTail = result.then(
     () => undefined,
     () => undefined
@@ -796,17 +851,21 @@ const enqueueRoomAdmission = <T>(
 }
 
 const createDocumentSessionBootstrap = async (
-  room: RoomState
+  room: RoomState,
+  signal: AbortSignal
 ): Promise<DocumentSessionBootstrap> => {
   let checkpoint =
     room.bootstrapCheckpointSeed ??
-    (await documentPersistenceClient.readCheckpoint(room.fileId))
+    (await documentPersistenceClient.readCheckpoint(room.fileId, signal))
   room.bootstrapCheckpointSeed = undefined
   if (
     checkpoint.durableSequence <
     room.persistenceQueue.getState().durableSequence
   ) {
-    checkpoint = await documentPersistenceClient.readCheckpoint(room.fileId)
+    checkpoint = await documentPersistenceClient.readCheckpoint(
+      room.fileId,
+      signal
+    )
   }
   if (
     checkpoint.durableSequence <
@@ -989,8 +1048,12 @@ webSocketServer.on('connection', (socket) => {
   let inboundFailed = false
   let controlTail = Promise.resolve()
 
+  const bootstrapController = new AbortController()
   const helloTimeout = setTimeout(() => {
-    if (!peer.ready) socket.close(1008, 'hello timeout')
+    if (!peer.ready) {
+      bootstrapController.abort()
+      socket.close(1008, 'hello timeout')
+    }
   }, 5_000)
 
   const rejectConnection = (error: unknown, reason: string): void => {
@@ -1026,8 +1089,17 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] app-defined fileId and actor identity are required'
       )
     }
-    const room = await getOrCreateRoom(fileId)
+    const room = await getOrCreateRoom(fileId, bootstrapController.signal)
     const bootstrap = await enqueueRoomAdmission(room, async () => {
+      const requireOpenPeer = () => {
+        bootstrapController.signal.throwIfAborted()
+        if (peer.closed || socket.readyState !== WebSocket.OPEN)
+          throw new SocketServerFailure(
+            'connection-rejected',
+            '[collaboration] document session closed during bootstrap'
+          )
+      }
+      requireOpenPeer()
       if (room.resetting) {
         throw new SocketServerFailure(
           'connection-rejected',
@@ -1040,7 +1112,11 @@ webSocketServer.on('connection', (socket) => {
           '[collaboration] actor is already connected to this room'
         )
       }
-      const sessionBootstrap = await createDocumentSessionBootstrap(room)
+      const sessionBootstrap = await createDocumentSessionBootstrap(
+        room,
+        bootstrapController.signal
+      )
+      requireOpenPeer()
       peer.actorId = identity.actorId
       peer.fileId = fileId
       peer.room = room
@@ -1049,6 +1125,9 @@ webSocketServer.on('connection', (socket) => {
       return sessionBootstrap
     })
     clearTimeout(helloTimeout)
+    sendControl(socket, {
+      type: CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY
+    })
     sendControl(socket, {
       type: CollaborationMessageTypes.READY,
       bootstrap
@@ -1808,6 +1887,7 @@ webSocketServer.on('connection', (socket) => {
   })
 
   const cleanup = (): void => {
+    bootstrapController.abort()
     clearTimeout(helloTimeout)
     inboundFailed = true
     sourceFrameAdmission?.controller.abort()

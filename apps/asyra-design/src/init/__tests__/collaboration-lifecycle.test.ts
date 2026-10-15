@@ -1893,7 +1893,6 @@ it.each(['resolved', 'rejected'] as const)(
     await disposal
     expect(unsubscribe).toHaveBeenCalledOnce()
     expect(getActiveCollaborationHandle()).toBe(active)
-    expect(window.__Collaboration__).toBe(active)
     await expect(session.activate()).rejects.toThrow()
   }
 )

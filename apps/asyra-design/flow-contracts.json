@@ -104,7 +104,9 @@
           "id": "request.continuity",
           "stepId": "request",
           "testName": "execution proof validates continuity references before a successor request",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "prepare.lifetime",
@@ -117,7 +119,11 @@
         {
           "id": "compose.resource-export",
           "stepId": "compose",
-          "testName": "execution proof exports compound resources before cleanup"
+          "testName": "execution proof exports compound resources before cleanup",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-leases.ts"
+          ]
         },
         {
           "id": "apply.composition",
@@ -131,17 +137,29 @@
         {
           "id": "inspect.regional-units",
           "stepId": "inspect",
-          "testName": "execution proof retains regional units without requiring global coverage for local review"
+          "testName": "execution proof retains regional units without requiring global coverage for local review",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/design-check-results.ts"
+          ]
         },
         {
           "id": "inspect.scoped-dependencies",
           "stepId": "inspect",
-          "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers"
+          "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
         },
         {
           "id": "inspect.deferred-measurement",
           "stepId": "inspect",
-          "testName": "execution proof checks all acknowledged parts before returning deferred capture without another model"
+          "testName": "execution proof checks all acknowledged parts before returning deferred capture without another model",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "inspect.current-evidence",
@@ -156,7 +174,9 @@
           "id": "settle.partial",
           "stepId": "settle",
           "testName": "execution proof retains partial progress when a successor makes no change",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "observe.accounting",
@@ -179,7 +199,9 @@
           "id": "observe.shared-invocation",
           "stepId": "observe",
           "testName": "execution proof composes a non-drawing host through shared invocation and local projection",
-          "implementationPaths": ["packages/ai-agent-runtime/src/invocation.ts"]
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/invocation.ts"
+          ]
         },
         {
           "id": "apply.region-removal",
@@ -269,17 +291,35 @@
         {
           "id": "apply.canonical-inspection-scope",
           "stepId": "apply",
-          "testName": "execution proof consumes canonical mutation scope without read pollution or no-change invalidation"
+          "testName": "execution proof consumes canonical mutation scope without read pollution or no-change invalidation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "apply.structural-delivery",
           "stepId": "apply",
-          "testName": "execution proof delivers compact structural output without repeating canonical writes"
+          "testName": "execution proof delivers compact structural output without repeating canonical writes",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         },
         {
           "id": "inspect.regional-pixels",
           "stepId": "inspect",
-          "testName": "execution proof retains deterministic regional image checks without model evaluation"
+          "testName": "execution proof retains deterministic regional image checks without model evaluation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-image-check.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "inspect.current-contract",
+          "stepId": "inspect",
+          "testName": "execution proof uses only current conversion and primary judgment contracts",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -338,14 +378,16 @@
           "routeId": "inspect-to-compose",
           "decision": "required",
           "caseIds": [
-            "inspect.current-evidence"
+            "inspect.current-evidence",
+            "inspect.current-contract"
           ]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
           "caseIds": [
-            "inspect.current-evidence"
+            "inspect.current-evidence",
+            "inspect.current-contract"
           ]
         },
         {

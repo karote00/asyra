@@ -1313,6 +1313,55 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByLabel('Operational progress').locator('li')
       ).toHaveCount(rowsBeforeLoop)
+      // The provider closes its finite root cohort before later inspection.
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'public-progress',
+          status: 'completed',
+          activity: {
+            kind: 'system',
+            callId: 'work',
+            scope: 'request',
+            phase: 'provider',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'inspect_drawing',
+          status: 'running',
+          activity: {
+            kind: 'system',
+            callId: 'fresh-inspection',
+            phase: 'inspecting',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Reviewing the drawing'
+      ])
+      await expect(current).toHaveText('Reviewing the drawing')
+      await expect(status).not.toContainText('Continue at the bottom')
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('settled-purpose-next-inspection.png')
+      })
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'inspect_drawing',
+          status: 'completed',
+          activity: {
+            kind: 'system',
+            callId: 'fresh-inspection',
+            phase: 'inspecting',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
       response.end(
         JSON.stringify({
           type: 'result',

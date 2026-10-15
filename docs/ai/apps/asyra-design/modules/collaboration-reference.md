@@ -107,7 +107,11 @@ change.
   publication handoff;
 - an optional app-owned permission/domain-order/conflict decision that may
   reject or transform a publication before routing its accepted result;
-- classification into one ordered `CanonicalChange[]` per source slice; and
+- classification into one ordered `CanonicalChange[]` per source slice. Each
+  move delivery retains its simultaneous move set; heterogeneous Scene batches
+  retain consecutive operation-family order; consecutive deliveries remain
+  separate ordered operations even when the transport groups them into one batch
+  or they occur next to creation/removal; and
 - exactly one progressive remote Factory transaction with one
   `core.applyCanonicalChanges(...)` request per source slice.
 

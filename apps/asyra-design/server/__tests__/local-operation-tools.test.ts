@@ -1,6 +1,5 @@
 import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import sharp from 'sharp'
-import type { VisualAssessmentInput } from '../local-visual-assessment'
 import { reviewPlanExample } from '../local-design-review'
 import { runInNewContext } from 'node:vm'
 import {
@@ -1153,6 +1152,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       'Silhouette and proportions match',
       'Window details match'
     ]),
+    structureCriteria: ['Silhouette and proportions match'],
     detailRequired: true
   }
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, plan)
@@ -1225,6 +1225,31 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
     message: expect.stringContaining('Windows are missing')
   })
   await call(AiDesignToolIds.REVIEW_DRAWING, report)
+  expect(tools.settleOutcome(completed)).toBe(completed)
+  const structureFailure = {
+    phase: 'structure',
+    inspectionIds: report.inspectionIds,
+    checks: [
+      {
+        ...report.checks[0],
+        status: 'fail',
+        evidence: 'The base outline needs correction.'
+      }
+    ]
+  }
+  await expect(
+    call(AiDesignToolIds.REVIEW_DRAWING, structureFailure)
+  ).resolves.toMatchObject({ accepted: false, readyForDetail: false })
+  expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
+    outcome: 'unsupported',
+    message: expect.stringContaining('base outline')
+  })
+  await expect(
+    call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...report,
+      checks: report.checks.slice(0, 1)
+    })
+  ).resolves.toMatchObject({ accepted: true, coverage: { passed: 2 } })
   expect(tools.settleOutcome(completed)).toBe(completed)
   await change()
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
@@ -2672,8 +2697,12 @@ it('searches current API descriptions and names without loading every schema or 
 })
 
 it('executes discovered APIs in a batch and identifies unknown lookup names', async () => {
-  const execute = vi.fn(async (_batch: AiActionBatch) => ({
-    actionResults: [],
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result: { status: 'complete' }
+    })),
     context: {}
   }))
   const operations = createLocalOperationTools(
@@ -3296,8 +3325,12 @@ it('includes bound fact targets in one canonical coverage check before visual ac
 })
 
 it('resolves a nested plural target through the registered schema in one canonical exchange', async () => {
-  const execute = vi.fn(async (_batch: AiActionBatch) => ({
-    actionResults: [],
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result: { status: 'complete' }
+    })),
     context: {}
   }))
   const resolveTargets = vi.fn(() => ['a', 'b'])
@@ -4910,6 +4943,21 @@ it('returns a reference-selection receipt without retransmitting retained source
   const facts = await call(AiDesignToolIds.RECORD_DESIGN_FACTS, {
     facts: [fact]
   })
+  const calculations = await call(AiDesignToolIds.RECORD_DESIGN_CALCULATIONS, {
+    calculations: [
+      {
+        id: 'scaled-height',
+        value: 80,
+        unit: 'px',
+        sourceFactIds: ['height'],
+        verification: 'Apply the documented scale'
+      }
+    ]
+  })
+  expect(calculations).toMatchObject({
+    diagnosticOnly: true,
+    calculations: [{ id: 'scaled-height', value: 80, status: 'valid' }]
+  })
   const selected = await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
     referenceImageIndexes: [0]
   })
@@ -4968,19 +5016,6 @@ describe('capture-to-review handoff', () => {
   const setup = async () => {
     const unavailable = new Set<string>()
     const state = { current: true }
-    const assessVisual = vi.fn(async (input: VisualAssessmentInput) => ({
-      overall: {
-        status: 'pass' as const,
-        evidence: `Compared ${input.images.length} images`
-      },
-      checks: [
-        {
-          criterionId: 'view',
-          status: 'pass' as const,
-          evidence: 'Visible details match'
-        }
-      ]
-    }))
     const execute = vi.fn(async (batch: AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map((action) => {
@@ -5023,7 +5058,7 @@ describe('capture-to-review handoff', () => {
       ].map((name) => ({ name, description: name, inputSchema: {} })),
       { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
       execute,
-      { reviewTargetId: 'drawing', assessVisual }
+      { reviewTargetId: 'drawing' }
     )
     const signal = new AbortController().signal
     const call = (name: string, args: unknown) =>
@@ -5053,7 +5088,6 @@ describe('capture-to-review handoff', () => {
       tools,
       call,
       execute,
-      assessVisual,
       unavailable,
       state,
       review,
@@ -5069,7 +5103,6 @@ describe('capture-to-review handoff', () => {
     })
     expect(result.accepted).toBe(false)
     expect(result.actionResults).toHaveLength(2)
-    expect(f.assessVisual).not.toHaveBeenCalled()
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         ...f.review,
@@ -5107,7 +5140,6 @@ describe('capture-to-review handoff', () => {
       'data:image/png'
     )
     expect(failed.actionResults[1].result.available).toBe(false)
-    expect(f.assessVisual).not.toHaveBeenCalled()
     f.unavailable.clear()
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...f.review,
@@ -5121,7 +5153,6 @@ describe('capture-to-review handoff', () => {
         inspectionIds: result.inspectionIds
       })
     ).toMatchObject({ accepted: true })
-    expect(f.assessVisual).not.toHaveBeenCalled()
     const captures = f.execute.mock.calls
       .flatMap(([batch]) => batch.actions)
       .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
@@ -5149,7 +5180,6 @@ describe('capture-to-review handoff', () => {
       }))
     })
     expect(input).toEqual(original)
-    expect(f.assessVisual).not.toHaveBeenCalled()
   })
 
   it('retains successful captures when a later capture throws', async () => {
@@ -5174,7 +5204,6 @@ describe('capture-to-review handoff', () => {
         { inspection: f.targets[1], message: 'Capture transport failed' }
       ]
     })
-    expect(f.assessVisual).not.toHaveBeenCalled()
   })
 
   it('stops the handoff on cancellation during capture', async () => {
@@ -5197,7 +5226,6 @@ describe('capture-to-review handoff', () => {
       )
     ).rejects.toThrow()
     expect(f.execute).toHaveBeenCalledTimes(1)
-    expect(f.assessVisual).not.toHaveBeenCalled()
     for (const entry of cancelledReceipt?.actionResults ?? [])
       expect(entry.result).not.toHaveProperty('inspectionId')
   })
@@ -5210,7 +5238,6 @@ describe('capture-to-review handoff', () => {
       inspections: f.targets
     })
     expect(result.accepted).toBe(false)
-    expect(f.assessVisual).not.toHaveBeenCalled()
   })
 
   it('validates capture targets and reusable IDs before any capture', async () => {
@@ -5244,7 +5271,6 @@ describe('capture-to-review handoff', () => {
       })
     ).toMatchObject({ accepted: false, status: 'partial' })
     expect(f.execute).not.toHaveBeenCalled()
-    expect(f.assessVisual).not.toHaveBeenCalled()
   })
 
   it('does not start captures when the request is cancelled', async () => {
@@ -5259,7 +5285,6 @@ describe('capture-to-review handoff', () => {
       )
     ).rejects.toThrow()
     expect(f.execute).not.toHaveBeenCalled()
-    expect(f.assessVisual).not.toHaveBeenCalled()
   })
 })
 
@@ -5583,8 +5608,12 @@ it('carries canonical attachment evidence from prepared review to the exact brow
 
 it('reports every target binding conflict before resolving or dispatching the recorded hierarchy edit', async () => {
   const resolveTargets = vi.fn(() => ['roof-a', 'roof-b'])
-  const execute = vi.fn(async (_batch: AiActionBatch) => ({
-    actionResults: [],
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result: { status: 'complete' }
+    })),
     context: {}
   }))
   const tools = createLocalOperationTools(

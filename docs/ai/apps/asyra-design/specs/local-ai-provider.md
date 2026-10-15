@@ -222,7 +222,7 @@ no improvement is obtained, or cancellation/runtime limits are reached.
 
 Prefer native Oval for intended circles/ellipses, including circular outlines,
 and native Rectangle for rectangles. Preserve deliberately irregular contours.
-Image-reference preparation accepts optional ovalPathIds: explicitly selected
+Image-reference preparation accepts only canonical componentMappings: explicitly selected
 whole single-contour paths become filled native Ovals at their original mapped
 bounds, with original fill/order/role. Compound paths are ineligible so holes
 are not silently filled. Selection is not automatic shape recognition or
@@ -264,7 +264,7 @@ without registered AI preparation contracts are not advertised as conversions.
 Every mapping must reference one retained single-contour path and a registered
 target, without duplicates or conflicts. Backend preserves order, mapped bounds,
 fill and role IDs; AI judges semantic suitability using reference/tool evidence.
-Bounds alone do not establish a shape. Existing ovalPathIds remains compatible.
+Bounds alone do not establish a shape. The obsolete ovalPathIds parameter is rejected before mutation; there is no alias conversion.
 No geometry processing moves into the model. Data review does not prove appearance;
 remaining visual uncertainty must be checked after rendering. The update action
 advertises typed object items with nested geometry/style fields, not an untyped

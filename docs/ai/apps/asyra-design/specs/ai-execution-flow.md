@@ -264,6 +264,15 @@ settlement; mixed successful writes and failure are partial. Compact replies may
 aggregate successful valueless acknowledgements, retaining their unmeasured
 application meaning, without dropping identities, reads or failure evidence.
 
+Element selection validates all requested IDs at the common element-selection
+owner inside the synchronous mutation boundary. A nonexistent ID, including a
+mixed valid/invalid request, rejects the whole replacement without changing prior
+selection or adding an Undo entry. `select_elements` reports its accepted selection
+count only after successful canonical replacement; the basic selection/toggle
+routes use the same existence contract. Explicit clearing and generic Core/vector
+selection channels retain their own contracts. A corrected call and its Undo/Redo
+must remain usable after rejection.
+
 Structural direct delivery retains group/ungroup child identities and acknowledged
 move identities in the existing request-owned context store. The immutable full
 receipt is stored with that membership at synchronous mutation settlement, after canonical publication and before yielding. A later document change invalidates the reference instead of recertifying old output. Compact output returns `retained` with
@@ -1385,9 +1394,11 @@ Every ordered invocation start and end updates canonical activity state before
 visible deduplication. A completed call's purpose expires. The primary AI publishes
 a short concrete stage intent (target and purpose) through existing public
 commentary before preparing inputs, and replaces it when the stage changes.
-Stage intent is not a claim that drawing is currently being applied. It survives
-child starts/ends and is retired by newer stage commentary, explicit completion,
-retry, saving or terminal settlement. No additional AI evaluates or authors status.
+Stage intent is not a claim that drawing is currently being applied. It survives child starts/ends while its next root tool cohort is active. The
+provider explicitly completes that stage when the last root call in the cohort
+settles, including failure/cancellation. New commentary replaces it; older calls
+cannot complete a replacement. Retry, saving and terminal settlement also retire
+the stage. A stage describes this finite work cohort, not the whole objective. No additional AI evaluates or authors status.
 
 Display the common genuinely live call purpose before retained stage intent.
 Show the observed operation separately from authored context. Admission/queue
@@ -1402,7 +1413,8 @@ immediately override normal work presentation.
 Call purposes retain authored identity, scope and revision across phase-only
 updates. Resolve inheritance from live ancestry, never copy it into a child as
 new authored text. Concurrent leaves use their common purpose; one sibling cannot
-represent unrelated work. Closing a parent closes dependent children, preserves
+represent unrelated work. Distinct active operation labels remain visible together
+with their count, rather than being replaced by a generic operation count. Closing a parent closes dependent children, preserves
 independent siblings and rejects late events. Omitted parent metadata preserves
 known ancestry. Request objective remains conversation context, not stage evidence.
 Registered operation descriptions remain system activity; preserve their diagnostic
@@ -1421,7 +1433,6 @@ Reconnect and restart resend stored evidence through the same collector, which
 validates duplicate content rather than duplicating it. Recovery never invokes
 an App operation. Resource, quota and persistence failures are explicit recording
 failures; they do not alter product completion or claim a complete trace.
-
 
 #### Composition artifact ownership
 
@@ -1471,14 +1482,12 @@ cannot capture those identities; use fresh input or a preceding successful
 receipt. Polymorphic read values stay opaque instead of inventing a return type.
 Direct public API validation and dispatch are unchanged.
 
-
 Canonical basic operations are registered once for typed recipe binding using
 browser-owned contracts and the secured existing operation executor. They remain
 registry-only capabilities: native provider declarations still expose the plural
 batch interface, not every basic method as a native function. Exact discovery
 returns the registered identity, revision and library invocation route. Neither a
 recipe nor direct library invocation bypasses browser admission, Undo or review.
-
 
 The AI query producer and release control are separate: read_design_context has a
 successful live-handle output; release_design_context has only historical release
@@ -1489,6 +1498,7 @@ borrows them, and requires a browser acknowledgement for release. Failed handle
 publication cleans up newly created browser state without retiring another
 consumer. On request cancellation the browser transaction-finally is authoritative
 for releasing request data even after host transport becomes unavailable.
+
 # Image products in reusable tools
 
 The request image owner publishes actual vector artifacts to the common host
@@ -1511,7 +1521,6 @@ remain control-plane source operations: their numeric provider attachment
 selectors are not persisted recipe identities. All native operations continue
 through the common invocation and outcome contract.
 
-
 Before each new composition, the library checks the exact current saved state.
 Suspended/retired entries reject even when this request previously loaded them.
 Unavailable storage refuses a known saved revision; a private candidate whose
@@ -1523,7 +1532,6 @@ replay canvas edits.
 Provider teardown attempts host disposal and storage closure separately after
 active calls settle. Each records duration and outcome using host observations;
 a cleanup error cannot replace the original product outcome or its error.
-
 
 ### Saved tool management in the conversation panel
 
@@ -1538,7 +1546,6 @@ cannot be resumed by these controls. Availability is rechecked before future
 invocations, while active pinned work retains its documented lifecycle. Closing
 the list cancels pending UI reads and ignores late responses. Provider and panel
 use the same configured AI_TOOL_LIBRARY_DIR and existing SQLite adapter.
-
 
 ### Durable recording gaps
 
@@ -1560,7 +1567,6 @@ Nested Runtime observations retain their pinned revision and admitted parent
 recipe name/revision/step ID in the existing execution record. Repeated same-tool
 steps remain distinguishable without replaying arguments or guessing from order.
 
-
 ### Retained predicate selection
 
 Region filters and current snapshot refinements support literal name equality,
@@ -1572,15 +1578,17 @@ checked before returning targets. Reference delivery contains handles and counts
 explicit pages remain available. Freshness, request ownership, cancellation and
 mutation admission apply unchanged. Names are not unique identities.
 
-
 ### Scoped visual check units
 
 A primary-agent check may name a stable unitId within its original criterion.
 Different units retain separate results and image dependencies. The initially cited capture targets and crops define a unit scope; receipt
-revisions do not define its identity. Additional corroborating images may include
-that original scope without redefining the unit. They do not grow its identity;
-all cited images remain actual invalidation dependencies. Replacing the original
-scope still requires exact revision/reason supersession.
+revisions do not define its identity. Changing the set of target/crop scopes,
+including adding a broader scope, requires exact revision/reason supersession.
+A regional check cannot mix an uncropped target image with a crop of that same
+target: explicitly resubmit only the required local images and keep whole-view
+judgments on their separate criterion. Admission rejects before recording any
+judgments and identifies the enclosing image IDs. An overview of an isolated
+regional target remains valid, as do explicit multi-target cross-region checks.
 Intermediate visual review accepts current local crops without requesting an
 unrelated overall view. Omitted units retain their status, and invalidation follows
 their actual image dependencies. Final review still requires current whole-request
@@ -1699,7 +1707,6 @@ IDs, viewport state, diagnostic timing and reuse counters. The verdict is produc
 inside the canonical evidence capture boundary; later writes still invalidate the
 applicable stored checks through their actual dependencies.
 
-
 Canonical canvas measurement results are retained in the same check store per
 checked target, alongside prepared-source and primary-agent evidence. Complete
 rechecks replace only that target's findings, including deleted children; partial
@@ -1734,7 +1741,6 @@ selection and viewport contracts retain revision 2. Saved recipes with replaced
 dependency identities fail admission before execution and must be corrected using
 the currently advertised contract. There is no old-output fallback.
 
-
 ### Mechanical delivery and unresolved write scope
 
 Automatic checks retain complete findings in the existing request-owned check
@@ -1752,7 +1758,6 @@ outcome remain available. Preserve existing document work; never replay it or
 promise a reconciliation tool that does not exist. A subsequent request starts
 from current document state rather than replaying this request. Ordinary failed
 mechanical checks and stale evidence remain retryable through review_design.
-
 
 ### Declared regional acceptance coverage
 
@@ -1805,14 +1810,12 @@ the host validates retained receipts in bounded batches. Stale, unavailable or
 incompletely validated evidence stays unresolved. Cancellation cannot publish a late
 pass; review recovery never replays drawing writes. Request teardown expires evidence.
 
-
 Accumulated inspection validation includes the browser owner's `validatedAt`
 session/revision. A host validation sequence must use one observation version;
 version drift prevents publication of new judgments and reports partial validation.
 It does not invalidate independent checks: later receipt validation identifies
 actual affected dependencies. Missing, duplicate, failed or malformed validation
 acknowledgements cannot establish currency. Cancellation publishes no new judgment.
-
 
 Sparse deferred-detail decisions use the same check store as regional judgments,
 including their explicit omit/restored/pending disposition and the submitted image
@@ -1840,7 +1843,6 @@ scope retains its existing write-stop boundary. Repeated provider call identitie
 are rejected before another dispatch; a new call identity is a new intentional
 invocation, not permission to assume prior unknown work rolled back. Failed save
 uses the successful receipt with save_tool and cannot replay product work.
-
 
 ### Deterministic aligned image checks
 
@@ -1873,7 +1875,6 @@ plane values, not portable recipe literals or durable document identities.
 ### Mechanical inspection transport
 
 Mechanical measurements and dependency validation use bounded exchanges of at most 64 independent exact-target actions. Each target retains its own evidence and finding status. A known fail-fast action failure preserves acknowledged prefix results and may continue only the proven unexecuted read suffix; unknown outcomes remain unverified. Cancellation prevents late adoption and further dispatch. Grouping reads never replays acknowledged document writes or converts missing checks into passes.
-
 
 ### Discovery continuation and activity diagnostic consistency
 
@@ -1934,3 +1935,113 @@ Runtime-authored direct action starts have paired completion activity on success
 failure, before another action or terminal outcome. Abort continues to suppress
 observer notifications; the returned cancelled outcome retires App activity.
 Completion ends activity ownership; the canonical outcome still determines success or failure.
+
+Native research items and App tool calls share the same finite authored-purpose
+cohort. A completed search releases its membership exactly once; overlapping
+operations keep the purpose active, and an older completion cannot retire a
+replacement purpose. Research diagnostics remain distinct from App mutations.
+
+Completed provider call identities remain closed for that request. A repeated or
+late native research start cannot attach an old call to new commentary, prolong
+that purpose, or disagree with the activity projector's closed-call state.
+
+
+## Tool-first correction contract
+
+The primary agent owns intent, creative decisions, recipe authorship and final pixel
+judgments. Design tools own deterministic checks and exact dependency invalidation.
+Runtime owns admitted finite orchestration, not domain diagnosis or repair invention.
+No drawing or prepared-review route opens another model. Explicit execution-report
+analysis is a separate caller-requested diagnostic service. Remove the independent
+visual-assessor provider/export/options/results. Shared current check data remains
+neutral. Partial judgment replies derive unresolved criteria and their evidence from
+the current shared result store, not only the submitted subset or a second history.
+A later failed/unverified structure judgment revokes earlier final acceptance while
+preserving unrelated passes. A structure-only recovery cannot grant final acceptance;
+a coherent primary-agent final review must close the retained obligations. Validation
+without publication and rejected input do not change those results. Explicit judgments
+of existing content govern completion even when this request made no document edit.
+Vector conversion accepts only `componentMappings` with eligible analysis
+receipts; `ovalPathIds` is rejected, never translated or silently ignored.
+
+### Mechanical closure interface
+
+The existing inspect owner exposes `verify_design_checks` through the common tool
+registry. This is the Stage 2 contract, not a claim of current availability.
+Input is a closed object `{ checks: [{ checkId, revision }] }`: a nonempty unique
+selection of request-owned tool-origin check identities and their exact retained
+revisions. Scope, canonical target and dependencies come from those owned records,
+never model-authored arbitrary IDs, a viewport, diagnostic text or a second store.
+Existing transport/iteration budgets apply; work is chunked internally. A selection
+with unknown, mixed ownership, wrong origin or conflicting revision is rejected
+before checking or mutation. The operation never mutates the document.
+
+Successful output contains `verification: { status, progress }`, `results` in the
+existing compact check-result format, and exact unresolved check identities/revisions,
+reason codes and recovery. `status` is `pass`, `repairable` or `decision-required`;
+`progress` is a nonempty stable string identifying normalized unresolved mechanical
+work for the selected logical obligations. It excludes result revisions, fresh receipt
+IDs, timing, counters and viewport state. Equal unresolved work produces equal progress,
+so repeated no-op checks or a repair cycle cannot bypass Runtime's repeated-progress
+stop. Counts remain diagnostic fields, not the verification token. The registry declares
+`/verification/status` and `/verification/progress` with required typed output fields.
+Output also supplies `checks` with every remaining selected identity and its current
+revision, including passes; `unresolved` is only the pending subset. An admitted recipe
+passes this acknowledged selection into repair. Every successful repair receipt carries
+the complete resulting selection with current revisions, so the next check binds from
+the last repair receipt, never initial versions or a pre-repair snapshot. If repair
+only invalidates dependencies without changing revisions, it still returns that exact
+selection for canonical revalidation. Partial/unknown repairs cannot supply a successor
+success binding.
+Canonical retirement is reported explicitly; a repairable result always retains a
+nonempty selection. All-retired work may pass without another empty verification call.
+A stale result revision is a recoverable input conflict, not permission to drop an
+obligation or restart initial writes. Exact revision matching alone is not currency:
+existing dependency invalidation can change status without advancing that revision. Pass requires
+complete coherent current mechanical coverage for that selection. It does not grant
+visual acceptance, whole-task completion, recipe eligibility or document durability.
+Repairable requires every remaining finding to have an owner-declared mechanical
+repair capability. The inspect owner returns their exact capability IDs and structured
+finding arguments; it cannot infer which recipe called it. An admitted recipe must
+cover that complete set. Because Runtime executes its finite repair list without
+domain branching, the Design repair owner validates that set and current finding
+receipts before any repair write. A mismatched or mixed unsupported set stops with
+exact unresolved work and no repair writes. Runtime validates registered schemas,
+bindings and budgets; it does not infer dynamic domain coverage from status alone.
+Findings without a declared repair require a primary-agent decision. Empty work after canonical deletion can
+retire only the deleted target's own obligation, not dependent visual criteria.
+
+Partial/cancelled/unavailable outcomes retain independently acknowledged results and
+exact outstanding identities; they are not successful verification bindings. Before
+publishing any pass the owner validates captured dependencies against the current
+canonical state. Safe read recovery retries only incomplete work. Unknown write
+settlement is reconciled by apply/settle, never by this reader or by replaying writes.
+Pan/zoom is not geometry change; region membership changes, contributing ancestors,
+shared properties and actual user-criterion changes invalidate their true dependents.
+
+Runtime consumes the typed verdict using its existing verification contract and
+finite repair list. It checks registered dependencies, bindings and budgets before writes,
+stops on no progress/unsupported findings/cancellation, and exports real receipts
+before releasing child resources. It cannot infer a new repair or invoke a model.
+A successful direct edit needs no recipe. Missing reusable capability is authored
+by the primary agent, admitted by Runtime, invoked through the same host, then saved
+only when eligible. Save-only retry never repeats a completed product mutation.
+
+### Cross-owner handoff cases and stage exits
+
+These cases define subsequent stage acceptance; they are pending until executed
+on the relevant captured source, not passing by structural admission.
+
+| Case | Producer -> consumer | Required success and failure behavior |
+| --- | --- | --- |
+| Current contract (Stage 1) | compose/inspect -> host and primary judgment | Canonical oval conversion and primary visual fail/correct/pass work; removed alias rejects before dispatch and no independent assessor capability exists. |
+| Aggregate closure (Stage 2) | apply receipt -> inspect -> Runtime verification | Fresh receipt closes selected stale mechanical checks, preserves unrelated visual passes, and executes one admitted known repair; actual Runtime admits the string progress contract and acknowledged revision binding. No-op/cyclic repairs and wrong/mixed repair capabilities stop without initial-write replay. |
+| Freshness race (Stage 2) | canonical edits -> inspect -> settle | Edit, Undo/Redo, collaborator change or cancellation during check cannot publish stale success; retry only safe reads, preserve unaffected records, and return exact incomplete scope. |
+| Delegation (Stage 3) | discovery -> admit/register -> host/invoke | Exact spec -> invalid recipe correction -> eligible invocation through real host; unsupported intent returns a decision; suitable direct tools need no forced composition. |
+| Reuse (Stage 4a) | invoke receipt -> persist -> fresh request | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition. |
+| Settlement (Stage 4b) | inspect/apply -> settle -> visible result | Purpose start/end/cohort ordering is truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven. |
+
+The definition of done for Stage 1 is current caller/schema/test alignment and
+applicable formal proof, types and lint. Stage 1 does not implement mechanical
+aggregation, modify model guidance or certify any future stage. Accepted historical
+evidence is immutable; obsolete executable behavior is removed, not emulated.

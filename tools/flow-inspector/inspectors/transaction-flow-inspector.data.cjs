@@ -284,6 +284,7 @@
         'Nested replay moves its source history stack only on outer commit; outer rollback leaves the original undo or redo source available.',
         'A successful nested replay followed by outer rollback restores runtime through the complete source replay in the opposite direction even without a replay journal or with a mixed replay journal, and restoration does not record a second journal.',
         'A new action mutation after nested undo or redo is journaled, marks the outer boundary rollback-only, and fails immediately; outer rollback reverses that action journal before restoring the nested replay source so runtime and history both return to their pre-boundary state.',
+        'A successful local no-op settles retained History shared evidence so changed siblings can publish; it adds no local rollback restoration. A thrown owner failure cannot settle its delivery.',
         'Before canonical state-owner apply, nested replay derives a restoration plan for each replay output and validates that output has an inverse contract; the plan is retained only after an acknowledged semantic apply or an explicit applied-then-failed acknowledgement, while a successful no-op or pre-apply failure retains no plan. Outer rollback executes retained output plans in reverse apply order, add/remove replay swaps inverse metadata, every custom inverter must produce at least one output, and every custom inverter output inverter must itself produce at least one reversible output before the primary replay output is applied.',
         'Transaction journal cloning preserves the declared DataTypes contract, including symbol values and nested undefined values, without JSON coercion.',
         'An acknowledged state owner may supply a complete immutable restoration batch prepared from its actual pre-apply state. Factory retains this batch instead of the static source inverse for that apply, including applied-then-failed cases, so failed overlapping Undo returns to its live pre-Undo values. Partial journals cannot substitute for this explicit owner contract.',
@@ -385,7 +386,7 @@
       ],
       outputs: ['artifact:transaction-result'],
       conditions: [
-        'Committed transaction-end shared changes flush in journal order.',
+        'Committed transaction-end shared changes flush in journal order. A later immediate boundary drains its preceding eligible journal prefix with effective immediate delivery; it cannot overtake deferred prerequisites. Undo/Redo and compensation retain the actual source order, and pure deferred transactions remain commit-only.',
         'Separate state-owner handoffs within one synchronous immediate enqueue window share a source slice; the existing microtask or settlement closes that boundary. Preserve ordered channel batches and reuse the same complete boundary for Undo, Redo and compensation. Never merge asynchronous windows or explicit progressive slices.',
         'A registered transaction-end channel append failure before application requests rollback, restores the provisional history transition, leaves no final undo history or user-action-completed effect, and propagates the delivery failure after restoration.',
         'Partially delivered transaction-end changes are compensated in reverse order when a later append fails before application.',

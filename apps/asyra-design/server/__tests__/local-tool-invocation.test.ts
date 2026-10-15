@@ -21,6 +21,9 @@ import { createLocalReferenceTools } from '../local-reference-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { AiActionNames } from '../../src/constants/ai-actions'
+import { AiDesignToolIds } from '../../src/constants/ai-design'
+import { AiImageToolIds, AiReferenceToolIds } from '../ai-domain-prompt'
+import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
 const signal = () => new AbortController().signal
@@ -165,11 +168,16 @@ it('preflights every advertised App tool family before its owner executes', asyn
   const operations = createLocalOperationTools(
     actions,
     {
+      ...designs,
       modelActions: (input) => designs.modelActions(images.modelActions(input)),
       resolveBatch: (input) => designs.resolveBatch(images.resolveBatch(input)),
       resolveTargets: designs.resolveTargets
     },
-    vi.fn()
+    vi.fn(),
+    {
+      referenceImages: images.referenceImages,
+      validateReferences: images.validateReferences
+    }
   )
   expect(
     operations.definitions.find(
@@ -187,8 +195,27 @@ it('preflights every advertised App tool family before its owner executes', asyn
     images,
     operations,
     createLocalReferenceTools(images.addReference),
-    createLocalDesignWorkflow(designs, operations)
+    createLocalDesignWorkflow(designs, operations),
+    createLocalToolLibraryTools(
+      () => {
+        throw new Error('Rejected controls must not resolve the library')
+      },
+      () => ({})
+    )
   ]
+  const browserNames = new Set(actions.map((action) => action.name))
+  const nativeNames = new Set(
+    owners
+      .flatMap((owner) => owner.definitions.map((tool) => tool.name))
+      .filter((name) => !browserNames.has(name))
+  )
+  expect([...nativeNames].sort()).toEqual(
+    [
+      ...Object.values(AiDesignToolIds),
+      ...Object.values(AiImageToolIds),
+      AiReferenceToolIds.IMPORT_REFERENCE_IMAGE
+    ].sort()
+  )
   for (const owner of owners) {
     const call = vi.spyOn(owner, 'call')
     for (const tool of owner.definitions) {

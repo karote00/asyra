@@ -641,7 +641,7 @@
       inputs: ['artifact:shared-publication'],
       outputs: ['artifact:document-publication', 'artifact:document-preparation-failure'],
       conditions: [
-        'Filter local-only channels and derive ordered canonical changes only at the publishing App boundary.',
+        'Filter local-only channels and derive ordered canonical changes only at the publishing App boundary. Heterogeneous Scene batches preserve consecutive operation-family order without changing the source slice. Each source move delivery retains its simultaneous move set; distinct sequential deliveries must not be flattened into one move, including creation/removal-adjacent moves.',
         'Preserve publication, artifact, transaction, semantic slice and publication-level compensation identity; transmit no duplicate raw owner events.',
         'Retain the prepared immutable publication for retries. Receivers consume explicit operations without reconstructing source channel adjacency.',
         'Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff.'

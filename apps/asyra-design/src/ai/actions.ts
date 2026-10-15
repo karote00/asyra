@@ -1,3 +1,4 @@
+import { SelectionTargetUnavailableError } from '../common-apis/selection'
 import {
   toolResultBoolean,
   toolResultCount,
@@ -993,7 +994,7 @@ export const createAiActions = (
       toolResultObject({ selectedCount: toolResultCount })
     ),
     name: AiActionNames.SELECT_ELEMENTS,
-    description: `Select from 1 to ${AI_SELECTION_LIMIT} existing elements.`,
+    description: `Select from 1 to ${AI_SELECTION_LIMIT} existing elements. Any nonexistent ID rejects the entire request and preserves the current selection.`,
     inputSchema: Object.freeze({
       type: 'object',
       additionalProperties: false,
@@ -1013,9 +1014,16 @@ export const createAiActions = (
     }),
     execute: async (args: SelectElementsArgs, context: AiExecutionContext) => {
       assertNotAborted(context)
-      await runAiMutation(context, () =>
-        apis.selectElements([...args.elementIds], mutationOptions)
-      )
+      await runAiMutation(context, () => {
+        assertNotAborted(context)
+        try {
+          apis.selectElements([...args.elementIds], mutationOptions)
+        } catch (error) {
+          if (error instanceof SelectionTargetUnavailableError)
+            throw new AiActionExecutionError(error.message)
+          throw error
+        }
+      })
       return Object.freeze({
         action: AiActionNames.SELECT_ELEMENTS,
         selectedCount: args.elementIds.length

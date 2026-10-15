@@ -1877,3 +1877,26 @@ it('distinguishes queued application from actual canvas execution without admiss
     expect(projection.result().entries).toHaveLength(1)
   }
 })
+
+it('names distinct concurrent operations instead of hiding both behind a count', () => {
+  const projection = createAiActivityProjection({
+    purpose: 'Draw the building'
+  })
+  for (const [index, phase] of ['preparing', 'inspecting'].entries())
+    projection.append({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Owner activity',
+      tool: 'operation',
+      toolStatus: 'running',
+      activity: {
+        kind: 'system',
+        callId: `phase-${index}`,
+        sequence: index + 1,
+        phase: phase as 'preparing' | 'inspecting'
+      }
+    })
+  expect(projection.result().current?.label).toBe(
+    'Preparing geometry - Checking the drawing - 2 operations'
+  )
+})

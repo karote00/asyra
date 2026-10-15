@@ -270,7 +270,7 @@ const projectCallEntry = (
   const message =
     livePurpose(calls)?.message ?? stagePurpose ?? fallback.message
   const descriptions = new Set(leaves.map(([, call]) => call.operationLabel))
-  let label = `Running ${leaves.length} operations`
+  let label = `${[...descriptions].join(' - ')} - ${leaves.length} operations`
   if (leaves.length === 1) label = leaves[0][1].operationLabel
   else if (descriptions.size === 1)
     label = `${leaves[0][1].operationLabel} - ${leaves.length} operations`

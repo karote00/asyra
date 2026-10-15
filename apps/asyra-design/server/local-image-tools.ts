@@ -632,14 +632,9 @@ export const createLocalImageTools = (
           )
             throw new Error('Invalid replacement')
           const mappings = reference.componentMappings ?? []
-          const ovalIds = reference.ovalPathIds ?? []
-          if (!Array.isArray(mappings) || !Array.isArray(ovalIds))
+          if (!Array.isArray(mappings))
             throw new Error('Invalid component selection')
-          if (
-            mappings.length ||
-            ovalIds.length ||
-            reference.analysisIds !== undefined
-          ) {
+          if (mappings.length || reference.analysisIds !== undefined) {
             const receiptIds = reference.analysisIds
             if (
               !Array.isArray(receiptIds) ||
@@ -658,11 +653,7 @@ export const createLocalImageTools = (
                 throw new Error('Missing or mismatched component analysis')
               return report
             })
-            const selections = [
-              ...mappings,
-              ...ovalIds.map((pathId) => ({ pathId, componentType: 'oval' }))
-            ]
-            for (const selection of selections) {
+            for (const selection of mappings) {
               if (
                 !isRecord(selection) ||
                 !evidence.some((analysis) =>

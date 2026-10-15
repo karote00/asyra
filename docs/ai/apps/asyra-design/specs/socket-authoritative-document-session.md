@@ -623,3 +623,48 @@ request removes its waiter without disconnecting the shared document session.
 The App confirms publications already queued at invocation; it waits for storage
 outside that queue, preserves later edits and reports storage separately from
 visual drawing completion. Local-only operation has no persistence claim.
+
+### Bounded bootstrap progress
+
+The Provider guards each finite observed bootstrap stage with the existing 5000ms
+stall deadline: Worker/socket opening, awaiting the first control frame, decoding
+and validation, then delivery to the main thread. The Worker emits ordered,
+one-time socket-open, first-bootstrap-frame and validated-bootstrap boundaries.
+Only the next boundary for the pending generation renews the deadline. Duplicate,
+reordered, stale-generation, ordinary timing and publication events do not renew it.
+At most four bounded waits are possible; no periodic heartbeat extends a stalled
+connection. A received frame is progress, not successful document admission: the
+existing parser, generation, cutoff/tail and Core-load contracts still apply.
+Cancellation and failures release the current Worker and reject the pending session.
+The saved Taipei101 fixture proves a real 183 MB checkpoint can finish decoding
+and handoff after total startup exceeds five seconds without being cancelled as
+an unresponsive socket. This is a correctness repair, not a speed guarantee.
+
+Bootstrap admission checks the socket lifetime before queued work and again after
+asynchronous checkpoint loading, before reserving the Actor. A disconnected reader
+must not become a room peer later or prevent that Actor from reconnecting. This
+preserves live duplicate-Actor rejection and the reserved sequence cutoff.
+
+Queued and executing room admission owns the initialized room until settlement.
+The last peer leaving or the durable watermark advancing cannot retire a room
+while a replacement bootstrap still reads its checkpoint. Success, failure and
+cancellation release admission ownership; ordinary idle retirement requires no
+peers, no admissions and no undurable publications. Explicit Reset still replaces
+the document generation through its own contract.
+
+Checkpoint preparation progress is one exact control milestone emitted after
+successful socket admission and checkpoint preparation, before full READY reply
+encoding. The worker validates this milestone and observes it after first control
+receipt and before full bootstrap decode. It advances only one bounded stall
+stage; it never means connected, editable or durable. Duplicate or post-ready
+milestones fail. Progress is not a substitute for a valid READY checkpoint and
+its existing canonical activation; missing milestones cannot keep a stalled
+session alive. No periodic progress heartbeat or longer timeout is used.
+
+Checkpoint-read cancellation follows caller lifetime. A closed or timed-out
+joining socket releases its admission and aborts its own existing-room read.
+Initial room loading is shared only while live waiters remain: one cancellation
+does not cancel another caller, but the last departure retires the pending entry
+and aborts its backend request. A successor starts fresh; a cancelled initializer
+cannot publish a stale room. This does not cancel durable writes or discard
+undurable publications.

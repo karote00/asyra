@@ -53,37 +53,100 @@ const waitForCollaboration = (page: Page) =>
     )
     .toBe('connected')
 
-test('manual edits, Undo, Redo and document load invalidate canonical inspection evidence', async ({
-  page
-}) => {
-  await page.goto(createTestDocumentIdentity().url)
-  await waitForAppReady(page)
-  await waitForCollaboration(page)
-  expect(await captureEvidence(page)).toBe(true)
-
-  await createRectangle(page)
-  await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
-  expect(await captureEvidence(page)).toBe(true)
-
-  // Selection and viewport changes do not mutate the inspected document.
-  await page.keyboard.press('Escape')
-  await page.keyboard.press('Meta+1')
-  expect(await evidenceIsCurrent(page)).toBe(true)
-
-  await undo(page)
-  await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
-  expect(await captureEvidence(page)).toBe(true)
-  await redo(page)
-  await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
-  expect(await captureEvidence(page)).toBe(true)
-
-  await page.evaluate(async () => {
-    const { core } = await import('../src/testing/runtime-access')
-    const saved = await core.save()
-    core.load(saved)
+test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspection evidence', async ({
+  page,
+  browser
+}, testInfo) => {
+  const remote = await browser.newPage({
+    baseURL: String(testInfo.project.use.baseURL)
   })
-  await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
-  expect(await captureEvidence(page)).toBe(true)
+  try {
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await remote.goto(page.url())
+    await waitForAppReady(remote)
+    await waitForCollaboration(remote)
+    await page.evaluate(async () => {
+      const { startDocumentPublicationCapture, startSharedPublicationCapture } =
+        await import('../src/testing/runtime-access')
+      startDocumentPublicationCapture('inspection-lifecycle-publications')
+      startSharedPublicationCapture('inspection-lifecycle-raw')
+    })
+    expect(await captureEvidence(page)).toBe(true)
+
+    await createRectangle(page)
+    await expect.poll(() => getElementCount(remote)).toBe(1)
+    await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
+    expect(await captureEvidence(page)).toBe(true)
+
+    // Selection and viewport changes do not mutate the inspected document.
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('Meta+1')
+    expect(await evidenceIsCurrent(page)).toBe(true)
+
+    await undo(page)
+    await expect.poll(() => getElementCount(remote)).toBe(0)
+    await expect.poll(() => getElementCount(page)).toBe(0)
+    await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
+    expect(await captureEvidence(page)).toBe(true)
+    await redo(page)
+    await expect.poll(() => getElementCount(remote)).toBe(1)
+    await expect.poll(() => getElementCount(page)).toBe(1)
+    await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
+    expect(await captureEvidence(page)).toBe(true)
+
+    const publications = await page.evaluate(async () => {
+      const { readTestCapture } = await import('../src/testing/runtime-access')
+      return JSON.stringify({
+        document: readTestCapture('inspection-lifecycle-publications'),
+        raw: readTestCapture('inspection-lifecycle-raw')
+      })
+    })
+    const { writeFile } = await import('node:fs/promises')
+    const publicationsPath = test
+      .info()
+      .outputPath('inspection-lifecycle-publications.json')
+    await writeFile(publicationsPath, publications)
+    await test.info().attach('inspection-lifecycle-publications', {
+      path: publicationsPath,
+      contentType: 'application/json'
+    })
+    const expectedDocument = await getCoreDocumentDigest(page)
+    await expect
+      .poll(() => getCoreDocumentDigest(remote))
+      .toEqual(expectedDocument)
+    const loaded = await page.evaluate(async () => {
+      const { core, getActiveCollaborationHandle } =
+        await import('../src/testing/runtime-access')
+      const handle = getActiveCollaborationHandle()
+      if (!handle) throw new Error('Missing connected document owner')
+      const persisted = await handle.confirmPersistence(
+        new AbortController().signal
+      )
+      const saved = await core.save()
+      // Isolate Core load from document publication; session replacement has its own tests.
+      await handle.dispose()
+      core.load(saved)
+      return { persisted, documentId: handle.identity.documentId }
+    })
+    await test.info().attach('isolated-load-document', {
+      body: JSON.stringify(loaded),
+      contentType: 'application/json'
+    })
+    await expect.poll(() => evidenceIsCurrent(page)).toBe(false)
+    expect(await captureEvidence(page)).toBe(true)
+    expect(await getPersistedDocumentDigest(loaded.documentId)).toEqual(
+      expectedDocument
+    )
+    await page.reload()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await expect.poll(() => getElementCount(page)).toBe(1)
+    expect(await getCoreDocumentDigest(page)).toEqual(expectedDocument)
+  } finally {
+    await remote.close()
+  }
 })
 
 test('recorded action stream preserves drawable targets during incremental construction', async ({
@@ -1026,4 +1089,477 @@ test('scoped inspection preserves other tiers and regions through canonical edit
     otherAfterDelete: true,
     afterLoad: false
   })
+})
+
+// The scripted primary agent crosses the real server host and browser runtime.
+// Only the external model and an explicit transport failure are substituted.
+test('public review handoffs retain independent evidence and recover before runtime completion', async ({
+  page
+}) => {
+  const { createLocalOperationTools } =
+    await import('../server/local-operation-tools')
+  const { createLocalToolHost } = await import('../server/local-tool-host')
+  const { createDesignCheckResults } =
+    await import('../server/design-check-results')
+  const { AiActionNames } = await import('../src/constants/ai-actions')
+  const { AiDesignToolIds } = await import('../src/constants/ai-design')
+  type ProviderInput = import('../src/ai/action-batch-protocol').AiProviderInput
+  type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
+  type StoredCheck = import('../server/design-check-results').DesignCheckResult
+  type Entry = import('@asyra/ai-agent-runtime').AiToolStoreEntry
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  const ids = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis } = await import('../src/common-apis')
+    return transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          { type: 'rect', x: 20, y: 20, width: 100, height: 80 },
+          { type: 'rect', x: 220, y: 20, width: 100, height: 80 }
+        ],
+        core.getCurrentWorkspaceId()
+      )
+    )
+  })
+  const [left, right] = ids
+  expect(left).toEqual(expect.any(String))
+  expect(right).toEqual(expect.any(String))
+  const before = await getCoreDocumentDigest(page)
+  let providerCalls = 0
+  let bridgeFailure: unknown
+  const dispatched: string[] = []
+  await page.exposeFunction(
+    'driveReviewHandoff',
+    async (input: ProviderInput) => {
+      providerCalls++
+      const checks = createDesignCheckResults()
+      const entries = new Map<string, Entry>()
+      const controller = new AbortController()
+      let rejectValidation = false
+      let cancelAfterValidation: AbortController | undefined
+      let operations!: ReturnType<typeof createLocalOperationTools>
+      const host = createLocalToolHost({
+        requestId: 'review-handoff',
+        signal: controller.signal,
+        capacity: 32,
+        receiptCapacity: 32,
+        artifactCapacity: 32,
+        limits: {
+          bytes: 24000,
+          steps: 10,
+          bindings: 100,
+          bindingDepth: 32,
+          issues: 10
+        },
+        store: {
+          read: async (key) => entries.get(key),
+          list: async () => [...entries.values()],
+          write: async (value) => {
+            if (entries.get(value.key)?.version !== value.expectedVersion)
+              throw new Error('Conflict')
+            const entry = {
+              key: value.key,
+              record: value.record,
+              version: crypto.randomUUID()
+            }
+            entries.set(value.key, entry)
+            return entry
+          }
+        },
+        createGroups: (ownership) => {
+          operations = createLocalOperationTools(
+            input.actions,
+            {
+              modelActions: (actions) => actions,
+              resolveBatch: (batch) => batch,
+              checkResults: checks
+            },
+            async (batch) => {
+              if (
+                rejectValidation &&
+                batch.actions.some(
+                  (action) =>
+                    action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+                )
+              ) {
+                rejectValidation = false
+                throw new Error(
+                  'Test transport disconnected before read dispatch'
+                )
+              }
+              dispatched.push(...batch.actions.map((action) => action.name))
+              const serializedReceipt = await page.evaluate(
+                async (serialized) => {
+                  const { testRuntimeState } =
+                    await import('../src/testing/runtime-access')
+                  const execute = testRuntimeState.get<
+                    (batch: AiActionBatch) => Promise<Receipt>
+                  >('review-handoff-execute')
+                  if (!execute) throw new Error('Missing real runtime executor')
+                  return JSON.stringify(
+                    await execute(JSON.parse(serialized) as AiActionBatch)
+                  )
+                },
+                JSON.stringify(batch)
+              )
+              const receipt = JSON.parse(serializedReceipt) as Receipt
+              if (
+                cancelAfterValidation &&
+                batch.actions.some(
+                  (action) =>
+                    action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+                )
+              ) {
+                cancelAfterValidation.abort()
+                cancelAfterValidation = undefined
+              }
+              return receipt
+            },
+            {
+              ownership,
+              requestSignal: controller.signal,
+              getNativeTools: () => host.definitions(),
+              getNativeToolsRevision: () => host.revision
+            }
+          )
+          return [
+            {
+              name: 'design_operations',
+              description: 'Design operations',
+              owner: operations
+            }
+          ]
+        }
+      })
+      let callId = 0
+      const invoke = async (
+        name: string,
+        input: unknown,
+        signal?: AbortSignal
+      ) => {
+        const reply = await host.invoke({
+          name: `design_operations.${name}`,
+          input,
+          signal,
+          callId: `call-${++callId}`
+        })
+        return JSON.parse(reply.text)
+      }
+      const capture = async (elementId: string | null) => {
+        const receipt = await invoke(AiActionNames.INSPECT_DRAWING, {
+          arguments: { elementId, view: 'overview' }
+        })
+        const image = receipt.actionResults?.find(
+          (entry: { result: { inspectionId?: string } }) =>
+            entry.result.inspectionId
+        )?.result
+        expect(
+          image,
+          JSON.stringify({ code: receipt.code, message: receipt.message })
+        ).toMatchObject({
+          inspectionId: expect.any(String),
+          available: true
+        })
+        expect(image.image.dataUrl).toMatch(/^data:image\/png;base64,/)
+        return image.inspectionId as string
+      }
+      const judgment = (
+        criterionId: string,
+        inspectionId: string,
+        status = 'pass'
+      ) => ({
+        criterionId,
+        inspectionIds: [inspectionId],
+        status,
+        evidence: `${criterionId} ${status} from the delivered target image`
+      })
+      const review = (
+        phase: string,
+        judgments: ReturnType<typeof judgment>[]
+      ) =>
+        invoke(AiDesignToolIds.REVIEW_DRAWING, {
+          phase,
+          inspectionIds: [
+            ...new Set(judgments.flatMap((check) => check.inspectionIds))
+          ],
+          checks: judgments
+        })
+      const read = async () =>
+        (
+          await invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
+            includePassed: true
+          })
+        ).items as StoredCheck[]
+      const completed: AiActionBatch = {
+        batchId: 'completed',
+        actions: [
+          {
+            id: 'done',
+            name: AiActionNames.REPORT_OUTCOME,
+            arguments: {
+              outcome: 'completed',
+              message: 'Independent checks recovered and completed.'
+            },
+            summary: 'Finish review'
+          }
+        ]
+      }
+      const settled = async () => {
+        await operations.validateCompletion(controller.signal)
+        return operations.settleOutcome(completed)
+      }
+      try {
+        expect(
+          await invoke(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+            phase: 'plan',
+            method: 'Inspect each independent editable part',
+            references: [],
+            criteria: {
+              Left: {
+                requirement: 'Verify the left part',
+                description: 'Check the left rectangle',
+                verification: 'visual'
+              },
+              Right: {
+                requirement: 'Verify the right part',
+                description: 'Check the right rectangle',
+                verification: 'visual'
+              }
+            },
+            structureCriteria: ['Left'],
+            detailRequired: false
+          })
+        ).toMatchObject({ recorded: true })
+        let a = await capture(left)
+        const b = await capture(right)
+        // Existing-content judgments must govern settlement without a synthetic edit.
+        expect(
+          await review('visual', [
+            judgment('Left', a, 'fail'),
+            judgment('Right', b, 'fail')
+          ])
+        ).toMatchObject({ accepted: false })
+        expect((await settled()).actions[0].arguments).toMatchObject({
+          outcome: 'unsupported'
+        })
+        const partial = await review('visual', [judgment('Left', a)])
+        expect(partial).toMatchObject({ accepted: false })
+        expect(JSON.stringify(partial)).toContain(
+          'Right fail from the delivered target image'
+        )
+        expect(await review('visual', [judgment('Right', b)])).toMatchObject({
+          accepted: true
+        })
+        expect(await settled()).toEqual(completed)
+        const passed = await read()
+        const rightPass = passed.find((check) => check.criterionId === 'Right')
+        expect(rightPass).toMatchObject({
+          origin: 'main-agent',
+          status: 'pass'
+        })
+        expect(
+          await review('structure', [judgment('Left', a, 'fail')])
+        ).toMatchObject({ accepted: false })
+        expect((await settled()).actions[0].arguments).toMatchObject({
+          outcome: 'unsupported'
+        })
+        expect(
+          (await read()).find((check) => check.id === rightPass?.id)
+        ).toEqual(rightPass)
+        expect(await review('structure', [judgment('Left', a)])).toMatchObject({
+          accepted: false
+        })
+        expect((await settled()).actions[0].arguments).toMatchObject({
+          outcome: 'unsupported'
+        })
+        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
+          accepted: true
+        })
+        // Reject at the external read boundary, preserving the retained store.
+        const retained = checks.read({ includePassed: true })
+        rejectValidation = true
+        const interrupted = await review('visual', [
+          judgment('Left', a, 'fail')
+        ])
+        expect(
+          interrupted,
+          'Disconnected validation must not publish a judgment'
+        ).not.toMatchObject({ accepted: true })
+        expect(checks.read({ includePassed: true })).toEqual(retained)
+        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
+          accepted: true
+        })
+        const count = dispatched.length
+        const cancelled = new AbortController()
+        cancelled.abort()
+        await expect(
+          invoke(
+            AiActionNames.INSPECT_DRAWING,
+            { arguments: { elementId: left } },
+            cancelled.signal
+          )
+        ).rejects.toThrow()
+        expect(dispatched).toHaveLength(count)
+        expect(checks.read({ includePassed: true })).toEqual(retained)
+        const lateCancel = new AbortController()
+        cancelAfterValidation = lateCancel
+        await expect(
+          invoke(
+            AiDesignToolIds.REVIEW_DRAWING,
+            {
+              phase: 'visual',
+              inspectionIds: [a],
+              checks: [judgment('Left', a, 'fail')]
+            },
+            lateCancel.signal
+          )
+        ).rejects.toThrow()
+        expect(checks.read({ includePassed: true })).toEqual(retained)
+        const unavailable = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          inspections: [
+            { elementId: 'missing-review-target', view: 'overview' }
+          ]
+        })
+        expect(unavailable).toMatchObject({
+          accepted: false,
+          status: 'partial'
+        })
+        expect((await settled()).actions[0].arguments).toMatchObject({
+          outcome: 'unsupported'
+        })
+        a = await capture(left)
+        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
+          accepted: true
+        })
+        await page.evaluate(async () => {
+          const { viewportApis } = await import('../src/common-apis')
+          viewportApis.panTo(900, 900)
+          viewportApis.zoomToCenter(0.25, 0, 0)
+        })
+        expect(await settled()).toEqual(completed)
+        expect(
+          (await read()).find((check) => check.id === rightPass?.id)
+        ).toEqual(rightPass)
+        // A real browser edit changes only the left dependency, not the right pass.
+        const beforeMutationDispatch = dispatched.length
+        const mutation = await invoke('api_core_updateElementProperties', {
+          arguments: { updates: [{ elementId: left, values: { width: 120 } }] },
+          inspection: 'defer'
+        })
+        expect(mutation, JSON.stringify(mutation)).toMatchObject({
+          toolOutcome: { status: 'success' }
+        })
+        expect(mutation).toMatchObject({
+          inspectionDeferred: true,
+          measurementDeferred: false
+        })
+        expect(dispatched.slice(beforeMutationDispatch)).toContain(
+          AiActionNames.REVIEW_DESIGN
+        )
+        expect(dispatched.slice(beforeMutationDispatch)).not.toContain(
+          AiActionNames.INSPECT_DRAWING
+        )
+        expect(
+          await review('visual', [judgment('Left', a)]),
+          'Changed browser dependency must reject old evidence'
+        ).not.toMatchObject({ accepted: true })
+        const changed = await read()
+        expect(changed.find((check) => check.id === rightPass?.id)).toEqual(
+          rightPass
+        )
+        expect(
+          changed.find((check) => check.criterionId === 'Left')?.status
+        ).not.toBe('pass')
+        expect((await settled()).actions[0].arguments).toMatchObject({
+          outcome: 'unsupported'
+        })
+        await invoke('api_core_updateElementProperties', {
+          arguments: { updates: [{ elementId: left, values: { width: 100 } }] },
+          inspection: 'defer'
+        })
+        a = await capture(left)
+        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
+          accepted: true
+        })
+        expect(
+          (await read()).find((check) => check.id === rightPass?.id)
+        ).toEqual(rightPass)
+        expect(
+          dispatched.filter(
+            (name) => name === 'api_core_updateElementProperties'
+          )
+        ).toHaveLength(2)
+        return await settled()
+      } catch (error) {
+        bridgeFailure = error
+        throw error
+      } finally {
+        await host.dispose()
+      }
+    }
+  )
+  const result = await page.evaluate(async () => {
+    const { createAiStartup } = await import('../src/ai/startup')
+    const { createAiConfirmationBroker } =
+      await import('../src/ai/confirmation')
+    const { createAiHistoryProjection } =
+      await import('../src/common-apis/history')
+    const { testRuntimeState } = await import('../src/testing/runtime-access')
+    let providerError: string | undefined
+    const provider: AiProvider = {
+      requestActionBatch: async (input, { executeBatch }) => {
+        try {
+          if (!executeBatch) throw new Error('Missing runtime executor')
+          testRuntimeState.set('review-handoff-execute', executeBatch)
+          return await (
+            window as unknown as {
+              driveReviewHandoff(input: unknown): Promise<AiActionBatch>
+            }
+          ).driveReviewHandoff(JSON.parse(JSON.stringify(input)))
+        } catch (error) {
+          providerError = String(error)
+          throw error
+        }
+      }
+    }
+    const startup = createAiStartup({
+      createProvider: () => provider,
+      createConfirmation: createAiConfirmationBroker,
+      createHistory: createAiHistoryProjection
+    })
+    const { runtime } = startup
+    try {
+      const outcome = await runtime.run({
+        intent: 'Review and correct the two existing parts.',
+        signal: new AbortController().signal
+      })
+      return {
+        status: outcome.status,
+        transaction: 'transaction' in outcome ? outcome.transaction : undefined,
+        final: outcome.audit.actions.at(-1)?.result,
+        providerError
+      }
+    } finally {
+      testRuntimeState.delete('review-handoff-execute')
+      await runtime.dispose()
+      startup.history.dispose()
+      startup.confirmation.dispose()
+    }
+  })
+  if (bridgeFailure) throw bridgeFailure
+  expect(result.providerError).toBeUndefined()
+  expect(result).toMatchObject({
+    status: 'executed',
+    transaction: { status: 'committed' }
+  })
+  expect(result.final).toMatchObject({
+    action: 'report_outcome',
+    outcome: 'completed',
+    persistence: { status: 'durable' }
+  })
+  expect(providerCalls).toBe(1)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
 })

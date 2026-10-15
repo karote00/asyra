@@ -1,3 +1,10 @@
+export const collaborationBootstrapPhases = [
+  'socket-open',
+  'bootstrap-received',
+  'checkpoint-ready',
+  'bootstrap-decoded'
+] as const
+
 import { DocumentPublicationContract } from './app-protocol-types'
 import type {
   ProviderAwarenessDisconnect,
@@ -31,6 +38,7 @@ export const CollaborationMessageTypes = {
   SOURCE_PUBLICATION_SETTLEMENT: 'source-publication-settlement',
   SOURCE_FRAME_ADMITTED: 'source-frame-admitted',
   SOURCE_PUBLICATION_PROPOSED: 'source-publication-proposed',
+  BOOTSTRAP_CHECKPOINT_READY: 'bootstrap-checkpoint-ready',
   READY: 'ready',
   RESPONSE: 'response',
   PUBLICATION: 'publication',
@@ -137,6 +145,10 @@ export interface CollaborationFailurePayload {
   readonly message: string
 }
 
+export interface BootstrapCheckpointReadyMessage {
+  readonly type: typeof CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY
+}
+
 export interface ReadyMessage {
   readonly type: typeof CollaborationMessageTypes.READY
   readonly bootstrap: DocumentSessionBootstrap
@@ -229,6 +241,7 @@ export interface ConnectionErrorMessage extends ProviderFailureMessage {
 }
 
 export type CollaborationServerMessage =
+  | BootstrapCheckpointReadyMessage
   | ReadyMessage
   | SuccessfulResponseMessage
   | FailedResponseMessage
@@ -1702,6 +1715,7 @@ const collaborationControlMessageTypes = new Set<string>([
   CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT,
   CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
   CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED,
+  CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY,
   CollaborationMessageTypes.READY,
   CollaborationMessageTypes.RESPONSE,
   CollaborationMessageTypes.AWARENESS,
@@ -1979,6 +1993,8 @@ export const parseCollaborationServerMessage = (
     return
   }
   switch (value.type) {
+    case CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY:
+      return hasExactOwnKeys(value, ['type']) ? { type: value.type } : undefined
     case CollaborationMessageTypes.READY: {
       const bootstrap = parseDocumentSessionBootstrap(value.bootstrap)
       return bootstrap ? { type: value.type, bootstrap } : undefined

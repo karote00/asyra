@@ -1,3 +1,9 @@
+import * as providerCapabilities from '../local-ai-provider'
+import {
+  parseLocalVectorArtifact,
+  prepareLocalVectorArtifact,
+  LOCAL_VECTOR_REFERENCE_SCHEMA
+} from '../local-vector-artifact'
 import { reviewPlanExample } from '../local-design-review'
 import { createDesignCheckResults } from '../design-check-results'
 import type { ExecutionRecordGap } from '@asyra/ai-agent-runtime'
@@ -1924,16 +1930,7 @@ it('execution proof composes capture and assessment without dropping unavailable
       )
     })
   )
-  const assessVisual = vi.fn(async () => ({
-    overall: { status: 'pass' as const, evidence: 'All required parts match' },
-    checks: [
-      {
-        criterionId: 'view',
-        status: 'pass' as const,
-        evidence: 'Current overview and detail'
-      }
-    ]
-  }))
+  const providerCallsBefore = spawn.mock.calls.length
   const tools = createLocalOperationTools(
     [
       AiActionNames.INSPECT_DRAWING,
@@ -1999,7 +1996,7 @@ it('execution proof composes capture and assessment without dropping unavailable
     }
   })
   expect(failed.next.arguments).not.toHaveProperty('checks')
-  expect(assessVisual).not.toHaveBeenCalled()
+  expect(spawn.mock.calls.length).toBe(providerCallsBefore)
   detailAvailable = true
   const reviewed = await call('review_drawing', {
     phase: 'visual',
@@ -2023,7 +2020,7 @@ it('execution proof composes capture and assessment without dropping unavailable
     })
   ).toMatchObject({ accepted: true })
   expect(captures).toEqual(['drawing', 'drawing', 'detail', 'detail'])
-  expect(assessVisual).not.toHaveBeenCalled()
+  expect(spawn.mock.calls.length).toBe(providerCallsBefore)
 })
 
 it('execution proof binds prepared recipe assessment to immutable source before applying', async () => {
@@ -3023,4 +3020,129 @@ it('execution proof retains deterministic regional image checks without model ev
     })
   ])
   expect(spawn.mock.calls.length).toBe(before)
+})
+
+it('execution proof uses only current conversion and primary judgment contracts', () => {
+  spawn.mockClear()
+  expect
+    .soft(providerCapabilities)
+    .not.toHaveProperty('requestLocalVisualAssessment')
+  expect
+    .soft(LOCAL_VECTOR_REFERENCE_SCHEMA.properties)
+    .not.toHaveProperty('ovalPathIds')
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="40" height="40"><path d="M20,0L40,20L20,40L0,20Z" fill="#008800"/></svg>'
+  )
+  const input = {
+    imageArtifactId: artifact.imageArtifactId,
+    bounds: { x: 0, y: 0, width: 40, height: 40 },
+    compositionRole: 'Mapped part',
+    excludePathIds: []
+  }
+  expect
+    .soft(() =>
+      prepareLocalVectorArtifact(artifact, {
+        ...input,
+        ovalPathIds: ['path-1']
+      })
+    )
+    .toThrow()
+  expect
+    .soft(
+      prepareLocalVectorArtifact(artifact, {
+        ...input,
+        componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
+      }).slices[0].descriptors[0].type
+    )
+    .toBe('oval')
+  const review = createLocalDesignReview()
+  expect.soft(review).not.toHaveProperty('retainAssessment')
+  review.record({
+    phase: 'plan',
+    method: 'Construct the requested part',
+    references: [],
+    criteria: reviewCriteria(['appearance']),
+    structureCriteria: ['appearance'],
+    detailRequired: false
+  })
+  review.mutate()
+  const inspectionIds = [review.inspect('part', true, true)?.inspectionId]
+  const inputReview = {
+    phase: 'visual',
+    final: true,
+    inspectionIds,
+    checks: [
+      {
+        criterionId: 'appearance',
+        status: 'fail',
+        evidence: 'The requested silhouette is incorrect.'
+      }
+    ]
+  }
+  const failed = review.record(inputReview)
+  expect.soft(failed.accepted).toBe(false)
+  expect.soft(failed).not.toHaveProperty('independentAssessment')
+  expect
+    .soft(review.correctionContext().criteria)
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ criterionId: 'appearance' })
+      ])
+    )
+  review.mutate()
+  expect
+    .soft(() =>
+      review.record({
+        ...inputReview,
+        checks: [
+          {
+            criterionId: 'appearance',
+            status: 'pass',
+            evidence: 'Corrected silhouette.'
+          }
+        ]
+      })
+    )
+    .toThrow()
+  const passed = review.record({
+    ...inputReview,
+    inspectionIds: [review.inspect('part', true, true)?.inspectionId],
+    checks: [
+      {
+        criterionId: 'appearance',
+        status: 'pass',
+        evidence: 'Corrected silhouette.'
+      }
+    ]
+  })
+  expect.soft(passed.accepted).toBe(true)
+  expect.soft(passed).not.toHaveProperty('independentAssessment')
+  review.record({
+    ...inputReview,
+    phase: 'structure',
+    final: undefined,
+    inspectionIds: passed.inspectionIds
+  })
+  expect(review.isAccepted()).toBe(false)
+  expect(review.getIssue()).toContain('requested silhouette')
+  expect(review.correctionContext().criteria).toMatchObject([
+    {
+      criterionId: 'appearance',
+      evidence: ['The requested silhouette is incorrect.']
+    }
+  ])
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: passed.inspectionIds,
+      checks: [
+        {
+          criterionId: 'appearance',
+          status: 'pass',
+          evidence: 'Corrected after the structure failure.'
+        }
+      ]
+    })
+  ).toMatchObject({ accepted: true })
+  expect.soft(spawn).not.toHaveBeenCalled()
 })

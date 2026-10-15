@@ -254,7 +254,7 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
       maxItems: LocalComponentAnalysisLimits.receiptIdsPerCall,
       uniqueItems: true,
       description:
-        'Required for componentMappings or ovalPathIds. Use same-request analysis receipts for this artifact and only select eligible path/component pairs.'
+        'Required for componentMappings. Use same-request analysis receipts for this artifact and only select eligible path/component pairs.'
     },
     compositionRole: { type: 'string', minLength: 1, maxLength: 160 },
     componentMappings: {
@@ -273,13 +273,6 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
           }
         }
       }
-    },
-    ovalPathIds: {
-      type: 'array',
-      uniqueItems: true,
-      items: { type: 'string' },
-      description:
-        'Optional IDs of whole single-contour paths that represent intended circles or ellipses. Replace each with one filled native Oval at its mapped bounds, preserving color and order. Do not select irregular artwork, paths with holes, or excluded paths.'
     },
     excludePathIds: {
       type: 'array',
@@ -316,7 +309,6 @@ export const prepareLocalVectorArtifact = (
           'bounds',
           'compositionRole',
           'excludePathIds',
-          'ovalPathIds',
           'componentMappings'
         ].includes(key)
     ) ||
@@ -353,23 +345,10 @@ export const prepareLocalVectorArtifact = (
     [...excluded].some((id) => typeof id !== 'string' || !pathIds.has(id))
   )
     invalid()
-  const ovalIds = input.ovalPathIds === undefined ? [] : input.ovalPathIds
-  if (!Array.isArray(ovalIds)) return invalid()
-  const ovals = new Set(ovalIds)
-  if (
-    ovals.size !== ovalIds.length ||
-    [...ovals].some(
-      (id) => typeof id !== 'string' || !pathIds.has(id) || excluded.has(id)
-    ) ||
-    artifact.paths.some((path) => ovals.has(path.id) && path.rings.length !== 1)
-  )
-    return invalid()
   const mappings =
     input.componentMappings === undefined ? [] : input.componentMappings
   if (!Array.isArray(mappings)) return invalid()
-  const components = new Map<string, VectorComponentType>(
-    [...ovals].map((id) => [id as string, 'oval'])
-  )
+  const components = new Map<string, VectorComponentType>()
   for (const mapping of mappings) {
     if (
       !record(mapping) ||
