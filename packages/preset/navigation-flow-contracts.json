@@ -25,57 +25,112 @@
         {
           "id": "navigation.native",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work retains polygon coverage and analytic material without baking its bounding rectangle"
+          "testName": "unified vector material work retains polygon coverage and analytic material without baking its bounding rectangle",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "navigation.complex",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work preserves canonical coverage for 'concave' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'concave' contours",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.2",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work preserves canonical coverage for 'crossed' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'crossed' contours",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.3",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work preserves canonical coverage for 'star' contours"
+          "testName": "unified vector material work preserves canonical coverage for 'star' contours",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.4",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work keeps radial gradients on the unified material evaluator"
+          "testName": "unified vector material work keeps radial gradients on the unified material evaluator",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.5",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work keeps sharp gradients on the unified material evaluator"
+          "testName": "unified vector material work keeps sharp gradients on the unified material evaluator",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "navigation.precision",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work keeps steep gradients on the unified material evaluator"
+          "testName": "unified vector material work keeps steep gradients on the unified material evaluator",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.7",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work keeps alpha gradients on the unified material evaluator"
+          "testName": "unified vector material work keeps alpha gradients on the unified material evaluator",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "preserve.8",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work keeps degenerate gradients on the unified material evaluator"
+          "testName": "unified vector material work keeps degenerate gradients on the unified material evaluator",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "load.roundoff",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work preserves material for dimension roundoff without changing the source"
+          "testName": "unified vector material work preserves material for dimension roundoff without changing the source",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         },
         {
           "id": "load.size-change",
           "stepId": "evaluate-vector-material",
-          "testName": "unified vector material work preserves actual size differences without raster routing"
+          "testName": "unified vector material work preserves actual size differences without raster routing",
+          "implementationPaths": [
+            "packages/preset/src/components/vector.ts",
+            "packages/preset/src/components/fills.ts",
+            "packages/preset/src/components/vector-compound-fill.ts"
+          ]
         }
       ],
       "handoffs": [

@@ -31,6 +31,7 @@ const validFailureDetails = (value, execution = false) =>
       )
   )
 const DEFAULT_MANIFESTS = [
+  'packages/preset/navigation-flow-contracts.json',
   'packages/render-engine-pixi/navigation-flow-contracts.json',
   'packages/ai-agent-runtime/flow-contracts.json',
   'packages/render/navigation-flow-contracts.json',

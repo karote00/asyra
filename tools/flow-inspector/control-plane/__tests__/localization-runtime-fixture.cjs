@@ -41,6 +41,11 @@ function localizationFixture() {
     path.join(repository, 'apps/asyra-design/src'),
     { recursive: true, force: false }
   )
+  const vectorContract = loadContract(
+    root,
+    undefined,
+    'packages/preset/navigation-flow-contracts.json'
+  )
   const pixiContract = loadContract(
     root,
     undefined,
@@ -52,6 +57,13 @@ function localizationFixture() {
     'packages/ai-agent-runtime/flow-contracts.json'
   )
   for (const file of [
+    ...[
+      'manifestPath',
+      'configFile',
+      'testFile',
+      'architecturePath',
+      'specPath'
+    ].map((key) => vectorContract[key]),
     ...[
       'manifestPath',
       'configFile',
@@ -87,6 +99,7 @@ function localizationFixture() {
   // The proof sandbox contains executable runtime inputs; ordinary observations
   // also fingerprint declared architecture boundaries outside that runtime.
   for (const contract of [
+    vectorContract,
     pixiContract,
     recipeContract,
     loadContract(
@@ -159,6 +172,16 @@ function localizationFixture() {
     pixiMutation.file,
     fs.readFileSync(path.join(repository, pixiMutation.file), 'utf8')
   )
+  const vectorManifest = JSON.parse(
+    fs.readFileSync(path.join(root, vectorContract.manifestPath), 'utf8')
+  )
+  const vectorMutation = vectorManifest.scenarios.find(
+    (item) => item.id === 'omit-retention'
+  ).mutation
+  originals.set(
+    vectorMutation.file,
+    fs.readFileSync(path.join(repository, vectorMutation.file), 'utf8')
+  )
   const config = path.join(directory, 'app.config.mjs')
   fs.writeFileSync(
     config,
@@ -222,6 +245,23 @@ function localizationFixture() {
           })
         })
       `
+      )
+    },
+    mutateVector() {
+      const { file, from, to } = vectorMutation
+      const original = originals.get(file)
+      assert.equal(original.split(from).length, 2)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(path.join(repository, file), original.replace(from, to))
+    },
+    failVectorSourceEntry() {
+      const file = 'packages/core/src/index.ts'
+      const original = fs.readFileSync(path.join(repository, file), 'utf8')
+      originals.set(file, original)
+      fs.chmodSync(path.join(repository, file), 0o600)
+      fs.writeFileSync(
+        path.join(repository, file),
+        original + "\nthrow new Error('Captured Core source failed')\n"
       )
     },
     mutatePixi() {
@@ -354,6 +394,8 @@ function localizationFixture() {
         repository,
         'packages/factory/src/__tests__/flow-proof.config.ts'
       )
+      if (kind === 'vector')
+        configFile = path.join(repository, vectorContract.configFile)
       if (kind === 'pixi')
         configFile = path.join(repository, pixiContract.configFile)
       if (kind === 'recipe')

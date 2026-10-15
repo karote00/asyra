@@ -2287,6 +2287,19 @@ engine independently of Render adapter faults on the same Inspector. Exact test
 identities keep their overlapping flow/case labels distinct, and rerunning one
 source cannot clear the other's unrun failure. Load errors stay execution evidence.
 
+The 11 existing Preset vector material cases are a default observation source
+through `packages/preset/navigation-flow-contracts.json`. They map to
+`evaluate-vector-material` on `render-delta-update`, with exact vector, fills and
+compound-fill implementation paths. The step's authority remains
+`docs/ai/framework/packages/preset.md`. The source-only config supports ordinary
+and captured runs through the declared public Core/Render/Utils dependency closure,
+uses one worker and rejects undeclared workspace imports. The existing coverage-hit
+fault locates `navigation.native`; rerunning a passing same-node sibling cannot
+clear that unrun failure. Full recovery preserves historical evidence. Public
+source-load errors retain their original evidence without inventing a node.
+These cases prove neutral material/coverage projections and canonical-data
+preservation, not GPU output or complete vector geometry behavior.
+
 Optional case `failureDetails` retain the ordered runner-supplied error records:
 name, message, stack, expected, actual and diff as exact strings. Capture these
 before JSON reporter normalization, preserving file/test traversal identity and

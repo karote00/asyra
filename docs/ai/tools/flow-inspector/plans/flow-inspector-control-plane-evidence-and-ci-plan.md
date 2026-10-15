@@ -464,6 +464,90 @@ retained 27 mapped passes with no issues. Final bounded review found no remainin
 actionable issue. This closes only this selected slice; remote CI and user review
 remain separate from local validation.
 
+## Selected Preset vector material coverage - 2026-10-15
+
+Activated after PR #327 merged at `141758c75`, under the Bounded Result-Source
+Slice. Select the 11 existing cases in `packages/preset/src/__tests__/vector-native-fill.test.ts`
+and its navigation manifest/config. Preserve all assertions, case identities,
+handoffs, workspace authority and the existing coverage-hit negative scenario.
+These source-level tests cover engine-neutral material/coverage projections and
+canonical-data preservation, not GPU pixels or all vector geometry behavior.
+
+Readiness review: the existing `evaluate-vector-material` step explicitly cites
+`docs/ai/framework/packages/preset.md`; retain that package specification rather
+than substituting the architecture's historical plan. Exact case locations are
+`components/vector.ts`, `components/fills.ts` and `components/vector-compound-fill.ts`
+within the existing owner boundary. Ordinary execution needs the same public Core,
+Render and Utils source closure already admitted by captured proof. Inspect that
+closure and use exact public root aliases; reject undeclared workspace imports.
+Run the unchanged file in jsdom with one worker. Source capture retains dependency
+admission ownership; no alternate runtime registry or product implementation.
+
+Complete handoff: original Vitest results -> admitted exact case/node/paths ->
+immutable localized observations -> existing API/CLI/Board. The existing hit
+predicate fault must fail only `navigation.native`. A filtered run of a passing
+same-node sibling must leave that failure visible; full recovery updates only
+executed cases and preserves historical failure context. Public Core source-load
+failure stays execution evidence without a guessed node.
+
+Execution cards under CORE_PROOF.md and the core proof Inspector:
+
+1. `admit-proof-contract` / Admission: consume the selected manifest, architecture
+   and unchanged cases. Add only this manifest/config to the admission boundary.
+   Test-first missing precise locations and proof-only startup; output admitted
+   location/reference integrity and ordinary/captured source config. Keep explicit
+   route inputs and contributor boundaries. No runtime result guessing or test
+   assertion rewrites; unresolved contract ownership stops implementation.
+2. `localize-test-results` / Ordinary Test Failure Localization: consume admitted
+   mapping and original runner evidence. Register this source in existing defaults
+   and extend the permanent runtime fixture/tests for the exact hit failure,
+   filtered sibling rerun, full recovery, source-load errors and CLI equality.
+   Preserve unknown/stale/duplicate/incomplete behavior and other targets. No
+   inferred diagnosis, dispatch, accepted-baseline mutation or new cache owner.
+3. `render-proof-board` / Board: project service-owned evidence on the existing
+   render-delta-update canvas. Extend its permanent browser test for owner
+   selection, exact paths/spec/original error, API equality, filtered-run failure
+   retention and historical recovery. Inspect desktop/narrow screenshots and
+   regenerate the catalog. No client-side mapping or conformance decisions.
+
+Each card retains its existing conditions, bypasses, contributors and same-step
+failure owner; reread the matching complete Inspector before advancing. Frozen
+mutation scope: selected manifest/config, core admission boundary, default sources,
+existing admission/runtime/Board tests and fixture, generated catalog, localization
+docs, Changeset and this plan. Discovery is limited to current source/contract
+comparison, the diff/direct consumers and formal selected positive/negative cases.
+No geometry, material, render output, product runtime, other test producer, command
+buttons or comments are authorized. Stop for an out-of-scope product correction.
+
+Gates: test-first admission/localization, focused and full control-plane/Board
+suites, original core proof/candidate, selected Preset proof, package tests,
+scoped lint/format, naming, typecheck, scope/test-placement, generator equality,
+App/tool build and exact-head Changeset check. This closes only this selected
+coverage slice, not the supporting plan.
+
+Completion evidence: admission tests first failed for absent exact paths and
+proof-only startup; ordinary localization tests first failed before default
+registration. After the bounded correction, all 11 unchanged cases pass and map.
+The original coverage-hit negative fails only `navigation.native`, a passing
+same-node filtered rerun retains that failure, and full recovery preserves its
+immutable historical record. Core public-source failure remains unresolved
+execution evidence. CLI/API equality and desktop/narrow Board selection, original
+assertion fields, filtered rerun and historical recovery passed. Browser tests
+explicitly reopen the existing narrow-screen details panel after node framing.
+
+Focused admission/localization/runtime: 72 passed. Full control-plane: 519 passed,
+two environment-conditional cases skipped. Full Board: 24 passed, two retained
+live-provider/GitHub cases skipped. Package: 12 React and 100 contract tests passed;
+scope/test-placement: 68 passed; naming: 15 passed. Scoped ESLint, formatting,
+typecheck, generated catalog equality and App/tool build (21 tasks) passed.
+Original core proof/candidate passed (three flows, five negatives, nine obligations);
+selected Preset proof passed (one flow, one negative, 11 obligations). The documented
+ordinary reporter command passed 11 cases with 11 mapped results and zero issues.
+Evidence is retained under `tmp/flow-inspector/vector/` and the emitted permanent
+fixture artifact paths. Final bounded review preserved case identities, assertions,
+route/handoff/source authority, package spec references and product runtime. No
+remaining in-scope findings; this coverage slice is complete, not the whole plan.
+
 ## Definition of Done
 
 For the selected producer, permanent tests cover passing and failing reports,

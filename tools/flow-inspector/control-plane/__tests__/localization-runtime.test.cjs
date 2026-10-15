@@ -727,3 +727,97 @@ test(
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
 )
+
+test(
+  'ordinary Preset vector faults retain their node through a passing sibling rerun and full recovery',
+  { timeout: 90000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    const baseline = await fixture.run('vector')
+    assert.equal(baseline.result.code, 0, baseline.result.output)
+    assert.equal(baseline.record.cases.length, 11)
+    assert.deepEqual(baseline.record.issues, [])
+    assert.ok(
+      baseline.record.cases.every((item) => item.resolution === 'mapped')
+    )
+    fixture.mutateVector()
+    const fault = await fixture.run('vector')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    const failed = fault.record.cases.filter((item) => item.status === 'failed')
+    assert.equal(failed.length, 1)
+    const location = failed[0].locations[0]
+    assert.equal(location.targetId, 'render-delta-update')
+    assert.equal(location.stepId, 'evaluate-vector-material')
+    assert.equal(location.caseId, 'navigation.native')
+    assert.equal(location.specPath, 'docs/ai/framework/packages/preset.md')
+    assert.ok(location.specRefs.includes(location.specPath))
+    assert.deepEqual(location.implementationPaths, [
+      'packages/preset/src/components/vector.ts',
+      'packages/preset/src/components/fills.ts',
+      'packages/preset/src/components/vector-compound-fill.ts'
+    ])
+    assert.ok(
+      failed[0].failureDetails.some(
+        (error) =>
+          error.message && error.stack && error.expected && error.actual
+      )
+    )
+    const sibling = await fixture.run('vector', [
+      '--testNamePattern',
+      'keeps radial gradients'
+    ])
+    assert.equal(sibling.result.code, 0, sibling.result.output)
+    assert.equal(
+      sibling.record.cases.filter((item) => item.status === 'passed').length,
+      1
+    )
+    const currentFailures = () =>
+      fixture.reader
+        .list()
+        .currentCases.filter((item) => item.status === 'failed')
+    assert.deepEqual(
+      currentFailures().map((item) => item.id),
+      [failed[0].id]
+    )
+    const output = []
+    assert.equal(
+      await main(['test-results', fault.record.id], {
+        repositoryRoot: fixture.repository,
+        write: (line) => output.push(line)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(output.join('')), fault.record)
+    fixture.restore()
+    const recovery = await fixture.run('vector')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+    assert.equal(currentFailures().length, 0)
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+    t.diagnostic('Vector evidence: ' + fixture.directory)
+  }
+)
+
+test(
+  'Preset vector execution uses public Core source and retains setup failure without a guessed node',
+  { timeout: 60000 },
+  async (t) => {
+    const fixture = localizationFixture()
+    t.after(() => fixture.restore())
+    fixture.failVectorSourceEntry()
+    const fault = await fixture.run('vector')
+    assert.equal(fault.result.code, 1, fault.result.output)
+    assert.match(fault.record.issues.join(' '), /Captured Core source failed/)
+    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
+    fixture.restore()
+    const recovery = await fixture.run('vector')
+    assert.equal(recovery.result.code, 0, recovery.result.output)
+    assert.equal(
+      recovery.record.cases.filter((item) => item.resolution === 'mapped')
+        .length,
+      11
+    )
+    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+  }
+)

@@ -103,13 +103,16 @@ node node_modules/vitest/vitest.mjs run --config packages/ai-agent-runtime/src/_
 # Existing Pixi engine adapter assertions (27 cases; mocked Pixi, no GPU proof).
 node node_modules/vitest/vitest.mjs run --config packages/render-engine-pixi/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
 
+# Existing Preset vector material assertions (11 engine-neutral source cases).
+node node_modules/vitest/vitest.mjs run --config packages/preset/src/__tests__/navigation-flow.config.ts --reporter=default --reporter=./tools/flow-inspector/control-plane/vitest-reporter.mjs
+
 # Human and agent clients read the same retained context; no proof lock is needed.
 node tools/flow-inspector/control-plane/cli.cjs test-results
 node tools/flow-inspector/control-plane/cli.cjs test-results <run-id>
 node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 test-results <run-id>
 ```
 
-Open `/reusable-tool-composition`, `/render-engine-boundary`, `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
+Open `/render-delta-update`, `/reusable-tool-composition`, `/render-engine-boundary`, `/ai-execution-flow`, `/history-replay`, `/history-shortcut` or `/transaction-atomicity` on the
 local Board. The
 **Test failure locations** section lists all observed failures, including
 unmapped failures. Selecting a mapped failure focuses its declared owner card
@@ -165,6 +168,19 @@ GPU pixels or complete rendering behavior. Transform-group faults locate the
 engine independently of Render adapter faults on the same Inspector. Exact test
 identities keep their overlapping flow/case labels distinct, and rerunning one
 source cannot clear the other's unrun failure. Load errors stay execution evidence.
+
+The 11 existing Preset vector material cases are a default observation source
+through `packages/preset/navigation-flow-contracts.json`. They map to
+`evaluate-vector-material` on `render-delta-update`, with exact vector, fills and
+compound-fill implementation paths. The step's authority remains
+`docs/ai/framework/packages/preset.md`. The source-only config supports ordinary
+and captured runs through the declared public Core/Render/Utils dependency closure,
+uses one worker and rejects undeclared workspace imports. The existing coverage-hit
+fault locates `navigation.native`; rerunning a passing same-node sibling cannot
+clear that unrun failure. Full recovery preserves historical evidence. Public
+source-load errors retain their original evidence without inventing a node.
+These cases prove neutral material/coverage projections and canonical-data
+preservation, not GPU output or complete vector geometry behavior.
 
 Other tests remain explicitly unmapped. Exact implementation
 paths are provided where declared; otherwise the responsible step boundary is
