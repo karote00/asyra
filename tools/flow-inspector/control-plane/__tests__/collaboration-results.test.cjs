@@ -1077,3 +1077,97 @@ test('stored observation capacity includes the actual formatted envelope', () =>
   assert.equal(record.report.metadata, undefined)
   assert.ok(record.issues.some((issue) => issue.includes('32 MiB')))
 })
+
+test('ordinary guarded skips do not turn a completed collaboration invocation into a runner failure', () => {
+  const { normalizeReport } = require('../playwright-results.cjs')
+  const f = collaborationReport()
+  const skipped = structuredClone(f.report.suites[0].specs[0])
+  skipped.id = 'guarded-case'
+  skipped.title = 'guarded case'
+  skipped.tests[0].results = [
+    { status: 'skipped', retry: 0, errors: [], attachments: [] }
+  ]
+  f.report.suites[0].specs.push(skipped)
+  const normalized = normalizeReport(root, f.context, f.report)
+  assert.equal(normalized.report.success, true)
+  assert.deepEqual(
+    normalized.report.testResults.map(
+      (item) => item.assertionResults[0].status
+    ),
+    ['passed', 'skipped']
+  )
+  assert.deepEqual(normalized.options.errors, [])
+  skipped.tests[0].results[0].errors = [
+    { message: 'original skipped-attempt error' }
+  ]
+  assert.equal(normalizeReport(root, f.context, f.report).report.success, false)
+})
+
+test(
+  'terminating the collaboration wrapper settles its owned runner descendants',
+  { timeout: 15000 },
+  (t) => {
+    const { spawnSync } = require('node:child_process')
+    const directory = fs.mkdtempSync(
+      path.join(root, 'tmp/flow-inspector/collaboration-descendants-')
+    )
+    const bin = path.join(directory, 'bin')
+    fs.mkdirSync(bin)
+    const pidFile = path.join(directory, 'child.pid')
+    fs.writeFileSync(
+      path.join(bin, 'node'),
+      `#!/bin/bash
+if [ "$1" = tools/flow-inspector/control-plane/playwright-results.cjs ]; then
+  if [ "$2" = begin ]; then echo '{"id":"owned-run"}' > "$3.context.json"; fi
+  exit 0
+fi
+exec '${process.execPath}' "$@"
+`,
+      { mode: 0o755 }
+    )
+    fs.writeFileSync(
+      path.join(bin, 'yarn'),
+      `#!/bin/bash
+'${process.execPath}' -e 'process.on("SIGTERM", () => {}); require("node:fs").writeFileSync(process.env.OWNED_PID_FILE, String(process.pid)); setInterval(() => {}, 1000)' >/dev/null 2>&1 &
+while [ ! -f "$OWNED_PID_FILE" ]; do sleep 0.01; done
+kill -TERM "$PPID"
+wait
+`,
+      { mode: 0o755 }
+    )
+    t.after(() => {
+      if (fs.existsSync(pidFile)) {
+        try {
+          process.kill(Number(fs.readFileSync(pidFile)), 'SIGKILL')
+        } catch {
+          // A settled child is already absent.
+        }
+      }
+    })
+    const result = spawnSync(
+      '/bin/bash',
+      ['scripts/run-collaboration-e2e.sh'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 10000,
+        maxBuffer: 8192,
+        env: {
+          ...process.env,
+          PATH: bin + path.delimiter + process.env.PATH,
+          OWNED_PID_FILE: pidFile,
+          FLOW_CI_REPORT: path.join(directory, 'report.json')
+        }
+      }
+    )
+    assert.equal(result.status, 143, result.stdout + result.stderr)
+    const pid = Number(fs.readFileSync(pidFile))
+    const state = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], {
+      encoding: 'utf8'
+    }).stdout.trim()
+    assert.ok(
+      !state || state.startsWith('Z'),
+      'Owned runner descendant remains live: ' + pid + ' (' + state + ')'
+    )
+  }
+)

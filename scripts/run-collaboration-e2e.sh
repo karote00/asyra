@@ -13,7 +13,10 @@ cleanup() {
   COLLABORATION_EXIT_CODE=$?
   trap - EXIT INT TERM
   if [ -n "$COLLABORATION_RUN_PID" ]; then
-    kill -TERM "$COLLABORATION_RUN_PID" 2>/dev/null || true
+    # The runner owns a separate job group, including Playwright workers/servers.
+    kill -TERM -- "-$COLLABORATION_RUN_PID" 2>/dev/null || true
+    sleep 0.1
+    kill -KILL -- "-$COLLABORATION_RUN_PID" 2>/dev/null || true
     wait "$COLLABORATION_RUN_PID" 2>/dev/null || true
   fi
   if [ "$COLLABORATION_OBSERVATION" = 1 ]; then
@@ -30,6 +33,9 @@ node tools/flow-inspector/control-plane/playwright-results.cjs begin "$FLOW_CI_R
 COLLABORATION_OBSERVATION=1
 FLOW_OBSERVATION_ID="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).id)' "$FLOW_CI_REPORT.context.json")"
 export FLOW_OBSERVATION_ID
+# Job control gives this invocation its own process group without affecting
+# other project services or the caller's process group.
+set -m
 PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn workspace @asyra/asyra-design playwright test --config playwright.collaboration.config.ts "$@" --reporter=line,json &
 COLLABORATION_RUN_PID=$!
 wait "$COLLABORATION_RUN_PID"

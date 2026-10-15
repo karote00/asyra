@@ -296,7 +296,11 @@ function normalizeReport(root, context, original) {
       success:
         !errors.length &&
         testResults.every((s) =>
-          s.assertionResults.every((a) => a.status === 'passed')
+          s.assertionResults.every(
+            (a) =>
+              a.status === 'passed' ||
+              (a.status === 'skipped' && a.failureMessages.length === 0)
+          )
         )
     },
     options: {

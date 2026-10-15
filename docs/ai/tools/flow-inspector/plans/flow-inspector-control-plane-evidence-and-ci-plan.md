@@ -1394,3 +1394,46 @@ Stage C command buttons/comments remains optional and needs separate activation.
 Universal repository coverage, root-cause inference, debugging/repair automation,
 ADE and task dispatch remain outside this stage. The three guarded collaboration
 cases are mapped but their high-detail/media behavior was not executed here.
+
+### PR #334 whole-stage review
+
+Review baseline: `adffbf503`; association remains Stage B in the consolidated
+roadmap. Discovery is bounded to the full PR diff, the 17/87 frozen inventories,
+original producer/configuration/CI handoffs, localization and Board/API/CLI direct
+consumers, and existing evidence. No runtime behavior, new coverage domain or
+Stage C capability is authorized. Existing successful product runs remain valid
+where inputs are unchanged; focused regression tests cover review corrections.
+
+Execution card - `localize-test-results`: preserve original outcomes, participant
+identity and immutable history; distinguish clean guarded skips from runner
+failure and settle the original producer's owned descendants on interruption.
+Inputs are the same original report and invocation; outputs are completed or
+explicitly incomplete observations, with no fabricated recovery. Existing shell,
+adapter and collaboration regression files are the implementation boundary.
+Failure owner is localization, not a product node. The two new formal tests fail
+on the review baseline: clean pass/skip reports claim runner failure, and a live
+TERM-resistant child survives wrapper termination. Fix those owners, then run
+normalization/localization, shell exit/descendant, retained-report and admission
+checks, scoped lint and shell syntax. Preserve passing/failed case distinctions,
+resource guards and original nonzero exits. Stop for out-of-scope product defects.
+
+Review correction results: both reproduced defects are fixed. Clean skipped
+cases remain skipped/unverified while a clean mixed pass/skip invocation no
+longer gains a spurious runner error; skipped attempts containing original errors
+still prevent successful completion. The collaboration wrapper creates an owned
+job group and settles descendants with bounded TERM/KILL before finalization,
+retaining the original exit status. The permanent regression includes a child
+that ignores TERM and confirms it cannot remain live after cancellation.
+
+Affected admission/localization/Playwright/collaboration checks: 99 passed,
+52 opt-in skips, zero failures, including historical complete-report ingestion
+and existing Design partial-recovery proofs. Catalog contracts: eight passed.
+Scoped ESLint, shell syntax and diff checks passed. No full collaboration or
+seven-configuration product suite was repeated. Final review found no further
+concrete defect within the frozen Stage B scope.
+
+The initial PR head's remote Board job failed during dependency installation
+before test execution (`Yarn 4.3.1: onCancel handler attached after promise
+settled`). This infrastructure failure is not evidence that Board behavior
+failed; no dependency/runtime upgrade or unrelated workaround is introduced.
+Remote checks for the corrected head must be assessed separately.
