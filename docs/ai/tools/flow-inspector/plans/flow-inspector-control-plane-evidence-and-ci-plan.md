@@ -771,3 +771,12 @@ scenarios and nine obligations. Final focused producer/workflow checks cover the
 last CI context correction. Required exact-head Changeset admission and remote
 publication are recorded with the PR; remote CI remains separate from local
 completion. The broader support plan is still open for its next bounded slice.
+
+PR #330 stage review found two incomplete-evidence paths at
+`localize-test-results`: structural report loss could leave an earlier clean
+case with passing authority, and failed attachment retention did not invalidate
+passing cases. Permanent regressions reproduced both before correction. The
+adapter now withholds recovery when traversal or attachment retention is
+incomplete, preserves original failures and reports, and still permits a later
+complete clean invocation to retire the failure without rewriting history.
+The selected mapping and next-stage scope remain unchanged.

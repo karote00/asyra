@@ -287,6 +287,57 @@ function observationFixture(t) {
   }
 }
 
+test('structurally incomplete reports cannot retire failures regardless of traversal order', (t) => {
+  const fixture = observationFixture(t)
+  const {
+    createObservationReader,
+    observationDirectory
+  } = require('../localization.cjs')
+  const first = fixture.start().finish(report())
+  for (const before of [true, false]) {
+    for (const damage of ['suite', 'spec', 'empty-spec', 'case', 'children']) {
+      const input = report([
+        { status: 'passed', retry: 0, errors: [], attachments: [] }
+      ])
+      const suite = input.suites[0].suites[0]
+      const spec = suite.specs[0]
+      spec.tests[0].status = 'expected'
+      const insert = (items, value) =>
+        before ? items.unshift(value) : items.push(value)
+      if (damage === 'suite') insert(input.suites, null)
+      if (damage === 'spec') insert(suite.specs, { ...spec, tests: null })
+      if (damage === 'empty-spec') insert(suite.specs, { ...spec, tests: [] })
+      if (damage === 'case')
+        insert(spec.tests, { ...spec.tests[0], results: null })
+      if (damage === 'children') suite.suites = {}
+      const record = fixture.start().finish(input)
+      assert.ok(record.issues.length)
+      assert.equal(
+        record.cases.some((item) => item.status === 'passed'),
+        false,
+        damage
+      )
+      assert.deepEqual(record.report.suites, input.suites)
+    }
+  }
+  const reader = createObservationReader(
+    observationDirectory(fixture.repository)
+  )
+  assert.ok(
+    reader.list().currentCases.some((item) => item.id === first.cases[0].id)
+  )
+  const clean = report([
+    { status: 'passed', retry: 0, errors: [], attachments: [] }
+  ])
+  clean.suites[0].suites[0].specs[0].tests[0].status = 'expected'
+  assert.equal(fixture.start().finish(clean).cases[0].status, 'passed')
+  assert.equal(
+    reader.list().currentCases.some((item) => item.status === 'failed'),
+    false
+  )
+  assert.deepEqual(reader.get(first.id), first)
+})
+
 test('missing output, changed source and mismatched CI integration retain prior failures and original history', (t) => {
   const fs = require('node:fs')
   const {
@@ -352,6 +403,38 @@ test('finalization refuses reuse and makes missing attachment bytes explicit wit
     () => complete(fixture.repository, invocation.reportPath),
     /already completed/
   )
+})
+
+test('unavailable attachment evidence cannot establish recovery from a passing report', (t) => {
+  const fixture = observationFixture(t)
+  const {
+    createObservationReader,
+    observationDirectory
+  } = require('../localization.cjs')
+  const failure = fixture.start().finish(report())
+  const input = report([
+    {
+      status: 'passed',
+      retry: 0,
+      errors: [],
+      attachments: [
+        { name: 'trace', path: 'apps/asyra-design/test-results/missing.zip' }
+      ]
+    }
+  ])
+  input.suites[0].suites[0].specs[0].tests[0].status = 'expected'
+  const record = fixture.start().finish(input)
+  assert.ok(
+    record.issues.some((issue) => issue.includes('attachment unavailable'))
+  )
+  assert.notEqual(record.cases[0].status, 'passed')
+  const reader = createObservationReader(
+    observationDirectory(fixture.repository)
+  )
+  assert.ok(
+    reader.list().currentCases.some((item) => item.id === failure.cases[0].id)
+  )
+  assert.deepEqual(reader.get(failure.id), failure)
 })
 
 test('Playwright primary error stack survives alongside its formatted JSON error message', () => {

@@ -13,6 +13,13 @@ const errorDetails = (error) =>
     ).map((key) => [key, error[key]])
   )
 
+function invalidatePassingResults(report) {
+  report.success = false
+  for (const suite of report.testResults)
+    for (const assertion of suite.assertionResults)
+      if (assertion.status === 'passed') assertion.status = 'unknown'
+}
+
 // Convert once at ingestion. Readers and the canvas consume the retained mapping.
 // Keep the complete original report separately from this runner-neutral projection.
 function normalizeReport(root, context, original) {
@@ -50,32 +57,38 @@ function normalizeReport(root, context, original) {
     errors.push(String(error?.stack ?? error?.message ?? error))
     executionFailureDetails.push(errorDetails(error))
   }
-  const executionIncomplete = errors.length > 0
+  let executionIncomplete = errors.length > 0
+  const incompleteStructure = (message) => {
+    executionIncomplete = true
+    errors.push(message)
+  }
   const walk = (suites, parents = [], depth = 0) => {
     if (depth > 64) {
-      errors.push('Playwright suite nesting exceeds the observation limit')
+      incompleteStructure(
+        'Playwright suite nesting exceeds the observation limit'
+      )
       return
     }
     if (!Array.isArray(suites)) {
-      errors.push('Malformed Playwright suites')
+      incompleteStructure('Malformed Playwright suites')
       return
     }
     for (const suite of suites) {
       if (!suite || typeof suite !== 'object') {
-        errors.push('Malformed Playwright suite')
+        incompleteStructure('Malformed Playwright suite')
         continue
       }
       if (!string(suite.title) || !Array.isArray(suite.specs))
-        errors.push('Malformed Playwright suite')
+        incompleteStructure('Malformed Playwright suite')
       let titles = depth === 0 ? parents : [...parents, suite.title]
       if (!string(suite.title)) titles = [...parents, '(unavailable suite)']
       for (const spec of Array.isArray(suite.specs) ? suite.specs : []) {
-        if (!spec || !Array.isArray(spec.tests)) {
-          errors.push('Malformed Playwright spec')
+        if (!spec || !Array.isArray(spec.tests) || !spec.tests.length) {
+          incompleteStructure('Malformed Playwright spec')
           continue
         }
         if (!string(spec.title) || !string(spec.file))
-          errors.push('Malformed Playwright spec identity')
+          incompleteStructure('Malformed Playwright spec identity')
         const title = string(spec.title)
           ? spec.title
           : '(unavailable test title)'
@@ -98,7 +111,7 @@ function normalizeReport(root, context, original) {
         }
         for (const [testIndex, item] of spec.tests.entries()) {
           if (!item || !Array.isArray(item.results)) {
-            errors.push('Malformed Playwright case: ' + spec.title)
+            incompleteStructure('Malformed Playwright case: ' + spec.title)
             continue
           }
           const details = [],
@@ -196,6 +209,9 @@ function normalizeReport(root, context, original) {
     }
   }
   if (Array.isArray(original?.suites)) walk(original.suites)
+  // Structural loss can hide a duplicate case, even after a clean case was read.
+  // Only a completely traversable report can establish passing authority.
+  if (executionIncomplete) invalidatePassingResults({ testResults })
   if (!testResults.length) errors.push('No Playwright cases recorded')
   return {
     report: {
@@ -285,6 +301,7 @@ function complete(root, reportPath) {
   // Report references are evidence, never arbitrary paths to read or execute.
   const retainedArtifacts = []
   let retainedBytes = 0
+  let attachmentsIncomplete = false
   const inspectAttachments = (suites, depth = 0) => {
     if (depth > 64) return
     for (const suite of Array.isArray(suites) ? suites : []) {
@@ -331,6 +348,7 @@ function complete(root, reportPath) {
                   digest: createHash('sha256').update(bytes).digest('hex')
                 })
               } catch (error) {
+                attachmentsIncomplete = true
                 normalized.options.errors.push(
                   'Playwright attachment unavailable: ' +
                     String(attachment?.name ?? '') +
@@ -346,6 +364,7 @@ function complete(root, reportPath) {
     }
   }
   inspectAttachments(original?.suites)
+  if (attachmentsIncomplete) invalidatePassingResults(normalized.report)
   const environment = context.command?.environment ?? {}
   const identityKeys = [
     'REPOSITORY',
