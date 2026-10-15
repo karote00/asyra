@@ -170,6 +170,47 @@
         "from": "if (round >= iteration.maxIterations)",
         "to": "if (false)"
       }
+    },
+    {
+      "id": "copy-registration-receipt",
+      "title": "Lose registration receipt identity",
+      "expectedFailedCaseIds": [
+        "register.handoff"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/tool-library.ts",
+        "from": "return previous.result",
+        "to": "return { ...previous.result }"
+      }
+    },
+    {
+      "id": "omit-invocation-calls",
+      "title": "Omit invocation call inventory",
+      "expectedFailedCaseIds": [
+        "invoke.handoff",
+        "persist.handoff",
+        "invoke.iteration",
+        "persist.iteration",
+        "persist.iteration-resume"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/recipe-execution.ts",
+        "from": "calls: Object.freeze(records.slice(start))",
+        "to": "calls: Object.freeze([])"
+      }
+    },
+    {
+      "id": "omit-reload-name",
+      "title": "Omit reloaded tool identity",
+      "expectedFailedCaseIds": [
+        "persist.handoff",
+        "persist.iteration"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/tool-store.ts",
+        "from": "loaded.push(record.contract.name)",
+        "to": "loaded.push('')"
+      }
     }
   ]
 }
