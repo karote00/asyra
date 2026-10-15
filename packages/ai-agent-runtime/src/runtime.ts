@@ -1411,6 +1411,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         evidence = { ...evidence, executionStarted: true }
         const actionResults: AiActionExecutionResult[] = []
         for (const action of confirmed.actions) {
+          const actionCallId = globalThis.crypto.randomUUID()
           const description = action.summary
           const authored =
             description &&
@@ -1425,9 +1426,10 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           emitProgress({
             ...(authored
               ? {
+                  toolStatus: 'running' as const,
                   activity: {
                     kind: 'work' as const,
-                    callId: action.id,
+                    callId: actionCallId,
                     sequence: 0
                   }
                 }
@@ -1447,7 +1449,9 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           failedActionId = action.id
           actionStartedAt = performance.now()
           recording?.trace('action_started', {
-            callId: action.id,
+            actionId: action.id,
+            batchId: confirmed.batchId,
+            callId: actionCallId,
             actionName: action.name,
             actor: 'app',
             purpose: action.summary,
@@ -1458,10 +1462,10 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             ? async (mutate, settled) => {
                 const executor = runMutation
                 if (!executor) throw new AiExecutionError()
-                const callId = `${action.id}:mutation-${++childSequence}`
+                const callId = `${actionCallId}:mutation-${++childSequence}`
                 const endAdmission = recording?.span({
                   callId: `${callId}:admission`,
-                  parentCallId: action.id,
+                  parentCallId: actionCallId,
                   owner: 'app',
                   purpose: 'Await mutation admission'
                 })
@@ -1472,7 +1476,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     endAdmission?.()
                     const endMutation = recording?.span({
                       callId,
-                      parentCallId: action.id,
+                      parentCallId: actionCallId,
                       owner: 'app',
                       purpose: 'Apply canonical mutation'
                     })
@@ -1499,8 +1503,8 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                   emitProgress({ ...update, attempt, tool: action.name }),
                 observe: async (stage, purpose, work) => {
                   const end = recording?.span({
-                    callId: `${action.id}:${stage}-${++childSequence}`,
-                    parentCallId: action.id,
+                    callId: `${actionCallId}:${stage}-${++childSequence}`,
+                    parentCallId: actionCallId,
                     owner: 'app',
                     purpose
                   })
@@ -1513,16 +1517,35 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               }
             )
             recording?.trace('action_completed', {
-              callId: action.id,
+              actionId: action.id,
+              batchId: confirmed.batchId,
+              callId: actionCallId,
               actionName: action.name,
               result: completed.actionResults[0]?.result
             })
           } catch (error) {
             recording?.trace('action_failed', {
-              callId: action.id,
+              actionId: action.id,
+              batchId: confirmed.batchId,
+              callId: actionCallId,
               actionName: action.name
             })
             throw error
+          } finally {
+            if (authored)
+              emitProgress({
+                attempt,
+                batchId: confirmed.batchId,
+                phase: 'execution',
+                tool: action.name,
+                toolStatus: 'completed',
+                summary: 'Action execution ended',
+                activity: {
+                  kind: 'system',
+                  callId: actionCallId,
+                  sequence: 0
+                }
+              })
           }
           allResults.push(...completed.actionResults)
           actionResults.push(...completed.actionResults)

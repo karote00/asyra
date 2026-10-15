@@ -128,9 +128,11 @@ describe('AI Agent conversation panel intent boundary', () => {
           message
         })
       )
-      expect(
-        screen.getByRole('status', { name: 'Current activity' }).textContent
-      ).toBe(message)
+      const current = within(
+        screen.getByRole('status', { name: 'Current activity' })
+      )
+      expect(current.getByText('Refining the design')).toBeTruthy()
+      expect(current.getByText(message).textContent).toBe(message)
       expect(
         within(screen.getByLabelText('Operational progress'))
           .getByText(message)

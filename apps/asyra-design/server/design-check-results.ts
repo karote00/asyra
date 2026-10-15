@@ -161,7 +161,10 @@ export const createDesignCheckResults = () => {
           result.scope !== undefined ||
           result.supersedes !== undefined ||
           Object.keys(result.dependencies).some(
-            (key) => key !== 'scene' && !key.startsWith('criterion:')
+            (key) =>
+              key !== 'scene' &&
+              key !== 'coverage:whole-view' &&
+              !key.startsWith('criterion:')
           )
         )
           throw new Error(

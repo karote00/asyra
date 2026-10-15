@@ -1862,8 +1862,8 @@ it('execution proof preserves concrete work through progress and settlement', as
     // Assertions must escape the conversation's intentional feature-error boundary.
     expect(featureCompleted).toBe(true)
     expect(checkpoints).toEqual([
-      { label: '', message: 'Inspect roof bounds' },
-      { label: '', message: 'Adjusting the roof color' },
+      { label: 'Checking the drawing', message: 'Inspect roof bounds' },
+      { label: 'Refining the design', message: 'Adjusting the roof color' },
       { label: 'Processing your request' },
       expect.objectContaining({
         phaseLabel: 'Processing your request',
@@ -1946,8 +1946,20 @@ it('execution proof composes capture and assessment without dropping unavailable
   const signal = new AbortController().signal
   const call = async (name: string, args: unknown) =>
     JSON.parse(await tools.call(name, args, signal))
-  await call('define_design_criteria', {
-    phase: 'plan',
+  const beforeCriteria = await call('review_drawing', {
+    phase: 'visual',
+    inspections: [{ elementId: 'drawing' }]
+  })
+  expect(beforeCriteria.next.tool).toBe('define_design_criteria')
+  expect(beforeCriteria.next.requiredInputs).toEqual([
+    'method',
+    'references',
+    'criteria',
+    'detailRequired'
+  ])
+  expect(beforeCriteria.inspectionIds).toHaveLength(1)
+  await call(beforeCriteria.next.tool, {
+    ...beforeCriteria.next.arguments,
     method: 'Compare the requested drawing',
     references: [],
     criteria: reviewCriteria(['view']),
@@ -1974,6 +1986,19 @@ it('execution proof composes capture and assessment without dropping unavailable
     inspectionIds: [expect.any(String)],
     failedInspections: [{ inspection: detail }]
   })
+  expect(failed.coverage.pending).toEqual(
+    expect.arrayContaining([expect.objectContaining({ criterionId: 'view' })])
+  )
+  expect(failed.next).toMatchObject({
+    tool: 'review_drawing',
+    requiredInputs: ['checks'],
+    arguments: {
+      phase: 'visual',
+      final: false,
+      inspectionIds: failed.inspectionIds
+    }
+  })
+  expect(failed.next.arguments).not.toHaveProperty('checks')
   expect(assessVisual).not.toHaveBeenCalled()
   detailAvailable = true
   const reviewed = await call('review_drawing', {
@@ -1983,6 +2008,13 @@ it('execution proof composes capture and assessment without dropping unavailable
     inspections: [detail]
   })
   expect(reviewed.accepted).toBe(false)
+  const partial = await call(reviewed.next.tool, {
+    ...reviewed.next.arguments,
+    checks
+  })
+  expect(partial.accepted).toBe(false)
+  expect(partial.coverage.passed).toBe(1)
+  expect(partial.results.counts.pass).toBeGreaterThan(0)
   expect(
     await call('review_drawing', {
       phase: 'visual',
@@ -1990,7 +2022,7 @@ it('execution proof composes capture and assessment without dropping unavailable
       inspectionIds: reviewed.inspectionIds
     })
   ).toMatchObject({ accepted: true })
-  expect(captures).toEqual(['drawing', 'detail', 'detail'])
+  expect(captures).toEqual(['drawing', 'drawing', 'detail', 'detail'])
   expect(assessVisual).not.toHaveBeenCalled()
 })
 
@@ -2401,6 +2433,7 @@ it('execution proof reconciles scoped criterion results after external edits wit
 
 it('execution proof retains regional units without requiring global coverage for local review', async () => {
   let sequence = 0
+  let coverageComplete = true
   const invalid = new Set<string>()
   const captured: string[] = []
   const validations: Record<string, unknown>[] = []
@@ -2419,7 +2452,7 @@ it('execution proof retains regional units without requiring global coverage for
           result = {
             current: !invalid.has(args.evidence?.receiptId ?? ''),
             validatedAt: { sessionId: 'proof-validation', revision: 1 },
-            coverage: { complete: args.scope !== undefined }
+            coverage: { complete: args.scope !== undefined && coverageComplete }
           }
         } else {
           captured.push(String(args.elementId))
@@ -2554,6 +2587,29 @@ it('execution proof retains regional units without requiring global coverage for
       }
     ]
   }
+  await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    final: false,
+    inspectionIds: [images[0]],
+    checks: [{ ...check(0), criterionId: 'Overall', unitId: 'local-agreement' }]
+  })
+  const localAgreement = checkResults
+    .read({ includePassed: true })
+    .items.find((item) => item.unitId === 'local-agreement')
+  coverageComplete = false
+  expect(await call(AiDesignToolIds.REVIEW_DRAWING, finalInput)).toMatchObject({
+    accepted: false,
+    status: 'partial'
+  })
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.find((item) => item.unitId === 'local-agreement')
+  ).toEqual(localAgreement)
+  coverageComplete = true
+  expect(await call(AiDesignToolIds.REVIEW_DRAWING, finalInput)).toMatchObject({
+    accepted: true
+  })
   expect(
     await call(AiDesignToolIds.REVIEW_DRAWING, {
       ...finalInput,

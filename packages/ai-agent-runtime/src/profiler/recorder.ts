@@ -90,6 +90,7 @@ const evidenceKeys = new Set([
   'nativeTurnId',
   'nativeItemId',
   'batchId',
+  'actionId',
   'purpose',
   'purposeSource',
   'expectedResult',

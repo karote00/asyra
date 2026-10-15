@@ -2444,6 +2444,26 @@ it('retains eight regional units under one criterion and repairs only the invali
       checks: [check('Finish')]
     })
   ).toMatchObject({ accepted: true })
+  const beforeCoverageFailure = review.readChecks({ includePassed: true })
+  review.invalidateWholeView('A new drawing root is outside the overview')
+  const afterCoverageFailure = review.readChecks({ includePassed: true })
+  expect(afterCoverageFailure.counts).toEqual({
+    pass: 8,
+    stale: 1,
+    fail: 0,
+    unverified: 0
+  })
+  expect(afterCoverageFailure.items.filter((item) => item.unitId)).toEqual(
+    beforeCoverageFailure.items.filter((item) => item.unitId)
+  )
+  expect(review.isAccepted()).toBe(false)
+  expect(
+    review.record({
+      phase: 'visual',
+      inspectionIds: [overview],
+      checks: [check('Finish')]
+    })
+  ).toMatchObject({ accepted: true })
   const repeatedView = review.inspect('tier-2', true, false, crop, true, {
     sessionId: 'app',
     revision: 10,
@@ -2458,6 +2478,16 @@ it('retains eight regional units under one criterion and repairs only the invali
       ]
     })
   ).not.toThrow()
+  // An overview corroborates the same tier; it must not redefine its identity.
+  expect(() =>
+    review.record({
+      ...repair,
+      inspectionIds: [overview, repaired],
+      checks: [{ ...unit(2, repaired), inspectionIds: [overview, repaired] }]
+    })
+  ).not.toThrow()
+  // Later evidence can omit corroboration while retaining the original scope.
+  expect(() => review.record(repair)).not.toThrow()
   const foreign = review.inspect('other-tier', true, false, crop)
     ?.inspectionId as string
   expect(() =>
@@ -2569,7 +2599,7 @@ describe('declared regional acceptance', () => {
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
     expect(declaration.revision).toBe(3)
-    expect(inspection.revision).toBe(3)
+    expect(inspection.revision).toBe(4)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],

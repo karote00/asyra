@@ -238,7 +238,9 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
           (path) => typeof path !== 'string' || !path.startsWith('/')
         ))) ||
     (args.view !== undefined && args.schemaPaths !== undefined) ||
-    ((args.view !== undefined || args.schemaPaths !== undefined) &&
+    (args.view !== undefined &&
+      !selectors.some((key) => args[key] !== undefined)) ||
+    (args.schemaPaths !== undefined &&
       args.names === undefined &&
       args.operation === undefined &&
       args.operations === undefined) ||
@@ -265,7 +267,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
         !args.operations.length ||
         args.operations.some((v) => typeof v !== 'string' || !v.trim())))
   )
-    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) or nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
   return undefined
 }
 
@@ -1034,6 +1036,24 @@ export const createLocalOperationTools = (
     description: tool.description,
     effect: tool.effect,
     composition: tool.composition,
+    execution: nativeExecution(tool)
+  })
+  const nativeDefinition = (
+    tool: NativeToolDescriptor,
+    args: Record<string, unknown>
+  ) => ({
+    ...deliverDefinition(
+      `${tool.namespace}.${tool.name}`,
+      { ...tool },
+      {
+        name: tool.name,
+        namespace: tool.namespace,
+        registeredName: tool.registeredName,
+        revision: tool.revision
+      },
+      args
+    ),
+    schemaSource: 'registered-tool-contract',
     execution: nativeExecution(tool)
   })
   const checkResults = preparation.checkResults ?? createDesignCheckResults()
@@ -1950,10 +1970,11 @@ export const createLocalOperationTools = (
                 'read',
                 ['tool-registry']
               ),
+              revision: 2,
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Known fields: request view=usage or schemaPaths; full is the default. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -1974,7 +1995,7 @@ export const createLocalOperationTools = (
                     type: 'string',
                     enum: ['usage', 'full'],
                     description:
-                      'Exact names/operation only. usage returns purpose, execution route and root schema field paths without the full schema; full is the default.'
+                      'With any selector. usage returns purpose, execution route and root schema field paths without the full schema; full is the exact-selector default; category/query default to menus.'
                   },
                   schemaPaths: {
                     type: 'array',
@@ -2556,28 +2577,7 @@ export const createLocalOperationTools = (
             .map((match) => match.name)
           return JSON.stringify({
             apis: selected.map((api) => details(api)),
-            tools: tools.map((tool) => {
-              const identity = `${tool.namespace}.${tool.name}`
-              return {
-                ...deliverDefinition(
-                  identity,
-                  { ...tool },
-                  {
-                    name: tool.name,
-                    namespace: tool.namespace,
-                    registeredName: tool.registeredName,
-                    revision: tool.revision
-                  },
-                  args
-                ),
-                schemaSource: 'registered-tool-contract',
-                execution: tool.execution ?? {
-                  kind: 'native-tool',
-                  namespace: tool.namespace,
-                  tool: tool.name
-                }
-              }
-            }),
+            tools: tools.map((tool) => nativeDefinition(tool, args)),
             missingNames,
             ...(ambiguousNames.length ? { ambiguousNames } : {}),
             ...(missingNames.length
@@ -2633,30 +2633,13 @@ export const createLocalOperationTools = (
             const page = pageBoundary(inventory.length)
             const tools = inventory
               .slice(page.offset, page.offset + definitionPageSize)
-              .map((tool) => {
-                const reference = {
-                  name: tool.name,
-                  namespace: tool.namespace,
-                  registeredName: tool.registeredName,
-                  revision: tool.revision
-                }
-                return {
-                  ...(args.includeSchemas === true || args.refresh === true
-                    ? deliverDefinition(
-                        `${tool.namespace}.${tool.name}`,
-                        { ...tool },
-                        reference,
-                        args
-                      )
-                    : {
-                        ...reference,
-                        description: tool.description,
-                        effect: tool.effect,
-                        composition: tool.composition
-                      }),
-                  execution: nativeExecution(tool)
-                }
-              })
+              .map((tool) =>
+                args.view !== undefined ||
+                args.includeSchemas === true ||
+                args.refresh === true
+                  ? nativeDefinition(tool, args)
+                  : nativeMenu(tool)
+              )
             return JSON.stringify({
               category: nativeCategory,
               apis: [],
@@ -2673,7 +2656,9 @@ export const createLocalOperationTools = (
             category: args.category,
             ...pageOf(
               entries,
-              args.includeSchemas === true || args.refresh === true
+              args.view !== undefined ||
+                args.includeSchemas === true ||
+                args.refresh === true
             )
           })
         }
@@ -2725,10 +2710,16 @@ export const createLocalOperationTools = (
                 }
               }),
           apis: selected.flatMap((entry) =>
-            'api' in entry ? [details(entry.api, false)] : []
+            'api' in entry ? [details(entry.api, args.view !== undefined)] : []
           ),
           tools: selected.flatMap((entry) =>
-            'tool' in entry ? [nativeMenu(entry.tool)] : []
+            'tool' in entry
+              ? [
+                  args.view !== undefined
+                    ? nativeDefinition(entry.tool, args)
+                    : nativeMenu(entry.tool)
+                ]
+              : []
           ),
           ...page
         })
@@ -2885,6 +2876,10 @@ export const createLocalOperationTools = (
             readyForDetail: false,
             inspectionIds,
             failedInspections,
+            ...designReview.judgmentHandoff(
+              inspectionIds,
+              reviewArgs.phase as 'structure' | 'visual'
+            ),
             actionResults: capturedResults,
             message
           })
@@ -2915,6 +2910,10 @@ export const createLocalOperationTools = (
             readyForDetail: false,
             inspectionIds,
             actionResults: capturedResults,
+            ...designReview.judgmentHandoff(
+              inspectionIds,
+              reviewArgs.phase as 'structure' | 'visual'
+            ),
             message:
               'Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.'
           })

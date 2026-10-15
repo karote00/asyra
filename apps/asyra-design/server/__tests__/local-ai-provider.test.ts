@@ -4495,7 +4495,12 @@ it('retains actual public stage through registered preparation in the activity p
   const projection = createAiActivityProjection({
     purpose: 'Original full request'
   })
-  const observations: { status: string; label: string; message?: string }[] = []
+  const observations: {
+    status: string
+    label: string
+    message?: string
+    phase?: string
+  }[] = []
   await requestConfiguredAiActionBatch(
     {
       ...input,
@@ -4519,6 +4524,7 @@ it('retains actual public stage through registered preparation in the activity p
         if (event.tool === 'prepare_design')
           observations.push({
             status: event.status,
+            phase: event.activity?.phase,
             ...projection.result().current
           })
       }
@@ -4528,7 +4534,12 @@ it('retains actual public stage through registered preparation in the activity p
   expect(observations.some((entry) => entry.status === 'completed')).toBe(true)
   for (const entry of observations) {
     expect(entry.message).toBe(stage)
-    expect(entry.label).not.toBe('Updating the canvas')
+    let label = 'Current task'
+    if (entry.status === 'running')
+      label = ['queued', 'admission'].includes(entry.phase ?? '')
+        ? 'Preparing operation - Preparing the design'
+        : 'Preparing the design'
+    expect(entry.label).toBe(label)
   }
 })
 

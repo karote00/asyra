@@ -1,15 +1,313 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: PERSISTENCE 409 CORRECTION VERIFIED LOCALLY - real edits, Undo/Redo, durable checkpoints and reload pass; no push or monitoring authorized.
+Status: CHECKPOINT REQUESTED - deterministic handoff corrections verified; complete tool usage coverage and live acceptance remain incomplete.
 
 ## Current authority and stop boundary
 
-The current task replaces Design's durable/peer interpretation of low-level Factory batches with explicit canonical document operations prepared once by the publishing App adapter. Preserve source publication identity/order, semantic source slices, Undo/Redo, compensation, retained retry bytes, checkpoint integrity and reload. Scope includes the Design publication adapter, wire validation, peer processor, outbox consumers, durable materializer/errors and their formal contracts/tests. Generic Factory, Core and Collaboration retain their current APIs unless a demonstrated direct integration defect requires correction. No live101, model calls, push or monitoring.
-The preceding four handoff repairs and recorded full101 are retained evidence.
-Reuse the current worktree; no push, monitoring, new live101, extra evaluator AI,
-model change or unrelated framework optimization. Finish scoped tests, lint,
-production typechecks and review, then report. Existing local changes are preserved.
+Repair the four observed handoffs from recorded run reusable-tools-1791997243736:
+discovery selection/representation, visual unit identity/evidence, incremental
+judgment delivery, and current activity projection. Reuse this worktree and the
+existing registry, check store and activity machine. No live101, extra model,
+further push, monitoring, persistence redesign or unrelated package changes.
+The prior persistence recovery and recorded full101 remain completed evidence.
+Run the affected formal owner/consumer tests, lint and production typechecks.
 Any later authorized full101 retains its independent 900-second hard deadline.
+
+## Authorized checkpoint and tool-test follow-up - 2026-10-15
+
+The user explicitly requests pushing the current corrections before adding all-tool
+usage tests. This is a coherent checkpoint of the recorded discovery, scoped
+judgment and action-lifecycle corrections, not completion of the product goal.
+Prior no-push directions are superseded for this checkpoint only. No live101 or
+monitoring is authorized by this follow-up. Preserve original validation failures.
+
+The subsequent live run `reusable-tools-1792002035768` completed drawing in
+366.810 seconds, with first content at 111.477 seconds. It did not pass whole-flow
+acceptance: a local base verdict cited a changed whole-building image and became
+stale; authored repair purpose survived into final inspection; and a fresh reload
+failed the document-session handshake although the stored checkpoint exactly
+matched the exported document. These remain open. Test counts below mean executed
+cases passed, not that every tool and failure/recovery path was covered.
+
+The next task uses the authoritative Design host/native/browser registries to
+verify usage, success, rejection, applicable execution failure/cancellation,
+artifact lifetime and real producer-consumer handoffs for all tools. Reuse formal
+tests and the saved live inputs. Never treat mock success outputs or schema-only
+checks as proof of real execution. Exclude model calls, live101, monitoring and
+additional remote operations. Missing cases and reproduced failures remain visible
+until addressed; this checkpoint does not close them.
+
+## Recorded handoff correction - 2026-10-15
+
+### Evidence and root causes
+
+- At 187.249s discovery rejected query plus usage even though selection and
+  representation are independent concerns. Flat advertised fields admit the
+  combination but handwritten admission prohibits it; lexical pages only return
+  menus. Preserve bounded pagination, exact routes and full schema availability.
+- At 451.885s the crown judgment added corroborating views and was treated as a
+  redesigned unit. Unit identity was the equality of all cited image scopes.
+  Preserve the original exact target/crop obligation when additional evidence
+  contains that scope; replacing/removing it still requires exact supersession.
+- The check store already retains sparse passes, but capture replies provide
+  evidence without a concrete sparse-recording handoff. Final-oriented guidance
+  leaves useful local judgments unrecorded. Tools cannot invent visual passes.
+- Activity contract and reducer explicitly prioritize stage prose over live call
+  purpose and hide observed work phases whenever prose exists. This is a contract
+  defect, not missing timers or a translation issue.
+
+### Execution cards and reviewed handoffs
+
+1. **compose - discovery.** Selection chooses registry entries; explicit usage/full
+   chooses the representation for exact, query and category selectors. Query and
+   category retain the same page size/revision/continuation. schemaPaths remains
+   exact because fragments need an identified contract. Default menus do not
+   consume full delivery. Validate native/action paths, repeat/recovery, empty
+   results and every returned continuation. No automatic tool dispatch or aliases.
+2. **inspect - evidence and retained judgments.** Unit scope is its initial exact
+   target/crop set, independent of receipt versions. Additional corroborating
+   scopes do not replace it or grow its identity. A scope replacement requires
+   current revision/reason; stale replacement and malformed checks change nothing.
+   Every cited image remains a real invalidation dependency (including a cited
+   overview); never silently discard a dependency to preserve a pass. Capture
+   and review replies expose pending coverage and an actionable sparse-recording
+   handoff, including partial captures. Record passes/failures before editing;
+   final completion consumes retained passes. Prove unchanged units and actual
+   cross-region dependencies, cancellation/failure and exact replay. Use existing
+   store only; no model call, synthetic pass or second acceptance ledger.
+3. **settle - current activity.** Live leaf/common call purpose outranks request
+   stage intent; stage intent remains context, not evidence that a drawing is
+   executing. Present observed meaningful operation plus authored purpose.
+   Admission/queue churn does not replace a live operation description; diagnostics
+   retain every phase. Completion removes its call purpose and returns to explicit
+   stage-context presentation. Preserve concurrent ancestry, late-event rejection,
+   Stop/retry/saving and authored language. UI and recorded selected purpose agree.
+
+Authorized implementation boundaries are the existing compose/inspect/settle
+Inspector steps: local-operation-tools, local-design-review, ai-domain-prompt,
+activity-state/presentation and direct producer/UI consumers only as necessary;
+associated formal tests, execution spec, Inspector contract/generated catalog and
+this plan. No broad repository discovery after this audit.
+
+### Direct-consumer review refinements
+
+- Capture before criteria is a supported path. Its next handoff must define the
+  criteria while retaining images, not request a judgment that cannot be recorded.
+  Formal capture-to-definition-to-recording regression first failed, then passed.
+- Queued/admitted calls are visibly preparation, not already drawing; retain that
+  classification until execution starts. After execution, repeated admission labels
+  cannot revive queued wording. Formal phase and provider integration tests cover it.
+- Showing current operation must not duplicate history rows with identical authored
+  subjects. Keep current phase projection independent from history subject
+  deduplication; historical snapshots stay immutable and all raw events remain.
+- Increment the changed public discovery/review contract revisions. Validate both
+  compact and full paginated representations through the real invocation boundary.
+- Each execution card above uses its named Inspector step as failure owner and
+  current specification sections Recorded handoff correction, Scoped visual check
+  units and Purpose lifetime. Inputs are current admitted descriptors, actual
+  delivered evidence and ordered progress respectively. Missing/ambiguous input
+  stops that owner, never dispatches writes or manufactures approval. Only existing
+  adapters/stores/projection contribute; extra models, guessed scopes, bypassed
+  freshness, persistence changes and a second registry/store are forbidden. Stop
+  an owner segment on its failing formal oracle and iterate within this boundary.
+
+### Plan self-review and closure
+
+Reviewed selector -> schema -> dispatcher -> page -> exact execution; capture ->
+judgment -> shared store -> mutation invalidation -> final acceptance; and provider
+start/phase/end -> reducer -> panel/diagnostics. Keep ambiguity, stale revision,
+partial capture, source changes, cancellation and unknown mutation settlement
+explicit. Scope expansion evidence is not proof of semantic equivalence; original
+scope must remain or explicit redesign applies. Empty/unchanged results are not
+fresh work. No node-count or model-time improvement claim from deterministic tests.
+Test-first each owner, then full affected server/browser suites, typecheck, lint,
+naming and current flow proofs. Review direct consumers and generated contracts.
+Stop after local evidence and report; no additional live101 or remote operation.
+
+### Whole-handoff review follow-up - 2026-10-15
+
+Reopen only the four handoffs for a complete direct-consumer review. Fixed discovery
+roots: current selector/schema/dispatcher, review capture/record/check-store/browser
+invalidation, provider lifecycle/projection/panel and their existing formal suites.
+No 101, extra model, push, monitoring, persistence or unrelated package changes.
+
+Inspect owner card: a failed whole-drawing coverage check currently invalidates
+criterion keys, which also retire independent optional regional units under that
+criterion. Input is canonical whole-coverage failure, output is pending whole-view
+acceptance with unchanged independent regional passes. Existing source/criterion
+changes still invalidate every actual dependent. Use an explicit whole-coverage
+dependency in the existing result store, not another store or an exception based
+on unit names. Exact owner remains inspect in the current Inspector, Scoped visual
+check units spec. Allowed files: local-design-review, its direct host/owner/browser
+tests and matching spec/plan. No model judgments, receipt freshness bypass or
+production browser/persistence mutation. Test-first the original coverage failure,
+then prove repair/final acceptance without resubmitting unaffected units; include
+corroborating-image invalidation, current source failures and existing 8/32-region
+browser-owner integration. Stop if a new owner or semantics is required.
+
+Self-review: criterion/source dependency and drawing coverage are different inputs.
+The correction must attach whole-coverage dependency both to declaration placeholders
+and recorded whole visual judgments. Regional judgments keep their own image and
+criterion dependencies; a regional judgment citing a whole image still invalidates
+when that image changes. Completeness is not weakened: final acceptance still
+requires actual current whole coverage and all mandatory criteria.
+
+Settle owner card: the actual Runtime action loop emits a scoped authored start
+but no matching end. The App therefore retains a completed direct action while
+later work is active. The matching settle Inspector already allows runtime.ts and
+its consumers. Add a paired completed lifecycle notification in the same action
+owner for success, failure and cancellation, without changing outcomes, mutation,
+retry, transaction or permissions. No new observer or timer. Allowed inputs are
+admitted action identity and executor settlement; outputs are ordered start/end
+progress and unchanged action outcomes. Abort must continue suppressing observer notifications; the canonical cancelled
+outcome closes App activity instead. Tests must prove ordering before the next
+action and failure/cancellation terminal behavior at Runtime, then consume the
+actual stream through the Design projection. This is a direct upstream repair,
+not unrelated framework work. Existing provider streams and App lifecycle guards
+remain required. Finish inspect owner gates before advancing to this card.
+
+Settle self-review refinement: action IDs are batch-local, whereas activity IDs
+live for the invocation. Paired completion must not make a later batch reusing an
+action ID invisible as an old closed call. Prove distinct invocation identities
+across real executeBatch calls, then use one opaque action-execution ID for progress
+and its causal trace children; retain original actionId/batchId as evidence. No
+change to product action IDs, receipts, retries or document identity.
+
+Observe direct-consumer card: changing invocation correlation must retain original
+batch/action identity through the existing profiler allowlist. Verify actual saved
+trace output, not input objects. Permit only the missing actionId diagnostic field
+if the test proves it is omitted; no raw payload expansion, observer authority or
+new record format. Runtime progress tests plus existing profiler suite own closure.
+
+### Whole-handoff review results - 2026-10-15
+
+Reviewed the complete direct path from discovery input/schema/dispatch and cached
+representations through capture, browser invalidation, sparse judgments, final
+acceptance, Runtime/provider lifecycle, activity projection, panel and persisted
+trace. Existing suites and actual browser contracts supplement the new regressions.
+
+Two canonical defects were reproduced before fixing their owners. Whole-view
+coverage failure retired eight independent regional passes through shared criterion
+keys; its own dependency now retires only whole visual obligations. Source,
+criterion and every actually cited image remain real dependencies. Regional
+identity does not widen when corroborating images are added. Actual dispatcher
+proof preserves the regional record through coverage failure and final retry
+without resubmission. Browser proofs cover geometry, property changes, crop entry,
+deletion, Undo, viewport changes, load and peer edits.
+
+Runtime direct actions lacked paired completion. The actual action loop now closes
+its scoped execution before advancing, while preserving executed/failed/cancelled
+outcomes and abort suppression. Self-review caught batch-local action ID reuse:
+each execution now has an opaque correlation ID shared by progress and causal
+trace children. Product IDs and receipts are unchanged. A saved-record regression
+also caught the recorder dropping original actionId; the existing allowlist now
+retains that field with batchId. Actual Runtime-to-App tests cover successful,
+failed, cancelled and repeated-batch handoffs; cancellation settles through its
+canonical outcome without late observer notifications.
+
+Final evidence (overlapping runs are not additional unique test counts):
+
+- Runtime full package: 374 passed (`tmp/handoff-review-runtime-verified.log`).
+  Final package build passed (`tmp/handoff-review-runtime-build-verified.log`).
+- Complete AI/browser/panel suite: 572 passed
+  (`tmp/handoff-review-ai-closed.log`); complete server suite: 1,170 passed and
+  nine original conditional skips (`tmp/handoff-review-server-closed.log`).
+  The later diagnostic allowlist-only change was verified by the full Runtime
+  suite and 104 direct-consumer cases (`tmp/handoff-review-cross-owner-verified.log`).
+- Actual browser inspection/conversation suites: 27 passed, five original
+  conditional skips (`tmp/handoff-review-browser.log`). After final execution-ID
+  correction, four affected status/batch/Undo cases passed again at 360/1280px
+  (`tmp/handoff-review-browser-closed.log`). Final active/completed screenshots
+  were inspected. Existing fixture logs include deliberate duplicate-create
+  backend rejections; this does not claim error-free backend logs or re-prove the
+  entire persistence subsystem. Temporary test ports are closed.
+- Production typechecks, scoped lint, 15 naming checks and whitespace checks
+  passed. Scoped lint retains one explicit test-console warning, zero errors.
+  Final test-only type correction was rebuilt and linted successfully.
+- Inspector/catalog: ten passed (`tmp/handoff-review-inspector.log`). Final
+  same-source proof: 30 obligations, four exact negative scenarios and recovery
+  passed (`tmp/handoff-review-same-source-proof.log`), source
+  `bd91578825cca486952b428f5de84dbfcc4338f92de9dfbe22735dc81d9a432f`,
+  accepted review `75d8746ae3ccf0a335d162986ea1d3723f26a06bc36f1d56dac858d32ed9c2d5`.
+
+Preserve red coverage/lifecycle/batch-identity/correlation regressions and earlier
+failed fixture/type iterations as failures. No admission, freshness, mandatory
+review, transaction or abort guard was weakened. This closes the bounded review;
+it does not claim faster model execution, universal agent wording correctness or
+new live101 acceptance. No live AI/101, commit, push or monitoring was performed.
+
+### Independent repeat of the bounded review - 2026-10-15
+
+Re-read actual discovery admission/delivery/paging, review dispatcher validation
+and partial receipts, result-store dependency closure, canonical browser change
+notifications, Runtime action progress/abort guards, activity reducer and panel.
+Rechecked failure, cancellation, retry, reused action IDs and saved trace consumers.
+No additional blocking defect or production change was identified. The four
+handoff corrections remain coherent with existing mutation, Undo and request
+lifetime contracts. This is a single-agent second review, not an external audit.
+
+Re-executed existing suites: 316 host discovery/review/store/flow cases
+(`tmp/handoff-second-review-host.log`), 104 Runtime-to-App/presentation/canonical
+inspection cases (`tmp/handoff-second-review-consumers.log`), and all 374 Runtime
+package tests (`tmp/handoff-second-review-runtime.log`). Same-source proof again
+passed 30 obligations, four exact negative scenarios and recovery
+(`tmp/handoff-second-review-proof.log`, unchanged source
+`bd91578825cca486952b428f5de84dbfcc4338f92de9dfbe22735dc81d9a432f`).
+Earlier complete server/AI suites, browser screenshots/E2E, build, typecheck and
+lint remain evidence for unchanged source; they were not silently counted as
+new runs. Local dependency changes preserve unrelated passes; changed ancestors,
+shared source/criteria or cited images still invalidate actual dependents. No
+additional model call, live101, commit, push or monitor was started. Model wording
+and live elapsed-time improvement remain outside this deterministic closure.
+
+### Prior local verification and bounded closeout
+
+All four owner corrections are implemented and reviewed through their actual
+producer/consumer boundaries. Capture-before-criteria required inputs are derived
+from the canonical schema, including references and detail requirements. Explicit
+discovery representations preserve pagination and delivery identity. A retained
+unit does not silently grow its identity when corroborating evidence is added;
+every cited image still contributes real invalidation dependencies. Current
+operation projection remains distinct from history subject deduplication.
+
+- AI/browser and panel suites: 569 passed (`tmp/handoff-verified-ai.log`).
+- Server suite: 1,170 passed, 9 existing conditional skips
+  (`tmp/handoff-verified-server.log`). After deriving the final required-input
+  list from the canonical schema, all 303 affected discovery/review/flow cases
+  passed again (`tmp/handoff-owner-closure.log`). These overlapping runs are not
+  additional distinct test counts.
+- Production typechecks passed, including the final schema refinement
+  (`tmp/handoff-final-schema-types.log`). Scoped lint has zero errors and two
+  explicit test-console warnings (`tmp/handoff-closure-lint.log`). Naming passed
+  all 15 checks (`tmp/handoff-closure-naming.log`); whitespace checks passed.
+- Actual browser status tests passed at 360px and 1280px, 2 cases in 18.9 seconds
+  (`tmp/handoff-status-final-e2e.log`). Active-inspection screenshots at both
+  widths and wrapped-purpose presentation were inspected. Tests cover current
+  operation/context separation, completion, late events, bounded wrapping,
+  history deduplication and preserved scrolling/following. They use deterministic
+  streams, not live AI. Temporary ports 3300/3401/4401 are no longer listening.
+- Inspector and generated-catalog tests passed all 10 cases
+  (`tmp/handoff-inspector-closure.log`). An obsolete contract-test assertion
+  expected older cache counts; it now checks the existing exact dependency and
+  observer-lifetime contract. No production cache was added by that correction.
+- Same-source flow proof passed 30 obligations, four exact negative scenarios
+  and recovery (`tmp/handoff-same-source-proof.log`). Captured source digest:
+  `325cee220cf082339800f44a72f319c48555b9c7d23d03039a0d0a363358aeab`;
+  accepted contract review:
+  `670caf2aad582db96d985c5e095196f8fe25d120eda2f6fb5e11ca083112a1c4`.
+
+Behavioral regression failures were retained before each owner correction. Earlier
+failed runs remain failed evidence, including a DOM test invocation missing its
+required environment and the stale Inspector assertion. No admission, freshness
+or mandatory check was weakened to make those runs pass.
+
+Limits: deterministic evidence proves the tool handoff, sparse result retention
+and status projection, not universal primary-agent compliance or model-time
+improvement. Authored purpose wording remains the primary agent's responsibility;
+the UI separately displays the observed operation or explicit task context. No new
+101 run, model call, push, commit or monitoring occurred after the requested
+checkpoint push. This closes this bounded correction, not the historical global
+plan or an authorization to start another stage.
 
 ## Direction
 

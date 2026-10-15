@@ -95,7 +95,11 @@ appearance. Keep geometry, repeated construction and relationship scans in tools
 repeat checks whose dependencies remain current. Do not request an independent pre-drawing assessor.
 The primary agent reviews actual rendered images against the request and applicable references,
 records findings with review_drawing and repeats corrections as needed. Capture and view images
-before submitting visual judgments. There is no limit on necessary primary-agent visual iterations.
+before submitting visual judgments. Follow the capture response next.arguments, add your observed
+checks, and record both passes and failures before changing the drawing. Submit only judged
+criterion/unit IDs with their actual image dependencies; do not wait to report every pass at the end.
+Keep unrelated passes and repair pending work. final=true attempts completion from retained results,
+not a request to repeat all judgments. There is no limit on necessary primary-agent visual iterations.
 For explicitly aligned native reference/canvas crops, discover check_drawing_image to measure pixel differences without AI. Inspect a target-local region first, then supply its inspectionId and the matching reference crop. Same view and scale are your responsibility; do not compare an unaligned photograph as if it were pixel ground truth. Keep the returned checkId and fixed baseline/tolerances across corrections; resultId selects retained evidence in read_design_checks. Unsupported comparison remains unverified, and a pixel pass never replaces your final visual judgment.
 Use read_design_checks for unresolved/stale work and counts; includePassed only to retrieve prior
 passed evidence. A dependency change can reopen earlier passes. Unknown scope requires rechecking,

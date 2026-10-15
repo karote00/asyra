@@ -1389,11 +1389,12 @@ Stage intent is not a claim that drawing is currently being applied. It survives
 child starts/ends and is retired by newer stage commentary, explicit completion,
 retry, saving or terminal settlement. No additional AI evaluates or authors status.
 
-While a stage intent exists, display it as the visible work umbrella. Otherwise,
-display the common genuinely live call purpose. Show concrete purpose without a
-generic processing/phase prefix; changing system phases and child counts must not
-cause repeated announcements for the same purpose. Without authored purpose use
-an honest observed phase, never invented work or the full request as current work.
+Display the common genuinely live call purpose before retained stage intent.
+Show the observed operation separately from authored context. Admission/queue
+churn preserves its operation description; meaningful operation changes update
+immediately. Without a live call, label retained prose as Current task rather than
+claiming that drawing is executing. Without authored purpose show only observed
+work, never invented work or the full request as current work.
 All lifecycle events and actual owner phases/counts remain in diagnostics. No timer
 or debounce suppresses events. Stopping, approval, saving and terminal outcomes
 immediately override normal work presentation.
@@ -1575,8 +1576,11 @@ mutation admission apply unchanged. Names are not unique identities.
 ### Scoped visual check units
 
 A primary-agent check may name a stable unitId within its original criterion.
-Different units retain separate results and image dependencies. Actual capture
-target and crop define a unit scope; receipt revisions do not define its identity.
+Different units retain separate results and image dependencies. The initially cited capture targets and crops define a unit scope; receipt
+revisions do not define its identity. Additional corroborating images may include
+that original scope without redefining the unit. They do not grow its identity;
+all cited images remain actual invalidation dependencies. Replacing the original
+scope still requires exact revision/reason supersession.
 Intermediate visual review accepts current local crops without requesting an
 unrelated overall view. Omitted units retain their status, and invalidation follows
 their actual image dependencies. Final review still requires current whole-request
@@ -1890,3 +1894,43 @@ a completed or rejected event cannot describe ongoing execution. Once all calls
 finish the diagnostic phase belongs to the provider. Raw incoming events remain
 recorded for causal analysis. Stage intent is supplied by the primary agent and
 is not evidence that canvas pixels are currently changing.
+
+### Recorded handoff correction
+
+Discovery selection and representation are independent. Exact, category and query
+selectors accept usage/full views; category/query default to compact menus and
+retain bounded pagination and registry revision. schemaPaths needs exact identities.
+Usage does not consume the full definition; continuation retains its representation.
+
+Capture replies, including partial capture, expose current pending coverage and
+instructions for recording only observed local judgments before the next edit.
+No status is fabricated. Valid passes accumulate in the existing store; subsequent
+reads and final acceptance consume them without retransmission. Each judgment cites
+only images it actually depends on; citing an overview makes it a real dependency.
+
+Current activity uses the live common call purpose before retained stage context.
+Observed operation and authored purpose are separate visible facts. Admission/queue
+churn preserves a stable operation description, not an obsolete stage action; exact
+phases remain diagnostic. With no active call, stage prose is explicitly labeled
+as context. Completion removes call purpose; concurrent ancestry and lifecycle
+precedence remain authoritative. No timeout-based guessing or extra model call.
+
+Capture before criteria returns a definition handoff and retains image identities;
+it does not request an impossible judgment. Current-operation changes do not append
+identical authored subjects to history. Derived history replaces only its current
+projection, never mutates earlier snapshots or suppresses diagnostic events.
+
+A known tool queued or admitted before execution is labeled as preparation for
+that operation; only execution presents the operation as active. Admission repeats
+preserve the existing description. A late preparation phase does not turn an
+already executing call back into a queued operation.
+
+Whole-drawing coverage is a separate check dependency from criterion/source validity.
+A failed overview coverage check reopens whole-view judgments and declarations,
+not independent regional units sharing the criterion. Regional judgments still
+depend on every cited image and their actual criterion/source requirements.
+
+Runtime-authored direct action starts have paired completion activity on success and
+failure, before another action or terminal outcome. Abort continues to suppress
+observer notifications; the returned cancelled outcome retires App activity.
+Completion ends activity ownership; the canonical outcome still determines success or failure.

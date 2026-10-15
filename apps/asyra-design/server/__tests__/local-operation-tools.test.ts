@@ -4320,7 +4320,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
     read({ names: [action.name], schemaPaths: ['/properties/missing'] })
   ).rejects.toThrow('Unknown schema path')
   for (const query of [
-    { category: 'design', view: 'usage' },
+    { query: 'design', schemaPaths: ['/properties/x'] },
     { names: [action.name], view: ['usage'] },
     { names: [action.name], schemaPaths: [] },
     { names: [action.name], schemaPaths: ['properties/rows'] },
@@ -7461,6 +7461,68 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
   expect(JSON.stringify(batch?.inputSchema)).not.toContain('review_design')
 })
 
+it('delivers usage pages across native and action discovery without consuming full definitions', async () => {
+  const action = {
+    ...basicApiContracts[0],
+    description: 'Discovery representation probe'
+  }
+  const native = Array.from({ length: 18 }, (_, index) => ({
+    name: `probe-${index}`,
+    namespace: 'saved_tools',
+    description: 'Discovery representation probe',
+    inputSchema: { type: 'object', properties: { target: { type: 'string' } } },
+    ...toolSemantics({
+      effect: 'read',
+      composition: 'control-plane',
+      outputSchema: { type: 'object' }
+    })
+  }))
+  const execute = vi.fn()
+  const owner = createLocalOperationTools(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    execute,
+    { getNativeTools: () => native }
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await owner.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const page = await read({
+    query: 'discovery representation probe',
+    view: 'usage'
+  })
+  expect(page.apis[0].definition.coverage).toBe('usage')
+  expect(page.tools[0].inputFields).toContain('/properties/target')
+  expect(page.tools[0].inputSchema).toBeUndefined()
+  expect(page.next.arguments.view).toBe('usage')
+  expect(owner.resultIssue('describe_design_apis', page)).toBeUndefined()
+  const last = await read(page.next.arguments)
+  expect(last.complete).toBe(true)
+  expect(last.tools.at(-1).definition.coverage).toBe('usage')
+  const category = await read({ category: 'tools', view: 'usage' })
+  expect(category.tools[0].definition.state).toBe('previously-returned')
+  const full = await read({ names: ['saved_tools.probe-0'] })
+  expect(full.tools[0].definition.state).toBe('included')
+  expect(full.tools[0].inputSchema).toEqual(native[0].inputSchema)
+  const repeated = await read({
+    query: 'discovery representation probe',
+    view: 'usage'
+  })
+  expect(repeated.tools[0].definition.state).toBe('previously-returned')
+  const restored = await read({
+    ...page.next.arguments,
+    refresh: true,
+    refreshReason: 'delivery-failure'
+  })
+  expect(restored.tools[0].inputFields).toContain('/properties/target')
+  expect(execute).not.toHaveBeenCalled()
+})
+
 it('searches compact native capability menus with pagination without consuming exact schemas', async () => {
   const native = Array.from({ length: 19 }, (_, index) => ({
     name: `inspect-${index}`,
@@ -7604,7 +7666,11 @@ it('delivers API, native and mixed discovery pages through the actual invocation
       category
     }))
   ]
-  for (const selector of selectors) {
+  for (const selector of selectors.flatMap((selector) => [
+    selector,
+    { ...selector, view: 'usage' },
+    { ...selector, view: 'full' }
+  ])) {
     let page = await read(selector)
     let delivered = 0
     const identities: string[] = []
@@ -7649,7 +7715,7 @@ it('delivers API, native and mixed discovery pages through the actual invocation
   expect(
     (await read({ names: ['saved_tools.pagination-0'] })).tools[0].definition
       .state
-  ).toBe('included')
+  ).toBe('previously-returned')
   expect(execute).not.toHaveBeenCalled()
 })
 

@@ -10,6 +10,18 @@ import { AiActionNames } from '../constants'
 export const activityToolLabels: Readonly<Record<string, string>> =
   Object.freeze({
     vtracer: 'Converting artwork to vectors',
+    [AiDesignToolIds.DESCRIBE_DESIGN_APIS]: 'Finding available operations',
+    [AiDesignToolIds.READ_DESIGN_CHECKS]: 'Reading unresolved checks',
+    [AiDesignToolIds.CHECK_DRAWING_IMAGE]: 'Comparing image regions',
+    [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]:
+      'Preparing and adding the design',
+    [AiDesignToolIds.EXECUTE_DESIGN_BATCH]: 'Applying planned edits',
+    [AiDesignToolIds.RETAIN_DESIGN_TARGETS]: 'Retaining edit targets',
+    [AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS]: 'Releasing retained data',
+    [AiDesignToolIds.SUBMIT_TOOL]: 'Validating a reusable operation',
+    [AiDesignToolIds.INVOKE_TOOL]: 'Running the selected operation',
+    [AiDesignToolIds.SAVE_TOOL]: 'Saving a reusable operation',
+    [AiDesignToolIds.MANAGE_TOOL]: 'Managing reusable operations',
     [AiDesignToolIds.PREPARE_DESIGN]: 'Preparing the design',
     [AiDesignToolIds.REVIEW_DRAWING]: 'Checking the requested details',
     [AiDesignToolIds.DEFINE_DESIGN_CRITERIA]: 'Defining the requested checks',
@@ -121,6 +133,7 @@ interface ActivityPurpose {
 
 interface ActiveCall {
   readonly label: string
+  readonly operationLabel: string
   readonly purpose?: ActivityPurpose
   readonly parentCallId?: string
 }
@@ -245,16 +258,23 @@ const projectCallEntry = (
   fallback: ActivityEntry,
   stagePurpose?: string
 ): ActivityEntry => {
-  if (stagePurpose) return { label: '', message: stagePurpose }
   const entries = Object.entries(calls)
-  if (!entries.length) return fallback
+  if (!entries.length)
+    return stagePurpose
+      ? { label: 'Current task', message: stagePurpose }
+      : fallback
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
   // Invalid ancestry cannot make one sibling's purpose represent all work.
   if (!leaves.length) return fallback
-  const message = livePurpose(calls)?.message ?? fallback.message
-  if (message) return { label: '', message }
-  return { label: livePhaseLabel(calls, fallback.label) }
+  const message =
+    livePurpose(calls)?.message ?? stagePurpose ?? fallback.message
+  const descriptions = new Set(leaves.map(([, call]) => call.operationLabel))
+  let label = `Running ${leaves.length} operations`
+  if (leaves.length === 1) label = leaves[0][1].operationLabel
+  else if (descriptions.size === 1)
+    label = `${leaves[0][1].operationLabel} - ${leaves.length} operations`
+  return { label, ...(message ? { message } : {}) }
 }
 
 const transitionKind = (
@@ -275,6 +295,14 @@ const transitionKind = (
 const sameActivity = (left: ActivityEntry | undefined, right: ActivityEntry) =>
   left?.label === right.label && left?.message === right.message
 
+const sameActivitySubject = (
+  left: ActivityEntry | undefined,
+  right: ActivityEntry
+) =>
+  left?.message && right.message
+    ? left.message === right.message
+    : sameActivity(left, right)
+
 /** One pure owner decides lifecycle, work retention and diagnostic disposition. */
 export const reduceAiActivity = (
   state: ActivityState,
@@ -290,12 +318,12 @@ export const reduceAiActivity = (
     let selected: ActivityPurpose | undefined
     let purposeSource = 'none'
     if (next.lifecycle === 'running') {
-      if (next.requestPurpose) {
-        selected = next.requestPurpose
-        purposeSource = 'request'
-      } else if (live) {
+      if (live) {
         selected = live
         purposeSource = 'live-call'
+      } else if (next.requestPurpose) {
+        selected = next.requestPurpose
+        purposeSource = 'request'
       }
     }
     const phaseLabel =
@@ -467,10 +495,25 @@ export const reduceAiActivity = (
       }
     } else {
       const previous = calls[activity.callId]
+      let operationLabel =
+        previous?.operationLabel ?? ownerPhaseLabels.executing
+      if (update.tool && Object.hasOwn(activityToolLabels, update.tool)) {
+        const description = activityToolLabels[update.tool]
+        operationLabel =
+          activity.phase && ['queued', 'admission'].includes(activity.phase)
+            ? (previous?.operationLabel ??
+              `Preparing operation - ${description}`)
+            : description
+      } else if (
+        activity.phase &&
+        !['queued', 'admission'].includes(activity.phase)
+      )
+        operationLabel = ownerPhaseLabels[activity.phase]
       calls[activity.callId] = {
         label: activity.phase
           ? ownerPhaseLabels[activity.phase]
           : activityLabel(update),
+        operationLabel,
         purpose: authorPurpose(
           previous?.purpose,
           authored,
@@ -562,7 +605,7 @@ export const createAiActivityProjection = (
     state = result.state
     if (
       result.decision.status === 'accepted' &&
-      !sameActivity(history.at(-1)?.entry, state.entry)
+      !sameActivitySubject(history.at(-1)?.entry, state.entry)
     )
       history.push({ entry: state.entry, lifecycle: state.lifecycle })
     return result.decision
@@ -594,8 +637,11 @@ export const createAiActivityProjection = (
           if (
             projected.lifecycle !== 'awaiting-answer' &&
             !sameActivity(entries.at(-1), current)
-          )
-            entries.push(current)
+          ) {
+            if (sameActivitySubject(entries.at(-1), current))
+              entries[entries.length - 1] = current
+            else entries.push(current)
+          }
           if (!entries.length) entries.push({ label: 'Starting request' })
         }
         return entries

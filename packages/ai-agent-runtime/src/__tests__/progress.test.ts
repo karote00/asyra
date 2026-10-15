@@ -765,3 +765,153 @@ it('rejects invalid activity parent and phase contracts at the shared transport 
   expect(isExecutionActivity({ ...value, phase: 'imaginary' })).toBe(false)
   expect(isExecutionActivity({ ...value, sequence: 0 })).toBe(false)
 })
+
+it.each(['success', 'failure', 'cancelled'] as const)(
+  'settles authored action activity before the next owner on %s',
+  async (outcome) => {
+    const updates: AiRuntimeProgressUpdate[] = []
+    const controller = new AbortController()
+    let executions = 0
+    const batch = candidateActionBatch()
+    const actions = [0, 1].map((index) => ({
+      ...batch.actions[0],
+      id: `action-${index}`,
+      summary: { kind: 'work', text: `Refine part ${index}` }
+    }))
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        provider: { requestActionBatch: async () => ({ ...batch, actions }) },
+        actionDefinitions: [
+          visibilityAction(
+            vi.fn(async () => {
+              if (executions++ === 0 && outcome !== 'success') {
+                if (outcome === 'cancelled') controller.abort()
+                throw new Error('Action did not complete')
+              }
+              return { apiKey: 'executor-secret', changed: true }
+            })
+          )
+        ]
+      })
+    )
+    try {
+      const result = await runtime.run({
+        intent: 'Refine both parts',
+        signal: controller.signal,
+        progressObserver: (update) => updates.push(update)
+      })
+      const scoped = updates.filter((update) => update.activity)
+      const expected = ['running']
+      if (outcome !== 'cancelled') expected.push('completed')
+      if (outcome === 'success') expected.push('running', 'completed')
+      expect(scoped.map((update) => update.toolStatus)).toEqual(expected)
+      if (outcome !== 'cancelled')
+        expect(scoped[0].activity?.callId).toBe(scoped[1].activity?.callId)
+      if (outcome === 'success') {
+        expect(scoped[2].activity?.callId).toBe(scoped[3].activity?.callId)
+        expect(scoped[0].activity?.callId).not.toBe(scoped[2].activity?.callId)
+      }
+      const expectedStatus = {
+        success: 'executed',
+        failure: 'failed',
+        cancelled: 'cancelled'
+      }
+      expect(result.status).toBe(expectedStatus[outcome])
+      if (outcome === 'cancelled') {
+        // Abort suppresses further observer notifications; the returned outcome
+        // is the authoritative signal for the App's settled projection.
+        expect(executions).toBe(1)
+        return
+      }
+      const completion = scoped[1]
+      expect(completion.activity?.kind).toBe('system')
+      expect(completion.tool).toBe('set_element_visibility')
+      if (!completion.activity || !scoped[0].activity)
+        throw new Error('Expected paired scoped activity')
+      expect(completion.activity.sequence).toBeGreaterThan(
+        scoped[0].activity.sequence
+      )
+    } finally {
+      await runtime.dispose()
+    }
+  }
+)
+
+it('keeps authored action activity identities distinct across batches reusing action IDs', async () => {
+  const updates: AiRuntimeProgressUpdate[] = []
+  const records: {
+    event: string
+    stage?: string
+    callId?: unknown
+    evidence?: unknown
+  }[] = []
+  const makeBatch = (batchId: string) => ({
+    ...candidateActionBatch(),
+    batchId,
+    actions: candidateActionBatch().actions.map((action) => ({
+      ...action,
+      summary: { kind: 'work', text: `Refine ${batchId}` }
+    }))
+  })
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      createRecordingSink: () => ({
+        write: (entry) => {
+          records.push(entry)
+        },
+        flush: async () => ({ status: 'saved', path: null })
+      }),
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Expected batch executor')
+          await options.executeBatch(makeBatch('first'))
+          return makeBatch('second')
+        }
+      }
+    })
+  )
+  try {
+    const result = await runtime.run({
+      intent: 'Refine twice',
+      signal: new AbortController().signal,
+      progressObserver: (update) => updates.push(update)
+    })
+    expect(result.status).toBe('executed')
+    const scoped = updates.filter((update) => update.activity)
+    expect(scoped.map((update) => update.toolStatus)).toEqual([
+      'running',
+      'completed',
+      'running',
+      'completed'
+    ])
+    expect(
+      new Set(
+        scoped
+          .filter((update) => update.toolStatus === 'running')
+          .map((update) => update.activity?.callId)
+      ).size
+    ).toBe(2)
+    expect(records.filter((entry) => entry.stage === 'action_started')).toEqual(
+      [
+        expect.objectContaining({
+          callId: scoped[0].activity?.callId,
+          evidence: expect.objectContaining({
+            actionId: 'action-1',
+            batchId: 'first'
+          })
+        }),
+        expect.objectContaining({
+          callId: scoped[2].activity?.callId,
+          evidence: expect.objectContaining({
+            actionId: 'action-1',
+            batchId: 'second'
+          })
+        })
+      ]
+    )
+    expect(scoped[0].activity?.callId).toBe(scoped[1].activity?.callId)
+    expect(scoped[2].activity?.callId).toBe(scoped[3].activity?.callId)
+  } finally {
+    await runtime.dispose()
+  }
+})

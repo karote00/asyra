@@ -966,7 +966,7 @@ for (const width of [360, 1280]) {
           callId: 'research-1',
           phase: 'executing',
           status: 'running',
-          label: 'Running an operation',
+          label: 'Researching design context',
           expected: ''
         },
         {
@@ -982,7 +982,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-1',
           phase: 'preparing',
           status: 'running',
-          label: 'Preparing geometry',
+          label: 'Preparing the design',
           expected: ''
         },
         {
@@ -999,7 +999,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: '',
+          label: 'Current task',
           message: '正在加入窗戶光影反射效果'
         },
         {
@@ -1007,7 +1007,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'preparing',
           status: 'running',
-          label: '',
+          label: 'Preparing the design',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1015,7 +1015,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'running',
-          label: '',
+          label: 'Preparing the design',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1023,7 +1023,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'completed',
-          label: '',
+          label: 'Current task',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1031,16 +1031,16 @@ for (const width of [360, 1280]) {
           callId: 'base-status',
           phase: 'applying',
           status: 'running',
-          label: '',
+          label: 'Adding the design',
           message: 'Applying window reflections',
-          expected: '正在加入窗戶光影反射效果'
+          expected: 'Applying window reflections'
         },
         {
           tool: 'apply_prepared_design',
           callId: 'base-status',
           phase: 'applying',
           status: 'completed',
-          label: '',
+          label: 'Current task',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1049,7 +1049,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: '',
+          label: 'Current task',
           expected: '正在加入窗戶光影反射效果'
         },
         {
@@ -1058,7 +1058,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: '',
+          label: 'Current task',
           message: '正在調整屋頂顏色'
         },
         {
@@ -1067,7 +1067,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: '',
+          label: 'Current task',
           message: '正在刪除被覆蓋物件'
         },
         {
@@ -1075,7 +1075,7 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'applying',
           status: 'completed',
-          label: '',
+          label: 'Current task',
           message: '正在加入窗戶光影反射效果',
           expected: '正在刪除被覆蓋物件'
         },
@@ -1085,7 +1085,7 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: '',
+          label: 'Current task',
           message: '正在隱藏右下角的標記。'
         }
       ]
@@ -1203,10 +1203,10 @@ for (const width of [360, 1280]) {
         .getByLabel('Operational progress')
         .locator('li')
         .count()
-      for (const tool of [
-        'read_design_context',
-        'inspect_drawing',
-        'describe_design_apis'
+      for (const [tool, label] of [
+        ['read_design_context', 'Reading the design'],
+        ['inspect_drawing', 'Reviewing the drawing'],
+        ['describe_design_apis', 'Finding available operations']
       ]) {
         for (const toolStatus of ['running', 'completed']) {
           response.write(
@@ -1224,9 +1224,14 @@ for (const width of [360, 1280]) {
             }) + '\n'
           )
           await expect(status.locator(':scope > span')).toHaveText([
+            toolStatus === 'running' ? label : 'Current task',
             '正在隱藏右下角的標記。'
           ])
           await expect(current).toHaveText('正在隱藏右下角的標記。')
+          if (tool === 'inspect_drawing' && toolStatus === 'running')
+            await page.getByTestId('ai-agent-panel').screenshot({
+              path: testInfo.outputPath('active-inspection-purpose.png')
+            })
         }
       }
       await expect(
@@ -1235,6 +1240,7 @@ for (const width of [360, 1280]) {
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
+        'Current task',
         longDescription
       ])
       expect(

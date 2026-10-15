@@ -47,6 +47,13 @@ apply no canonical prefix. Executor failure reaches the app transaction's
 rollback. `dispose()` aborts active work and disposes only explicitly owned
 resources.
 
+Scoped authored action progress has paired start/end notifications. Each actual
+execution has an opaque invocation identity, distinct from batch-local action IDs;
+causal trace children use that execution identity and retain original actionId and
+batchId for correlation. Completion ends activity, not necessarily successful work.
+Abort suppresses further observer notifications; consumers use the returned
+cancelled outcome to settle their UI. Progress never authorizes mutation or retry.
+
 When actions need revision-bound receipt capture, the App mutation executor
 honors `runAiMutation(context, mutate, settled?)`: call `settled(result)` once,
 synchronously after successful canonical publication and before yielding. Keep
