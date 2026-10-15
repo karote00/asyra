@@ -1725,3 +1725,14 @@ test('Skill source inputs select packaging checks before merge alongside their e
     )
   )
 })
+
+test('the original collaboration wrapper selects its own E2E producer', () => {
+  const selected = classifyChanges(
+    ['scripts/run-collaboration-e2e.sh'],
+    manifests
+  )
+  assert.deepEqual(selected.relationshipMap.executionPlan.checks.e2e.selected, [
+    'collaboration'
+  ])
+  assert.deepEqual(selected.unknownPaths, [])
+})

@@ -1186,3 +1186,211 @@ retention, source/configuration rejection, declared investigation entries,
 functional/status lifecycle and unchanged direct consumers. No remaining concrete
 finding was identified in that scope. This does not establish root cause, verify
 the 19 skipped product cases, or expand Stage A into collaboration work.
+
+## Stage B - Collaboration and shared Framework localization - 2026-10-15
+
+Activated from merged Stage A at `6ff0eaae6248c6f28279f1791d27c51c7633233b`.
+One complete stage and one PR. Main goal: original collaboration and selected
+shared Framework failures identify declared investigation entries and original
+evidence, without propagating failure to unobserved consumers.
+
+Frozen collaboration inventory: the original `test:e2e:collaboration` command
+and `playwright.collaboration.config.ts` select 17 Chromium cases:
+
+- `collaboration-ai-agent-video.spec.ts` - proves the high-detail progressive CRDT correctness flow without generating media
+- `collaboration-ai-agent-video.spec.ts` - keeps two connected Actors converged through one complete high-detail cat Undo and Redo
+- `collaboration-ai-agent-video.spec.ts` - records two live CRDT clients while Agent creates the same cat
+- `collaboration.spec.ts` - keeps only the initial none-to-connected transition silent
+- `collaboration.spec.ts` - does not replay a prior-generation removal after document Reset
+- `collaboration.spec.ts` - keeps the room live when a retained source publication cannot apply during recovery
+- `collaboration.spec.ts` - 16-item server response publishes each finite member with one Undo and Redo entry
+- `collaboration.spec.ts` - 16-item AI response converges through the ordinary two-actor publication path
+- `collaboration.spec.ts` - 320-item AI response converges through the ordinary cooperative two-actor path
+- `collaboration.spec.ts` - 1,280-item cat prefix measures ordinary cooperative two-actor creation
+- `collaboration.spec.ts` - two real Asyra Design windows converge while connected and catch up through reconnect bootstrap
+- `collaboration.spec.ts` - remote undo restores an exact nested Group with and without local tombstones
+- `collaboration.spec.ts` - remote Group redo preserves exact hierarchy and world geometry
+- `collaboration.spec.ts` - vector creation and anchor movement converge through the canonical collaboration pipeline
+- `collaboration.spec.ts` - mouse-down create and drag frames reach peer canonical state before pointer-up
+- `collaboration.spec.ts` - pen drag-to-add publishes real topology and curve frames before pointer-up
+- `collaboration.spec.ts` - partial Fill updates preserve computed and UI fields on both peers through Undo and Redo
+
+The three video-file cases retain their original high-detail/media opt-in guards.
+Ordinary execution covers all 14 collaboration cases; guarded cases remain
+explicitly skipped unless their original environment is supplied. Mapping a
+guarded case does not claim its runtime correctness. No new media recording or
+external-provider task is activated.
+
+Frozen Framework scope: all cases selected by the existing Factory publication
+(9), Factory History (14), Render viewport (6), Pixi navigation (27), Preset native
+fill (11), Preset coverage (16) and Agent recipe (4) manifests/configurations: 87.
+Preserve their existing exact identities and owners. Original configuration
+discovery/results must agree with this inventory; discrepancies block closure.
+Stage A's 412 identities are preservation obligations, not another full E2E run.
+
+Authorized changes: observation-only manifests/Inspector/specification, original
+Playwright adapter, test-only participant evidence, collaboration command/CI
+wiring, affected permanent tests/fixtures, generated catalog and tool docs.
+No App or Framework runtime semantics, original product assertions, budgets,
+resource guards, package dependencies, accepted baselines or optional actions
+change. Fixed discovery is current commands/configs, selected manifests, selected
+assertions, their canonical owners and direct Board/API/CLI consumers.
+
+Architecture/design review: reuse `admit-proof-contract` and
+`localize-test-results`. Exact file/title/project identifies the case; actual
+participant identities are retained evidence, never guessed failure owners.
+Record each identity during the existing readiness helper before contexts close,
+with observation UUID, test ID, project and retry. The original report carries
+these attachments; collection validates them once and stores the immutable
+projection. Missing/foreign identity evidence cannot establish a clean pass or
+retire a prior failure. Readers continue consuming stored records without
+remapping; no new registry, dependency-impact propagation or cache is introduced.
+The test helper is an explicit observation input fingerprint, separate from the
+product architecture boundary.
+
+The existing local package command and CI both enter one PID-owned shell wrapper
+that captures source before invoking the unchanged Playwright configuration and
+finalizes on exit. Original errors, attempts and attachments remain intact.
+Functional/status source behavior remains unchanged. Vitest already records the
+selected Framework manifests; reuse it and prove actual mixed-consumer outcomes.
+
+Complete acceptance: exact 17/87 inventories; original local/CI capture; participant
+identity isolation and missing-output handling; unchanged original collaboration
+baseline plus bounded owner fault/recovery; shared-owner failures with passing
+and unexecuted consumers, concurrent local/remote failures, partial recovery and
+immutable history; Board/API/CLI parity; stale/source/config/retry rejection;
+assembled tool regressions, scoped lint/typecheck/build, naming, catalog, CI scope
+and task/Changeset admission. Run focused gates after meaningful slices and broad
+gates once assembled; rerun only invalidated evidence. Product bugs outside
+localization stop the affected acceptance rather than silently expand scope.
+
+Admission execution card: `admit-proof-contract` consumes this frozen inventory
+and current collaboration/session/Factory contracts. Add one exact collaboration
+observation manifest and architecture with independent operation outcomes. Inputs
+are existing cases and canonical owner source; output is admitted mappings with
+required participant counts and explicit observation-only source files. Validate
+invalid participant declarations/input paths, exact inventory, owner boundaries
+and executable-proof rejection. Boundaries are existing admission, manifests,
+Inspector/spec and contract tests. No runtime-derived or UI-guessed ownership;
+missing/contradictory entries block advancement. Failure owner remains admission.
+
+Next stage: after A/B acceptance, close the agreed localization scope. Optional
+Stage C command buttons/comments require separate activation; no further mandatory
+coverage stage is created.
+
+Localization execution card: `localize-test-results` consumes the admitted
+collaboration manifest, original JSON report, source fingerprint and test-only
+participant attachments. Produce one immutable localized record per invocation;
+validate each attempt's capture/test/project/retry identity and distinct actual
+participants before allowing a pass. Preserve failed attempts even when identity
+is unavailable. The helper wraps existing readiness without changing assertions
+or runtime; only its declared observation input extends source capture. The
+existing functional/status paths and Vitest reporter remain authoritative.
+Allowed files are the adapter/localization, collaboration shell/package command,
+CI handoff, observation helper/imports, and their permanent tests/fixtures named
+by the Inspector. Empty, foreign, stale and interrupted inputs cannot fabricate
+success. Focused gates cover source isolation, participant replay, incomplete
+attempts, original failures and shell exit handling. Stop for incompatible
+product semantics; no retained cache or cross-consumer failure propagation.
+
+Framework inventory correction: original configuration discovery found 14 History
+cases, of which only two had existing mappings. The other six configurations
+match their declared counts. The complete selected Framework inventory is 87;
+75 was the pre-discovery mapped count, not complete coverage. This is inside the
+frozen config scope. Admission card: preserve both existing replay identities;
+map the 12 missing cases to canonical History staging, rollback, staged-delivery
+or replay ownership according to their actual assertions. Extend the existing
+History Inspector/manifest and direct regression expectations, not the original
+runtime or assertions. Run original baseline/negative scenarios to retain exact
+scenario outcomes and complete coverage. Reject missing owners instead of
+narrowing the configuration or counting unmapped failures as localized.
+
+Collector capacity correction: the complete original collaboration command passed
+14 cases and skipped the three original guarded cases, but its 14,481,480-byte
+JSON exceeded the functional producer's 4 MiB limit. The retained original report
+proves the producer-specific prerequisite. Raise only admitted collaboration
+reports to a bounded 32 MiB limit; functional/status remain 4 MiB, attachment and
+process guards remain unchanged. A permanent above-4-MiB/above-32-MiB regression
+must fail before correction. Replay the retained original report/context for
+acceptance rather than rerun successful product cases; keep the first unavailable
+observation immutable and distinguish it from corrected ingestion evidence.
+
+Localization boundary review: the report budget does not override the existing
+32 MiB stored-record budget. The permanent oversized-envelope case proves that
+normalization can exceed that bound through retained runner details. Before
+saving, the localization owner must replace an over-budget result with an
+explicit unavailable observation (no cases or recovery authority), preserving
+the original producer file. This is incomplete evidence, not a product fallback.
+The same-owner integration test exercises one Factory fault through the original
+Framework configuration and collaboration case, then independent recovery and
+Board/API/CLI history. Its isolated repository must copy every declared mapped
+input, including specification inputs; an incomplete fixture cannot grant source
+precision. No product semantics or budgets change.
+
+Bounded fixture replan after two setup failures: shared-consumer source capture
+must reuse the localization owner's expanded fingerprint input list, rather than
+copy a partial manifest list or reinterpret glob boundaries. Copy those exact
+files before introducing the single Factory fault. Review confirms this includes
+specification, configuration and runtime inputs and preserves the original tests;
+then rerun only this unfinished shared-consumer acceptance. No production change
+is needed for these setup failures.
+
+CI handoff review found the new wrapper missing from the existing suite-selection
+registry. A wrapper-only diff failed the formal selection regression. Under the
+localization command/CI handoff card, register this support input only for the
+collaboration suite and its existing repository-check owner. The registry remains
+the sole selection authority; no new CI policy or product scope is introduced.
+
+### Stage B validation and bounded review outcome
+
+The complete implementation is locally validated; PR review and remote CI remain
+separate. This stage's main objective is original collaboration/shared Framework
+failure-to-node localization, with actual participant evidence and independent
+consumer outcomes. No App or Framework runtime behavior changed.
+
+- Original complete collaboration invocation: 14 passed, 3 original opt-in cases
+  skipped, 0 unexpected failures, 159.9 seconds. The original 14,481,480-byte
+  report is retained under `tmp/flow-inspector/collaboration-full-kdYXy7/`.
+  Its first collection was unavailable because of the former report cap. The
+  corrected collector replays its captured mapping, source and original report
+  into 17 mapped outcomes; the resulting record also passes the durable reader.
+  This is historical ingestion evidence, not a claim that later formatting and
+  clarified Inspector text were present in that product run. Current admission,
+  source-input invalidation, capacity and reader tests validate those later edits.
+- All seven selected Framework configurations: 87 original cases passed and
+  mapped. History expands from two to all 14 exact cases, preserving original IDs;
+  original replay-order/inverse faults retain all eight/nine failures.
+- All five collaboration operation owners passed original baseline/fault/recovery
+  proofs, with original assertions unchanged. Same-source Factory fault proof:
+  three Framework failures plus one collaboration failure, six Framework passes,
+  and no failure invented for unexecuted consumers. Independent recovery retains
+  the other consumer's failure and both immutable original records.
+- Concurrent local session/remote peer faults and partial recovery passed.
+  Missing/foreign participants, retry identity, stale observation-helper inputs,
+  report/envelope limits and shell failure/termination exits have permanent tests.
+- Shared-consumer Board/API/CLI parity passed. Desktop (1800 x 1200) and narrow
+  (850 x 1100) screenshots were inspected: mapped selection and original evidence
+  are readable. Artifacts: `tmp/flow-inspector/playwright-runtime-AHMNTP/`.
+  History Board integration also passed with all newly mapped failures.
+- Assembled control-plane run: 617 tests, 562 passed, 54 intentionally skipped;
+  its sole failure was the superseded assertion that collaboration was an unknown
+  producer. That assertion was corrected and its focused rerun passed. Final
+  admission/localization/collaboration tests: 76 passed, 10 opt-in skips (those
+  original producer proofs were run separately as listed above).
+- Tool React tests: 12 passed; final catalog/viewer/package contracts: 100 passed;
+  CI relationship/workspace automation/local validation contracts: 122 passed;
+  task/placement/CI initial contracts: 75 passed; naming: 15 passed.
+  Scoped ESLint, shell syntax, tool typecheck/build and baseline workspace build
+  passed. Core `prove` passed 3 flows, 5 negative scenarios and 9 obligations;
+  `candidate` completed. No accepted baseline was changed.
+- Bounded review covered declared owners, original runner handoffs, immutable
+  ingestion/read consumers, selected CI wiring and Stage A preservation. It fixed
+  report capacity, durable envelope capacity (including formatted bytes), and
+  wrapper-only CI selection. No remaining in-scope finding is known. Historical
+  full-run evidence is not rewritten or promoted to current-source conformance.
+
+Next goal: after Stage B review/CI/merge, close the agreed A/B localization scope.
+Stage C command buttons/comments remains optional and needs separate activation.
+Universal repository coverage, root-cause inference, debugging/repair automation,
+ADE and task dispatch remain outside this stage. The three guarded collaboration
+cases are mapped but their high-detail/media behavior was not executed here.

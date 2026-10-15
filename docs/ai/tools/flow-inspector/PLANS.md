@@ -9,8 +9,8 @@ human or AI's work. The roadmap no longer requires an agent/task/delivery system
 
 ## Current delivery stages - 2026-10-15
 
-The core failure-to-node path is implemented. Stage A now has a complete
-implementation candidate for its frozen 412-case inventory; validation and
+The core failure-to-node path is implemented. Stage A merged as PR #333
+with its frozen 412-case inventory; validation and
 remaining execution limits are recorded in the supporting plan. Follow the roadmap's
 [consolidated stages](plans/flow-inspector-workflow-control-plane-roadmap.md#consolidated-delivery-stages---2026-10-15):
 
@@ -19,8 +19,11 @@ remaining execution limits are recorded in the supporting plan. Follow the roadm
 3. Stage C: optional command buttons and comments, only on a separate request.
 
 A/B include full end-to-end acceptance, not one PR per mapping or owner. Exact
-inventories are frozen before implementation. Stage B is the next goal after
-Stage A review; it is not activated by the Stage A implementation. Historical
+inventories are frozen before implementation. Stage B is now activated as one
+complete stage: 17 collaboration identities and 87 selected Framework cases.
+Its whole-stage validation is recorded in the existing result-source plan.
+After A/B acceptance, close the agreed localization scope; optional C requires
+a separate request. Historical
 slice notes do not schedule more stages.
 
 ## Core Mainline

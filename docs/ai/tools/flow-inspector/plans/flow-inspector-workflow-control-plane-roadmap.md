@@ -11,7 +11,8 @@ they were implemented or that the original full phases were completed.
 The consolidated roadmap supersedes the earlier small delivery slices. The user
 subsequently activated the complete Stage A from merged main; its frozen inventory,
 implementation and validation are recorded in the existing result-source support
-plan. Stage B and optional Stage C require their own activation.
+plan. Stage A merged as PR #333. The user activated the complete Stage B from
+that merged main; optional Stage C remains inactive.
 
 ## Product Objective
 
@@ -50,41 +51,41 @@ This section supersedes the earlier per-case/per-owner delivery sequence and
 historical "next-stage" notes in the supporting plan. Owner steps remain internal
 implementation and review checkpoints, not separate user-facing stages or PRs.
 The original consolidation was planning-only. Stage A was subsequently activated
-as one complete implementation; this does not activate Stage B or C.
+as one complete implementation and merged. Stage B was separately activated
+from that main; Stage C remains inactive.
 Association: this roadmap's Delivery Sequence, now consolidated here; the Flow
 Inspector follow-up owner retains whole-plan closeout responsibility.
 
 ### Current completed capabilities and remaining gaps
 
 Earlier completed coverage is recorded through PR #331. The Stage A implementation
-candidate extends it as described below; local validation is distinct from PR
+merged as PR #333. Stage B extends it as described below; local validation is distinct from PR
 review, CI completion and merge.
 
 - Core ordinary Vitest ingestion, exact case-to-node mapping, original failure
   context, Board/API/CLI access, per-case recovery and immutable history are
   implemented. Unknown, ambiguous, stale and execution failures remain explicit.
 - Existing mappings cover Design Undo/Redo shortcuts, Factory transaction and
-  two real History replay cases, Design execution (23 cases), Render viewport
+  all 14 Factory History cases, Design execution (23 cases), Render viewport
   (six), reusable-tool composition (four), Pixi adapter (27), Preset vector
   material (11) and compound coverage (16). These are selected test contracts,
   not complete package coverage, GPU output or live-provider verification.
 - Design original Playwright/functional CI report ingestion is implemented.
-  The Stage A candidate covers all 412 frozen Chromium identities, preserving the
+  Stage A covers all 412 frozen Chromium identities, preserving the
   six existing deletion mappings and adding 32 functional responsibility nodes.
   Original expected failures remain failed and skipped cases remain unverified;
   coverage does not mean all underlying product behavior passes.
-- Still missing: separately admitted collaboration result support and the
-  remaining shared-owner/consumer mappings
-  within an explicitly frozen integration scope. Existing collectors and readers
-  must be reused rather than rebuilt for each test file.
+- Stage B adds separately admitted collaboration result support (17 exact cases,
+  including three guarded opt-ins) and completes all 87 cases selected by seven
+  shared Framework configurations. Its validation record is in the support plan;
+  mapping a case does not turn skipped or failing behavior into a pass.
 - Node command buttons and comments remain optional. Automatic diagnosis, repair,
   ADE, task orchestration and merge enforcement are outside this roadmap.
 
 ### Stage A - Complete Design functional failure localization
 
-Status: locally complete, pending PR review and remote CI. See the Stage A
-activation and acceptance record in the result-source support plan. Stage B is
-the next implementation goal after review.
+Status: merged as PR #333. See the Stage A activation and acceptance record
+in the result-source support plan.
 
 Outcome: within the selected Design functional suite, a failed existing test
 leads directly to its responsible architecture node and original investigation
@@ -120,6 +121,10 @@ Full acceptance:
    a supported-scope summary and a reproducible existing-command example.
 
 ### Stage B - Complete collaboration and shared Framework localization
+
+Status: locally complete from merged PR #333; pending PR review and remote CI.
+The frozen 17 collaboration / 87 Framework inventory and evidence live in the
+result-source support plan. The complete stage is delivered as one PR after scoped validation.
 
 Outcome: collaboration and shared Framework failures within a frozen integration
 scope are as directly actionable as local Design failures, without marking every

@@ -430,6 +430,9 @@ async function playwrightFixture(t, options = {}) {
         cwd: app,
         env: {
           ...env,
+          ...(observationSource === 'collaboration'
+            ? { E2E_OWN_SERVERS: '0', FLOW_OBSERVATION_ID: context.id }
+            : {}),
           PLAYWRIGHT_JSON_OUTPUT_NAME: path.join(repository, reportPath)
         },
         signal: t.signal,

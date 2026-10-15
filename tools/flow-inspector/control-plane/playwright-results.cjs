@@ -11,6 +11,8 @@ const sourceManifestPaths = (source = 'functional') => {
       manifestPath,
       'apps/asyra-design/playwright-functional-flow-contracts.json'
     ]
+  if (source === 'collaboration')
+    return ['apps/asyra-design/playwright-collaboration-flow-contracts.json']
   if (source === 'status')
     return ['apps/asyra-design/playwright-status-flow-contracts.json']
   throw new Error('Unsupported Design Playwright source')
@@ -168,6 +170,67 @@ function normalizeReport(root, context, original) {
           }
           if (malformed)
             errors.push('Malformed Playwright result: ' + spec.title)
+          const selected = context.contracts.flatMap((contract) =>
+            contract.cases.filter(
+              (candidate) =>
+                (candidate.testFile ?? contract.testFile) ===
+                  path.relative(root, file) &&
+                candidate.testName === [...titles, title].join(' ') &&
+                candidate.projectName === item.projectName
+            )
+          )
+          if (selected.some((candidate) => candidate.minimumParticipants)) {
+            for (const result of item.results) {
+              if (result?.status === 'skipped') continue
+              const participants = new Set()
+              let valid = true
+              const attachments = (
+                Array.isArray(result?.attachments) ? result.attachments : []
+              ).filter(
+                (attachment) => attachment?.name === 'collaboration-participant'
+              )
+              for (const attachment of attachments) {
+                try {
+                  if (
+                    attachment.contentType !== 'application/json' ||
+                    typeof attachment.body !== 'string'
+                  )
+                    throw new Error('missing participant body')
+                  const evidence = JSON.parse(
+                    Buffer.from(attachment.body, 'base64').toString('utf8')
+                  )
+                  if (
+                    evidence.observationId !== context.id ||
+                    evidence.testId !== spec.id ||
+                    evidence.projectName !== item.projectName ||
+                    evidence.retry !== result.retry ||
+                    !['documentId', 'roomId', 'actorId'].every(
+                      (key) =>
+                        typeof evidence.identity?.[key] === 'string' &&
+                        evidence.identity[key].trim()
+                    )
+                  )
+                    throw new Error('foreign participant identity')
+                  participants.add(evidence.identity.actorId)
+                } catch {
+                  valid = false
+                }
+              }
+              if (
+                !valid ||
+                selected.some(
+                  (candidate) =>
+                    participants.size < candidate.minimumParticipants
+                )
+              ) {
+                malformed = true
+                errors.push(
+                  'Collaboration participant evidence unavailable or mismatched: ' +
+                    spec.title
+                )
+              }
+            }
+          }
           const clean =
             !malformed &&
             !executionIncomplete &&
@@ -257,14 +320,21 @@ function begin(
   const report = safePath(root, reportPath)
   if (fs.existsSync(report) || fs.existsSync(report + '.context.json'))
     throw new Error('Use a fresh report path for each Playwright invocation')
+  let defaultCommand = { cwd: '.', argv: ['bash', 'scripts/run-e2e.sh'] }
+  if (source === 'status')
+    defaultCommand = {
+      cwd: 'apps/asyra-design',
+      argv: ['yarn', 'test:e2e:status-toast']
+    }
+  if (source === 'collaboration')
+    defaultCommand = {
+      cwd: 'apps/asyra-design',
+      argv: ['yarn', 'test:e2e:collaboration']
+    }
   const context = localization.beginObservation(root, {
     manifestPaths: sourceManifestPaths(source),
     command: command ?? {
-      cwd: source === 'status' ? 'apps/asyra-design' : '.',
-      argv:
-        source === 'status'
-          ? ['yarn', 'test:e2e:status-toast']
-          : ['bash', 'scripts/run-e2e.sh'],
+      ...defaultCommand,
       environment: Object.fromEntries(
         [
           'CI',
@@ -308,13 +378,20 @@ function complete(root, reportPath) {
   }
   if (context.phase === 'completed')
     throw new Error('Playwright invocation was already completed')
+  const reportLimitMiB = context.contracts.some((contract) =>
+    sourceManifestPaths('collaboration').includes(contract.manifestPath)
+  )
+    ? 32
+    : 4
   let original = null
   try {
     if (
       !fs.statSync(report).isFile() ||
-      fs.statSync(report).size > 4 * 1024 * 1024
+      fs.statSync(report).size > reportLimitMiB * 1024 * 1024
     )
-      throw new Error('Report exceeds the 4 MiB observation limit')
+      throw new Error(
+        'Report exceeds the ' + reportLimitMiB + ' MiB observation limit'
+      )
     original = JSON.parse(fs.readFileSync(report, 'utf8'))
   } catch (error) {
     context.issues.push('Playwright report unavailable: ' + error.message)
@@ -444,7 +521,7 @@ if (require.main === module) {
       (action === 'complete' && process.argv.length > 4)
     )
       throw new Error(
-        'Usage: playwright-results.cjs begin <fresh-report-path> [functional|status] or complete <report-path>'
+        'Usage: playwright-results.cjs begin <fresh-report-path> [functional|status|collaboration] or complete <report-path>'
       )
     const result =
       action === 'begin'

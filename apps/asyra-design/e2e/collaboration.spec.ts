@@ -1,3 +1,4 @@
+import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
 import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
@@ -12,8 +13,7 @@ import {
   getSelectedElementClientCenter,
   pressGroupCommandShortcut,
   redo,
-  undo,
-  waitForAppReady
+  undo
 } from './test-utils'
 
 const collaborationUrl = (fileId: string) =>

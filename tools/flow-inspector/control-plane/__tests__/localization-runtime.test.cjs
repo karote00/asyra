@@ -256,7 +256,7 @@ test(
 )
 
 test(
-  'ordinary History replay faults locate registered cases while preserving unmapped failures and other targets',
+  'ordinary History replay faults locate registered cases while retaining all selected failures and other targets',
   { timeout: 120000 },
   async (t) => {
     const fixture = localizationFixture()
@@ -267,7 +267,7 @@ test(
     assert.equal(
       baseline.record.cases.filter((item) => item.resolution === 'mapped')
         .length,
-      2
+      14
     )
     fixture.mutate('app')
     const appFault = await fixture.run('app')
@@ -281,11 +281,17 @@ test(
         (item) => item.status === 'failed'
       )
       const mapped = failures.filter((item) => item.resolution === 'mapped')
-      assert.equal(mapped.length, scenario === 'replay-order' ? 2 : 1)
-      assert.ok(failures.some((item) => item.resolution === 'unmapped'))
+      assert.equal(mapped.length, scenario === 'replay-order' ? 8 : 9)
+      assert.ok(failures.every((item) => item.resolution === 'mapped'))
       for (const item of mapped) {
         assert.equal(item.locations[0].targetId, 'history-replay')
-        assert.equal(item.locations[0].stepId, 'replay-history-action')
+        assert.ok(
+          [
+            'replay-history-action',
+            'record-history-action',
+            'rollback-history-action'
+          ].includes(item.locations[0].stepId)
+        )
         assert.equal(item.locations[0].ownerPackage, '@asyra/factory')
         assert.ok(
           item.failureDetails.some(

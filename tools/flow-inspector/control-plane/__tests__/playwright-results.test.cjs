@@ -647,7 +647,7 @@ test('functional and status producers select their complete exact contracts befo
   assert.deepEqual(sourceManifestPaths('status'), [
     'apps/asyra-design/playwright-status-flow-contracts.json'
   ])
-  for (const source of ['', 'collaboration', '../other', null])
+  for (const source of ['', 'unknown-producer', '../other', null])
     assert.throws(() => sourceManifestPaths(source), /source/)
 })
 

@@ -82,6 +82,7 @@ function sourceFingerprint(root, contracts) {
       'configFile'
     ])
       add(contract[key])
+    for (const file of contract.observationInputs ?? []) add(file)
     for (const item of contract.cases) if (item.testFile) add(item.testFile)
     for (const step of contract.runtimeScope.steps)
       for (const boundary of step.implementationBoundary)
@@ -299,7 +300,23 @@ function completeObservation(root, context, report, options = {}) {
   } catch (error) {
     options = { ...options, errors: [...(options.errors ?? []), error.message] }
   }
-  const result = localizeReport(root, context, report, { ...options, stale })
+  let result = localizeReport(root, context, report, { ...options, stale })
+  // Preserve the reader's existing bound, including its envelope and digest.
+  const envelopeBytes = Buffer.byteLength(
+    JSON.stringify({ digest: '0'.repeat(64), record: result }, null, 2) + '\n'
+  )
+  if (envelopeBytes > 32 * 1024 * 1024)
+    result = localizeReport(
+      root,
+      context,
+      { success: false, testResults: [] },
+      {
+        stale: true,
+        errors: [
+          'Localized observation exceeds the 32 MiB storage limit; original producer output remains at its source.'
+        ]
+      }
+    )
   saveObservation(observationDirectory(root), result)
   return result
 }

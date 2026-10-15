@@ -447,7 +447,7 @@ test('History replay admission maps existing Factory cases to their runtime owne
     'packages/factory/history-replay-flow-contracts.json'
   )
   assert.equal(contract.targetId, 'history-replay')
-  assert.equal(contract.cases.length, 2)
+  assert.equal(contract.cases.length, 14)
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
   for (const item of contract.cases) {
     assert.ok(
@@ -455,7 +455,14 @@ test('History replay admission maps existing Factory cases to their runtime owne
         item.testName.replace('Factory journal-backed action history ', '')
       )
     )
-    assert.equal(item.stepId, 'replay-history-action')
+    assert.ok(
+      [
+        'replay-history-action',
+        'record-history-action',
+        'rollback-history-action',
+        'settle-staged-delivery'
+      ].includes(item.stepId)
+    )
     assert.deepEqual(item.implementationPaths, [
       'packages/factory/src/factory.ts',
       'packages/factory/src/data-transact.ts'
@@ -463,12 +470,8 @@ test('History replay admission maps existing Factory cases to their runtime owne
   }
   assert.equal(contract.runtimeScope.steps[0].ownerPackage, '@asyra/factory')
   assert.deepEqual(
-    contract.scenarios.map((item) => item.expectedFailedCaseIds),
-    [
-      [],
-      ['replay.ordered-action', 'replay.staged-values'],
-      ['replay.staged-values']
-    ]
+    contract.scenarios.map((item) => item.expectedFailedCaseIds.length),
+    [0, 8, 9]
   )
 })
 

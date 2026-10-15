@@ -2237,15 +2237,15 @@ the original runner stack alongside the JSON report. Unavailable precision remai
 produce unresolved records. Failure text is original runner evidence, not an
 inferred root cause. Multiple cases at one node remain separate.
 
-The additional `history-replay` target maps two existing Factory journal-backed
-History cases: whole-action ordered replay and staged first-before/latest-after
-values. These execute real Factory replay handlers; they do not establish complete
-App state or rendering correctness. The remaining tests in the same file remain
-unmapped observations. Its manifest and isolated source config retain the same
-Vitest producer, exact identity rules and immutable history. Controlled replay
-order and inverse-value faults prove localization without changing assertions.
-This partial manifest does not satisfy strict accepted-proof inventory: the other
-twelve tests remain unregistered, and `prove` must not report conformance.
+The `history-replay` target maps all 14 existing Factory journal-backed History
+cases to recording, rollback, staged-delivery settlement and replay owners.
+The two original replay case identities remain stable. These execute real
+Factory handlers; they do not establish complete App state or rendering
+correctness. The manifest and isolated source config retain the same Vitest
+producer, exact identity rules and immutable history. Controlled replay-order
+and inverse-value faults retain eight and nine original failing cases,
+respectively, without changing assertions. Complete mapping alone does not grant
+an accepted baseline or conformance.
 
 The existing `ai-execution-flow` manifest is also a default observation source.
 Its 23 unchanged cases map to seven existing responsibility nodes with precise
@@ -2416,8 +2416,27 @@ introduced.
 Original attachment references remain in the report; available file attachments
 are copied once into the observation UUID directory with their size and SHA-256.
 Later runs cannot overwrite them. Missing, symlinked or out-of-output references
-remain explicit issues. Reports above 4 MiB, attachments above 64 MiB each or
+remain explicit issues. Reports above 4 MiB (32 MiB for the collaboration producer), localized records
+above the existing 32 MiB storage limit, attachments above 64 MiB each or
 256 MiB total are unsupported and never become passing evidence. CI retains the
 original producer output alongside observations. Source-stale passing records
 cannot retire prior failures. Read-only display may remove terminal styling;
 retained report/error bytes remain original.
+
+### Collaboration and shared Framework observations
+
+Collaboration selects its own pre-execution manifest/configuration and retains
+the original report. Observation-only manifests may declare exact repository
+`observationInputs` and positive bounded `minimumParticipants` per case. The
+former are fingerprinted verification inputs, never product ownership. Participant
+attachments contain the capture UUID, test identity, project, retry and actual
+document/room/actor IDs read from the active session. Missing or mismatched
+evidence remains explicit and cannot clear an earlier failure. An original joint
+assertion failure maps to its declared operation, not an inferred guilty actor.
+Readers expose the retained original attachments/attempts through existing
+Board/API/CLI records; no reader recomputes attribution.
+
+Existing Framework Vitest observations retain their exact selected cases. A
+shared package never marks all consumers failed: only observed failures count;
+passing consumers and unexecuted consumers remain distinct. Partial reruns do
+not erase other failures or alter historical records.

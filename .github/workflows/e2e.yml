@@ -220,3 +220,14 @@ jobs:
         id: flow-results
         if: ${{ always() }}
         run: node tools/flow-inspector/control-plane/workflow-results.cjs collect collaboration tmp/flow-ci/collaboration.json
+
+      - name: Retain collaboration observation evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: collaboration-observations-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            tmp/flow-ci/*.json
+            tmp/flow-inspector/test-results/
+            apps/asyra-design/test-results/
+          if-no-files-found: warn
