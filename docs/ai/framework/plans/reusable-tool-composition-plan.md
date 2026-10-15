@@ -97,6 +97,20 @@ The final delivery must still verify its actual committed head, changeset and ex
 remote lease. No live 101, provider request, Stage 3 product change or CI monitoring
 was performed. The subsequent Stage 3 planning review remains local after push.
 
+### Stage 2 final main freshness integration - 2026-10-16
+
+Before push, main advanced to 4e925488842807672ab36c86fb69a269bd2249f5
+(Inspector node interactions, #336). Rebase preserves both the new exact selected
+configuration binding test and this branch's owned-process cleanup tests. The
+existing workspace generator produces no further changes. All 590 previously
+reviewed Design/Runtime/Factory source files remain byte-identical. Run affected
+Inspector contract/catalog, node interaction, original-result and collaboration
+normalization tests; retain the completed original collaboration report rather
+than repeat unchanged browser behavior. The integrated suite passed 102 tests with
+55 existing opt-in skips (`tmp/stage2-push/stage-c-tests.log`), including the real
+original-case fault/recovery proofs. Scoped lint and 18 metadata tests passed.
+No Stage 3 implementation is included.
+
 ### Stage 1/2 integration review - 2026-10-16
 
 - Objective: recheck the current Stage 2 diff and direct Stage 1 consumers, including
