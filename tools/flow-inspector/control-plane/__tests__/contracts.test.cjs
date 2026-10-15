@@ -680,3 +680,54 @@ test('Pixi engine source config runs all unchanged cases without proof environme
   assert.equal(report.numPassedTests, 27)
   assert.equal(report.numFailedTests, 0)
 })
+
+test('Preset vector admission retains exact locations and the explicitly referenced package specification', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'packages/preset/navigation-flow-contracts.json'
+  )
+  assert.equal(contract.cases.length, 11)
+  assert.equal(contract.specPath, 'docs/ai/framework/packages/preset.md')
+  const step = contract.architectureDefinition.steps.find(
+    (item) => item.id === 'evaluate-vector-material'
+  )
+  assert.ok(step.specRefs.includes(contract.specPath))
+  assert.ok(fs.statSync(path.join(root, contract.specPath)).isFile())
+  for (const item of contract.cases) {
+    assert.equal(item.stepId, step.id)
+    assert.deepEqual(item.implementationPaths, [
+      'packages/preset/src/components/vector.ts',
+      'packages/preset/src/components/fills.ts',
+      'packages/preset/src/components/vector-compound-fill.ts'
+    ])
+    for (const file of item.implementationPaths)
+      assert.ok(fs.statSync(path.join(root, file)).isFile())
+  }
+})
+test('Preset vector source config runs all unchanged cases without proof environment', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+  const temporary = fs.mkdtempSync(
+    path.join(root, 'tmp/flow-inspector/vector-config-')
+  )
+  const env = { ...process.env, TMPDIR: temporary }
+  delete env.FLOW_PROOF_SOURCE
+  delete env.FLOW_PROOF_SCENARIO
+  const result = require('node:child_process').spawnSync(
+    process.execPath,
+    [
+      require.resolve('vitest/vitest.mjs'),
+      'run',
+      '--config',
+      'packages/preset/src/__tests__/navigation-flow.config.ts',
+      '--reporter=json'
+    ],
+    { cwd: root, env, encoding: 'utf8', timeout: 30000 }
+  )
+  assert.equal(result.status, 0, result.stdout + result.stderr)
+  const report = JSON.parse(result.stdout)
+  assert.equal(report.numPassedTests, 11)
+  assert.equal(report.numFailedTests, 0)
+})
