@@ -76,6 +76,10 @@ Updates carry an expected revision; atomic compare-and-replace rejects conflicts
 Repeating the same current update is a no-op; an older update cannot overwrite a
 newer revision. Concurrency correctness does not require a replayable event log.
 Current notes are editable/removable with the same revision checks; no edit history.
+These concurrency guarantees apply to supported writers. Direct editors must
+preserve valid revision bindings; validation cannot recover edits lost by an
+external writer that bypasses coordination. Document that boundary without
+requiring the helper API to author a valid flow.
 
 A result update replaces only its declared current scope. Superseded warnings are
 removed from current state after category-specific coverage validation, not moved
@@ -138,6 +142,13 @@ Ship a public, versioned, data-only schema and reference, usable outside Asyra:
   instructions, inspect evidence, add note, submit acceptance and reopen work.
 - Versioning, invalid input diagnostics, path semantics, examples and change rules.
 
+For architecture flows, preserve the existing semantic responsibilities: explicit
+step owner, inputs/outputs, conditions/bypasses, allowed/forbidden contributors,
+implementation boundary, specification references, failure owner, invariants,
+acceptance contracts, justified cache dimensions and route/artifact contracts. A task title and completion checkbox cannot replace those constraints.
+Non-code/manual flows may omit code/package references; their declared
+responsibilities, dependencies and acceptance criteria still require validation.
+
 Keep definition and current-result fields separate within the flow contract: producers do not rewrite
 architecture, and editing a definition cannot manufacture completion. Reuse the
 existing architecture contract and extend at its semantic owner; do not create
@@ -194,9 +205,10 @@ unsupported raw formats with a precise diagnostic and the documented import path
 Provide first-class Vitest and Playwright integrations using existing owners;
 publish supported runner versions before implementation. Generic producers bind
 project/flow/node/criterion and outcome. Automated producers also bind actual
-case identity, configuration and execution identity; source revisions and
+case or observation identity, configuration and execution identity; source revisions and
 supporting evidence references apply when declared by the flow. Test files,
-test case identities and run metadata are not requirements for manual-only flows. They preserve producer failure exit status,
+test case identities and run metadata are not requirements for manual-only flows.
+Producer integrations preserve producer failure exit status,
 partial/missing output and project boundaries. Mapping may be explicit even when
 there is no test file. Unknown failures remain visible rather than guessed.
 
@@ -232,6 +244,14 @@ Preserve complete machine-readable evidence/compact Agent summaries; reducing
 human visual density does not discard evidence. Legacy proof/delivery controls
 are not unconditional content in an ordinary task panel.
 
+A single machine-readable request for a selected node returns its current error
+or blocker, exact flow/node/criterion identities, relevant specification and
+implementation entry references, current evidence/revision and configured rerun
+command/scope (or manual/external next action). Missing references are explicit;
+never invent a root cause or require reading historical runs. Both the selected
+node and its compact context identify the declared failure owner. This is the
+starting point for investigation, not a claim of automatic diagnosis or repair.
+
 ## Independent runtime and external CI
 
 Separate installed read-only assets from validated consumer project context and
@@ -239,7 +259,8 @@ project-owned data. Discover config from cwd or an explicit root; handle nested
 workspaces, missing configuration, spaces, occupied ports and unavailable runners.
 Do not modify node_modules or silently fall back to Asyra flows. Initialization
 must not overwrite source, tests or configuration. Git is optional for local/manual
-use; missing Git identity is explicit, with source/config fingerprints instead.
+use; source/config fingerprints are used only when the flow declares them.
+Manual-only flows need neither Git nor a source fingerprint.
 Initial runtime target is Node.js 24 on macOS/Linux; Windows and Yarn PnP are not
 claimed without separate verification. npm install is required; node_modules-based
 Yarn/pnpm consumers resolve their local dependencies without global runners.
@@ -251,7 +272,7 @@ CI evaluation reads flow files alone and requires no browser, UI build, server,
 rendering dependency initialization or background service.
 Supply a generic shell recipe and a GitHub Actions example, not Asyra-only YAML.
 CI executes product tests once; Inspector consumes results rather than rerunning.
-A project may explicitly request a separate run action; reading/evaluation never
+Manual-only CI performs no product test step. A project may explicitly request a separate run action; reading/evaluation never
 implicitly triggers it.
 
 Define machine exit codes and structured outcomes for satisfied, unsatisfied,
@@ -267,6 +288,16 @@ validate included attachments, reject conflicts and import idempotently. Histori
 runs are not required or bundled by default. Board, Agent context and CI
 must use the same completion/evidence policy. Only current state and referenced tool-owned attachments require local storage;
 there is no mandatory archival or team synchronization.
+
+Live observation watches the selected flow-file set, including externally authored
+updates, creation, replacement and deletion; it does not watch product source to
+schedule tests. After a complete valid write, the dashboard and Agent reads
+converge to the same evaluated revision without reload. Partial/invalid JSON,
+unsupported schema and missing flow files show an actionable unavailable/invalid
+state, never a silently retained green verdict. A last-valid display, if retained
+in memory, is explicitly stale and cannot establish completion. Recovery requires
+a valid current file; cold start and live refresh apply identical validation.
+Product test watch remains producer-owned and publishes only executed results.
 
 ## Future team interfaces and conflict assessment
 
@@ -300,7 +331,12 @@ future team can safely merge mutable status JSON files.
 One complete stage: public flow authoring/schema/docs, generic and manual evidence,
 node/feature completion policy, card/top-panel actions, folded human context,
 current notes, current-only storage and the team-interface conflict decisions. Reuse existing test producers
-and reader. Review the complete product and architecture flow before implementing
+and reader. Stage 1 owns the public generic write/read contract, optional update
+helpers, manual actions, live file observation and compact Agent context, including
+adapting existing producers to the current-only contract. Stage 2 packages these
+same owners as installed commands/integrations and proves external use; it does
+not defer a write/read capability needed to accept Stage 1.
+Review the complete product and architecture flow before implementing
 owner steps. Do not split into per-button or per-state PRs.
 
 Acceptance:
@@ -323,7 +359,6 @@ Acceptance:
 7. Existing Asyra current failure localization, warning-coverage safeguards and exact
    selected reruns are preserved through the explicit flow-file transition. Documentation distinguishes
    task completion, automated pass and manual acceptance.
-
 8. A hand-written flow file alone operates the dashboard and policy evaluator,
    with no runner, reports, mapping database, Git or Asyra files. Invalid structure,
    criteria and dependencies produce actionable file/field errors.
@@ -331,11 +366,25 @@ Acceptance:
    restarting without any historical files gives the same verdict. Old-version
    writes conflict. The one-time Asyra projection agrees with retained current
    outcomes without modifying old archives.
+10. One compact-context request provides current failure/blocker, node and failure
+    owner, specification, implementation entry, revision and exact rerun scope or
+    manual/external action. A repair/retry case starts from that response without
+    separately searching logs or historical records; absent references stay explicit.
+11. Directly edit a flow with Inspector stopped, then load it; repeat with Inspector
+    open and verify refresh without reload. Create/delete/atomically replace files
+    and exercise partial/invalid writes and recovery. UI and machine reads never
+    expose a stale passing result as current, and observation launches zero tests.
+12. Translate an existing architecture flow and compare its owner, route, artifact,
+    contributor, bypass and failure-boundary contracts. Invalid references/cycles
+    fail; unrelated-node edits preserve unaffected acceptance while changed
+    prerequisites invalidate affected downstream completion. Required, optional
+    and conditional paths and flow-level acceptance have explicit verdict cases.
 
 ### Stage 2 - Independent installation, CI and release readiness
 
 One complete stage: installed executable, consumer config/catalog/storage,
-public adapters/import API, external CI, package assets and clean-consumer proof.
+distribution of Stage 1 adapters/import APIs, external CI, package assets and
+clean-consumer proof.
 It consumes Stage 1's complete task workflow, not the previous cluttered UI.
 
 Acceptance:
@@ -364,6 +413,15 @@ Acceptance:
 8. Inspect actual consumer UI and compare Board/API/CI outcomes. Record exact
    source and tarball integrity. All intended runtime files and public docs ship;
    no local evidence/secrets do. Verify existing Asyra operation is preserved.
+9. From shipped documentation alone, initialize without overwriting existing
+   files and validate the public manual/automated/mixed/custom examples. Repeat
+   Stage 1's compact-context and external-file update/recovery paths through the
+   installed package, not repository-private entry points.
+10. A manual-only CI job with no test runner installed and no UI/server started
+    evaluates a valid flow.
+    Satisfied, unsatisfied, invalid and awaiting-manual outcomes have documented
+    exit codes and matching structured results. An optional nonblocking manual
+    gate never changes the task/feature verdict to complete.
 
 Run focused formal gates at complete owner slices and assembled-stage checkpoints;
 do not repeatedly rerun unaffected expensive suites. No tests run for this planning
@@ -391,6 +449,13 @@ headless external CI, independent installation and future-team conflict boundari
 Stage 1 owns the schema, state transition and architecture-contract implementation;
 Stage 2 proves its independently installed distribution. Neither stage can claim
 completion from merely displaying static cards or passing Asyra-only tests. No
-additional product decision is needed to start Stage 1 after user authorization;
+additional product-scope decision is needed to start Stage 1 design after user authorization;
 owner-level design and formal tests remain part of implementation, not claimed
 as already performed. Publication requires separate explicit authorization.
+
+The follow-up planning review makes Stage 1's writer/reader ownership explicit,
+preserves architecture constraints, and adds direct-file refresh/error recovery,
+one-request Agent context and manual-only headless CI acceptance. Stage 2 proves
+those same capabilities from the installed package. Exact schema/owner-flow
+review remains a required Stage 1 design gate before production coding; this
+planning review does not claim that implementation admission already passed.

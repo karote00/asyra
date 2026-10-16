@@ -11,7 +11,8 @@ The remaining work is grouped into two complete delivery stages:
 
 1. Human task workflow and open evidence contract: public flow authoring,
    automated/manual evidence, node/feature acceptance, direct card/panel actions,
-   concise human context and future-team conflict boundaries.
+   concise human/Agent context, current-state writes and file observation,
+   and future-team conflict boundaries.
 2. Independent installation, external CI and release readiness: consumer-owned
    projects, portable adapters, installed-package acceptance and publication gate.
 
