@@ -944,3 +944,27 @@ test(
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
 )
+test('watch publication excludes cached files outside the actual runner specifications', async (t) => {
+  const { default: Reporter } = await import('../vitest-reporter.mjs')
+  const { JsonReporter } = await import('vitest/reporters')
+  let published
+  t.mock.method(JsonReporter.prototype, 'onFinished', async (files) => {
+    published = files
+  })
+  const reporter = new Reporter()
+  const selected = {
+    filepath: '/selected.test.ts',
+    projectName: 'selected',
+    tasks: []
+  }
+  const cached = {
+    filepath: '/cached.test.ts',
+    projectName: 'selected',
+    tasks: []
+  }
+  reporter.onTestRunStart([
+    { moduleId: selected.filepath, project: { name: 'selected' } }
+  ])
+  await reporter.onFinished([selected, cached])
+  assert.deepEqual(published, [selected])
+})

@@ -1262,6 +1262,16 @@ test('Board separates current evidence problems from historical warnings and lin
   await expect(history).not.toHaveAttribute('open', '')
   await history.locator('summary').click()
   await expect(history).toContainText('old warning <script>')
+  await expect(history).toContainText(
+    'Later complete invocation covered the same scope'
+  )
+  const recoverySummary = await (
+    await fetch(
+      server.origin + '/api/node-context/' + recovered.id + '/0/summary'
+    )
+  ).json()
+  assert.equal(recoverySummary.warnings.items[0].status, 'history')
+  assert.equal(recoverySummary.warnings.items[0].supersededBy, recovered.id)
   assert.equal(await history.locator('script').count(), 0)
   await page.screenshot({
     path: path.join(fixture.directory, 'current-and-history-desktop.png'),

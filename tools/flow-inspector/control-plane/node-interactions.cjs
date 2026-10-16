@@ -301,6 +301,7 @@ function createNodeInteractions(
       status = sameTest.some((candidate) => candidate.id === caseId)
         ? 'current'
         : 'superseded'
+    if (item && !sameTest.length) status = 'historical'
     const errors = item?.failureDetails?.length
       ? item.failureDetails
       : (item?.failures ?? []).map((message) => ({ message }))
@@ -315,12 +316,16 @@ function createNodeInteractions(
       'rerun.originalInvocation',
       4000
     )
+    const warnings = observations.warningContext(runId)
+    if (warnings.total > warnings.items.length)
+      truncatedFields.push('warnings.items')
     const result = {
       format: 1,
       runId,
       caseId,
       reference: bounded(reference, 'reference'),
       evidenceUrl,
+      warnings: boundedObject(warnings, 'warnings', 2000),
       observedAt: record?.startedAt ?? null,
       observedSource: record
         ? { head: record.head, digest: record.source.digest }
@@ -486,7 +491,7 @@ function createNodeInteractions(
     active.promise = Promise.resolve().then(async () => {
       let result
       try {
-        const { contract } = resolve(request.runId, request.caseId)
+        const { contract, location } = resolve(request.runId, request.caseId)
         const output = safePath(
           root,
           path.relative(root, path.join(directory, 'node-reruns', value.id))
@@ -564,6 +569,13 @@ function createNodeInteractions(
           cwd: command.cwd,
           argv: [process.execPath, ...args]
         }
+        const observationRequest = {
+          version: 1,
+          manifestPath: contract.manifestPath,
+          caseIds: [location.caseId],
+          predecessorId: request.runId,
+          reason: 'Explicit selected-case rerun'
+        }
         const observation = isPlaywright
           ? playwright.begin(
               root,
@@ -571,11 +583,13 @@ function createNodeInteractions(
               env,
               commandRecord,
               source,
-              executionConfig
+              executionConfig,
+              observationRequest
             )
           : localization.beginObservation(root, {
               manifestPaths: [contract.manifestPath],
-              command: commandRecord
+              command: commandRecord,
+              request: observationRequest
             })
         if (observation.source?.digest !== current.sourceDigest) {
           localization.completeObservation(root, observation, null, {

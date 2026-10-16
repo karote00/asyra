@@ -276,7 +276,7 @@ jobs:
           yarn workspace @asyra/asyra-design build:collaboration-server
       - name: Test Flow Inspector control-plane contracts
         run: |
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,node-interactions,collaboration-results,localization,localization-runtime,playwright-results,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,observation-files,observation-lifecycle,node-interactions,collaboration-results,localization,localization-runtime,playwright-results,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs candidate
 
@@ -462,6 +462,14 @@ jobs:
           PROFILE_RESULT: ${{ needs.fieldscope-profile-remaining.result }}
         run: |
           if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
+      - name: Download complete observation bundles
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: flow-observations-*
+          path: tmp/flow-ci/bundles
+          merge-multiple: false
       - name: Aggregate selected CI scope and completed flow results
         env:
           FLOW_RESULT_REPOSITORY: ${{ github.repository }}
@@ -470,6 +478,7 @@ jobs:
           FLOW_RESULT_INTEGRATION: ${{ github.sha }}
           FLOW_RESULT_RUN: ${{ github.run_id }}
           FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
+          FLOW_OBSERVATION_BUNDLES_DIR: tmp/flow-ci/bundles
           FLOW_SELECTED_CHECK_RESULTS_FILE: ci-selected-check-results.json
           FLOW_WORKSPACE_VALIDATION_RESULT: ${{ needs.workspace-validation.result }}
           FLOW_WORKSPACE_RESULTS_DIR: .ci-workspace-results

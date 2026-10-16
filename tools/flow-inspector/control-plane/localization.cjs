@@ -6,6 +6,7 @@ const { randomUUID, createHash } = require('node:crypto')
 const { loadContract } = require('./contracts.cjs')
 const { safePath } = require('./snapshot.cjs')
 const { writeAtomic, validId } = require('./store.cjs')
+const lifecycle = require('./observation-lifecycle.cjs')
 const digest = (value) => createHash('sha256').update(value).digest('hex')
 const FAILURE_DETAIL_FIELDS = [
   'name',
@@ -123,7 +124,36 @@ function beginObservation(root, options = {}) {
   } catch (error) {
     issues.push('Source fingerprint unavailable: ' + error.message)
   }
+  const request =
+    options.request ??
+    (process.env.FLOW_RESULT_REQUEST
+      ? JSON.parse(
+          fs.readFileSync(
+            safePath(root, process.env.FLOW_RESULT_REQUEST),
+            'utf8'
+          )
+        )
+      : undefined)
+  const intent = request ? lifecycle.resolveIntent(contracts, request) : null
+  let correction
+  if (request?.predecessorId) {
+    const previous = createObservationReader(observationDirectory(root)).get(
+      request.predecessorId
+    )
+    if (previous.phase !== 'completed')
+      throw new Error('Correction predecessor is incomplete')
+    correction = {
+      version: 1,
+      predecessorId: previous.id,
+      predecessorDigest: lifecycle.recordDigest(previous),
+      reason: request.reason
+    }
+    if (!lifecycle.validCorrection(correction))
+      throw new Error('Invalid correction reason')
+  }
   const context = {
+    ...(intent ? { intent } : {}),
+    ...(correction ? { correction } : {}),
     format: 1,
     id: randomUUID(),
     startedAt: new Date().toISOString(),
@@ -403,7 +433,7 @@ function invocationScope(record) {
       .sort(([a], [b]) => a.localeCompare(b))
   })
 }
-function classifyWarnings(records) {
+function classifyWarnings(records, associations = []) {
   const cleanScopes = new Map()
   const groups = { current: [], history: [] }
   for (const record of [...records].reverse()) {
@@ -413,20 +443,54 @@ function classifyWarnings(records) {
       record.cases.every((item) => value.identities.has(identity(item)))
     )
     if (record.issues.length || record.executionFailureDetails?.length) {
+      const explicit =
+        records.find((next) => lifecycle.canSupersede(record, next)) ??
+        associations
+          .map((relation) => {
+            const next = records.find(
+              (value) =>
+                value.id === relation.successorId &&
+                lifecycle.recordDigest(value) === relation.successorDigest
+            )
+            return lifecycle.canSupersede(
+              record,
+              next,
+              relation.correction,
+              relation.intent
+            )
+              ? next
+              : null
+          })
+          .find(Boolean)
       const retired =
-        successor &&
-        record.phase === 'completed' &&
-        successor.record.startedAt > record.startedAt &&
-        Number.isFinite(Date.parse(record.finishedAt)) &&
-        Date.parse(successor.record.startedAt) >=
-          Date.parse(record.finishedAt) &&
-        record.cases.every((item) => successor.identities.has(identity(item)))
+        explicit ||
+        (successor &&
+          !lifecycle.discoveryFailure(record) &&
+          (!record.intent ||
+            record.intent.cases.every((item) =>
+              successor.identities.has(identity(item))
+            )) &&
+          lifecycle.sameExecution(record, successor.record) &&
+          record.phase === 'completed' &&
+          successor.record.startedAt > record.startedAt &&
+          Number.isFinite(Date.parse(record.finishedAt)) &&
+          Date.parse(successor.record.startedAt) >=
+            Date.parse(record.finishedAt) &&
+          record.cases.every((item) =>
+            successor.identities.has(identity(item))
+          ))
+      let replacementReason = null
+      if (explicit)
+        replacementReason = 'Corrected invocation executed the intended cases'
+      else if (retired)
+        replacementReason = 'Later complete invocation covered the same scope'
       const group = {
         runId: record.id,
         startedAt: record.startedAt,
         issues: record.issues,
         executionFailureDetails: record.executionFailureDetails ?? [],
-        supersededBy: retired ? successor.record.id : null
+        supersededBy: retired ? (explicit?.id ?? successor.record.id) : null,
+        replacementReason
       }
       groups[retired ? 'history' : 'current'].push(group)
     }
@@ -457,8 +521,108 @@ function classifyWarnings(records) {
 }
 function createObservationReader(directory, options = {}) {
   const entries = new Map()
+  const relations = new Map()
+  const artifacts = new Map()
+  const readArtifact = options.readArtifact ?? ((file) => fs.readFileSync(file))
+  const projectRecord = (entry) =>
+    entry.artifactErrors?.length
+      ? {
+          ...entry.record,
+          issues: [...entry.record.issues, ...entry.artifactErrors],
+          cases: entry.record.cases.map((item) => ({
+            ...item,
+            resolution: 'stale',
+            locations: []
+          }))
+        }
+      : entry.record
+  const refreshArtifacts = () => {
+    const live = new Set()
+    for (const entry of entries.values()) {
+      entry.artifactErrors = []
+      if (!entry.record) continue
+      for (const artifact of entry.record.retainedArtifacts ?? []) {
+        const key = artifact.retainedPath
+        live.add(key)
+        try {
+          const prefix =
+            'tmp/flow-inspector/test-results/' +
+            entry.record.id +
+            '/attachments/'
+          if (
+            !key.startsWith(prefix) ||
+            !/^[0-9]+$/.test(key.slice(prefix.length))
+          )
+            throw new Error('Invalid retained artifact path')
+          const file = safePath(
+            directory,
+            entry.record.id + '/attachments/' + key.slice(prefix.length)
+          )
+          const stat = fs.lstatSync(file)
+          const signature =
+            stat.mtimeMs +
+            ':' +
+            stat.ctimeMs +
+            ':' +
+            stat.size +
+            ':' +
+            artifact.digest +
+            ':' +
+            artifact.size
+          let checked = artifacts.get(key)
+          if (checked?.signature !== signature) {
+            let error = null
+            if (
+              !stat.isFile() ||
+              stat.size !== artifact.size ||
+              stat.size > 64 * 1024 * 1024
+            )
+              error = 'Invalid retained artifact size or type'
+            else if (digest(readArtifact(file)) !== artifact.digest)
+              error = 'Retained artifact digest mismatch'
+            checked = { signature, error }
+            artifacts.set(key, checked)
+          }
+          if (checked.error) throw new Error(checked.error)
+        } catch (error) {
+          entry.artifactErrors.push(
+            'Retained artifact unavailable: ' + key + ': ' + error.message
+          )
+        }
+      }
+    }
+    for (const key of artifacts.keys())
+      if (!live.has(key)) artifacts.delete(key)
+  }
   const readFile = options.readFile ?? ((file) => fs.readFileSync(file, 'utf8'))
   const refresh = () => {
+    const relationDirectory = path.join(directory, 'corrections')
+    const relationNames = fs.existsSync(relationDirectory)
+      ? fs
+          .readdirSync(relationDirectory)
+          .filter((name) => !name.includes('.publish-'))
+      : []
+    for (const name of relations.keys())
+      if (!relationNames.includes(name)) relations.delete(name)
+    for (const name of relationNames) {
+      const file = path.join(relationDirectory, name)
+      const stat = fs.lstatSync(file)
+      const signature = stat.mtimeMs + ':' + stat.ctimeMs + ':' + stat.size
+      if (relations.get(name)?.signature === signature) continue
+      try {
+        if (!stat.isFile() || stat.size > 1024 * 1024)
+          throw new Error('Invalid correction file')
+        const relation = JSON.parse(readFile(file))
+        if (
+          !lifecycle.validAssociation(relation) ||
+          name !== relation.correction.predecessorId + '.json'
+        )
+          throw new Error('Invalid correction relation')
+        relations.set(name, { signature, relation })
+      } catch (error) {
+        relations.set(name, { signature, error: name + ': ' + error.message })
+      }
+    }
     const names = fs.existsSync(directory)
       ? fs
           .readdirSync(directory)
@@ -491,6 +655,10 @@ function createObservationReader(directory, options = {}) {
           (Object.hasOwn(record, 'executionFailureDetails') &&
             !validFailureDetails(record.executionFailureDetails, true)) ||
           !record.cases.every((item) => validCase(item, record.id)) ||
+          (record.intent !== undefined &&
+            !lifecycle.validIntent(record.intent)) ||
+          (record.correction !== undefined &&
+            !lifecycle.validCorrection(record.correction)) ||
           (record.command !== null &&
             (!record.command ||
               typeof record.command.cwd !== 'string' ||
@@ -511,15 +679,68 @@ function createObservationReader(directory, options = {}) {
         entries.set(name, { signature, error: name + ': ' + error.message })
       }
     }
+    refreshArtifacts()
   }
   return {
+    associations() {
+      refresh()
+      return structuredClone(
+        [...relations.values()]
+          .filter((entry) => entry.relation)
+          .map((entry) => entry.relation)
+      )
+    },
+    warningContext(id) {
+      refresh()
+      const records = [...entries.values()]
+        .filter((entry) => entry.record)
+        .map(projectRecord)
+        .filter((record) =>
+          lifecycle.matchesExecution(record, options.executionIdentity)
+        )
+        .sort(
+          (a, b) =>
+            a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id)
+        )
+      const groups = classifyWarnings(
+        records,
+        [...relations.values()]
+          .filter((entry) => entry.relation)
+          .map((entry) => entry.relation)
+      )
+      const selected = new Set(
+        (records.find((record) => record.id === id)?.cases ?? []).map(identity)
+      )
+      const followsRecovery = (group) =>
+        (
+          records.find((record) => record.id === group.supersededBy)?.cases ??
+          []
+        ).some((item) => selected.has(identity(item)))
+      const related = Object.entries(groups).flatMap(([status, values]) =>
+        values
+          .filter(
+            (item) =>
+              item.runId === id ||
+              item.supersededBy === id ||
+              followsRecovery(item)
+          )
+          .map((item) => ({
+            status,
+            runId: item.runId,
+            supersededBy: item.supersededBy,
+            replacementReason: item.replacementReason,
+            evidenceUrl: '/api/test-results/' + item.runId
+          }))
+      )
+      return { total: related.length, items: related.slice(0, 3) }
+    },
     caseContext(id, caseId) {
       if (!validId(id)) throw new Error('Invalid observation id')
       refresh()
       const entry = entries.get(id + '.json')
       if (!entry?.record)
         throw new Error(entry?.error ?? 'Observation not found')
-      const record = entry.record
+      const record = projectRecord(entry)
       const item = record.cases.find((value) => value.id === caseId)
       if (!item) throw new Error('Observed case unavailable')
       // Project before cloning: source inventories and raw reports are not summary inputs.
@@ -566,16 +787,42 @@ function createObservationReader(directory, options = {}) {
       refresh()
       const records = [...entries.values()]
         .filter((entry) => entry.record)
-        .map((entry) => entry.record)
+        .map(projectRecord)
         .sort(
           (a, b) =>
             a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id)
         )
+      const relationErrors = [...relations.values()]
+        .filter((entry) => entry.relation)
+        .flatMap(({ relation }) => {
+          const previous = records.find(
+            (record) => record.id === relation.correction.predecessorId
+          )
+          const next = records.find(
+            (record) => record.id === relation.successorId
+          )
+          return next &&
+            lifecycle.recordDigest(next) === relation.successorDigest &&
+            lifecycle.canSupersede(
+              previous,
+              next,
+              relation.correction,
+              relation.intent
+            )
+            ? []
+            : [
+                'Correction ' +
+                  relation.correction.predecessorId +
+                  ': missing, changed or unsupported successor evidence'
+              ]
+        })
       const current = new Map()
       const startedAt = new Map(
         records.map((record) => [record.id, record.startedAt])
       )
-      for (const record of records) {
+      for (const record of records.filter((value) =>
+        lifecycle.matchesExecution(value, options.executionIdentity)
+      )) {
         const perRun = new Map()
         for (const item of record.cases) {
           const key = identity(item)
@@ -666,10 +913,18 @@ function createObservationReader(directory, options = {}) {
             item.id.slice(item.runId.length + 1) +
             '/summary'
         })),
-        warningGroups: classifyWarnings(records),
-        issues: [...entries.values()]
+        warningGroups: classifyWarnings(
+          records.filter((value) =>
+            lifecycle.matchesExecution(value, options.executionIdentity)
+          ),
+          [...relations.values()]
+            .filter((entry) => entry.relation)
+            .map((entry) => entry.relation)
+        ),
+        issues: [...entries.values(), ...relations.values()]
           .filter((entry) => entry.error)
           .map((entry) => entry.error)
+          .concat(relationErrors)
       })
     }
   }

@@ -341,7 +341,8 @@ function begin(
   environment = process.env,
   command,
   source = 'functional',
-  executionConfig
+  executionConfig,
+  request
 ) {
   const report = safePath(root, reportPath)
   if (fs.existsSync(report) || fs.existsSync(report + '.context.json'))
@@ -360,6 +361,16 @@ function begin(
   const context = localization.beginObservation(root, {
     manifestPaths: sourceManifestPaths(source),
     executionConfig,
+    request:
+      request ??
+      (environment.FLOW_RESULT_REQUEST
+        ? JSON.parse(
+            fs.readFileSync(
+              safePath(root, environment.FLOW_RESULT_REQUEST),
+              'utf8'
+            )
+          )
+        : undefined),
     command: command ?? {
       ...defaultCommand,
       environment: Object.fromEntries(

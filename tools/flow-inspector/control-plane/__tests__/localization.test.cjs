@@ -575,3 +575,58 @@ test('unknown and concurrent warning scope remains current, including unreadable
   assert.equal(reader.list().issues.length, 1)
   assert.equal(reader.list().warningGroups.history.length, 0)
 })
+
+test('corrected invocation retires discovery warning through persisted intended scope, not argv equality', (t) => {
+  const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/correction-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const oldContext = context()
+  oldContext.startedAt = '2026-01-01T00:00:00.000Z'
+  const old = localizeReport(
+    root,
+    oldContext,
+    { success: false, testResults: [] },
+    {
+      errors: ['No Playwright cases recorded'],
+      originalReport: {
+        config: {},
+        suites: [],
+        stats: { expected: 0, unexpected: 0, flaky: 0, skipped: 0 },
+        errors: [{ message: 'Error: No tests found.' }]
+      }
+    }
+  )
+  old.finishedAt = '2026-01-01T00:00:01.000Z'
+  saveObservation(dir, old)
+  const next = context()
+  next.startedAt = '2026-01-01T00:00:02.000Z'
+  next.command.argv.push('--corrected-filter')
+  next.intent = {
+    version: 1,
+    cases: [
+      {
+        file: contract.testFile,
+        testName: contract.cases[0].testName,
+        projectName: ''
+      }
+    ]
+  }
+  next.correction = {
+    version: 1,
+    predecessorId: old.id,
+    predecessorDigest: require('node:crypto')
+      .createHash('sha256')
+      .update(JSON.stringify(old))
+      .digest('hex'),
+    reason: 'Correct the selector to the intended case'
+  }
+  const recovered = localizeReport(root, next, report([failure()]))
+  saveObservation(dir, recovered)
+  const reader = createObservationReader(dir)
+  assert.equal(reader.list().warningGroups.current.length, 0)
+  assert.equal(
+    reader.list().warningGroups.history[0].supersededBy,
+    recovered.id
+  )
+  assert.equal(reader.list().currentCases[0].status, 'failed')
+  assert.equal(reader.get(old.id).issues[0], 'No Playwright cases recorded')
+})

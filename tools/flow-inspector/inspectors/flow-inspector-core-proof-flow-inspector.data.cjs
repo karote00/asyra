@@ -60,17 +60,20 @@ const data = {
       inputs: [
         'artifact:admitted-proof-contract',
         'original Vitest or Design Playwright case report, runner-normalized error details and project identities',
-        'run identity and mapped working-tree input fingerprints'
+        'run identity and mapped working-tree input fingerprints',
+        'version-1 admitted case intent, correction requests and immutable associations',
+        'complete observation bundles with record and artifact digests'
       ],
       outputs: ['artifact:localized-test-observations'],
       conditions: [
+        'Persist bounded versioned intended case scope and explicit correction relations independently of service lifetime. Validate subsequent exact-scope evidence before retiring discovery warnings; preserve original records and expose replacement reasons. Export/import complete immutable result bundles with integrity and execution-identity checks; reads and imports never run tests.',
         'Resolve exact file/name/project identities once at ingestion; retain every failure and original report, including each runner-supplied assertion message, stack, expected, actual and diff without reconstructing omitted values. Preserve suite/run assertion details with their execution context and no invented product node.',
         'Unmapped, ambiguous, stale and execution failures stay explicit; no guessed node or root cause.',
         'Selected node reruns may bind a generated execution configuration to the admitted original configuration and exact retained wrapper digest. Require that explicit binding before accepting its report; changed, missing or unrelated configuration stays stale. Preserve the actual original report and participant observation identity.',
         'Design Playwright ingestion selects the functional, isolated status or collaboration source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures. Clean skips remain unverified without implying a failed invocation; Every collaboration exit settles the owned runner group before observation finalization, including descendants that outlive a successful leader.',
         'Collaboration observations retain actual document/room/actor identities per run, original test identity, project and retry. Missing or mismatched participant evidence cannot establish recovery; joint failures never infer which actor caused them. Fingerprint declared observation input files separately from product ownership. Collaboration reports are bounded at 32 MiB; other Playwright reports retain 4 MiB. A localized envelope exceeding the existing 32 MiB storage limit becomes explicit unavailable evidence, without recovery authority; original producer output stays untouched.',
-        'Retain atomic per-run records and reuse admitted read projections until files change.',
-        'Own current versus historical evidence-warning classification. Retire warnings only through a strictly later clean settled invocation with identical recorded scope and admitted mappings covering the earlier identities; unknown scope, skipped, stale and concurrent observations never establish recovery.'
+        'Retain atomic per-run records and reuse admitted read projections until files change. Watch reporter cycles publish only actually selected modules, never cached passing files.',
+        'Own current versus historical evidence-warning classification. Preserve exact recorded-scope automatic retirement for other warnings, respecting declared intent. Discovery failures always require explicitly linked corrections with complete intended coverage and matching mappings/execution identities. Unknown correction categories, skipped, stale, partial and concurrent observations never establish discovery recovery. Keep originals immutable and surface invalid associations. Post-hoc corrections cannot narrow successor intent. Verify retained attachment paths, sizes and digests on startup and refresh; reuse admission until file signatures change. Missing or corrupt attachments yield current warnings and stale locations without rewriting originals.'
       ],
       bypasses: [
         'Incomplete execution has no completed result or passing authority.'
@@ -86,8 +89,12 @@ const data = {
         'accepted baseline mutation',
         'arbitrary command dispatch'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['reader lifetime', 'retained artifact path and expected size/digest', 'file mtime/ctime and size'],
       implementationBoundary: [
+        'tools/flow-inspector/control-plane/observation-lifecycle.cjs',
+        'tools/flow-inspector/control-plane/observation-files.cjs',
+        'tools/flow-inspector/control-plane/__tests__/observation-lifecycle.test.cjs',
+        'tools/flow-inspector/control-plane/__tests__/observation-files.test.cjs',
         'tools/flow-inspector/control-plane/localization.cjs',
         'tools/flow-inspector/control-plane/vitest-reporter.mjs',
         'tools/flow-inspector/control-plane/playwright-results.cjs',
@@ -107,7 +114,7 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/localization-runtime-fixture.cjs'
       ],
-      specRefs: ['#ordinary-test-failure-localization', '#current-observations-and-investigation-summaries', '#node-interactions'],
+      specRefs: ['#persisted-result-lifecycle', '#ordinary-test-failure-localization', '#current-observations-and-investigation-summaries', '#node-interactions'],
       failureOwnerStepId: 'localize-test-results'
     },
     {
@@ -240,6 +247,7 @@ const data = {
         'Design E2E producer envelopes and required forwarder results',
         'fixed Design Delete case inventory',
         'Playwright raw case reports',
+        'complete immutable observation bundles from selected producers',
         'GitHub repository, base, head, integration, run and attempt identity'
       ],
       outputs: ['artifact:workflow-result-summary'],
@@ -251,6 +259,7 @@ const data = {
         'Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.',
         'Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision and run id. Partial reruns may reuse successful evidence from earlier positive integer attempts with unchanged plan/map digests; preserve the original producer attempt and reject future or malformed attempts. Local evidence requires the exact local run/attempt pair. Latest GitHub dependency outcomes must succeed: an older successful receipt cannot override a later failed, cancelled, missing or skipped selected job.',
         'One canonical aggregate consumes scope evidence, the complete execution plan, run-bound selected-check results, exact dynamic workspace lint/build/test/E2E result records, selected Flow Inspector and release results, specialized per-suite E2E outcomes, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected producer must be skipped. Missing, failed, cancelled, unknown, empty, zero-test or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected suites must report success and selected Design suites must provide exact case evidence.',
+        'Consume validated complete observation bundles using the shared observation reader. Project every admitted case with current/history warnings, check repository/base/head/integration/run/attempt identity and artifact integrity, and retain existing required-job authority. Missing selected bundles, unresolved evidence and retained assertion failures block the aggregate, including cases outside the representative inventory. Consumption never launches product tests.',
         'Validate the exact Design case inventory and every attempt outcome. Preserve confirmed assertion failures; missing or invalid case evidence is unverified. Job success is not case evidence or accepted conformance.'
       ],
       bypasses: [

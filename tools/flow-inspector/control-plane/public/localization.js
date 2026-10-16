@@ -130,6 +130,8 @@
             successor.target = '_blank'
             successor.rel = 'noopener noreferrer'
             section.append(successor)
+            if (group.replacementReason)
+              section.append(node('p', group.replacementReason))
           }
           container.append(section)
         }

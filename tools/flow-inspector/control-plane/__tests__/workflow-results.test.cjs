@@ -1561,9 +1561,83 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       ),
       JSON.stringify(workspaceResult(designWorkspace, currentScope))
     )
+    const {
+      saveObservation,
+      localizeReport,
+      observationDirectory
+    } = require('../localization.cjs')
+    const { exportBundle } = require('../observation-files.cjs')
+    const { loadContract } = require('../contracts.cjs')
+    const bundleDirectory = path.join(directory, 'bundles')
+    for (const producer of ['design', 'collaboration']) {
+      const producerRoot = path.join(directory, producer)
+      const manifest =
+        producer === 'design'
+          ? 'apps/asyra-design/playwright-functional-flow-contracts.json'
+          : 'apps/asyra-design/playwright-collaboration-flow-contracts.json'
+      const contract = loadContract(root, undefined, manifest)
+      const item = contract.cases[0]
+      const record = localizeReport(
+        root,
+        {
+          format: 1,
+          id: require('node:crypto').randomUUID(),
+          startedAt: new Date().toISOString(),
+          head: currentIdentity.head,
+          contracts: [contract],
+          issues: [],
+          source: { digest: 'a'.repeat(64), files: [] },
+          command: {
+            cwd: '.',
+            argv: ['existing-product-test'],
+            environment: Object.fromEntries(
+              Object.entries(currentIdentity).map(([key, value]) => [
+                'FLOW_RESULT_' + key.toUpperCase(),
+                value
+              ])
+            )
+          }
+        },
+        {
+          testResults: [
+            {
+              name: path.join(root, item.testFile ?? contract.testFile),
+              message: '',
+              assertionResults: [
+                {
+                  fullName: item.testName,
+                  status: 'passed',
+                  failureMessages: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          projects: [item.projectName ?? ''],
+          originalReport: report(producer === 'design' ? [0] : [1, 2])
+        }
+      )
+      saveObservation(observationDirectory(producerRoot), record)
+      exportBundle(producerRoot, 'bundle', currentIdentity)
+      fs.cpSync(
+        path.join(producerRoot, 'bundle'),
+        path.join(
+          bundleDirectory,
+          'flow-observations-' +
+            producer +
+            '-' +
+            currentIdentity.run +
+            '-' +
+            currentIdentity.attempt
+        ),
+        { recursive: true }
+      )
+    }
     const completeRun = {
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
+      FLOW_OBSERVATION_BUNDLES_DIR: bundleDirectory,
       FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
       FLOW_SELECTED_CHECK_RESULTS_FILE: selectedCheckResultsFile,
       FLOW_WORKSPACE_VALIDATION_RESULT: 'success',
@@ -1625,6 +1699,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       const aggregated = spawnSync(process.execPath, [cli, 'aggregate'], {
         env: {
           ...completeRun,
+          FLOW_OBSERVATION_BUNDLES_DIR: bundleDirectory,
           FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
           FLOW_SELECTED_CHECK_RESULTS_FILE: selectedCheckResultsFile,
           FLOW_FRAMEWORK_DECLARATION_RESULT: 'success',
