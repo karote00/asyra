@@ -71,7 +71,8 @@
         "@asyra/collaboration#build:collaboration",
         "@asyra/factory#build:factory",
         "@asyra/feature-system#build:feature-system",
-        "@asyra/system-context#build:system-context"
+        "@asyra/system-context#build:system-context",
+        "@asyra/utils#build:utils"
       ]
     },
     "@asyra/asyra-office#react:build": {

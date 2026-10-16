@@ -7692,3 +7692,14 @@ Stage 4 is locally complete within its frozen contract. Earlier trace-less
 navigation/Undo events remain historical unknowns, not newly diagnosed by green
 runs; the user-accepted non-blocking navigation limitation remains explicit.
 No commit, push, live 101, monitoring or subsequent stage was performed.
+
+
+Stage 4 delivery correction - 2026-10-17: the formal dependency gate detects
+the Runtime Atlas Utils import without a direct framework-site dependency.
+Its existing Utils owner contract is unchanged. Add only the internal workspace
+dependency and synchronized lockfile, then rerun dependency/build-graph/shared
+checks and site validation. This is packaging correction, not a new runtime
+owner or Inspector semantic change. The failing dependency log is retained at
+tmp/stage4-push/shared/1.log. User now authorizes this Stage 4 push followed by
+one recorded live 101 with a hard fifteen-minute deadline; no later push or
+monitoring is authorized.
