@@ -79,7 +79,9 @@ jobs:
         env:
           FLOW_PROOF_URL: http://127.0.0.1:4318
           FLOW_PROOF_BROWSER_CHANNEL: chrome
-        run: node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
+        run: |
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
+          yarn workspace @asyra/flow-inspector test:flow-ui
 
   render-contracts:
     if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'render-contracts') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}

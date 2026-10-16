@@ -61,8 +61,8 @@ const relative = (root, file) =>
 const identity = (item) =>
   JSON.stringify([item.file, item.projectName, item.testName])
 
-function sourceFingerprint(root, contracts) {
-  const inputs = new Set(['package.json', 'yarn.lock'])
+function fingerprintPaths(root, declaredInputs) {
+  const inputs = new Set()
   const add = (input) => {
     if (inputs.has(input)) return
     const file = safePath(root, input)
@@ -74,21 +74,7 @@ function sourceFingerprint(root, contracts) {
       for (const name of fs.readdirSync(file).sort()) add(input + '/' + name)
     } else inputs.add(input)
   }
-  for (const contract of contracts) {
-    for (const key of [
-      'manifestPath',
-      'architecturePath',
-      'specPath',
-      'testFile',
-      'configFile'
-    ])
-      add(contract[key])
-    for (const file of contract.observationInputs ?? []) add(file)
-    for (const item of contract.cases) if (item.testFile) add(item.testFile)
-    for (const step of contract.runtimeScope.steps)
-      for (const boundary of step.implementationBoundary)
-        add(boundary.replace(/\/\*\*$/, ''))
-  }
+  declaredInputs.forEach(add)
   const files = [...inputs].sort().map((file) => {
     const absolute = safePath(root, file)
     return {
@@ -98,6 +84,27 @@ function sourceFingerprint(root, contracts) {
   })
   return { digest: digest(JSON.stringify(files)), files }
 }
+function sourceFingerprint(root, contracts) {
+  const inputs = ['package.json', 'yarn.lock']
+  for (const contract of contracts) {
+    for (const key of [
+      'manifestPath',
+      'architecturePath',
+      'specPath',
+      'testFile',
+      'configFile'
+    ])
+      inputs.push(contract[key])
+    inputs.push(...(contract.observationInputs ?? []))
+    for (const item of contract.cases)
+      if (item.testFile) inputs.push(item.testFile)
+    for (const step of contract.runtimeScope.steps)
+      for (const boundary of step.implementationBoundary)
+        inputs.push(boundary.replace(/\/\*\*$/, ''))
+  }
+  return fingerprintPaths(root, inputs)
+}
+
 function beginObservation(root, options = {}) {
   const contracts = [],
     issues = []
@@ -165,6 +172,12 @@ function beginObservation(root, options = {}) {
       ? { executionConfig: structuredClone(options.executionConfig) }
       : {}),
     command: options.command ?? null
+  }
+  if (process.env.FLOW_FILE_DIRECTORY) {
+    context.flowWrite = require('../flow-files/producers.cjs').capture(
+      process.env.FLOW_FILE_DIRECTORY
+    )
+    return context
   }
   saveObservation(observationDirectory(root), {
     ...context,
@@ -350,7 +363,13 @@ function completeObservation(root, context, report, options = {}) {
         ]
       }
     )
-  saveObservation(observationDirectory(root), result)
+  if (context.flowWrite)
+    require('../flow-files/producers.cjs').publish(
+      result,
+      context.flowWrite,
+      root
+    )
+  else saveObservation(observationDirectory(root), result)
   return result
 }
 function saveObservation(directory, record) {
@@ -930,6 +949,7 @@ function createObservationReader(directory, options = {}) {
   }
 }
 module.exports = {
+  fingerprintPaths,
   FAILURE_DETAIL_FIELDS,
   DEFAULT_MANIFESTS,
   observationDirectory,

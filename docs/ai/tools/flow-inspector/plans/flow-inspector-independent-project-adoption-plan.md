@@ -1,8 +1,8 @@
 # Flow-Based Work Management and Independent Project Adoption
 
-Status: REVIEWED PLAN - ready for implementation authorization; no implementation or publication performed.
+Status: Stage 1 implemented and locally accepted; Stage 2 not started; publication paused.
 Updated: 2026-10-17 (Asia/Taipei).
-Selected base: `0461df90b9a8aff8f58761ba2178224927678e2a`.
+Stage 1 base: `1cd4b38a6e3e09a320cb2fa70ba3e8c25e63a724` (merged planning PR #341).
 Owner: Flow Inspector tool maintainer.
 
 ## Product direction and scope correction
@@ -24,8 +24,9 @@ This user-directed scope supersedes the earlier planning restriction to failure
 localization and the first draft's Vitest/Playwright-only admission. Previous
 A/B/C and persisted-result closeouts remain evidence for bounded Asyra-checkout
 capabilities. They do not establish full task-oriented UX or independent adoption.
-Publication remains paused. No implementation, tests, versions, registry writes
-or changes to historical completion records are authorized by this planning task.
+Publication remains paused. The user authorized complete Stage 1 implementation
+after merging PR #341. Stage 2, registry writes and historical completion record
+rewrites remain outside this implementation.
 
 ## Flow files are the sole project contract and state input
 
@@ -191,9 +192,9 @@ completion. A test's passed/failed result is not the whole task lifecycle.
 - Existing recovery coverage safeguards remain; resolved warnings are replaced, not archived.
   Source edits alone do not clear failure; comments cannot change verdicts.
 
-Freeze exact state-transition names, authorization and schema revisions in the
-existing product/Inspector contracts before production edits. This planning
-proposal is not a new runtime state store or a claim that transitions exist.
+The [Flow Document Contract](../FLOW_DOCUMENT.md), public JSON schema and
+`flow-document-workflow` architecture Inspector freeze the Stage 1 transitions
+and owner boundaries. Stage 2 consumes these owners without another state store.
 
 ## Any test system, including no tests
 
@@ -379,6 +380,43 @@ Acceptance:
     fail; unrelated-node edits preserve unaffected acceptance while changed
     prerequisites invalidate affected downstream completion. Required, optional
     and conditional paths and flow-level acceptance have explicit verdict cases.
+
+Stage 1 acceptance evidence (2026-10-17):
+
+- `FLOW_DOCUMENT.md`, the public `flow.schema.json`, manual/mixed/dependent-feature
+  examples and the `flow-document-workflow` Inspector define the reviewed schema
+  and owner handoffs. The workspace renders the architecture without static errors.
+- Permanent `flow-files/__tests__/policy.test.cjs` and `store.test.cjs` cover
+  manual/automated kinds, required/optional/conditional and cross-flow dependencies,
+  integration acceptance, source invalidation, explicit blockers, revision conflicts,
+  idempotency, atomic replacement, work-count reuse and current attachment cleanup.
+- `producers.test.cjs` proves offline localization, complete warning replacement
+  after source correction, excluded skipped siblings, architecture authority checks,
+  and one-time projection whose evidence and attachments survive removal of old
+  archives. The original archive bytes are unchanged by projection.
+- `server.test.cjs` and `service.test.cjs` prove shared machine reads, file
+  creation/deletion/invalid-write recovery, authorization, stale previews, bounded
+  current writes and explicit execution settlement. Reads and preview start no tests.
+- `browser.test.cjs` exercises desktop and narrow human panels, folded full context,
+  manual accept/reopen availability, live invalid-state recovery and failed-node
+  Rerun through a real custom producer to renewed manual acceptance. Screenshots
+  are produced under `tmp/flow-stage-one/browser/` and were visually reviewed.
+- `selected-rerun.test.cjs` executes the original exact Factory Vitest and Design
+  collaboration Playwright cases through the new current-file route. Existing
+  Design baseline/fault/recovery, six-case partial/full recovery and original App
+  rerun tests pass. The existing runner's nested process-group test proves cleanup.
+- Package contracts, React tests, typecheck/build, generated assets, naming,
+  test-file placement and CI/workspace contract checks pass. The new UI and selected
+  rerun gates are included in the existing tool-validation CI jobs; they are explicit
+  tool acceptance tests, not work performed by ordinary flow reads.
+
+Known boundaries remain intentional: trusted local actors/actions, no hosted team
+identity, cooperative local writer locking, and no source-change detection without
+producer-declared revisions. Projection rejects changed retained source/architecture
+rather than granting new authority to old evidence. Generic JSON authors can operate
+without runners; packaged external adapters, independent install and external CI
+release acceptance belong to Stage 2. No npm publication or product-feature changes
+were performed in Stage 1.
 
 ### Stage 2 - Independent installation, CI and release readiness
 

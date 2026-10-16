@@ -393,7 +393,19 @@ function begin(
     }
   })
   fs.mkdirSync(path.dirname(report), { recursive: true })
-  fs.writeFileSync(report + '.context.json', JSON.stringify({ id: context.id }))
+  fs.writeFileSync(
+    report + '.context.json',
+    JSON.stringify(
+      context.flowWrite
+        ? {
+            context,
+            digest: createHash('sha256')
+              .update(JSON.stringify(context))
+              .digest('hex')
+          }
+        : { id: context.id }
+    )
+  )
   return context
 }
 function complete(root, reportPath) {
@@ -404,9 +416,19 @@ function complete(root, reportPath) {
   let context,
     unavailable = false
   try {
-    context = reader.get(
-      JSON.parse(fs.readFileSync(report + '.context.json', 'utf8')).id
+    const sidecar = JSON.parse(
+      fs.readFileSync(report + '.context.json', 'utf8')
     )
+    if (sidecar.context) {
+      if (
+        !sidecar.context.flowWrite ||
+        createHash('sha256')
+          .update(JSON.stringify(sidecar.context))
+          .digest('hex') !== sidecar.digest
+      )
+        throw new Error('Invalid current invocation context')
+      context = sidecar.context
+    } else context = reader.get(sidecar.id)
   } catch {
     unavailable = true
     context = localization.beginObservation(root, {
@@ -468,14 +490,17 @@ function complete(root, reportPath) {
                   retainedBytes + size > 256 * 1024 * 1024
                 )
                   throw new Error('attachment retention limit exceeded')
-                const retainedPath =
-                  'tmp/flow-inspector/test-results/' +
-                  context.id +
-                  '/attachments/' +
-                  retainedArtifacts.length
+                const retainedPath = context.flowWrite
+                  ? path.relative(root, file)
+                  : 'tmp/flow-inspector/test-results/' +
+                    context.id +
+                    '/attachments/' +
+                    retainedArtifacts.length
                 const destination = safePath(root, retainedPath)
-                fs.mkdirSync(path.dirname(destination), { recursive: true })
-                fs.copyFileSync(file, destination, fs.constants.COPYFILE_EXCL)
+                if (!context.flowWrite) {
+                  fs.mkdirSync(path.dirname(destination), { recursive: true })
+                  fs.copyFileSync(file, destination, fs.constants.COPYFILE_EXCL)
+                }
                 const bytes = fs.readFileSync(destination)
                 retainedBytes += bytes.length
                 retainedArtifacts.push({

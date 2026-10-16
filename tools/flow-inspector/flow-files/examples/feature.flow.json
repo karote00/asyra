@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "projectId": "example",
+  "flowId": "feature",
+  "revision": 0,
+  "definition": {
+    "title": "Order feature",
+    "purpose": "Verify an order, prepare delivery, and accept the integrated feature",
+    "nodes": [
+      {
+        "id": "review",
+        "title": "Review order",
+        "objective": "Confirm the order is correct",
+        "owner": "Product owner",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "accepted",
+            "title": "Order accepted",
+            "kind": "manual"
+          },
+          {
+            "id": "check",
+            "title": "Automated verification",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "order-valid"
+            }
+          }
+        ],
+        "specRefs": ["docs/order.md"],
+        "implementationRefs": ["src/order.js"],
+        "actions": [
+          {
+            "id": "check",
+            "label": "Check order",
+            "kind": "command",
+            "argv": [
+              "node",
+              "tools/flow-inspector/flow-files/examples/custom-check.cjs"
+            ],
+            "cwd": ".",
+            "criterionIds": ["check"]
+          }
+        ]
+      },
+      {
+        "id": "delivery",
+        "title": "Prepare delivery",
+        "objective": "Confirm delivery is ready",
+        "owner": "Product owner",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "feature",
+            "nodeId": "review"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "ready",
+            "title": "Delivery ready",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": ["docs/order.md"],
+        "implementationRefs": ["src/order.js"],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "release",
+        "title": "Integrated order journey accepted",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

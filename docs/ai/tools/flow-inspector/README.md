@@ -5,41 +5,32 @@ family.
 
 ## Current Product Direction
 
-The agreed A/B/C delivery is complete and merged. Existing test results take
-humans and AI directly to recorded responsibility nodes, implementation locations
-and original failure evidence. Optional selected-case reruns and append-only
-node/run notes are available under [Node interactions](CORE_PROOF.md#node-interactions).
+Flow Inspector reads public JSON flow documents as the project's contract and
+current state. A card is a bounded task; required tasks, dependencies and explicit
+integration criteria determine feature completion. Tests are optional. Manual,
+automated and mixed criteria share one evaluator. Current notes, explicit local
+actions and compact Agent context use the same revision-checked state.
 
-The [completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
-records the exact Design, collaboration and selected Framework coverage,
-validation and explicit execution limits. The [plan index](PLANS.md) has no
-activated follow-up. Universal mapping, root-cause inference, automatic repair
-and expanded task/delivery management are not implied. Building an Asyra product
-does not require adopting Flow Inspector; its tooling remains separate from
-product runtime dependencies.
+Start with the [flow authoring guide](../../../../tools/flow-inspector/flow-files/README.md)
+and [Flow Document Contract](FLOW_DOCUMENT.md). The Stage 1 source-level dashboard
+reuses the existing canvas, puts Rerun/manual actions at the top of the selected
+panel, and folds full evidence and architecture. It reads only selected current
+flow files, including offline writes and live replacements; it never schedules
+product tests on read or refresh. Resolved warnings are replaced after coverage
+validation rather than retained in a mandatory history.
 
-For a failed case, use its **Open investigation summary** link or run:
+The [adoption plan](plans/flow-inspector-independent-project-adoption-plan.md)
+separates this workflow from Stage 2 installed-package distribution and external
+CI acceptance. npm publication remains paused. Asyra runtime and Asyra Skill do
+not require this tool. Authentication, hosted team coordination, automatic root
+cause analysis and Agent dispatch are not implemented.
 
-```sh
-node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 node-context <run-id> <case-id> summary
-```
-
-This read returns original errors, currentness, validated responsibility/specification
-and implementation entries, plus display-only original invocation and the
-manifest-derived selected-test command. `rerun.previewUrl` and `previewRequest`
-identify the existing explicit preview path; reading never runs a test. Check
-`truncatedFields` and follow `evidenceUrl` for full original evidence. See
-[Current observations and investigation summaries](CORE_PROOF.md#current-observations-and-investigation-summaries).
-The Board separates current evidence problems from collapsed historical warnings.
-A zero failure count does not waive missing or stale evidence.
-
-Persisted test results, offline startup, live refresh and correction-backed
-warning history are complete through merged PR #339 and post-merge acceptance.
-See the [completed lifecycle plan](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md)
-for the tool-switching failure/recovery evidence and its limits. Test producers
-write evidence; Inspector reads it without launching tests on startup or refresh.
-
-Existing development workflows and implemented contracts below remain in force.
+The prior [A/B/C completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
+and [result lifecycle closeout](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md)
+remain evidence for the old bounded Asyra workflow. The authoring guide describes
+an explicit one-time projection of its current results; archives are untouched
+and are not read by the flow-document dashboard. Old proof/Agent execution tools
+retain their own evidence contracts and are not prerequisites for ordinary tasks.
 
 ## Role in Plan-Driven Development
 

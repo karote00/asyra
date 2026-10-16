@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "projectId": "example",
+  "flowId": "checkout",
+  "revision": 0,
+  "definition": {
+    "title": "Checkout",
+    "purpose": "Accept an order",
+    "nodes": [
+      {
+        "id": "review",
+        "title": "Review order",
+        "objective": "Confirm the order is correct",
+        "owner": "Product owner",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "accepted",
+            "title": "Order accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [],
+        "implementationRefs": [],
+        "actions": []
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

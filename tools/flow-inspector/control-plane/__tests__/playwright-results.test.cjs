@@ -1253,3 +1253,64 @@ test('selected rerun config admission requires the exact original mapping and re
   fs.unlinkSync(file)
   assert.equal(normalizeReport(root, bound, original).options.stale, true)
 })
+
+test('current flow publication retains Playwright attachments without an observation archive', (t) => {
+  const fs = require('node:fs')
+  const { fromContracts } = require('../../flow-files/producers.cjs')
+  const { openProject } = require('../../flow-files/store.cjs')
+  const fixture = observationFixture(t)
+  const selected = require('../playwright-results.cjs')
+    .sourceManifestPaths()
+    .map((manifest) => loadContract(fixture.repository, undefined, manifest))
+  const directory = path.join(fixture.repository, 'flows')
+  fs.mkdirSync(directory)
+  for (const doc of fromContracts(selected, 'example'))
+    fs.writeFileSync(
+      path.join(directory, doc.flowId + '.flow.json'),
+      JSON.stringify(doc)
+    )
+  const prior = process.env.FLOW_FILE_DIRECTORY
+  process.env.FLOW_FILE_DIRECTORY = directory
+  t.after(() => {
+    if (prior === undefined) delete process.env.FLOW_FILE_DIRECTORY
+    else process.env.FLOW_FILE_DIRECTORY = prior
+  })
+  const invocation = fixture.start()
+  const input = report()
+  const attachment = path.join(
+    fixture.repository,
+    'apps/asyra-design/test-results/failure.txt'
+  )
+  fs.mkdirSync(path.dirname(attachment), { recursive: true })
+  fs.writeFileSync(attachment, 'Original attachment bytes')
+  input.suites[0].suites[0].specs[0].tests[0].results[0].attachments = [
+    { name: 'failure', contentType: 'text/plain', path: attachment }
+  ]
+  invocation.finish(input)
+  const current = openProject(directory).snapshot()
+  const observation = current.documents
+    .flatMap((d) => d.current.observations)
+    .find((o) => o.status === 'failed')
+  assert.ok(observation)
+  assert.equal(
+    fs.readFileSync(
+      path.join(directory, observation.attachments[0].path),
+      'utf8'
+    ),
+    'Original attachment bytes'
+  )
+  assert.equal(
+    fs.existsSync(
+      path.join(fixture.repository, 'tmp/flow-inspector/test-results')
+    ),
+    false
+  )
+  fs.unlinkSync(attachment)
+  assert.equal(
+    openProject(directory)
+      .snapshot()
+      .documents.flatMap((d) => d.current.observations)
+      .some((o) => o.status === 'failed'),
+    true
+  )
+})

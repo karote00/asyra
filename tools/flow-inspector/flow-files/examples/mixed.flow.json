@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "projectId": "example",
+  "flowId": "mixed",
+  "revision": 0,
+  "definition": {
+    "title": "Mixed review",
+    "purpose": "Accept an order",
+    "nodes": [
+      {
+        "id": "review",
+        "title": "Review order",
+        "objective": "Confirm the order is correct",
+        "owner": "Product owner",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "accepted",
+            "title": "Order accepted",
+            "kind": "manual"
+          },
+          {
+            "id": "check",
+            "title": "Automated verification",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "order-valid"
+            }
+          }
+        ],
+        "specRefs": [],
+        "implementationRefs": [],
+        "actions": [
+          {
+            "id": "check",
+            "label": "Check order",
+            "kind": "command",
+            "argv": [
+              "node",
+              "tools/flow-inspector/flow-files/examples/custom-check.cjs"
+            ],
+            "cwd": ".",
+            "criterionIds": ["check"]
+          }
+        ]
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

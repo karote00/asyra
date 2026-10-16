@@ -3,9 +3,9 @@
 ## Active and proposed work
 
 [Flow-Based Work Management and Independent Project Adoption](plans/flow-inspector-independent-project-adoption-plan.md)
-is the current proposed direction, updated by the user on 2026-10-17.
-Reviewed planning scope: ready for implementation authorization. Implementation
-and npm publication have not started.
+is the current authorized direction, updated by the user on 2026-10-17.
+Stage 1 is implemented and locally accepted; Stage 2 remains unimplemented. npm publication
+is paused.
 
 The remaining work is grouped into two complete delivery stages:
 
@@ -44,6 +44,6 @@ Detailed history remains in `plans/completed/` and dated prior plans.
 
 The living [Core Proof](CORE_PROOF.md), [Inspector contract](FLOW_INSPECTOR.md),
 [execution contract](AGENT_EXECUTION.md) and [review contract](PR_REVIEW.md) describe
-current implemented behavior. Before implementing the proposed stages, reconcile
-their affected owner contracts with the new product direction. A proposed plan
-alone does not change runtime semantics or reopen historical completed evidence.
+current implemented behavior. The [Flow Document Contract](FLOW_DOCUMENT.md) owns the new current-file workflow;
+proof/execution contracts remain scoped to their existing tools. Historical
+completed evidence is not rewritten as proof of independent adoption.
