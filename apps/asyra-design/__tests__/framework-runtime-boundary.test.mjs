@@ -331,3 +331,27 @@ test('ordinary validation includes every maintained server regression suite', ()
     'Maintained server regressions must be in ordinary package validation'
   )
 })
+
+test('formal AI suites do not enable live model inference', () => {
+  const directories = [
+    path.join(appDirectory, 'server/__tests__'),
+    path.join(appDirectory, 'e2e'),
+    path.resolve(appDirectory, '../../scripts/__tests__')
+  ]
+  const failures = []
+  for (const directory of directories) {
+    for (const name of readdirSync(directory)) {
+      if (!/\.(test|spec)\.(ts|tsx|mjs)$/.test(name)) continue
+      const source = readFileSync(path.join(directory, name), 'utf8')
+      if (
+        /process\.env\.(E2E_LOCAL_AI|LOCAL_AI_DISCOVERY_PROBE)\b/.test(source)
+      )
+        failures.push(path.relative(appDirectory, path.join(directory, name)))
+    }
+  }
+  assert.deepEqual(
+    failures,
+    [],
+    'Model inference belongs to explicit manual evaluation, not formal tests'
+  )
+})

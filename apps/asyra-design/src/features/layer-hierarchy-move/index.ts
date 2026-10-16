@@ -1,4 +1,5 @@
 import { defineFeature } from '@asyra/core'
+import { SessionCancelPolicies } from '@asyra/utils'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import { hierarchyApis, selectionApis } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
@@ -74,7 +75,7 @@ export const layerHierarchyMoveSession = {
 export const layerHierarchyMoveFeatureDefinition = {
   priority: 110,
   exclusive: true,
-  cancelPolicy: 'commit-current' as const,
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: layerHierarchyMoveSession
 }
 

@@ -162,3 +162,6 @@ export {
   getActiveCollaborationHandle
 }
 export type { AiDrawingPerformanceProfile, CollaborationDebugHandle }
+
+export { subscribeToUndo, subscribeToRedo } from '@asyra/core'
+export { historyApis } from '../common-apis/history'

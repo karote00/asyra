@@ -184,12 +184,12 @@
               "Host-published artifacts have explicit call/request ownership. Pinned schemas identify references; borrowed and sibling pins survive cleanup, exported values transfer before child release, and failed release stays retryable without bypassing freshness.",
               "Image artifact publication uses actual request storage. Dependent analysis/review handles pin their source; release removes matching storage and reuse entries, while derived contour products own their required lineage. Numeric attachment selection stays control-plane; typed contour analysis/refinement uses retained source handles and relative keys.",
               "The existing conversation panel provides explicit saved metadata refresh and exact-version suspend/remove through local same-origin admitted host management. Runtime owns record decoding and state writes; no alternate catalog, model request or canvas edit is created. Stored status is not a promise of current dependency eligibility.",
-              "A new composition invocation checks current durable state for known saved revisions. Cross-request suspension, retirement or unavailable storage refuses new work while an already-started pinned graph completes without replay or implicit cancellation.",
+              "A new composition invocation checks current durable state for the root and every admitted composition dependency, deduplicated only within that admission. Cross-request suspension, retirement or unavailable storage refuses new work while an already-started pinned graph completes without replay or implicit cancellation.",
               "Canonical basic operations are registry-only typed recipe dependencies with exact invocation routes; native provider exposure remains batch-only. Both use the same secured browser dispatcher and successful receipt schema, without a second registry or duplicated schemas.",
               "Tool-first delegation preserves known direct calls and ready-part bypasses. Exact dependency schemas and registeredName/revision govern recipe authorship; native wrappers are not recipe identities. Native mechanicalSelection flows as fresh input to verify_design_checks and explicitly prescribed repair_design_checks; next state carries returned requestId/checks including independent passes and retired obligations. Runtime alone iterates without a new model turn. Unknown settlement stops writes; save-only receipts never replay product work. Provider instructions, discovery and executable examples share these handoffs.",
               "Authoring uses the canonical Runtime grammar and same-registry discovery. Host registry changes invalidate discovery; controls never enter recipes or hold leaf scheduler barriers.",
               "Canonical verification metadata is relocated with its typed first-receipt envelope; only explicitly eligible domain checks may drive bounded Runtime iteration. Mechanical execution, primary-agent acceptance and durable storage remain distinct.",
-              "The request host registers namespace-qualified native and composed identities in one Runtime registry, dispatches both through the same secured leaf executor and scheduler, and projects pinned nested control schemas for ownership. Cleanup failure preserves execution evidence; shutdown waits and supports release retry without reopening. The request library coordinates Runtime registry/interpreter/persistence and the secured leaf executor. Successful compositions save independently; failed saving retains bounded genuine receipts for save-only retry. No parent scheduler barrier or product replay; disposal follows settled invocations.",
+              "The request host registers namespace-qualified native and composed identities in one Runtime registry, dispatches both through the same secured leaf executor and scheduler, and projects pinned nested control schemas for ownership. Cleanup failure preserves execution evidence; shutdown waits and supports release retry without reopening. The request library coordinates Runtime registry/interpreter/persistence and the secured leaf executor. Successful compositions save independently; failed saving retains bounded genuine root/child proof for dependency-first save-only retry. Actual automatic saving has its own invocation under the live native control, with complete start/end and execution phase; diagnostic failure cannot replace product or storage outcomes. No parent scheduler barrier or product replay; disposal follows settled invocations.",
               "Design supplies a bounded durable Runtime tool store with transactional expected-version writes; no model-selected paths, silent reset, memory-only saved claims or product replay after storage failure.",
               "Keep successful output separate from declared partial receipts. Host outcomes choose the schema; recipe proof consumes only successful output and never treats partial evidence as a usable successor input.",
               "App prompt directs internal edits without approval and contextual external-tool or security questions through request_clarification; await the answer when permission is needed and retain prior authorization without bypassing host security",
@@ -291,7 +291,6 @@
               "apps/asyra-design/server/local-tool-invocation.ts",
               "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
-              "apps/asyra-design/server/__tests__/local-ai-live.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
@@ -455,12 +454,16 @@
               "artifact:prepared-review",
               "registered action effects",
               "registered tool-owner access declarations",
-              "current canonical permissions"
+              "current canonical permissions",
+              "issued history intent and registered Feature execution mode",
+              "current Factory replay state and active Feature session"
             ],
             "outputs": [
-              "artifact:execution-receipt"
+              "artifact:execution-receipt",
+              "history settlement and ordinary canonical publications"
             ],
             "conditions": [
+              "Factory alone owns history replay through outer settlement. App history opts into immediate Feature execution, never interaction queue admission. Existing session commit-current finalizes the drag before replay; current async handler settlement is allowed but queued work cannot run ahead or interleave. Repeated history during finalization/replay is ignored without retention; cleanup failure or runtime closure stops replay. No App busy mirror or second history owner. Accepted direction remains immutable.",
               "repair_design_checks consumes requestId, the complete current tool-check selection and explicit set-prescribed-child-position policy. Preflight every pending finding, unique exact child coverage, captured parent-local basis bound by the canonical attachment receipt to the exact parent/workspace, current canonical dependency receipts and ordinary permissions before any write. Mixed/unsupported findings and stale policy stop without mutation. Invoke existing App/Core mutations; no guessed positions, reparent, deletion or implicit scope expansion.",
               "Read-only queue-time repair preflight reports an input rejection before writing. Exact failed-action identity plus not-started settlement and no acknowledgement preserves known no-write recovery; unknown or partial writer failures still retain unresolved mutation scope. Fresh explicitly prescribed policy may retry, never automatic rebasing or write replay.",
               "Check repair returns actual settlement and the complete fresh successor selection. Later cancellation/owner failure preserves acknowledged writes, Undo and canonical recovery; partial/unknown output never supplies success bindings or repeats initial recipe writes. Reuse post-write owner checks rather than scan twice. Coordinator never holds the leaf scheduler barrier while awaiting a child.",
@@ -513,6 +516,17 @@
               "Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/src/config/key-combinations.ts",
+              "packages/feature-system/src/core/feature.ts",
+              "packages/feature-system/src/core/session-manager.ts",
+              "packages/feature-system/src/core/interaction-queue.ts",
+              "packages/feature-system/src/core/execution-registry.ts",
+              "packages/feature-system/src/types/execution.ts",
+              "packages/feature-system/src/types/feature.ts",
+              "packages/input-system/src/input-system.ts",
+              "packages/input-system/src/event-mappings.ts",
+              "apps/asyra-design/src/features/undo-redo/index.ts",
+              "apps/asyra-design/src/config/__tests__/history-shortcuts.test.ts",
               "apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts",
               "apps/asyra-design/src/ai/prescribed-position-action.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
@@ -589,7 +603,6 @@
               "apps/asyra-design/server/__tests__/local-tool-scheduler.test.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
-              "apps/asyra-design/server/__tests__/local-ai-live.test.ts",
               "apps/asyra-design/server/local-image-tools.ts",
               "apps/asyra-design/server/local-design-tools.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
@@ -795,7 +808,6 @@
               "apps/asyra-design/src/ai/startup.ts",
               "apps/asyra-design/server/local-ai-provider.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
-              "apps/asyra-design/server/__tests__/local-ai-live.test.ts",
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
             ],
             "specRefs": [
@@ -1023,7 +1035,6 @@
               "apps/asyra-design/e2e/local-ai-provider.spec.ts",
               "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
-              "apps/asyra-design/server/__tests__/local-ai-live.test.ts",
               "apps/asyra-design/server/local-action-observation.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/src/ai/action-failure.ts",
@@ -31872,6 +31883,7 @@
               "Execute admitted bounded repair with initial writes once, typed current state, owner check verdict and actual iteration provenance. Count nested worst-case work before writes; stop on decision, repeated progress, budget, cancellation or non-success, exporting actual validated recovery without replay or eligibility.",
               "Observe pinned tool revision and admitted parent recipe name/revision/step ID on child lifecycle events. Do not invent admitted provenance for a rejected root; diagnostic metadata does not change execution authority.",
               "Validate successful output only against outputSchema; partial uses declared partialOutputSchema or the same shape. Host outcome selects the schema; partial validation never rescues malformed success and partial results never feed successor bindings.",
+              "Retain genuine nested composition receipts in private root execution evidence bounded by the admitted graph; no public receipt reconstruction or durable execution state.",
               "Failed/unknown results export resources only through a validated declared recoveryOutputSchema. Preserve exact outcome and settlement; nested recovery receipts transfer pinned references before ancestor cleanup without feeding successful bindings or granting save eligibility."
             ],
             "bypasses": [
@@ -31921,7 +31933,9 @@
             ],
             "conditions": [
               "Save exact immutable definition and eligibility atomically; validate reload through admission and isolate corrupt entries.",
+              "A read is a snapshot, not a reservation. Before no-write acknowledgement or local registration, confirm exact stored identity, version and bytes after asynchronous preparation. Independent writers are not serialized by a request queue. A valid write acknowledgement describes its commit, not immunity to later retirement; new invocations recheck durable availability.",
               "Persist and compare the full optional iteration body with steps/output; reload and resume re-enter canonical bounded admission, and only verified success can grant eligibility. Save-only recovery never executes the graph.",
+              "Save genuine successful nested proof dependency-first without product replay. Preserve acknowledged children on parent failure, retry through the same root proof, and reject expired/forged receipts or unavailable durable dependencies.",
               "Host management projects compact canonical stored metadata without registration or execution. State-only suspend/retire uses the observed storage version, preserves immutable definitions and rejects stale writes; runtime availability changes only after exact durable acknowledgement."
             ],
             "bypasses": [

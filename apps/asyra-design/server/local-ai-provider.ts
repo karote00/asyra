@@ -575,17 +575,17 @@ const runLocalAiProvider = async (
         if (event.phase === 'completed') stage = 'tool_completed'
         else if (event.phase !== 'started') stage = 'tool_failed'
         usage?.trace(stage, evidence)
-        if (event.phase !== 'started')
-          reportProgress({
-            tool: toolBindings.get(call.name)?.definition.name ?? call.name,
-            status: 'completed',
-            activity: {
-              kind: 'system',
-              callId: call.callId,
-              parentCallId: call.parentCallId,
-              sequence: 0
-            }
-          })
+        reportProgress({
+          tool: toolBindings.get(call.name)?.definition.name ?? call.name,
+          status: event.phase === 'started' ? 'running' : 'completed',
+          activity: {
+            kind: 'system',
+            callId: call.callId,
+            parentCallId: call.parentCallId,
+            sequence: 0,
+            ...(event.phase === 'started' ? { phase: 'queued' as const } : {})
+          }
+        })
       }
     })
     const started = performance.now()

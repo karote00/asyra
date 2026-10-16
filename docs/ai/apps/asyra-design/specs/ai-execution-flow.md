@@ -1366,6 +1366,12 @@ its canonical action identity and successful output schema. Following measuremen
 or inspection receipts have their own envelope and do not weaken the primary
 result. The shared validator enforces positional schemas and disallowed tails.
 
+Keyboard history commands retain their issued direction through immediate Feature
+execution and existing session finalization; they never enter the ordinary
+interaction queue and later input cannot reverse the admitted direction. Replay events do not certify the outer
+transaction or durable save. History grouping and document acknowledgement remain
+owned by their existing boundaries.
+
 ### Durable library
 
 Design supplies Runtime's `AiToolStore` from its local host data directory. Models
@@ -1380,7 +1386,11 @@ The request-scoped Design coordinator binds that same registry to the existing
 secured leaf executor and artifact ownership adapter. It never acquires a parent
 scheduler barrier. A completed successful composition attempts durable promotion
 only after host checks; execution and saving have separate receipts. Failed saving
-retains bounded genuine evidence for save-only retry. Partial or uncertain work
+retains bounded genuine evidence for save-only retry. Runtime retains nested child
+proof behind the same root receipt and saves dependencies before the parent. Saving
+uses its own actual invocation under the live native control, with start/end and
+execution phase observations; a completed recipe is not shown as still drawing.
+Observer failure cannot replace product or storage outcomes. Partial or uncertain work
 never becomes eligible or triggers replay. A saved candidate can be resumed through
 Runtime revalidation in a later request. Request disposal releases library state
 only after started invocations settle; persisted definitions remain on disk.
@@ -1546,7 +1556,9 @@ remain control-plane source operations: their numeric provider attachment
 selectors are not persisted recipe identities. All native operations continue
 through the common invocation and outcome contract.
 
-Before each new composition, the library checks the exact current saved state.
+Before each new composition, the library checks the exact current saved state
+of the root and every admitted composition dependency, once per identity in that
+admission. Native leaves retain their existing secured execution boundary.
 Suspended/retired entries reject even when this request previously loaded them.
 Unavailable storage refuses a known saved revision; a private candidate whose
 initial save was never acknowledged remains locally usable. Already-started
@@ -2097,3 +2109,25 @@ The definition of done for Stage 1 is current caller/schema/test alignment and
 applicable formal proof, types and lint. Stage 1 does not implement mechanical
 aggregation, modify model guidance or certify any future stage. Accepted historical
 evidence is immutable; obsolete executable behavior is removed, not emulated.
+
+
+### History input admission
+
+Factory replay state is the sole busy authority. During Undo/Redo, the App ignores
+new history shortcuts before input dispatch. Accepted history input never enters
+the ordinary Feature queue. Core reads the
+composed Factory directly; no mirror, timer or independent lock is introduced.
+Only explicit false from an input combination callback suppresses its dispatch.
+Other input and ordinary void callbacks retain their normal semantics. Accepted
+history commands retain their issued direction, while model state is resolved by
+the existing Feature. Failed replay preserves canonical compensation and releases
+admission through ordinary Factory settlement. Ignored input is never replayed.
+
+When idle, the registered history Feature begins synchronously. An active drag
+ends through its existing commit-current session finalizer and then is undone.
+Only an already-running handler may need to settle first; unrelated queued work
+cannot run ahead or interleave. This sequencing belongs to the existing Feature
+interaction owner, not an App history lock. Overlapping immediate invocations are
+ignored, never retained. Session finalization failure or runtime closure prevents
+replay. Later pointer updates cannot restore the closed drag. Redo, collaboration,
+compensation and save/reload use their existing canonical owners.

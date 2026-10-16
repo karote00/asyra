@@ -5,6 +5,7 @@ import {
   rectFromPoints
 } from '@asyra/utils'
 import { defineFeature } from '@asyra/core'
+import { SessionCancelPolicies } from '@asyra/utils'
 import {
   elementApis,
   selectionApis,
@@ -109,7 +110,7 @@ export const selectionFeature = defineFeature<
 >(FeatureNames.SELECTION, InputSystemEvents.INPUT_DRAG, {
   priority: 5,
   exclusive: false,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   api,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {

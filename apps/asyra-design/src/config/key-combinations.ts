@@ -31,6 +31,15 @@ const updateKeyState = (raw: RawInputEvent) => {
   core.setSystemProperty(PresetSystemPropertyKeys.KEY_META, nextKeyState.meta)
 }
 
+const updateHistoryShortcutState = (raw: RawInputEvent) => {
+  updateKeyState(raw)
+  if (core.isInUndoRedo()) return false
+  raw.detail = {
+    ...raw.detail,
+    historyDirection: raw.modifiers.shift ? 'redo' : 'undo'
+  }
+}
+
 export const isEditableShortcutTarget = (target: Element | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false
@@ -309,13 +318,13 @@ export const keyCombinations = {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyZ],
       modifiers: [ModifierKey.META],
-      callback: updateKeyState
+      callback: updateHistoryShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyZ],
       modifiers: [ModifierKey.CTRL],
-      callback: updateKeyState
+      callback: updateHistoryShortcutState
     }
   ],
   [InputSystemEvents.INPUT_SHORTCUT_GROUP]: groupShortcutInputRegistrations.map(

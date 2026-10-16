@@ -142,6 +142,7 @@ interface RecipeExecutionEvidence {
   readonly recipe: AdmittedAiRecipe
   readonly requestId: string
   readonly callId: string
+  readonly children: readonly AiRecipeExecutionResult[]
 }
 const executionEvidence = new WeakMap<object, RecipeExecutionEvidence>()
 /** Internal evidence lookup; a caller-authored JSON receipt is not proof. */
@@ -280,6 +281,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
         let observed: AiRecipeExecutionResult | undefined
         const start = records.length
         const issues: string[] = []
+        const children: AiRecipeExecutionResult[] = []
         const recovery: AiRecipeRecovery[] = []
         const transferredRecovery = new Set<AiRecipeRecovery>()
         let exportedSchema: AiJsonValue | undefined
@@ -439,6 +441,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                   ...(iteration === undefined ? {} : { iteration })
                 })
               )
+              if (pinned.recipe) children.push(child)
               issues.push(...child.issues)
               recovery.push(...(child.recovery ?? []))
               const schema = exportedSchemas.get(child)
@@ -581,7 +584,8 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
             Object.freeze({
               recipe: node.recipe,
               requestId: request.requestId,
-              callId
+              callId,
+              children: Object.freeze(children)
             })
           )
         return finalResult

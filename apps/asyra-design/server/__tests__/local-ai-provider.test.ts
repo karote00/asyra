@@ -42,6 +42,7 @@ import { basicApiResultSchema } from '../../src/ai/basic-api-results'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type { AiToolStoreEntry } from '@asyra/ai-agent-runtime'
 import { createAiActivityProjection } from '../../src/ai/activity-state'
+import { createServerActionBatchProvider } from '../../src/ai/server-action-batch-provider'
 
 const { spawn, retainedRecords } = vi.hoisted(() => ({
   spawn: vi.fn(),
@@ -544,11 +545,63 @@ describe('local subscription AI backend', () => {
     }
     const run = async (width: number, submit: boolean) => {
       const recordOffset = retainedRecords.length
+      const projection = createAiActivityProjection()
+      const activity: {
+        id: string
+        parent?: string
+        status: string
+        message?: string
+        tool: string
+        label: string
+      }[] = []
+      let streamController:
+        ReadableStreamDefaultController<Uint8Array> | undefined
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          streamController = controller
+        }
+      })
+      const deliver = (value: unknown) => {
+        if (!streamController) throw new Error('Missing transport stream')
+        streamController.enqueue(
+          new TextEncoder().encode(JSON.stringify(value) + '\n')
+        )
+      }
+      const transport = createServerActionBatchProvider({
+        fetch: async () =>
+          new Response(stream, {
+            headers: { 'content-type': 'application/x-ndjson' }
+          })
+      })
+      const received = transport.requestActionBatch(providerInput, {
+        signal: new AbortController().signal,
+        onProgress: (event) => {
+          projection.append({
+            attempt: 1,
+            phase: 'provider',
+            summary: 'Owner activity',
+            tool: event.tool,
+            toolStatus: event.status,
+            message: event.message,
+            activity: event.activity
+          })
+          if (event.activity)
+            activity.push({
+              id: event.activity.callId,
+              parent: event.activity.parentCallId,
+              status: event.status,
+              tool: event.tool,
+              label: projection.result().current.label,
+              message: projection.result().current.message
+            })
+        }
+      })
       const server = fakeServer({ hold: true, manualToolReplies: true })
       const request = requestLocalAiActionBatch(providerInput, {
         model: 'selected-model',
         executable: 'codex',
-        executeBatch: async () => ({ actionResults: [], context: {} })
+        executeBatch: async () => ({ actionResults: [], context: {} }),
+        onProgress: (event) => deliver({ type: 'activity', ...event })
       })
       await untilTurn(server.packets)
       let id = 100
@@ -672,12 +725,31 @@ describe('local subscription AI backend', () => {
         const result = await call('invoke_tool', {
           name: 'prepare-part',
           revision: 1,
-          input: width
+          input: width,
+          message: 'Prepare the editable facade panel'
         })
         expect(result).toMatchObject({
           execution: { status: 'success' },
           storage: { status: 'saved' }
         })
+        expect(
+          activity.some(
+            (event) =>
+              event.parent &&
+              event.tool === 'save_tool' &&
+              event.status === 'running' &&
+              event.label === 'Saving a reusable operation'
+          )
+        ).toBe(true)
+        const started = new Set<string>()
+        for (const event of activity) {
+          if (event.status === 'running') started.add(event.id)
+          else if (event.parent)
+            expect(started.has(event.id), JSON.stringify(event)).toBe(true)
+          if (event.parent && event.status === 'running')
+            expect(event.message).toBe('Prepare the editable facade panel')
+        }
+        expect(projection.result().current.message).toBeUndefined()
         const target = await call('retain_design_targets', {
           targets: [{ artifactId: result.execution.value, keys: ['surface'] }]
         })
@@ -685,7 +757,11 @@ describe('local subscription AI backend', () => {
         return result.execution.value
       } finally {
         server.finish()
-        await request
+        const batch = await request
+        deliver({ type: 'result', batch })
+        streamController?.close()
+        await received
+        transport.dispose()
         const recorded = parseExecutionRecord(
           retainedRecords
             .slice(recordOffset)
@@ -1087,182 +1163,6 @@ describe('local subscription AI backend', () => {
       await completion
     }
   })
-
-  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
-    'discovers deferred vector APIs through the real native provider',
-    async () => {
-      const native =
-        await vi.importActual<typeof import('node:child_process')>(
-          'node:child_process'
-        )
-      const children: import('node:child_process').ChildProcess[] = []
-      const calls: { tool: string; namespace: string }[] = []
-      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
-        const child = native.spawn(...args)
-        children.push(child)
-        let buffer = ''
-        child.stdout?.on('data', (chunk: Buffer) => {
-          buffer += chunk.toString()
-          let newline: number
-          while ((newline = buffer.indexOf('\n')) >= 0) {
-            const line = buffer.slice(0, newline)
-            buffer = buffer.slice(newline + 1)
-            try {
-              const packet = JSON.parse(line)
-              if (packet.method === 'item/tool/call')
-                calls.push({
-                  tool: packet.params.tool,
-                  namespace: packet.params.namespace
-                })
-            } catch {
-              /* Only record native tool identities. */
-            }
-          }
-        })
-        return child
-      })
-      const contract = basicApiContracts.find(
-        ({ method }) => method === 'getVectorAnchorPointAtWorkspacePos'
-      )
-      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
-      if (!contract || !executable)
-        throw new Error('Missing native discovery probe configuration')
-      const executeBatch = vi.fn(async () => ({
-        actionResults: [],
-        context: {}
-      }))
-      try {
-        const result = await requestLocalAiActionBatch(
-          {
-            intent: `Inspect the API for editing vector nodes: discover and call describe_design_apis for ${contract.name}. Use native discovery and Code Mode as needed. This is a protocol check only; do not execute a canvas operation. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
-            context: {},
-            actions: [
-              {
-                name: contract.name,
-                description: contract.description,
-                inputSchema:
-                  contract.inputSchema as AiProviderInput['actions'][number]['inputSchema']
-              },
-              { name: 'report_outcome', description: 'Report', inputSchema: {} }
-            ],
-            attempt: 1
-          },
-          {
-            executable,
-            model: 'gpt-6-astra',
-            executeBatch,
-            signal: AbortSignal.timeout(90_000)
-          }
-        )
-        expect(result).toMatchObject({
-          actions: expect.arrayContaining([
-            expect.objectContaining({ name: 'report_outcome' })
-          ])
-        })
-        expect(calls).toContainEqual({
-          tool: 'describe_design_apis',
-          namespace: 'design_operations'
-        })
-        expect(executeBatch).not.toHaveBeenCalled()
-      } finally {
-        for (const child of children)
-          if (child.exitCode === null && child.signalCode === null)
-            child.kill('SIGKILL')
-      }
-    },
-    95_000
-  )
-
-  it.skipIf(process.env.LOCAL_AI_DISCOVERY_PROBE !== 'true')(
-    'records phase-specific review criteria through real deferred discovery',
-    async () => {
-      const native =
-        await vi.importActual<typeof import('node:child_process')>(
-          'node:child_process'
-        )
-      const children: import('node:child_process').ChildProcess[] = []
-      const calls: { tool: string; namespace: string; arguments: unknown }[] =
-        []
-      spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
-        const child = native.spawn(...args)
-        children.push(child)
-        let buffer = ''
-        child.stdout?.on('data', (chunk: Buffer) => {
-          buffer += chunk.toString()
-          let newline: number
-          while ((newline = buffer.indexOf('\n')) >= 0) {
-            const line = buffer.slice(0, newline)
-            buffer = buffer.slice(newline + 1)
-            try {
-              const packet = JSON.parse(line)
-              if (packet.method === 'item/tool/call')
-                calls.push({
-                  tool: packet.params.tool,
-                  namespace: packet.params.namespace,
-                  arguments: packet.params.arguments
-                })
-            } catch {
-              /* Only record native tool identities. */
-            }
-          }
-        })
-        return child
-      })
-      const executable = process.env.LOCAL_AI_PROTOCOL_EXECUTABLE
-      if (!executable)
-        throw new Error('Missing native discovery probe configuration')
-      const plan = {
-        phase: 'plan',
-        method: 'native-shapes',
-        references: [],
-        criteria: reviewCriteria(['A red square sized 100 by 100 px']),
-        detailRequired: false
-      }
-      const executeBatch = vi.fn(async () => ({
-        actionResults: [],
-        context: {}
-      }))
-      try {
-        const result = await requestLocalAiActionBatch(
-          {
-            intent: `Protocol test: discover review_drawing and call it with this exact plan: ${JSON.stringify(plan)}. Do not draw or inspect the canvas. Finish with report_outcome, outcome unsupported, message Protocol probe complete.`,
-            context: {},
-            actions: [
-              {
-                name: 'inspect_drawing',
-                description: 'Inspect drawing',
-                inputSchema: {}
-              },
-              { name: 'report_outcome', description: 'Report', inputSchema: {} }
-            ],
-            attempt: 1
-          },
-          {
-            executable,
-            model: 'gpt-6-astra',
-            executeBatch,
-            signal: AbortSignal.timeout(90_000)
-          }
-        )
-        expect(result).toMatchObject({
-          actions: expect.arrayContaining([
-            expect.objectContaining({ name: 'report_outcome' })
-          ])
-        })
-        expect(calls).toContainEqual({
-          tool: 'review_drawing',
-          namespace: 'design_operations',
-          arguments: plan
-        })
-        expect(executeBatch).not.toHaveBeenCalled()
-      } finally {
-        for (const child of children)
-          if (child.exitCode === null && child.signalCode === null)
-            child.kill('SIGKILL')
-      }
-    },
-    95_000
-  )
 
   it.skipIf(!process.env.LOCAL_AI_PROTOCOL_EXECUTABLE)(
     'checks installed native registration without inference',

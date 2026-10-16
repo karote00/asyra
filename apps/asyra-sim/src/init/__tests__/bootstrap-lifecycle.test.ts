@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { SessionCancelPolicies } from '@asyra/utils'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { IndexedProjectRepository } from '../../storage/indexed-db'
 import { ProjectSession } from '../../storage/project-session'
@@ -181,7 +182,7 @@ describe('App composition lifetime', () => {
       'test.persistence-interaction',
       10,
       true,
-      'rollback',
+      SessionCancelPolicies.ROLLBACK,
       { onStart: () => ({}), onCancel, onEnd }
     )
     await manager.handleStart(

@@ -3496,3 +3496,361 @@ it('execution proof connects tool-first guidance to native selection and Runtime
     await host.dispose()
   }
 })
+
+it('execution proof saves nested tool evidence and reopens without product replay', async () => {
+  const { createLocalToolStore } = await import('../local-tool-store')
+  const { toolRequestReference } = await import('../../src/ai/tool-contract')
+  const parentDirectory = resolve('tmp/stage4-tool-proof')
+  await mkdir(parentDirectory, { recursive: true })
+  const directory = await mkdtemp(resolve(parentDirectory, 'case-'))
+  const open = () =>
+    createLocalToolStore({
+      directory,
+      capacity: 16,
+      recordBytes: 65536,
+      totalBytes: 1048576
+    })
+  let database = await open()
+  let fail = false
+  let preparations = 0
+  const events: { phase: string; name: string; parent?: string }[] = []
+  const makeHost = (requestId: string) =>
+    createLocalToolHost({
+      requestId,
+      signal: new AbortController().signal,
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 32,
+      limits: {
+        steps: 16,
+        bindings: 100,
+        bindingDepth: 32,
+        bytes: 24000,
+        issues: 8
+      },
+      store: {
+        read: (key) => database.read(key),
+        list: (limit) => database.list(limit),
+        write: (value) => {
+          if (fail) throw new Error('Store unavailable')
+          return database.write(value)
+        }
+      },
+      observe: (event) => {
+        events.push({
+          phase: event.phase,
+          name: event.call.name,
+          parent: event.call.parentCallId
+        })
+        if (
+          event.phase === 'started' &&
+          event.call.name === 'design_preparation.prepare_design'
+        )
+          preparations++
+      },
+      createGroups: (ownership) => [
+        {
+          name: 'design_preparation',
+          description: 'Prepare editable parts',
+          owner: createLocalDesignTools(
+            [
+              {
+                name: AiActionNames.APPLY_PREPARED_DESIGN,
+                description: 'Apply',
+                inputSchema: {}
+              }
+            ],
+            createDesignPreparationSession(undefined, undefined, ownership)
+          )
+        }
+      ]
+    })
+  let host = makeHost('first')
+  const call = async (name: string, input: unknown) =>
+    JSON.parse((await host.invoke({ name, input })).text)
+  try {
+    const literal = (value: unknown) => ({ kind: 'literal', value })
+    const child = {
+      format: 1,
+      name: 'prepared-source',
+      revision: 1,
+      description: 'Prepare a fresh editable part.',
+      inputSchema: { type: 'number', minimum: 1, maximum: 100 },
+      outputSchema: toolRequestReference,
+      steps: [
+        {
+          id: 'prepare',
+          tool: 'design_preparation.prepare_design',
+          revision: 2,
+          input: {
+            kind: 'object',
+            fields: {
+              draft: {
+                kind: 'object',
+                fields: {
+                  type: literal('frame'),
+                  name: literal('Part'),
+                  width: literal(200),
+                  height: literal(200),
+                  children: {
+                    kind: 'array',
+                    items: [
+                      {
+                        kind: 'object',
+                        fields: {
+                          type: literal('rect'),
+                          key: literal('surface'),
+                          name: literal('Surface'),
+                          width: { kind: 'input', path: '' },
+                          height: literal(10),
+                          fill: literal('#123456')
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      output: { kind: 'step', step: 'prepare', path: '/artifactId' }
+    }
+    const parent = {
+      ...child,
+      name: 'prepared-parent',
+      steps: [
+        {
+          id: 'prepare',
+          tool: child.name,
+          revision: 1,
+          input: { kind: 'input', path: '' }
+        }
+      ],
+      output: { kind: 'step', step: 'prepare', path: '' }
+    }
+    expect(
+      await call('tool_library.submit_tool', {
+        submissionId: 'child',
+        proposal: child
+      })
+    ).toMatchObject({ ok: true })
+    expect(
+      await call('tool_library.submit_tool', {
+        submissionId: 'parent',
+        proposal: parent
+      })
+    ).toMatchObject({ ok: true })
+    fail = true
+    const first = await call('tool_library.invoke_tool', {
+      name: parent.name,
+      revision: 1,
+      input: 17
+    })
+    expect(first, JSON.stringify(first)).toMatchObject({
+      execution: { status: 'success' },
+      storage: { status: 'unsaved' },
+      receiptId: expect.any(String)
+    })
+    fail = false
+    expect(
+      await call('tool_library.save_tool', {
+        name: parent.name,
+        revision: 1,
+        receiptId: first.receiptId
+      })
+    ).toMatchObject({ status: 'saved', availability: 'eligible' })
+    expect(preparations).toBe(1)
+    expect(
+      events.some(
+        (event) =>
+          event.name === 'tool_library.save_tool' &&
+          event.parent &&
+          event.phase === 'started'
+      )
+    ).toBe(true)
+    await host.dispose()
+    database.close()
+    database = await open()
+    host = makeHost('second')
+    expect(await host.load()).toMatchObject({
+      loaded: [child.name, parent.name],
+      unavailable: []
+    })
+    expect(
+      await call('tool_library.save_tool', {
+        name: parent.name,
+        revision: 1,
+        receiptId: first.receiptId
+      })
+    ).toMatchObject({ status: 'unsaved' })
+    const second = await call('tool_library.invoke_tool', {
+      name: parent.name,
+      revision: 1,
+      input: 23
+    })
+    expect(second).toMatchObject({
+      execution: { status: 'success' },
+      storage: { status: 'saved' }
+    })
+    expect(second.execution.value).not.toBe(first.execution.value)
+    expect(preparations).toBe(2)
+    expect(
+      await call('tool_library.manage_tool', {
+        name: child.name,
+        revision: 1,
+        operation: 'suspend'
+      })
+    ).toMatchObject({ status: 'saved' })
+    expect(
+      await call('tool_library.invoke_tool', {
+        name: parent.name,
+        revision: 1,
+        input: 24
+      })
+    ).toMatchObject({ execution: { settlement: 'not-started' } })
+    expect(preparations).toBe(2)
+  } finally {
+    await host.dispose()
+    database.close()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+it('execution proof preserves issued history direction across the App feature handoff', async () => {
+  vi.stubGlobal('window', {})
+  const { default: core, getFeatureRegistry } = await import('@asyra/core')
+  const { keyCombinations } = await import('../../src/config/key-combinations')
+  const { FeatureNames, InputSystemEvents } =
+    await import('../../src/constants')
+  const { ModifierKey, InputType } = await import('@asyra/utils')
+  const { historyApis } = await import('../../src/common-apis/history')
+  await import('../../src/features/undo-redo')
+  const execution = getFeatureRegistry().getDefinition(
+    FeatureNames.UNDO_REDO
+  )?.execution
+  if (!execution) throw new Error('Missing real history feature')
+  const originalBusy = core.deps.factory.isInUndoRedo
+  const originalSet = core.setSystemProperty
+  const originalUndo = historyApis.undo
+  const originalRedo = historyApis.redo
+  const applied: string[] = []
+  core.setSystemProperty = vi.fn()
+  historyApis.undo = async () => {
+    applied.push('undo')
+  }
+  historyApis.redo = async () => {
+    applied.push('redo')
+  }
+  try {
+    core.deps.factory.isInUndoRedo = () => false
+    for (const modifier of [ModifierKey.META, ModifierKey.CTRL]) {
+      const combo = keyCombinations[
+        InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
+      ].find((entry) => entry.modifiers.includes(modifier))
+      if (!combo) throw new Error('Missing real history shortcut')
+      for (const shift of [false, true]) {
+        const raw = {
+          type: InputType.KEYBOARD,
+          keys: ['z'],
+          modifiers: {
+            shift,
+            meta: modifier === ModifierKey.META,
+            ctrl: modifier === ModifierKey.CTRL,
+            alt: false
+          }
+        } as import('@asyra/utils').RawInputEvent
+        core.deps.factory.isInUndoRedo = () => true
+        expect(combo.callback(raw)).toBe(false)
+        expect(raw.detail).toBeUndefined()
+        core.deps.factory.isInUndoRedo = () => false
+        expect(combo.callback(raw)).not.toBe(false)
+        await execution({
+          detail: raw.detail,
+          keyShift: !shift
+        } as import('@asyra/utils').SystemContextSnapshotWithDetail)
+      }
+    }
+    expect(applied).toEqual(['undo', 'redo', 'undo', 'redo'])
+    expect(
+      await execution({
+        detail: {},
+        keyShift: true
+      } as import('@asyra/utils').SystemContextSnapshotWithDetail)
+    ).toBeNull()
+    expect(applied).toHaveLength(4)
+    const features = await import('@asyra/feature-system')
+    const listeners = new Map<
+      string,
+      (raw: import('@asyra/utils').RawInputEvent) => void | Promise<void>
+    >()
+    features.setCorePackages({
+      inputSystem: {
+        on: (name, callback) => {
+          listeners.set(name, callback)
+        },
+        off: (name) => listeners.delete(name)
+      },
+      systemContext: {
+        getSystemContextSnapshot: () =>
+          ({}) as import('@asyra/utils').SystemContextSnapshot
+      }
+    })
+    try {
+      const dispatch = listeners.get(InputSystemEvents.INPUT_SHORTCUT_UNDOREDO)
+      if (!dispatch) throw new Error('Missing real history dispatch')
+      const request = dispatch({
+        detail: { historyDirection: 'undo' }
+      } as unknown as import('@asyra/utils').RawInputEvent)
+      const atReturn = [...applied]
+      await request
+      expect(atReturn).toEqual(['undo', 'redo', 'undo', 'redo', 'undo'])
+    } finally {
+      await features.disposeFeatureSystem(
+        () => ({}) as import('@asyra/utils').SystemContextSnapshot
+      )
+    }
+    const { InputSystem } = await import('@asyra/input-system')
+    const input = new InputSystem()
+    const callbacks = new Map<string, EventListener[]>()
+    input.attachBrowserHost({
+      addEventListener: (name: string, callback: EventListener) => {
+        callbacks.set(name, [...(callbacks.get(name) ?? []), callback])
+      },
+      removeEventListener: vi.fn()
+    } as unknown as Window)
+    input.registry.register(
+      'history',
+      keyCombinations[InputSystemEvents.INPUT_SHORTCUT_UNDOREDO]
+    )
+    const received: unknown[] = []
+    input.on('history', (raw) => {
+      received.push(raw.detail)
+    })
+    const keydown = callbacks.get('keydown')?.[0]
+    if (!keydown) throw new Error('Missing browser input binding')
+    const key = (code: string) =>
+      ({
+        code,
+        target: { tagName: 'DIV', isContentEditable: false },
+        preventDefault: vi.fn()
+      }) as unknown as KeyboardEvent
+    try {
+      core.deps.factory.isInUndoRedo = () => true
+      keydown(key('MetaLeft'))
+      keydown(key('KeyZ'))
+      expect(received).toEqual([])
+      core.deps.factory.isInUndoRedo = () => false
+      keydown(key('KeyZ'))
+      expect(received).toEqual([{ historyDirection: 'undo' }])
+    } finally {
+      input.resetRuntime()
+    }
+  } finally {
+    core.deps.factory.isInUndoRedo = originalBusy
+    core.setSystemProperty = originalSet
+    historyApis.undo = originalUndo
+    historyApis.redo = originalRedo
+    vi.unstubAllGlobals()
+  }
+})

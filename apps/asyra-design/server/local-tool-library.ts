@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
   AiToolContractError,
   createAiToolContract,
+  createAiInvoker,
   createAiToolLibrary,
   createAiRecipeInvoker,
   createAiRecipeRecoverySchema,
@@ -9,6 +11,9 @@ import {
   createAiToolPersistence,
   createAiToolStoreManagement,
   type AiInvocation,
+  type AiInvocationContext,
+  type AiInvocationEvent,
+  type AiRecipeInvocationEvent,
   type AiRecipeExecutionResult,
   type AiRecipeInvokerOptions,
   type AiRecipeSubmission,
@@ -21,12 +26,17 @@ export interface LocalToolLibraryOptions
   extends
     Pick<
       AiRecipeInvokerOptions,
-      'registry' | 'validate' | 'execute' | 'leases' | 'observe'
+      'registry' | 'validate' | 'execute' | 'leases'
     >,
     Pick<AiToolLibraryOptions, 'limits' | 'capacity'>,
     Pick<AiToolPersistenceOptions, 'store' | 'check'> {
   readonly requestId: string
   readonly receiptCapacity: number
+  readonly onPhase?: (call: AiInvocationContext, phase: 'execution') => void
+  readonly observe?: (
+    event: AiInvocationEvent<unknown> &
+      Pick<AiRecipeInvocationEvent, 'revision' | 'recipeStep'>
+  ) => void | Promise<void>
 }
 
 export interface LocalToolInvocationResult {
@@ -141,25 +151,55 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
       const composed = registered.kind === 'composition'
       const revision = registered.definition.revision
       if (composed) {
-        const requiresSaved =
-          registered.availability === 'eligible' ||
-          savedIdentities.has(identity(input.name, revision))
-        try {
-          const current = await management.read(input.name, revision)
+        const checked = new Set<string>()
+        const verifySaved = async (
+          name: string,
+          revision: number
+        ): Promise<void> => {
+          const key = identity(name, revision)
+          if (checked.has(key)) return
+          checked.add(key)
+          const entry = options.registry.registration(name, {
+            requestId: options.requestId,
+            revision
+          })
+          if (!entry)
+            throw new Error(
+              'A recipe dependency is unavailable; refresh discovery before invoking.'
+            )
+          if (entry.kind !== 'composition') return
+          const requiresSaved =
+            entry.availability === 'eligible' || savedIdentities.has(key)
+          let current: Awaited<ReturnType<typeof management.read>>
+          try {
+            current = await management.read(name, revision)
+          } catch {
+            if (requiresSaved)
+              throw new Error(
+                'Saved tool state could not be verified; retry admission without replaying work.'
+              )
+          }
           if (
             (!current && requiresSaved) ||
             (current &&
-              current.availability !== 'eligible' &&
-              current.availability !== 'candidate')
+              (entry.availability === 'eligible'
+                ? current.availability !== 'eligible'
+                : !['eligible', 'candidate'].includes(current.availability)))
           )
-            return rejected(
+            throw new Error(
               'Saved tool is unavailable; refresh discovery before invoking.'
             )
-        } catch {
-          if (requiresSaved)
-            return rejected(
-              'Saved tool state could not be verified; retry admission without replaying work.'
-            )
+          const recipe = library.recipe(name, revision)
+          if (!recipe) throw new Error('The admitted recipe is unavailable.')
+          for (const dependency of recipe.dependencies)
+            await verifySaved(dependency.name, dependency.revision)
+        }
+        try {
+          await verifySaved(input.name, revision)
+        } catch (error) {
+          return rejected(
+            error instanceof Error ? error.message : String(error)
+          )
         }
         if (pending.has(callId))
           return rejected(
@@ -188,11 +228,30 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
           return { execution }
         }
         pending.set(callId, { name: input.name, revision, receipt: execution })
-        const storage = await save({
-          name: input.name,
-          revision,
-          requestId: options.requestId,
-          receipt: execution
+        const storage = await createAiInvoker<AiToolSaveResult>({
+          observe: (event) => {
+            const observation = options.observe?.(event)
+            try {
+              if (event.phase === 'started')
+                options.onPhase?.(event.call, 'execution')
+            } catch {
+              /* Diagnostic phase failure cannot replace durable product evidence. */
+            }
+            return observation
+          },
+          execute: async () => {
+            return save({
+              name: input.name,
+              revision,
+              requestId: options.requestId,
+              receipt: execution
+            })
+          }
+        }).invoke({
+          name: `tool_library.${AiDesignToolIds.SAVE_TOOL}`,
+          input: { name: input.name, revision },
+          parentCallId: input.parentCallId,
+          actor: 'app-server'
         })
         generation++
         if (storage.status === 'saved') pending.delete(callId)

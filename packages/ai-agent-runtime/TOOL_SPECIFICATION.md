@@ -310,6 +310,20 @@ receipt cannot establish eligibility. This is scoped evidence, not proof of all
 possible requests or visual correctness. Saving a candidate remains supported;
 a restart exposes it for explicit inspection/resumption, never automatic execution.
 
+Nested invocation keeps genuine child composition receipts in private request-local
+root evidence. Saving a successful root saves eligible dependencies before the parent;
+a failed child save leaves the root unsaved. The same root receipt retries storage
+only, preserving independently acknowledged children. Never reconstruct child proof
+from public call records or persist execution values. Validate exact current stored
+state before promotion; suspension and retirement cannot be undone by a late save.
+
+A store read is a snapshot, not a reservation. Per-instance queues do not serialize
+independent store writers. After asynchronous preparation, no-write acknowledgement
+and local registration must confirm the exact stored identity, version and bytes.
+A successful CAS write describes its durable commit; it does not promise that a
+later management operation cannot change availability. Each new invocation checks
+current availability before pinning its graph. No store transaction spans tool work.
+
 Store conflicts and failures leave product completion unchanged. Retrying save
 performs storage work only. Reload checks the current canonical dependencies and
 re-enters admission; unknown formats, corrupted entries and changed dependencies

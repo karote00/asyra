@@ -1,6 +1,7 @@
 import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
 import { readFile, writeFile } from 'node:fs/promises'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
+import type { RawInputEvent } from '@asyra/utils'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
 import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
 import {
@@ -1315,6 +1316,47 @@ test('16-item AI response converges through the ordinary two-actor publication p
       waitForCollaboration(actorA),
       waitForCollaboration(actorB)
     ])
+    await actorA.evaluate(async () => {
+      const { core, historyApis, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const events: unknown[] = []
+      const capture = (phase: string, detail?: unknown) =>
+        events.push({
+          phase,
+          detail,
+          at: performance.now(),
+          busy: core.isInUndoRedo(),
+          undoDepth: core.getUndoHistoryDepth()
+        })
+      const keydown = (event: KeyboardEvent) => {
+        if (event.code === 'KeyZ') capture('keydown', { shift: event.shiftKey })
+      }
+      const admitted = (raw: RawInputEvent) => {
+        capture('admitted', { modifiers: raw.modifiers, detail: raw.detail })
+      }
+      const original = { ...historyApis }
+      for (const name of ['undo', 'redo'] as const) {
+        historyApis[name] = async (options) => {
+          capture(`${name}-entry`)
+          try {
+            const result = await original[name](options)
+            capture(`${name}-return`)
+            return result
+          } catch (error) {
+            capture(`${name}-failure`, String(error))
+            throw error
+          }
+        }
+      }
+      document.addEventListener('keydown', keydown, true)
+      core.deps.inputSystem.on('input.shortcut.undoredo', admitted)
+      testRuntimeState.set('collaboration-history-input', events)
+      testRuntimeState.set('collaboration-history-dispose', () => {
+        document.removeEventListener('keydown', keydown, true)
+        core.deps.inputSystem.off('input.shortcut.undoredo', admitted)
+        Object.assign(historyApis, original)
+      })
+    })
     checkpoint = 'actors-ready'
     await Promise.all([
       capturePublicationOutcomes(actorA),
@@ -1559,6 +1601,25 @@ test('16-item AI response converges through the ordinary two-actor publication p
       checkpoint = 'actor-b-reload-snapshot-complete'
     })
   } finally {
+    try {
+      const evidence = await actorA.evaluate(async () => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        testRuntimeState.get<() => void>('collaboration-history-dispose')?.()
+        return testRuntimeState.get('collaboration-history-input')
+      })
+      const evidencePath = testInfo.outputPath('history-input.json')
+      await writeFile(evidencePath, JSON.stringify(evidence))
+      await testInfo.attach('history-input.json', {
+        path: evidencePath,
+        contentType: 'application/json'
+      })
+    } catch (error) {
+      testInfo.annotations.push({
+        type: 'history-input-capture',
+        description: String(error)
+      })
+    }
     await testInfo.attach('16-item-last-checkpoint.txt', {
       body: Buffer.from(checkpoint),
       contentType: 'text/plain'

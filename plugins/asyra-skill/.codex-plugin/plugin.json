@@ -1,6 +1,6 @@
 {
   "name": "asyra-skill",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Build and extend products with Asyra using its public APIs, ownership patterns and formal verification. Includes versioned reference guides.",
   "author": {
     "name": "Asa Tsai"

@@ -136,6 +136,7 @@
           'Execute admitted bounded repair with initial writes once, typed current state, owner check verdict and actual iteration provenance. Count nested worst-case work before writes; stop on decision, repeated progress, budget, cancellation or non-success, exporting actual validated recovery without replay or eligibility.',
           'Observe pinned tool revision and admitted parent recipe name/revision/step ID on child lifecycle events. Do not invent admitted provenance for a rejected root; diagnostic metadata does not change execution authority.',
           'Validate successful output only against outputSchema; partial uses declared partialOutputSchema or the same shape. Host outcome selects the schema; partial validation never rescues malformed success and partial results never feed successor bindings.',
+          'Retain genuine nested composition receipts in private root execution evidence bounded by the admitted graph; no public receipt reconstruction or durable execution state.',
           'Failed/unknown results export resources only through a validated declared recoveryOutputSchema. Preserve exact outcome and settlement; nested recovery receipts transfer pinned references before ancestor cleanup without feeding successful bindings or granting save eligibility.'
         ],
         bypasses: [
@@ -182,7 +183,9 @@
         outputs: ['artifact:saved-recipe'],
         conditions: [
           'Save exact immutable definition and eligibility atomically; validate reload through admission and isolate corrupt entries.',
+          'A read is a snapshot, not a reservation. Before no-write acknowledgement or local registration, confirm exact stored identity, version and bytes after asynchronous preparation. Independent writers are not serialized by a request queue. A valid write acknowledgement describes its commit, not immunity to later retirement; new invocations recheck durable availability.',
           'Persist and compare the full optional iteration body with steps/output; reload and resume re-enter canonical bounded admission, and only verified success can grant eligibility. Save-only recovery never executes the graph.',
+          'Save genuine successful nested proof dependency-first without product replay. Preserve acknowledged children on parent failure, retry through the same root proof, and reject expired/forged receipts or unavailable durable dependencies.',
           'Host management projects compact canonical stored metadata without registration or execution. State-only suspend/retire uses the observed storage version, preserves immutable definitions and rejects stale writes; runtime availability changes only after exact durable acknowledgement.'
         ],
         bypasses: [

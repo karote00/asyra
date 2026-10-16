@@ -1593,7 +1593,29 @@ for (const mode of [
     type ProviderInput =
       import('../src/ai/action-batch-protocol').AiProviderInput
     type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
-    type Entry = import('@asyra/ai-agent-runtime').AiToolStoreEntry
+    const { createLocalToolStore } = await import('../server/local-tool-store')
+    const openStore = () =>
+      createLocalToolStore({
+        directory: testInfo.outputPath('tool-library'),
+        capacity: 32,
+        recordBytes: 262144,
+        totalBytes: 1048576
+      })
+    let database = await openStore()
+    let failEligibility = false
+    const store: import('@asyra/ai-agent-runtime').AiToolStore = {
+      read: (key) => database.read(key),
+      list: (limit) => database.list(limit),
+      write: (value) => {
+        if (
+          failEligibility &&
+          (value.record as { availability?: string }).availability ===
+            'eligible'
+        )
+          throw new Error('Injected library acknowledgement failure')
+        return database.write(value)
+      }
+    }
     const document = createTestDocumentIdentity()
     const peer = await browser.newPage({
       baseURL: String(testInfo.project.use.baseURL)
@@ -1651,138 +1673,132 @@ for (const mode of [
         async (input: ProviderInput) => {
           primaryCalls++
           const controller = new AbortController()
-          const checks = createDesignCheckResults()
-          const entries = new Map<string, Entry>()
+          let checks = createDesignCheckResults()
           const events: {
             phase: string
             callId: string
             parentCallId?: string
             name: string
           }[] = []
-          const host = createLocalToolHost({
-            requestId: 'mechanical-integration',
-            signal: controller.signal,
-            observe: (event) => {
-              events.push({
-                phase: event.phase,
-                callId: event.call.callId,
-                parentCallId: event.call.parentCallId,
-                name: event.call.name
-              })
-            },
-            capacity: 32,
-            receiptCapacity: 64,
-            artifactCapacity: 32,
-            limits: {
-              bytes: 48000,
-              steps: 20,
-              bindings: 200,
-              bindingDepth: 32,
-              issues: 10
-            },
-            store: {
-              read: async (key) => entries.get(key),
-              list: async () => [...entries.values()],
-              write: async (value) => {
-                if (entries.get(value.key)?.version !== value.expectedVersion)
-                  throw new Error('Conflict')
-                const entry = {
-                  key: value.key,
-                  record: value.record,
-                  version: crypto.randomUUID()
-                }
-                entries.set(value.key, entry)
-                return entry
-              }
-            },
-            createGroups: (ownership) => [
-              {
-                name: 'design_operations',
-                description: 'Actual mechanical operations',
-                owner: createLocalOperationTools(
-                  input.actions,
-                  {
-                    modelActions: (value) => value,
-                    resolveBatch: (value) => value,
-                    checkResults: checks
-                  },
-                  async (batch) => {
-                    dispatched.push(
-                      ...batch.actions.map((action) => action.name)
-                    )
-                    for (const action of batch.actions)
-                      if (action.name === 'review_design')
-                        measured.push(String(action.arguments.elementId))
-                    if (
-                      mode === 'basis-changed' &&
-                      !basisChanged &&
-                      batch.actions.some(
-                        (action) => action.name === 'apply_prescribed_positions'
+          const createHost = (requestId: string) =>
+            createLocalToolHost({
+              requestId,
+              signal: controller.signal,
+              observe: (event) => {
+                events.push({
+                  phase: event.phase,
+                  callId: event.call.callId,
+                  parentCallId: event.call.parentCallId,
+                  name: event.call.name
+                })
+              },
+              capacity: 32,
+              receiptCapacity: 64,
+              artifactCapacity: 32,
+              limits: {
+                bytes: 48000,
+                steps: 20,
+                bindings: 200,
+                bindingDepth: 32,
+                issues: 10
+              },
+              store,
+              createGroups: (ownership) => [
+                {
+                  name: 'design_operations',
+                  description: 'Actual mechanical operations',
+                  owner: createLocalOperationTools(
+                    input.actions,
+                    {
+                      modelActions: (value) => value,
+                      resolveBatch: (value) => value,
+                      checkResults: checks
+                    },
+                    async (batch) => {
+                      dispatched.push(
+                        ...batch.actions.map((action) => action.name)
                       )
-                    ) {
-                      basisChanged = true
-                      await page.evaluate(async (parentId) => {
-                        const { core } =
-                          await import('../src/testing/runtime-access')
-                        const { transactionApis } =
-                          await import('../src/common-apis')
-                        transactionApis.runTransaction(() =>
-                          core.updateElementProperties([
-                            { elementId: parentId, values: { x: 350 } }
-                          ])
+                      for (const action of batch.actions)
+                        if (action.name === 'review_design')
+                          measured.push(String(action.arguments.elementId))
+                      if (
+                        mode === 'basis-changed' &&
+                        !basisChanged &&
+                        batch.actions.some(
+                          (action) =>
+                            action.name === 'apply_prescribed_positions'
                         )
-                      }, ids.roots[2])
-                      recoveryBefore = await getCoreDocumentDigest(page)
-                      expect(recoveryBefore).not.toEqual(before)
-                    }
-                    const receipt = await page.evaluate(async (serialized) => {
-                      const { testRuntimeState } =
-                        await import('../src/testing/runtime-access')
-                      const execute = testRuntimeState.get<
-                        (batch: AiActionBatch) => Promise<Receipt>
-                      >('mechanical-integration-execute')
-                      if (!execute)
-                        throw new Error('Missing actual runtime executor')
-                      return JSON.parse(
-                        JSON.stringify(await execute(JSON.parse(serialized)))
+                      ) {
+                        basisChanged = true
+                        await page.evaluate(async (parentId) => {
+                          const { core } =
+                            await import('../src/testing/runtime-access')
+                          const { transactionApis } =
+                            await import('../src/common-apis')
+                          transactionApis.runTransaction(() =>
+                            core.updateElementProperties([
+                              { elementId: parentId, values: { x: 350 } }
+                            ])
+                          )
+                        }, ids.roots[2])
+                        recoveryBefore = await getCoreDocumentDigest(page)
+                        expect(recoveryBefore).not.toEqual(before)
+                      }
+                      const receipt = await page.evaluate(
+                        async (serialized) => {
+                          const { testRuntimeState } =
+                            await import('../src/testing/runtime-access')
+                          const execute = testRuntimeState.get<
+                            (batch: AiActionBatch) => Promise<Receipt>
+                          >('mechanical-integration-execute')
+                          if (!execute)
+                            throw new Error('Missing actual runtime executor')
+                          return JSON.parse(
+                            JSON.stringify(
+                              await execute(JSON.parse(serialized))
+                            )
+                          )
+                        },
+                        JSON.stringify(batch)
                       )
-                    }, JSON.stringify(batch))
-                    if (
-                      batch.actions.some(
-                        (action) => action.name === 'apply_prescribed_positions'
-                      )
-                    ) {
-                      if (mode === 'cancel-after-write') controller.abort()
-                      if (mode === 'interrupted-after-write')
-                        throw new BrowserBatchExecutionError(
-                          {
-                            batchId: batch.batchId,
-                            code: 'BROWSER_BATCH_EXECUTION_FAILED',
-                            message:
-                              'Injected delivery interruption after acknowledged write',
-                            executionMs: 0,
-                            handlerMs: 0
-                          },
-                          {
-                            ...receipt,
-                            failure: {
-                              code: 'INJECTED_DELIVERY_FAILURE',
+                      if (
+                        batch.actions.some(
+                          (action) =>
+                            action.name === 'apply_prescribed_positions'
+                        )
+                      ) {
+                        if (mode === 'cancel-after-write') controller.abort()
+                        if (mode === 'interrupted-after-write')
+                          throw new BrowserBatchExecutionError(
+                            {
+                              batchId: batch.batchId,
+                              code: 'BROWSER_BATCH_EXECUTION_FAILED',
                               message:
                                 'Injected delivery interruption after acknowledged write',
-                              stage: 'execution',
-                              settlement: 'completed',
-                              contextFresh: true
+                              executionMs: 0,
+                              handlerMs: 0
+                            },
+                            {
+                              ...receipt,
+                              failure: {
+                                code: 'INJECTED_DELIVERY_FAILURE',
+                                message:
+                                  'Injected delivery interruption after acknowledged write',
+                                stage: 'execution',
+                                settlement: 'completed',
+                                contextFresh: true
+                              }
                             }
-                          }
-                        )
-                    }
-                    return requireBatchSuccess(batch, receipt, 0)
-                  },
-                  { ownership, requestSignal: controller.signal }
-                )
-              }
-            ]
-          })
+                          )
+                      }
+                      return requireBatchSuccess(batch, receipt, 0)
+                    },
+                    { ownership, requestSignal: controller.signal }
+                  )
+                }
+              ]
+            })
+          let host = createHost('mechanical-integration')
           const invoke = async (name: string, input: unknown) =>
             JSON.parse((await host.invoke({ name, input })).text)
           try {
@@ -1941,6 +1957,7 @@ for (const mode of [
             expect(submitted, JSON.stringify(submitted)).toMatchObject({
               ok: true
             })
+            if (mode === 'complete') failEligibility = true
             if (mode === 'cancel-after-write') {
               await expect(
                 invoke('tool_library.invoke_tool', {
@@ -1955,12 +1972,32 @@ for (const mode of [
                 revision: 1,
                 input: { selection: state, policy }
               })
-              if (mode === 'complete')
+              if (mode === 'complete') {
                 expect(result, JSON.stringify(result)).toMatchObject({
                   execution: { status: 'success', value: 'pass' },
-                  storage: { status: 'saved' }
+                  storage: { status: 'unsaved' },
+                  receiptId: expect.any(String)
                 })
-              else {
+                const beforeSave = await getCoreDocumentDigest(page)
+                const beforeChecks = checks.read({ includePassed: true })
+                const beforeCalls = [...dispatched]
+                failEligibility = false
+                expect(
+                  await invoke('tool_library.save_tool', {
+                    name: recipe.name,
+                    revision: 1,
+                    receiptId: result.receiptId
+                  })
+                ).toMatchObject({ status: 'saved', availability: 'eligible' })
+                expect(await getCoreDocumentDigest(page)).toEqual(beforeSave)
+                expect(checks.read({ includePassed: true })).toEqual(
+                  beforeChecks
+                )
+                expect(dispatched).toEqual(beforeCalls)
+                await expect
+                  .poll(() => getPersistedDocumentDigest(document.fileId))
+                  .toEqual(beforeSave)
+              } else {
                 expect(
                   result.execution.status,
                   JSON.stringify(result)
@@ -2112,6 +2149,67 @@ for (const mode of [
                   independent.some((prior) => prior.id === item.id)
                 )
             ).toEqual(independent)
+            if (mode === 'complete') {
+              const beforeReuse = await getCoreDocumentDigest(page)
+              await host.dispose()
+              database.close()
+              database = await openStore()
+              checks = createDesignCheckResults()
+              host = createHost('mechanical-fresh-request')
+              expect(await host.load()).toMatchObject({
+                loaded: [recipe.name],
+                unavailable: []
+              })
+              expect(
+                await invoke('tool_library.save_tool', {
+                  name: recipe.name,
+                  revision: 1,
+                  receiptId: 'expired-receipt'
+                })
+              ).toMatchObject({ status: 'unsaved' })
+              const old = await invoke(
+                'design_operations.verify_design_checks',
+                state
+              )
+              expect(old).toMatchObject({
+                available: false,
+                toolOutcome: { status: 'failed', settlement: 'not-started' }
+              })
+              const fresh = await invoke('design_operations.review_design', {
+                arguments: { elementId: ids.roots[2] }
+              })
+              const attachment = await invoke(
+                'design_operations.read_design_attachment',
+                { arguments: { parentId: ids.roots[2] } }
+              )
+              const basis = attachment.actionResults[0].result
+              const reused = await invoke('tool_library.invoke_tool', {
+                name: recipe.name,
+                revision: 1,
+                input: {
+                  selection: fresh.mechanicalSelection,
+                  policy: {
+                    ...policy,
+                    positions: [
+                      {
+                        ...policy.positions[0],
+                        x: 17,
+                        attachmentEvidence: {
+                          parentId: basis.parentId,
+                          workspaceId: basis.workspaceId,
+                          evidence: basis.evidence
+                        }
+                      }
+                    ]
+                  }
+                }
+              })
+              expect(reused).toMatchObject({
+                execution: { status: 'success', value: 'pass' },
+                storage: { status: 'saved' }
+              })
+              expect(await getCoreDocumentDigest(page)).toEqual(beforeReuse)
+            }
             expect(
               dispatched.filter((name) => name === 'apply_prescribed_positions')
             ).toHaveLength(mode === 'basis-changed' ? 2 : 1)
@@ -2240,6 +2338,7 @@ for (const mode of [
       await waitForCollaboration(page)
       expect(await getCoreDocumentDigest(page)).toEqual(after)
     } finally {
+      database.close()
       await peer.close()
     }
   })

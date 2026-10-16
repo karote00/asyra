@@ -831,6 +831,10 @@ class Core implements CoreAPIs {
     )
   }
 
+  isInUndoRedo(): boolean {
+    return this.deps.factory.isInUndoRedo()
+  }
+
   getUndoHistoryDepth(): number {
     return this.deps.factory.getUndoHistoryDepth()
   }

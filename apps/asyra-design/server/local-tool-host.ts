@@ -165,6 +165,7 @@ export const createLocalToolHost = (options: {
       return { ...value.toolOutcome, value }
     },
     observe: options.observe,
+    onPhase: options.onPhase,
     check: async () => ({
       ok: true,
       scope:

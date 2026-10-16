@@ -470,10 +470,8 @@ class InputSystem {
             raw.detail = combo.detail
           }
 
-          // Call callback before triggering action (if defined)
-          if (combo.callback) {
-            combo.callback(raw)
-          }
+          // Admission happens before any downstream queue or session receives input.
+          if (combo.callback?.(raw) === false) continue
 
           this.triggerAction(eventName, raw)
         }

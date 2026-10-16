@@ -2,25 +2,23 @@
 
 Status: Stages 1 and 2 were pushed at c727b1de593cab4499d4dfe47768d4791823a20f
 on 2026-10-16 after current-main integration and applicable local verification.
-Stage 3 is locally complete after the 2026-10-16 full review and current-source
-verification. The user explicitly retains the isolated unreproduced browser
-navigation failure as a known unresolved, non-blocking item. Its trigger is not
-claimed fixed. Stage 4 implementation is not started. The current user authorizes
-Stage 3 delivery followed by local Stage 4 planning only.
+Stage 3 was pushed as b1c8f9ac8bbc4cc7380aee677b27629136de1514 after the
+2026-10-16 full review, current-main integration and actual-head verification.
+The user explicitly retains the isolated unreproduced browser navigation failure as a known unresolved, non-blocking item. Its trigger is not
+claimed fixed. Stage 4 is locally complete with current-source contract and integration evidence below; its changes remain uncommitted and unpushed.
 
 ## Current authority and stop boundary
 
-The user authorizes one Stage 3 push after applicable verification and current-main
-integration. Then review and amend Stage 4 planning locally, preserving Stage 1/2/3
-contracts. Do not implement Stage 4, run live 101, call models, create a PR, merge or
-resume monitoring. Do not push subsequent Stage 4 planning changes. Historical
+The authorized Stage 3 push is complete. Stage 4 local implementation and verification
+are complete, preserving Stage 1/2/3 contracts. Stop for the user report. Do not run
+live 101, call models, push, create a PR, merge or resume monitoring. Historical
 execution cards are evidence, not active commands.
-The current Stage 3 is **Make tool-first delegation consistent and executable**.
+The delivered Stage 3 is **Make tool-first delegation consistent and executable**.
 The older completed section named **Stage 3 - Direct structural delivery** below
 is historical and must not be resumed as the current task.
 
-Stage 2 delivery: exact lease protected the previous remote e0d52ddef; latest
-integrated main is 4e925488842807672ab36c86fb69a269bd2249f5. Actual-head candidate
+Historical Stage 2 delivery: exact lease protected remote e0d52ddef; its
+integrated main was 4e925488842807672ab36c86fb69a269bd2249f5. Actual-head candidate
 508f59b7-517a-429c-afa8-0b5506aa269d passed; assessment
 98d71915-7567-4de2-9f65-1abfc9c9aaea is current and eligible for that source.
 Actual-head changeset check passed. CI was not monitored. These are Stage 2
@@ -1861,24 +1859,217 @@ empty selections nor a newer check may bypass those boundaries.
 
 #### 4. Preserve purpose, save eligibility and cross-request reuse
 
-Activity uses the same request/recipe/step causality as invocation. Lifecycle start/end
-updates remain complete; presentation filtering may avoid flicker without hiding real
-changes. Between tool calls preserve only a genuinely live authored task purpose with a
-truthful phase; retire completed cohorts under the reviewed settle contract, not a
-completed leaf or an invented claim of drawing. Unknown purpose cannot be
-fabricated. Concurrent completion must not clear another active task's purpose.
+**Planning review baseline - 2026-10-16.** Stage 3 was pushed as
+b1c8f9ac8bbc4cc7380aee677b27629136de1514 after integration with main
+eac2b0d8e719ee9055c846a24a033020c4b1c3cd. This section is a reviewed execution
+plan, not runtime completion evidence. The subsequent user authorizes Stage 4
+admission and implementation; model calls, live 101, push and monitoring remain excluded.
 
-Successful eligible execution attempts durable saving through the existing library.
-Save failure returns a genuine receipt for save-only retry, without repeating drawing.
-Candidates are not advertised as proven usable. A fresh request discovers an eligible
-revision and invokes it with new parameters; document IDs and request-local handles
-must not be captured as reusable literals. Invalid dependencies, suspension, removal,
-failed storage and cancellation retain their declared current-contract behavior.
+**Objective and frozen scope.** Complete the existing invocation-to-purpose and
+execution-to-durable-library handoffs while preserving Stages 1/2/3. Use the one
+Runtime registry, interpreter, persistence owner, Design request coordinator and
+activity state machine. Do not replace them or add another task orchestrator,
+status generator, durable execution checkpoint, retry daemon or compatibility route.
+Read-only discovery is limited to the owners below, their current public contracts,
+direct consumers and permanent tests. Implementation may correct confirmed failures
+within these owners after admission and a failing integration oracle. Unrelated
+Factory, rendering or persistence redesign is not part of this stage.
 
-Gate: host-level save failure/retry/reopen/discovery/invoke with fresh values; exact
-outcome and no duplicate mutation assertions. Replay recorded generic-status handoffs,
-parallel calls, stop and late events through the real activity consumers. Add no new
-model call to produce status text or certify recipe eligibility.
+##### Existing behavior and planning gaps
+
+Current source already provides automatic save after completed composition, genuine
+request-local save receipts, SQLite expected-version writes, dependency reload,
+suspend/remove checks, scoped activity and provider root-cohort settlement. Retain
+working behavior; an absent combined test does not establish a production defect.
+
+The earlier Stage 4 paragraph did not specify receipt expiry across request disposal,
+candidate versus eligible durability, independent document acknowledgement, nested
+save dependencies, publication races or end-to-end activity ordering. It also did not
+require one real durable-store/host/browser path. These are now explicit below.
+Host-level in-memory-store tests, separate SQLite adapter tests and routed management
+UI fixtures remain useful but do not together prove that complete path.
+
+##### 4A. Preserve actual work purpose through the real event path
+
+Owner: Design `settle`, with `compose` supplying Runtime invocation identity and
+`observe` retaining evidence. Read `local-ai-provider.ts`, `local-tool-host.ts`,
+`local-tool-library-tools.ts`, `server-action-batch-provider.ts`, `conversation.ts`,
+`activity-state.ts`, `presentation.ts` and the conversation panel together. Runtime
+`invocation.ts`/`recipe-execution.ts` own call identity, parent, pinned revision and
+step provenance; Design translates those events, not a second lifecycle authority.
+
+- Input is the actual request/attempt, ordered event sequence, call/parent identity,
+  authored purpose identity/scope/revision and observed phase. Output is the existing
+  incremental activity projection and diagnostic disposition consumed by the panel.
+  Preserve current wire fields; any necessary semantic change must first update the
+  existing spec and matching Inspector boundary, not introduce an alternate envelope.
+- Distinguish original objective, authored stage intent, active call purpose and
+  observed operation. Inherit purpose through live ancestry; never copy inherited
+  prose as newly authored work. Native calls, nested recipes and native research must
+  agree on which finite root cohort can complete a stage.
+- Deliver every start/end, including admission failure, cancellation and child
+  failure, before visible deduplication. Parent completion closes only its dependent
+  children. Late/duplicate starts cannot reopen closed calls; an old cohort or attempt
+  cannot clear newer commentary or another independent active call.
+- Known work retains concrete context during input preparation and queueing, but
+  its phase cannot claim drawing before execution. After leaf completion, remove its
+  execution claim. Retain stage prose only while its declared lifetime remains live.
+  Without authored context, show an observed phase; do not fabricate work or retain
+  stale text to hide missing information. Language selection remains unchanged.
+- Keep lifecycle transitions and observed phases in diagnostics even when text does
+  not change. Do not add timers/debounce that conceal events. Stop, question,
+  approval, document saving and terminal conversation outcomes take precedence.
+  Tool-library saving is not document-saving acknowledgement or visual acceptance.
+- Review pre-inference library load, coordinator-only work, nested invocation,
+  save-only recovery and cleanup intervals explicitly. No completed child may remain
+  visually active during them; missing current operation evidence is a producer
+  handoff issue, not a reason to invent a purpose in the panel.
+
+Proof: scripted external provider events must pass through the real provider adapter,
+Runtime/host, production transport decoder, conversation projection and panel. Extend
+existing provider/presentation/conversation/browser tests with controlled ordering:
+serial children; parallel siblings with different purposes; nested coordinators;
+research overlapping an App tool; rejected admission; cancellation before and after
+acknowledged work; new commentary while an older cohort settles; retry and late events;
+no authored context; library save wait and final document-save wait. Assert lifecycle,
+selected purpose identity, phase and current DOM at each boundary, not just final text.
+No extra model call may author, classify or validate a status.
+
+##### 4B. Separate execution, eligibility and durable acknowledgement
+
+Owners: Design `compose` (`local-tool-library.ts`, native library controls,
+`local-tool-host.ts`, `local-tool-store.ts`) and Runtime `persist` (`tool-store.ts`,
+`tool-library.ts`, registry). Existing `LocalToolInvocationResult` is authoritative:
+`execution.status/settlement/value/recovery` is distinct from optional `storage`
+and `receiptId`. Native wrappers must preserve that distinction on all paths.
+
+- Admission may save candidate metadata without product execution. Candidate saving
+  does not certify usability. Candidate resume restores private availability only;
+  it does not restore an execution cursor, old check results or transient handles.
+- Only a genuine success/completed receipt for the exact admitted recipe and request,
+  valid declared output and current eligible dependencies may support promotion.
+  The host's current applicability scope explicitly certifies canonical admission,
+  outcomes, schemas and artifact handoff; it does not certify appearance, arbitrary
+  inputs or satisfaction of the original drawing request. Do not add an AI reviewer.
+- Keep Stage 1 mechanical/primary-visual completion and Stage 2 retained check
+  revisions unchanged. A mechanically successful reusable tool can be eligible even
+  while the broader drawing still requires primary visual review. Conversely, a
+  green visual review cannot make failed/partial/unknown recipe execution eligible.
+- Successful product work followed by an unsaved tool record preserves the exact
+  execution result and genuine receipt. `save_tool(name, revision, receiptId)` retries
+  only persistence; no leaf execution, drawing, Undo entry or re-verification of
+  unaffected canvas checks. Capacity is reserved before starting work; backpressure
+  must not evict another invocation's unresolved save receipt or raise the limit.
+- Receipt ownership ends with request disposal. A fresh request rejects expired,
+  foreign, mismatched or fabricated receipts. If eligible bytes were acknowledged,
+  reload them; if only a candidate was saved, expose only explicit candidate resume;
+  if no definition was saved, report it unavailable. Do not recreate success evidence
+  from logs or automatically redraw to obtain another receipt. Durable execution
+  resumption is excluded, not silently promised by the word recovery.
+- Nested compositions require durably eligible dependencies before parent promotion.
+  The invocation owner retains actual child receipts in private root evidence;
+  persistence saves that bounded proof tree dependency-first. Keep the existing
+  public root receipt as the single storage-only retry handle. A child save failure
+  leaves independently acknowledged children intact and the parent unsaved; retry
+  uses genuine child evidence without replaying either graph. Do not expose a second
+  receipt catalog, reconstruct proof from logs or retain payloads durably. Request
+  expiry keeps the same honest unavailability boundary as above.
+- Cancellation/unknown settlement never promotes unfinished work. Cancellation after
+  acknowledged product completion cannot roll it back; any already committed library
+  bytes remain authoritative, while unacknowledged storage remains uncertain/unsaved
+  until the current owner confirms it. Teardown attempts host disposal and store close
+  independently after active work settles; cleanup failure cannot replace the product
+  outcome or claim that resources closed successfully.
+
+Proof: use the real host, native controls, registry/interpreter and real SQLite store
+in one permanent integration path. Inject faults only at the documented external
+storage boundary. Cover successful save, lock contention, commit-before-reply failure,
+exact save-only retry, receipt exhaustion before writes, disposal and fresh reopen,
+unknown/partial execution, nested dependency save failure and cleanup failure. Count
+actual leaf writes and compare receipts/store bytes; no duplicate mutation is allowed.
+
+##### 4C. Reopen and reuse through current authority
+
+Owner: Runtime `persist -> admit -> register -> invoke`, with Design provider load,
+discovery and secured management endpoint as direct consumers. Keep exact immutable
+name/revision, canonical dependency fingerprints and expected-version storage writes.
+
+- A new request loads/revalidates through current admission and discovers eligible
+  tools through the same registry. Invoke with fresh parameters, current document
+  targets/check selections and newly owned artifacts. Persist no request handles or
+  document identities as reusable literals, and release only owned leases.
+- Candidate metadata can be listed as candidate, never advertised as proven eligible.
+  Stored UI status is metadata, not a promise that invocation is currently admitted.
+  Refresh and exact-version management use the existing endpoint without model or
+  canvas work; stale management writes fail without overwriting another connection.
+- Suspension/removal, changed or missing dependencies, corrupt newer records,
+  incomplete inventory and unavailable storage must not silently expose an older
+  recipe or guessed fallback. Preserve current family-specific rejection; do not
+  disable unrelated native capabilities or reset persistent data.
+- Recheck saved state before a new invocation. An already-started admitted graph may
+  settle with its pinned revision, but cannot republish a dependency or tool retired
+  during execution. Dependency disappearance between load and invoke, concurrent
+  promotion/state writes and ambiguous acknowledgements require exact current owner
+  evidence, not blind retries. Fix only a reproduced mismatch with this contract.
+
+Proof: extend `local-tool-library`, `local-tool-store`, `local-tool-host`, provider,
+Runtime `tool-store`/`recipe-flow` and actual management integration tests. Close and
+reopen the database/host, rediscover the exact eligible revision, and execute with
+new values. Assert fresh handles, unchanged old document work, no old check selection,
+no automatic execution on load/resume and zero additional provider turns for tools.
+Test concurrent connections and the suspended/retired/corrupt/dependency cases above.
+
+##### 4D. Integrated predecessor preservation and completion gate
+
+Before production edits, update only necessary thin product spec/Inspector contracts
+and executable cases at the existing Design `compose`/`settle`/`observe` and Runtime
+`persist`/`invoke` owners. Re-read exact inputs, outputs, routes, bypasses, forbidden
+contributors and failure owners. Complete supported Inspector admission; then set the
+Stage 4 goal. Work one admitted owner slice at a time, with test-first defects and the
+same fixed seven-category review after each slice. This planning review itself does
+not claim that admission or the following runtime tests have passed.
+
+A permanent combined browser case must use actual native review selection, Runtime
+repair, canonical browser mutations and document persistence, plus the actual host
+library and SQLite adapter. Mock external inference and deliberate fault boundaries
+only. Build on `ai-inspection-evidence.spec.ts`; retain existing component tests and
+management UI fixtures, but do not use their separate green results as this proof.
+
+1. Obtain fresh scoped findings with an independent passed region, execute one
+   explicitly prescribed repair and accumulate current results. Deferred screenshot
+   still performs mechanical checks. Deliver an actual image before scripted primary
+   judgment; model judgment quality is outside this deterministic proof.
+2. Hold/fail tool-library saving after the real mutation; the panel shows the actual
+   remaining operation, document/check state remains intact, and save-only recovery
+   adds zero product writes and zero history entries. Observe independent document
+   durability, not a substituted library-save acknowledgement.
+3. Apply an unrelated local/peer edit; retain unaffected passes and invalidate only
+   actual dependencies. Exercise Undo/Redo, acknowledged interruption, existing
+   compensation/resend and fresh document reload. No new shared mutation owner is
+   introduced; run affected existing Factory/collaboration regressions if touched.
+4. Close the request and store, reopen with a new request, discover and invoke the
+   saved revision with fresh values. Test expired receipt/check/handle rejection,
+   candidate-only reopen, unavailable storage and recovery without replay. Parallel
+   current status and terminal late-event behavior must remain correct throughout.
+
+Run affected whole existing server/Runtime/activity suites (not only new cases),
+real browser handoff/library cases, production typechecks, scoped lint/naming, and
+current-source Inspector cases/required negative controls with accepted-behavior
+preservation. Keep original skips and failure evidence truthful. Record check reads,
+actual mutations, save attempts, admitted calls, provider re-entry and event ordering;
+node count is not an improvement metric. No new live AI/101, complete repository CI,
+push or monitoring is part of this gate.
+
+**Self-review outcome.** All four directions now share their actual authorities:
+Stage 1 evidence/completion, Stage 2 scoped finite repair, Stage 3 discovery/delegation,
+and Stage 4 lifecycle/durability/reuse. Failure recovery has an explicit owner and
+lifetime at each handoff, including nested save receipts and disposal. Existing
+mechanisms are reused; new persistence formats, clocks, compatibility, duplicate
+registries and extra AI are unnecessary. Remaining work is implementation admission,
+formal failing cases where behavior disagrees, bounded fixes and integrated evidence.
+The isolated Stage 3 navigation interruption remains known unresolved/non-blocking
+by user direction; retained traces must diagnose a new occurrence rather than relabel
+it passed. No Stage 4 runtime correctness or latency improvement is claimed yet.
 
 ### Self-review, verification and completion boundary
 
@@ -1905,8 +2096,9 @@ those require observed evidence and must be reported without conflating them.
 
 Whole-direction completion requires all four stages and their connected failure/recovery
 cases, not merely registered tools or isolated green tests. Stages 1/2 are complete
-and pushed; Stage 3 is locally complete with the explicitly retained unresolved
-browser event; Stage 4 remains pending. Current changes are not pushed.
+and pushed; Stage 3 is pushed with the explicitly retained unresolved browser event.
+Stage 4 admission, implementation and local completion gates are complete as recorded
+in the Stage 4 completion section. Stage 4 changes are not pushed.
 
 ## Earlier review evidence (not current execution instructions)
 
@@ -6429,3 +6621,1074 @@ build passes (7.80 seconds; existing chunk-size warning). Retain the current-sou
 integration evidence above, and verify actual-head task context, changeset and
 Inspector source assessment. Keep the isolated navigation event explicitly unresolved.
 Stage 4 remains planning-only and its later edits stay local.
+
+### Stage 4 entry and admission - 2026-10-16
+
+The user authorizes Stage 4 implementation after Inspector admission and goal setup.
+Use the reviewed 4A-4D slices and the existing exact compose/settle/observe and Runtime
+persist/invoke contracts. The initial target retains all 35 accepted Design obligations;
+new or changed semantics/cases must update the matching owner and target before
+production changes. Keep all predecessor gates, not only new Stage 4 checks.
+
+Entry review confirms actual public owners already provide purpose causality, finite
+iteration, genuine receipts, durable save and reload. Investigate missing combined
+proof and concrete handoff failures; do not rebuild functioning mechanisms.
+
+Stage 4 initial admission: target 626285be-1383-474d-a30a-e6565b78d399, revision 1,
+using reviewed contract b6873583e8c5ced61d0a7225c302736048fb0969adae5e741bacb51fa0a19c7f
+and review 49dd0e4e75810a8a3e43d10b79541bca645f50583821ea52c04b67761a13cb8d.
+All 35 predecessor obligations remain allocated. Naming entry gate passed.
+
+#### Stage 4A execution card - complete causal activity
+
+Owner: Design settle, compose supplies invocation identity. Spec: Purpose lifetime
+and Purpose continuity after execution. Inspector: settle conditions, allowed provider
+result adapter/conversation projection, failure owner settle. Inputs: actual Runtime
+invocation events, current request/cohort and authored purpose. Outputs: complete
+scoped start/end progress through transport and the existing activity projection.
+No extra model, copied inherited authorship, timers, alternate state machine or
+canvas mutation. Boundary: local-ai-provider.ts and existing provider tests,
+presentation/conversation tests and panel integration as direct consumers.
+
+First verify nested coordinator start visibility in actual provider events consumed
+by the production activity projection. Use scripted external protocol only; keep
+real registry, Runtime invocation and event normalization. Test repeated starts,
+parallel calls, successful/failed endings and request completion. A canonical owner
+that already passes needs preservation evidence only. Gate: provider suite,
+presentation/conversation/transport suites, types/lint and Inspector settle proof.
+Stop to revise the same owner contract if event identity cannot support the handoff.
+
+Stage 4A first correction: the real provider omitted nested coordinator starts while
+reporting their endings. The strengthened actual provider-to-activity integration
+failed on missing inherited purpose before the correction. Forward both lifecycle
+edges with queued starts; retain leaf phases and existing projection ownership.
+291 tests passed, three original skips; production types and focused lint passed.
+Evidence: tmp/stage4/activity-{red,green,types,lint}.log. Remaining panel/storage
+interval integration belongs to the later combined gate, not claimed complete here.
+
+#### Stage 4B execution cards - nested execution proof and durable recovery
+
+Invoke owner first: retain actual nested composition receipts in the existing private
+execution evidence, bounded by the admitted finite graph. No public schema change,
+log-derived proof, leaf output duplication or durable execution state. Persist owner
+then consumes that evidence dependency-first with exact identity, applicability and
+current saved-state checks. One root recovery handle retains child and parent proof;
+independently acknowledged children survive a later storage failure. The existing
+per-key store queue and CAS remain authoritative. No graph execution on save retry.
+
+Boundary: recipe-execution.ts, tool-store.ts, existing recipe-flow/tool-store tests,
+TOOL_SPECIFICATION and matching invoke/persist Inspector contracts. Formal nested
+candidate regression must fail before production edits. Reject forged/foreign proof,
+retired dependencies, partial results and stale writes; verify replay counts, fresh
+load and invocation. Update admission before production, then run Runtime suites,
+build/types/lint/naming and host/store integration. Do not add an App receipt catalog.
+
+#### Stage 4C execution card - dependency availability at invocation admission
+
+Exact compose/current-authority contract requires every composition dependency to
+remain available before a new invocation, not only the named root. The real SQLite
+reopen test proves the current host executes a parent after another connection
+suspends its child. Correct the existing host admission traversal using canonical
+admitted dependencies and keyed store management; deduplicate within this admission
+only. Preserve already-started graphs, fail before writes, and do not reload a whole
+library or add a new registry. Boundary: local-tool-library.ts and its real-store
+integration tests. Existing compose availability and Stage 4C contract authorize this
+correction; check direct native consumers and the combined browser gate afterward.
+
+#### Stage 4A storage interval card - real operation lifecycle
+
+The provider integration confirms automatic library saving has no active storage
+call after the recipe finishes. Use the existing Runtime invoker for that actual
+internal save, parented to the still-live native control (not the completed recipe).
+The host forwards the existing execution phase and ordered start/end observations;
+no new phase enum, activity machine, model call or public tool is needed. The save
+input contains only immutable identity, not retained execution payloads. A failed
+store result remains distinct from successful product work. Extend the same real
+provider-to-projection oracle to require the saving label and retained purpose.
+Boundary: library, host, provider direct adapters and existing integration tests.
+
+#### Stage 4D execution card - existing browser flow with real durable library
+
+Extend the existing aggregate mechanical repair browser case, retaining its five
+success/interruption modes and real check/repair/Factory/collaboration owners. Replace
+its in-memory library with the actual SQLite adapter. In the successful mode inject
+an eligibility write failure after the canonical repair, then save-only retry while
+asserting identical document/check state and mutation counts. Close/reopen store and
+host, reject the expired receipt and old check selection, re-review current inputs and
+reuse the saved recipe. Preserve peer edit isolation, Undo/Redo, document acknowledgement
+and fresh page reload checks. No live inference, local harness or extra product owner.
+
+Source-proof fixture review: the new host proof initially used an invalid root draft,
+then omitted the real preparation ownership injection. Re-audit against the existing
+local-tool-host integration fixture: use a frame with an editable child and the
+actual host ownership passed to createDesignPreparationSession. Keep schema and lease
+validation strict; both failures are fixture defects, not product regressions or
+passing evidence. The combined browser test also corrected its new foreign-request
+oracle to the current failed/not-started receipt (not an aggregate domain verdict).
+
+
+### Stage 4 completion and fixed-scope review - 2026-10-16
+
+The current local source closes the four admitted slices. No new task owner,
+compatibility path, model reviewer, durable execution cursor or retry daemon was
+introduced. No live model/101, remote operation or monitoring was performed.
+
+Confirmed corrections:
+
+- Forward actual nested starts as well as ends through the existing provider adapter.
+  Automatic library saving has its own existing Runtime invocation lifecycle,
+  parented to the live native control. Production transport decoding and projection
+  preserve authored purpose and show the actual storage operation. Diagnostic phase
+  failure cannot replace successful product work or durable storage evidence.
+- Keep genuine successful nested composition receipts in private execution evidence.
+  Persist dependencies before the parent, retain acknowledged children after a
+  later failure, and retry through the original root receipt without executing tools.
+  Forged/expired/foreign evidence and retired dependencies remain rejected.
+- Check current saved availability of every composed dependency before a new graph
+  starts. Shared dependency identities are read once per admission; native leaves
+  still use their existing executor. Private and acknowledged candidates retain
+  their current contract. Started graphs may settle but cannot republish retirement.
+- Use a real SQLite library in the existing native-check/repair/browser flow. A
+  library failure leaves the changed document and accumulated checks intact;
+  save-only recovery adds no mutations. Reopen rejects old receipts and selections,
+  then accepts a newly attached current selection and the saved recipe. Peer edits,
+  unaffected passes, Undo/Redo and independently acknowledged document reload survive.
+
+Final fixed seven-category review:
+
+1. User behavior: traced normal/native/nested calls, parallel lifecycle consumers,
+   cancellation and current-request retry; complete existing provider/activity and
+   browser suites pass, including the original conditional skips.
+2. Contracts: traced actual provider to NDJSON decoder to projection and panel;
+   execution, library acknowledgement, primary judgment and document acknowledgement
+   remain distinct. Root proof is private, exact and request-bound.
+3. Invariants: canonical finite admission prevents recursive recipe cycles; per-key
+   persistence serialization follows that dependency order. No user-authored receipt
+   or log can substitute for execution evidence. No new input/output wrapper exists.
+4. Recovery: before-commit and committed-before-reply faults preserve product work;
+   retry is storage-only. Expiry after disposal is explicit, not fictional resume.
+   Existing capacity, corruption, retirement, partial/unknown and cleanup tests pass.
+5. Architecture: one registry/interpreter/persistence owner; Design translates actual
+   lifecycle events. Factory, rendering, document protocol and shared history were
+   not modified. The combined browser path proves their direct integration.
+6. Work/resources: repeated child references cause exactly two admission reads for
+   root plus child before four real leaf calls. Save-only retry leaves leaf count at
+   four; fresh reuse uses fresh inputs/handles. No idle polling or broad reload cache.
+   Test-owned ports 3352/3452/4452 exited; unrelated worktree listeners were untouched.
+7. Verification: review covered changed owners and existing direct consumers, not
+   only new tests. Exact negative controls fail the intended obligations and restored
+   baselines pass on identical source digests. Initial failing and interrupted runs
+   remain failed evidence; the retained Stage 3 navigation event is still unresolved.
+
+Verification evidence (do not add overlapping test counts):
+
+- Runtime whole suite: 377 passed; build passed (`tmp/stage4/final-runtime*.log`).
+- Design whole server harness: 1,239 passed, nine original skips; AI/activity suite:
+  586 passed (`tmp/stage4/final-server.log`, `final-ai.log`). Final admission-count
+  assertion reran the entire library file: 17 passed (`admission-work-count.log`).
+- Existing inspection/conversation/library browser suites: 34 passed, five original
+  skips (`tmp/stage4/final-browser.log`). Real combined SQLite path includes complete,
+  basis-changed, no-progress, cancel-after-write and interrupted-after-write modes.
+- Production types, naming and scoped lint pass; lint reports four existing console
+  warnings and zero errors. The final E2E formatting-only correction required no
+  behavior rerun. Generated catalog contracts pass all eight tests.
+- Formal screenshots `automatic-library-save.png` at the existing 360px and 1280px
+  current-activity cases were visually inspected from the explicit 3352 site. Saving
+  and inherited purpose are visible, with the composer and history preserved.
+- Runtime candidate 4bce1bad-ed24-460e-8ac2-760ec51c6572, source
+  678fb68134fb3c16eff805f4581b63c8ea382e9f3a6149806dfd8d01b4c45818;
+  assessment 041cb828-a34a-4c7d-b236-c3d52b99862c is current/eligible (10 obligations).
+- Design closure candidate c995cf40-1705-49f5-b3f7-14cdafa5ce3d retains source
+  50829d700dbdb9350b40bed00d53b2c6780970cb45de5b4d3e9a4af4ee717284
+  (36 obligations). Assessment 3d0c3c95-4eb0-47e4-ac53-ef730ad655e9 is
+  current/eligible (`tmp/stage4/design-closure-assessment.json`).
+- `tmp/stage4/source-controls.log` records all six Runtime and four Design exact
+  negative scenarios, followed by passing recovery baselines. Their runtime source
+  digests match the final candidates. This is not a baseline-acceptance mutation.
+
+Limits: scripted external provider events prove the real integration, not future
+model choices or a drawing-time guarantee. The previously unreproduced navigation
+interruption remains the user-accepted non-blocking issue. This closes Stage 4 local
+work only; remote delivery and a new live acceptance require a later user request.
+
+### Stage 4 follow-up comprehensive review - 2026-10-16
+
+The user reopens the fixed seven-category review across the Stage 4 diff and its
+Stage 1/2/3 direct consumers. Scope: lifecycle/transport/panel, genuine receipt
+persistence, current dependency admission, fresh-request reuse, real browser edits,
+local pass accumulation, collaboration, Undo/Redo and durable reload. No live model,
+101, push or monitoring. Retain earlier evidence only for identical source; diagnose
+in-scope defects test-first. Existing Inspector admission remains the contract.
+
+The nine prior server skips are seven real-provider inference tests, one installed
+native-registration test and one saved large-document bootstrap test. The last two
+are applicable without inference and now pass in tmp/stage4-review/bootstrap.log
+and native-registration.log. The targeted native command deselects other tests;
+those deselections are not new passes. The seven inference cases remain excluded.
+
+Persist execution card: inspect publication after asynchronous dependency work,
+including already-eligible idempotent saving. Input is a genuine completed receipt,
+immutable definition and current host store; output must distinguish acknowledged
+eligible state from concurrent suspend/retire. Allowed owner tool-store.ts, existing
+Runtime and real SQLite host tests; spec Stage 4B/4C and Runtime persist require
+current exact acknowledgement, never republishing unavailable revisions. First
+reproduce with two actual SQLite connections and an intervening management write,
+then repair the canonical persistence owner if needed. Preserve product outcomes,
+mutation counts, capacity and save-only recovery; no polling, compatibility, new
+format or weakening of CAS. Run complete affected persistence/host suites, existing
+provider/activity/browser integrations, types/lint/naming and current-source proofs.
+
+The real two-connection regressions both fail on stale saved eligibility
+(save-race-red.log). The first post-edit App rerun also failed because it still
+resolved the previous Runtime dist; the package has build:ai-agent-runtime, not a
+build alias. After rebuilding the actual package entry, all 19 library tests pass.
+The canonical commitStored no-write path now rereads exact bytes/version before
+acknowledging unchanged state, and the eligible-save branch uses that same owner.
+This preserves CAS writes and adds no product execution, fallback or persistent
+format. It does not promise distributed serializability after the final observed
+acknowledgement. Existing persist conditions already forbid late revival; no new
+architecture contract or broader mutation scope is required.
+
+The same final-publication review exposed load/resume checking the root before
+asynchronous dependency validation. Two additional actual SQLite regressions
+retire the root while its child is being read; both incorrectly publish/restore
+it (restore-race-red.log). Extend the same persist-owner correction to final
+registration, reusing one exact stored-entry confirmation after async preparation.
+Do not add a second state authority or extra writes. The broad browser run also
+failed the existing third Undo digest assertion; preserve its evidence and diagnose
+that direct predecessor integration separately before completion.
+
+Integration verification card: Design settle/observe preserves independent history
+and durable publications (existing Frame revision case). The first run read the
+third Undo digest after the shared helper's fixed 500ms delay; the production
+shortcut awaits progressive history replay, whose completion event is published
+only after its outer transaction settles. Two unchanged traced reruns pass, so the
+original trigger is not proven. Strengthen this existing consumer to await exact
+canonical digest and history depth before checking durable bytes, and retain traces
+on the first failure. Keep the same keyboard input, expected snapshots, durable
+acknowledgements and reload assertions. Only the existing conversation E2E file is
+allowed; no Factory/history behavior changes, extra replay or enlarged timeouts.
+A pending or lost shortcut must still fail the bounded semantic wait. Preserve the
+first failure separately and do not claim the unexplained event itself fixed.
+
+#### Follow-up review results
+
+Fixed seven-category review, limited to this stage and its direct predecessors:
+
+1. Contract and scope: mechanical acceptance, primary visual judgment, document
+   durability and reusable-tool eligibility remain distinct. No extra inference,
+   compatibility, second registry or broader stage was introduced.
+2. Inputs/outputs: genuine private child receipts still authorize dependency-first
+   saving; stale/forged/cross-request handles cannot authorize publication or replay.
+   Retained root receipts describe storage recovery, not permission to repeat work.
+3. Ordering/lifetime: all nested starts/ends reach the real transport before UI
+   deduplication. Existing parallel, late-event, replacement-purpose, cancellation
+   and save-phase cases pass. Final store confirmation now follows asynchronous
+   dependency work for both saving and registration; it does not extend leases.
+4. Failure/recovery: four new real two-connection SQLite cases reproduced stale
+   acknowledgements and retired-root load/resume publication before the correction.
+   Exact final version/bytes confirmation rejects them. Product success remains
+   distinct from storage failure; retry performs no additional product writes.
+5. Architecture: the correction stays in Runtime persistence; Design still owns
+   SQLite and the panel projection. Existing Factory, history and document owners
+   are unchanged. Their real browser and two-peer integration is exercised below.
+6. Work/resources: unchanged commits do not add writes. Invocation admission still
+   checks each composed identity once per graph; no polling/cache or larger limit.
+   Only test-owned services are used; persistent local configuration is preserved.
+7. Evidence and limitations: full existing suites supplement the regressions. The
+   first Frame Undo failure remains retained in undo-first-failure; two unchanged
+   traced runs passed but do not establish its trigger. The existing case now waits
+   for exact canonical content AND history depth, then durable bytes, with first-
+   failure traces. No arbitrary delay increase or keyboard replay was added. Do not
+   claim that this proves the unexplained original failure's root cause fixed.
+
+Final production-source evidence, under tmp/stage4-review/:
+
+- Runtime: 377 passed (runtime-final.log); actual entry build passed.
+- Server: 1,244 passed / eight skipped (server-final.log). One of those eight is
+  the large saved-document bootstrap already passed separately in bootstrap.log;
+  the remaining seven are real model-inference cases intentionally not executed.
+  Installed native registration also passed and asserts no model turn starts.
+- Existing AI/activity: 586 passed (ai-all.log). The later correction touches only
+  store persistence, which this browser-state suite does not import; its unchanged
+  lifecycle consumers are also covered by the final browser and server gates.
+- Existing conversation/inspection/library E2E: 34 passed / five conditional skips
+  (browser-final.log). Skips are three opt-in workload profiles and two retained
+  recording/document replays requiring explicit fixtures; none is counted passed.
+- Full collaboration suite: 19 passed (collaboration-final.log), including peer
+  compensation, recovery after publication/IndexedDB/cleanup failure, subsequent
+  edits, Undo/Redo, resend and acknowledged durable reload.
+- Production types, naming and scoped lint passed; four existing console warnings,
+  no errors. The final history-wait formatting error was corrected, not ignored.
+- Runtime candidate 499b1450-bc1e-407c-ad75-effd3f779b98 has source
+  070d0bf8a0bf7b1bc1e48c388e3623bc27fcff1c506a07b1ea8ab759190ab959;
+  assessment c0887f9d-6369-404a-ae79-35abc7bbffd8 is current/eligible.
+- Design candidate 5abfb6ac-9e2e-4f94-b500-2ea0eed79106 has source
+  90c590184d9b13793dfdd3e89155b25bc1728a5e5ee9158a581f2fe8dfde25ab;
+  assessment ed692f09-9631-4f88-bc92-0e312c275047 is current/eligible.
+- All six Runtime and four Design exact negative controls failed only expected
+  obligations, each followed by a passing restored baseline (source-controls.log).
+  Their source digests equal the final candidates. All 44 Runtime and 807 Design
+  captured files were compared with current bytes and match exactly.
+
+Earlier failed runs remain failed evidence. No live 101, inference, push or
+monitoring occurred. No source target/baseline was silently accepted or replaced.
+
+Final history-consumer check: both 360px and 1280px cases pass after independently
+awaiting the exact digest and the committed history depth (history-final.log).
+The full suite's other 32 passing cases are unchanged; no broad rerun was needed.
+Focused lint and diff whitespace checks pass. Test-owned ports 3352/3452/4452
+are closed. Stage 4 local review is complete with the two explicit unresolved
+historical event triggers above; do not convert those evidence limits into a
+claim that every possible browser interruption is fixed.
+
+### Stage 4 authority and deterministic verification review - 2026-10-16
+
+The user reopens this stage only: remove inference-dependent formal tests, explain
+recurring stale-authority failures, review persistence/status/reuse/Undo and recovery,
+and directly correct demonstrated defects. No live inference/101, push, monitoring,
+next stage, dependencies or environment changes. Existing local changes are retained.
+
+Bounded replan and self-review: reading an entry is a snapshot, not a reservation.
+Runtime's per-instance queue cannot serialize independent SQLite writers. The old
+save fast path and restore path had separate early checks across await boundaries.
+Previous Inspector cases exercised ordinary persistence but did not prove the final
+publication boundary. A green case collection was incorrectly treated as coverage
+of that missing temporal obligation. Fix verification at the same persistence owner;
+do not add global locks, caches or claim that an acknowledgement prevents future
+management changes. CAS acknowledges a write at its durable commit; a no-write
+acknowledgement and local restore require exact current entry confirmation after
+asynchronous preparation. Future invocation rechecks availability; an already pinned
+valid invocation may finish, but cannot revive a retired durable revision.
+
+Execution slices:
+1. Deterministic-test policy: remove actual model-turn cases from Design server/E2E
+   and scripts, their commands and active guidance. Keep scripted protocol streams,
+   actual tool/SQLite/browser integration and installed registration without a turn.
+   Add a permanent formal guard against the removed inference opt-ins, prove it red
+   before removal. Historical run evidence remains historical, not an executable gate.
+2. Runtime persist: bind final authority to an Inspector product case and negative
+   control; exercise save/load/resume and both suspension/retirement with deterministic
+   scheduling and exact versions, plus recovery and no extra product execution.
+   Existing real SQLite regressions remain integration proof. Verify malformed owner
+   acknowledgements and failure exits at the same boundary; test-first any finding.
+   Allowed files: tool-store, its existing tests/fixture/recipe proof, current spec,
+   Inspector persist step/manifest and generated catalog. No new persistence format.
+3. Design history consumer: inspect the retained first failure, real input shortcut,
+   progressive transaction and canonical publication boundaries. Add controlled delay
+   and complete diagnostic capture in the existing formal Frame revision case to
+   distinguish lost input, in-flight replay, rollback and wrong settled output.
+   Do not infer historical causality from a successful rerun or remove assertions.
+4. Fixed seven-category review across existing direct consumers; whole Runtime and
+   server suites, existing activity tests, real browser handoffs and collaboration,
+   scoped types/lint/naming and current-source Inspector proof. Stop after scoped
+   closure; keep any evidence limit explicit. No new repository-wide discovery.
+
+Review iteration: the controlled history fixture initially could not reach its
+pause because the small Frame undo fits within the default replay slice. Force
+one item per slice through the existing public CooperativeRenderOptions in that
+single proof; do not add sleeps or change production scheduling. Native browser
+imports must pass through the existing test runtime facade. Keep both failed
+fixture attempts as evidence and retain the original unrelated failure separately.
+The final durable reread also lacked identity comparison; the formal store test
+first reproduced false success, then the owner added key equality alongside
+version and bytes. Recovery reuses the receipt without executing product work.
+
+The next diagnostic attempt showed no wrapper entries despite real shortcut and
+Undo events: the test loaded a second extensionless history module instance.
+Route instrumentation through the existing statically imported runtime facade,
+so the browser proof uses the exact App history object. This is test wiring,
+not a production defect. Recorded Undo events also precede the outer Feature
+transaction's stack movement; name them replay-completed and retain independent
+committed-depth, exact document and durable checkpoint oracles. The historical
+failure still lacks its final input/transaction trace; do not infer its cause.
+
+Review outcome for the fixed seven categories:
+- Contract/scope: real inference cases were removed from the server, browser and
+  scripts suites, their maintained commands and active guidance. Deterministic
+  transcripts still exercise real registration, tools, SQLite and browser owners.
+  The permanent boundary regression was red before removing the former live opt-ins.
+- Input/output: final confirmation compares identity, version and exact record.
+  Its malformed-identity regression was red before the owner correction. The same
+  receipt succeeds after adapter recovery without another product invocation.
+- Ordering/lifetime: save, load and resume share final confirmation after async
+  preparation. Six suspension/retirement schedules are now an executable Inspector
+  obligation. Per-instance queues do not claim to lock other SQLite connections.
+- Failure/recovery: genuine nested receipts, before/after-commit failures, external
+  retirement, request reopening and save-only retries remain exercised by actual
+  SQLite connections. No retired state is resurrected and no product work is replayed.
+- Architecture: Runtime owns authority, Design owns SQLite and presentation; neither
+  Factory nor document protocol changed. Current status, existing read/write tools,
+  collaboration, compensation, Undo/Redo and durable reload passed their existing
+  direct-consumer suites, beyond the new regressions.
+- Resources/work: no global lock, added polling, larger capacity or compatibility
+  branch. The no-write path adds a final read, not another write or execution.
+- Evidence: Inspector now fails persist.authority when final confirmation is removed.
+  Seven Runtime and four Design negative controls fail only their declared cases,
+  with restored passing baselines. The omit-invocation-calls control also expects
+  persist.authority because that proof requires a genuine successful invocation.
+
+Verified results (tmp/stage4-authority-review): Runtime 379 passed; server 1243
+passed, with its two conditional cases separately passed: installed registration
+without inference and saved-checkpoint encoding/decoding. AI/activity 586 passed.
+Five browser suites: 51 passed, five workload/retained-fixture conditional skips;
+collaboration: all 19 passed. Naming 15, boundary 14 and catalog 8 passed. Runtime
+build and production server/browser TypeScript passed. Scoped lint has zero errors
+and four existing console warnings. Do not count filtered-out tests as additional
+passes. Earlier red cases and failed fixture setup runs remain failed evidence.
+
+Runtime candidate 4b1593a2-d243-43e4-8a9b-f356a2b393ce, source
+188bda0c1aea5dfa0a53a33f32902c910fbabea01985fbbdd1aa1809776c7ede,
+assessment b8ed6ad3-01a8-46e3-9ac7-00279358fff7 is current/eligible (11 obligations).
+Design candidate 7eaa2659-c20c-472b-97a2-1b96dc4c7ba5, source
+98bb53cd97d7333d0efebed2b196458552f7cdb548751d6aacaf54c0971f6511,
+assessment 02ceed5c-9f27-4ceb-978f-d90dc14272a7 is current/eligible (36 obligations).
+The 44 Runtime and 807 Design captured files exactly match current bytes.
+
+Undo evidence limit: the original final-shortcut/transaction trace does not exist,
+so its unique trigger remains unproven. New instrumentation captures input, actual
+history entry/return, replay events, history depths and document publications. A
+controlled real replay proves a fixed keyboard wait can finish before the history
+transaction. The canonical-content, committed-depth, durable-save and reload oracles
+all remain; no automatic keyboard retry or timeout enlargement was introduced.
+Diagnostic capture restores its instrumentation and cannot overwrite the original
+assertion/navigation error. Its final capture-only validation is recorded separately.
+No actual model inference, live 101, push, monitoring or remote operation occurred.
+
+Final diagnostic-only history check: one controlled 360px case passed (51.1s),
+with persisted frame-history-lifecycle.json and no publication decode failures.
+The prior full 51-case browser result remains the broad evidence; this focused
+case is not an additional distinct product case. Test-owned 3352/3452/4452 listeners
+are closed. The requested scoped review is complete; historical Undo/navigation
+trigger uncertainty remains explicit. Leave all work local for the user.
+
+### Stage 4 complete follow-up review - 2026-10-16
+
+Scope is the current Stage 4 diff and its direct Runtime persistence, Design
+coordinator/status, history, collaboration and document consumers. Preserve the
+seven review categories above. Fixed discovery: bounded source/diff reads,
+existing failure artifacts, deterministic interleavings and the existing formal
+integration suites. No inference, 101, remote operations, monitoring, next stage,
+compatibility paths or unrelated framework redesign. Previous passing evidence
+remains valid only for unchanged source; do not claim a historical cause from a
+rerun. User authorization covers demonstrated direct regressions and their tests.
+
+Step card - Design compose, durable-library handoff to Runtime persist:
+- Spec: ai-execution-flow.md, Durable library; TOOL_SPECIFICATION.md, What is saved.
+- Inspector: ai-execution-flow compose and reusable-tool-composition persist.
+- Input: admitted finite recipe, real execution receipt, exact SQLite CAS commit
+  acknowledgement, independent peer management and request-close signal.
+- Output: separate product/storage outcomes, terminal observations, no product
+  replay, no fresh invocation or reload of a retired revision.
+- Condition: a write acknowledgement describes its commit; retirement after that
+  commit must still block subsequent admission. Lost acknowledgement retains a
+  genuine save-only receipt, which must not resurrect an externally retired entry.
+- Allowed contributors: existing Runtime persistence/registry and real host SQLite.
+  Forbidden: live model, second registry, locks spanning product execution, replay
+  after storage failure, fabricated eligibility or timeout-based completion.
+- Boundary: existing server/__tests__/local-tool-library.test.ts integration cases;
+  production changes only if a formal regression identifies its incorrect owner.
+- Failure owner: Runtime persist for storage; Design compose for receipt lifetime.
+- Gates: real two-connection post-commit retirement with returned/lost acknowledgement,
+  terminal observation and disposal, fresh request load; entire local-tool-library
+  suite and direct store/control/invocation suites, scoped lint/types/naming.
+- Self-review: this complements the pre-publication stale-read proof; it must not
+  redefine a successful historical commit as permanently available. No new API.
+
+Undo investigation remains read-only until evidence warrants an additional test
+or correction. Compare original artifact and actual input -> Feature queue ->
+progressive replay -> outer commit -> publication -> durable checkpoint ordering.
+The original failure lacks the final input trace. Distinguish that unresolved
+trigger from the proven fixed-wait/settlement gap; do not modify canonical History
+merely to obtain a passing rerun. Stop discovery after these direct paths.
+
+History consumer investigation card - Design apply -> settle:
+Read existing Feature execution queue and public history boundaries. Add a
+controlled browser input sequence in ai-conversation-flow.spec.ts: create a real
+shape, hold the first Undo at the public history adapter, enqueue Redo and a normal
+tool shortcut, release, and assert exact document, history and durable reload. This
+is a diagnostic product case, not a claim about the historical failure. Allowed
+contributors are real DOM shortcuts, existing test facade, actual Feature/Factory
+and document owners; forbidden are direct stack edits, retries and model calls.
+If it exposes a production defect, identify and admit its exact owner before repair.
+Retain first failure trace; a passing result only excludes the controlled schedule.
+
+The controlled browser case failed on current code: queued Redo followed by the
+Select shortcut produced the empty document instead of the drawn rectangle.
+Evidence: tmp/stage4-followup-review/queued-history-first-failure/trace.zip and
+queued-history.log. The producer updates shared modifier state immediately; the
+Feature reads it only when the serialized callback eventually executes. A later
+shortcut therefore changes the meaning of an already-issued history command.
+This proves a separate queued-command defect, not the historical third-Undo trigger.
+
+Bounded revised apply card: the App input mapping owns translating a keyboard
+chord into an immutable history direction in raw.detail; the Undo/Redo Feature
+consumes that command through historyApis. Keep Framework's dequeue-time model
+snapshot, queue, progressive replay, transaction and persistence unchanged. The
+current event requires direction; missing/invalid intent performs no mutation,
+without falling back to mutable Shift. Add key-combinations.ts, undo-redo/index.ts
+and their exact integration test to apply's existing boundary. Update the current
+feature spec. Run the actual producer/consumer test for Meta/Ctrl and both directions,
+malformed intent and API rejection, plus the controlled browser failure/recovery,
+ordinary history, collaboration, types/lint/naming and source-bound Inspector proof.
+No generalized input rewrite or new queue. Re-read apply and settle before advancing.
+
+Verification correction: the new exact App input/Feature proof is a mixed
+browser/server integration verifier, so including it in the server-only TypeScript
+program imports browser DOM types. Keep production server types unchanged. Move
+only this verifier's type-check ownership into tsconfig.flow-proof.json, explicitly
+including the existing browser declarations; the normal App typecheck command runs
+all three programs. No unchecked test, production DOM allowance or indirect import
+workaround. The Inspector maps apply.history-intent and a negative control back to
+the actual mapping and registered Feature, supplemented by the real browser case.
+
+
+Follow-up closure:
+- Real two-connection SQLite tests cover retirement after commit with returned or
+  lost acknowledgement, exact terminal storage outcomes, save-only recovery and
+  fresh-request load. All 106 direct store/library/management/invocation cases pass.
+  No additional persistence production correction was necessary in this review.
+- The queued history defect was reproduced before repair in both the actual browser
+  and nine mapping/Feature cases. The input now captures immutable direction; the
+  Feature no longer reads a later shortcut's Shift state. No Factory, transaction,
+  replay or document-persistence implementation changed.
+- Actual history/dialogue/presentation consumers: 112 pass. Original Frame cases at
+  both widths plus queued history: three browser cases pass. Existing history and
+  inspection suites: 22 pass, two original conditional cases unexecuted. Complete
+  collaboration suite: 19 pass, including peer compensation, recovery, Undo/Redo,
+  IndexedDB retry and durable reload. Focused reruns are not additional cases.
+- Inspector source candidate 9192cbf7-ffb0-43db-9453-82ec54e18a04 covers 37 obligations;
+  source 0f7883e23ffe7d8cb5c6696ba32c257c5890d7ac60d30a2603e9a3d41cab1821.
+  Target 0e5fd935-c067-4aa1-b4b9-ffe65eae8b9b, assessment
+  75cc0094-2991-490f-a383-f3e79b18e700 is current/eligible. The exact negative
+  read-late-history-modifier fails only apply.history-intent; restored source passes.
+  Subsequent verifier type-program separation changes no runtime behavior.
+- App, server and mixed integration-proof TypeScript programs pass. Catalog eight
+  cases pass. Scoped lint has zero errors and one existing console warning.
+  Evidence: tmp/stage4-followup-review/{storage-integration,consumer-tests,
+  history-green,history-consumers,collaboration,history-source-controls,
+  source-closeout,types-final,lint-closeout,catalog-tests}.log.
+
+The seven review categories cover input/contract shape, semantic owner and direct
+consumers, real success flow, failure/retry/retirement/disposal, concurrent ordering,
+persisted identity/reload and unchanged behavior. This closes the scoped follow-up,
+not a guarantee against all future defects. The original historical third-Undo
+trigger still lacks its final input trace and remains unproven; the newly proven
+queued-Redo defect must not be substituted as its cause. No live model, 101, push,
+monitoring or remote operation occurred. Test-owned ports are closed.
+
+
+### Stage 4 history admission correction - 2026-10-16
+
+The user clarified the authoritative product requirement: while Undo or Redo is
+executing, another Undo or Redo is ignored, never queued for later replay. This
+supersedes the preceding queued-Redo acceptance expectation. Preserving issued
+direction remains necessary for accepted commands; it is not permission to accept
+commands during replay. No live model/101, push, monitoring or unrelated changes.
+
+Step card - apply input admission to settle:
+- Owner: App history input policy, consuming Factory's existing inUndo/inRedo
+  lifetime through Core. Factory retains sole authority over replay state, stacks,
+  compensation and outer transaction completion. No App busy flag, timer or lock.
+- Inputs: actual keyboard chord, current Factory replay state, canonical event detail.
+- Outputs: idle commands carry their captured direction into the existing Feature;
+  busy commands produce no Feature event, history entry or delayed work.
+- Existing gap: input combination callbacks cannot suppress dispatch, and Core lacks
+  a facade for the existing Factory isInUndoRedo query. Add a read-only Core facade
+  and an explicit synchronous false callback result at the generic input boundary.
+  Void callback behavior remains the current normal contract, not a legacy path.
+- Conditions: only explicit false suppresses dispatch. Other input remains usable;
+  success and failure release replay state through existing Factory settlement.
+  No broad transaction-idle filter that would suppress unrelated actions.
+- Boundary: key-combinations.ts; existing undo-redo Feature intent contract;
+  Core core.ts and facade integration test; InputSystem callback contract/dispatch
+  and formal tests; existing history browser/proof cases, specs and Inspector apply.
+  Framework additions expose existing authority and admission, not history policy.
+- Forbidden: parallel busy mirrors, dropped transaction safeguards, replacing queue,
+  modifying Factory merely to pass a test, replaying ignored commands after failure.
+- Gates: red/green input admission and real App mapping/Feature cases; actual browser
+  progressive Undo and Redo held inside Factory, repeated same/opposite shortcuts,
+  ordinary shortcut unaffected, exact document/history/save/reload; replay failure
+  release and subsequent accepted command; existing history/collaboration suites;
+  Core/InputSystem suites, relevant types/lint/naming and current Inspector proof.
+- Stop: complete these bounded gates and report; do not start another stage.
+
+Self-review: a guard only at Feature execution is too late because Factory may be
+idle by dequeue time. A guard that only erases detail still queues work and can
+cancel an unrelated session, so rejection must occur before dispatch. Read Factory
+at input time; its flags cover progressive replay through outer settlement. The
+new Core facade must delegate to its injected Factory (not a global singleton).
+The browser proof must pause within actual replay, not before calling Factory as
+the superseded test did. Test both directions and failure recovery. Do not claim
+this proves the trigger of the older trace-less third-Undo failure.
+
+
+Direct consumer review found the existing 16-item collaboration scenario sends
+Redo after visible empty snapshots, without an outer history settlement oracle.
+The first run failed with an empty document after Redo. Do not infer timing from
+that alone: retain actual keydown/admission events with Factory busy state and
+history depth in this existing formal case before changing its sequencing.
+Scope includes this direct history consumer only. If confirmed, wait for canonical
+history settlement in the scenario, not a longer delay, retry or new product lock.
+
+
+History admission closure - 2026-10-16:
+- Product change is limited to the read-only Core Factory query, generic explicit
+  false input admission, and App history shortcut policy. Factory replay,
+  compensation, transactions and persistence production were not changed.
+- Test-first evidence: the actual browser accepted three extra history inputs
+  during held Factory replay before the fix. The source-bound proof also failed
+  only apply.history-intent before implementation. No duplicated busy state.
+- Core 269, InputSystem 36, App mapping/Feature 13 and FieldScope shortcut 1 pass.
+  Four actual browser cases cover Undo/Redo success/failure, same/opposite inputs,
+  unrelated input, no delayed replay, subsequent action and exact save/reload.
+  Existing history regression: 18 browser cases pass (including the four above).
+  Full collaboration: 19 pass in 3.7 minutes on the final frozen source, including
+  peer convergence, compensation, failed save recovery and reload. Types, builds,
+  scoped lint, naming and eight catalog tests pass. Existing lint warnings remain.
+- Inspector recovery a8830b4c-66fb-4b96-a44a-74d3d8148d6b passes all 37 obligations.
+  Policy negative 9cb8b96a-622c-4432-9d7f-9ec4eb65ab51 and dispatch negative
+  8b2ff535-1eaf-4d6d-b297-b71097ab4539 each fail only apply.history-intent.
+  Target 4d39a98f-bb17-4334-8295-d8ec6df7f6be revision 1; assessment
+  b118a121-7e31-40c0-892c-96533a03ccc4 is current/eligible for runtime source
+  90a48bcffdf57d0703a96e97b5d93fadfa16e71305cab70e3de11cca113eab9d.
+  All 802 captured runtime files still match after final diagnostic-only edits.
+- Evidence: tmp/history-admission/. Keep the initial collaboration failure: final
+  Redo observed an empty document. A controlled outer-transaction hold stopped
+  earlier, so it did NOT reproduce that failure. Three capture-only repeats and
+  the final full suite pass, but do not establish the original trigger. The
+  existing 16-item formal case now records actual keydown, admission, direction,
+  Factory busy/depth, and history API entry/return/error, restoring observers in
+  finally. The final trace contains six idle admissions, four Undo and two Redo
+  entries/returns, no errors. No delay increase, retries or oracle weakening.
+- Review covered input rejection before Feature/session queue, unchanged void
+  callback consumers, injected Factory authority, immutable accepted direction,
+  failure release, exact histories, collaboration and persistence. The earlier
+  trace-less third-Undo and Stage 3 navigation events remain unresolved evidence
+  limitations. No claimed root cause from passing reruns. No live AI/101, push or
+  monitoring; stop at this scoped report.
+
+
+### Stage 4 immediate history dispatch correction - 2026-10-16
+
+This user-approved product requirement supersedes the prior admission-only closure:
+Undo/Redo must never enter the interaction queue. During Factory history execution,
+ignore new history input; when idle, execute immediately. Factory remains the only
+history owner. No App lock, mirrored history flag, deferred command replay, model
+run/101, push, monitoring, or unrelated stage work.
+
+Read-only architecture review:
+- The previous input guard rejects busy inputs, but accepted input still enters
+  SessionManager.runAfterCancellingActiveSessions -> its captured interaction
+  queue runner -> ExecutionRegistry -> App history API. The previous proof did
+  not assert that accepted input bypasses the queue. Its completion claim was
+  therefore narrower than the original requirement.
+- Feature currently serializes all mutation handlers; active sessions own open
+  Factory transactions and may have an asynchronous onStart/onUpdate/onEnd in
+  flight. Existing cancellation finalizes commit-current or performs rollback,
+  and can itself await user-defined handlers. Directly invoking replay alongside
+  those handlers can mix histories or allow post-replay writes.
+- Factory inUndo/inRedo currently describe actual replay through outer settlement.
+  They also classify transaction origin and influence history recording. Setting
+  them before finalizing an ordinary session is not a safe reservation trick.
+- A new App pending flag, direct input-to-Factory bypass, general transaction-idle
+  rejection disguised as history admission, or a priority queue that still stores
+  the Undo request does not establish the requested contract.
+
+Bounded task and review gate:
+- Owner: existing Feature dispatch/session settlement and Factory history route;
+  App declares history intent; Core exposes existing authority. No new registry.
+- Scope: Feature dispatch/session/scheduler and their current public contracts;
+  Factory/reactive-events only where required by demonstrated replay ownership;
+  Core facade, Design history Feature/API/input and direct history consumers;
+  existing product spec, Inspector apply route and formal integration cases.
+- Fixed discovery: trace those entry points, actual transaction start/end and
+  cancellation paths, direct input/toolbar consumers, and their existing tests.
+  Preserve unrelated local Stage 4 work and current dependency versions.
+- Required red proof: accepted idle input invokes history before any interaction
+  queue admission; busy same/opposite input creates no queue work or later replay.
+  Cover rapid consecutive input and current-generation shutdown/disposal.
+- Integration gates: actual session interruption with commit-current and rollback,
+  cleanup failure, replay failure/compensation, repeated input during settlement,
+  normal action after recovery, exact history depth and document state, two-actor
+  collaboration, accepted/durable save and reload. Use real owners; mocks may
+  observe queue entry but must not replace the route being proved. Preserve
+  existing Core/InputSystem/Feature/Factory affected regressions and types/lint.
+- Confirmed by the user on 2026-10-17: interrupting a drag commits its current
+  session through the existing onEnd/commit-current policy, then undoes that drag.
+  Necessary settlement is not admission to the ordinary interaction queue.
+
+Reviewed apply-owner card - 2026-10-17:
+- Existing ownership verified: MoveElements already supplies commit-current;
+  SessionManager already finalizes and closes that transaction; ExecutionRegistry
+  already wraps finite execution; Factory owns replay, compensation and history;
+  collaboration consumes existing publications and gates remote apply on actual
+  transaction idle. None of these semantics needs a parallel implementation.
+- Incorrect owner boundary: Feature execution admission unconditionally queues all
+  events before calling the existing session-finalization route.
+- Extend the existing Feature execution registration with an explicit immediate
+  mode. One event cannot mix immediate and queued participants. Only the history
+  Feature opts in. No event-name whitelist or second history flag.
+- The existing interaction runtime supplies immediate execution as a non-buffering
+  entry, not a priority queue. It begins the operation synchronously and provides
+  settlement of the currently executing handler, not the queued tail. Its single
+  active-operation ownership prevents ordinary callbacks from entering while that
+  immediate operation settles/replays. Another immediate invocation is ignored
+  while that operation is active; no pending command is retained. This is generic
+  execution ownership, not a mirrored Factory history state or App lock.
+- Reuse SessionManager cancellation exactly once after any already-running handler
+  settles; do not repeat onEnd/onCancel or reopen the session. No active session
+  means call the Feature immediately without an await or queued microtask. On
+  failure, stop before replay; release runtime execution ownership in finally.
+- Preserve generation/close checks before and after asynchronous settlement;
+  shutdown drains admitted work, rejects pending normal work, and cannot run
+  history in a successor. Existing Factory flags continue rejecting input during
+  replay; normal input retains its existing serialized transaction boundary.
+- Proof: real Feature input registration and SessionManager, not direct invocation
+  of a mocked execution callback; spy on queue admission; idle same-stack entry;
+  held onUpdate, onEnd success/failure, repeated input, queued unrelated command,
+  disposal, later recovery. Actual drag through keyboard Undo, mouse-up and Redo
+  verifies no stale drag update, exact history and durable document reload.
+- Scope adds only the Feature runtime's existing core/type files and permanent
+  tests to the apply contract. No Factory or persistence rewrite is planned.
+- Self-review: rejected direct Factory calls (skip Feature/session), early Factory
+  flag reservation (misclassifies session commit), a new App busy flag, and a
+  queued high-priority history command. The accepted design reuses existing
+  session/transaction implementation and changes only admission. Existing queued
+  command/session regression suites remain required, along with real collaboration.
+
+- Admission: target `17a344e1-1993-4aba-bf89-d1a06d7a1ab3`, reviewed candidate
+  `1473c4bc-0ec9-4f46-9446-a97c673f65d1`; the real App dispatch proof failed
+  `apply.history-intent` before implementation. This is admission, not acceptance.
+- In-slice self-review tightened the same interaction owner's boundary: settlement
+  of the running operation is enforced inside that owner, never delegated to a
+  caller that could forget to await it. The new direct-owner regression failed
+  before this refinement. SessionManager still owns only session finalization.
+- Browser environment correction: the first drag-save check accidentally reused
+  another worktree's port 4401 and hit a publication-contract 409 before the drag.
+  That result is invalid as same-source product evidence. The replacement run uses
+  dedicated port 4411 with all three services from this worktree; the unrelated
+  listener was preserved. No persistence implementation was changed for it.
+
+- Final lifecycle review reproduced a retired transport binding dispatching into a
+  replacement Feature after asynchronous session finalization. The permanent
+  regression first failed. The correction reuses `EventBinding.cleanupRequested`
+  before snapshot/finalization and before execution, without a new registry or
+  history flag. Existing unregister/disposal cases remain required. The completed
+  collaboration run passed all 19 cases before this guard; rerun affected input,
+  history and collaboration gates on the final guard source before closure.
+
+#### Immediate history dispatch - bounded final review
+
+1. Contract and input: explicit issued intent is immutable; normal callbacks retain
+   their input semantics. Accepted history uses immediate Feature dispatch. Removed
+   the contradictory active-spec statement that history traverses the queue.
+2. Ownership and handoffs: InputSystem -> registered Feature -> existing session
+   finalizer -> ExecutionRegistry transaction -> Factory replay -> existing
+   publication/collaboration/persistence. Factory and MoveElements production were
+   not changed in this correction. Mode belongs to Feature registration; shared
+   participants cannot disagree. There is no event-name whitelist or App busy flag.
+3. Ordering and invariants: idle input enters on the same stack; immediate work
+   never appends to the queue tail. The existing execution owner awaits only the
+   running handler and holds off ordinary queued operations. Commit-current ends
+   the drag exactly once; subsequent pointer input cannot reapply it. Repeated
+   immediate input is discarded without storage or deferred replay.
+4. Failure and recovery: session-finalizer rejection stops history; existing
+   rollback policy remains authoritative. Real controlled replay failures prove
+   compensation, busy-state release and later history work. Actual browser proof
+   confirms durable save/reload and a new edit/save after reload.
+5. Lifetime: admission captures the existing runtime generation. Closure during
+   finalization prevents later replay; stale callers cannot enter a successor.
+   Existing transport retirement prevents a waiting invocation from targeting a
+   replacement Feature. Queued ordinary work retains its serialization and cleanup.
+6. Complexity and work: no new history queue, controller, registry, retained command
+   list, timers, persistence retry mechanism, compatibility branch or model call.
+   Only the existing Feature execution owner tracks its running operation; it does
+   not mirror Factory's inUndo/inRedo or implement session finalization itself.
+7. Evidence: tests include real Feature registration, session state and input
+   dispatch, direct queue admission observation, genuine keyboard/mouse and exact
+   persisted document digests. Existing suites supplement the new regressions.
+   Tests with stale keyShift-only fixtures now consume current issued intent and
+   prove changed live modifiers cannot reverse it; invalid intent remains a no-op.
+
+Final-source gates so far: Feature 66, Factory 300, Core 269, App history/input/drag
+28, Design Inspector 37; production Feature build and all App TypeScript projects
+pass. Lint has zero errors and four pre-existing console warnings; naming 15 and
+catalog 8 pass. Final history browser suite: 15 passed (1.9 minutes), including
+active drag interruption, real busy replay, compensation and durable reload. Final
+collaboration closure: all 19 cases passed (3.6 minutes), including two-actor
+publication, rollback compensation, resend/reconnect, isolated recovery,
+Undo/Redo and exact durable reload. Final Core rerun: 269 passed; all App
+TypeScript projects passed again after the transport-retirement guard.
+
+Inspector recovery `1c6803c9-ea6b-4bcd-a2ac-29ae53936b97` captures source
+`111a59e62e0b9e9973c379b1ce6fcd7247948fcddcc0179628de503313ea1671`.
+All four exact negative controls fail only `apply.history-intent`, then recovery
+passes. Target `8bd253b8-fbcf-4bff-808c-1ed345edf05e`, assessment
+`5ce717f9-b092-4299-be89-23252ccfa83b`: completed/current/eligible. Accepted baseline
+was not replaced. Evidence: `tmp/history-immediate/`. Earlier red, invalid mixed-
+worktree browser and intermediate results remain distinguishable from final passes.
+The prior trace-less Undo/navigation observations remain unresolved; success here
+does not establish their historical trigger. No live model/101, push or monitoring.
+
+Closure: the final source manifest contains 807 files and all match current bytes.
+The seven-category bounded review has no remaining in-scope production finding.
+Test-owned listeners 3300/3401/4411 have exited; the unrelated worktree's existing
+4401 listener was preserved. All edits remain local and uncommitted. Stop at this
+user checkpoint; do not infer authorization for 101, push, monitoring or later work.
+
+
+### Session cancellation policy constants - 2026-10-17
+
+User-authorized follow-up to Stage 4: centralize the three existing session
+cancellation values in Feature System, derive policy/outcome types from those
+values, expose them through the existing Core facade, and update direct consumers.
+Preserve all dispatch, interruption, transaction, failure and history semantics.
+This is a representation-only refactor; it does not change an Inspector step's
+semantics or add a route. No new Inspector boundary or admission is needed.
+
+Bounded review: inspect all current policy literals in Feature System and App
+consumers; distinguish session rollback values from Factory transaction outcomes.
+Update the public session guide and developer Skill routing, then regenerate its
+owned reference bundle. The installed external Skill cache is read-only.
+Validate exported values and derived types (including rejected typo/outcome),
+existing session lifecycle/failure/history tests, direct App feature consumers,
+Core/App types, naming, lint, and Skill bundle integrity. No 101, inference, push,
+monitoring, broader history refactor or compatibility layer.
+
+Closure: Feature System 67 tests (including all existing cancellation, failure,
+disposal and immediate-history cases), direct App Features 45, and Core facade
+11 passed. The permanent policy typecheck is now part of local/CI package tests;
+it rejects misspelled keys/values and feature-defined as a final outcome.
+Feature/Core builds and all Design typecheck projects passed. Naming 15, public
+documentation 11 and Skill packaging 24 passed. The real third-party installer
+case is not applicable to this documentation-only Skill change and remains
+opt-in; no installer, native model or installed-cache validation is claimed.
+Scoped lint has zero errors and three pre-existing Feature console warnings.
+The first documentation inventory assertion failed because the added example
+raised the snippet count from 11 to 12; the precise count was synchronized and
+the full documentation gates passed, without dropping any checks.
+
+Review confirms one constant owner, Core re-export identity, literal-preserving
+types, unchanged interruption/failure semantics and separate Factory transaction
+outcomes. Updated maintained public guidance and generated offline Skill 0.1.13
+candidate, with installed-API verification guidance; external installed 0.1.12
+remains untouched. Public indices include the current local source. Evidence:
+tmp/session-policy-*.log. Changes remain local. No inference/101, push or monitoring.
+
+
+### Session policy contract owner correction - 2026-10-17
+
+This user-approved allocation supersedes the preceding constant-owner decision:
+Utils owns SessionCancelPolicies and the derived policy/outcome types. Feature
+System imports the pure contract and owns its execution; Apps import these values
+from Utils while invoking runtime through Core. Remove the Feature System and
+Core exports, with no compatibility aliases. All policy values, session behavior,
+transaction/history and failure semantics remain unchanged.
+
+Scope: existing constant/type declarations, all exact policy consumers and public
+exports, formal type/value/export-boundary tests, canonical package/public guides,
+Skill source and generated references/indices, and this task's changeset. Fixed
+discovery uses exact policy identifiers, current export chains and dependency
+direction. This is a contract-location refactor without changing Inspector step
+semantics; no new flow/admission. Move the policy tests and typecheck to Utils;
+run Utils/Feature tests, direct App consumers, Core export tests, builds/App types,
+naming/lint and documentation/Skill packaging gates. Self-review must verify no
+old re-export remains and Utils imports no upper-layer runtime. No 101, push,
+monitoring, new compatibility behavior or unrelated owner changes.
+
+Owner-correction closure: Utils 101 (including the permanent typecheck), Feature
+System 67, Core facade boundary 11 and direct App Feature 45 tests passed. Utils,
+Feature System and Core builds and all Design TypeScript projects passed. Naming
+15 and scoped lint passed (zero errors, three existing console warnings). Public
+documentation and Skill packaging: 35 passed, the unchanged installer-only opt-in
+case was not applicable/run. Generated public indices and offline Skill references
+are current. No claim of native model/installer behavior or installed-cache update.
+
+Self-review traced Utils root -> constants barrel -> one pure definition; Feature
+System execution and handler types consume that definition, with no upper-layer
+imports in Utils. App consumers import Utils directly. Core and Feature System
+public policy exports are removed and absence is tested; obsolete source and
+Feature-owned typecheck files are removed. The changeset now targets Utils and
+Feature System, not a Core re-export. Transaction outcomes remain separate, and
+existing lifecycle/failure/history regressions pass. No behavior, queue, history,
+persistence or compatibility branch was added. Evidence: tmp/session-policy-utils-*.log.
+All work remains local; no 101, push, monitoring or further stage advancement.
+
+
+### Session policy owner review - 2026-10-17
+
+Re-review the exact constant/type/export migration and its direct consumers,
+Session/Factory history path, documentation and Skill source/bundle. Inspection
+uses identifier/literal searches and AST checks of cancelPolicy, registerSession
+and onCancel, including maintained JS examples and generated-template inventory.
+No runtime behavior change or Inspector semantic change is planned.
+
+Findings: Runtime Atlas still used four rollback literals, the Sim lifecycle
+integration fixture one, and two Feature tests one each. Replace these with the
+Utils constant. Incremental tsc left the removed Feature-owned constant in dist;
+use the existing clean/build commands and inspect the actual built public entries.
+The release-pinned Design CLI template also has literals, but is generated release
+output: package-release-validation explicitly excludes template regeneration from
+ordinary refactors. Do not hand-edit it or copy unrelated local Stage 4 changes
+into a release template. No old policy imports/exports occur in that template.
+
+Gates: existing Utils/Feature/Core/Factory tests, direct Design Feature tests and
+App types, affected Sim lifecycle integration, real Runtime Atlas session-to-Factory
+Undo/Redo and failure cases, naming/lint, docs/Skill synchronization. Keep source
+policy values and error/transaction outcomes unchanged. No 101, model calls, push
+or monitoring.
+
+Review closure: all seven maintained-source policy literals are replaced. The
+final AST inventory reports zero such literals in maintained Apps/packages/scripts;
+eight remain solely in the release-pinned generated template described above.
+Clean Feature build removed all four obsolete constant artifacts. Actual built
+module imports confirm Utils owns the value; TypeScript's exported-symbol graph
+also confirms both policy types are exported only by Utils, not Core or Feature.
+No runtime session, history, transaction or persistence behavior was changed.
+
+Fresh regression gates: Utils 101 (including typecheck), Feature 67, full Core
+270, full Factory 300, direct Design Features 45, actual Runtime Atlas 15 and Sim
+lifecycle integration 20 all passed. These include existing cancellation failure,
+disposal, history settlement, canonical transaction/batch and lifecycle cases,
+not only the new constant/export tests. Design's three TypeScript projects,
+runtime boundary 13, naming 15, scoped lint and diff whitespace checks passed.
+Utils/Feature/Core builds passed. Public docs and Skill generated checks passed;
+their tests passed 35 with one unchanged installer-only opt-in skip. The latter
+is outside this source/bundle change; no installer or installed-cache claim.
+Evidence: tmp/session-policy-review-*.log. No new browser collaboration/save-reload
+run was performed for this value-preserving migration; earlier browser evidence
+remains historical for its recorded source. No inference/101, push or monitoring.
+
+
+### Session policy browser integration follow-up - 2026-10-17
+
+User-authorized closure supplements the Utils owner review with real Chrome
+integration: complete undo-redo, transaction-history-groups and collaboration
+specs. Reuse their existing current assertions for gesture interruption, busy
+history rejection, peer convergence, compensation, recovery, durable confirmation
+and reload. Run one worker, no automatic retries, fail fast. Use isolated
+APP_URL http://127.0.0.1:3300, collaboration 3401, backend 4411 with test-owned
+services from this worktree and unchanged persistent .env. Preserve every failure
+and inspect the first incorrect owner before any bounded repair. No production
+change is planned; any regression fix must follow the existing exact owner flow
+and test-first rules. No live model/101, push, monitoring or later-stage work.
+Record current-source results separately from prior browser evidence.
+
+
+Browser follow-up closure: all 35 real Chrome cases passed on this worktree,
+with one worker, retries=0, maxFailures=1 and no skips: undo-redo plus
+transaction-history-groups 12 (1.5m), four success/failure busy-history cases
+(58.0s), and the complete collaboration spec 19 (3.8m). The busy cases use the
+existing controlled yield/failure adapter around actual history execution;
+collaboration AI-response cases use deterministic recorded/generated responses,
+not model inference. Services were built and owned by Playwright in order:
+document backend 4411, collaboration 3401, Vite 3300. Listener cwd and resolved
+Utils/Feature/Core/Factory package paths were checked against this worktree.
+All three ports are closed after completion; persistent .env was unchanged.
+
+Evidence includes active-drag Undo, subsequent Redo and durable reload, exact
+nested history/peer state, post-reload edit/save/reload, ignored busy shortcuts
+and recovery after injected history failure. Collaboration covers reconnection,
+remote hierarchy/geometry restoration, live pointer updates, peer compensation,
+isolated failed drafts, IndexedDB persistence failure, cleanup failure and
+successful recovery without overwriting an independent peer. Pending/restored
+Group and both peer screenshots were inspected. No failure, automatic retry or
+production/test edit was needed. Logs, screenshots and diagnostic attachments:
+tmp/session-policy-browser/{history.log,history-busy.log,collaboration.log,history,history-busy,collaboration}.
+This adds current-source browser evidence; it does not diagnose unrelated
+historical intermittent navigation/Undo events merely from passing runs.
+No 101, inference, push or monitoring. Only plan/handoff evidence changed.
+
+
+### Stage 4 complete current-source review - 2026-10-17
+
+Review the fixed seven categories across Stage 4A-D and their Stage 1/2/3
+producer/consumer paths. Fixed discovery: current owner contracts, bounded diffs
+of Runtime recipe/persistence, Design library/host/provider and immediate Session
+history changes; direct activity, check-selection/repair, store/management and
+browser consumers. Preserve the current Utils-only policy contract. Require
+actual failure/retry, retirement, request disposal/reopen, partial outcomes and
+no duplicated product work. Reuse the immediately preceding 35 browser cases
+only while their source is unchanged. Run complete Runtime, Design server and
+AI consumer suites, the integrated mechanical-check/SQLite library/browser cases,
+current-source Inspector proof, types/lint and affected predecessor gates.
+No unrelated discovery, live model/101, push, monitoring or later-stage work.
+Confirmed in-scope defects require a matching owner card and failing regression
+before repair. Record historical navigation/Undo unknowns as such, not fixed by
+a later pass. Completion means no open concrete finding in this bounded scope.
+
+
+Compose-owner correction card: the full existing server suite fails the public
+API exhaustiveness assertion for core.isInUndoRedo (server.log, 1 failed/1245
+passed/2 skipped). Its current spec is History input admission: synchronous
+Factory-state observation before input dispatch. It is not a model task action.
+Existing compose Inspector owns canonical capability classification and includes
+basic-api-dispositions.ts plus basic-api-contracts.test.ts; no flow semantics,
+new tool or schema is required. Input: existing public Core method. Output: one
+reviewed host-only disposition. Conditions: preserve direct App/Core use and
+existing history APIs. Forbidden: exposing a model polling/control alternative,
+removing the exhaustive assertion or adding an execution allowlist. Failure owner:
+compose. Change only the disposition and this evidence; the existing failing
+formal oracle supplies the red proof. Run the complete basic API/operation
+consumer files, server harness, types and lint; keep unaffected browser evidence.
+
+
+Current-source review closure: the existing exhaustive API oracle detected the
+missing Core.isInUndoRedo disposition. The compose-owner correction classifies
+it as synchronous App input admission, not a model action. Only that metadata
+entry changed production source in this review. The initial failed server run
+remains failed evidence; the complete rerun passed. No new controller, queue,
+compatibility alias or relaxed assertion was introduced.
+
+The fixed review covered normal/concurrent/reentrant use; exact request, recipe,
+receipt and dependency ownership; invalid/foreign/expired inputs; cancellation,
+partial work, ambiguous save acknowledgement, retirement and storage-only retry;
+existing Framework ownership and direct consumers; bounded receipt/work reuse;
+and actual integration evidence. Root and child receipts remain private and
+request-owned, dependencies save before parents, retirement cannot be reversed by
+late promotion, and new requests revalidate current durable authority. Activity
+uses actual invocation ancestry and closes completed child claims independently.
+Mechanical passes, primary visual judgment, document durability and library
+eligibility remain distinct across Stages 1/2/3/4. No additional concrete in-scope
+finding remains after the classification correction and repeated owner review.
+
+Fresh results under tmp/stage4-complete-review/: Runtime 379 passed; complete
+Design server 1246 passed and two original conditional skips; AI consumer suite
+586 passed; the focused classification/operation confirmation passed 192 cases
+(a subset, not an additional distinct coverage count). All three Design typecheck
+projects, naming, scoped lint and diff whitespace checks passed. Real Chrome
+conversation, inspection and library integration passed 38 cases in 5.3 minutes,
+with retries=0 and five original conditional skips. These exercise real SQLite,
+canonical browser mutations, scoped pass retention, prescribed repair, save-only
+retry, fresh-request reuse, busy history, interruption and durable reload. Current
+purpose at both viewport sizes, automatic library saving, and stopped retained
+work screenshots were inspected. The preceding 35 history/collaboration browser
+passes remain applicable: this metadata-only correction changes none of their
+runtime owners. All Playwright-owned 3300/3401/4411 services exited.
+
+Skip accounting: server skips are the opt-in saved large-document encoding probe
+and installed native-provider registration probe (the latter explicitly asserts
+zero inference). Browser skips are three application performance profiles and
+two opt-in retained document/action replays requiring supplied artifacts. They
+are not silently passed, live-model tests, or replacements for the combined
+Stage 4 integration cases. No live AI/101 or performance improvement claim.
+
+Current Design candidate 486e91d3-50a6-4560-b733-14a8d7896518 and recovery
+7db06180-c0ef-4f55-a80f-e7eb313f0bfe share source
+f6c59957b924ed5be96d0ffb1f1ce038b8dfd41f439b1ac9503872acaa718f23.
+All 37 obligations passed; all eight negative controls produced exactly their
+expected failures and baseline recovered. Target assessment
+60c734a8-8825-42e1-aca8-4f874517464b completed current/eligible with no stale
+reasons, using target 8bd253b8-fbcf-4bff-808c-1ed345edf05e and same-source
+accepted-behavior preservation. Runtime candidate
+0fa1a80c-6f3e-4939-a3bd-f48d3f0a33c4 and recovery
+f55aa614-d8eb-4721-9ede-922be8c0c64f share source
+188bda0c1aea5dfa0a53a33f32902c910fbabea01985fbbdd1aa1809776c7ede:
+11 obligations passed, seven exact negative controls and recovery passed.
+Accepted baselines were not replaced to obtain a green result.
+
+Stage 4 is locally complete within its frozen contract. Earlier trace-less
+navigation/Undo events remain historical unknowns, not newly diagnosed by green
+runs; the user-accepted non-blocking navigation limitation remains explicit.
+No commit, push, live 101, monitoring or subsequent stage was performed.

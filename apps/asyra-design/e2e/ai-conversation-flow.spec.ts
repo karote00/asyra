@@ -15,6 +15,8 @@ import {
   waitForAppReady
 } from './test-utils'
 
+test.use({ trace: 'retain-on-failure' })
+
 for (const count of [16, 320, 1280]) {
   test(`profiles canonical prepared vector application with ${count} items`, async ({
     page
@@ -1044,6 +1046,40 @@ for (const width of [360, 1280]) {
           expected: '正在加入窗戶光影反射效果'
         },
         {
+          tool: 'invoke_tool',
+          callId: 'native-save-parent',
+          phase: 'executing',
+          status: 'running',
+          label: 'Running the selected operation',
+          message: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'save_tool',
+          callId: 'automatic-save',
+          parentCallId: 'native-save-parent',
+          phase: 'executing',
+          status: 'running',
+          label: 'Saving a reusable operation',
+          expected: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'save_tool',
+          callId: 'automatic-save',
+          parentCallId: 'native-save-parent',
+          phase: 'executing',
+          status: 'completed',
+          label: 'Running the selected operation',
+          expected: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'invoke_tool',
+          callId: 'native-save-parent',
+          phase: 'executing',
+          status: 'completed',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
           tool: 'provider',
           callId: 'provider-gap',
           scope: 'request',
@@ -1115,6 +1151,7 @@ for (const width of [360, 1280]) {
             activity: {
               kind: event.message ? 'work' : 'system',
               callId: event.callId,
+              parentCallId: event.parentCallId,
               phase: event.phase,
               scope: event.scope,
               sequence: ++activitySequence
@@ -1126,6 +1163,11 @@ for (const width of [360, 1280]) {
           ...(event.label ? [event.label] : []),
           ...(workMessage ? [workMessage] : [])
         ])
+        if (event.callId === 'automatic-save' && event.status === 'running') {
+          await page.getByTestId('ai-agent-panel').screenshot({
+            path: testInfo.outputPath('automatic-library-save.png')
+          })
+        }
         if (event.callId === 'provider-gap') {
           await expect(status).not.toContainText('Updating the canvas')
           await page.getByTestId('ai-agent-panel').screenshot({
@@ -1857,62 +1899,197 @@ for (const width of [360, 1280]) {
         })
         .toEqual(expected)
     }
+    await page.evaluate(async () => {
+      const { core, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const { historyApis } = await import('../src/testing/runtime-access')
+      const { subscribeToUndo, subscribeToRedo } =
+        await import('../src/testing/runtime-access')
+      const events: unknown[] = []
+      const append = (kind: string, detail?: unknown) =>
+        events.push({
+          kind,
+          detail,
+          at: performance.now(),
+          undoDepth: core.deps.factory.transact.undoStack.length,
+          redoDepth: core.deps.factory.transact.redoStack.length
+        })
+      testRuntimeState.set('frame-history-events', events)
+      const keydown = (event: KeyboardEvent) =>
+        append('keydown', {
+          code: event.code,
+          meta: event.metaKey,
+          ctrl: event.ctrlKey,
+          shift: event.shiftKey,
+          repeat: event.repeat,
+          target: (event.target as Element | null)?.tagName
+        })
+      document.addEventListener('keydown', keydown, true)
+      const subscriptions = [
+        subscribeToUndo(() => append('undo-replay-completed')),
+        subscribeToRedo(() => append('redo-replay-completed'))
+      ]
+      const original = historyApis.undo
+      historyApis.undo = async (options) => {
+        append('undo-enter')
+        const gated = testRuntimeState.get<boolean>('frame-history-arm')
+        testRuntimeState.set('frame-history-arm', false)
+        let waited = false
+        try {
+          await original(
+            gated
+              ? {
+                  ...options,
+                  maxItemsPerSlice: 1,
+                  yieldToHost: async () => {
+                    if (!waited) {
+                      waited = true
+                      append('undo-yield-held')
+                      await new Promise<void>((resolve) =>
+                        testRuntimeState.set('frame-history-release', resolve)
+                      )
+                    }
+                    await options?.yieldToHost?.()
+                  }
+                }
+              : options
+          )
+          append('undo-return')
+        } catch (error) {
+          append('undo-rejected', String(error))
+          throw error
+        }
+      }
+      testRuntimeState.set('frame-history-dispose', () => {
+        testRuntimeState.get<() => void>('frame-history-release')?.()
+        historyApis.undo = original
+        document.removeEventListener('keydown', keydown, true)
+        subscriptions.forEach((subscription) => subscription.unsubscribe())
+      })
+    })
     const snapshots = [await getCoreDocumentDigest(page)]
     const depth = await getUndoHistoryDepth(page)
-    await page.getByRole('button', { name: 'Open Agent' }).click()
-    for (let i = 1; i <= 3; i++) {
-      await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
+    try {
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      for (let i = 1; i <= 3; i++) {
+        await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
+        await page.getByRole('button', { name: 'Send', exact: true }).click()
+        await expect(
+          page.getByTestId('ai-agent-message').last()
+        ).toHaveAttribute('data-outcome', 'success')
+        await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
+        expect(await getUndoHistoryDepth(page)).toBe(depth + i)
+        snapshots.push(await getCoreDocumentDigest(page))
+        await assertDurable(snapshots[i], `edit-${i}`)
+      }
+      await page
+        .getByLabel('Message Agent')
+        .fill('Revise a target that has gone away')
       await page.getByRole('button', { name: 'Send', exact: true }).click()
-      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
-        'data-outcome',
-        'success'
-      )
+      const failed = page.getByTestId('ai-agent-message').last()
+      await expect(failed).toHaveAttribute('data-outcome', 'failed')
       await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
-      expect(await getUndoHistoryDepth(page)).toBe(depth + i)
-      snapshots.push(await getCoreDocumentDigest(page))
-      await assertDurable(snapshots[i], `edit-${i}`)
+      await expect(failed).toContainText(
+        'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
+      )
+      const explanation = failed.getByText(
+        /The original drawing is missing or is not an editable composition/
+      )
+      await expect(explanation).toBeInViewport()
+      await failed.getByLabel('Work history').click()
+      await expect(
+        failed.getByRole('list', { name: 'Operational progress' })
+      ).not.toContainText('Finished')
+      await expect(failed.getByText('Result', { exact: true })).toHaveCount(0)
+      await expect(
+        page.getByRole('status', { name: 'Current activity' })
+      ).toHaveCount(0)
+      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
+      expect(await getUndoHistoryDepth(page)).toBe(depth + 3)
+      await page.getByRole('button', { name: 'Jump to latest' }).click()
+      await expect(explanation).toBeInViewport({ ratio: 1 })
+      await page
+        .getByTestId('ai-agent-panel')
+        .screenshot({ path: testInfo.outputPath('revision-failure.png') })
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      for (let i = 2; i >= 0; i--) {
+        if (width === 360 && i === 0) {
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.set('frame-history-arm', true)
+          )
+        }
+        await undo(page)
+        if (width === 360 && i === 0) {
+          const events = await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<{ kind: string }[]>('frame-history-events')
+          )
+          expect(
+            events?.filter((event) => event.kind === 'undo-yield-held')
+          ).toHaveLength(1)
+          // A keyboard helper's delay does not acknowledge a completed transaction.
+          expect(
+            events?.filter((event) => event.kind === 'undo-replay-completed')
+          ).toHaveLength(2)
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<() => void>('frame-history-release')?.()
+          )
+        }
+        await expect
+          .poll(() => getCoreDocumentDigest(page), {
+            message: `Undo ${i} must settle to the exact preceding document`
+          })
+          .toEqual(snapshots[i])
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
+        await assertDurable(snapshots[i], `undo-${i}`)
+      }
+      for (let i = 1; i <= 3; i++) {
+        await redo(page)
+        await expect
+          .poll(() => getCoreDocumentDigest(page), {
+            message: `Redo ${i} must settle to the exact subsequent document`
+          })
+          .toEqual(snapshots[i])
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
+        await assertDurable(snapshots[i], `redo-${i}`)
+      }
+      expect(requests).toBe(4)
+    } finally {
+      try {
+        const evidence = await page.evaluate(async () => {
+          const runtime = await import('../src/testing/runtime-access')
+          try {
+            return {
+              events: runtime.testRuntimeState.get('frame-history-events'),
+              publications: runtime.readTestCapture('frame-revisions'),
+              decodeFailures:
+                runtime.readDocumentPublicationDecodeFailures('frame-revisions')
+            }
+          } finally {
+            runtime.testRuntimeState.get<() => void>(
+              'frame-history-dispose'
+            )?.()
+          }
+        })
+        const evidencePath = testInfo.outputPath('frame-history-lifecycle.json')
+        await writeFile(evidencePath, JSON.stringify(evidence))
+        await testInfo.attach('frame-history-lifecycle', {
+          path: evidencePath,
+          contentType: 'application/json'
+        })
+      } catch (error) {
+        // Diagnostic collection must preserve the original assertion or navigation failure.
+        testInfo.annotations.push({
+          type: 'history-capture-unavailable',
+          description: String(error)
+        })
+      }
     }
-    await page
-      .getByLabel('Message Agent')
-      .fill('Revise a target that has gone away')
-    await page.getByRole('button', { name: 'Send', exact: true }).click()
-    const failed = page.getByTestId('ai-agent-message').last()
-    await expect(failed).toHaveAttribute('data-outcome', 'failed')
-    await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
-    await expect(failed).toContainText(
-      'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
-    )
-    const explanation = failed.getByText(
-      /The original drawing is missing or is not an editable composition/
-    )
-    await expect(explanation).toBeInViewport()
-    await failed.getByLabel('Work history').click()
-    await expect(
-      failed.getByRole('list', { name: 'Operational progress' })
-    ).not.toContainText('Finished')
-    await expect(failed.getByText('Result', { exact: true })).toHaveCount(0)
-    await expect(
-      page.getByRole('status', { name: 'Current activity' })
-    ).toHaveCount(0)
-    expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
-    expect(await getUndoHistoryDepth(page)).toBe(depth + 3)
-    await page.getByRole('button', { name: 'Jump to latest' }).click()
-    await expect(explanation).toBeInViewport({ ratio: 1 })
-    await page
-      .getByTestId('ai-agent-panel')
-      .screenshot({ path: testInfo.outputPath('revision-failure.png') })
-    await page.getByRole('button', { name: 'Close Agent panel' }).click()
-    for (let i = 2; i >= 0; i--) {
-      await undo(page)
-      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
-      await assertDurable(snapshots[i], `undo-${i}`)
-    }
-    for (let i = 1; i <= 3; i++) {
-      await redo(page)
-      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
-      await assertDurable(snapshots[i], `redo-${i}`)
-    }
-    expect(requests).toBe(4)
     // Restore the canvas-ready viewport used at initial bootstrap.
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.reload()
@@ -2041,3 +2218,177 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+for (const direction of ['undo', 'redo'] as const) {
+  for (const fail of [false, true]) {
+    test(`history admission ignores repeated shortcuts during ${direction} - failure=${fail}`, async ({
+      page
+    }, testInfo) => {
+      const documentIdentity = createTestDocumentIdentity()
+      await page.goto(documentIdentity.url)
+      await waitForAppReady(page)
+      const empty = await getCoreDocumentDigest(page)
+      const initialDepth = await getUndoHistoryDepth(page)
+      await createRectangle(page)
+      const drawn = await getCoreDocumentDigest(page)
+      await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth + 1)
+      if (direction === 'redo') {
+        await undo(page)
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth)
+        expect(await getCoreDocumentDigest(page)).toEqual(empty)
+      }
+      await page.evaluate(
+        async ({ direction, fail }) => {
+          const { core, historyApis, testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          const original = { ...historyApis }
+          const calls: string[] = [],
+            inputs: string[] = []
+          let first = true
+          const listener = () => {
+            inputs.push('history')
+          }
+          core.deps.inputSystem.on('input.shortcut.undoredo', listener)
+          for (const name of ['undo', 'redo'] as const) {
+            historyApis[name] = async (options) => {
+              calls.push(name)
+              const gated = name === direction && first
+              if (gated) first = false
+              let held = false
+              try {
+                await original[name](
+                  gated
+                    ? {
+                        ...options,
+                        maxItemsPerSlice: 1,
+                        yieldToHost: async () => {
+                          if (!held) {
+                            held = true
+                            testRuntimeState.set(
+                              'history-admission-busy',
+                              core.deps.factory.isInUndoRedo()
+                            )
+                            await new Promise<void>((resolve) =>
+                              testRuntimeState.set(
+                                'history-admission-release',
+                                resolve
+                              )
+                            )
+                            if (fail)
+                              throw new Error(
+                                'Controlled history slice failure'
+                              )
+                          }
+                          await options?.yieldToHost?.()
+                        }
+                      }
+                    : options
+                )
+              } catch (error) {
+                testRuntimeState.set('history-admission-error', String(error))
+                throw error
+              }
+            }
+          }
+          testRuntimeState.set('history-admission-calls', calls)
+          testRuntimeState.set('history-admission-inputs', inputs)
+          testRuntimeState.set('history-admission-dispose', () => {
+            testRuntimeState.get<() => void>('history-admission-release')?.()
+            Object.assign(historyApis, original)
+            core.deps.inputSystem.off('input.shortcut.undoredo', listener)
+          })
+        },
+        { direction, fail }
+      )
+      try {
+        await (direction === 'undo' ? undo(page) : redo(page))
+        await expect
+          .poll(() =>
+            page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('history-admission-busy')
+            )
+          )
+          .toBe(true)
+        // Both same/opposite commands are ignored, rather than deferred until idle.
+        await undo(page)
+        await redo(page)
+        await undo(page)
+        await page.keyboard.press('v')
+        expect(
+          await page.evaluate(async () => {
+            const { testRuntimeState } =
+              await import('../src/testing/runtime-access')
+            return {
+              calls: testRuntimeState.get('history-admission-calls'),
+              inputs: testRuntimeState.get('history-admission-inputs')
+            }
+          })
+        ).toEqual({ calls: [direction], inputs: ['history'] })
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get<
+            () => void
+          >('history-admission-release')?.()
+        )
+        await expect
+          .poll(() =>
+            page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).core.deps.factory.isInUndoRedo()
+            )
+          )
+          .toBe(false)
+        const expected = (direction === 'undo') !== fail ? empty : drawn
+        const expectedDepth =
+          expected === empty ? initialDepth : initialDepth + 1
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(expectedDepth)
+        expect(await getCoreDocumentDigest(page)).toEqual(expected)
+        if (fail) {
+          expect(
+            await page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('history-admission-error')
+            )
+          ).toContain('Controlled history slice failure')
+        }
+        // A new command after either success or compensation must work normally.
+        const next = expected === empty ? 'redo' : 'undo'
+        await (next === 'undo' ? undo(page) : redo(page))
+        const final = next === 'undo' ? empty : drawn
+        await expect
+          .poll(() => getUndoHistoryDepth(page))
+          .toBe(next === 'undo' ? initialDepth : initialDepth + 1)
+        expect(await getCoreDocumentDigest(page)).toEqual(final)
+        expect(
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get('history-admission-calls')
+          )
+        ).toEqual([direction, next])
+        await expect
+          .poll(() => getPersistedDocumentDigest(documentIdentity.fileId))
+          .toEqual(final)
+        await page.reload()
+        await waitForAppReady(page)
+        expect(await getCoreDocumentDigest(page)).toEqual(final)
+      } finally {
+        try {
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<() => void>('history-admission-dispose')?.()
+          )
+        } catch (error) {
+          testInfo.annotations.push({
+            type: 'history-cleanup',
+            description: String(error)
+          })
+        }
+      }
+    })
+  }
+}

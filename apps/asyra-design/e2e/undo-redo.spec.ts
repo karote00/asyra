@@ -12,6 +12,8 @@ import {
   getSelectedElementRect,
   getElementRectClientCenter,
   getSelectedElementClientCenter,
+  getCoreDocumentDigest,
+  getPersistedDocumentDigest,
   undo,
   redo
 } from './test-utils'
@@ -184,6 +186,68 @@ test.describe('Undo/Redo Actions', () => {
           : null
       })
       .toEqual({ x: Math.round(moved.x), y: Math.round(moved.y) })
+  })
+
+  test('Undo interrupts the active drag and preserves Redo through durable reload', async ({
+    page
+  }) => {
+    test.setTimeout(60_000)
+    await createRectangle(page, 0.35, 0.35)
+    const before = await getSelectedElementRect(page)
+    const center = await getSelectedElementClientCenter(page)
+    expect(before).not.toBeNull()
+    expect(center).not.toBeNull()
+    if (!before || !center) throw new Error('Missing real drag target')
+    const fileId = new URL(page.url()).searchParams.get('fileId')
+    if (!fileId) throw new Error('Missing document identity')
+    const original = await getCoreDocumentDigest(page)
+    const durable = async (expected: typeof original) => {
+      await expect
+        .poll(() => getPersistedDocumentDigest(fileId), { timeout: 15_000 })
+        .toEqual(expected)
+    }
+    await durable(original)
+    const historyDepth = () =>
+      page.evaluate(async () => {
+        const { core } = await import('../src/testing/runtime-access')
+        return {
+          undo: core.deps.factory.transact.undoStack.length,
+          redo: core.deps.factory.transact.redoStack.length
+        }
+      })
+    const initialDepth = await historyDepth()
+    await page.mouse.move(center.x, center.y)
+    await page.mouse.down()
+    await page.mouse.move(center.x + 120, center.y + 70, { steps: 10 })
+    await expect
+      .poll(async () => (await getSelectedElementRect(page))?.x)
+      .toBeGreaterThan(before.x + 10)
+    const moved = await getCoreDocumentDigest(page)
+    // Keep the pointer down: using the toolbar here would end the session first.
+    await page.keyboard.press('ControlOrMeta+z')
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(original)
+    await expect
+      .poll(historyDepth)
+      .toEqual({ undo: initialDepth.undo, redo: 1 })
+    await page.mouse.move(center.x + 160, center.y + 100)
+    await page.mouse.up()
+    expect(await getCoreDocumentDigest(page)).toEqual(original)
+    await durable(original)
+    await redo(page)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(moved)
+    await expect
+      .poll(historyDepth)
+      .toEqual({ undo: initialDepth.undo + 1, redo: 0 })
+    await durable(moved)
+    await page.reload()
+    await waitForAppReady(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(moved)
+    await createRectangle(page, 0.65, 0.45)
+    const next = await getCoreDocumentDigest(page)
+    await durable(next)
+    await page.reload()
+    await waitForAppReady(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(next)
   })
 
   test('pressing Escape commits the interruption position as one Undo entry', async ({

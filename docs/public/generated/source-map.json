@@ -10,7 +10,7 @@
         },
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "65a485a45525c39144e939fffbc7d3144ce379e7f2a0f8a1dc17cefb3225125f"
+          "sha256": "3ad099e424e4ad93867025b4adfd190ac31992f7889606eb362dcd089bf8c55c"
         }
       ]
     },
@@ -62,11 +62,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "65a485a45525c39144e939fffbc7d3144ce379e7f2a0f8a1dc17cefb3225125f"
+          "sha256": "3ad099e424e4ad93867025b4adfd190ac31992f7889606eb362dcd089bf8c55c"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -82,7 +82,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "636836707e686d347b7e46dd948b1d9ff1e22cd9d8628c36d18aa1f635c47dc2"
+          "sha256": "6dd0b2d7606cb708e7ae6b1fad5e29c8929c489421ec728dbb5312941ce4474b"
         }
       ]
     },
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         }
       ]
     },
@@ -110,7 +110,7 @@
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
-          "sha256": "01b9e4667f82549a2cfcfc61a34c2742149def2384a21f76f77e92395fbe82b7"
+          "sha256": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5"
         }
       ]
     },
@@ -120,7 +120,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "65a485a45525c39144e939fffbc7d3144ce379e7f2a0f8a1dc17cefb3225125f"
+          "sha256": "3ad099e424e4ad93867025b4adfd190ac31992f7889606eb362dcd089bf8c55c"
         },
         {
           "path": "docs/ai/framework/packages/system-context.md",
@@ -138,7 +138,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
+          "sha256": "3543d8b8fad5ee283611055add412f6591ebe0d02387037a3720ff7b8706e4dc"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
@@ -184,11 +184,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "11fd41d5525906c25a0b08f7d5470a9f54bf84877cd57da3d1656512ac763ed0"
+          "sha256": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa"
         },
         {
           "path": "docs/ai/framework/plans/headless-core-and-core-kernel-future-plan.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -220,15 +220,15 @@
     },
     {
       "id": "build/feature-session",
-      "pageSha256": "263eb0024b7aee84649e33fd583e80c2628ba7ce3f7aa4e0670ff22dcd74f9ee",
+      "pageSha256": "91bcc101100bc3ea991fb247e7e0bf5c0a5a08f56fa76294c5fb3bfa14eb9284",
       "sources": [
         {
           "path": "docs/ai/framework/packages/feature-system.md",
-          "sha256": "01b9e4667f82549a2cfcfc61a34c2742149def2384a21f76f77e92395fbe82b7"
+          "sha256": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5"
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
+          "sha256": "3543d8b8fad5ee283611055add412f6591ebe0d02387037a3720ff7b8706e4dc"
         }
       ]
     },
@@ -256,7 +256,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -288,7 +288,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/modules/collaboration-reference.md",
-          "sha256": "25fdb5ffc4facbb9bd7d82b90054fb123098f8d21e15928b0473576a7498f930"
+          "sha256": "c770df172fe9eb48c3b3cfd0280cb1d5a877c0bdabe0dc62a212a0c331d27a98"
         }
       ]
     },
@@ -316,13 +316,13 @@
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
-          "sha256": "01b9e4667f82549a2cfcfc61a34c2742149def2384a21f76f77e92395fbe82b7"
+          "sha256": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5"
         }
       ]
     },
     {
       "id": "reference/packages/ai-agent-runtime",
-      "pageSha256": "ed6a6f0f6d0b729fdaa0268e9af22ce0974004105073ebcddddc20836d46fb84",
+      "pageSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
@@ -354,7 +354,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "4e07dd438671294f0716a2a6f423a8aa972b5a057257a5624259801a7fef20a2"
+          "sha256": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965"
         },
         {
           "path": "packages/core/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "6648b50b2a02e9a758becd0c0cd1e9453d56d4dd975f5ebcec2207970a50f63b"
+          "sha256": "3543d8b8fad5ee283611055add412f6591ebe0d02387037a3720ff7b8706e4dc"
         },
         {
           "path": "packages/factory/package.json",
@@ -396,7 +396,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/feature-system.md",
-          "sha256": "01b9e4667f82549a2cfcfc61a34c2742149def2384a21f76f77e92395fbe82b7"
+          "sha256": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5"
         },
         {
           "path": "packages/feature-system/package.json",
@@ -410,7 +410,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "11fd41d5525906c25a0b08f7d5470a9f54bf84877cd57da3d1656512ac763ed0"
+          "sha256": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa"
         },
         {
           "path": "packages/input-system/package.json",
@@ -578,11 +578,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/utils.md",
-          "sha256": "24984893ee0feff5072a132b470ad993ea60e8f92cc8b746dffdf8b381efd17e"
+          "sha256": "10f76368c0b6af1ecd727cf90700aaa63cd43c7096293179b77c0acbc6b2da35"
         },
         {
           "path": "packages/utils/package.json",
-          "sha256": "d2009c0606c4f176a39d2ee7a1f50f14ba60a7293c8e8a8956918cadee7afb62"
+          "sha256": "8fb4a172efbfbd2b65283fc2741d38d682a843a45b2ad5ceca2116845abb11c7"
         }
       ]
     },

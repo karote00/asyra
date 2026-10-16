@@ -26,6 +26,12 @@ export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
     owner: 'core',
+    methods: ['isInUndoRedo'],
+    reason:
+      'App input admission synchronously observes the existing Factory replay flags before dispatch. Model calls use the public history actions; an asynchronous status query cannot reserve or control history execution.'
+  },
+  {
+    owner: 'core',
     methods: ['getPropertyOwnerElementIds'],
     reason:
       'Host inspection observes canonical property publications and resolves affected live or retired owners. This inverse ownership index supports mutation evidence, not an independent model operation.'

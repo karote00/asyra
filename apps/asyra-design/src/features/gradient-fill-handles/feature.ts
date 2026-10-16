@@ -1,4 +1,5 @@
 import { defineFeature } from '@asyra/core'
+import { SessionCancelPolicies } from '@asyra/utils'
 import {
   clampUnit,
   type EVENT_OPTIONS,
@@ -466,7 +467,7 @@ export const dragGradientHandleFeature = defineFeature<
 >(FeatureNames.DRAG_GRADIENT_HANDLE, InputSystemEvents.INPUT_DRAG, {
   priority: 16,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
@@ -588,7 +589,7 @@ export const dragGradientStopFeature = defineFeature<
 >(FeatureNames.DRAG_GRADIENT_STOP, InputSystemEvents.INPUT_DRAG, {
   priority: 15,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)

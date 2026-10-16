@@ -549,3 +549,49 @@ describe('stored tool management', () => {
     ).toMatchObject({ status: 'unsaved' })
   })
 })
+
+it('rejects a final read for a different durable identity and recovers without replay', async () => {
+  const { store } = memoryStore()
+  const author = setup(store)
+  author.register()
+  const receipt = await author.runner.invoke({
+    name: 'reusable',
+    requestId: 'author',
+    input: 4
+  })
+  const request = {
+    name: 'reusable',
+    revision: 1,
+    requestId: 'author',
+    receipt
+  }
+  expect(await author.persistence.save(request)).toMatchObject({
+    status: 'saved'
+  })
+  const read = store.read
+  let reads = 0
+  store.read = async (key) => {
+    const entry = await read(key)
+    reads++
+    return entry && reads === 2 ? { ...entry, key: 'wrong-identity' } : entry
+  }
+  expect(await author.persistence.save(request)).toMatchObject({
+    status: 'unsaved'
+  })
+  store.read = async (key) => {
+    const entry = await read(key)
+    return entry ? { ...entry, key: 'wrong-identity' } : entry
+  }
+  const consumer = setup(store)
+  expect((await consumer.persistence.load('fresh')).loaded).toEqual([])
+  expect(consumer.registry.get('reusable')).toBeUndefined()
+  store.read = read
+  expect(await author.persistence.save(request)).toMatchObject({
+    status: 'saved'
+  })
+  expect((await consumer.persistence.load('fresh')).loaded).toEqual([
+    'reusable'
+  ])
+  expect(author.writes).toEqual([4])
+  expect(consumer.writes).toEqual([])
+})

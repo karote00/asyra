@@ -34,6 +34,44 @@ The maintained proof uses:
 In an app, keep canonical mutations behind its existing common/Core APIs. The
 small local value below only makes transaction evidence directly observable.
 
+## Choose the cancellation policy
+
+`@asyra/utils` exports `SessionCancelPolicies`, `SessionCancelPolicy` and
+`SessionCancelOutcome` as a pure shared contract. Apps and Framework packages
+import them directly from Utils. Feature System owns policy execution; Core
+exposes runtime helpers such as `defineFeature`, not these constants or types.
+Check the installed package exports before using the constant: a Skill update
+does not update the product's dependencies.
+
+| Constant | Interrupted-session behavior |
+| --- | --- |
+| `SessionCancelPolicies.COMMIT_CURRENT` | Default. Run `onEnd` to finalize the current valid result as one undoable transaction. |
+| `SessionCancelPolicies.ROLLBACK` | Run cancellation cleanup and roll back the transaction's rollbackable writes. |
+| `SessionCancelPolicies.FEATURE_DEFINED` | Require `onCancel` to return `ROLLBACK` or `COMMIT_CURRENT` from this same constant object. |
+
+`SessionCancelPolicy` is derived from the constant values. `SessionCancelOutcome`
+is derived from only `ROLLBACK` and `COMMIT_CURRENT`: `FEATURE_DEFINED` selects a
+handler, but is not a final outcome. TypeScript rejects misspelled values or keys.
+
+For example, a drag Feature can declare:
+
+```ts
+import { SessionCancelPolicies } from '@asyra/utils'
+
+// Pass these options to the existing drag Feature definition.
+const dragOptions = {
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT
+}
+```
+
+When Undo interrupts a drag, its existing session finalizer completes that drag
+before Factory undoes it. Do not introduce an App history queue or a second busy
+flag. A commit here is a runtime transaction, not a durable-save acknowledgement.
+A handler failure or forced rollback overrides the normal interruption policy;
+if one participant requests rollback, the complete transaction rolls back.
+`FEATURE_DEFINED` uses `onCancel` even when its returned outcome is commit-current;
+that handler owns its finalization. Do not assume it also calls `onEnd`.
+
 ## Where this runs
 
 Register the session in the app Feature that owns the gesture or long-running
@@ -44,6 +82,7 @@ intent. Raw input and UI controllers call `handleStart`, `handleUpdate`, and
 
 ```ts
 import factory from '@asyra/factory'
+import { SessionCancelPolicies } from '@asyra/utils'
 import { SessionManager } from '@asyra/feature-system'
 
 const sessions = new SessionManager()
@@ -95,11 +134,11 @@ const applyValue = (after: number) => {
   state.value = after
 }
 
-sessions.registerSession(SESSION, FEATURE, 100, true, 'rollback', {
+sessions.registerSession(SESSION, FEATURE, 100, true, SessionCancelPolicies.ROLLBACK, {
   onStart: () => ({ initialValue: state.value }),
   onUpdate: ({ nextValue }: ValueUpdate) => applyValue(nextValue),
   onEnd: () => undefined,
-  onCancel: () => 'rollback'
+  onCancel: () => SessionCancelPolicies.ROLLBACK
 })
 ```
 

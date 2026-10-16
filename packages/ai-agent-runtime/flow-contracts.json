@@ -12,7 +12,9 @@
     "invoke.handoff",
     "persist.handoff",
     "invoke.iteration",
-    "persist.iteration"
+    "persist.iteration",
+    "persist.nested",
+    "persist.authority"
   ],
   "externalInputs": [],
   "flows": [
@@ -105,6 +107,22 @@
           "implementationPaths": [
             "packages/ai-agent-runtime/src/tool-store.ts"
           ]
+        },
+        {
+          "id": "persist.nested",
+          "stepId": "persist",
+          "testName": "recipe proof saves nested candidates dependency-first without replay",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-store.ts"
+          ]
+        },
+        {
+          "id": "persist.authority",
+          "stepId": "persist",
+          "testName": "recipe proof confirms durable authority after asynchronous preparation without replay",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/tool-store.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -140,7 +158,9 @@
           "routeId": "invoke-to-persist",
           "decision": "required",
           "caseIds": [
-            "persist.handoff"
+            "persist.handoff",
+            "persist.nested",
+            "persist.authority"
           ]
         },
         {
@@ -148,7 +168,9 @@
           "decision": "required",
           "caseIds": [
             "persist.handoff",
-            "persist.iteration-resume"
+            "persist.iteration-resume",
+            "persist.nested",
+            "persist.authority"
           ]
         }
       ]
@@ -206,7 +228,9 @@
         "persist.handoff",
         "invoke.iteration",
         "persist.iteration",
-        "persist.iteration-resume"
+        "persist.iteration-resume",
+        "persist.nested",
+        "persist.authority"
       ],
       "mutation": {
         "file": "packages/ai-agent-runtime/src/recipe-execution.ts",
@@ -219,12 +243,37 @@
       "title": "Omit reloaded tool identity",
       "expectedFailedCaseIds": [
         "persist.handoff",
-        "persist.iteration"
+        "persist.iteration",
+        "persist.nested"
       ],
       "mutation": {
         "file": "packages/ai-agent-runtime/src/tool-store.ts",
         "from": "loaded.push(record.contract.name)",
         "to": "loaded.push('')"
+      }
+    },
+    {
+      "id": "omit-nested-proof",
+      "title": "Lose genuine child composition evidence",
+      "expectedFailedCaseIds": [
+        "persist.nested"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/recipe-execution.ts",
+        "from": "if (pinned.recipe) children.push(child)",
+        "to": "if (false) children.push(child)"
+      }
+    },
+    {
+      "id": "ignore-final-store-authority",
+      "title": "Ignore the final durable entry confirmation",
+      "expectedFailedCaseIds": [
+        "persist.authority"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/tool-store.ts",
+        "from": "!current ||\n    current.key !== entry.key ||\n    current.version !== entry.version ||\n    !same(current.record, entry.record)",
+        "to": "false"
       }
     }
   ]

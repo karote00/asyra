@@ -1,5 +1,14 @@
 # Asyra Skill releases
 
+## 0.1.13 - Session cancellation guidance candidate
+
+- Explain all three session cancellation policies and their concrete outcomes,
+  imported directly from Utils; Feature System owns their execution.
+- Route gesture/session authoring to the existing Feature finalizer and Factory
+  history authority; verify installed constant exports before use.
+- Synchronize the offline Feature guide. This local candidate does not update
+  installed Skills, product dependencies, or publish a release.
+
 ## 0.1.12 - Installer guidance candidate
 
 - Document project-scoped Vercel Skills and OpenSkills installation and updates.

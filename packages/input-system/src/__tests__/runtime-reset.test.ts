@@ -18,6 +18,42 @@ const host = () => ({ addEventListener: vi.fn(), removeEventListener: vi.fn() })
 describe('Input full runtime reset', () => {
   afterEach(() => vi.useRealTimers())
 
+  it('suppresses explicit false before dispatch without blocking later or other input', () => {
+    const input = new InputSystem(),
+      browser = host()
+    let accept = false
+    input.registry.register('command', [
+      {
+        type: InputType.KEYBOARD,
+        keys: [keyMap.keys.KeyA],
+        modifiers: [],
+        callback: () => (accept ? undefined : false)
+      }
+    ])
+    const receive = vi.fn(),
+      other = vi.fn()
+    input.on('command', receive)
+    input.registry.register('other', [
+      { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
+    ])
+    input.on('other', other)
+    input.attachBrowserHost(browser as unknown as Window)
+    const keydown = browser.addEventListener.mock.calls.find(
+      ([name]) => name === 'keydown'
+    )?.[1] as EventListener
+    try {
+      keydown(keyboardEvent())
+      expect(receive).not.toHaveBeenCalled()
+      expect(other).toHaveBeenCalledOnce()
+      accept = true
+      keydown(keyboardEvent())
+      expect(receive).toHaveBeenCalledOnce()
+      expect(other).toHaveBeenCalledTimes(2)
+    } finally {
+      input.resetRuntime()
+    }
+  })
+
   it('removes all owned listeners, mappings and pending timers', () => {
     vi.useFakeTimers()
     const input = new InputSystem(),

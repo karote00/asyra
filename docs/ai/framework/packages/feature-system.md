@@ -17,13 +17,21 @@ Primary interaction runtime. Handles execute/session sequencing and cancellation
 - Active feature execution should run one-by-one with deterministic ordering.
 - Before running next action, current active session must be cancelable.
 - Async feature handlers are allowed, but runtime must guard against stuck sessions.
-- One interaction queue serializes command, session start/update/end, and cancel
-  operations without event coalescing.
+- One interaction runtime serializes ordinary commands, session start/update/end,
+  and cancellation without event coalescing. A one-shot input Feature may declare
+  `executionMode: 'immediate'`: it never enters the queue and begins synchronously
+  when idle. If a handler is already running, settle that handler, finalize the
+  existing session using its cancel policy, then execute. Pending ordinary work
+  cannot interleave. Overlapping immediate invocations are ignored, not retained.
+  This execution boundary does not replace Factory history state or session logic.
+- Execution participants sharing an event must agree on mode. Immediate mode is
+  not valid for session or renderer-event Features. Failure or runtime closure
+  during finalization stops the immediate command; disposal drains active work.
 - A programmatic task is a targeted, non-mutating async Feature boundary. It
   owns one Feature-created `AbortSignal`, rejects overlap for the same Feature,
   and never opens a canonical transaction around external wait time.
 - Public `SessionManager` lifecycle entry points and one-shot commands share the
-  default transaction owner's interaction queue. Multiple `SessionManager`
+  default transaction owner's interaction runtime. Multiple `SessionManager`
   instances may own separate registrations, but they participate in one active
   session runtime: starting a registered session first cancels the current
   active session, including one owned by another manager instance.
@@ -42,8 +50,15 @@ Primary interaction runtime. Handles execute/session sequencing and cancellation
 - `update` runs while session remains active
 - `end` finalizes session
 - `cancel` aborts active session before conflicting next action
-- `cancelPolicy` defaults to `commit-current`; explicit alternatives are
-  `rollback` and `feature-defined`
+- Import `SessionCancelPolicies`, `SessionCancelPolicy` and `SessionCancelOutcome`
+  directly from `@asyra/utils`. Utils owns their pure shared definitions; Feature
+  System owns execution. Neither Feature System nor Core re-exports this contract.
+  The policy type derives from all three values; the outcome type derives only
+  from `ROLLBACK` and `COMMIT_CURRENT`, never `FEATURE_DEFINED`.
+- `cancelPolicy` defaults to `SessionCancelPolicies.COMMIT_CURRENT`; explicit
+  alternatives are `SessionCancelPolicies.ROLLBACK` and
+  `SessionCancelPolicies.FEATURE_DEFINED`. Values remain `commit-current`,
+  `rollback` and `feature-defined`; transaction/history semantics are unchanged.
 - the public `SessionManager.registerSession(...)` boundary preserves its legacy
   five-argument `(name, feature, priority, exclusive, handler)` form with the
   default commit-current policy; the additive six-argument form accepts an

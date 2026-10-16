@@ -487,3 +487,9 @@ validation by default. Removal observers may explicitly pass
 remaining direct owner relations are still included. Canonical hierarchy and
 parent-property changes own removal invalidation. Inspection dependency tracking uses this
 public facade rather than guessing owners from the initiating tool target.
+
+## History replay observation
+
+`core.isInUndoRedo()` reads the composed Factory replay state directly, including
+its outer transaction lifetime. It reserves nothing and retains no second busy
+state. Input policies can reject new history commands before queueing.

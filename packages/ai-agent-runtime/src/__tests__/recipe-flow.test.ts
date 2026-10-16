@@ -8,6 +8,7 @@ import {
 } from '../recipe-execution.js'
 import {
   createAiToolPersistence,
+  createAiToolStoreManagement,
   type AiToolStore,
   type AiToolStoreEntry
 } from '../tool-store.js'
@@ -308,6 +309,100 @@ it('recipe proof saves without replay and validates durable reuse', async () => 
     })
   ).toMatchObject({ status: 'success', value: 12 })
   expect(second.writes).toEqual([12])
+})
+
+it('recipe proof saves nested candidates dependency-first without replay', async () => {
+  const { store, entries } = memoryStore()
+  const host = setup(store)
+  expect(host.register().ok).toBe(true)
+  expect(
+    host.library.submit({
+      requestId: 'author',
+      submissionId: 'parent',
+      proposal: {
+        format: 1,
+        name: 'nested',
+        revision: 1,
+        description: 'Apply through a private candidate.',
+        inputSchema: { type: 'number' },
+        outputSchema: { type: 'number' },
+        steps: [
+          {
+            id: 'child',
+            tool: 'reusable',
+            revision: 1,
+            input: { kind: 'input', path: '' }
+          }
+        ],
+        output: { kind: 'step', step: 'child', path: '' }
+      }
+    }).ok
+  ).toBe(true)
+  const receipt = await host.runner.invoke({
+    name: 'nested',
+    requestId: 'author',
+    input: 3
+  })
+  expect(receipt).toMatchObject({
+    status: 'success',
+    settlement: 'completed',
+    value: 3
+  })
+  const request = { name: 'nested', revision: 1, requestId: 'author', receipt }
+  const write = store.write
+  store.write = vi.fn(async (input) => {
+    if (input.key === JSON.stringify(['reusable', 1]))
+      throw new Error('Child store unavailable')
+    return write(input)
+  })
+  expect(await host.persistence.save(request)).toMatchObject({
+    status: 'unsaved',
+    issue: expect.stringContaining('Child store unavailable')
+  })
+  expect(entries.size).toBe(0)
+  store.write = write
+  expect(
+    await host.persistence.save({ ...request, receipt: { ...receipt } })
+  ).toMatchObject({ status: 'unsaved' })
+  expect(entries.size).toBe(0)
+  expect(await host.persistence.save(request)).toMatchObject({
+    status: 'saved',
+    availability: 'eligible'
+  })
+  expect([...entries.keys()]).toEqual([
+    JSON.stringify(['reusable', 1]),
+    JSON.stringify(['nested', 1])
+  ])
+  const versions = [...entries.values()].map((entry) => entry.version)
+  expect(await host.persistence.save(request)).toMatchObject({
+    status: 'saved'
+  })
+  expect([...entries.values()].map((entry) => entry.version)).toEqual(versions)
+  expect(host.writes).toEqual([3])
+  const fresh = setup(store)
+  expect(await fresh.persistence.load('fresh')).toMatchObject({
+    loaded: ['reusable', 'nested'],
+    unavailable: []
+  })
+  expect(fresh.writes).toEqual([])
+  expect(
+    await fresh.runner.invoke({ name: 'nested', requestId: 'fresh', input: 12 })
+  ).toMatchObject({ status: 'success', value: 12 })
+  expect(fresh.writes).toEqual([12])
+  const child = entries.get(JSON.stringify(['reusable', 1]))
+  if (!child) throw new Error('Missing saved child')
+  expect(
+    await createAiToolStoreManagement({ store, capacity: 32 }).setState({
+      name: 'reusable',
+      revision: 1,
+      expectedVersion: child.version,
+      availability: 'retired'
+    })
+  ).toMatchObject({ status: 'saved' })
+  expect(await host.persistence.save(request)).toMatchObject({
+    status: 'unsaved'
+  })
+  expect(host.writes).toEqual([3])
 })
 
 const boundedProposal = (host: ReturnType<typeof setup>) => {
@@ -630,4 +725,101 @@ it('resumes a bounded candidate privately without executing or losing its iterat
     await next.runner.invoke({ name: 'bounded', requestId: 'next', input: 1 })
   ).toMatchObject({ status: 'success', value: 0 })
   expect(next.writes).toEqual([1, 0])
+})
+
+it('recipe proof confirms durable authority after asynchronous preparation without replay', async () => {
+  for (const mode of ['save', 'load', 'resume'] as const) {
+    for (const availability of ['suspended', 'retired'] as const) {
+      const { store } = memoryStore()
+      const first = setup(store)
+      expect(first.register().ok).toBe(true)
+      const receipt =
+        mode === 'resume'
+          ? undefined
+          : await first.runner.invoke({
+              name: 'reusable',
+              requestId: 'author',
+              input: 4
+            })
+      expect(
+        await first.persistence.save({
+          name: 'reusable',
+          revision: 1,
+          requestId: 'author',
+          receipt
+        })
+      ).toMatchObject({ status: 'saved' })
+      const read = store.read
+      const list = store.list
+      const management = createAiToolStoreManagement({
+        store: { ...store, read, list },
+        capacity: 32
+      })
+      let changed = false
+      const retireSnapshot = async () => {
+        if (changed) return
+        changed = true
+        const entry = await management.read('reusable', 1)
+        if (!entry) throw new Error('Missing current durable revision')
+        expect(
+          await management.setState({
+            name: 'reusable',
+            revision: 1,
+            expectedVersion: entry.version,
+            availability
+          })
+        ).toMatchObject({ status: 'saved' })
+      }
+      store.read = async (key) => {
+        const snapshot = await read(key)
+        if (mode !== 'load') await retireSnapshot()
+        return snapshot
+      }
+      store.list = async (limit) => {
+        const snapshot = await list(limit)
+        if (mode === 'load') await retireSnapshot()
+        return snapshot
+      }
+      const next = setup(store)
+      if (mode === 'save') {
+        expect(
+          await first.persistence.save({
+            name: 'reusable',
+            revision: 1,
+            requestId: 'author',
+            receipt
+          })
+        ).toMatchObject({ status: 'unsaved' })
+      } else if (mode === 'load') {
+        expect((await next.persistence.load('fresh')).loaded).toEqual([])
+      } else {
+        expect(
+          await next.persistence.resume({
+            name: 'reusable',
+            revision: 1,
+            requestId: 'fresh'
+          })
+        ).toMatchObject({ ok: false })
+      }
+      expect(changed).toBe(true)
+      expect((await management.read('reusable', 1))?.availability).toBe(
+        availability
+      )
+      expect(
+        next.registry.get('reusable', { requestId: 'fresh' })
+      ).toBeUndefined()
+      expect(next.writes).toEqual([])
+      expect(first.writes).toEqual(mode === 'resume' ? [] : [4])
+      // A retry after an authoritative retirement must never revive or execute it.
+      expect(
+        await first.persistence.save({
+          name: 'reusable',
+          revision: 1,
+          requestId: 'author',
+          receipt
+        })
+      ).toMatchObject({ status: 'unsaved' })
+      expect(first.writes).toEqual(mode === 'resume' ? [] : [4])
+    }
+  }
 })
