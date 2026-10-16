@@ -1,3 +1,4 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
 import { invokeLocalTool } from '../local-tool-invocation'
@@ -810,12 +811,14 @@ it('applies and reviews ready batches while later requirements and geometry rema
       first: {
         requirement: 'First part',
         description: 'Visible first part',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       },
       later: {
         requirement: 'Later part',
         description: 'Visible later part',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       }
     },
     structureCriteria: ['first', 'later'],
@@ -839,14 +842,16 @@ it('applies and reviews ready batches while later requirements and geometry rema
     await call('review_drawing', {
       phase: 'visual',
       final: false,
-      inspectionIds: [inspection],
-      checks: [
-        {
-          criterionId: 'first',
-          status: 'pass',
-          evidence: 'The retained first part is visible.'
-        }
-      ]
+      ...wholeViewJudgments(
+        [inspection],
+        [
+          {
+            criterionId: 'first',
+            status: 'pass',
+            evidence: 'The retained first part is visible.'
+          }
+        ]
+      )
     })
   ).toMatchObject({ accepted: false, final: false })
   expect(operations.getStructureIssue()).toBeTruthy()

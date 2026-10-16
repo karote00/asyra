@@ -1,3 +1,4 @@
+import recordedScope from '../server/__tests__/fixtures/recorded-101/scope-handoff-20261017.json' with { type: 'json' }
 import { expect, test, type Page } from '@playwright/test'
 import type { FillAttrs } from '@asyra/utils'
 import type { AiActionBatch, AiProvider } from '@asyra/ai-agent-runtime'
@@ -1315,6 +1316,15 @@ test('public review handoffs retain independent evidence and recover before runt
         return operations.settleOutcome(completed)
       }
       try {
+        const beforeAdmission = dispatched.length
+        const rejected = await invoke(
+          AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
+          recordedScope.plan
+        )
+        expect(rejected).not.toMatchObject({ recorded: true })
+        expect(JSON.stringify(rejected)).toContain('requiredUnits')
+        expect(dispatched).toHaveLength(beforeAdmission)
+        expect(checks.read({ includePassed: true }).items).toEqual([])
         expect(
           await invoke(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
             phase: 'plan',
@@ -1324,12 +1334,14 @@ test('public review handoffs retain independent evidence and recover before runt
               Left: {
                 requirement: 'Verify the left part',
                 description: 'Check the left rectangle',
-                verification: 'visual'
+                verification: 'visual',
+                requiredUnits: []
               },
               Right: {
                 requirement: 'Verify the right part',
                 description: 'Check the right rectangle',
-                verification: 'visual'
+                verification: 'visual',
+                requiredUnits: []
               }
             },
             structureCriteria: ['Left'],
@@ -1338,6 +1350,21 @@ test('public review handoffs retain independent evidence and recover before runt
         ).toMatchObject({ recorded: true })
         let a = await capture(left)
         const b = await capture(right)
+        const beforeJudgments = checks.read({ includePassed: true })
+        const missingScope = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          inspectionIds: [a, b],
+          checks: [
+            {
+              criterionId: 'Left',
+              status: 'pass',
+              evidence: 'Missing explicit image dependency'
+            }
+          ]
+        })
+        expect(JSON.stringify(missingScope)).toContain('inspectionIds')
+        expect(checks.read({ includePassed: true })).toEqual(beforeJudgments)
+
         // Existing-content judgments must govern settlement without a synthetic edit.
         expect(
           await review('visual', [
@@ -1484,7 +1511,22 @@ test('public review handoffs retain independent evidence and recover before runt
           arguments: { updates: [{ elementId: left, values: { width: 100 } }] },
           inspection: 'defer'
         })
+        const retiredLeft = a
         a = await capture(left)
+        expect(
+          await invoke(AiDesignToolIds.REVIEW_DRAWING, {
+            phase: 'visual',
+            inspectionIds: [retiredLeft, a, b],
+            checks: [judgment('Left', a)]
+          }),
+          'An available-list entry not cited by any judgment cannot reject local recovery'
+        ).toMatchObject({ accepted: true })
+        const recovered = checks.read({ includePassed: true })
+        expect(
+          await review('visual', [judgment('Left', retiredLeft)]),
+          'Explicitly citing retired evidence must still be rejected'
+        ).not.toMatchObject({ accepted: true })
+        expect(checks.read({ includePassed: true })).toEqual(recovered)
         expect(await review('visual', [judgment('Left', a)])).toMatchObject({
           accepted: true
         })

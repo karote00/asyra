@@ -1,3 +1,5 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
+import recordedScope from './fixtures/recorded-101/scope-handoff-20261017.json'
 import recordedReview from './fixtures/recorded-101/review-handoff.json'
 import { createLocalImageTools } from '../local-image-tools'
 import { createDesignCheckResults } from '../design-check-results'
@@ -5,7 +7,12 @@ const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
       id,
-      { requirement: id, description: id, verification: 'visual' }
+      {
+        requirement: id,
+        description: id,
+        verification: 'visual',
+        requiredUnits: []
+      }
     ])
   )
 import { describe, it, expect } from 'vitest'
@@ -79,12 +86,14 @@ describe('construction and comparison review', () => {
         Viewpoint: {
           requirement: 'Requested angle',
           description: 'Visible top surface',
-          verification: 'visual'
+          verification: 'visual',
+          requiredUnits: []
         },
         Finish: {
           requirement: 'Rough sketch',
           description: 'Keep rough lines',
-          verification: 'visual'
+          verification: 'visual',
+          requiredUnits: []
         }
       },
       deferredDetails: [
@@ -121,22 +130,23 @@ describe('construction and comparison review', () => {
       review.record({
         phase: 'visual',
         final: false,
-        inspectionIds: inspect(review),
-        checks: [check('Viewpoint')]
+        ...wholeViewJudgments(inspect(review), [check('Viewpoint')])
       })
     ).toMatchObject({ accepted: false })
     expect(() =>
       review.record({
         phase: 'visual',
-        inspectionIds: inspect(review),
-        checks: [check('Unknown')]
+        ...wholeViewJudgments(inspect(review), [check('Unknown')])
       })
     ).toThrow()
     expect(
       review.record({
         phase: 'visual',
-        inspectionIds: inspect(review),
-        checks: [check('Viewpoint'), check('Finish')],
+        ...wholeViewJudgments(inspect(review), [
+          check('Viewpoint'),
+          check('Finish')
+        ]),
+
         deferredChecks: [
           { id: 'back', status: 'omit', evidence: 'Back remains fully hidden' }
         ]
@@ -151,8 +161,7 @@ describe('construction and comparison review', () => {
     expect(
       r.record({
         phase: 'structure',
-        inspectionIds: ids,
-        checks: [check('Viewpoint')]
+        ...wholeViewJudgments(ids, [check('Viewpoint')])
       })
     ).toMatchObject({ readyForDetail: true, accepted: false })
     expect(r.getIssue()).toBeTruthy()
@@ -160,15 +169,13 @@ describe('construction and comparison review', () => {
     expect(() =>
       r.record({
         phase: 'structure',
-        inspectionIds: ids,
-        checks: [check('Viewpoint')]
+        ...wholeViewJudgments(ids, [check('Viewpoint')])
       })
     ).toThrow()
     expect(
       r.record({
         phase: 'visual',
-        inspectionIds: inspect(r),
-        checks: [check('Viewpoint'), check('Finish')]
+        ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
       })
     ).toMatchObject({ accepted: true })
   })
@@ -179,21 +186,21 @@ describe('construction and comparison review', () => {
     const ids = inspect(r)
     r.record({
       phase: 'visual',
-      inspectionIds: ids,
-      checks: [check('Viewpoint'), check('Finish', 'fail')]
+      ...wholeViewJudgments(ids, [check('Viewpoint'), check('Finish', 'fail')])
     })
     r.mutate()
     expect(() =>
       r.record({
         phase: 'visual',
-        inspectionIds: ids,
-        checks: [check('Viewpoint'), check('Finish')]
+        ...wholeViewJudgments(ids, [check('Viewpoint'), check('Finish')])
       })
     ).toThrow()
     const result = r.record({
       phase: 'visual',
-      inspectionIds: inspect(r),
-      checks: [check('Viewpoint', 'fail'), check('Finish')]
+      ...wholeViewJudgments(inspect(r), [
+        check('Viewpoint', 'fail'),
+        check('Finish')
+      ])
     })
     expect(result).toMatchObject({
       accepted: false,
@@ -221,14 +228,18 @@ it('reports whole-structure readiness independently of final acceptance and prep
   r.mutate()
   r.record({
     phase: 'structure',
-    inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-    checks: [check('Viewpoint', 'fail')]
+    ...wholeViewJudgments(
+      [r.inspect('root', true, true)?.inspectionId],
+      [check('Viewpoint', 'fail')]
+    )
   })
   expect(r.getStructureIssue()).toBeTruthy()
   r.record({
     phase: 'structure',
-    inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(
+      [r.inspect('root', true, true)?.inspectionId],
+      [check('Viewpoint')]
+    )
   })
   expect(r.getStructureIssue()).toBeUndefined()
   r.mutate()
@@ -250,16 +261,18 @@ it('retains deferred work through mutations and requires a current final disposi
   expect(
     r.record({
       phase: 'structure',
-      inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-      checks: [check('Viewpoint')],
+      ...wholeViewJudgments(
+        [r.inspect('root', true, true)?.inspectionId],
+        [check('Viewpoint')]
+      ),
+
       deferredDetails
     })
   ).toMatchObject({ readyForDetail: true, deferredDetails })
   r.mutate()
   const visual = {
     phase: 'visual',
-    inspectionIds: inspect(r),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
   }
   expect(r.record(visual)).toMatchObject({
     accepted: false,
@@ -280,14 +293,16 @@ it('retains deferred work through mutations and requires a current final disposi
     })
   ).toMatchObject({ accepted: true, pendingDetails: [] })
   r.mutate()
-  expect(r.record({ ...visual, inspectionIds: inspect(r) })).toMatchObject({
+  expect(
+    r.record({ ...visual, ...wholeViewJudgments(inspect(r), visual.checks) })
+  ).toMatchObject({
     accepted: false,
     pendingDetails: ['rear']
   })
   expect(
     r.record({
       ...visual,
-      inspectionIds: inspect(r),
+      ...wholeViewJudgments(inspect(r), visual.checks),
       deferredChecks: [
         {
           id: 'rear',
@@ -317,8 +332,7 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
   r.mutate()
   const visual = {
     phase: 'visual',
-    inspectionIds: inspect(r),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
   }
   for (const deferredChecks of [
     [{ id: 'unknown', status: 'omit', evidence: 'covered' }],
@@ -333,7 +347,10 @@ it('rejects unknown, duplicate or empty deferred dispositions and isolates reque
   other.record(plan)
   other.mutate()
   expect(
-    other.record({ ...visual, inspectionIds: inspect(other) })
+    other.record({
+      ...visual,
+      ...wholeViewJudgments(inspect(other), visual.checks)
+    })
   ).toMatchObject({ accepted: true })
 })
 
@@ -343,14 +360,16 @@ it('reopens final review when a later structure assessment declares deferred wor
   r.mutate()
   r.record({
     phase: 'visual',
-    inspectionIds: inspect(r),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
   })
   expect(r.getIssue()).toBeUndefined()
   r.record({
     phase: 'structure',
-    inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-    checks: [check('Viewpoint')],
+    ...wholeViewJudgments(
+      [r.inspect('root', true, true)?.inspectionId],
+      [check('Viewpoint')]
+    ),
+
     deferredDetails: [
       { id: 'edge', description: 'Edge ornament', reason: 'Possibly hidden' }
     ]
@@ -377,8 +396,7 @@ it.each(
     expect(
       r.record({
         phase: 'visual',
-        inspectionIds: inspect(r),
-        checks: [check('Viewpoint'), check('Finish')]
+        ...wholeViewJudgments(inspect(r), [check('Viewpoint'), check('Finish')])
       })
     ).toMatchObject({ accepted: true, deferredDetails: [] })
   }
@@ -397,7 +415,7 @@ it('advertises required plan and inspection fields before tool execution', () =>
     expect(operationInputIssue({ phase }, schema)).toBeDefined()
     expect(
       operationInputIssue(
-        { phase, inspectionIds: ['current'], checks: [check('Viewpoint')] },
+        { phase, ...wholeViewJudgments(['current'], [check('Viewpoint')]) },
         schema
       )
     ).toBeUndefined()
@@ -424,8 +442,7 @@ it('retains field validation when native discovery projects a review alternative
   }
   const visual = {
     phase: 'visual',
-    inspectionIds: ['current'],
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(['current'], [check('Viewpoint')])
   }
   expect(operationInputIssue(visual, inspectionSchema)).toBeUndefined()
   expect(
@@ -604,8 +621,10 @@ it('reopens completion when a source fact changes and cannot approve unresolved 
   review.mutate()
   const visual = {
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   }
   review.record(visual)
   expect(review.isAccepted()).toBe(true)
@@ -643,8 +662,10 @@ it('captures facts with the first plan and binds their application to current cr
   review.mutate()
   const visual = {
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   }
   expect(review.record(visual)).toMatchObject({
     accepted: true,
@@ -708,8 +729,7 @@ it('allows a focused intermediate assessment without certifying unfinished final
   const stage = {
     phase: 'visual',
     final: false,
-    inspectionIds: overview,
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(overview, [check('Viewpoint')])
   }
   expect(operationInputIssue(stage, designEvidenceSchema)).toBeUndefined()
   expect(review.record(stage)).toMatchObject({
@@ -728,8 +748,10 @@ it('allows a focused intermediate assessment without certifying unfinished final
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: inspect(review),
-      checks: [check('Viewpoint'), check('Finish')]
+      ...wholeViewJudgments(inspect(review), [
+        check('Viewpoint'),
+        check('Finish')
+      ])
     })
   ).toMatchObject({ accepted: true })
 })
@@ -744,8 +766,7 @@ it('reuses an identical fact regardless of JSON property order', () => {
 describe('phase-specific tool admission', () => {
   const structure = {
     phase: 'structure',
-    inspectionIds: ['current'],
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(['current'], [check('Viewpoint')])
   }
   const visual = { ...structure, phase: 'visual' }
   it.each([
@@ -820,13 +841,15 @@ it('retains observable structure checks linked to the original request by stable
       silhouette: {
         requirement: 'Draw a detailed tower',
         description: 'Preserve flared tiers and recessed corners',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       },
       finish: {
         requirement: 'Draw a detailed tower',
         description:
           'Check surface contacts and stray lines against the reference',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       }
     },
     structureCriteria: ['silhouette'],
@@ -843,27 +866,25 @@ it('retains observable structure checks linked to the original request by stable
   expect(
     review.record({
       phase: 'structure',
-      inspectionIds,
-      checks: [
+      ...wholeViewJudgments(inspectionIds, [
         {
           criterionId: 'silhouette',
           status: 'pass',
           evidence: 'Flared outline and recessed corners observed'
         }
-      ]
+      ])
     })
   ).toMatchObject({ readyForDetail: true, accepted: false })
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds,
-      checks: [
+      ...wholeViewJudgments(inspectionIds, [
         {
           criterionId: 'silhouette',
           status: 'pass',
           evidence: 'Structure remains correct'
         }
-      ]
+      ])
     })
   ).toMatchObject({
     accepted: false,
@@ -876,8 +897,7 @@ it('retains observable structure checks linked to the original request by stable
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds,
-      checks: [
+      ...wholeViewJudgments(inspectionIds, [
         {
           criterionId: 'silhouette',
           status: 'pass',
@@ -888,7 +908,7 @@ it('retains observable structure checks linked to the original request by stable
           status: 'fail',
           evidence: 'Stray lines extend beyond the surface'
         }
-      ]
+      ])
     })
   ).toMatchObject({ accepted: false })
 })
@@ -909,7 +929,8 @@ it('provides executable fact and binding examples in the native-discoverable des
       viewpoint: {
         requirement: 'Use the requested view',
         description: 'Preserve source axis',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       }
     },
     structureCriteria: []
@@ -951,13 +972,18 @@ it('validates a candidate without overwriting the previous completed review', ()
   r.mutate()
   const args = {
     phase: 'visual',
-    inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(
+      [r.inspect('root', true, true)?.inspectionId],
+      [check('Viewpoint'), check('Finish')]
+    )
   }
   r.record(args)
   const changed = {
     ...args,
-    checks: [check('Viewpoint', 'fail'), check('Finish')]
+    ...wholeViewJudgments(args.inspectionIds, [
+      check('Viewpoint', 'fail'),
+      check('Finish')
+    ])
   }
   r.validateReview(changed)
   expect(r.isAccepted()).toBe(true)
@@ -987,7 +1013,8 @@ it('routes visual and data evidence separately without dropping the data require
       view: {
         requirement: 'solid tower',
         description: 'joined faces',
-        verification: 'visual'
+        verification: 'visual',
+        requiredUnits: []
       },
       scale: {
         requirement: '1cm=1px',
@@ -1004,14 +1031,22 @@ it('routes visual and data evidence separately without dropping the data require
   })
   const args = {
     phase: 'structure',
-    inspectionIds: [r.inspect('root', true, true)?.inspectionId],
-    checks: [check('view'), check('scale')]
+    ...wholeViewJudgments(
+      [r.inspect('root', true, true)?.inspectionId],
+      [check('view'), check('scale')]
+    )
   }
   expect(r.record(args)).toMatchObject({
     readyForDetail: true
   })
   expect(
-    r.record({ ...args, checks: [check('view'), check('scale', 'unverified')] })
+    r.record({
+      ...args,
+      ...wholeViewJudgments(args.inspectionIds, [
+        check('view'),
+        check('scale', 'unverified')
+      ])
+    })
   ).toMatchObject({ readyForDetail: false })
 })
 
@@ -1097,8 +1132,10 @@ it('records initial criteria after first pixels without accepting or rewriting t
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: inspect(review),
-      checks: [check('Viewpoint'), check('Finish')]
+      ...wholeViewJudgments(inspect(review), [
+        check('Viewpoint'),
+        check('Finish')
+      ])
     })
   ).toMatchObject({ accepted: true })
 })
@@ -1195,8 +1232,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
   }
   const result = r.record({
     phase: 'visual',
-    inspectionIds,
-    checks: failed.checks
+    ...wholeViewJudgments(inspectionIds, failed.checks)
   })
   expect(result.correction).toMatchObject({
     diagnosticOnly: true,
@@ -1220,7 +1256,10 @@ it('hands all unresolved criteria and inspected scope to correction without acce
     checks: [check('Viewpoint'), check('Finish')]
   }
   expect(() =>
-    r.record({ phase: 'visual', inspectionIds, checks: passed.checks })
+    r.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspectionIds, passed.checks)
+    })
   ).toThrow()
   expect(r.correctionContext().criteria).toHaveLength(2)
   expect(r.isAccepted()).toBe(false)
@@ -1229,7 +1268,7 @@ it('hands all unresolved criteria and inspected scope to correction without acce
     r.inspect('tier', true, false, region)?.inspectionId as string
   ]
   expect(
-    r.record({ phase: 'visual', inspectionIds: fresh, checks: passed.checks })
+    r.record({ phase: 'visual', ...wholeViewJudgments(fresh, passed.checks) })
   ).toMatchObject({ accepted: true, correction: { criteria: [] } })
 })
 
@@ -1249,8 +1288,7 @@ it('preserves accepted review for identical facts bindings and reference selecti
   const inspectionIds = inspect(review)
   review.record({
     phase: 'visual',
-    inspectionIds,
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspectionIds, [check('Viewpoint'), check('Finish')])
   })
   expect(review.isAccepted()).toBe(true)
   review.record({
@@ -1305,8 +1343,10 @@ it('preserves reviewed work when adding an unrelated unbound fact', () => {
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   review.record({ phase: 'facts', facts: [sourceFact] })
   expect(review.isAccepted()).toBe(true)
@@ -1325,8 +1365,10 @@ it('returns affected criteria and a fresh review handoff when a bound source cha
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   const receipt = review.record({
     phase: 'facts',
@@ -1379,8 +1421,10 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   review.record({
     phase: 'facts',
@@ -1409,11 +1453,13 @@ it('invalidates unknown review impact when an existing unbound fact is replaced 
   review.record({
     phase: 'visual',
     final: false,
-    inspectionIds,
-    checks: [check('Finish')]
+    ...wholeViewJudgments(inspectionIds, [check('Finish')])
   })
   expect(
-    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspectionIds, [check('Finish')])
+    })
   ).toMatchObject({
     accepted: false,
     coverage: {
@@ -1430,8 +1476,10 @@ it('corrects derived calculation notes without changing source facts or approved
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   const calculation = {
     id: 'projected-length',
@@ -1485,7 +1533,8 @@ it('rechecks only affected data criteria after a source correction while retaini
     appearance: {
       requirement: 'Recognizable view',
       description: 'Requested appearance',
-      verification: 'visual'
+      verification: 'visual',
+      requiredUnits: []
     },
     scale: {
       requirement: 'Requested scale',
@@ -1509,8 +1558,7 @@ it('rechecks only affected data criteria after a source correction while retaini
   ]
   review.record({
     phase: 'visual',
-    inspectionIds,
-    checks: [check('appearance'), check('scale')]
+    ...wholeViewJudgments(inspectionIds, [check('appearance'), check('scale')])
   })
   expect(review.isAccepted()).toBe(true)
   review.record({
@@ -1536,16 +1584,19 @@ it('rechecks only affected data criteria after a source correction while retaini
     'scale'
   ])
   expect(
-    review.record({ phase: 'visual', inspectionIds, checks: [check('scale')] })
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspectionIds, [check('scale')])
+    })
   ).toMatchObject({ accepted: true })
   review.mutate()
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [
-        requireTestValue(review.inspect('root', true, true)).inspectionId
-      ],
-      checks: [check('scale')]
+      ...wholeViewJudgments(
+        [requireTestValue(review.inspect('root', true, true)).inspectionId],
+        [check('scale')]
+      )
     })
   ).toMatchObject({
     accepted: false,
@@ -1707,8 +1758,10 @@ describe('reference applicability and fact evidence', () => {
     review.mutate()
     const args = {
       phase: 'visual',
-      inspectionIds: inspect(review),
-      checks: [check('Viewpoint'), check('Finish')]
+      ...wholeViewJudgments(inspect(review), [
+        check('Viewpoint'),
+        check('Finish')
+      ])
     }
     expect(review.record(args)).toMatchObject({ accepted: false })
     review.selectReferences([0], {
@@ -1763,8 +1816,10 @@ describe('reference applicability and fact evidence', () => {
     review.mutate()
     review.record({
       phase: 'visual',
-      inspectionIds: inspect(review),
-      checks: [check('Viewpoint'), check('Finish')]
+      ...wholeViewJudgments(inspect(review), [
+        check('Viewpoint'),
+        check('Finish')
+      ])
     })
     const before = review.readChecks({ includePassed: true })
     expect(
@@ -1794,8 +1849,10 @@ describe('reference applicability and fact evidence', () => {
     expect(
       review.record({
         phase: 'visual',
-        inspectionIds: inspect(review),
-        checks: [check('Viewpoint'), check('Finish')]
+        ...wholeViewJudgments(inspect(review), [
+          check('Viewpoint'),
+          check('Finish')
+        ])
       })
     ).toMatchObject({ accepted: true })
     expect(review.preparationContext().referenceImageIndexes).toEqual([
@@ -1950,7 +2007,8 @@ describe('reference applicability and fact evidence', () => {
         Finish: {
           requirement: 'Completed exterior',
           description: 'No construction machinery',
-          verification: 'visual'
+          verification: 'visual',
+          requiredUnits: []
         }
       }
     })
@@ -1967,8 +2025,10 @@ it('retains primary-agent passes, pending work and scene invalidation without er
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish', 'fail')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish', 'fail')
+    ])
   })
   expect(review.readChecks().counts).toEqual({
     pass: 1,
@@ -1982,8 +2042,7 @@ it('retains primary-agent passes, pending work and scene invalidation without er
   expect(() =>
     review.record({
       phase: 'visual',
-      inspectionIds: inspect(review),
-      checks: [check('Unknown')]
+      ...wholeViewJudgments(inspect(review), [check('Unknown')])
     })
   ).toThrow()
   expect(review.readChecks().counts.fail).toBe(1)
@@ -1995,8 +2054,10 @@ it('retains primary-agent passes, pending work and scene invalidation without er
   ).toBe('Observed Viewpoint pass')
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   expect(review.readChecks().items).toEqual([])
   expect(review.readChecks({ includePassed: true }).items).toHaveLength(2)
@@ -2009,14 +2070,19 @@ it('rechecks only unresolved criteria when the scene and passed dependencies are
   const inspectionIds = inspect(review)
   review.record({
     phase: 'visual',
-    inspectionIds,
-    checks: [check('Viewpoint'), check('Finish', 'fail')]
+    ...wholeViewJudgments(inspectionIds, [
+      check('Viewpoint'),
+      check('Finish', 'fail')
+    ])
   })
   const before = review
     .readChecks({ includePassed: true })
     .items.find((item) => item.id === 'visual:Viewpoint')
   expect(
-    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspectionIds, [check('Finish')])
+    })
   ).toMatchObject({ accepted: true })
   const after = review
     .readChecks({ includePassed: true })
@@ -2030,19 +2096,23 @@ it('does not revive stale passes when only another criterion is reviewed after a
   review.mutate()
   review.record({
     phase: 'visual',
-    inspectionIds: inspect(review),
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspect(review), [
+      check('Viewpoint'),
+      check('Finish')
+    ])
   })
   review.mutate()
   const inspectionIds = inspect(review)
   review.record({
     phase: 'visual',
     final: false,
-    inspectionIds,
-    checks: [check('Finish')]
+    ...wholeViewJudgments(inspectionIds, [check('Finish')])
   })
   expect(
-    review.record({ phase: 'visual', inspectionIds, checks: [check('Finish')] })
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspectionIds, [check('Finish')])
+    })
   ).toMatchObject({
     accepted: false,
     coverage: {
@@ -2114,7 +2184,7 @@ describe('criterion inspection dependencies', () => {
     ).toBe(true)
     expect(review.readChecks().counts.pass).toBe(8)
   })
-  it('rejects criterion dependencies not delivered in this review and retains whole-image dependencies by default', () => {
+  it('rejects criterion dependencies not delivered in this review and retains explicitly shared image dependencies', () => {
     const { review, ids } = scoped()
     expect(() =>
       review.record({
@@ -2127,8 +2197,7 @@ describe('criterion inspection dependencies', () => {
     review.record({
       phase: 'visual',
       final: false,
-      inspectionIds: [ids[0], ids[1]],
-      checks: [check('tier-1')]
+      ...wholeViewJudgments([ids[0], ids[1]], [check('tier-1')])
     })
     review.invalidateInspections([String(ids[1])], 'Shared comparison changed')
     expect(
@@ -2144,7 +2213,13 @@ it('retains eight regional units under one criterion and repairs only the invali
   const review = createLocalDesignReview()
   review.record({
     ...plan,
-    criteria: reviewCriteria(['Finish']),
+    criteria: {
+      ...reviewCriteria(['Overview']),
+      Finish: {
+        ...reviewCriteria(['Finish']).Finish,
+        requiredUnits: Array.from({ length: 8 }, (_, i) => `tier-${i}`)
+      }
+    },
     structureCriteria: [],
     detailRequired: false
   })
@@ -2189,8 +2264,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Overview')])
     })
   ).toMatchObject({ accepted: false })
   const repaired = review.inspect('tier-2', true, false, crop, true, {
@@ -2216,8 +2290,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Overview')])
     })
   ).toMatchObject({ accepted: true })
   const beforeCoverageFailure = review.readChecks({ includePassed: true })
@@ -2236,8 +2309,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Overview')])
     })
   ).toMatchObject({ accepted: true })
   const repeatedView = review.inspect('tier-2', true, false, crop, true, {
@@ -2325,8 +2397,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Overview')])
     })
   ).toMatchObject({ accepted: false })
   review.record({
@@ -2337,8 +2408,7 @@ it('retains eight regional units under one criterion and repairs only the invali
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Overview')])
     })
   ).toMatchObject({ accepted: true })
 })
@@ -2374,8 +2444,8 @@ describe('declared regional acceptance', () => {
     const inspection = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(declaration.revision).toBe(3)
-    expect(inspection.revision).toBe(4)
+    expect(declaration.revision).toBe(4)
+    expect(inspection.revision).toBe(5)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -2454,8 +2524,7 @@ describe('declared regional acceptance', () => {
     const overall = (id: string) =>
       review.record({
         phase: 'visual',
-        inspectionIds: [id],
-        checks: [check('Overview')]
+        ...wholeViewJudgments([id], [check('Overview')])
       })
     return { review, capture, submit, overall }
   }
@@ -2537,8 +2606,7 @@ describe('declared regional acceptance', () => {
     expect(() =>
       review.record({
         phase: 'visual',
-        inspectionIds: [replacement],
-        checks: [check('Facade')]
+        ...wholeViewJudgments([replacement], [check('Facade')])
       })
     ).toThrow(/unit/)
   })
@@ -2566,7 +2634,6 @@ describe('declared regional acceptance', () => {
       { ...specification, criteria: { Facade: specification.criteria.Facade } },
       { ...specification, structureCriteria: ['Facade'] },
       ...[
-        [],
         ['tier-0', 'tier-0'],
         [''],
         Array.from({ length: 25 }, (_, i) => String(i))
@@ -2629,6 +2696,7 @@ describe('declared regional acceptance', () => {
       checks: [
         {
           ...check('Facade'),
+          inspectionIds: [id],
           unitId: 'tier-0'
         }
       ]
@@ -2658,8 +2726,7 @@ describe('declared regional acceptance', () => {
     ).inspectionId
     review.record({
       phase: 'structure',
-      inspectionIds: [id],
-      checks: [check('Viewpoint')]
+      ...wholeViewJudgments([id], [check('Viewpoint')])
     })
     const before = review.readChecks({ includePassed: true })
     const context = review.preparationContext()
@@ -2685,8 +2752,8 @@ describe('declared regional acceptance', () => {
         final: true,
         inspectionIds: [id],
         checks: [
-          { ...check('Facade'), unitId: 'tier-1' },
-          { ...check('Facade'), unitId: 'foreign' }
+          { ...check('Facade'), inspectionIds: [id], unitId: 'tier-1' },
+          { ...check('Facade'), inspectionIds: [id], unitId: 'foreign' }
         ]
       })
     ).toThrow(/declared/)
@@ -2699,8 +2766,7 @@ describe('declared regional acceptance', () => {
     ).inspectionId
     const result = detailed.record({
       phase: 'visual',
-      inspectionIds: [overview],
-      checks: [check('Finish')]
+      ...wholeViewJudgments([overview], [check('Finish')])
     })
     expect(result.accepted).toBe(false)
     expect(detailed.readChecks({ includePassed: true }).items).toEqual(
@@ -2747,6 +2813,7 @@ it('accumulates deferred decisions before completion and reopens only changed de
       checks: [
         {
           ...check(criterionId),
+          inspectionIds: [id],
           ...(criterionId === 'Finish'
             ? { unitId: id === roof ? 'roof' : 'rear' }
             : {})
@@ -2818,8 +2885,7 @@ it('never reports accepted with unresolved mechanical evidence and preserves vis
   results.record(mechanical)
   const review = {
     phase: 'visual',
-    inspectionIds: [id],
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments([id], [check('Viewpoint'), check('Finish')])
   }
   expect(r.record(review)).toMatchObject({ accepted: false })
   expect(r.isAccepted()).toBe(false)
@@ -2857,8 +2923,7 @@ it('reopens changed deferred definitions without dropping other decisions or pub
   ).inspectionId
   const review = {
     phase: 'visual',
-    inspectionIds: [id],
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments([id], [check('Viewpoint'), check('Finish')])
   }
   const decision = {
     id: 'rear',
@@ -2922,7 +2987,14 @@ it('reopens changed deferred definitions without dropping other decisions or pub
 
 it('replays the saved Taipei101 base judgment without inheriting the whole-building dependency', () => {
   const review = createLocalDesignReview()
-  review.record(recordedReview.plan)
+  review.record({
+    ...recordedReview.plan,
+    criteria: {
+      ...recordedReview.plan.criteria,
+      whole: { ...recordedReview.plan.criteria.whole, requiredUnits: [] },
+      view: { ...recordedReview.plan.criteria.view, requiredUnits: [] }
+    }
+  })
   const ids = new Map<string, string>()
   recordedReview.images.forEach((image, index) => {
     const capture = recordedReview.capture.inspections[index]
@@ -2992,14 +3064,15 @@ it('preserves pending judgment evidence across partial correction and structure 
   const inspectionIds = inspect(review)
   review.record({
     phase: 'visual',
-    inspectionIds,
-    checks: [check('Viewpoint', 'fail'), check('Finish', 'fail')]
+    ...wholeViewJudgments(inspectionIds, [
+      check('Viewpoint', 'fail'),
+      check('Finish', 'fail')
+    ])
   })
   const partial = review.record({
     phase: 'visual',
     final: false,
-    inspectionIds,
-    checks: [check('Finish')]
+    ...wholeViewJudgments(inspectionIds, [check('Finish')])
   })
   expect(partial.correction).toMatchObject({
     criteria: [
@@ -3011,8 +3084,7 @@ it('preserves pending judgment evidence across partial correction and structure 
     .items.find((item) => item.id === 'visual:Finish')
   review.record({
     phase: 'structure',
-    inspectionIds,
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
   })
   expect(review.correctionContext().criteria).toEqual([])
   expect(
@@ -3024,8 +3096,7 @@ it('preserves pending judgment evidence across partial correction and structure 
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds,
-      checks: [check('Viewpoint')]
+      ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
     })
   ).toMatchObject({ accepted: true })
 })
@@ -3037,15 +3108,13 @@ it('revokes final acceptance on a later structure failure and recovers without l
   const inspectionIds = inspect(review)
   review.record({
     phase: 'visual',
-    inspectionIds,
-    checks: [check('Viewpoint'), check('Finish')]
+    ...wholeViewJudgments(inspectionIds, [check('Viewpoint'), check('Finish')])
   })
   expect(review.isAccepted()).toBe(true)
   const before = review.readChecks({ includePassed: true })
   const failure = {
     phase: 'structure',
-    inspectionIds,
-    checks: [check('Viewpoint', 'fail')]
+    ...wholeViewJudgments(inspectionIds, [check('Viewpoint', 'fail')])
   }
   review.validateReview(failure)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
@@ -3066,15 +3135,13 @@ it('revokes final acceptance on a later structure failure and recovers without l
   expect(review.readChecks({ includePassed: true })).toEqual(failed)
   review.record({
     phase: 'structure',
-    inspectionIds,
-    checks: [check('Viewpoint')]
+    ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
   })
   expect(review.isAccepted()).toBe(false)
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds,
-      checks: [check('Viewpoint')]
+      ...wholeViewJudgments(inspectionIds, [check('Viewpoint')])
     })
   ).toMatchObject({ accepted: true })
   expect(review.getIssue()).toBeUndefined()
@@ -3094,11 +3161,12 @@ it.each(['structure', 'visual'])(
     expect(review.getIssue()).toBeUndefined()
     const failure = {
       phase,
-      inspectionIds,
-      checks:
+      ...wholeViewJudgments(
+        inspectionIds,
         phase === 'structure'
           ? [check('Viewpoint', 'fail')]
           : [check('Viewpoint', 'fail'), check('Finish')]
+      )
     }
     review.validateReview(failure)
     expect(review.getIssue()).toBeUndefined()
@@ -3108,10 +3176,166 @@ it.each(['structure', 'visual'])(
     expect(
       review.record({
         phase: 'visual',
-        inspectionIds,
-        checks: [check('Viewpoint'), check('Finish')]
+        ...wholeViewJudgments(inspectionIds, [
+          check('Viewpoint'),
+          check('Finish')
+        ])
       })
     ).toMatchObject({ accepted: true })
     expect(review.getIssue()).toBeUndefined()
   }
 )
+
+describe('recorded 101 scope admission', () => {
+  it('rejects the original omitted-scope plan atomically before retaining criteria', () => {
+    const review = createLocalDesignReview()
+    expect(() => review.record(recordedScope.plan)).toThrow(/requiredUnits/)
+    expect(review.readChecks({ includePassed: true }).items).toEqual([])
+    expect(
+      operationInputIssue(recordedScope.plan, reviewPlanSchema)
+    ).toBeDefined()
+  })
+  it('rejects inherited image scope without replacing current checks', () => {
+    const review = createLocalDesignReview()
+    review.record({
+      phase: 'plan',
+      method: 'Explicit scope',
+      references: [],
+      detailRequired: false,
+      criteria: {
+        whole: {
+          requirement: 'Whole view',
+          description: 'Whole view',
+          verification: 'visual',
+          requiredUnits: []
+        }
+      }
+    })
+    const image = requireTestValue(
+      review.inspect('building', true, true)
+    ).inspectionId
+    const before = review.readChecks({ includePassed: true })
+    expect(() =>
+      review.record({
+        phase: 'visual',
+        final: false,
+        inspectionIds: [image],
+        checks: [recordedScope.judgments[0].input.checks[0]]
+      })
+    ).toThrow(/inspectionIds/)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+  })
+})
+
+it('rejects undeclared units instead of silently adding obligations to a whole-view criterion', () => {
+  const review = createLocalDesignReview()
+  review.record(reviewPlanExample)
+  const image = requireTestValue(
+    review.inspect('building', true, true)
+  ).inspectionId
+  const before = review.readChecks({ includePassed: true })
+  expect(() =>
+    review.record({
+      phase: 'visual',
+      inspectionIds: [image],
+      checks: [
+        {
+          criterionId: 'appearance',
+          unitId: 'undeclared',
+          inspectionIds: [image],
+          status: 'pass',
+          evidence: 'A local claim cannot redefine a whole-view criterion'
+        }
+      ]
+    })
+  ).toThrow(/declared/)
+  expect(review.readChecks({ includePassed: true })).toEqual(before)
+})
+
+it.each(['pass', 'fail', 'unverified'] as const)(
+  'does not inherit unused retired images during sparse %s judgment recovery',
+  (status) => {
+    const review = createLocalDesignReview()
+    review.record(reviewPlanExample)
+    const retired = requireTestValue(
+      review.inspect('old', true, true)
+    ).inspectionId
+    review.invalidateInspections([retired], 'The old target changed')
+    const current = requireTestValue(
+      review.inspect('current', true, true)
+    ).inspectionId
+    const result = review.record({
+      phase: 'visual',
+      inspectionIds: [retired, current],
+      checks: [
+        {
+          criterionId: 'appearance',
+          status,
+          evidence: 'Current target',
+          inspectionIds: [current]
+        }
+      ]
+    })
+    expect(result).toMatchObject({ accepted: status === 'pass' })
+    const retained = review.readChecks({ includePassed: true })
+    expect(() =>
+      review.record({
+        phase: 'visual',
+        inspectionIds: [retired, current],
+        checks: [
+          {
+            criterionId: 'appearance',
+            status: 'pass',
+            evidence: 'Retired target',
+            inspectionIds: [retired]
+          }
+        ]
+      })
+    ).toThrow(/inspection/i)
+    expect(review.readChecks({ includePassed: true })).toEqual(retained)
+  }
+)
+
+it('keeps deferred-detail image dependencies when filtering the judgment menu', () => {
+  const review = createLocalDesignReview()
+  review.record({
+    ...reviewPlanExample,
+    deferredDetails: [
+      {
+        id: 'rear',
+        description: 'Rear details',
+        reason: 'Confirm visibility'
+      }
+    ]
+  })
+  const retired = requireTestValue(
+    review.inspect('old', true, true)
+  ).inspectionId
+  review.invalidateInspections([retired], 'The deferred evidence changed')
+  const current = requireTestValue(
+    review.inspect('current', true, true)
+  ).inspectionId
+  const before = review.readChecks({ includePassed: true })
+  expect(() =>
+    review.record({
+      phase: 'visual',
+      inspectionIds: [retired, current],
+      checks: [
+        {
+          criterionId: 'appearance',
+          status: 'pass',
+          evidence: 'Current image',
+          inspectionIds: [current]
+        }
+      ],
+      deferredChecks: [
+        {
+          id: 'rear',
+          status: 'omit',
+          evidence: 'Hidden in both submitted images'
+        }
+      ]
+    })
+  ).toThrow(/current inspection IDs/)
+  expect(review.readChecks({ includePassed: true })).toEqual(before)
+})

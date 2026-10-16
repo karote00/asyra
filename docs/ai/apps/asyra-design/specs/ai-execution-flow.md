@@ -374,7 +374,7 @@ disposes it on Stop or settlement; no cross-request scheduling state is retained
 
 ## Evidence and completion
 
-Saving a pre-mutation plan returns a compact storage acknowledgement with criterion
+Declaring review criteria returns a compact storage acknowledgement with criterion
 and deferred-detail IDs and fact validity. It does not echo the submitted method,
 requirements, source statements or references. The review owner retains complete
 criteria, source facts/bindings and explicit reference selection for subsequent
@@ -1429,11 +1429,12 @@ Every ordered invocation start and end updates canonical activity state before
 visible deduplication. A completed call's purpose expires. The primary AI publishes
 a short concrete stage intent (target and purpose) through existing public
 commentary before preparing inputs, and replaces it when the stage changes.
-Stage intent is not a claim that drawing is currently being applied. It survives child starts/ends while its next root tool cohort is active. The
-provider explicitly completes that stage when the last root call in the cohort
-settles, including failure/cancellation. New commentary replaces it; older calls
-cannot complete a replacement. Retry, saving and terminal settlement also retire
-the stage. A stage describes this finite work cohort, not the whole objective. No additional AI evaluates or authors status.
+Stage intent is not a claim that drawing is currently being applied. It survives
+individual root and child call completion while the main agent prepares inputs or
+interprets results. New commentary replaces it; retry, saving and terminal
+settlement retire it. A completed invocation removes only its call-scoped purpose.
+The provider must not infer stage completion from an empty set of active calls.
+No additional AI evaluates or authors status.
 
 Display the common genuinely live call purpose before retained stage intent.
 Show the observed operation separately from authored context. Admission/queue
@@ -1798,10 +1799,12 @@ mechanical checks and stale evidence remain retryable through review_design.
 
 ### Declared regional acceptance coverage
 
-A visual criterion may declare nonempty unique `requiredUnits`, within the existing
-24-item bound. These are stable regional or cross-region judgment identities, not
-geometry or a new tool. A criterion without requiredUnits remains a whole-criterion
-obligation. Partitioned criteria cannot be data criteria or structure checkpoint
+Every visual criterion explicitly declares `requiredUnits`, within the existing
+24-item bound. An empty array intentionally declares a whole-view judgment; a
+nonempty array declares independent regional or cross-region obligations. Missing
+scope is rejected atomically by the declaration call without storing a plan or dispatching canvas mutations. This does not introduce a plan-before-drawing gate. These are stable regional or cross-region judgment identities, not
+geometry or a new tool. A visual criterion with empty requiredUnits remains a whole-criterion
+obligation. Data criteria omit requiredUnits. Partitioned criteria cannot be data criteria or structure checkpoint
 criteria. The first declaration may follow the first ready drawing. Once judgments
 exist, obligations cannot be rewritten; an established plan also retains its lock
 after a drawing mutation. Identical declaration must not reset findings.
@@ -1812,7 +1815,8 @@ The existing check store accumulates current passes across calls. Final acceptan
 requires every declared unit (including never-submitted units), all whole criteria
 and all retained unresolved findings. The same derivation governs review replies,
 correction instructions and completion settlement. Omission or a whole-criterion pass cannot
-substitute for missing regional work. Sparse reviews may supply only changed units;
+substitute for missing regional work. Every submitted judgment supplies its own nonempty inspectionIds; the enclosing
+image list is availability, not an inherited dependency list. Sparse reviews may supply only changed units;
 unchanged passes retain result revisions and image dependencies. A cross-region
 check names every required image, so editing either dependency invalidates it.
 
@@ -1944,7 +1948,12 @@ Capture replies, including partial capture, expose current pending coverage and
 instructions for recording only observed local judgments before the next edit.
 No status is fabricated. Valid passes accumulate in the existing store; subsequent
 reads and final acceptance consume them without retransmission. Each judgment cites
-only images it actually depends on; citing an overview makes it a real dependency.
+only images it actually depends on; citing an overview makes it a real dependency. The enclosing
+image list is only a selection menu: unused entries, including retired entries,
+cannot block a submitted judgment or become freshness dependencies. Selection
+must still be a subset of that menu. Capture requests validate all requested
+images; deferred-detail decisions retain their enclosing-image dependencies.
+Final acceptance validates retained passes as well as submitted judgments.
 
 Current activity uses the live common call purpose before retained stage context.
 Observed operation and authored purpose are separate visible facts. Admission/queue
@@ -1973,10 +1982,9 @@ failure, before another action or terminal outcome. Abort continues to suppress
 observer notifications; the returned cancelled outcome retires App activity.
 Completion ends activity ownership; the canonical outcome still determines success or failure.
 
-Native research items and App tool calls share the same finite authored-purpose
-cohort. A completed search releases its membership exactly once; overlapping
-operations keep the purpose active, and an older completion cannot retire a
-replacement purpose. Research diagnostics remain distinct from App mutations.
+Native research and App call starts/ends update actual operation ownership.
+Neither completes request-stage commentary; overlapping and late completion events
+cannot clear its replacement. Research diagnostics remain separate from mutation.
 
 Completed provider call identities remain closed for that request. A repeated or
 late native research start cannot attach an old call to new commentary, prolong
@@ -2103,7 +2111,7 @@ on the relevant captured source, not passing by structural admission.
 | Freshness race (Stage 2) | canonical edits -> inspect -> settle | Edit, Undo/Redo, collaborator change or cancellation during check cannot publish stale success; retry only safe reads, preserve unaffected records, and return exact incomplete scope. |
 | Delegation (Stage 3) | discovery -> admit/register -> host/invoke | Exact spec -> invalid recipe correction -> eligible invocation through real host; unsupported intent returns a decision; suitable direct tools need no forced composition. |
 | Reuse (Stage 4a) | invoke receipt -> persist -> fresh request | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition. |
-| Settlement (Stage 4b) | inspect/apply -> settle -> visible result | Purpose start/end/cohort ordering is truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven. |
+| Settlement (Stage 4b) | inspect/apply -> settle -> visible result | Stage replacement and call start/end ordering are truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven. |
 
 The definition of done for Stage 1 is current caller/schema/test alignment and
 applicable formal proof, types and lint. Stage 1 does not implement mechanical

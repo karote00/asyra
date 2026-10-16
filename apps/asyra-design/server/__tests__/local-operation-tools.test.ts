@@ -1,3 +1,4 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
 import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import sharp from 'sharp'
 import { reviewPlanExample } from '../local-design-review'
@@ -12,7 +13,12 @@ const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
       id,
-      { requirement: id, description: id, verification: 'visual' }
+      {
+        requirement: id,
+        description: id,
+        verification: 'visual',
+        requiredUnits: []
+      }
     ])
   )
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -1178,13 +1184,16 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   expect(overviewId).toEqual(expect.any(String))
   const report = {
     phase: 'visual',
-    inspectionIds: [overviewId],
-    checks: Object.keys(plan.criteria).map((criterionId) => ({
-      criterionId,
-      status: 'pass',
-      evidence:
-        'Compared the rendered outline and repeated window structure with the reference.'
-    }))
+    ...wholeViewJudgments(
+      [overviewId],
+      Object.keys(plan.criteria).map((criterionId) => ({
+        criterionId,
+        status: 'pass',
+        evidence:
+          'Compared the rendered outline and repeated window structure with the reference.',
+        inspectionIds: [overviewId]
+      }))
+    )
   }
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, report)
@@ -1230,14 +1239,13 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   expect(tools.settleOutcome(completed)).toBe(completed)
   const structureFailure = {
     phase: 'structure',
-    inspectionIds: report.inspectionIds,
-    checks: [
+    ...wholeViewJudgments(report.inspectionIds, [
       {
         ...report.checks[0],
         status: 'fail',
         evidence: 'The base outline needs correction.'
       }
-    ]
+    ])
   }
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, structureFailure)
@@ -1292,15 +1300,17 @@ it('accepts intentionally ugly low-detail work against user criteria with only a
   if (!evidence) throw new Error('Missing inspection receipt')
   const result = review.record({
     phase: 'visual',
-    inspectionIds: [evidence.inspectionId],
-    checks: [
-      {
-        criterionId,
-        status: 'pass',
-        evidence:
-          'The overview shows exactly three uneven shapes, a crooked mouth and intentionally mismatched eyes.'
-      }
-    ]
+    ...wholeViewJudgments(
+      [evidence.inspectionId],
+      [
+        {
+          criterionId,
+          status: 'pass',
+          evidence:
+            'The overview shows exactly three uneven shapes, a crooked mouth and intentionally mismatched eyes.'
+        }
+      ]
+    )
   })
   expect(result.accepted).toBe(true)
   expect(review.getIssue()).toBeUndefined()
@@ -1368,14 +1378,16 @@ it('keeps same-revision receipts valid across repeated captures and distinguishe
   expect(review.inspect('window', true, false)).toEqual(detail)
   const report = {
     phase: 'visual',
-    inspectionIds: [overview.inspectionId, detail.inspectionId],
-    checks: [
-      {
-        criterionId: criterion,
-        status: 'pass',
-        evidence: 'Compared the whole composition and the window detail.'
-      }
-    ]
+    ...wholeViewJudgments(
+      [overview.inspectionId, detail.inspectionId],
+      [
+        {
+          criterionId: criterion,
+          status: 'pass',
+          evidence: 'Compared the whole composition and the window detail.'
+        }
+      ]
+    )
   }
   expect(review.record(report).accepted).toBe(true)
   review.mutate()
@@ -1408,8 +1420,7 @@ it('accepts regional detail on the composition but never promotes it to overview
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [detail.inspectionId],
-      checks
+      ...wholeViewJudgments([detail.inspectionId], checks)
     })
   ).toMatchObject({
     accepted: false,
@@ -1420,16 +1431,20 @@ it('accepts regional detail on the composition but never promotes it to overview
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [overview.inspectionId, detail.inspectionId],
-      checks
+      ...wholeViewJudgments(
+        [overview.inspectionId, detail.inspectionId],
+        checks
+      )
     }).accepted
   ).toBe(true)
   review.mutate()
   expect(() =>
     review.record({
       phase: 'visual',
-      inspectionIds: [overview.inspectionId, detail.inspectionId],
-      checks
+      ...wholeViewJudgments(
+        [overview.inspectionId, detail.inspectionId],
+        checks
+      )
     })
   ).toThrow('current inspection IDs')
 })
@@ -1598,10 +1613,10 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
-      inspectionIds: [unrelated.actionResults[0].result.inspectionId],
-      checks: [
-        { criterionId: 'Shape', status: 'pass', evidence: 'Unrelated image' }
-      ]
+      ...wholeViewJudgments(
+        [unrelated.actionResults[0].result.inspectionId],
+        [{ criterionId: 'Shape', status: 'pass', evidence: 'Unrelated image' }]
+      )
     })
   ).resolves.toMatchObject({
     status: 'partial',
@@ -1614,14 +1629,16 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
-      inspectionIds: [inspected.actionResults[0].result.inspectionId],
-      checks: [
-        {
-          criterionId: 'Shape',
-          status: 'pass',
-          evidence: 'Whole tower visible'
-        }
-      ]
+      ...wholeViewJudgments(
+        [inspected.actionResults[0].result.inspectionId],
+        [
+          {
+            criterionId: 'Shape',
+            status: 'pass',
+            evidence: 'Whole tower visible'
+          }
+        ]
+      )
     })
   ).resolves.toMatchObject({ accepted: true })
   const validation = execute.mock.calls.findLast(
@@ -1746,10 +1763,10 @@ it.each([
   })
   await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
-    inspectionIds: [image.actionResults[0].result.inspectionId],
-    checks: [
-      { criterionId: 'Shape', status: 'pass', evidence: 'Refined shape' }
-    ]
+    ...wholeViewJudgments(
+      [image.actionResults[0].result.inspectionId],
+      [{ criterionId: 'Shape', status: 'pass', evidence: 'Refined shape' }]
+    )
   })
   expect(capturedScope).toEqual({
     requiredIds: ['successor'],
@@ -1891,14 +1908,16 @@ it('checks each deferred mutation and reuses current measurements for capture an
     AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
-      inspectionIds: [inspectionId],
-      checks: [
-        {
-          criterionId: 'Match the requested design',
-          status: 'pass',
-          evidence: 'Checked the final combined stage'
-        }
-      ]
+      ...wholeViewJudgments(
+        [inspectionId],
+        [
+          {
+            criterionId: 'Match the requested design',
+            status: 'pass',
+            evidence: 'Checked the final combined stage'
+          }
+        ]
+      )
     },
     signal
   )
@@ -1945,14 +1964,16 @@ it('checks each deferred mutation and reuses current measurements for capture an
     AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
-      inspectionIds: [failedCapture.actionResults[0].result.inspectionId],
-      checks: [
-        {
-          criterionId: 'Match the requested design',
-          status: 'pass',
-          evidence: 'Image inspected but measurement incomplete'
-        }
-      ]
+      ...wholeViewJudgments(
+        [failedCapture.actionResults[0].result.inspectionId],
+        [
+          {
+            criterionId: 'Match the requested design',
+            status: 'pass',
+            evidence: 'Image inspected but measurement incomplete'
+          }
+        ]
+      )
     },
     signal
   )
@@ -2206,14 +2227,16 @@ it('retains the whole drawing review target after a child refinement', async () 
       AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
-        inspectionIds: [overview, detail],
-        checks: [
-          {
-            criterionId: 'Reflective glass',
-            status: 'pass',
-            evidence: 'Current overview and native glass detail inspected'
-          }
-        ]
+        ...wholeViewJudgments(
+          [overview, detail],
+          [
+            {
+              criterionId: 'Reflective glass',
+              status: 'pass',
+              evidence: 'Current overview and native glass detail inspected'
+            }
+          ]
+        )
       },
       signal
     )
@@ -2232,14 +2255,16 @@ it('retains the whole drawing review target after a child refinement', async () 
       AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
-        inspectionIds: [overview, detail],
-        checks: [
-          {
-            criterionId: 'Reflective glass',
-            status: 'pass',
-            evidence: 'Old inspection'
-          }
-        ]
+        ...wholeViewJudgments(
+          [overview, detail],
+          [
+            {
+              criterionId: 'Reflective glass',
+              status: 'pass',
+              evidence: 'Old inspection'
+            }
+          ]
+        )
       },
       signal
     )
@@ -2761,8 +2786,10 @@ it('reports exact review input fields before stateful evidence validation', asyn
       AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
-        inspectionIds: ['current'],
-        checks: [{ status: 'pass', evidence: 'Visible' }]
+        ...wholeViewJudgments(
+          ['current'],
+          [{ status: 'pass', evidence: 'Visible' }]
+        )
       },
       new AbortController().signal
     )
@@ -2826,10 +2853,10 @@ it.each(['assessment', 'completion'])(
     )
     const assessment = {
       phase: 'visual',
-      inspectionIds: [capture.actionResults[0].result.inspectionId],
-      checks: [
-        { criterionId: 'Appearance', status: 'pass', evidence: 'Matches' }
-      ]
+      ...wholeViewJudgments(
+        [capture.actionResults[0].result.inspectionId],
+        [{ criterionId: 'Appearance', status: 'pass', evidence: 'Matches' }]
+      )
     }
     expect(
       JSON.parse(
@@ -3018,10 +3045,10 @@ it.each(['missing stamp', 'missing validation action'])(
         AiDesignToolIds.REVIEW_DRAWING,
         {
           phase: 'visual',
-          inspectionIds: [capture.actionResults[0].result.inspectionId],
-          checks: [
-            { criterionId: 'Appearance', status: 'pass', evidence: 'Matches' }
-          ]
+          ...wholeViewJudgments(
+            [capture.actionResults[0].result.inspectionId],
+            [{ criterionId: 'Appearance', status: 'pass', evidence: 'Matches' }]
+          )
         },
         signal
       )
@@ -3300,14 +3327,16 @@ it('includes bound fact targets in one canonical coverage check before visual ac
   })
   const visual = {
     phase: 'visual',
-    inspectionIds: [image.actionResults[0].result.inspectionId],
-    checks: [
-      {
-        criterionId: 'Axis',
-        status: 'pass',
-        evidence: 'Axes match'
-      }
-    ]
+    ...wholeViewJudgments(
+      [image.actionResults[0].result.inspectionId],
+      [
+        {
+          criterionId: 'Axis',
+          status: 'pass',
+          evidence: 'Axes match'
+        }
+      ]
+    )
   }
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, visual)
@@ -3486,7 +3515,8 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
         view: {
           requirement: 'solid tower',
           description: 'correct',
-          verification: verification === 'data' ? 'data' : 'visual'
+          verification: verification === 'data' ? 'data' : 'visual',
+          ...(verification === 'data' ? {} : { requiredUnits: [] })
         }
       },
       structureCriteria: ['view'],
@@ -3510,10 +3540,16 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
     })
     const review = {
       phase: 'structure',
-      inspectionIds: [image.actionResults[0].result.inspectionId],
-      checks: [
-        { criterionId: 'view', status: 'pass', evidence: 'I did it correctly' }
-      ]
+      ...wholeViewJudgments(
+        [image.actionResults[0].result.inspectionId],
+        [
+          {
+            criterionId: 'view',
+            status: 'pass',
+            evidence: 'I did it correctly'
+          }
+        ]
+      )
     }
 
     expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
@@ -4001,14 +4037,13 @@ it.each([
     const review = (inspectionIds: string[]) =>
       call(AiDesignToolIds.REVIEW_DRAWING, {
         phase: 'visual',
-        inspectionIds,
-        checks: [
+        ...wholeViewJudgments(inspectionIds, [
           {
             criterionId: 'Visibility',
             status: 'pass',
             evidence: 'Requested visibility checked'
           }
-        ]
+        ])
       })
     expect(await review([firstImage])).toMatchObject({ accepted: false })
     expect(execute.mock.calls.at(-1)?.[0].actions[0].arguments).toMatchObject({
@@ -5108,7 +5143,7 @@ describe('capture-to-review handoff', () => {
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         ...f.review,
-        inspectionIds: result.inspectionIds
+        ...wholeViewJudgments(result.inspectionIds, f.review.checks)
       })
     ).toMatchObject({ accepted: true })
     expect(
@@ -5126,7 +5161,7 @@ describe('capture-to-review handoff', () => {
     const f = await setup()
     f.unavailable.add('window')
     const failed = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
-      ...f.review,
+      phase: f.review.phase,
       inspections: f.targets
     })
     expect(failed).toMatchObject({
@@ -5145,14 +5180,14 @@ describe('capture-to-review handoff', () => {
     f.unavailable.clear()
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...f.review,
-      inspectionIds: failed.inspectionIds,
+      ...wholeViewJudgments(failed.inspectionIds, f.review.checks),
       inspections: [f.targets[1]]
     })
     expect(result.accepted).toBe(false)
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         ...f.review,
-        inspectionIds: result.inspectionIds
+        ...wholeViewJudgments(result.inspectionIds, f.review.checks)
       })
     ).toMatchObject({ accepted: true })
     const captures = f.execute.mock.calls
@@ -5169,7 +5204,7 @@ describe('capture-to-review handoff', () => {
   it('returns every unavailable target without manufacturing evidence or mutating input', async () => {
     const f = await setup()
     for (const target of f.targets) f.unavailable.add(target.elementId)
-    const input = { ...f.review, inspections: f.targets }
+    const input = { phase: f.review.phase, inspections: f.targets }
     const original = structuredClone(input)
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, input)
     expect(result).toMatchObject({
@@ -5196,7 +5231,7 @@ describe('capture-to-review handoff', () => {
       return execute(batch)
     })
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
-      ...f.review,
+      phase: f.review.phase,
       inspections: f.targets
     })
     expect(result).toMatchObject({
@@ -5223,7 +5258,7 @@ describe('capture-to-review handoff', () => {
     await expect(
       f.tools.call(
         AiDesignToolIds.REVIEW_DRAWING,
-        { ...f.review, inspections: f.targets },
+        { phase: f.review.phase, inspections: f.targets },
         controller.signal
       )
     ).rejects.toThrow()
@@ -5236,7 +5271,7 @@ describe('capture-to-review handoff', () => {
     const f = await setup()
     f.state.current = false
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
-      ...f.review,
+      phase: f.review.phase,
       inspections: f.targets
     })
     expect(result.accepted).toBe(false)
@@ -5269,7 +5304,7 @@ describe('capture-to-review handoff', () => {
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         ...f.review,
         inspections: f.targets,
-        inspectionIds: ['unknown']
+        ...wholeViewJudgments(['unknown'], f.review.checks)
       })
     ).toMatchObject({ accepted: false, status: 'partial' })
     expect(f.execute).not.toHaveBeenCalled()
@@ -5282,7 +5317,7 @@ describe('capture-to-review handoff', () => {
     await expect(
       f.tools.call(
         AiDesignToolIds.REVIEW_DRAWING,
-        { ...f.review, inspections: f.targets },
+        { phase: f.review.phase, inspections: f.targets },
         controller.signal
       )
     ).rejects.toThrow()
@@ -5834,14 +5869,13 @@ it('reuses independent measurement receipts and rechecks only an affected final 
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
       final,
-      inspectionIds,
-      checks: [
+      ...wholeViewJudgments(inspectionIds, [
         {
           criterionId: 'Appearance',
           status: 'pass',
           evidence: 'Both targets inspected'
         }
-      ]
+      ])
     })
   let ids = await capture()
   expect(measured).toEqual(['a', 'b', 'a'])
@@ -6671,14 +6705,16 @@ it('keeps review replies and final settlement blocked by tool findings without r
   checkResults.record(failed)
   const result = await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
-    inspectionIds: [image.actionResults[0].result.inspectionId],
-    checks: [
-      {
-        criterionId: 'Appearance',
-        status: 'pass',
-        evidence: 'Observed the requested drawing'
-      }
-    ]
+    ...wholeViewJudgments(
+      [image.actionResults[0].result.inspectionId],
+      [
+        {
+          criterionId: 'Appearance',
+          status: 'pass',
+          evidence: 'Observed the requested drawing'
+        }
+      ]
+    )
   })
   expect(result.accepted).toBe(false)
   const final = {

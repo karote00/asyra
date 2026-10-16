@@ -685,38 +685,6 @@ const runLocalAiProvider = async (
   })
   const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()
-  let publicPurpose: { id: string; calls: Set<string> } | undefined
-  const purposeCalls = new Map<string, typeof publicPurpose>()
-  const completePublicPurpose = (
-    purpose: NonNullable<typeof publicPurpose>
-  ) => {
-    if (publicPurpose !== purpose || purpose.calls.size) return
-    publicPurpose = undefined
-    reportProgress({
-      tool: 'public-progress',
-      status: 'completed',
-      activity: {
-        kind: 'system',
-        callId: purpose.id,
-        sequence: 0,
-        scope: 'request',
-        phase: 'provider'
-      }
-    })
-  }
-  const startPurposeCall = (id: string) => {
-    if (purposeCalls.has(id)) return
-    purposeCalls.set(id, publicPurpose)
-    publicPurpose?.calls.add(id)
-  }
-  const settlePurposeCall = (id: string) => {
-    const purpose = purposeCalls.get(id)
-    // Keep the completed identity so late native starts cannot reopen it.
-    purposeCalls.set(id, undefined)
-    if (!purpose) return
-    purpose.calls.delete(id)
-    completePublicPurpose(purpose)
-  }
 
   let child: ChildProcessWithoutNullStreams
   try {
@@ -888,9 +856,6 @@ const runLocalAiProvider = async (
           ? params.arguments.message
           : undefined
       if (authoredMessage) message = authoredMessage
-      const purposeCallId = `tool:${params.callId}`
-      startPurposeCall(purposeCallId)
-      const settleCallPurpose = () => settlePurposeCall(purposeCallId)
       reportProgress(
         {
           tool: toolName,
@@ -1058,7 +1023,6 @@ const runLocalAiProvider = async (
         .then(({ success, contentItems }) => {
           if (terminalError || stopped) return
           toolTasks.delete(task)
-          settleCallPurpose()
           reportProgress({
             tool: toolName,
             status: 'completed',
@@ -1096,7 +1060,6 @@ const runLocalAiProvider = async (
           fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
         })
         .finally(() => {
-          settleCallPurpose()
           toolTasks.delete(task)
         })
       toolTasks.set(task, toolName)
@@ -1228,9 +1191,6 @@ const runLocalAiProvider = async (
     ) {
       if (typeof params.item.id !== 'string' || !params.item.id)
         return protocolFailure()
-      const purposeCallId = `item:${params.item.id}`
-      if (value.method === 'item/started') startPurposeCall(purposeCallId)
-      else settlePurposeCall(purposeCallId)
       usage?.trace(
         value.method === 'item/started'
           ? 'research_started'
@@ -1276,17 +1236,13 @@ const runLocalAiProvider = async (
           item.text.trim() &&
           item.text.length <= 1000
         ) {
-          publicPurpose = {
-            id: typeof item.id === 'string' ? item.id : randomUUID(),
-            calls: new Set()
-          }
           reportProgress({
             tool: 'public-progress',
             status: 'running',
             message: item.text,
             activity: {
               kind: 'work',
-              callId: publicPurpose.id,
+              callId: typeof item.id === 'string' ? item.id : randomUUID(),
               sequence: 0,
               scope: 'request',
               phase: 'provider'

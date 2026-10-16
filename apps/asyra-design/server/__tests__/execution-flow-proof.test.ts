@@ -1,3 +1,4 @@
+import { createAiActivityProjection } from '../../src/ai/activity-state'
 import * as providerCapabilities from '../local-ai-provider'
 import {
   parseLocalVectorArtifact,
@@ -21,7 +22,12 @@ const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
       id,
-      { requirement: id, description: id, verification: 'visual' }
+      {
+        requirement: id,
+        description: id,
+        verification: 'visual',
+        requiredUnits: []
+      }
     ])
   )
 import { EventEmitter } from 'node:events'
@@ -1031,34 +1037,34 @@ it('execution proof distinguishes stage readiness from current final assessment'
   expect(
     review.record({
       phase: 'structure',
-      inspectionIds: [initial],
-      checks: [check('Silhouette')]
+      ...wholeViewJudgments([initial], [check('Silhouette')])
     })
   ).toMatchObject({ readyForDetail: true, accepted: false })
   review.mutate()
   expect(() =>
     review.record({
       phase: 'visual',
-      inspectionIds: [initial],
-      checks: [check('Silhouette'), check('Finish')]
+      ...wholeViewJudgments([initial], [check('Silhouette'), check('Finish')])
     })
   ).toThrow()
   expect(review.getIssue()).toBeTruthy()
   expect(review.record({ phase: 'facts' })).toEqual(savedFacts)
   const failedReview = review.record({
     phase: 'visual',
-    inspectionIds: [
-      review.inspect('root', true, true)?.inspectionId,
-      review.inspect('detail', true, false)?.inspectionId
-    ],
-    checks: [
-      check('Silhouette'),
-      {
-        ...check('Finish'),
-        status: 'fail',
-        evidence: 'Missing requested visible trim'
-      }
-    ]
+    ...wholeViewJudgments(
+      [
+        review.inspect('root', true, true)?.inspectionId,
+        review.inspect('detail', true, false)?.inspectionId
+      ],
+      [
+        check('Silhouette'),
+        {
+          ...check('Finish'),
+          status: 'fail',
+          evidence: 'Missing requested visible trim'
+        }
+      ]
+    )
   })
   expect(failedReview).toMatchObject({
     accepted: false,
@@ -1072,11 +1078,13 @@ it('execution proof distinguishes stage readiness from current final assessment'
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: [
-        review.inspect('root', true, true)?.inspectionId,
-        review.inspect('detail', true, false)?.inspectionId
-      ],
-      checks: [check('Silhouette'), check('Finish')]
+      ...wholeViewJudgments(
+        [
+          review.inspect('root', true, true)?.inspectionId,
+          review.inspect('detail', true, false)?.inspectionId
+        ],
+        [check('Silhouette'), check('Finish')]
+      )
     })
   ).toMatchObject({ accepted: true })
   review.mutate()
@@ -1145,8 +1153,10 @@ it('execution proof distinguishes stage readiness from current final assessment'
       AiDesignToolIds.REVIEW_DRAWING,
       {
         phase: 'visual',
-        inspectionIds: [unrelated.actionResults[0].result.inspectionId],
-        checks: [check('Silhouette')]
+        ...wholeViewJudgments(
+          [unrelated.actionResults[0].result.inspectionId],
+          [check('Silhouette')]
+        )
       },
       signal
     )
@@ -1162,8 +1172,10 @@ it('execution proof distinguishes stage readiness from current final assessment'
     AiDesignToolIds.REVIEW_DRAWING,
     {
       phase: 'visual',
-      inspectionIds: [image.actionResults[0].result.inspectionId],
-      checks: [check('Silhouette')]
+      ...wholeViewJudgments(
+        [image.actionResults[0].result.inspectionId],
+        [check('Silhouette')]
+      )
     },
     signal
   )
@@ -1975,7 +1987,6 @@ it('execution proof composes capture and assessment without dropping unavailable
   }
   const failed = await call('review_drawing', {
     phase: 'visual',
-    checks,
     inspections: [{ elementId: 'drawing' }, detail]
   })
   expect(failed).toMatchObject({
@@ -2000,14 +2011,14 @@ it('execution proof composes capture and assessment without dropping unavailable
   detailAvailable = true
   const reviewed = await call('review_drawing', {
     phase: 'visual',
-    checks,
-    inspectionIds: failed.inspectionIds,
+
+    ...wholeViewJudgments(failed.inspectionIds, checks),
     inspections: [detail]
   })
   expect(reviewed.accepted).toBe(false)
   const partial = await call(reviewed.next.tool, {
     ...reviewed.next.arguments,
-    checks
+    ...wholeViewJudgments(reviewed.next.arguments.inspectionIds, checks)
   })
   expect(partial.accepted).toBe(false)
   expect(partial.coverage.passed).toBe(1)
@@ -2015,8 +2026,8 @@ it('execution proof composes capture and assessment without dropping unavailable
   expect(
     await call('review_drawing', {
       phase: 'visual',
-      checks,
-      inspectionIds: reviewed.inspectionIds
+
+      ...wholeViewJudgments(reviewed.inspectionIds, checks)
     })
   ).toMatchObject({ accepted: true })
   expect(captures).toEqual(['drawing', 'drawing', 'detail', 'detail'])
@@ -2484,6 +2495,11 @@ it('execution proof retains regional units without requiring global coverage for
   const signal = new AbortController().signal
   const call = async (name: string, args: Record<string, unknown>) =>
     JSON.parse(await tools.call(name, args, signal))
+  await expect(
+    call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, recordedScope.plan)
+  ).rejects.toThrow(/requiredUnits/)
+  expect(execute).not.toHaveBeenCalled()
+  expect(checkResults.read({ includePassed: true }).items).toEqual([])
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     ...reviewPlanExample,
     criteria: {
@@ -2542,7 +2558,7 @@ it('execution proof retains regional units without requiring global coverage for
   const repaired = await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
     final: false,
-    inspectionIds: [image],
+    inspectionIds: [...images, image],
     checks: [check(2, image)]
   })
   expect(repaired.results.counts).toEqual({
@@ -2558,15 +2574,17 @@ it('execution proof retains regional units without requiring global coverage for
   })
   const final = await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
-    inspectionIds: [overview.actionResults[0].result.inspectionId],
-    checks: [
-      {
-        criterionId: 'Overall',
-        status: 'pass',
-        evidence:
-          'Overall drawing agrees with the retained regional findings and requested result'
-      }
-    ]
+    ...wholeViewJudgments(
+      [overview.actionResults[0].result.inspectionId],
+      [
+        {
+          criterionId: 'Overall',
+          status: 'pass',
+          evidence:
+            'Overall drawing agrees with the retained regional findings and requested result'
+        }
+      ]
+    )
   })
   expect(final).toMatchObject({
     accepted: true,
@@ -2575,24 +2593,20 @@ it('execution proof retains regional units without requiring global coverage for
   expect(validations.some((args) => args.scope !== undefined)).toBe(true)
   const finalInput = {
     phase: 'visual',
-    inspectionIds: [overview.actionResults[0].result.inspectionId],
-    checks: [
-      {
-        criterionId: 'Overall',
-        status: 'pass',
-        evidence: 'Current whole view agrees'
-      }
-    ]
+    ...wholeViewJudgments(
+      [overview.actionResults[0].result.inspectionId],
+      [
+        {
+          criterionId: 'Overall',
+          status: 'pass',
+          evidence: 'Current whole view agrees'
+        }
+      ]
+    )
   }
-  await call(AiDesignToolIds.REVIEW_DRAWING, {
-    phase: 'visual',
-    final: false,
-    inspectionIds: [images[0]],
-    checks: [{ ...check(0), criterionId: 'Overall', unitId: 'local-agreement' }]
-  })
   const localAgreement = checkResults
     .read({ includePassed: true })
-    .items.find((item) => item.unitId === 'local-agreement')
+    .items.find((item) => item.unitId === 'tier-0')
   coverageComplete = false
   expect(await call(AiDesignToolIds.REVIEW_DRAWING, finalInput)).toMatchObject({
     accepted: false,
@@ -2601,7 +2615,7 @@ it('execution proof retains regional units without requiring global coverage for
   expect(
     checkResults
       .read({ includePassed: true })
-      .items.find((item) => item.unitId === 'local-agreement')
+      .items.find((item) => item.unitId === 'tier-0')
   ).toEqual(localAgreement)
   coverageComplete = true
   expect(await call(AiDesignToolIds.REVIEW_DRAWING, finalInput)).toMatchObject({
@@ -3070,14 +3084,13 @@ it('execution proof uses only current conversion and primary judgment contracts'
   const inputReview = {
     phase: 'visual',
     final: true,
-    inspectionIds,
-    checks: [
+    ...wholeViewJudgments(inspectionIds, [
       {
         criterionId: 'appearance',
         status: 'fail',
         evidence: 'The requested silhouette is incorrect.'
       }
-    ]
+    ])
   }
   const failed = review.record(inputReview)
   expect.soft(failed.accepted).toBe(false)
@@ -3106,22 +3119,26 @@ it('execution proof uses only current conversion and primary judgment contracts'
     .toThrow()
   const passed = review.record({
     ...inputReview,
-    inspectionIds: [review.inspect('part', true, true)?.inspectionId],
-    checks: [
-      {
-        criterionId: 'appearance',
-        status: 'pass',
-        evidence: 'Corrected silhouette.'
-      }
-    ]
+    ...wholeViewJudgments(
+      [review.inspect('part', true, true)?.inspectionId],
+      [
+        {
+          criterionId: 'appearance',
+          status: 'pass',
+          evidence: 'Corrected silhouette.'
+        }
+      ]
+    )
   })
   expect.soft(passed.accepted).toBe(true)
+  if (!Array.isArray(passed.inspectionIds))
+    throw new Error('Missing recorded image IDs')
   expect.soft(passed).not.toHaveProperty('independentAssessment')
   review.record({
     ...inputReview,
     phase: 'structure',
     final: undefined,
-    inspectionIds: passed.inspectionIds
+    ...wholeViewJudgments(passed.inspectionIds, inputReview.checks)
   })
   expect(review.isAccepted()).toBe(false)
   expect(review.getIssue()).toContain('requested silhouette')
@@ -3134,14 +3151,13 @@ it('execution proof uses only current conversion and primary judgment contracts'
   expect(
     review.record({
       phase: 'visual',
-      inspectionIds: passed.inspectionIds,
-      checks: [
+      ...wholeViewJudgments(passed.inspectionIds, [
         {
           criterionId: 'appearance',
           status: 'pass',
           evidence: 'Corrected after the structure failure.'
         }
-      ]
+      ])
     })
   ).toMatchObject({ accepted: true })
   expect.soft(spawn).not.toHaveBeenCalled()
@@ -3853,4 +3869,339 @@ it('execution proof preserves issued history direction across the App feature ha
     historyApis.redo = originalRedo
     vi.unstubAllGlobals()
   }
+})
+
+it('execution proof retains recorded authored purpose after provider tool settlement', async ({
+  onTestFinished
+}) => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  onTestFinished(() => log.mockRestore())
+  const parent = resolve('tmp/flow-library-tests')
+  await mkdir(parent, { recursive: true })
+  const toolLibraryDirectory = await mkdtemp(resolve(parent, 'purpose-'))
+  onTestFinished(() =>
+    rm(toolLibraryDirectory, { recursive: true, force: true })
+  )
+  const projection = createAiActivityProjection({ purpose: 'Draw Taipei 101' })
+  const settled: unknown[] = []
+  const stages = recordedPurpose.recordedOutput
+    .filter((event) => event.evidence.status === 'running')
+    .map((event) => {
+      if (typeof event.evidence.purpose !== 'string')
+        throw new Error('Recorded purpose is missing')
+      return {
+        ...recordedPurpose.item,
+        id: event.evidence.activity.callId,
+        text: event.evidence.purpose
+      }
+    })
+  let stageIndex = 0
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdin: new Writable(),
+    kill: () => {
+      queueMicrotask(() => child.emit('close', null, 'SIGTERM'))
+      return true
+    }
+  })
+  const send = (packet: unknown) =>
+    child.stdout.write(JSON.stringify(packet) + '\n')
+  child.stdin = new Writable({
+    write(chunk, _encoding, done) {
+      const packet = JSON.parse(String(chunk))
+      queueMicrotask(() => {
+        if (packet.id === undefined) return
+        if (packet.method) {
+          const replies: Record<string, unknown> = {
+            initialize: {},
+            'config/read': { config: {} },
+            'account/read': { account: { type: 'chatgpt' } },
+            'thread/start': {
+              thread: { id: 'purpose-thread' },
+              model: 'gpt-6-astra',
+              reasoningEffort: 'medium',
+              instructionSources: [],
+              runtimeWorkspaceRoots: []
+            },
+            'turn/start': { turn: { id: 'purpose-turn' } }
+          }
+          send({ id: packet.id, result: replies[packet.method] })
+        }
+        if (
+          packet.method === 'turn/start' ||
+          (packet.id >= 9001 && packet.result && stageIndex < stages.length)
+        ) {
+          if (packet.result && packet.id >= 9001)
+            settled.push(projection.result().current)
+          const stage = stages[stageIndex++]
+          send({
+            method: 'item/completed',
+            params: {
+              threadId: 'purpose-thread',
+              turnId: 'purpose-turn',
+              item: stage
+            }
+          })
+          send({
+            id: 9000 + stageIndex,
+            method: 'item/tool/call',
+            params: {
+              threadId: 'purpose-thread',
+              turnId: 'purpose-turn',
+              callId: `lookup-${stageIndex}`,
+              namespace: 'design_operations',
+              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              arguments: { category: 'tools' }
+            }
+          })
+        } else if (packet.id >= 9001 && packet.result) {
+          settled.push(projection.result().current)
+          send({
+            method: 'item/completed',
+            params: {
+              threadId: 'purpose-thread',
+              turnId: 'purpose-turn',
+              item: {
+                type: 'agentMessage',
+                phase: 'final_answer',
+                text: JSON.stringify({
+                  batchId: 'purpose-proof',
+                  actions: [
+                    {
+                      id: 'report',
+                      name: 'report_outcome',
+                      summary: 'Transport proof',
+                      arguments: {
+                        outcome: 'unsupported',
+                        message:
+                          'No canvas operation requested in this protocol proof.'
+                      }
+                    }
+                  ]
+                })
+              }
+            }
+          })
+          send({
+            method: 'turn/completed',
+            params: {
+              threadId: 'purpose-thread',
+              turn: { id: 'purpose-turn', status: 'completed' }
+            }
+          })
+        }
+      })
+      done()
+    }
+  })
+  spawn.mockReturnValueOnce(child)
+  const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+  await requestLocalAiActionBatch(
+    {
+      intent: 'Draw Taipei 101',
+      context: {},
+      attempt: 1,
+      actions: [
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        },
+        { name: 'report_outcome', description: 'Report', inputSchema: {} }
+      ]
+    },
+    {
+      model: 'gpt-6-astra',
+      executable: 'test-transport',
+      executeBatch,
+      toolLibraryDirectory,
+      onProgress: (event) =>
+        projection.append({
+          attempt: 1,
+          phase: 'provider',
+          summary: 'Provider activity',
+          tool: event.tool,
+          toolStatus: event.status,
+          message: event.message,
+          activity: event.activity
+        })
+    }
+  )
+  expect(settled).toEqual(
+    stages.map((stage) => ({
+      label: 'Current task',
+      message: stage.text.trim()
+    }))
+  )
+  expect(executeBatch).not.toHaveBeenCalled()
+  projection.append({
+    attempt: 1,
+    phase: 'settled',
+    outcome: 'executed',
+    summary: 'Request completed'
+  })
+  expect(projection.result().current?.message).not.toBe(
+    recordedPurpose.item.text.trim()
+  )
+})
+
+// Exact saved run reusable-tools-1792174632012 input/evidence. Inspector captures
+// this verification entry without auxiliary test files; retain the raw source
+// fixtures separately for ordinary provider and browser integration tests.
+const recordedScope = {
+  plan: {
+    phase: 'plan',
+    method:
+      'Editable world-space faces in centimeters, scale 1 px/cm, fixed elevated orthographic three-quarter architectural projection (azimuth35°, elevation25°). 508m height; local facade dimensions estimated from architect photographs where unavailable. No scene or labels.',
+    references: [
+      'https://www.onenessarchitects.com/project/Taipei-101',
+      'https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf'
+    ],
+    referenceImageIndexes: [1, 3, 4],
+    criteria: {
+      whole: {
+        requirement:
+          'Entire Taipei 101 base to spire with distinctive silhouette',
+        description:
+          'Full tower, eight projecting bamboo modules, narrowed crown, complete spire and base; no decorative scene.',
+        verification: 'visual'
+      },
+      view: {
+        requirement:
+          'Fixed elevated three-quarter view and consistent perspective',
+        description:
+          'Two visible sides and top planes use one camera throughout.',
+        verification: 'visual'
+      },
+      detail: {
+        requirement:
+          'Highly detailed realistic facade, frames and ornamentation',
+        description:
+          'Visible base entrance, dense framed glazing, tier cornices, corner ornament, medallions and crown details.',
+        verification: 'visual'
+      },
+      material: {
+        requirement: 'Realistic materials lighting and shadows',
+        description:
+          'Blue-green reflective glass, metal trim, sided lighting, ledge shade and roof surfaces.',
+        verification: 'visual'
+      },
+      scale: {
+        requirement:
+          'Real-world dimensions at 1cm=1px before projection; editable 2D',
+        description:
+          'Native vectors projected at scale1 from centimeter coordinates, tip50800cm; estimated local dimensions disclosed.',
+        verification: 'data'
+      }
+    },
+    detailRequired: true
+  }
+}
+const recordedPurpose = {
+  item: {
+    type: 'agentMessage',
+    id: 'msg_0d223ccae413a4f8016ad26a2ed5cc8191a0e9d221c7ed830c',
+    phase: 'commentary',
+    text: '我會先確認台北 101 的尺寸與外觀參考，再以固定俯視三分之四視角建立可編輯的建築細節。\n'
+  },
+  recordedOutput: [
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26a2ed5cc8191a0e9d221c7ed830c'
+        },
+        purpose:
+          '我會先確認台北 101 的尺寸與外觀參考，再以固定俯視三分之四視角建立可編輯的建築細節。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26a58e6f8819189906bb8d26ddcc6'
+        },
+        purpose:
+          '先建立基座、入口與下段帷幕牆；全棟採用同一個俯視投影，508 公尺總高以 50,800 像素的投影前尺度處理。未公開的局部尺寸將依照片比例估算。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26a876d108191891875812d7e7ac5'
+        },
+        purpose:
+          '接著建立八組外張竹節、逐格窗框與層間出簷，保留每一片玻璃和金屬構件的可編輯性。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26aaeade48191befad91bab3e377d'
+        },
+        purpose:
+          '現在補上觀景層、退縮塔冠與完整尖塔，並加入屋頂平台和金屬肋條。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26adb979c81918e08ab82defeb284'
+        },
+        purpose:
+          '調整玻璃反光，減少逐格漸層造成的磁磚感，讓兩個立面的受光方向更一致。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26b08b77081918013c6e1b110d7f5'
+        },
+        purpose:
+          '補上立面中央的如意飾件、轉角金屬構造、圓形錢幣浮雕，以及入口的層層門框、雨遮與玻璃門。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26b41bb008191874222c1e67d1065'
+        },
+        purpose:
+          '最後補上機電百葉、簷下陰影與屋頂護欄，再檢查全棟及局部細節。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26b65273c8191a41b3c38f17476dc'
+        },
+        purpose:
+          '局部檢查顯示尖塔仍像玻璃構造；我會改成金屬圓桿與環帶，並加密塔冠的水平金屬格柵。\n'
+      }
+    },
+    {
+      evidence: {
+        status: 'running',
+        activity: {
+          callId: 'msg_0d223ccae413a4f8016ad26bb567f48191b9c93b370e7cf5c5'
+        },
+        purpose: '修正入口雨遮與如意浮雕的前後遮擋，保留已完成的窗格和材質。\n'
+      }
+    }
+  ]
+}
+/** Build deliberately whole-view test judgments with explicit image dependencies. */
+const wholeViewJudgments = <T>(
+  inspectionIds: readonly unknown[],
+  checks: readonly T[]
+) => ({
+  inspectionIds,
+  checks: checks.map((check) => ({ ...check, inspectionIds }))
 })

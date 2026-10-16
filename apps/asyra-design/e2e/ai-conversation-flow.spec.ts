@@ -1279,6 +1279,50 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByLabel('Operational progress').locator('li')
       ).toHaveCount(stableRows)
+      // Real stream/controller/panel: unrelated siblings must not borrow one
+      // another's purpose or leave an execution label after both settle.
+      const parallel = (
+        callId: string,
+        tool: string,
+        message: string,
+        completed = false
+      ) => {
+        response.write(
+          JSON.stringify({
+            type: 'activity',
+            tool,
+            status: completed ? 'completed' : 'running',
+            message,
+            activity: {
+              kind: 'work',
+              callId,
+              phase: 'executing',
+              sequence: ++activitySequence
+            }
+          }) + '\n'
+        )
+      }
+      parallel('parallel-review', 'review_drawing', 'Inspect the crown')
+      parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Checking the requested details - Preparing the design - 2 operations',
+        '正在隱藏右下角的標記。'
+      ])
+      parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Checking the requested details',
+        'Inspect the crown'
+      ])
+      parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Current task',
+        '正在隱藏右下角的標記。'
+      ])
+      parallel('parallel-edit', 'prepare_design', 'Late completed sibling')
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Current task',
+        '正在隱藏右下角的標記。'
+      ])
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([

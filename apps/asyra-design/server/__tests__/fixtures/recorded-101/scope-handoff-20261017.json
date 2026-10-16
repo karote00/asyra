@@ -1,0 +1,1643 @@
+{
+  "sourceRun": "reusable-tools-1792174632012",
+  "requestId": "d3c525b1-d489-44ed-a84d-73ebc943f821",
+  "plan": {
+    "phase": "plan",
+    "method": "Editable world-space faces in centimeters, scale 1 px/cm, fixed elevated orthographic three-quarter architectural projection (azimuth35°, elevation25°). 508m height; local facade dimensions estimated from architect photographs where unavailable. No scene or labels.",
+    "references": [
+      "https://www.onenessarchitects.com/project/Taipei-101",
+      "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+    ],
+    "referenceImageIndexes": [
+      1,
+      3,
+      4
+    ],
+    "criteria": {
+      "whole": {
+        "requirement": "Entire Taipei 101 base to spire with distinctive silhouette",
+        "description": "Full tower, eight projecting bamboo modules, narrowed crown, complete spire and base; no decorative scene.",
+        "verification": "visual"
+      },
+      "view": {
+        "requirement": "Fixed elevated three-quarter view and consistent perspective",
+        "description": "Two visible sides and top planes use one camera throughout.",
+        "verification": "visual"
+      },
+      "detail": {
+        "requirement": "Highly detailed realistic facade, frames and ornamentation",
+        "description": "Visible base entrance, dense framed glazing, tier cornices, corner ornament, medallions and crown details.",
+        "verification": "visual"
+      },
+      "material": {
+        "requirement": "Realistic materials lighting and shadows",
+        "description": "Blue-green reflective glass, metal trim, sided lighting, ledge shade and roof surfaces.",
+        "verification": "visual"
+      },
+      "scale": {
+        "requirement": "Real-world dimensions at 1cm=1px before projection; editable 2D",
+        "description": "Native vectors projected at scale1 from centimeter coordinates, tip50800cm; estimated local dimensions disclosed.",
+        "verification": "data"
+      }
+    },
+    "detailRequired": true
+  },
+  "judgments": [
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "c211b6bb-d8cb-4efb-93df-09d078e4013a"
+        ],
+        "checks": [
+          {
+            "criterionId": "whole",
+            "status": "pass",
+            "evidence": "Viewed full-height capture: all eight flared modules, lower taper, base, crown and entire spire are visible; isolated building only."
+          },
+          {
+            "criterionId": "view",
+            "status": "pass",
+            "evidence": "Both façades and roof terraces consistently follow the same elevated three-quarter camera."
+          },
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "evidence": "Window grids and cornices are present; entrance portal, medallions and corner ornament still missing."
+          },
+          {
+            "criterionId": "material",
+            "status": "fail",
+            "evidence": "Glass pane gradients repeat too strongly and appear tiled; needs subdued glazing and stronger coherent side lighting."
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 6,
+            "fail": 2,
+            "unverified": 0,
+            "stale": 1
+          },
+          "items": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "Window grids and cornices are present; entrance portal, medallions and corner ornament still missing.",
+              "scope": [
+                "c211b6bb-d8cb-4efb-93df-09d078e4013a"
+              ],
+              "dependencies": {
+                "coverage:whole-view": "required",
+                "inspection:c211b6bb-d8cb-4efb-93df-09d078e4013a": "34242",
+                "criterion:detail": "1"
+              },
+              "revision": 2
+            },
+            {
+              "id": "visual:material",
+              "criterionId": "material",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "Glass pane gradients repeat too strongly and appear tiled; needs subdued glazing and stronger coherent side lighting.",
+              "scope": [
+                "c211b6bb-d8cb-4efb-93df-09d078e4013a"
+              ],
+              "dependencies": {
+                "coverage:whole-view": "required",
+                "inspection:c211b6bb-d8cb-4efb-93df-09d078e4013a": "34242",
+                "criterion:material": "1"
+              },
+              "revision": 2
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "origin": "main-agent",
+              "status": "stale",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "scene": "0",
+                "criterion:scale": "1"
+              },
+              "revision": 1,
+              "reason": "Unscoped canonical evidence changed."
+            }
+          ],
+          "visitedResults": 3
+        },
+        "coverage": {
+          "required": 5,
+          "passed": 2,
+          "pending": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "status": "fail"
+            },
+            {
+              "id": "visual:material",
+              "criterionId": "material",
+              "status": "fail"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "Taipei 101 architectural height is 508m, 101 tower floors; podium has six floors.",
+            "scope": "Total height and floor organization; not facade detail measurements.",
+            "sources": [
+              "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+            ],
+            "verification": "Project profile page 3.",
+            "dependencies": [
+              {
+                "key": "structural-profile",
+                "version": "2026-10-17"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+              ],
+              "referenceIds": []
+            }
+          },
+          {
+            "id": "bamboo",
+            "statement": "Eight eight-floor outward-flaring modules rise above the tapered lower tower; blue-green glazing, silver-gray framing and projecting cornices.",
+            "scope": "Visible organization and material appearance, not surveyed widths.",
+            "sources": [
+              "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "https://www.onenessarchitects.com/project/Taipei-101"
+            ],
+            "verification": "Architect text and viewed photographs.",
+            "dependencies": [
+              {
+                "key": "architect-reference",
+                "version": "original"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "model-assessed",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "referenceIds": [
+                "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79"
+              ]
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 4,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "evidence": "Window grids and cornices are present; entrance portal, medallions and corner ornament still missing.",
+            "factIds": []
+          },
+          {
+            "criterionId": "material",
+            "status": "fail",
+            "evidence": "Glass pane gradients repeat too strongly and appear tiled; needs subdued glazing and stronger coherent side lighting.",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "c211b6bb-d8cb-4efb-93df-09d078e4013a"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 5,
+            "passed": 2,
+            "pending": [
+              {
+                "id": "visual:detail",
+                "criterionId": "detail",
+                "status": "fail"
+              },
+              {
+                "id": "visual:material",
+                "criterionId": "material",
+                "status": "fail"
+              },
+              {
+                "id": "visual:scale",
+                "criterionId": "scale",
+                "status": "stale"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "Architect aerial image shows full tower and upper planes.",
+              "criterionIds": [
+                "whole",
+                "view",
+                "material"
+              ],
+              "limitations": [
+                "Photo perspective differs from chosen fixed projection; cannot establish exact local dimensions."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 3,
+              "referenceId": "reference:4e40839b247ad8b55445b313b2474d80591ef7649cc218b9e07b4f0165429b26",
+              "status": "restricted",
+              "reason": "Entrance close-up supports stepped portal and ruyi.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Ground-level frontal view only."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 4,
+              "referenceId": "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "status": "restricted",
+              "reason": "Clearly depicts eight outward-flaring tiers and crown.",
+              "criterionIds": [
+                "whole",
+                "detail"
+              ],
+              "limitations": [
+                "Base cropped; warm dusk lighting not adopted."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 4,
+          "criteria": [
+            {
+              "criterionId": "detail",
+              "evidence": [
+                "Window grids and cornices are present; entrance portal, medallions and corner ornament still missing."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "material",
+              "evidence": [
+                "Glass pane gradients repeat too strongly and appear tiled; needs subdued glazing and stronger coherent side lighting."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "scale",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": [
+                "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0"
+              ]
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "c211b6bb-d8cb-4efb-93df-09d078e4013a",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "overview": true,
+              "detail": false
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "4d214007-e814-4daf-a3af-d64a50c945e7",
+          "4ab87116-e3b9-4373-b328-53d23f1c6942",
+          "696319a7-921e-432a-9cc6-8b243e361810",
+          "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+        ],
+        "checks": [
+          {
+            "criterionId": "whole",
+            "status": "pass",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7"
+            ],
+            "evidence": "Full tower is visible with all eight bamboo tiers, base, medallions, central ruyi and complete spire; no scene or decorative additions."
+          },
+          {
+            "criterionId": "view",
+            "status": "pass",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+            ],
+            "evidence": "Roof terraces and both sides retain consistent elevated projection and foreshortening."
+          },
+          {
+            "criterionId": "material",
+            "status": "fail",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "4ab87116-e3b9-4373-b328-53d23f1c6942",
+              "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+            ],
+            "evidence": "Façade glass now has subtler directional light, but antenna still looks like glazed square tower rather than metallic mast."
+          },
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "696319a7-921e-432a-9cc6-8b243e361810",
+              "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+            ],
+            "evidence": "Ruyi scrollwork, medallions, framed glazing and entrance are present. Crown needs closely spaced metal fins and mast ring detail."
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 4400,
+            "fail": 2,
+            "unverified": 0,
+            "stale": 1
+          },
+          "items": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "Ruyi scrollwork, medallions, framed glazing and entrance are present. Crown needs closely spaced metal fins and mast ring detail.",
+              "scope": [
+                "4d214007-e814-4daf-a3af-d64a50c945e7",
+                "696319a7-921e-432a-9cc6-8b243e361810",
+                "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+              ],
+              "dependencies": {
+                "coverage:whole-view": "required",
+                "inspection:4d214007-e814-4daf-a3af-d64a50c945e7": "40826",
+                "inspection:696319a7-921e-432a-9cc6-8b243e361810": "40826",
+                "inspection:f7ebb269-f057-4aa6-a67a-87fbec5cd296": "40826",
+                "criterion:detail": "1"
+              },
+              "revision": 3
+            },
+            {
+              "id": "visual:material",
+              "criterionId": "material",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "Façade glass now has subtler directional light, but antenna still looks like glazed square tower rather than metallic mast.",
+              "scope": [
+                "4d214007-e814-4daf-a3af-d64a50c945e7",
+                "4ab87116-e3b9-4373-b328-53d23f1c6942",
+                "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+              ],
+              "dependencies": {
+                "coverage:whole-view": "required",
+                "inspection:4d214007-e814-4daf-a3af-d64a50c945e7": "40826",
+                "inspection:4ab87116-e3b9-4373-b328-53d23f1c6942": "40826",
+                "inspection:f7ebb269-f057-4aa6-a67a-87fbec5cd296": "40826",
+                "criterion:material": "1"
+              },
+              "revision": 3
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "origin": "main-agent",
+              "status": "stale",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "scene": "0",
+                "criterion:scale": "1"
+              },
+              "revision": 1,
+              "reason": "Unscoped canonical evidence changed."
+            }
+          ],
+          "visitedResults": 3
+        },
+        "coverage": {
+          "required": 5,
+          "passed": 2,
+          "pending": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "status": "fail"
+            },
+            {
+              "id": "visual:material",
+              "criterionId": "material",
+              "status": "fail"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "Taipei 101 architectural height is 508m, 101 tower floors; podium has six floors.",
+            "scope": "Total height and floor organization; not facade detail measurements.",
+            "sources": [
+              "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+            ],
+            "verification": "Project profile page 3.",
+            "dependencies": [
+              {
+                "key": "structural-profile",
+                "version": "2026-10-17"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+              ],
+              "referenceIds": []
+            }
+          },
+          {
+            "id": "bamboo",
+            "statement": "Eight eight-floor outward-flaring modules rise above the tapered lower tower; blue-green glazing, silver-gray framing and projecting cornices.",
+            "scope": "Visible organization and material appearance, not surveyed widths.",
+            "sources": [
+              "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "https://www.onenessarchitects.com/project/Taipei-101"
+            ],
+            "verification": "Architect text and viewed photographs.",
+            "dependencies": [
+              {
+                "key": "architect-reference",
+                "version": "original"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "model-assessed",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "referenceIds": [
+                "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79"
+              ]
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 7,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "material",
+            "status": "fail",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "4ab87116-e3b9-4373-b328-53d23f1c6942",
+              "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+            ],
+            "evidence": "Façade glass now has subtler directional light, but antenna still looks like glazed square tower rather than metallic mast.",
+            "factIds": []
+          },
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "inspectionIds": [
+              "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "696319a7-921e-432a-9cc6-8b243e361810",
+              "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+            ],
+            "evidence": "Ruyi scrollwork, medallions, framed glazing and entrance are present. Crown needs closely spaced metal fins and mast ring detail.",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "4d214007-e814-4daf-a3af-d64a50c945e7",
+          "4ab87116-e3b9-4373-b328-53d23f1c6942",
+          "696319a7-921e-432a-9cc6-8b243e361810",
+          "f7ebb269-f057-4aa6-a67a-87fbec5cd296"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 5,
+            "passed": 2,
+            "pending": [
+              {
+                "id": "visual:detail",
+                "criterionId": "detail",
+                "status": "fail"
+              },
+              {
+                "id": "visual:material",
+                "criterionId": "material",
+                "status": "fail"
+              },
+              {
+                "id": "visual:scale",
+                "criterionId": "scale",
+                "status": "stale"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "Architect aerial image shows full tower and upper planes.",
+              "criterionIds": [
+                "whole",
+                "view",
+                "material"
+              ],
+              "limitations": [
+                "Photo perspective differs from chosen fixed projection; cannot establish exact local dimensions."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 3,
+              "referenceId": "reference:4e40839b247ad8b55445b313b2474d80591ef7649cc218b9e07b4f0165429b26",
+              "status": "restricted",
+              "reason": "Entrance close-up supports stepped portal and ruyi.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Ground-level frontal view only."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 4,
+              "referenceId": "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "status": "restricted",
+              "reason": "Clearly depicts eight outward-flaring tiers and crown.",
+              "criterionIds": [
+                "whole",
+                "detail"
+              ],
+              "limitations": [
+                "Base cropped; warm dusk lighting not adopted."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 8,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "Ruyi close-up establishes scroll profile, pendant and layered metal.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Not dimensional evidence or elevated viewpoint."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 9,
+              "referenceId": "reference:e62598a8f2ffc1c581f7fd00cef9c25d8f486867102a1fbac55a6c4af22a111f",
+              "status": "restricted",
+              "reason": "Visible corner ribbing and circular medallions.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Ground-up photograph; not aligned pixel reference."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 10,
+              "referenceId": "reference:cfc1c9c1c5e240db9d4772962e9046b771b3225654857595678b22a839ba9a80",
+              "status": "restricted",
+              "reason": "Supports mechanical louvers and central ruyi at cornices.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Perspective foreshortened."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 7,
+          "criteria": [
+            {
+              "criterionId": "detail",
+              "evidence": [
+                "Ruyi scrollwork, medallions, framed glazing and entrance are present. Crown needs closely spaced metal fins and mast ring detail."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "material",
+              "evidence": [
+                "Façade glass now has subtler directional light, but antenna still looks like glazed square tower rather than metallic mast."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "scale",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": [
+                "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0"
+              ]
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "4d214007-e814-4daf-a3af-d64a50c945e7",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "4ab87116-e3b9-4373-b328-53d23f1c6942",
+              "elementId": "design-9ad92621-6356-41e5-9559-4572809b73ec-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "696319a7-921e-432a-9cc6-8b243e361810",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 6650,
+                "y": 47000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "f7ebb269-f057-4aa6-a67a-87fbec5cd296",
+              "elementId": "design-7288be71-d23a-486e-a246-d6d34c675338-0",
+              "overview": true,
+              "detail": false
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3",
+          "3b7881c3-0cfa-4512-9b48-b2b7abb0c731",
+          "cc856db1-257a-49bf-b011-d230ff88625b",
+          "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+        ],
+        "checks": [
+          {
+            "criterionId": "whole",
+            "status": "pass",
+            "inspectionIds": [
+              "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3"
+            ],
+            "evidence": "Full-height silhouette and isolated composition preserved after metallic mast replacement."
+          },
+          {
+            "criterionId": "view",
+            "status": "pass",
+            "inspectionIds": [
+              "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3",
+              "3b7881c3-0cfa-4512-9b48-b2b7abb0c731"
+            ],
+            "evidence": "Mast elliptical caps and tower top surfaces consistently show elevated camera."
+          },
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "inspectionIds": [
+              "cc856db1-257a-49bf-b011-d230ff88625b",
+              "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+            ],
+            "evidence": "Local capture reveals canopy bracket triangles drawn over the canopy top and a later cornice shadow crossing the ruyi. Repair painter order."
+          },
+          {
+            "criterionId": "material",
+            "status": "pass",
+            "inspectionIds": [
+              "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3",
+              "3b7881c3-0cfa-4512-9b48-b2b7abb0c731",
+              "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+            ],
+            "evidence": "Glazing has coherent blue-green sided light, metal mast has distinct cylindrical light/shadow and collars; trim is reflective and frames have dark recesses."
+          },
+          {
+            "criterionId": "scale",
+            "status": "pass",
+            "inspectionIds": [
+              "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3"
+            ],
+            "evidence": "Successful construction uses centimeter world coordinates, projection scale1, z0 base to z50800 tip; fixed azimuth35/elevation25. Mechanical review confirms 24,998 editable native elements. Local widths/details are photo-proportioned estimates, not survey measurements."
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 4401,
+            "fail": 1,
+            "unverified": 0,
+            "stale": 2
+          },
+          "items": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "Local capture reveals canopy bracket triangles drawn over the canopy top and a later cornice shadow crossing the ruyi. Repair painter order.",
+              "scope": [
+                "cc856db1-257a-49bf-b011-d230ff88625b",
+                "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+              ],
+              "dependencies": {
+                "coverage:whole-view": "required",
+                "inspection:cc856db1-257a-49bf-b011-d230ff88625b": "45971",
+                "inspection:2fd066d9-67b6-4fd4-a7d8-62f2618a65b8": "45971",
+                "criterion:detail": "1"
+              },
+              "revision": 4
+            },
+            {
+              "id": "measurement:design-9ad92621-6356-41e5-9559-4572809b73ec-0",
+              "origin": "tool",
+              "status": "stale",
+              "evidence": "{\"complete\":true,\"findings\":[]}",
+              "scope": [
+                "design-9ad92621-6356-41e5-9559-4572809b73ec-0"
+              ],
+              "dependencies": {
+                "measurement:design-9ad92621-6356-41e5-9559-4572809b73ec-0": "{\"sessionId\":\"bc587828-f9bd-400f-b8b7-de67dbe65ff7\",\"revision\":30868,\"receiptId\":\"36ef65a8-d101-4b9c-b8eb-c93424dd83c1\"}"
+              },
+              "revision": 1,
+              "reason": "Canonical measurement dependencies changed or are unavailable."
+            },
+            {
+              "id": "measurement:design-875ab4b8-8b42-49d1-afd2-2433c8cf8111-0",
+              "origin": "tool",
+              "status": "stale",
+              "evidence": "{\"complete\":true,\"findings\":[]}",
+              "scope": [
+                "design-875ab4b8-8b42-49d1-afd2-2433c8cf8111-0"
+              ],
+              "dependencies": {
+                "measurement:design-875ab4b8-8b42-49d1-afd2-2433c8cf8111-0": "{\"sessionId\":\"bc587828-f9bd-400f-b8b7-de67dbe65ff7\",\"revision\":30868,\"receiptId\":\"9682c536-290f-4857-b66c-3e7b403a0f26\"}"
+              },
+              "revision": 1,
+              "reason": "Canonical measurement dependencies changed or are unavailable."
+            }
+          ],
+          "visitedResults": 3
+        },
+        "coverage": {
+          "required": 5,
+          "passed": 4,
+          "pending": [
+            {
+              "id": "visual:detail",
+              "criterionId": "detail",
+              "status": "fail"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "Taipei 101 architectural height is 508m, 101 tower floors; podium has six floors.",
+            "scope": "Total height and floor organization; not facade detail measurements.",
+            "sources": [
+              "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+            ],
+            "verification": "Project profile page 3.",
+            "dependencies": [
+              {
+                "key": "structural-profile",
+                "version": "2026-10-17"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+              ],
+              "referenceIds": []
+            }
+          },
+          {
+            "id": "bamboo",
+            "statement": "Eight eight-floor outward-flaring modules rise above the tapered lower tower; blue-green glazing, silver-gray framing and projecting cornices.",
+            "scope": "Visible organization and material appearance, not surveyed widths.",
+            "sources": [
+              "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "https://www.onenessarchitects.com/project/Taipei-101"
+            ],
+            "verification": "Architect text and viewed photographs.",
+            "dependencies": [
+              {
+                "key": "architect-reference",
+                "version": "original"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "model-assessed",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "referenceIds": [
+                "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79"
+              ]
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 9,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "detail",
+            "status": "fail",
+            "inspectionIds": [
+              "cc856db1-257a-49bf-b011-d230ff88625b",
+              "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+            ],
+            "evidence": "Local capture reveals canopy bracket triangles drawn over the canopy top and a later cornice shadow crossing the ruyi. Repair painter order.",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3",
+          "3b7881c3-0cfa-4512-9b48-b2b7abb0c731",
+          "cc856db1-257a-49bf-b011-d230ff88625b",
+          "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 5,
+            "passed": 4,
+            "pending": [
+              {
+                "id": "visual:detail",
+                "criterionId": "detail",
+                "status": "fail"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "Architect aerial image shows full tower and upper planes.",
+              "criterionIds": [
+                "whole",
+                "view",
+                "material"
+              ],
+              "limitations": [
+                "Photo perspective differs from chosen fixed projection; cannot establish exact local dimensions."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 3,
+              "referenceId": "reference:4e40839b247ad8b55445b313b2474d80591ef7649cc218b9e07b4f0165429b26",
+              "status": "restricted",
+              "reason": "Entrance close-up supports stepped portal and ruyi.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Ground-level frontal view only."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 4,
+              "referenceId": "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "status": "restricted",
+              "reason": "Clearly depicts eight outward-flaring tiers and crown.",
+              "criterionIds": [
+                "whole",
+                "detail"
+              ],
+              "limitations": [
+                "Base cropped; warm dusk lighting not adopted."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 8,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "Ruyi close-up establishes scroll profile, pendant and layered metal.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Not dimensional evidence or elevated viewpoint."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 9,
+              "referenceId": "reference:e62598a8f2ffc1c581f7fd00cef9c25d8f486867102a1fbac55a6c4af22a111f",
+              "status": "restricted",
+              "reason": "Visible corner ribbing and circular medallions.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Ground-up photograph; not aligned pixel reference."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 10,
+              "referenceId": "reference:cfc1c9c1c5e240db9d4772962e9046b771b3225654857595678b22a839ba9a80",
+              "status": "restricted",
+              "reason": "Supports mechanical louvers and central ruyi at cornices.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Perspective foreshortened."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 9,
+          "criteria": [
+            {
+              "criterionId": "detail",
+              "evidence": [
+                "Local capture reveals canopy bracket triangles drawn over the canopy top and a later cornice shadow crossing the ruyi. Repair painter order."
+              ],
+              "elementIds": []
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "5b09ffc4-3f46-4cbe-8e75-39bf0b385bb3",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "3b7881c3-0cfa-4512-9b48-b2b7abb0c731",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 9600,
+                "y": 1100,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "cc856db1-257a-49bf-b011-d230ff88625b",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 7400,
+                "y": 48000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "2fd066d9-67b6-4fd4-a7d8-62f2618a65b8",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 8000,
+                "y": 34100,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    {
+      "input": {
+        "phase": "visual",
+        "final": true,
+        "inspectionIds": [
+          "618e64d1-3e5a-4fa7-a035-30d55d22cbf4",
+          "82ce9924-45aa-4e28-90ab-8f3719dd92f1",
+          "d69b8660-cff8-4e5a-96b0-0541413eb104"
+        ],
+        "checks": [
+          {
+            "criterionId": "whole",
+            "status": "pass",
+            "inspectionIds": [
+              "618e64d1-3e5a-4fa7-a035-30d55d22cbf4"
+            ],
+            "evidence": "Current full view includes the base through the metallic tip, eight projecting bamboo tiers, tapered lower floors and crown. No background panel, labels or unrelated decoration."
+          },
+          {
+            "criterionId": "view",
+            "status": "pass",
+            "inspectionIds": [
+              "618e64d1-3e5a-4fa7-a035-30d55d22cbf4"
+            ],
+            "evidence": "Both sides, terrace tops, crown and mast consistently use the same elevated three-quarter projection."
+          },
+          {
+            "criterionId": "detail",
+            "status": "pass",
+            "inspectionIds": [
+              "618e64d1-3e5a-4fa7-a035-30d55d22cbf4",
+              "82ce9924-45aa-4e28-90ab-8f3719dd92f1",
+              "d69b8660-cff8-4e5a-96b0-0541413eb104"
+            ],
+            "evidence": "Detailed native glazing, window frames, corner ribs, louvers, coin reliefs, layered ruyi scrolls, entrance portal and doors are present. Current close-ups confirm canopy overlaps its supports and ruyi sits cleanly in front of cornice shade."
+          },
+          {
+            "criterionId": "material",
+            "status": "pass",
+            "inspectionIds": [
+              "618e64d1-3e5a-4fa7-a035-30d55d22cbf4",
+              "82ce9924-45aa-4e28-90ab-8f3719dd92f1",
+              "d69b8660-cff8-4e5a-96b0-0541413eb104"
+            ],
+            "evidence": "Glazing has blue-green sided illumination, recessed dark frames and ledge shadows; metal trims, ruyi and mast have distinct reflective highlights. Corrected canopy shading is continuous."
+          },
+          {
+            "criterionId": "scale",
+            "status": "pass",
+            "inspectionIds": [
+              "618e64d1-3e5a-4fa7-a035-30d55d22cbf4"
+            ],
+            "evidence": "Native construction retains 1px per world centimeter, base z0 to tip z50800 and fixed35°/25° camera. 24,998 native editable elements mechanically checked; no raster. Local dimensions are photo-proportioned estimates, not survey precision."
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 4406,
+            "fail": 0,
+            "unverified": 0,
+            "stale": 0
+          },
+          "items": [],
+          "visitedResults": 0
+        },
+        "coverage": {
+          "required": 5,
+          "passed": 5,
+          "pending": []
+        },
+        "final": true,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "Taipei 101 architectural height is 508m, 101 tower floors; podium has six floors.",
+            "scope": "Total height and floor organization; not facade detail measurements.",
+            "sources": [
+              "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+            ],
+            "verification": "Project profile page 3.",
+            "dependencies": [
+              {
+                "key": "structural-profile",
+                "version": "2026-10-17"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://conf.ncree.org.tw/download/i0981026-structural%20design%20of%20taipei%20101%20tower.pdf"
+              ],
+              "referenceIds": []
+            }
+          },
+          {
+            "id": "bamboo",
+            "statement": "Eight eight-floor outward-flaring modules rise above the tapered lower tower; blue-green glazing, silver-gray framing and projecting cornices.",
+            "scope": "Visible organization and material appearance, not surveyed widths.",
+            "sources": [
+              "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "https://www.onenessarchitects.com/project/Taipei-101"
+            ],
+            "verification": "Architect text and viewed photographs.",
+            "dependencies": [
+              {
+                "key": "architect-reference",
+                "version": "original"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "model-assessed",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "referenceIds": [
+                "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79"
+              ]
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 10,
+        "accepted": true,
+        "checks": [],
+        "inspectionIds": [
+          "618e64d1-3e5a-4fa7-a035-30d55d22cbf4",
+          "82ce9924-45aa-4e28-90ab-8f3719dd92f1",
+          "d69b8660-cff8-4e5a-96b0-0541413eb104"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 5,
+            "passed": 5,
+            "pending": []
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "Architect aerial image shows full tower and upper planes.",
+              "criterionIds": [
+                "whole",
+                "view",
+                "material"
+              ],
+              "limitations": [
+                "Photo perspective differs from chosen fixed projection; cannot establish exact local dimensions."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 3,
+              "referenceId": "reference:4e40839b247ad8b55445b313b2474d80591ef7649cc218b9e07b4f0165429b26",
+              "status": "restricted",
+              "reason": "Entrance close-up supports stepped portal and ruyi.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Ground-level frontal view only."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 4,
+              "referenceId": "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+              "status": "restricted",
+              "reason": "Clearly depicts eight outward-flaring tiers and crown.",
+              "criterionIds": [
+                "whole",
+                "detail"
+              ],
+              "limitations": [
+                "Base cropped; warm dusk lighting not adopted."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 8,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "Ruyi close-up establishes scroll profile, pendant and layered metal.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Not dimensional evidence or elevated viewpoint."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 9,
+              "referenceId": "reference:e62598a8f2ffc1c581f7fd00cef9c25d8f486867102a1fbac55a6c4af22a111f",
+              "status": "restricted",
+              "reason": "Visible corner ribbing and circular medallions.",
+              "criterionIds": [
+                "detail"
+              ],
+              "limitations": [
+                "Ground-up photograph; not aligned pixel reference."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 10,
+              "referenceId": "reference:cfc1c9c1c5e240db9d4772962e9046b771b3225654857595678b22a839ba9a80",
+              "status": "restricted",
+              "reason": "Supports mechanical louvers and central ruyi at cornices.",
+              "criterionIds": [
+                "detail",
+                "material"
+              ],
+              "limitations": [
+                "Perspective foreshortened."
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": false,
+          "revision": 10,
+          "criteria": [],
+          "inspections": [
+            {
+              "inspectionId": "618e64d1-3e5a-4fa7-a035-30d55d22cbf4",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "82ce9924-45aa-4e28-90ab-8f3719dd92f1",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 7400,
+                "y": 48000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "d69b8660-cff8-4e5a-96b0-0541413eb104",
+              "elementId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0",
+              "region": {
+                "x": 7800,
+                "y": 34500,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    }
+  ],
+  "localEdits": [
+    {
+      "input": {
+        "operations": [
+          {
+            "name": "resolve_design_targets",
+            "arguments": {
+              "scope": "region",
+              "bounds": {
+                "x": 5000,
+                "y": 47000,
+                "width": 5500,
+                "height": 3000
+              },
+              "filter": {
+                "name": {
+                  "equals": "雨遮托架8"
+                },
+                "ancestorId": "design-4733ac6b-39cf-497d-bca2-7a327b282b51-0"
+              },
+              "expectedCount": 1
+            }
+          }
+        ],
+        "inspection": "defer",
+        "message": "定位雨遮遮擋修正目標"
+      },
+      "output": {
+        "actionResults": [
+          {
+            "actionId": "ea537fe2-521f-427e-b41d-349cc15aae7f",
+            "actionName": "resolve_design_targets",
+            "result": {
+              "available": true,
+              "scope": "region",
+              "parentId": null,
+              "offset": 0,
+              "limit": 1,
+              "total": 1,
+              "elementIds": [
+                "design-ea9b8b33-4150-493b-8c66-28d3e674e88f-293"
+              ],
+              "nextOffset": null,
+              "elements": [],
+              "missingIds": [],
+              "delivery": "transient",
+              "coordinateSpace": "parent-local",
+              "observation": {
+                "candidateCount": 743,
+                "metadataReadCount": 743,
+                "computedReadCount": 0,
+                "matchedCount": 1,
+                "reused": false,
+                "selectionExecutions": 1,
+                "retainedRows": 0,
+                "fields": []
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "batchSummary": {
+          "operationCount": 1,
+          "actionCount": 1
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    {
+      "input": {
+        "operations": [
+          {
+            "name": "api_hierarchy_moveElementsRelative",
+            "arguments": {
+              "request": {
+                "elementIds": [
+                  "design-6cb3a44c-3f55-4296-ae93-a028129bf773-0"
+                ],
+                "anchorId": "design-ea9b8b33-4150-493b-8c66-28d3e674e88f-0",
+                "placement": "before"
+              }
+            }
+          },
+          {
+            "name": "api_hierarchy_moveElementsRelative",
+            "arguments": {
+              "request": {
+                "anchorId": "design-ea9b8b33-4150-493b-8c66-28d3e674e88f-293",
+                "placement": "after"
+              }
+            },
+            "target": {
+              "field": "elementIds",
+              "artifactId": "ea9b8b33-4150-493b-8c66-28d3e674e88f",
+              "keys": [
+                "入口雨遮頂",
+                "入口雨遮厚度"
+              ]
+            }
+          }
+        ],
+        "inspection": "defer",
+        "message": "修正簷影與雨遮的繪製順序"
+      },
+      "output": {
+        "actionResults": [
+          {
+            "actionId": "2872dc32-31f9-4263-8eee-054d8077b744",
+            "actionName": "api_hierarchy_moveElementsRelative",
+            "result": {
+              "value": {
+                "count": 1
+              },
+              "status": "complete",
+              "mutationScope": {
+                "complete": true,
+                "elementCount": 2,
+                "removedElementCount": 0
+              },
+              "retained": {
+                "snapshotId": "29ecd2a7-9deb-4de9-88d2-5a5d632a8f30",
+                "leaseId": "15e59000-2999-45b2-a99f-cac2ab5e421a",
+                "total": 1
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          },
+          {
+            "actionId": "aa15abd0-38c0-4c44-8013-2295521532db",
+            "actionName": "api_hierarchy_moveElementsRelative",
+            "result": {
+              "value": {
+                "count": 2
+              },
+              "status": "complete",
+              "mutationScope": {
+                "complete": true,
+                "elementCount": 3,
+                "removedElementCount": 0
+              },
+              "retained": {
+                "snapshotId": "0e3c22b6-5d26-468c-9c22-bd0d68668520",
+                "leaseId": "129b15cf-d70a-43bf-971e-1266bc0d6468",
+                "total": 2
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "inspectionDeferred": true,
+        "measurementDeferred": false,
+        "checks": {
+          "counts": {
+            "pass": 5,
+            "fail": 0,
+            "unverified": 0,
+            "stale": 0
+          },
+          "visitedResults": 5
+        },
+        "batchSummary": {
+          "operationCount": 2,
+          "actionCount": 2
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    }
+  ]
+}

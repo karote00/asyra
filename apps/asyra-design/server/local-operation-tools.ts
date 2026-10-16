@@ -63,7 +63,8 @@ import {
   createLocalDesignReview,
   designEvidenceDefinitions,
   designEvidenceInput,
-  reviewVisualSchema
+  reviewVisualSchema,
+  reviewInspectionIds
 } from './local-design-review'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
@@ -2957,9 +2958,7 @@ export const createLocalOperationTools = (
               region?: unknown
             }[]
           | undefined
-        const inspectionIds = [
-          ...((reviewArgs.inspectionIds as string[] | undefined) ?? [])
-        ]
+        const inspectionIds = reviewInspectionIds(reviewArgs)
         if (inspectionIds.length + (targets?.length ?? 0) > 24)
           throw new LocalOperationPreparationError(
             'Review accepts at most 24 reusable IDs and capture targets combined.'
@@ -3039,7 +3038,7 @@ export const createLocalOperationTools = (
             })
           }
         }
-        reviewArgs.inspectionIds = inspectionIds
+        if (targets?.length) reviewArgs.inspectionIds = inspectionIds
         if (failedInspections.length) {
           const message =
             'Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run.'

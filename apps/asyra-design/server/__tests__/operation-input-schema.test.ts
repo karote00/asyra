@@ -1,3 +1,4 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
 import { expect, it } from 'vitest'
 import {
   designEvidenceSchema,
@@ -260,7 +261,7 @@ it('preserves real review and action schema admission after native conversion', 
     ),
     { phase: 'facts' },
     { phase: 'visual', checks: [] },
-    { phase: 'structure', inspectionIds: ['image'], checks: [] }
+    { phase: 'structure', ...wholeViewJudgments(['image'], []) }
   ]
   expect(operationInputIssue(reviewPlanExample, converted)).toBeUndefined()
   for (const input of candidates)
@@ -393,10 +394,16 @@ it('preserves admission of every advertised evidence tool through native convers
     select_design_references: { referenceImageIndexes: [0] },
     review_drawing: {
       phase: 'visual',
-      inspectionIds: ['inspection'],
-      checks: [
-        { criterionId: 'shape', status: 'pass', evidence: 'Matches reference.' }
-      ]
+      ...wholeViewJudgments(
+        ['inspection'],
+        [
+          {
+            criterionId: 'shape',
+            status: 'pass',
+            evidence: 'Matches reference.'
+          }
+        ]
+      )
     }
   }
   expect(Object.keys(examples).sort()).toEqual(
@@ -429,7 +436,12 @@ it('preserves composed capture inputs and strict target validation through nativ
   if (!tool) throw new Error('Missing review tool')
   const native = nativeToolInputSchema(tool.inputSchema)
   const checks = [
-    { criterionId: 'shape', status: 'pass', evidence: 'Current shape' }
+    {
+      criterionId: 'shape',
+      status: 'pass',
+      evidence: 'Current shape',
+      inspectionIds: ['overview']
+    }
   ]
   const targets = [
     { elementId: 'drawing' },

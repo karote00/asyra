@@ -33,6 +33,24 @@ const text = (value: unknown): value is string =>
 const strings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.length <= 24 && value.every(text)
 
+/** Select actual submitted dependencies; an enclosing menu is not evidence. */
+export const reviewInspectionIds = (
+  value: Record<string, unknown>
+): string[] => {
+  if (
+    (Array.isArray(value.inspections) && value.inspections.length) ||
+    (Array.isArray(value.deferredChecks) && value.deferredChecks.length)
+  )
+    return strings(value.inspectionIds) ? [...value.inspectionIds] : []
+  return [
+    ...new Set(
+      (Array.isArray(value.checks) ? value.checks : []).flatMap((check) =>
+        record(check) && strings(check.inspectionIds) ? check.inspectionIds : []
+      )
+    )
+  ]
+}
+
 interface DesignCriterion {
   requirement: string
   description: string
@@ -115,18 +133,27 @@ const designReviewProperties = {
       type: 'object',
       additionalProperties: false,
       required: ['requirement', 'description', 'verification'],
+      oneOf: [
+        {
+          properties: { verification: { const: 'visual' } },
+          required: ['requiredUnits']
+        },
+        {
+          properties: { verification: { const: 'data' }, requiredUnits: false }
+        }
+      ],
       properties: {
         requirement: { type: 'string', minLength: 1, maxLength: 1000 },
         description: { type: 'string', minLength: 1, maxLength: 1000 },
         verification: { type: 'string', enum: ['visual', 'data'] },
         requiredUnits: {
           type: 'array',
-          minItems: 1,
+          minItems: 0,
           maxItems: 24,
           uniqueItems: true,
           items: { type: 'string', minLength: 1, maxLength: 256 },
           description:
-            'Fixed regional or cross-region judgments for a visual criterion. Keep a separate whole-view visual criterion. Omission cannot remove a required unit. Not supported for data or structure criteria.'
+            'Required explicit scope for every visual criterion: [] deliberately means whole-view; nonempty stable unit IDs mean independent regional or cross-region judgments. Use regional units for independently editable areas and a separate whole-view criterion for overall agreement. Omit only for data criteria. Nonempty units are not supported for structure criteria.'
         }
       }
     }
@@ -190,7 +217,7 @@ const designReviewProperties = {
     items: {
       type: 'object',
       additionalProperties: false,
-      required: ['criterionId', 'status', 'evidence'],
+      required: ['criterionId', 'status', 'evidence', 'inspectionIds'],
       properties: {
         criterionId: {
           type: 'string',
@@ -220,7 +247,7 @@ const designReviewProperties = {
           uniqueItems: true,
           items: { type: 'string', minLength: 1 },
           description:
-            'Delivered inspection IDs used for this criterion; defaults to all IDs in this review. Include every image needed for cross-region judgments.'
+            'Required exact delivered inspection IDs used for this judgment; the enclosing list only declares available images. Include every image needed for cross-region judgments.'
         },
         status: { type: 'string', enum: ['pass', 'fail', 'unverified'] },
         evidence: { type: 'string', minLength: 1, maxLength: 1000 }
@@ -274,13 +301,14 @@ export const reviewPlanExample = {
     appearance: {
       requirement: 'Use the requested appearance.',
       description: 'The current drawing matches the requested appearance.',
-      verification: 'visual'
+      verification: 'visual',
+      requiredUnits: []
     }
   },
   detailRequired: false
 }
 export const reviewPlanGuidance =
-  `Criteria are keyed by stable IDs. Plan fields: ${reviewPlanSchema.required.join(', ')}. Each criterion requires ${reviewPlanSchema.properties.criteria.additionalProperties.required.join(', ')}. verification is visual for appearance or data for canonical/numeric checks; split mixed requirements. Visual criteria can declare requiredUnits (unique stable unit IDs, at most 24). Keep a separate unpartitioned visual whole-view criterion. Do not partition data or structure criteria. Once judged or changed, declared obligations cannot shrink; identical replay preserves results. ` +
+  `Criteria are keyed by stable IDs. Plan fields: ${reviewPlanSchema.required.join(', ')}. Each criterion requires ${reviewPlanSchema.properties.criteria.additionalProperties.required.join(', ')}. verification is visual for appearance or data for canonical/numeric checks; split mixed requirements. Every visual criterion requires explicit requiredUnits: [] for deliberate whole-view checks or unique stable regional IDs (at most 24). Keep a separate unpartitioned visual whole-view criterion. Do not partition data or structure criteria. Once judged or changed, declared obligations cannot shrink; identical replay preserves results. ` +
   `Plan input example: ${JSON.stringify(reviewPlanExample)}\nAdapt its criterion to the actual request; this example is syntax, not an extra requirement.`
 
 const reviewStructureSchema = {
@@ -399,7 +427,7 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 3,
+    revision: 4,
     name: AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     description:
       'Define request-linked criteria before review, after the first ready drawing if appropriate. Store requirements; this does not inspect or approve the drawing. phase is fixed by this tool and may be omitted. ' +
@@ -519,10 +547,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 4,
+    revision: 5,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence,inspectionIds}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -702,7 +730,10 @@ export const createLocalDesignReview = (
   }
   const requiredChecks = () =>
     Object.entries(plan?.criteria ?? {}).flatMap(([criterionId, criterion]) =>
-      (criterion.requiredUnits ?? [undefined]).map((unitId) => ({
+      (criterion.requiredUnits?.length
+        ? criterion.requiredUnits
+        : [undefined]
+      ).map((unitId) => ({
         id: visualCheckIdentity({ criterionId, unitId }),
         criterionId,
         ...(unitId === undefined ? {} : { unitId })
@@ -1377,16 +1408,29 @@ export const createLocalDesignReview = (
             'Structure criteria must be a unique subset of planned criteria.'
           )
         const declared = value.criteria as Record<string, DesignCriterion>
-        const partitioned = Object.entries(declared).filter(
+        const scoped = Object.entries(declared).filter(
           ([, item]) => item.requiredUnits !== undefined
         )
         if (
-          partitioned.some(
+          Object.values(declared).some(
+            (item) =>
+              item.verification === 'visual' && item.requiredUnits === undefined
+          )
+        )
+          throw new Error(
+            'Every visual criterion requires explicit requiredUnits: [] for whole-view, or stable regional unit IDs. No plan was stored.'
+          )
+        const partitioned = scoped.filter(
+          ([, item]) => item.requiredUnits?.length
+        )
+        if (
+          scoped.some(
             ([id, item]) =>
               item.verification !== 'visual' ||
-              structureCriteria.includes(id) ||
+              (structureCriteria.includes(id) &&
+                !!item.requiredUnits?.length) ||
               !strings(item.requiredUnits) ||
-              item.requiredUnits.length === 0 ||
+              item.requiredUnits.length > 24 ||
               item.requiredUnits.some(
                 (unit) => !text(unit) || unit.length > 256
               ) ||
@@ -1400,7 +1444,7 @@ export const createLocalDesignReview = (
           partitioned.length &&
           !Object.values(declared).some(
             (item) =>
-              item.verification === 'visual' && item.requiredUnits === undefined
+              item.verification === 'visual' && item.requiredUnits?.length === 0
           )
         )
           throw new Error(
@@ -1465,10 +1509,10 @@ export const createLocalDesignReview = (
         !plan ||
         !strings(value.inspectionIds) ||
         !value.inspectionIds.length ||
-        value.inspectionIds.some((id) => !inspections.has(id))
+        reviewInspectionIds(value).some((id) => !inspections.has(id))
       )
         throw new Error(
-          'Use current inspection IDs and an existing pre-mutation plan.'
+          'Use current inspection IDs for referenced evidence and an existing declared plan.'
         )
       const structure = value.phase === 'structure'
       if (
@@ -1486,7 +1530,7 @@ export const createLocalDesignReview = (
         : Object.keys(plan.criteria)
       if (
         structure &&
-        !value.inspectionIds.some((id) => inspections.get(id)?.overview)
+        !reviewInspectionIds(value).some((id) => inspections.get(id)?.overview)
       )
         throw new Error('Inspect the full drawing before structure review.')
       if (
@@ -1543,7 +1587,14 @@ export const createLocalDesignReview = (
       for (const check of value.checks) {
         const requiredUnits = plan.criteria[check.criterionId]?.requiredUnits
         if (
-          requiredUnits &&
+          check.unitId !== undefined &&
+          !requiredUnits?.includes(check.unitId)
+        )
+          throw new Error(
+            'Use an exact declared unit; whole-view criteria do not accept regional unit IDs.'
+          )
+        if (
+          requiredUnits?.length &&
           (check.unitId === undefined || !requiredUnits.includes(check.unitId))
         )
           throw new Error(
@@ -1557,16 +1608,15 @@ export const createLocalDesignReview = (
             'Visual unitId must be a stable nonempty regional identity.'
           )
         if (
-          check.inspectionIds !== undefined &&
-          (!strings(check.inspectionIds) ||
-            !check.inspectionIds.length ||
-            new Set(check.inspectionIds).size !== check.inspectionIds.length ||
-            check.inspectionIds.some(
-              (id: string) => !(value.inspectionIds as string[]).includes(id)
-            ))
+          !strings(check.inspectionIds) ||
+          !check.inspectionIds.length ||
+          new Set(check.inspectionIds).size !== check.inspectionIds.length ||
+          check.inspectionIds.some(
+            (id: string) => !(value.inspectionIds as string[]).includes(id)
+          )
         )
           throw new Error(
-            'Criterion inspection IDs must be a nonempty unique subset of the current review images.'
+            'Each check.inspectionIds must be a nonempty unique subset of the current review images.'
           )
       }
       for (const check of value.checks) {
@@ -1587,7 +1637,7 @@ export const createLocalDesignReview = (
           )
         if (check.unitId === undefined) continue
         const key = visualCheckIdentity(check)
-        const imageIds: string[] = check.inspectionIds ?? value.inspectionIds
+        const imageIds: string[] = check.inspectionIds
         const enclosingIds = imageIds.filter((id) => {
           const image = inspections.get(id)
           return (
@@ -1605,7 +1655,7 @@ export const createLocalDesignReview = (
           )
         const scope = [
           ...new Set<string>(
-            (check.inspectionIds ?? value.inspectionIds).map((id: string) => {
+            check.inspectionIds.map((id: string) => {
               const image = inspections.get(id)
               if (!image)
                 throw new Error('Unit requires current delivered image scope.')
@@ -1630,7 +1680,7 @@ export const createLocalDesignReview = (
             previous.status === check.status &&
             previous.evidence === check.evidence &&
             JSON.stringify(previous.scope) ===
-              JSON.stringify(check.inspectionIds ?? value.inspectionIds)
+              JSON.stringify(check.inspectionIds)
           if (
             !previous ||
             (previous.revision !== check.supersedes.revision && !exactReplay)
@@ -1720,7 +1770,7 @@ export const createLocalDesignReview = (
           unitId: check.unitId,
           status: check.status,
           evidence: check.evidence,
-          scope: check.inspectionIds ?? value.inspectionIds
+          scope: check.inspectionIds
         })),
         ...deferredCandidates
       ])
@@ -1783,14 +1833,14 @@ export const createLocalDesignReview = (
           origin: 'main-agent',
           status: check.status as 'pass' | 'fail' | 'unverified',
           evidence: check.evidence,
-          scope: [...(check.inspectionIds ?? value.inspectionIds)],
+          scope: [...check.inspectionIds],
           dependencies: {
             ...(check.unitId === undefined &&
             plan.criteria[check.criterionId].verification === 'visual'
               ? { [wholeViewCoverageDependency]: 'required' }
               : {}),
             ...Object.fromEntries(
-              (check.inspectionIds ?? value.inspectionIds).map((id: string) => [
+              check.inspectionIds.map((id: string) => [
                 `inspection:${id}`,
                 String(inspections.get(id)?.source?.revision ?? revision)
               ])

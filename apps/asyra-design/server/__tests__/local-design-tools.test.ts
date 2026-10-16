@@ -1417,7 +1417,8 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
         subject: {
           requirement: 'Only a journal title',
           description: 'Only a journal title',
-          verification: 'visual'
+          verification: 'visual',
+          requiredUnits: []
         }
       }
     },

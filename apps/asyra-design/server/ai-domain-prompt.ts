@@ -96,7 +96,7 @@ repeat checks whose dependencies remain current. Do not request an independent p
 The primary agent reviews actual rendered images against the request and applicable references,
 records findings with review_drawing and repeats corrections as needed. Capture and view images
 before submitting visual judgments. Follow the capture response next.arguments, add your observed
-checks, and record both passes and failures before changing the drawing. Submit only judged
+checks, and record both passes and failures before changing the drawing. Declare requiredUnits for each visual criterion: [] explicitly means whole-view; stable regional IDs let independently editable areas retain their own judgments. Keep a separate overall criterion. Every submitted check must specify its own inspectionIds from the capture response; the enclosing list is not inherited. Submit only judged
 criterion/unit IDs with their actual image dependencies; do not wait to report every pass at the end.
 Keep unrelated passes and repair pending work. final=true attempts completion from retained results,
 not a request to repeat all judgments. There is no limit on necessary primary-agent visual iterations.

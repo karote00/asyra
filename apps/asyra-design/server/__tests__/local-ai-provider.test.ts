@@ -1,11 +1,16 @@
-import recordedPurpose from './fixtures/recorded-101/purpose.json'
+import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
       id,
-      { requirement: id, description: id, verification: 'visual' }
+      {
+        requirement: id,
+        description: id,
+        verification: 'visual',
+        requiredUnits: []
+      }
     ])
   )
 import { designPreparationExamples } from '../design-preparation-examples'
@@ -4363,7 +4368,7 @@ it('publishes registered operation intent with explicit provenance', async () =>
   })
 })
 
-it('settles public stage after its root tool cohort before later inspection', async () => {
+it('retains authored stage context after root tool completion without claiming execution', async () => {
   const stage = recordedPurpose.item.text
   const child = fakeServer({
     commentary: stage,
@@ -4421,10 +4426,8 @@ it('settles public stage after its root tool cohort before later inspection', as
   expect(observations.some((entry) => entry.status === 'running')).toBe(true)
   expect(observations.some((entry) => entry.status === 'completed')).toBe(true)
   for (const entry of observations) {
-    expect(entry.message).toBe(
-      entry.status === 'running' ? stage.trim() : undefined
-    )
-    let label = 'Processing your request'
+    expect(entry.message).toBe(stage.trim())
+    let label = 'Current task'
     if (entry.status === 'running')
       label = ['queued', 'admission'].includes(entry.phase ?? '')
         ? 'Preparing operation - Preparing the design'
@@ -4434,7 +4437,7 @@ it('settles public stage after its root tool cohort before later inspection', as
 })
 
 it.each(['success', 'failure'] as const)(
-  'retires recorded purpose after its last root call on %s without clearing its replacement',
+  'retains recorded stage on %s while retiring calls and preserving its replacement',
   async (outcome) => {
     const server = fakeServer({ hold: true, manualToolReplies: true })
     spawn.mockReturnValue(server.child)
@@ -4551,7 +4554,7 @@ it.each(['success', 'failure'] as const)(
     await vi.waitFor(() =>
       expect(server.packets.some((packet) => packet.id === 803)).toBe(true)
     )
-    expect(projection.result().current?.message).toBeUndefined()
+    expect(projection.result().current?.message).toBe(next.text)
     expect(
       events
         .filter(
@@ -4559,13 +4562,13 @@ it.each(['success', 'failure'] as const)(
             event.tool === 'public-progress' && event.status === 'completed'
         )
         .map((event) => event.activity?.callId)
-    ).toEqual(['next-stage'])
+    ).toEqual([])
     server.finish()
     await result
   }
 )
 
-it('settles native research purpose before a later App call and preserves overlapping research', async () => {
+it('retains stage context between native research and App calls without reopening closed research', async () => {
   const server = fakeServer({ hold: true, manualToolReplies: true })
   spawn.mockReturnValue(server.child)
   const projection = createAiActivityProjection({ purpose: 'Draw Taipei101' })
@@ -4612,20 +4615,22 @@ it('settles native research purpose before a later App call and preserves overla
     recordedPurpose.item.text.trim()
   )
   research('research-b', 'completed')
-  expect(projection.result().current?.message).toBeUndefined()
+  expect(projection.result().current?.message).toBe(
+    recordedPurpose.item.text.trim()
+  )
   expect(
     events.filter(
       (event) =>
         event.tool === 'public-progress' && event.status === 'completed'
     )
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   research('research-b', 'completed')
   expect(
     events.filter(
       (event) =>
         event.tool === 'public-progress' && event.status === 'completed'
     )
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   server.notify('item/completed', {
     item: {
       ...recordedPurpose.item,
@@ -4657,7 +4662,10 @@ it('settles native research purpose before a later App call and preserves overla
   await vi.waitFor(() =>
     expect(server.packets.some((packet) => packet.id === 891)).toBe(true)
   )
-  expect(projection.result().current?.message).toBeUndefined()
+  expect(projection.result().current).toEqual({
+    label: 'Current task',
+    message: 'Prepare the next part'
+  })
   server.finish()
   await result
 })

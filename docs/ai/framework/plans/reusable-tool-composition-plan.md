@@ -1,21 +1,19 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: Stages 1 and 2 were pushed at c727b1de593cab4499d4dfe47768d4791823a20f
-on 2026-10-16 after current-main integration and applicable local verification.
-Stage 3 was pushed as b1c8f9ac8bbc4cc7380aee677b27629136de1514 after the
-2026-10-16 full review, current-main integration and actual-head verification.
-The user explicitly retains the isolated unreproduced browser navigation failure as a known unresolved, non-blocking item. Its trigger is not
-claimed fixed. Stage 4 is locally complete with current-source contract and integration evidence below; its changes remain uncommitted and unpushed.
+Status: Stages 1 through 4 were delivered; the latest pushed source is
+`a873aa70f47f0903df5c37d453f7d07991301c5c`. Recorded-run corrections and their
+follow-up review remain local. Prior delivery and validation records below are
+historical evidence, not active execution instructions.
 
 ## Current authority and stop boundary
 
-The authorized Stage 3 push is complete. Stage 4 local implementation and verification
-are complete, preserving Stage 1/2/3 contracts. Stop for the user report. Do not run
-live 101, call models, push, create a PR, merge or resume monitoring. Historical
-execution cards are evidence, not active commands.
-The delivered Stage 3 is **Make tool-first delegation consistent and executable**.
-The older completed section named **Stage 3 - Direct structural delivery** below
-is historical and must not be resumed as the current task.
+Review and repair the recorded scope/activity handoffs under the latest
+**Scope and activity handoff review - 2026-10-17** card below. Verify local pass
+accumulation, concurrent activity, failure recovery and consistency of current
+spec/prompt/Inspector/consumer contracts. Preserve earlier local corrections.
+Do not run live 101, call models, push, create a PR, merge or resume monitoring.
+Do not start a new implementation stage. The isolated older trace-less browser
+navigation failure remains known and non-blocking, not claimed fixed.
 
 Historical Stage 2 delivery: exact lease protected remote e0d52ddef; its
 integrated main was 4e925488842807672ab36c86fb69a269bd2249f5. Actual-head candidate
@@ -1732,7 +1730,7 @@ operations remain outside this completion claim.
 - **Purpose and terminal consumers.** Preserve current request/call/parent identity
   and authored purpose through invocation, queued leaves and settlement. Generic
   tool descriptions remain system activity; no new prompt may claim active drawing
-  during preparation or revive a settled cohort. Existing status filtering and
+  during preparation or revive a completed invocation. Existing status filtering and
   causal ownership stay unchanged; any direct regression returns to its current
   owner. Successful drawing remains separate from persistence confirmation.
 
@@ -1879,7 +1877,7 @@ Factory, rendering or persistence redesign is not part of this stage.
 
 Current source already provides automatic save after completed composition, genuine
 request-local save receipts, SQLite expected-version writes, dependency reload,
-suspend/remove checks, scoped activity and provider root-cohort settlement. Retain
+suspend/remove checks and scoped invocation activity. Retain
 working behavior; an absent combined test does not establish a production defect.
 
 The earlier Stage 4 paragraph did not specify receipt expiry across request disposal,
@@ -1905,15 +1903,17 @@ step provenance; Design translates those events, not a second lifecycle authorit
   existing spec and matching Inspector boundary, not introduce an alternate envelope.
 - Distinguish original objective, authored stage intent, active call purpose and
   observed operation. Inherit purpose through live ancestry; never copy inherited
-  prose as newly authored work. Native calls, nested recipes and native research must
-  agree on which finite root cohort can complete a stage.
+  prose as newly authored work. Native calls, nested recipes and native research
+  close only their invocation ownership. They cannot infer completion of request
+  stage context; new commentary, retry, saving or terminal settlement retires it.
 - Deliver every start/end, including admission failure, cancellation and child
   failure, before visible deduplication. Parent completion closes only its dependent
-  children. Late/duplicate starts cannot reopen closed calls; an old cohort or attempt
+  children. Late/duplicate starts cannot reopen closed calls; an old call or attempt
   cannot clear newer commentary or another independent active call.
 - Known work retains concrete context during input preparation and queueing, but
   its phase cannot claim drawing before execution. After leaf completion, remove its
-  execution claim. Retain stage prose only while its declared lifetime remains live.
+  execution claim. With no active calls, retain authored stage prose as Current
+  task context, never as an execution label.
   Without authored context, show an observed phase; do not fabricate work or retain
   stale text to hide missing information. Language selection remains unchanged.
 - Keep lifecycle transitions and observed phases in diagnostics even when text does
@@ -1930,7 +1930,7 @@ Runtime/host, production transport decoder, conversation projection and panel. E
 existing provider/presentation/conversation/browser tests with controlled ordering:
 serial children; parallel siblings with different purposes; nested coordinators;
 research overlapping an App tool; rejected admission; cancellation before and after
-acknowledged work; new commentary while an older cohort settles; retry and late events;
+acknowledged work; new commentary while older calls settle; retry and late events;
 no authored context; library save wait and final document-save wait. Assert lifecycle,
 selected purpose identity, phase and current DOM at each boundary, not just final text.
 No extra model call may author, classify or validate a status.
@@ -7703,3 +7703,271 @@ owner or Inspector semantic change. The failing dependency log is retained at
 tmp/stage4-push/shared/1.log. User now authorizes this Stage 4 push followed by
 one recorded live 101 with a hard fifteen-minute deadline; no later push or
 monitoring is authorized.
+
+### Recorded 101 purpose and review-scope correction - 2026-10-17
+
+Current task supersedes the Stage 4 cohort-expiry instruction. Use saved run
+`tmp/ai-recording/runs/reusable-tools-1792174632012` only; no live inference,
+101 run, push, monitoring, dependency upgrade or document/history redesign.
+Preserve the four pre-existing local documentation corrections.
+
+Root-cause review before implementation:
+
+- The prompt says a concrete stage survives individual operation completion.
+  Provider root-cohort completion instead retires it, and provider integration
+  tests assert the generic fallback. The 230.024-second fallback is an authored
+  contract mismatch, not a missing reducer exception.
+- The original plan declares no regional units. Every passed visual criterion
+  cites the whole-building image, sometimes with local crops. Those actual
+  image dependencies really change after painter-order edits. Previous fixture
+  tests supplied regional units that the real input omitted. They proved the
+  mechanism, not the entry handoff. Never keep a judgment whose actual evidence
+  changed or split a whole-image judgment into invented local approvals.
+- Per-check image lists are optional and inherit every image in the submission.
+  This silently broadens dependencies. Scope must be explicit at admission and
+  carried back with coverage/repair replies, not reconstructed from prose.
+
+Bounded owner cards and order:
+
+1. Settle/provider activity owner (`settle`, Purpose lifetime). Inputs are actual
+   native commentary, root/child invocation phases and terminal outcomes. Retain
+   request-stage context until replacement, retry or lifecycle settlement;
+   individual call completion removes only that call. Label context separately
+   from observed operation, including after failure. Reject old/closed call
+   events and retain concurrency/approval/Stop/save precedence. Remove the
+   provider cohort bookkeeping, not add another busy/status owner. Boundary:
+   local-ai-provider, existing activity projection/tests, prompt, product spec,
+   matching Inspector and proof. Test the actual provider-to-projection path
+   with recorded commentary and sequential/overlapping tools, late events,
+   failure, replacement and terminal settlement. No invented work text.
+2. Inspect/review admission owner (`inspect`, regional result accumulation).
+   Keep existing requiredUnits: every visual criterion must explicitly provide
+   it; [] means an intentionally whole-view judgment, nonempty stable IDs mean
+   independent regional/cross-region obligations. Data criteria do not use it.
+   Every submitted judgment must name its own inspectionIds; remove inherited
+   all-image scope. Return the admitted obligations with capture/review handoffs
+   so callers can submit only pending units. The original omitted-scope input
+   must fail before plan storage or canvas application with actionable recovery.
+   Explicit whole criteria still invalidate on changed whole-image evidence.
+   The model, not a tool or hidden AI, chooses semantic partitioning. Tools
+   enforce complete declared coverage and exact image dependencies. Boundary:
+   local-design-review, local-operation-tools/direct workflow/schema consumers,
+   current prompt, formal tests/recorded fixture, spec and Inspector. No cache,
+   guessed geometric equivalence, silent legacy default or numeric limit change.
+3. Integration/preservation: replay the saved input into the real public tools,
+   exercise explicit corrected regional scopes, native browser edits, retained
+   result revisions, sparse re-review and final acceptance. Check unaffected
+   crops survive, affected/whole images expire, unknown scope stays unverified,
+   cancellation/transport failure preserves prior results, and final acceptance
+   still requires all obligations. Run direct provider/transport/conversation/
+   presentation, review/check/workflow/schema suites, real browser inspection
+   integration, production TypeScript, focused lint/naming and current Inspector
+   evidence. Existing history/collaboration/save paths are consumers, not new
+   mutation owners; preserve their formal integration assertions.
+
+Self-review: explicit scope cannot guarantee the main model chooses a good
+partition. It removes silent defaults and exposes the decision; do not promise
+all global visual claims remain current after local edits. Keeping stage context
+must not imply active painting: actual call phases remain separate and terminal
+controls win. The saved raw fixture must remain raw, with corrected test input
+constructed separately. Admission must be atomic and recovery cannot erase
+previous passes. Test-first each owner; inspect direct consumer failures before
+advancing. Stop only for a genuine out-of-scope owner change or contradictory
+formal evidence; report limits without fabricating closure.
+
+
+Recorded correction closure - 2026-10-17:
+
+The two owner corrections are complete within this task. No new lifecycle owner,
+cache, compatibility fallback, model call, Factory/persistence change or numeric
+limit was introduced. Visual declaration revision 4 and judgment revision 5 expose
+the explicit current inputs through the same registry, native schema conversion,
+usage guidance, prompt and direct consumers. The raw recorded fixture remains
+unchanged; corrected declarations are constructed separately in tests.
+
+Test-first evidence lives in tmp/recorded-101-followup/: activity-red.log,
+scope-red.log and undeclared-red.log fail the former behavior. The full current
+server response harness passes 1,250 tests (two existing opt-in skips). Frontend
+AI validation initially passed 48 files and failed the inspection fixture file
+because its old whole-view declaration omitted requiredUnits; correcting that
+fixture and preserving each regional image binding passes all 26 tests in the
+file. Together the unchanged passes and corrected owner cover the 586-case
+suite; the initial all-ai.log remains failed, not relabeled as a green run.
+All three production typecheck projects pass. Naming passes 15 cases; scoped lint
+has zero errors and four existing console warnings; catalog tests pass eight.
+
+Frozen-source real Chrome inspection integration passes 12 cases with two
+existing artifact-dependent opt-in skips. It exercises rejected recorded scope
+at the public Runtime entry without dispatch or stored judgments, explicit
+recovery, sparse review, independent pass retention, canonical mutations,
+regrouping, Undo/Redo, cancellation, interrupted writes and durable reload.
+Four additional existing conversation cases pass at 360/1280px, including stage
+replacement, operation settlement, timeout, retry and one-Undo replacement.
+Current-activity and timeout screenshots were inspected. Playwright-owned
+3300/3401/4411 listeners are closed. No live inference or full 101 was run.
+
+The first browser attempt was contaminated by watched-source edits during its
+run and recorded unexpected Vite reconnections/reload. Its two failures and
+traces remain in first-browser-failures; the full same suite subsequently ran
+with frozen files and passed. This does not establish a general cause for older
+trace-less navigation failures. A first candidate also failed because its
+self-contained proof snapshot did not capture auxiliary fixture imports; the
+proof entry now embeds the exact recorded evidence it needs while ordinary
+integration tests consume the preserved JSON fixtures. Inspector production was
+not changed to hide that failure.
+
+Source-bound candidate 5b17f334-0207-4bd6-8832-bcbd099aa4ba and recovery
+5627ccd7-b139-4982-8ef3-fab64fa0e3b4 pass all 38 obligations on source
+503ac5685b2ec32e1833ae106aa4d08c91fef5b345a504c4bc45f002ff4edffa.
+All 808 captured file hashes match the tested working source. Contract review
+b7057dcfb04a3db3a5640559a56ece554bd78f2d9e5785dfc0313479611f7d37
+was accepted with no blockers. Negative run
+0dd9ec31-6b33-4817-89e7-351b1dee6e5c intentionally ignores canonical evidence
+and fails exactly current-evidence, scoped-dependencies, regional-units and
+regional-pixels; recovery passes. No accepted target baseline was replaced.
+
+Bounded final review checked declaration/schema/example agreement, actual public
+producer-to-consumer delivery, atomic rejection/recovery, sparse accumulation,
+changed image expiry, cancellation/failure retention, sequential/concurrent/late
+activity, lifecycle precedence and existing save/history consumers. No remaining
+concrete in-scope finding was identified. The main agent still chooses semantic
+regions and authors stage updates; tools cannot infer an unreported intention or
+turn a changed whole-image judgment into independent local approvals. No live
+latency improvement is claimed. Leave changes local; no push or monitoring.
+
+
+### Scope and activity handoff review - 2026-10-17
+
+Authorized follow-up: review the two recorded-run corrections and their direct
+consumers, existing failure recovery and current requirement consistency. No
+live AI/101, push, monitoring, new framework owner or unrelated repository audit.
+Discovery is fixed to the changed owners, registry/schema/capture/review/store/
+completion handoffs, provider/activity/panel/conversation lifecycle, active spec,
+matching Inspector and prompt. Historical plan evidence is not current authority.
+
+Inspect owner finding: explicit per-check image dependencies are stored correctly,
+but the invocation owner still validates every enclosing image and uses that list
+to reject submitted changes. An unused stale image can therefore reject a valid
+local judgment before publication. The enclosing image list is availability, not
+an implicit dependency, as already required by the current spec. Freeze the fix
+at the existing review owner and its local-operation caller: derive the submitted
+image selection once from the explicit checks; deferred-detail decisions retain
+their documented enclosing-image dependency, capture requests still validate all
+requested images, and referenced stale/unknown images remain rejected. Retained
+passed evidence still participates in final acceptance and coverage. Do not weaken
+freshness, cross-request identities, mechanical checks or atomic admission.
+
+Step card - inspect: inputs are schema-admitted review submissions, declared
+criteria/units and retained image receipts. Output is only admitted current
+judgments plus existing pending coverage and recovery. Conditions include explicit
+per-check membership, capture-only versus judgment calls, sparse/failed/deferred
+judgments, cancelled or incoherent validation, changed prior evidence and final
+coverage. Browser evidence is authoritative; no new image/model validator or
+compatibility fallback. Boundary: local-design-review.ts, local-operation-tools.ts,
+existing owner/server proof/browser integration tests, spec and matching Inspector.
+First strengthen the real public browser handoff and owner regression; prove red,
+repair selection at its semantic owner, then run existing review/workflow/schema
+consumers and frozen-source browser recovery. Test unrelated stale images before
+and after known retirement, while the same image remains rejected when cited.
+
+Settle review card: trace sequential/concurrent calls, active ancestry, request
+commentary replacement, old/closed events, cancellation/approval/save/retry and
+panel rendering. Context without calls must be labeled Current task, with no
+execution label inferred from prose. Existing call/phase owners remain sole
+truth. Change implementation only after a concrete failing case, not because a
+new status abstraction could be invented. Include existing presentation,
+provider-to-projection and browser conversation tests rather than only new tests.
+
+Self-review: this correction closes the admission-to-validation mismatch rather
+than masking invalidation. It must not drop failed/unverified checks or deferred
+dependencies when deriving selection. Unknown referenced images must still give
+recoverable feedback; all-current final acceptance must remain required. Explicit
+whole-view judgments may legitimately expire. No semantic AI partitioning claim.
+
+
+Follow-up review closure - 2026-10-17:
+
+Confirmed and corrected one additional inspect-owner handoff defect. Explicit
+per-check bindings reached the result store, but both invocation freshness checks
+and the direct review owner still treated unused enclosing images as mandatory.
+The recorded menu could include a retired image and veto otherwise valid local
+recovery. The existing public browser integration and direct owner regression
+both failed before correction (tmp/scope-activity-review/browser-red.log and
+scope-red.log). Selection now belongs to local-design-review's reviewInspectionIds;
+the invocation owner consumes the same selection for validation and submitted-
+change detection. Keep the original menu for subset admission; filtering it must
+not admit references that were never offered. Capture and deferred-detail image
+requirements are preserved. No numeric limit or accepted evidence was relaxed.
+
+Full review followed raw input, native schema conversion, the real registry,
+selection admission, browser receipt validation, atomic result publication,
+independent pass revisions, sparse repair and final settlement. Existing tests
+cover changed/foreign/unknown evidence, partial and cancelled validation,
+canonical coverage, source requirements, transport failure and recovery. New
+owner cases cover pass/fail/unverified submissions and deferred-detail evidence;
+the source-bound regional case now repairs with an unused retired image still in
+the menu. The browser test proves actual edit, stale rejection, preserved sibling
+pass, local recovery and rejected reuse of the old image before durable completion.
+
+No further activity runtime edit was justified. Existing provider integration,
+projection and conversation tests plus strengthened 360/1280px browser cases
+prove unrelated parallel purposes cannot replace common stage context, completion
+exposes the surviving call, all calls ending returns to Current task, and late
+starts cannot revive execution. Other existing cases retain queue/admission,
+parent/child closure, approval, cancellation, timeout/retry, saving and terminal
+precedence. Screenshots of actual current context and timeout UI were inspected.
+The 66-case presentation file was rerun after correcting an obsolete test title
+that claimed the original objective returned; its assertions already require
+only the observed provider phase. Context remains authored information, not a
+promise of pixels changing or an inferred new stage.
+
+Requirement consistency review found stale authoritative prose: the plan header
+still described Stage 4 as unpushed; Stage 4A retained root-cohort retirement;
+API_SURFACES described the removed record_design_review tool, a pre-mutation gate,
+blanket mutation invalidation, default deletion confirmation and query schemas
+instead of the current menu representation. Corrected these to the active spec,
+registry and permission contracts. Marked the old evaluation plan and handoff
+section as historical; immutable run evidence was not rewritten. No unrelated
+App requirements, global governance rules or framework semantics were changed.
+
+Fresh local gates: full server harness 1,254 passed/two existing opt-in skips;
+all 49 frontend AI files 586 passed; real Chrome 16 passed/two existing artifact-
+dependent skips, retries=0; three production typecheck projects, naming 15,
+scoped lint (zero errors, one pre-existing console warning), catalog eight and
+diff whitespace pass. Browser services 3300/3401/4411 exited. The first focused
+green attempt found only two old error-substring assertions; retained the useful
+current-inspection wording while removing the incorrect pre-mutation claim,
+then the complete server harness passed. This is not a hidden passed rerun.
+
+Source candidate 7df0865e-285d-4f8c-a81c-c931a5c89746 passes 38 obligations on
+b7056e39e02cd29c28bc7662913603bd7e077c0f0cb41a02007ec8b3b5ca04a4.
+Contract review 1168cd21489bd67392f3e7821aead6c116d3e0138415d8a0ed77a3e72cce45fb
+is accepted, with unchanged case identities and no blockers. Negative run
+366e84db-2936-46f9-9240-f2903ee5f616 fails exactly the four expected inspection
+freshness cases. The earlier negative command was blocked before execution by
+pending contract admission; its log is retained separately. No target baseline
+was replaced. Recovery run d04800f7-9b27-46f8-9161-9281b1c66f14 passes all
+38 obligations on the same captured source and mapping revision 90. Final
+comparison of all 808 captured file hashes against the worktree found no changes.
+
+No remaining concrete in-scope issue was found by this review. This is evidence
+for the stated contracts, not a guarantee of all possible model-authored intent.
+The main agent still chooses semantic regions and announces stage changes;
+actual changed whole-image judgments still need rechecking. No live latency or
+101 improvement claim. Leave all changes local: no model calls, 101, push or
+monitoring, and no automatically inferred next stage.
+
+### Reviewed handoff delivery and recorded acceptance - 2026-10-17
+
+The user now authorizes one push of the completed scope/activity corrections,
+followed by one full recorded Taipei 101 acceptance. This supersedes the prior
+local-only stop for delivery only; do not push subsequent test artifacts or
+resume monitoring. Integrate latest main, preserve unrelated documentation edits,
+and reuse verified unchanged source evidence. The independent deadline must
+terminate the owned provider/browser execution at fifteen minutes from send,
+retain failure evidence without asking, and distinguish timeout from completion.
+Use the original full prompt and unchanged App model. Fit first content, changed
+overall bounds and final content; keep ten seconds after normal completion.
+Report first frame, phase timing/AI-tool attribution, actual local pass reuse,
+parallel activity/context ownership, persistence/reload and final reference images.
+No node-count-based improvement claim or production changes during the run.

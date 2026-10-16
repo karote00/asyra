@@ -541,7 +541,8 @@ it.each([
           Overall: {
             requirement: 'Complete building',
             description: 'Whole-view agreement',
-            verification: 'visual'
+            verification: 'visual',
+            requiredUnits: []
           },
           Facade: {
             requirement: 'Detailed facade',
@@ -609,6 +610,7 @@ it.each([
           checks: [
             {
               criterionId: 'Overall',
+              inspectionIds: [image],
               status: 'pass',
               evidence: 'Whole building agrees'
             }

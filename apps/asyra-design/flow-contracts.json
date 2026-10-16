@@ -384,6 +384,15 @@
             "packages/feature-system/src/types/execution.ts",
             "packages/feature-system/src/types/feature.ts"
           ]
+        },
+        {
+          "id": "settle.recorded-purpose",
+          "stepId": "settle",
+          "testName": "execution proof retains recorded authored purpose after provider tool settlement",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/src/ai/activity-state.ts"
+          ]
         }
       ],
       "handoffs": [

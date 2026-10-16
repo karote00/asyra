@@ -911,7 +911,7 @@ it('does not restore approval after the user has started stopping', () => {
   expect(lateApproval.state.entry.label).toBe('Stopping…')
 })
 
-it('returns to the objective after drawing completes', () => {
+it('returns to the observed provider phase without reviving the objective after drawing completes', () => {
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })

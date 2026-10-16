@@ -1,5 +1,45 @@
 # Reusable Tool Composition - Current Handoff
 
+## Current user direction - 2026-10-17
+
+Push the validated corrections once, then run one recorded full Taipei 101 with
+an independent fifteen-minute hard stop. No subsequent push or monitoring.
+See the plan delivery/acceptance card. The completed review below remains evidence.
+
+## Completed task - Scope/activity full review - 2026-10-17
+
+The latest user request is locally complete: review both recorded-run fixes,
+repair confirmed handoff failures, check current requirement consistency, and
+prove integration without live AI/101, push or resumed monitoring. Stay in
+.worktrees/ai-reusable-tool-design on codex/ai-reusable-tool-design. Preserve all
+local work and the four pre-existing documentation corrections.
+
+Additional root cause: per-check bindings were saved correctly, but invocation
+and direct owner admission still required every enclosing image. The existing
+review owner now derives actual submitted image dependencies once; the caller
+uses that selection while retaining the original menu for subset validation.
+Unused retired menu images cannot veto local recovery; cited stale images remain
+rejected. Capture/deferred requirements and final retained coverage are unchanged.
+Current activity needs no further runtime change: real parallel stream/panel cases
+prove surviving-call presentation and Current task context after all calls finish.
+No second status owner, speculative phase, compatibility fallback or extra model.
+
+Fresh gates: server 1,254 pass/two existing opt-in skips; frontend AI 586 pass;
+real browser 16 pass/two artifact-dependent skips; presentation 66 (subset,
+rerun after title correction), production types, naming 15, scoped lint and
+catalog eight pass. Real browser covers local pass accumulation, actual edits,
+Undo/Redo, collaboration, interrupted writes and durable reload. Evidence:
+tmp/scope-activity-review/. The plan's Scope and activity handoff review card and
+closure contain exact source/negative/recovery IDs, failed-run lineage and limits.
+
+Current plan header, Stage 4A, API_SURFACES and evidence terminology now agree
+with the active spec/registry. Previous cohort retirement and pre-mutation gate
+instructions are superseded, not compatibility behavior. Historical tests are
+not execution authority. Do not start another stage, rerun unchanged gates,
+run 101, push or resume monitoring without new user direction.
+
+## Historical Stage 4 evidence
+
 ## Latest complete Stage 4 review - 2026-10-17
 
 Stage 4 is locally complete after the full fixed-category review and current-source
@@ -116,7 +156,7 @@ implementation, full affected suites and the fixed seven-category review. Stop f
 the user report; no further implementation is authorized by older cards. No live AI/101,
 push, PR, merge, monitoring or subagents. Preserve .env.
 
-- Worktree: /Users/asa/Desktop/workspace/asra/.worktrees/ai-reusable-tool-design.
+- Worktree: .worktrees/ai-reusable-tool-design.
 - Branch: codex/ai-reusable-tool-design.
 - Pushed HEAD (Stages 1/2/3): b1c8f9ac8bbc4cc7380aee677b27629136de1514.
 - Integrated main: eac2b0d8e719ee9055c846a24a033020c4b1c3cd.
@@ -171,12 +211,13 @@ as the proven cause. Retain the event without blocking Stage 3 or repeating broa
 suites solely to obtain more passes. Investigate new failing trace evidence if it
 appears. Test-owned ports 3300/3401/4401 are closed.
 
-## Reviewed Stage 4 plan
+## Historical reviewed Stage 4 plan
 
-The active plan section now defines four bounded slices:
+The delivered Stage 4 plan defined four bounded slices:
 
 1. Real provider/Runtime lifecycle through transport, conversation and panel; exact
-   purpose, phase, concurrency, cancellation, old-event and root-cohort ownership.
+   purpose, phase, concurrency, cancellation and old-event ownership. The former
+   root-cohort retirement requirement was superseded by the current recorded-run correction.
 2. Completed product execution versus candidate/eligible tool persistence; genuine
    save-only recovery, nested dependency receipts, capacity and request disposal.
 3. Actual SQLite close/reopen, current dependency admission and fresh-input reuse;
