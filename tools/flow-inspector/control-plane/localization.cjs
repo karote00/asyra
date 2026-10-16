@@ -380,6 +380,81 @@ function validCase(item, runId) {
     )
   )
 }
+// A recorded invocation is evidence scope, never permission to execute its argv.
+function invocationScope(record) {
+  if (
+    !record.command?.argv.length ||
+    !Array.isArray(record.contracts) ||
+    !record.contracts.length ||
+    !record.contracts.every(
+      (c) =>
+        typeof c?.manifestPath === 'string' && typeof c?.digest === 'string'
+    )
+  )
+    return null
+  return JSON.stringify({
+    cwd: record.command.cwd,
+    argv: record.command.argv,
+    environment: Object.entries(record.command.environment ?? {}).sort(
+      ([a], [b]) => a.localeCompare(b)
+    ),
+    contracts: record.contracts
+      .map((c) => [c.manifestPath, c.digest])
+      .sort(([a], [b]) => a.localeCompare(b))
+  })
+}
+function classifyWarnings(records) {
+  const cleanScopes = new Map()
+  const groups = { current: [], history: [] }
+  for (const record of [...records].reverse()) {
+    const scope = invocationScope(record)
+    const successors = cleanScopes.get(scope) ?? []
+    const successor = successors.find((value) =>
+      record.cases.every((item) => value.identities.has(identity(item)))
+    )
+    if (record.issues.length || record.executionFailureDetails?.length) {
+      const retired =
+        successor &&
+        record.phase === 'completed' &&
+        successor.record.startedAt > record.startedAt &&
+        Number.isFinite(Date.parse(record.finishedAt)) &&
+        Date.parse(successor.record.startedAt) >=
+          Date.parse(record.finishedAt) &&
+        record.cases.every((item) => successor.identities.has(identity(item)))
+      const group = {
+        runId: record.id,
+        startedAt: record.startedAt,
+        issues: record.issues,
+        executionFailureDetails: record.executionFailureDetails ?? [],
+        supersededBy: retired ? successor.record.id : null
+      }
+      groups[retired ? 'history' : 'current'].push(group)
+    }
+    if (
+      scope !== null &&
+      record.phase === 'completed' &&
+      !record.issues.length &&
+      !record.executionFailureDetails?.length &&
+      record.cases.length &&
+      record.cases.every(
+        (item) =>
+          item.resolution === 'mapped' &&
+          ['passed', 'failed'].includes(item.status)
+      ) &&
+      new Set(record.cases.map(identity)).size === record.cases.length
+    ) {
+      const identities = new Set(record.cases.map(identity))
+      // Keep only coverage not already proven by a later clean invocation.
+      if (
+        !successors.some((value) =>
+          [...identities].every((key) => value.identities.has(key))
+        )
+      )
+        cleanScopes.set(scope, [...successors, { record, identities }])
+    }
+  }
+  return groups
+}
 function createObservationReader(directory, options = {}) {
   const entries = new Map()
   const readFile = options.readFile ?? ((file) => fs.readFileSync(file, 'utf8'))
@@ -438,6 +513,47 @@ function createObservationReader(directory, options = {}) {
     }
   }
   return {
+    caseContext(id, caseId) {
+      if (!validId(id)) throw new Error('Invalid observation id')
+      refresh()
+      const entry = entries.get(id + '.json')
+      if (!entry?.record)
+        throw new Error(entry?.error ?? 'Observation not found')
+      const record = entry.record
+      const item = record.cases.find((value) => value.id === caseId)
+      if (!item) throw new Error('Observed case unavailable')
+      // Project before cloning: source inventories and raw reports are not summary inputs.
+      return structuredClone({
+        record: {
+          id: record.id,
+          startedAt: record.startedAt,
+          head: record.head,
+          source: { digest: record.source?.digest ?? null },
+          command: record.command,
+          contracts: record.contracts.map((c) => ({
+            manifestPath: c.manifestPath,
+            digest: c.digest
+          }))
+        },
+        item: Object.fromEntries(
+          [
+            'id',
+            'runId',
+            'file',
+            'testName',
+            'projectName',
+            'status',
+            'resolution',
+            'assertionLocation',
+            'failures',
+            'failureDetails',
+            'locations'
+          ]
+            .filter((key) => Object.hasOwn(item, key))
+            .map((key) => [key, item[key]])
+        )
+      })
+    },
     get(id) {
       if (!validId(id)) throw new Error('Invalid observation id')
       refresh()
@@ -446,7 +562,7 @@ function createObservationReader(directory, options = {}) {
         throw new Error(entry?.error ?? 'Observation not found')
       return structuredClone(entry.record)
     },
-    list() {
+    list({ caseIdentityOnly = false } = {}) {
       refresh()
       const records = [...entries.values()]
         .filter((entry) => entry.record)
@@ -496,6 +612,24 @@ function createObservationReader(directory, options = {}) {
           current.set(key, items)
         }
       }
+      if (caseIdentityOnly)
+        return structuredClone({
+          currentCases: [...current.values()].flat().map((item) => ({
+            id: item.id,
+            runId: item.runId,
+            file: item.file,
+            testName: item.testName,
+            projectName: item.projectName,
+            status: item.status,
+            resolution: item.resolution,
+            contextUrl:
+              '/api/node-context/' +
+              item.runId +
+              '/' +
+              item.id.slice(item.runId.length + 1) +
+              '/summary'
+          }))
+        })
       return structuredClone({
         runs: records
           .map(
@@ -523,7 +657,16 @@ function createObservationReader(directory, options = {}) {
             })
           )
           .reverse(),
-        currentCases: [...current.values()].flat(),
+        currentCases: [...current.values()].flat().map((item) => ({
+          ...item,
+          contextUrl:
+            '/api/node-context/' +
+            item.runId +
+            '/' +
+            item.id.slice(item.runId.length + 1) +
+            '/summary'
+        })),
+        warningGroups: classifyWarnings(records),
         issues: [...entries.values()]
           .filter((entry) => entry.error)
           .map((entry) => entry.error)

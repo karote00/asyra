@@ -1886,7 +1886,8 @@ function createService(
     ErrorType: ActionError
   })
   return {
-    nodeContext: (runId, caseId) => nodeInteractions.context(runId, caseId),
+    nodeContext: (runId, caseId, compact = false) =>
+      nodeInteractions.context(runId, caseId, compact),
     previewNodeRerun(request, actor) {
       authorize(actor, 'verify')
       return nodeInteractions.preview(request)

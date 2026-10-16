@@ -202,8 +202,14 @@
   background: #401c25;
   color: #fecaca;
 }
+.step-card {
+  outline: none;
+}
+.step-card:focus-visible {
+  border-style: dashed;
+}
 .step-card.proof-failed {
-  box-shadow: inset 0 0 0 3px #f87171;
+  border-color: #f87171;
 }
 
 .proof-body .proof-confirmation {
@@ -276,9 +282,8 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.observation-failed {
-  outline: 2px solid #e88349;
-  outline-offset: 3px;
+.step-card.observation-failed {
+  border-color: #f87171;
 }
 
 #node-interactions {

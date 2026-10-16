@@ -2362,6 +2362,46 @@ errors, independent scopes and retained history; Board/machine equality and
 unchanged-poll read counts. The test runner and package runtime remain their
 existing owners. New result-source integrations are outside this milestone.
 
+### Current observations and investigation summaries
+
+The observation reader owns current test results and evidence-warning classification.
+The Board separates latest observed tests, current evidence problems, and collapsed
+historical warnings. A selected run is labeled as a historical observation, never
+as the current working tree. Editing source alone does not establish recovery.
+
+A run warning becomes historical only after a strictly later, completed, issue-free
+invocation with the same recorded cwd, argv, environment and admitted manifest
+identities/digests has nonempty, uniquely mapped, settled cases covering every
+identity in the earlier run. Skipped, stale, incomplete, unrelated, or concurrent
+results cannot retire warnings. Unknown invocation scope and unreadable records
+remain current evidence problems. Original records and execution details remain
+immutable and available by run id. Latest case recovery retains the existing
+exact-identity rules independently of run-warning retirement.
+
+`GET /api/node-context/<run-id>/<case-index>/summary` and
+`node-context <run-id> <case-id> summary` return the same version-1 investigation
+projection. The existing context without `summary` remains the interaction view
+for notes and actions. Summary reads include test identity/status, observed time,
+current or superseded status, original assertion fields, validated node/specification/
+implementation boundaries, and rerun information. They omit source-file inventories,
+notes, action history and raw reports. Strings, error counts and command size are
+bounded by a shared 16,000-byte content budget, at most three errors and ten
+current references, with explicit truncation paths and an immutable full-evidence
+URL. Metadata and JSON framing are additional. Oversized structured commands or
+node objects are omitted as a whole, never returned as executable fragments.
+
+Original invocation argv/environment is display-only. A separately labeled
+manifest-derived selected-test command is eligible for preview only when the
+current mapping resolves. Actual execution still requires the existing permission,
+source-bound preview and confirmation. Summary reads never capture source or run
+commands. Missing evidence, unresolved or changed mappings expose their reason
+without a guessed node. Failed-case listings link directly to the summary.
+
+Acceptance covers failure/recovery, filtered/skipped/stale/concurrent results,
+unknown warning scope, corrupt records, unchanged read counts, summary truncation,
+missing references, original-command distrust, API/CLI parity and a real browser
+failure-to-recovery flow. No observation grants accepted conformance.
+
 ### Design Playwright Observations
 
 The Design functional runner may retain its original Playwright JSON alongside

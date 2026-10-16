@@ -229,14 +229,15 @@ async function startServer(
           )
           if (targetRoute) return send(200, service.getTarget(targetRoute[1]))
           const nodeRoute = route.pathname.match(
-            /^\/api\/node-context\/([a-f0-9-]{36})\/([0-9]+)$/
+            /^\/api\/node-context\/([a-f0-9-]{36})\/([0-9]+)(\/summary)?$/
           )
           if (nodeRoute)
             return send(
               200,
               service.nodeContext(
                 nodeRoute[1],
-                nodeRoute[1] + ':' + nodeRoute[2]
+                nodeRoute[1] + ':' + nodeRoute[2],
+                Boolean(nodeRoute[3])
               )
             )
           if (route.pathname === '/api/test-results')

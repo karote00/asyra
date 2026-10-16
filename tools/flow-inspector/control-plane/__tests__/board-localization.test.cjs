@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, getComputedStyle */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -1140,3 +1140,183 @@ test(
     )
   }
 )
+
+test('node status uses one border through selection, hover and keyboard focus', async (t) => {
+  const fixture = localizationFixture()
+  const { page, server } = await openBoard(t, fixture)
+  await page.goto(server.origin + '/history-shortcut')
+  const card = page.frameLocator('iframe').locator('.step-card').first()
+  await expect(card).toBeVisible()
+  for (const [status, color] of [
+    ['observation-failed', 'rgb(248, 113, 113)'],
+    ['proof-failed', 'rgb(248, 113, 113)'],
+    ['observation-failed proof-failed', 'rgb(248, 113, 113)']
+  ]) {
+    for (const selected of [false, true]) {
+      await card.evaluate(
+        (node, { status, selected }) => {
+          node.className =
+            'step-card ' + status + (selected ? ' is-selected selected' : '')
+        },
+        { status, selected }
+      )
+      await card.hover()
+      await page.keyboard.press('Tab')
+      await card.focus()
+      const style = await card.evaluate((node) => {
+        const style = getComputedStyle(node)
+        return {
+          color: style.borderTopColor,
+          outline: style.outlineStyle,
+          shadow: style.boxShadow
+        }
+      })
+      assert.deepEqual(
+        style,
+        { color, outline: 'none', shadow: 'none' },
+        status
+      )
+    }
+  }
+  await card.evaluate((node) => {
+    node.className = 'step-card is-selected'
+  })
+  assert.equal(
+    await card.evaluate((node) => getComputedStyle(node).borderTopColor),
+    'rgb(89, 183, 255)'
+  )
+})
+
+test('Board separates current evidence problems from historical warnings and links compact investigation context', async (t) => {
+  const fixture = localizationFixture()
+  const { page, server } = await openBoard(t, fixture)
+  const { loadContract } = require('../contracts.cjs')
+  const {
+    beginObservation,
+    completeObservation
+  } = require('../localization.cjs')
+  const contract = loadContract(
+    fixture.repository,
+    undefined,
+    'apps/asyra-design/undo-redo-flow-contracts.json'
+  )
+  const command = { cwd: '.', argv: ['yarn', 'test'] }
+  const observe = (status, errors = []) => {
+    const context = beginObservation(fixture.repository, {
+      manifestPaths: [contract.manifestPath],
+      command
+    })
+    return completeObservation(
+      fixture.repository,
+      context,
+      {
+        success: status === 'passed',
+        testResults: [
+          {
+            name: path.join(fixture.repository, contract.testFile),
+            assertionResults: [
+              {
+                fullName: contract.cases[0].testName,
+                status,
+                failureMessages: status === 'failed' ? ['original failure'] : []
+              }
+            ]
+          }
+        ]
+      },
+      { errors }
+    )
+  }
+  const failed = observe('failed', ['old warning <script>'])
+  await page.goto(server.origin + '/history-shortcut')
+  const frame = page.frameLocator('iframe')
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'old warning <script>'
+  )
+  const link = frame.getByRole('link', {
+    name: 'Open investigation summary',
+    exact: true
+  })
+  await expect(link).toHaveAttribute(
+    'href',
+    '/api/node-context/' + failed.id + '/0/summary'
+  )
+  const summary = await (
+    await fetch(server.origin + (await link.getAttribute('href')))
+  ).json()
+  assert.equal(summary.errors[0].message, 'original failure')
+  assert.equal(summary.node.stepId, 'select-history-replay')
+  await frame.locator('#test-result-failures button').click()
+  await expect(frame.locator('.observation-failed')).toHaveCount(1)
+  const recovered = observe('passed')
+  await expect(frame.locator('#test-result-notice')).toContainText(
+    '0 failed tests',
+    { timeout: 10000 }
+  )
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'No current evidence problems'
+  )
+  await expect(frame.locator('#test-result-detail')).toBeEmpty()
+  await expect(frame.locator('.observation-failed')).toHaveCount(0)
+  const history = frame.locator('#test-result-historical-warnings')
+  await expect(history).not.toHaveAttribute('open', '')
+  await history.locator('summary').click()
+  await expect(history).toContainText('old warning <script>')
+  assert.equal(await history.locator('script').count(), 0)
+  await page.screenshot({
+    path: path.join(fixture.directory, 'current-and-history-desktop.png'),
+    fullPage: true
+  })
+  await page.setViewportSize({ width: 850, height: 1100 })
+  await page.getByRole('button', { name: 'Close Inspector catalog' }).click()
+  await page.screenshot({
+    path: path.join(fixture.directory, 'current-and-history-narrow.png'),
+    fullPage: true
+  })
+  await frame.locator('#test-result-history').selectOption(failed.id)
+  await expect(frame.locator('#test-result-notice')).toContainText(
+    'Historical observation'
+  )
+  await expect(frame.locator('#test-result-notice')).toContainText(
+    '1 failed tests'
+  )
+  await expect(frame.locator('#test-result-execution-details')).toContainText(
+    'old warning <script>'
+  )
+  const corruptName = require('node:crypto').randomUUID() + '.json'
+  fs.writeFileSync(
+    path.join(
+      fixture.repository,
+      'tmp/flow-inspector/test-results',
+      corruptName
+    ),
+    'broken'
+  )
+  const storageProblems = frame.getByRole('region', {
+    name: 'Current observation storage problems',
+    exact: true
+  })
+  await expect(storageProblems).toContainText(corruptName, { timeout: 10000 })
+  await expect(
+    frame.locator('#test-result-current-problems')
+  ).not.toContainText(corruptName)
+  await frame.locator('#test-result-history').selectOption(recovered.id)
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'No evidence problems in this observation.'
+  )
+  await expect(storageProblems).toContainText(corruptName)
+  await frame.locator('#test-result-history').selectOption('')
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'No current evidence problems.'
+  )
+  await expect(storageProblems).toContainText(corruptName)
+  await page.screenshot({
+    path: path.join(fixture.directory, 'current-storage-problems.png'),
+    fullPage: true
+  })
+  assert.equal(server.service.testResult(failed.id).cases[0].status, 'failed')
+  assert.equal(
+    server.service.testResult(recovered.id).cases[0].status,
+    'passed'
+  )
+})

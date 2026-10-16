@@ -108,8 +108,8 @@ function createNodeInteractions(
       fail(409, 'Node context is unresolved')
     return { record, item, location: item.locations[0] }
   }
-  const resolve = (runId, caseId) => {
-    const selection = selected(runId, caseId)
+  const resolve = (runId, caseId, supplied) => {
+    const selection = supplied ?? selected(runId, caseId)
     const { record, item, location } = selection
     const candidates = record.contracts.filter(
       (contract) =>
@@ -240,13 +240,154 @@ function createNodeInteractions(
       }
     return action
   }
-  const context = (runId, caseId) => {
+  const summary = (runId, caseId) => {
+    const evidenceUrl = '/api/test-results/' + runId
+    const truncatedFields = []
+    let remainingBytes = 16000
+    const bounded = (value, field, limit = 2000) => {
+      let result = value.slice(0, Math.min(limit, remainingBytes))
+      while (
+        Buffer.byteLength(JSON.stringify(result)) > remainingBytes &&
+        result.length
+      )
+        result = result.slice(0, Math.floor(result.length / 2))
+      if (result !== value) truncatedFields.push(field)
+      remainingBytes = Math.max(
+        0,
+        remainingBytes - Buffer.byteLength(JSON.stringify(result))
+      )
+      return result
+    }
+    const boundedObject = (value, field, limit = 12000) => {
+      const bytes = Buffer.byteLength(JSON.stringify(value))
+      if (value === null) return null
+      if (bytes <= Math.min(limit, remainingBytes)) {
+        remainingBytes -= bytes
+        return value
+      }
+      truncatedFields.push(field)
+      return null
+    }
+    let input,
+      node = null,
+      reference = 'available',
+      selectedCommand = null
+    try {
+      input = observations.caseContext(runId, caseId)
+      const { record, item } = input
+      if (item.resolution !== 'mapped' || item.locations.length !== 1)
+        throw new Error('Node context is unresolved: ' + item.resolution)
+      const resolved = resolve(runId, caseId, {
+        record,
+        item,
+        location: item.locations[0]
+      })
+      node = resolved.location
+      selectedCommand = commandFor(resolved)
+    } catch (error) {
+      reference = error.message
+    }
+    const { record, item } = input ?? {}
+    const current = observations.list({ caseIdentityOnly: true }).currentCases
+    const sameTest = current.filter(
+      (candidate) =>
+        item &&
+        candidate.file === item.file &&
+        candidate.testName === item.testName &&
+        candidate.projectName === item.projectName
+    )
+    let status = 'unavailable'
+    if (item)
+      status = sameTest.some((candidate) => candidate.id === caseId)
+        ? 'current'
+        : 'superseded'
+    const errors = item?.failureDetails?.length
+      ? item.failureDetails
+      : (item?.failures ?? []).map((message) => ({ message }))
+    if (errors.length > 3) truncatedFields.push('errors')
+    const compactNode = boundedObject(node, 'node')
+    const compactCommand = boundedObject(
+      selectedCommand,
+      'rerun.selectedCommand'
+    )
+    const originalInvocation = boundedObject(
+      record?.command ?? null,
+      'rerun.originalInvocation',
+      4000
+    )
+    const result = {
+      format: 1,
+      runId,
+      caseId,
+      reference: bounded(reference, 'reference'),
+      evidenceUrl,
+      observedAt: record?.startedAt ?? null,
+      observedSource: record
+        ? { head: record.head, digest: record.source.digest }
+        : null,
+      currentness: {
+        status,
+        meaning:
+          'Latest observed test result, not current working-tree verification',
+        latest: sameTest.slice(0, 10).map((value) => ({
+          runId: value.runId,
+          caseId: value.id,
+          status: value.status,
+          resolution: value.resolution,
+          contextUrl: value.contextUrl
+        }))
+      },
+      test: item
+        ? {
+            file: bounded(item.file, 'test.file'),
+            name: bounded(item.testName, 'test.name'),
+            project: bounded(item.projectName, 'test.project'),
+            status: item.status,
+            resolution: item.resolution,
+            assertionLocation: boundedObject(
+              item.assertionLocation ?? null,
+              'test.assertionLocation'
+            )
+          }
+        : null,
+      errors: errors
+        .slice(0, 3)
+        .map((error, index) =>
+          Object.fromEntries(
+            localization.FAILURE_DETAIL_FIELDS.filter(
+              (key) => typeof error[key] === 'string'
+            ).map((key) => [
+              key,
+              bounded(error[key], 'errors.' + index + '.' + key)
+            ])
+          )
+        ),
+      node: compactNode,
+      rerun: {
+        originalInvocation,
+        originalInvocationExecutable: false,
+        selectedCommand: compactCommand,
+        previewAvailable: selectedCommand !== null,
+        confirmationRequired: true,
+        previewUrl: '/api/node-reruns/preview',
+        previewRequest: { runId, caseId },
+        reason: selectedCommand
+          ? 'Permission, fresh source-bound preview and confirmation are required before execution'
+          : bounded(reference, 'rerun.reason')
+      },
+      truncatedFields
+    }
+    if (sameTest.length > 10) truncatedFields.push('currentness.latest')
+    return result
+  }
+  const context = (runId, caseId, compact = false) => {
     if (
       !validId(runId) ||
       typeof caseId !== 'string' ||
-      !caseId.startsWith(runId + ':')
+      !new RegExp('^' + runId + ':[0-9]+$').test(caseId)
     )
       fail(400, 'Invalid node context')
+    if (compact) return summary(runId, caseId)
     const state = read()
     let reference = 'available',
       node = null

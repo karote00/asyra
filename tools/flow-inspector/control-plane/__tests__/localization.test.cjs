@@ -117,6 +117,18 @@ test('reader retains history and independent failures, and unchanged polling doe
   reader.list()
   reader.get(first.id)
   assert.equal(reads, 1)
+  const compact = reader.caseContext(first.id, first.cases[0].id)
+  assert.equal(compact.record.source.files, undefined)
+  assert.equal(compact.record.originalReport, undefined)
+  assert.equal(compact.item.runnerDetails, undefined)
+  const identities = reader.list({ caseIdentityOnly: true }).currentCases
+  assert.deepEqual(
+    identities.map((c) => c.id),
+    reader.list().currentCases.map((c) => c.id)
+  )
+  assert.equal(identities[0].failures, undefined)
+  reader.caseContext(first.id, first.cases[0].id)
+  assert.equal(reads, 1, 'summary reads reuse the admitted record')
   const next = context()
   next.startedAt = new Date(Date.now() + 1000).toISOString()
   saveObservation(
@@ -471,4 +483,95 @@ test('a capture reads repeated per-case source inputs only once', () => {
   } finally {
     fs.lstatSync = lstat
   }
+})
+
+test('warning scopes retire only after a later clean complete matching invocation', (t) => {
+  const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/warnings-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const make = (second, options = {}, cases = [failure()]) => {
+    const input = context()
+    input.startedAt = new Date(1700000000000 + second * 1000).toISOString()
+    const output = report(cases)
+    output.success = true
+    output.testResults[0].status = cases.some((c) => c.status === 'failed')
+      ? 'failed'
+      : 'passed'
+    const value = localizeReport(root, input, output, options)
+    value.finishedAt = new Date(
+      1700000000000 + second * 1000 + 100
+    ).toISOString()
+    return value
+  }
+  const old = make(0, { errors: ['old runner warning'] })
+  saveObservation(dir, old)
+  const reader = createObservationReader(dir)
+  assert.equal(reader.list().warningGroups.current[0].runId, old.id)
+  const skipped = make(1, {}, [{ ...failure(), status: 'skipped' }])
+  saveObservation(dir, skipped)
+  const unrelated = make(2)
+  unrelated.command.argv.push('--other-scope')
+  saveObservation(dir, unrelated)
+  const stale = make(3, { stale: true })
+  saveObservation(dir, stale)
+  assert.ok(reader.list().warningGroups.current.some((x) => x.runId === old.id))
+  const clean = make(4, {}, [
+    { ...failure(), status: 'passed', failureMessages: [] }
+  ])
+  saveObservation(dir, clean)
+  const state = reader.list()
+  assert.ok(
+    state.warningGroups.history.some(
+      (x) => x.runId === old.id && x.supersededBy === clean.id
+    )
+  )
+  assert.ok(!state.warningGroups.current.some((x) => x.runId === old.id))
+  assert.equal(reader.get(old.id).issues[0], 'old runner warning')
+  const laterSibling = make(5, {}, [
+    {
+      ...failure(contract.cases[1].testName),
+      status: 'passed',
+      failureMessages: []
+    }
+  ])
+  saveObservation(dir, laterSibling)
+  assert.ok(
+    reader.list().warningGroups.history.some((x) => x.runId === old.id),
+    'a later sibling cannot undo proven recovery'
+  )
+
+  assert.match(
+    state.currentCases[0].contextUrl,
+    /\/api\/node-context\/.*\/summary$/
+  )
+})
+
+test('unknown and concurrent warning scope remains current, including unreadable evidence', (t) => {
+  const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/warnings-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const old = localizeReport(root, context(), report([]), {
+    errors: ['setup failed']
+  })
+  const output = report([{ ...failure(), status: 'passed' }])
+  output.success = true
+  output.testResults[0].status = 'passed'
+  const clean = localizeReport(
+    root,
+    { ...context(), startedAt: old.startedAt },
+    output,
+    {}
+  )
+  saveObservation(dir, old)
+  saveObservation(dir, clean)
+  const unknown = {
+    ...old,
+    id: require('node:crypto').randomUUID(),
+    command: null
+  }
+  saveObservation(dir, unknown)
+  const reader = createObservationReader(dir)
+  assert.equal(reader.list().warningGroups.current.length, 2)
+  const corrupt = require('node:crypto').randomUUID() + '.json'
+  fs.writeFileSync(path.join(dir, corrupt), 'broken')
+  assert.equal(reader.list().issues.length, 1)
+  assert.equal(reader.list().warningGroups.history.length, 0)
 })
