@@ -1,6 +1,20 @@
 # Persisted Flow Results and Warning Supersession
 
-Status: Implemented - local acceptance complete; PR review and CI pending.
+Status: DONE - implemented, reviewed, merged and accepted.
+Completion date: 2026-10-17 (Asia/Taipei).
+Closeout owner: Flow Inspector follow-up owner.
+Integrated base: `8b92a50fc0632505e321b1a413f3dd2204559785`.
+
+## Final decision
+
+The user accepted the complete persisted-result lifecycle and requested plan
+closeout. PR #339 merged at the integrated base above. Its final head
+`14723f5d0cae8887ece343dee895827421e2e9c7` has successful executed GitHub checks;
+scope-skipped checks remain skipped, not executed product acceptance.
+The original task contract and selected-base analysis below preserve design
+history. They do not reopen completed work. Living behavior remains governed by
+[Core Proof](../../CORE_PROOF.md#persisted-result-lifecycle).
+There is no automatically scheduled implementation stage.
 
 ## Task contract
 
@@ -220,8 +234,8 @@ integration, unrelated product fixes or a change to CI required-test policy.
 
 Primary stage goal: durable test-produced flow results with consistent offline,
 live and CI presentation and evidence-backed warning supersession.
-Next checkpoint: real-use acceptance with Inspector absent during production and
-restart/import afterward; further features require a separate product decision.
+Checkpoint completed: offline production, restart/import and real-use acceptance
+are recorded below. Further features require a separate product decision.
 
 ## Implementation and acceptance evidence
 
@@ -253,8 +267,8 @@ Limits: mapped runner coverage remains bounded; correction is explicit rather
 than guessed; unknown warning classes do not gain new recovery rules. Local
 storage and seven-day CI retention are not durable archival services. CI
 aggregation and import are passive; tool proofs remain executable validation.
-The next checkpoint is review of this complete stage and its CI run, followed by
-normal product use. Additional features require a separate scope decision.
+Stage review, final-head CI and the real-use checkpoint are complete. Continue
+normal product use; additional features require a separate scope decision.
 
 Local validation passed: lifecycle/bundle/localization regressions, targeted watch
 and investigation-summary checks, producer/CI aggregation contracts, 108 CI
@@ -272,3 +286,67 @@ attachments rather than trusting observation JSON alone. Missing or corrupt
 attachments retain original records, invalidate derived locations and cannot clear
 a previous failure. Formal regressions cover restart, live invalidation, restored
 attachments, unchanged byte-read counts and post-hoc scope narrowing.
+
+## Post-merge real-use acceptance - 2026-10-17
+
+Accepted on the integrated base above in `.worktrees/flow-post-339`. This used a
+previously unexercised existing feature, `apps/asyra-design/src/features/switch-primary-tool/index.ts`, and
+the unchanged existing Chromium case `Tool Switching should switch to Rectangle
+tool when pressing R key` in `apps/asyra-design/e2e/tool-switching.spec.ts`.
+The existing case mapping is `functional.tool-switching.645a0034831c` and the
+responsibility node is `design-functional / switch-tool`.
+
+1. With Inspector stopped, inject a feature-only fault that forwards Select
+   instead of the requested tool. Do not change tests or mappings.
+2. The first hand-written anchored grep selected no tests. Preserve observation
+   `0a8e321e-fbc4-4727-8be6-15dbd83da657`; this was an invocation error, not a
+   product failure. Correct the selector with an explicit predecessor relation.
+3. The existing test then fails with expected `rectangle`, received `select`,
+   at assertion line 49. Observation `b3370576-20ba-4d3b-a62e-3850fc2d4064` was
+   finalized while Inspector remained stopped. CI fail-fast also records an
+   execution warning; this incomplete correction does not retire discovery.
+4. Start Inspector. The retained failure maps to `switch-tool`. Its compact
+   summary provides original errors, specification, feature/common-API entries,
+   currentness and rerun guidance. The Board selects the same responsibility.
+5. Follow those entries: the common API writes its supplied tool correctly;
+   the feature incorrectly supplies Select. Repair forwarding to `tool`.
+   Before any rerun, the latest observation remains failed.
+6. Rerun the same existing case with the corrected invocation: one test passes
+   in 2.9 seconds. Persist observation
+   `94999bba-9ff8-4e21-b19f-76d96134befd`, retaining the original discovery
+   predecessor and intended case. The already-open Board updates without reload:
+   zero failures, zero current evidence problems, two historical warning groups.
+   The fail-fast warning is replaced by complete same-scope execution; the
+   no-tests warning is replaced by explicit correction with intended coverage.
+7. The old failure summary becomes `superseded` and links to the current passing
+   case. Restart Inspector again: all three records, the mapped passing case and
+   both historical warning groups remain available. No consumer starts a test.
+
+The feature fault was removed and the tracked worktree was clean after acceptance.
+Raw reports, before/after/restart projections, summaries and inspected Board
+screenshots are retained locally under `.worktrees/flow-post-339/tmp/acceptance/`;
+immutable observations remain under that worktree's
+`tmp/flow-inspector/test-results/`. These ignored files are local evidence, not
+portable committed artifacts. UTC timestamps inside original observations are
+preserved; this completion date uses Asia/Taipei.
+
+### Evidence limits
+
+This was not a blind unfamiliar-Agent benchmark: the same Agent selected and
+injected the fault. It proves available localization context, not measured time
+or token savings. Recovery reused the corrected producer invocation; the
+summary's selected-rerun preview/confirmation path was not executed in this
+acceptance. Existing formal coverage remains its evidence. This single case
+neither expands mapped coverage nor establishes repository-wide product health.
+CI consumption remains passive; executable tool proofs remain distinct.
+
+## Closeout and next goal
+
+Primary stage goal achieved: durable test-produced results with consistent
+startup/live/CI classification and evidence-backed warning replacement.
+The next goal is normal product use and separately scoped correction of concrete
+observed gaps; no additional feature stage is activated.
+
+Closeout is documentation-only: synchronize status and links, preserve evidence
+limits, and append the decision. Do not rerun product tests, change runtime or
+mapping contracts, create a Changeset, bump versions, tag or publish a release.

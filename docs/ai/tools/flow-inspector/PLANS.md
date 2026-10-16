@@ -4,23 +4,16 @@ Never record completed plans here.
 
 ## Active and Future Work
 
-The persisted-result lifecycle stage is implemented and awaits PR review and CI. The agreed failure-localization
-and optional node-interaction scope is closed following the merges of Stages
-A/B/C. See the [completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
-for the bounded outcome, original acceptance evidence and remaining limitations.
+No implementation stage is active. The agreed failure-localization and optional
+node-interaction scope is closed in the
+[A/B/C completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md).
+The persisted-result lifecycle and post-merge real-use acceptance are closed in
+the [completed lifecycle plan](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md).
 Detailed completion history belongs in `plans/completed/`, not this active index.
 
 Further runner or mapping coverage, interactions or operational features require
 a new explicit product decision with a bounded inventory and acceptance criteria.
 There is no mandatory Stage D and no automatically queued per-case follow-up.
-
-## Active Result Lifecycle Stage
-
-[Persisted flow results and warning supersession](plans/flow-inspector-persisted-results-and-warning-supersession-plan.md)
-is the approved follow-up to PR #338. It delivers test-produced
-execution evidence, offline/restart/CI consumption, and correction-backed warning
-retirement. It does not reopen the completed
-A/B/C stages or historical control-plane backlogs.
 
 ## Product Direction and Authority
 

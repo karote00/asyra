@@ -284,3 +284,23 @@ selected coverage and observation-only authority remain explicit. Further work
 requires a new scoped product decision; no mandatory Stage D is queued. This is
 a documentation-only closeout with no runtime, Changeset, version, tag,
 publication or deployment change.
+
+## Close persisted results and warning supersession - 2026-10-17
+
+Context: PR #339 merged with successful final-head executed checks. Post-merge
+acceptance used an unchanged Design tool-switching test and mapping with a
+feature-only injected fault, offline result production and subsequent repair.
+
+Decision: close the
+[completed lifecycle plan](../../plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md).
+This supersedes its interim pending-review/CI and next-checkpoint status. The
+Board and compact context locate the recorded failure; success retires the
+explicitly corrected discovery warning and same-scope fail-fast warning while
+preserving original evidence, including across service restart.
+
+Consequences: no next implementation stage is activated. Continue normal use and
+scope concrete gaps separately. Local ignored evidence is not a portable archive;
+this acceptance is not a blind Agent-efficiency benchmark and did not execute
+the selected-rerun preview path. Existing coverage and retention limits remain.
+This closeout changes documentation only, with no tests rerun, runtime changes,
+Changeset, version, tag, publication or deployment.
