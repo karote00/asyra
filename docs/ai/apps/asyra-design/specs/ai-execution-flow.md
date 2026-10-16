@@ -155,6 +155,31 @@ computed projections from canonical values and linked property records. Known
 IDs and new values do not require a preliminary whole-document read. Unknown
 information needed by the requested operation still requires an appropriate read.
 
+### Tool-first delegation and mechanical closure
+
+Known current tools execute directly. Ready parts do not wait for recipe authorship.
+When a deterministic combination is missing, the primary agent acquires exact
+registered dependency contracts and the canonical submit_tool schema, authors finite
+work, corrects admission issues with a new submission identity, and invokes the
+returned exact candidate with fresh inputs. Admission performs no drawing. Native
+route/wrapper and recipe registeredName/revision are distinct contracts.
+
+Native review_design publishes mechanicalSelection as current request data. A finite
+mechanical recipe binds that selection to verify_design_checks and a supported
+explicit policy to repair_design_checks. Its next state carries returned requestId/
+checks, including passed and owner-retired obligations. Initial creation is outside
+iteration. Verification metadata supplies status/progress paths. Unsupported findings,
+partial/unknown settlement, no progress or exhaustion return a decision without
+inventing repair or repeating acknowledged writes. Changed attachment basis requires
+fresh evidence and an explicitly renewed policy.
+
+Tool checks cannot grant primary visual acceptance or document durability. Capture
+rendered images before primary judgments; retain independent passes. Optional library
+storage failure uses the actual save-only receipt, not drawing replay. New requests
+obtain fresh selection/evidence; library resume is availability, not an execution
+cursor. Provider, discovery and result guidance agree on these routes. Code Mode
+binds current values; Runtime owns admitted recurring iteration.
+
 ## Preparation and execution
 
 The combined preparation/application workflow also accepts ordered ready `parts`.

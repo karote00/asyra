@@ -552,7 +552,7 @@ describe('local subscription AI backend', () => {
       })
       await untilTurn(server.packets)
       let id = 100
-      const call = async (tool: string, args: unknown) => {
+      const call = async (tool: string, args: unknown, success = true) => {
         const current = ++id
         server.send({
           id: current,
@@ -576,10 +576,59 @@ describe('local subscription AI backend', () => {
           result: { success: boolean; contentItems: { text: string }[] }
         }
         const value = JSON.parse(packet.result.contentItems[0].text)
-        expect(packet.result.success, JSON.stringify(value)).toBe(true)
+        expect(packet.result.success, JSON.stringify(value)).toBe(success)
         return value
       }
       try {
+        if (submit) {
+          const contract = await call('describe_design_apis', {
+            names: [
+              'design_preparation.prepare_design',
+              'tool_library.submit_tool'
+            ]
+          })
+          expect(contract.tools).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                name: 'submit_tool',
+                composition: 'control-plane'
+              }),
+              expect.objectContaining({
+                name: 'prepare_design',
+                registeredName: proposal.steps[0].tool,
+                revision: proposal.steps[0].revision,
+                composition: 'allowed'
+              })
+            ])
+          )
+          const rejected = await call(
+            'submit_tool',
+            {
+              submissionId: 'invalid',
+              proposal: {
+                ...proposal,
+                steps: [{ ...proposal.steps[0], revision: 999 }]
+              }
+            },
+            false
+          )
+          expect(rejected).toMatchObject({
+            ok: false,
+            code: 'admission',
+            toolOutcome: { settlement: 'not-started' }
+          })
+          expect(rejected.issues.length).toBeGreaterThan(0)
+          expect(
+            (
+              retainedRecords.slice(recordOffset) as {
+                evidence?: { tool?: string }
+              }[]
+            ).some(
+              (record) =>
+                record.evidence?.tool === 'design_preparation.prepare_design'
+            )
+          ).toBe(false)
+        }
         if (submit)
           expect(
             await call('submit_tool', { submissionId: 'prepare', proposal })
@@ -599,11 +648,27 @@ describe('local subscription AI backend', () => {
             }),
             expect.objectContaining({
               name: 'prepare_design',
-              registeredName: 'design_preparation.prepare_design',
-              composition: 'allowed'
+              registeredName: 'design_preparation.prepare_design'
             })
           ])
         )
+        if (submit) {
+          expect(
+            found.tools.find(
+              (tool: { name: string }) => tool.name === 'prepare_design'
+            ).definition
+          ).toMatchObject({ availableInResponse: false })
+          const restored = await call('describe_design_apis', {
+            names: ['design_preparation.prepare_design'],
+            refresh: true,
+            refreshReason: 'context-loss'
+          })
+          expect(restored.tools).toHaveLength(1)
+          expect(restored.tools[0]).toMatchObject({
+            composition: 'allowed',
+            definition: { availableInResponse: true, coverage: 'full' }
+          })
+        }
         const result = await call('invoke_tool', {
           name: 'prepare-part',
           revision: 1,
@@ -1430,6 +1495,19 @@ describe('local subscription AI backend', () => {
         expect(definition?.description).toContain(JSON.stringify(example))
     }
     const instructions = thread?.developerInstructions as string
+    const base = String(thread?.baseInstructions)
+    for (const name of [
+      'mechanicalSelection',
+      'verify_design_checks',
+      'repair_design_checks'
+    ])
+      expect(base).toContain(name)
+    expect(base).toContain('returned requestId/checks')
+    expect(instructions).not.toContain(
+      'Discover the relevant tools before composing calls'
+    )
+    expect(instructions).toContain('Known current contracts need no lookup')
+    expect(instructions).toContain('Runtime owns admitted finite iteration')
     expect(instructions).toContain(
       'input.actions lists final-response actions, not the complete capability catalog'
     )

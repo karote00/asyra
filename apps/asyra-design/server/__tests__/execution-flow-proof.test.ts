@@ -3300,3 +3300,199 @@ it('execution proof preserves a rejected mechanical repair as not-started across
     await host.dispose()
   }
 })
+
+it('execution proof connects tool-first guidance to native selection and Runtime decision recovery', async () => {
+  const { AI_APP_PROMPT } = await import('../ai-domain-prompt')
+  expect.soft(AI_APP_PROMPT).toContain('mechanicalSelection')
+  expect.soft(AI_APP_PROMPT).toContain('verify_design_checks')
+  expect.soft(AI_APP_PROMPT).toContain('repair_design_checks')
+  expect.soft(AI_APP_PROMPT).toContain('returned requestId/checks')
+  const checks = createDesignCheckResults()
+  const revision = checks.record({
+    id: 'unresolved',
+    origin: 'tool',
+    status: 'fail',
+    evidence: 'Requires a creative decision',
+    dependencies: {}
+  })
+  const execute = vi.fn()
+  const host = createLocalToolHost({
+    requestId: 'guidance',
+    signal: new AbortController().signal,
+    capacity: 4,
+    receiptCapacity: 4,
+    artifactCapacity: 4,
+    limits: {
+      bytes: 24000,
+      steps: 10,
+      bindings: 100,
+      bindingDepth: 32,
+      issues: 10
+    },
+    store: {
+      read: async () => undefined,
+      list: async () => [],
+      write: async () => {
+        throw new Error('A failed recipe cannot be saved as eligible')
+      }
+    },
+    createGroups: (ownership) => [
+      {
+        name: 'design_operations',
+        description: 'Design checks',
+        owner: createLocalOperationTools(
+          [
+            {
+              name: AiActionNames.REVIEW_DESIGN,
+              description: 'Review',
+              inputSchema: { type: 'object' }
+            }
+          ],
+          {
+            modelActions: (value) => value,
+            resolveBatch: (value) => value,
+            checkResults: checks
+          },
+          execute,
+          {
+            ownership,
+            getNativeTools: () => host.definitions(),
+            getNativeToolsRevision: () => host.revision
+          }
+        )
+      }
+    ]
+  })
+  try {
+    const invoke = async (name: string, input: unknown) =>
+      JSON.parse((await host.invoke({ name, input })).text)
+    const lookup = await invoke('design_operations.describe_design_apis', {
+      names: ['design_operations.verify_design_checks']
+    })
+    expect(lookup.tools[0]).toMatchObject({
+      verification: {
+        statusPath: '/verification/status',
+        progressPath: '/verification/progress'
+      }
+    })
+    const verifier = host
+      .definitions()
+      .find((tool) => tool.name === 'verify_design_checks')
+    const repair = host
+      .definitions()
+      .find((tool) => tool.name === 'repair_design_checks')
+    if (!verifier || !repair) throw new Error('Missing mechanical contracts')
+    const repairSchema = repair.inputSchema as {
+      properties: { policy: unknown }
+    }
+    const selected = (step: string) => ({
+      kind: 'object',
+      fields: {
+        requestId: { kind: 'step', step, path: '/requestId' },
+        checks: { kind: 'step', step, path: '/checks' }
+      }
+    })
+    const proposal = {
+      format: 1,
+      name: 'verify-selected-work',
+      revision: 1,
+      description:
+        'Verify the selected current work without inventing repairs.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['selection', 'policy'],
+        properties: {
+          selection: verifier.inputSchema,
+          policy: repairSchema.properties.policy
+        }
+      },
+      outputSchema: { type: 'string' },
+      steps: [
+        {
+          id: 'first',
+          tool: verifier.registeredName,
+          revision: verifier.revision,
+          input: { kind: 'input', path: '/selection' }
+        }
+      ],
+      iteration: {
+        id: 'closure',
+        stateSchema: verifier.inputSchema,
+        state: {
+          kind: 'object',
+          fields: {
+            requestId: { kind: 'step', step: 'first', path: '/requestId' },
+            checks: { kind: 'step', step: 'first', path: '/checks' }
+          }
+        },
+        check: {
+          id: 'check',
+          tool: verifier.registeredName,
+          revision: verifier.revision,
+          input: { kind: 'state', path: '' }
+        },
+        repairs: [
+          {
+            id: 'repair',
+            tool: repair.registeredName,
+            revision: repair.revision,
+            input: {
+              kind: 'object',
+              fields: {
+                ...selected('check').fields,
+                policy: { kind: 'input', path: '/policy' }
+              }
+            }
+          }
+        ],
+        next: selected('repair'),
+        maxIterations: 1
+      },
+      output: {
+        kind: 'step',
+        step: 'closure',
+        path: '/result/verification/status'
+      }
+    }
+    const admission = await invoke('tool_library.submit_tool', {
+      submissionId: 'guidance',
+      proposal
+    })
+    expect(admission).toMatchObject({ ok: true })
+    expect(execute).not.toHaveBeenCalled()
+    const result = await invoke('tool_library.invoke_tool', {
+      name: proposal.name,
+      revision: 1,
+      input: {
+        selection: {
+          requestId: 'guidance',
+          checks: [{ checkId: 'unresolved', revision }]
+        },
+        policy: {
+          capability: 'set-prescribed-child-position',
+          positions: [
+            {
+              elementId: 'child',
+              x: 0,
+              y: 0,
+              attachmentEvidence: {
+                parentId: 'parent',
+                workspaceId: 'workspace',
+                evidence: { sessionId: 'session', revision: 0 }
+              }
+            }
+          ]
+        }
+      }
+    })
+    expect(result.execution.status).not.toBe('success')
+    expect(result.execution.issues).toEqual(
+      expect.arrayContaining(['Primary-agent decision required'])
+    )
+    expect(result).not.toHaveProperty('storage')
+    expect(execute).not.toHaveBeenCalled()
+  } finally {
+    await host.dispose()
+  }
+})

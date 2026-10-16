@@ -1,17 +1,30 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: Stage 2 implementation and owner integration are complete. The current
-delivery request permits one Stage 2 push after current-main integration gates,
-followed by local Stage 3 planning review only.
+Status: Stages 1 and 2 were pushed at c727b1de593cab4499d4dfe47768d4791823a20f
+on 2026-10-16 after current-main integration and applicable local verification.
+Stage 3 is locally complete after the 2026-10-16 full review and current-source
+verification. The user explicitly retains the isolated unreproduced browser
+navigation failure as a known unresolved, non-blocking item. Its trigger is not
+claimed fixed. Stage 4 implementation is not started. The current user authorizes
+Stage 3 delivery followed by local Stage 4 planning only.
 
 ## Current authority and stop boundary
 
-Deliver the completed Stage 2 and retained Stage 1/Inspector corrections as defined
-below. Preserve primary-agent visual review, accumulated results, Factory history
-and persistence recovery. After delivery, review only the current Stage 3 plan and
-its direct Stage 1/2 handoffs. Do not implement Stage 3/4, run live 101, call models,
-create a PR, merge or resume monitoring. Later plan edits remain local. Historical
-execution cards document earlier decisions and do not authorize new work.
+The user authorizes one Stage 3 push after applicable verification and current-main
+integration. Then review and amend Stage 4 planning locally, preserving Stage 1/2/3
+contracts. Do not implement Stage 4, run live 101, call models, create a PR, merge or
+resume monitoring. Do not push subsequent Stage 4 planning changes. Historical
+execution cards are evidence, not active commands.
+The current Stage 3 is **Make tool-first delegation consistent and executable**.
+The older completed section named **Stage 3 - Direct structural delivery** below
+is historical and must not be resumed as the current task.
+
+Stage 2 delivery: exact lease protected the previous remote e0d52ddef; latest
+integrated main is 4e925488842807672ab36c86fb69a269bd2249f5. Actual-head candidate
+508f59b7-517a-429c-afa8-0b5506aa269d passed; assessment
+98d71915-7567-4de2-9f65-1abfc9c9aaea is current and eligible for that source.
+Actual-head changeset check passed. CI was not monitored. These are Stage 2
+results, not Stage 3 admission or model-choice evidence.
 
 ### Stage 2 delivery authorization and integration - 2026-10-16
 
@@ -1421,40 +1434,430 @@ Exercise capacity pressure after successful grouping without repeating the mutat
 
 #### 3. Make tool-first delegation consistent and executable
 
-The primary agent owns intent, scope, creative choices, parameters, visual acceptance
-and authoring missing recipes. The existing Runtime invocation/library owns admitted
-execution and persistence. Do not add a second registry, AI planner or interpreter.
+Status: locally complete after full review on 2026-10-16. The source contract,
+current integration and applicable quality checks pass. The user explicitly retains
+the earlier unreproduced navigation interruption as a known unresolved, non-blocking
+item. No model-selection or latency improvement is claimed.
 
-Use this decision order consistently in App prompt, provider instructions, discovery,
-selected tool usage and examples:
+**Outcome and bounded scope.** Give the primary agent one consistent way to select
+and use current capabilities, including Stage 2 mechanical closure, across actual
+assembled provider instructions, compact discovery, exact schemas and executable
+examples. Keep the existing registry, native dispatcher, Runtime interpreter,
+request check store and library. Tool-first does not mean recipe-first. Do not
+create a master planner, dispatcher, compatibility alias layer, new tool grammar,
+second catalog, generic repair engine, hidden model call or broader safety limits.
 
-1. Reuse a known current capability contract; otherwise discover compact capabilities,
-   including eligible saved tools. Reference research is a different operation.
-2. Use an existing suitable domain workflow or eligible composition for deterministic
-   multi-step work. A genuinely single-step operation remains a direct invocation.
-3. If primitives cover the need but no workflow does, retrieve their exact contracts
-   and the canonical recipe specification; author parameterized bindings, checks,
-   permitted repairs and a finite stop condition, then submit for admission.
-4. Correct admission issues before execution. Invoke the admitted exact revision with
-   fresh inputs; the runtime performs the graph and declared iteration.
-5. If a required primitive or safe repair is absent, report that specific capability
-   gap or return a design decision. Do not fabricate a route or use JS callbacks.
+Primary AI owns intent, scope, creative choices, parameters, explicit repair policy,
+recipe authorship and visual judgment. Runtime owns admission and finite execution;
+Design owners supply canonical checks/repairs; the existing document and library
+owners settle their distinct durability obligations. A primary-agent turn is needed
+for a new decision, not between mechanically determined iteration steps.
 
-Stage 3 consumes the verified Stage 2 mechanical contract; guide the model only to
-its supported execution and recovery paths. Existing save/settlement contracts must
-remain valid now; Stage 4 provides their full cross-request and whole-flow proof,
-not permission to defer correctness. Do not advertise unverified aggregate behavior.
+##### Current review authority - 2026-10-16
 
-Code Mode is an invocation/data-binding surface, not an alternative recurring
-orchestrator that sends each intermediate result back for model coordination. Preserve
-backend patterns, projections and retained handles; do not force a recipe for trivial
-edits or force whole-building planning before a ready first part can be rendered.
+The user requests a complete Stage 3 implementation/direct-consumer review and
+bounded navigation-cause investigation. Preserve the original failed run as a known
+unresolved item without blocking this stage solely on that unreproduced event. This
+supersedes prior checkpoint instructions to block completion on that specific failure;
+it does not waive product assertions or any other completion criterion. Use the same
+seven review categories, current compose/inspect/settle contracts and existing tests.
+No new architecture, Stage 4, live model/101, push or monitoring. Reuse unchanged
+source evidence, verify its currentness, and fix only a proven in-scope defect.
 
-Gate: verify the actual assembled instructions and advertised definitions together,
-then exercise discovery -> exact schema -> admission -> invocation through the real
-host. Cover direct, saved, newly composed, invalid and unavailable cases. Prompt-string
-assertions alone cannot prove model behavior; deterministic tests prove the supported
-path, and any later real-provider probe must report observed choices separately.
+##### Step Execution Card - Stage 3 compose admission and guidance
+
+- Owner: `compose`; routes `request-to-compose`, `compose-to-prepare`,
+  `compose-to-apply`, `inspect-to-compose`, `apply-to-compose`.
+- Spec: `ai-execution-flow.md` capability discovery/composition and tool-first
+  correction. Inspector: current compose inputs/outputs/conditions/bypasses,
+  contributors, boundary and failure owner; inspect/settle remain consumers.
+- Inputs: current request, canonical capability contracts, actual inspection and
+  execution receipts. Output: a tool program using exact registered routes and
+  fresh selection/policy values. Direct known work bypasses recipe creation.
+- Allowed: domain guidance, native provider protocol, registered schemas. Forbidden:
+  model review inside tools, second interpreter/catalog, guessed identities,
+  saved request literals, replay of unknown writes or new compatibility paths.
+- Files: existing compose-owned ai-domain-prompt.ts, local-ai-provider.ts,
+  local-operation-tools.ts, local-tool-library-tools.ts and their formal tests;
+  execution-flow-proof.test.ts; spec, corresponding Inspector/manifest and
+  TOOL_SPECIFICATION.md. Browser inspection integration is preservation evidence.
+- Cases: actual assembled instructions, known/direct route, exact lookup recovery,
+  canonical proposal admission/correction/reuse, fresh mechanical selection through
+  finite iteration, unsupported/partial/unknown/cancel and save-only recovery.
+- Gates: test-first missing guidance; real host/Runtime integration; existing real
+  browser inspection/history/save integration; focused server tests, production
+  types, lint/naming, same-source Inspector candidate/assessment. No live provider.
+- Review: spec/architecture, valid use, boundaries/invalid input, concurrency,
+  lifecycle/recovery, downstream preservation, and work/over-design. Discovery is
+  frozen to these files, direct consumers and existing test cases.
+- Stop: wider owner change, unknown contract, new model or legacy path; Stage 4,
+  101, remote operations and monitoring remain excluded.
+
+Admission on 2026-10-16: candidate `2213574f-50a1-4c92-9e8f-21b0b7e1ab52`
+retains the 34 predecessor obligations and adds `compose.tool-first-handoff`.
+Review `2588633a94afb0c185ed7643180223ba1f023186b1b58fc1bca49f6dff0f5dc7`
+has no contract blockers. Development target `171841c6-6153-45a0-af6b-a320d7727c9e`
+retains all 35 obligations pending; it does not accept the red candidate as complete.
+The new case first exposed absent mechanical-selection guidance. Its initial harness
+also omitted registered capabilities; this was corrected to use the real registry,
+then canonical repair grammar (nonempty repairs) without changing production admission.
+Stage 3-only goal was set after admission. Provider assembly regression independently
+failed on missing Stage 2 guidance before the production instruction change.
+
+Bounded verification re-review: the new source-proof harness had three incorrect
+assumptions (empty native registration, empty iteration repairs, and object-shaped
+execution issues). Inspect the current host definitions, canonical grammar and
+execution receipt before correcting the harness. Keep admission strict and the
+unsupported-decision no-write oracle. Production algorithms are unchanged. Verify
+the corrected case in isolation before repeating captured-source proof.
+
+The first browser run had a navigation interruption in the pre-existing public
+handoff case; the other 11 applicable cases passed. Warm targeted replay passed,
+which alone does not explain the first failure. Retain both reports; reproduce with
+Vite dependency diagnostics and tracing against a fresh project-local dev cache.
+Do not add retry around mutations or change product lifecycle to hide navigation.
+
+##### Stage 3 local verification checkpoint - 2026-10-16
+
+- Actual provider assembly, canonical operation descriptions and Runtime tool
+  specification now agree on direct/reused/new recipes and current mechanical
+  selections. No new planner, registry, interpreter, cache or production algorithm.
+- Formal provider handoff exercises exact discovery, rejected admission with zero
+  product calls, corrected submission, execution, storage, fresh-request reuse and
+  scoped full-schema recovery. Unsupported mechanical findings stop the real
+  Runtime before prescribed repair; they never trigger another model.
+- Nine server integration files passed 486 tests, with three existing opt-in skips.
+  The current source proof passes all 35 obligations including the 34 predecessors.
+  Production types pass; final lint has zero errors and four existing no-console
+  warnings. Naming passes 15 tests; generated catalog contract passes eight tests.
+- The original browser run passed 11 and skipped two, but failed the public handoff
+  case at page.evaluate with destroyed execution context. Warm and fresh-cache
+  focused runs each passed. A frozen full-suite replay with the original cache and
+  Vite dependency/HMR logs plus Playwright traces passed 12, with two original skips.
+  It covers local/peer edits, independent pass retention, actual Runtime repair,
+  changed basis, no progress, post-write cancellation/interruption, Undo/Redo and
+  acknowledged persistence/reload. These later passes do not erase the first failure.
+- Initial local tracing was on-first-retry, and that run did not retry. Consequently
+  it retained no failing navigation trace. Dependency re-optimization, source-edit HMR
+  and product navigation remain hypotheses, not established causes. No retry around
+  mutations, longer timeout or product fallback was added. Do not infer the cause is fixed from later successful replays. The later explicit
+  user decision permits Stage 3 closure with this known item. Future investigation
+  must retain the failing navigation/network/HMR event rather than repeat broad
+  suites without new evidence.
+- Fixed review categories were applied to current producers/consumers, not just new
+  tests: valid/invalid use, exact identities/lifetimes, canonical invariants,
+  cancellation/partial/unknown/save-only recovery, architecture/ownership,
+  repeated-work/resource boundaries, and source-bound verification. Existing
+  current-purpose causality and document/Factory algorithms were not changed.
+- Final formatted-source candidate `5d085e80-a7e8-4fb0-a5cb-6cb2f68527c4`
+  passes all 35 obligations. Source digest:
+  `21ef806ef3be49091639906d65ff039445d56ad10cadf1cbee2c456b50ab4434`.
+  Target `464efc48-fe8d-4e09-9513-c27f5238b441`, allocation 1, assessment
+  `354271e0-644f-4fba-b890-e652c016cb41` is current and eligible with passed
+  integration. This verifies the current source contract; it does not waive the
+  known unresolved browser event. Stage completion also requires the complete
+  review below and the user-authorized non-blocking treatment of that event.
+- Evidence: tmp/stage3/{server-integration,browser-integration,browser-navigation,
+  browser-cold-navigation,browser-frozen-replay,types,lint-final,naming-final,
+  catalog-contract}.log. Earlier failed fixture/oracle iterations remain failed;
+  corrected canonical grammar and string-shaped execution issues are now exercised.
+  Scripted external-provider tests prove wiring, not model preference or speed.
+
+##### Bounded diagnostic iteration - browser evidence retention
+
+The original navigation failure remains unexplained. Five repeats of the exact
+public handoff case with dependency/HMR logs and tracing pass (45.3 seconds), without
+reload messages. This narrows reproduction but does not clear the failed run.
+
+The existing test harness configures on-first-retry tracing while ordinary local
+policy has zero retries. Correct only the formal ai-inspection-evidence.spec.ts
+suite's evidence retention to retain-on-failure. This changes diagnostics, not
+product/Inspector semantics, retry count, timeouts, assertions or failure handling;
+do not add it as a product capability merely to authorize a test setting. Verify
+with focused suite lint and the existing handoff integration test, then preserve
+future failures' traces. No change to shared Playwright policy or other suites.
+The corrected suite passed the existing public handoff integration case in 17.9
+seconds without a CLI trace override; focused ESLint passed. Test-owned ports
+3300/3401/4401 are closed. The production source and all assertions are unchanged.
+The concurrent source proof also passed all 35 obligations with unchanged source
+digest 21ef806ef3be49091639906d65ff039445d56ad10cadf1cbee2c456b50ab4434;
+that proof preceded this diagnostic-only suite option and is not evidence of a
+reproduced navigation cause. Logs: tmp/stage3/browser-navigation-repeated.log,
+browser-retained-trace.log, browser-trace-lint.log, navigation-concurrent-proof.log.
+
+Missing original trace cannot be reconstructed by this correction. The user subsequently authorized preserving the original event as non-blocking;
+do not infer its cause or a repair from repeated passes alone.
+
+##### Final Stage 3 review - 2026-10-16
+
+Scope remained the admitted compose guidance, its canonical descriptors, real
+provider/host/Runtime consumers and Stage 1/2 browser handoffs. No new production
+correction was required in this review.
+
+- **Behavior and route selection:** actual provider assembly preserves known direct
+  calls and ready construction; exact lookup, basic batch wrappers, eligible saved
+  recipes and corrected new submissions use their advertised owners. Model choice
+  is not guaranteed by these deterministic tests.
+- **Contract and invariant review:** current native selection, revision, verification
+  paths, fresh policy and output state match the canonical schemas and interpreter.
+  Admission rejects unsupported graphs before calls; request identities are not
+  saved as reusable literals. Retired obligations retain provenance rather than
+  disappearing to manufacture a pass.
+- **Failure/recovery:** existing integrated cases cover stale basis, unavailable
+  measurements, unsupported decisions, no progress, cancellation, partial/unknown
+  writes, safe suffix continuation and genuine save-only retry. Unknown writes stay
+  terminal despite later passing geometry. Save-only retry asserts one product call.
+- **Stage 1/2 preservation:** real browser cases verify mechanical checks despite
+  deferred capture, delivered image evidence before primary visual decisions,
+  retained independent passes, exact affected IDs/revisions, peer edits, Undo/Redo,
+  persistence acknowledgement and matching reload. Scripted provider re-entry is
+  asserted once; finite mechanical repair invokes no additional model.
+- **Architecture/work/resource review:** one registry/interpreter/owner chain remains.
+  No UI state machine, Factory/persistence algorithm, cache, compatibility route,
+  model configuration or runtime budget changed. Existing ownership/cancellation
+  tests preserve cleanup and unrelated calls; test-owned ports are closed.
+- **Evidence/currentness:** all 807 files in the passing captured source exactly
+  match the current checkout (tmp/stage3/review-source-comparison.json). Assessment
+  354271e0-644f-4fba-b890-e652c016cb41 was re-read through the actual service and is
+  still current/eligible. Server 486 passed / three original opt-in skips; current
+  source proof 35 passed; full browser 12 passed / two original opt-in skips.
+  Production types, naming 15, catalog 8 and focused lint passed (four existing
+  no-console warnings). The only later E2E change is trace retention, verified by
+  its own lint and actual handoff case; assertions are unchanged. Failed earlier
+  reports remain failed. No reason was found to rerun unchanged broad gates.
+
+Navigation investigation distinguishes the observed symptom from its trigger:
+Playwright reported destruction of the page.evaluate execution context; the stack
+alone does not prove which navigation mechanism caused it. Current App reload
+owners are explicit reset or recovery-button callbacks, not automatic mechanical
+check/recipe completion. The failed case does not invoke those callbacks. The
+installed Vite client can reload on a full-reload/update message or websocket
+reconnection after a successful ping, but the first failed run lacks the required
+browser/HMR trace to correlate either. No server-restart or optimizer-reload line
+exists in the retained first log. Warm/cold/frozen and repeated reproductions pass;
+these do not identify a trigger. The confirmed diagnostic defect was on-first-retry
+tracing with zero ordinary retries; the formal suite now retains first-failure
+traces. Do not label Vite, dependency optimization or product recovery as the proven
+root cause. The original event remains known unresolved at the user's direction.
+
+Stage 3 completion is limited to its implementation and verified contracts, with
+that explicit known item. Stage 4, real-model adoption/latency, live 101 and remote
+operations remain outside this completion claim.
+
+##### Current-source review findings
+
+1. The App prompt already describes recipe authoring, finite iteration and safe
+   recovery. The gap is its concrete connection to the new Stage 2 selection and
+   guarded repair contracts, not absence of an orchestration system. Audit the
+   combined AI_APP_PROMPT, AI_OPERATION_INSTRUCTIONS, provider developerInstructions,
+   tool result instructions and actual native definitions. Avoid contradictory
+   routing or a description that sends every repair back to the model.
+2. Discovery separates capability lookup from research, supports exact semantic
+   operations/names, pagination and revision-scoped delivery. Preserve this owner.
+   Query currently matches normalized words in registered names/descriptions;
+   do not promise semantic search, add guessed aliases or rename callable identities
+   as a substitute for useful purpose/limitation text and explicit category fallback.
+3. Stage 2 supports exact mechanical selections and prescribed existing-child
+   positions for supported container-overflow findings. It does not choose better
+   colors, infer a new projection or redesign a building. Guidance must not advertise
+   all findings as automatically repairable or treat all tool outputs as check handles.
+4. A recipe dependency identity, native execution route and input wrapper are
+   different fields. Admission and native conversion use the canonical schemas;
+   examples must exercise those schemas and actual downstream calls. A menu or
+   previously-returned definition reference alone does not prove complete binding
+   information. Restore only missing contract coverage when necessary.
+5. Execution, mechanical verification, primary-agent visual acceptance, document
+   persistence and saved-tool eligibility are different results. The optional
+   execution value lives under the exact selected invoke_tool result contract;
+   callers cannot invent a generic output field or use partial/recovery data as a
+   successful step result. Stage 4 expands proof; it does not defer these obligations.
+6. TOOL_SPECIFICATION.md still describes some delivered integration as planned PR 2/3
+   work. During Stage 3, update that current status and acquisition guidance at its
+   existing owner. Preserve historical evidence only as history, not compatibility
+   instructions or a second authoritative spec exposed to the model.
+
+##### Exact producer-to-consumer handoffs
+
+- **Intent to capability.** Reuse a known current contract. Otherwise use
+  describe_design_apis operation/category/query menus, including available saved
+  tools; request full definitions only for selected capabilities. Follow exact
+  next.arguments while complete=false. Registry changes restart the affected lookup,
+  not document work. Zero matches, ambiguous names and unavailable storage remain
+  distinct; preserve unique matches. Research is not catalog search. Vocabulary
+  improvements belong in canonical descriptions, not a parallel index.
+- **Capability to route.** Suitable domain workflows (including ready-part
+  prepare_and_apply_design), eligible saved compositions and single-step direct
+  calls remain valid. Basic batch-action routes keep their prescribed wrapper;
+  native review/capture remains outside execute_design_batch. The actual registered
+  composition eligibility and registeredName/revision govern recipe dependencies;
+  native namespace exposure is not proof of eligibility. Never block a ready first
+  part while authoring a whole-document recipe or collecting all details.
+  Prefer matching existing backend patterns/projection, retained regional queries and
+  aggregate mapping tools over model-expanded vertices, full child inventories or
+  repeated per-object calls. Preserve their real supported schemas and scope.
+- **Missing combination to authoring.** Only when existing capabilities cannot
+  express the required deterministic multi-step work, obtain the exact dependency
+  input/output/verification contracts plus submit_tool's canonical Runtime proposal
+  schema. Author typed fresh inputs, bindings, finite steps and optional iteration.
+  submit_tool receives submissionId/proposal and expectedRevision when applicable.
+  Identical submission retries remain idempotent; a corrected proposal uses a new
+  submissionId. Failure issues must be carried to the next correction. Submission
+  executes zero product operations and returns a private candidate, not a saved pass.
+- **Stage 1/2 to mechanical closure.** Pass the actual review_design
+  mechanicalSelection (`requestId`, exact `checkId`/`revision` pairs) as fresh
+  request input. verify_design_checks returns current checks plus
+  verification.status/progress. Use the registered verification paths; never parse
+  diagnostic wording. The repair policy contains supported capability and explicit
+  positions with original parent/workspace attachment evidence from the canonical
+  producer. No literal request IDs/handles in saved recipes, guessed revisions,
+  selected-target ID substitution or automatic coordinate-basis rebasing.
+- **Iteration state to next check.** Bind initial writes outside iteration. Carry
+  the current selection returned by check/repair into subsequent state; never reuse
+  an older selection or discard already passed independent obligations. Owner-confirmed
+  retired checks remain selected terminal records with provenance; absence is not a
+  pass and callers must not drop all obligations to manufacture completion. Runtime
+  checks again after repair. Unknown, partial, unsupported, stalled or exhausted
+  results stop declared automatic work; no branch adds creative inference. Actual
+  dependency changes reopen only affected obligations. Pan/zoom and presentation
+  do not change semantic evidence; primary visual stamps keep their own dependencies.
+- **Invocation to decision.** invoke_tool consumes exact name/revision/fresh input
+  and optional current purpose. Interpret execution.status AND settlement, actual
+  calls, typed value/recovery and storage independently. Mechanical pass ends only
+  this declared mechanical task. It cannot grant primary visual acceptance, approve
+  unavailable imagery or prove document/backend or library persistence.
+- **Evidence to primary review.** Preserve Stage 1 deferred-capture behavior: all
+  required mechanical checks still run. Capture at an actual visual decision
+  boundary, deliver the image, then let the primary agent record observed criterion/
+  unit results through review_drawing. Accumulate independent passes and return only
+  unresolved affected work. Final visual review is not replaced by a tool pass or
+  by a preset limit on primary-agent iterations. No independent reviewer model.
+- **Purpose and terminal consumers.** Preserve current request/call/parent identity
+  and authored purpose through invocation, queued leaves and settlement. Generic
+  tool descriptions remain system activity; no new prompt may claim active drawing
+  during preparation or revive a settled cohort. Existing status filtering and
+  causal ownership stay unchanged; any direct regression returns to its current
+  owner. Successful drawing remains separate from persistence confirmation.
+
+Code Mode remains a valid invocation/data-binding surface for current schemas and
+retained handles. It is not a second recurring orchestrator or an excuse to send
+every intermediate result back for model coordination. Runtime owns admitted finite
+iteration; product tools own deterministic bulk work. Do not add AI-supplied JS
+callbacks, convert existing schema-bound operations into arbitrary code execution,
+or prohibit useful direct calls merely because they do not need a recipe.
+
+##### Recovery behavior that must remain executable
+
+- Missing fields/context: recover exact schema coverage using the existing refresh
+  contract; do not re-fetch every definition or redraw products.
+- Admission rejection: retain field/step diagnostics, correct the proposal and admit
+  again with zero mutation calls. A missing primitive or unsupported repair returns
+  the specific decision/capability gap to the primary agent, not an invented route.
+- Changed revision, expired artifact, foreign request, changed parent/workspace,
+  permission/lock or stale dependency: reject before writes when known; acquire
+  fresh evidence and an explicitly renewed policy when its basis changed. Do not
+  silently adopt a newer policy or invalidate unrelated passes.
+- Partial read: keep known findings/independent passes and retry only the affected
+  read. Partial execution: retain acknowledged work and the exact recovery receipt;
+  compose only an explicitly safe remaining suffix. An unknown mutation scope must
+  be resolved through the document recovery boundary before any further writes.
+  A later green check does not resolve uncertain delivery.
+- Cancellation, no progress and iteration exhaustion: stop descendants, keep actual
+  receipts and normal history/compensation semantics. No automatic reinvocation of
+  initial creation. A newer request/reload cannot reuse old request checks or pins;
+  obtain fresh evidence and use the existing persistence reconciliation first.
+- Library unavailable/suspended/stale: do not invoke the unavailable saved revision.
+  Native capabilities remain discoverable; any alternative executes only with a
+  valid current contract. Successful execution with unsaved library metadata uses
+  save_tool and the genuine receiptId for storage-only retry. manage_tool resume
+  restores availability, never an execution cursor. Do not report the whole drawing
+  as failed merely because optional library saving failed, or as durable when the
+  document owner has not acknowledged persistence.
+
+##### Authorized implementation order
+
+1. **Admission, then goal.** Re-read the current Design compose step and routes
+   request-to-compose, compose-to-prepare/apply, inspect-to-compose and apply-to-compose;
+   review their direct inspect/settle consumers and Runtime admit/register/invoke/persist.
+   Add the exact Stage 3 product cases and any missing contract wording through the
+   existing Inspector paths. Preserve all Stage 1/2 obligations on the same source.
+   Complete admission and set a Stage 3-only goal before production implementation. Existing Stage 2 assessment is predecessor evidence,
+   not admission of new Stage 3 semantics.
+2. **Canonical descriptions and examples.** In the existing compose owner, reconcile
+   discovery descriptions, exact execution routes, recipe acquisition and the concrete
+   Stage 2 check/repair example. Reuse canonical schemas and verification metadata;
+   no hard-coded copied definitions. Existing selected contracts remain retrievable.
+3. **Assembled provider guidance.** Align App/base/developer instructions and result
+   continuation guidance with those real routes. Remove superseded duplicate advice
+   instead of layering exceptions. Use a few executable decision examples: ready
+   construction, a direct edit, eligible reuse, missing deterministic combination,
+   supported mechanical closure, and a creative decision that must return to AI.
+4. **Whole handoff proof and closure.** Exercise the real host/registry/admission/
+   dispatcher/Runtime/check owners together, and the existing browser/history/save
+   consumers. Review all seven fixed categories, correct direct regressions test-first
+   and re-run affected gates. Stop at Stage 3 completion; no automatic Stage 4, push,
+   monitoring or 101. The current authorization covers Stage 3 only.
+
+Authorized mutation scope: existing Design compose-owned prompt,
+provider, operation/library descriptors and their formal tests; current App spec,
+Runtime tool specification's acquisition/status text and corresponding Inspector
+contracts/catalog. Read Stage 1/2 check/apply and persistence owners as direct
+consumers. Do not rewrite their algorithms, Runtime interpreter, schema grammar,
+scene tree, rendering, history, backend persistence, storage format or UI state
+machine merely to improve guidance. A reproduced blocking owner defect needs a
+bounded replan; a new architectural scope requires user direction.
+
+##### Permanent cases and completion criteria
+
+Use current formal files, not disposable scripts or a new audit ledger. Strengthen
+local-ai-provider.test.ts, ai-domain-prompt.test.ts, local-operation-tools.test.ts,
+local-tool-library-tools.test.ts, local-tool-operation-composition.test.ts and
+execution-flow-proof.test.ts where their real owner applies. Extend the existing
+ai-inspection-evidence.spec.ts host/browser integration rather than substituting
+successful fake tool replies for canonical checks or durable mutation results.
+
+- Prove assembled thread/start instructions and native definitions agree, then drive
+  deterministic external-provider protocol input through the real advertised host.
+  Direct ready parts must not call submit_tool or wait for a whole-building plan.
+  Valid known calls must not require a catalog round trip.
+- Prove exact lookup and missing-schema recovery; ambiguous/zero results, changed
+  pagination revision and restored context must not select a similar guessed tool.
+  Exercise both basic batch wrappers and native/composed invocation wrappers.
+- Discover a suitable eligible tool and invoke it with fresh arguments. Separately
+  discover primitives, submit an invalid proposal (zero writes), correct/admit it and
+  invoke the returned exact candidate. Candidate registration cannot self-certify
+  saved eligibility. Control-plane operations cannot become recipe dependencies.
+- Connect native mechanicalSelection to real Runtime check/repair/next-state/check.
+  Assert exact measured target IDs, unchanged independent pass revisions, initial
+  write count and zero provider re-entry inside deterministic closure. Unsupported
+  findings must return a decision with zero fabricated repair operations.
+- Reuse the real Stage 1/2 browser case: local and peer edits, changed attachment
+  basis, Undo/Redo, known prewrite rejection, acknowledged partial results, unknown
+  settlement, cancellation and fresh document reload. Verify affected scope and
+  retained passes at each boundary, not only a final green response.
+- Exercise safe suffix continuation and genuine save-only retry with no duplicate
+  drawing; preserve canonical host rejection of foreign/stale receipts. Request
+  reopen obtains fresh request evidence and cannot resume old execution state.
+- Deliver actual captured image evidence before scripted primary-review decisions;
+  deferred capture must still execute mechanical checks, and tool success must not
+  satisfy visual or document-durability completion. Scripted decisions test wiring,
+  not model judgment quality. Preserve concurrent purpose/settlement assertions.
+
+Run applicable server/Runtime contract tests, affected real browser integration,
+production typechecks, lint, naming and current-source Inspector proofs. Retain
+unchanged predecessor evidence only after source/contract verification. Record tool
+calls, reads, touched targets, accumulated revisions, writes and provider re-entry;
+node count is not an effectiveness metric. Model behavior and wall-clock improvement
+require separately authorized real-provider evidence; neither prompt text assertions
+nor scripted protocol tests can guarantee the model chooses the advertised path.
+
+**Self-review result.** The proposed handoffs now have explicit producers, consumers,
+failure owners and restart behavior. No new model, orchestration layer, compatibility
+route or generic creative repair is needed. Stage 1/2 completion remains intact and
+Stage 4 is not used to defer correctness. Admission and local implementation now
+exist, with formal case and browser results below. The later full review closes Stage 3 with the user-authorized known navigation
+item; no universal failure coverage or guaranteed latency is claimed. A second review added
+owner-confirmed retirement and terminal unknown-scope handling explicitly; neither
+empty selections nor a newer check may bypass those boundaries.
 
 #### 4. Preserve purpose, save eligibility and cross-request reuse
 
@@ -1500,9 +1903,10 @@ must retain the independent 900-second forced stop, recording and evidence prese
 Runtime correctness does not guarantee model selection or a completion-time target;
 those require observed evidence and must be reported without conflating them.
 
-Implementation completion requires the four slices and their connected failure/recovery
-cases, not merely registered tools or isolated green tests. Current result: plan reviewed,
-implementation pending. No production, test or Inspector file was changed in this segment.
+Whole-direction completion requires all four stages and their connected failure/recovery
+cases, not merely registered tools or isolated green tests. Stages 1/2 are complete
+and pushed; Stage 3 is locally complete with the explicitly retained unresolved
+browser event; Stage 4 remains pending. Current changes are not pushed.
 
 ## Earlier review evidence (not current execution instructions)
 
@@ -1530,7 +1934,9 @@ The following categories are mandatory together, not selectable review themes:
   invalidation, subscriptions, queues, workers, rooms and disposals.
 - Verification: inspect current implementation and existing consumers, not only
   new tests. Use deterministic adverse ordering and actual saved-file integration.
-  An unexplained failed run blocks completion even if later repeats pass.
+  An unexplained failed run blocks completion even if later repeats pass, unless
+  the user explicitly retains that specific event as a non-blocking known item.
+  This exception never turns its failed result into a pass.
 
 This expands review depth across the authorized handoffs, not mutation scope to
 unrelated repository features. Before each new correction, identify the first
@@ -6013,3 +6419,13 @@ basis, terminal retirement, stable progress, fresh successor selections and
 independent mechanical/visual/durability completion. That was the Stage 2 planning checkpoint. The later Current authority and Stage 2
 local completion sections above supersede its execution stop; they do not authorize
 Stage 3, model calls, live 101, push or monitoring.
+
+### Stage 3 delivery authorization - 2026-10-16
+
+The user authorizes delivery of completed Stage 3. Main advanced only by the
+Inspector documentation closeout eac2b0d8e719ee9055c846a24a033020c4b1c3cd.
+Rebase and verify unchanged implementation inputs before push. Production Vite
+build passes (7.80 seconds; existing chunk-size warning). Retain the current-source
+integration evidence above, and verify actual-head task context, changeset and
+Inspector source assessment. Keep the isolated navigation event explicitly unresolved.
+Stage 4 remains planning-only and its later edits stay local.

@@ -1,12 +1,12 @@
 # Tool Specification
 
-Status: Common contracts and generic composition/library implementation present; PR 2 validation in progress. Embedded Design integration remains planned.
+Status: Common contracts, finite composition/library and embedded Design integration are implemented. Current staged guidance and verification work remains tracked in the plan.
 
 This specification is owned by `@asyra/ai-agent-runtime` and applies equally to
 primitive and composed tools. The remaining implementation is tracked by the
 [Reusable Tool Composition plan](../../docs/ai/framework/plans/reusable-tool-composition-plan.md).
 Exported types and formal tests are the authority for the implemented foundation.
-The model-acquisition section specifies host integration; Design adopts it in PR 3.
+The model-acquisition section applies to the current host integration; Design exposes the canonical proposal through submit_tool and exact dependency contracts through describe_design_apis.
 
 ## One canonical contract
 

@@ -545,7 +545,7 @@ const verifyChecksDefinition = {
     progressPath: '/verification/progress'
   },
   description:
-    'Verify an exact request-owned mechanical check selection. Reuse current passes, refresh only affected canonical dependencies, and retain independent results on failure. No model or visual judgment. Use the returned current checks for subsequent verification or explicit prescribed repair; never replay initial writes.',
+    'Verify an exact request-owned mechanical check selection from native review_design.mechanicalSelection. Use fresh requestId/checks as recipe input, not saved literals. Reuse current passes, refresh only affected canonical dependencies, and retain independent results on failure. No model or visual judgment. Use returned requestId/checks as iteration state and carry the repair result into the next check. Registered verification metadata supplies status/progress paths. Keep independent passed and owner-retired checks selected; unsupported findings require a primary-agent decision. Never replay initial writes.',
   inputSchema: designCheckInputSchema
 }
 
@@ -596,7 +596,7 @@ const repairChecksDefinition = {
   composition: 'allowed' as const,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
-    'Apply only explicit prescribed child positions for the complete selected container-overflow findings. Supply original parent attachment evidence from read_design_attachment; never substitute a changed basis. Preflight all findings and edits before writes. Return actual receipts and current checks for verification; do not infer visual acceptance or replay initial writes.',
+    'Apply only explicit prescribed child positions for the complete selected container-overflow findings. Supply original parent attachment evidence from read_design_attachment; never substitute a changed basis. Preflight all findings and edits before writes. Bind policy as fresh input and use returned requestId/checks for the next verification. Changed parent/workspace basis requires fresh evidence and an explicitly renewed policy. Return actual receipts; do not infer visual acceptance or replay initial writes.',
   inputSchema: repairChecksSchema
 }
 

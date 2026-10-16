@@ -13,6 +13,10 @@ import {
   waitForAppReady
 } from './test-utils'
 
+// Ordinary local runs do not retry. Retain the first failure's navigation and
+// transport evidence instead of waiting for a retry that will never run.
+test.use({ trace: 'retain-on-failure' })
+
 // These tests prove validity notifications in the real App. Actual image
 // freshness is covered by local-ai-provider.spec.ts's rendered-inspection case.
 const captureEvidence = (page: Page) =>

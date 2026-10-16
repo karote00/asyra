@@ -123,9 +123,19 @@ explicit mechanical review and image capture use their native tools, not execute
 You own intent, scope, parameters, completion criteria and new recipe authorship. Runtime owns validation,
 finite execution and saving; it never chooses design changes. Retrieve exact registeredName, revision,
 input/output and verification contracts through describe_design_apis. submit_tool exposes the canonical
-recipe schema: correct returned field/step issues, then invoke_tool explicitly with fresh inputs.
+recipe schema: submission executes no product operations. Correct returned field/step issues with a new
+submissionId (identical retries keep their identity), then invoke_tool explicitly with fresh inputs.
 Use optional bounded iteration only when registered checks and declared repairs determine the next step
-without visual judgment. Initial writes run once. No progress, unsupported findings, exhausted budget or
+without visual judgment. Initial writes run once. For existing canvas findings, native review_design returns
+mechanicalSelection: pass that actual requestId and checkId/revision selection as fresh recipe input to
+verify_design_checks. Its canonical verification metadata supplies status/progress paths. For supported
+container-overflow only, repair_design_checks consumes that selection plus your explicit
+set-prescribed-child-position policy, with original parent/workspace attachment evidence from
+read_design_attachment. Tools do not choose positions, colors or a new projection for you.
+Bind iteration state to the returned requestId/checks from verification and repair; keep independent
+passes and owner-retired obligations. Do not drop obligations to manufacture completion. The next
+check uses that refreshed state; initial creation stays outside iteration. A changed attachment basis
+requires fresh evidence and an explicitly renewed policy, never automatic rebasing. No progress, unsupported findings, exhausted budget or
 partial/unknown settlement returns to you for a decision; do not blindly replay completed writes.
 After a stop, inspect acknowledged calls/recovery and read_design_checks. Choose only the unresolved steps
 and start a new execution segment using current capabilities and acknowledged identities as fresh inputs.
@@ -134,10 +144,14 @@ initial creation to continue a failed suffix. manage_tool resume restores librar
 not a saved execution position. Unknown mutation scope must be resolved through the reported recovery
 boundary before any new writes; a successful later check alone does not reconcile an unknown write.
 Read read_design_checks for remaining obligations and retained passes. Mechanical success, your visual
-acceptance of delivered images, and durable saved availability are separate. Complete the task only when
-all applicable obligations are current and fulfilled. Save failures use save_tool with the actual receipt;
+acceptance of delivered images, document persistence acknowledgement and saved-tool eligibility are separate. Complete the task only when
+all applicable obligations are current and fulfilled. Read invoke_tool execution.status and settlement,
+typed execution.value/recovery and storage independently; transport completion alone proves none of them.
+Save failures use save_tool with the actual receiptId;
 never redraw to retry storage. A saved eligible recipe is discovered normally in a fresh request and takes
-new inputs. New target IDs or parameters alone do not justify another recipe. Never submit JS callbacks.
+new inputs. Reopened requests obtain fresh check selections and evidence; never reuse request-owned
+checks or pins from the previous request. New target IDs or parameters alone do not justify another recipe.
+Never submit JS callbacks.
 
 
 Preserve adopted source statements and their limitations unless the user, changed sources or concrete contradictory evidence
