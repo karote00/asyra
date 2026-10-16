@@ -1,34 +1,49 @@
-Never record completed plans here.
-
 # Flow Inspector Plans
 
-## Active and Future Work
+## Active and proposed work
 
-No implementation stage is active. The agreed failure-localization and optional
-node-interaction scope is closed in the
-[A/B/C completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md).
-The persisted-result lifecycle and post-merge real-use acceptance are closed in
-the [completed lifecycle plan](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md).
-Detailed completion history belongs in `plans/completed/`, not this active index.
+[Flow-Based Work Management and Independent Project Adoption](plans/flow-inspector-independent-project-adoption-plan.md)
+is the current proposed direction, updated by the user on 2026-10-17.
+Reviewed planning scope: ready for implementation authorization. Implementation
+and npm publication have not started.
 
-Further runner or mapping coverage, interactions or operational features require
-a new explicit product decision with a bounded inventory and acceptance criteria.
-There is no mandatory Stage D and no automatically queued per-case follow-up.
+The remaining work is grouped into two complete delivery stages:
 
-## Product Direction and Authority
+1. Human task workflow and open evidence contract: public flow authoring,
+   automated/manual evidence, node/feature acceptance, direct card/panel actions,
+   concise human/Agent context, current-state writes and file observation,
+   and future-team conflict boundaries.
+2. Independent installation, external CI and release readiness: consumer-owned
+   projects, portable adapters, installed-package acceptance and publication gate.
 
-Help humans and AI move from an existing failed test directly to its recorded
-responsibility node, implementation location and original evidence. Investigation
-and repair remain their work. Mapped coverage does not imply passing product
-behavior, universal test support or proof of a root cause.
+## Product direction and authority
 
-The living [Core Proof](CORE_PROOF.md), [static Inspector contract](FLOW_INSPECTOR.md),
-[local execution contract](AGENT_EXECUTION.md) and [review contract](PR_REVIEW.md)
-remain authoritative. Existing controls retain their behavior. Original planning
-paths remain stable as historical scope/evidence references; they are not active
-backlogs. Repository development rules remain unchanged.
+A flow represents feature work; each card represents a bounded task. Accepted
+completion of all required tasks and integration criteria completes the feature.
+Flow Inspector should replace a separate task board for this workflow, with
+flow files as the sole project contract/current-state input. Failure localization
+is one optional evidence source. Tests are optional; manual-only and
+mixed projects must work. Humans and Agents share authoritative state while the
+human panel folds technical detail. No per-stage history is required: persist
+current state with minimal revision metadata. CI evaluates the same flow files
+headlessly without UI or a running service. Asyra Skill remains independent.
 
-Task dispatch, provider expansion, remote reconciliation, agent budget management,
-ticket/PR synchronization, delivery management, protected merge enforcement,
-team tracking and hosting remain outside the agreed scope. Their unfinished
-historical requirements are not marked complete or silently reactivated.
+This user-directed planning decision supersedes earlier restrictions that treated
+all work management as outside the product. It does not activate autonomous task
+assignment/Agent dispatch, provider orchestration, Jira/Asana synchronization,
+protected merge enforcement, team hosting or authentication. Assess future-team
+identity/concurrency/authority interfaces now; implement team services later.
+
+## Existing completed scope
+
+The [A/B/C completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
+and [completed result lifecycle](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md)
+remain evidence for bounded Asyra-checkout behavior. They do not claim independent
+npm readiness or completion of the newly clarified task-oriented experience.
+Detailed history remains in `plans/completed/` and dated prior plans.
+
+The living [Core Proof](CORE_PROOF.md), [Inspector contract](FLOW_INSPECTOR.md),
+[execution contract](AGENT_EXECUTION.md) and [review contract](PR_REVIEW.md) describe
+current implemented behavior. Before implementing the proposed stages, reconcile
+their affected owner contracts with the new product direction. A proposed plan
+alone does not change runtime semantics or reopen historical completed evidence.
