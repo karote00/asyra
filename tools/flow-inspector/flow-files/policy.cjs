@@ -245,7 +245,7 @@ function evaluateProject(project) {
     const nodes = doc.definition.nodes.map((n) => evaluate(doc.flowId, n.id)),
       integration = evaluate(doc.flowId, 'integration')
     let status = integration.status
-    if (status !== 'done') {
+    if (status !== 'done' && status !== 'failed') {
       const required = nodes.filter(
         (n) => doc.definition.nodes.find((d) => d.id === n.id).required
       )

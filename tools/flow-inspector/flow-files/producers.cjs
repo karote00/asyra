@@ -216,7 +216,22 @@ function updatesFor(record, documents, bindingFor) {
       i.locations.length !== 1 ||
       !['passed', 'failed'].includes(i.status)
   )
+  const missing = (record.intent?.cases ?? []).filter(
+    (selection) =>
+      !record.cases.some(
+        (item) =>
+          item.file === selection.file &&
+          item.testName === selection.testName &&
+          item.projectName === selection.projectName
+      )
+  )
+  const coverageIssues = missing.map(
+    (item) => 'Selected test result missing: ' + item.testName
+  )
+  if (!record.cases.length && !missing.length)
+    coverageIssues.push('No test results published')
   if (
+    coverageIssues.length ||
     record.issues.length ||
     record.executionFailureDetails?.length ||
     unresolved.length
@@ -250,6 +265,7 @@ function updatesFor(record, documents, bindingFor) {
       scopes.get(key).criteria.push(criterionId(contract, candidate))
     }
     const summary = [
+      ...coverageIssues,
       ...record.issues,
       ...(record.executionFailureDetails ?? []).map((detail) =>
         JSON.stringify(detail)
@@ -302,15 +318,17 @@ function publish(record, captured, root) {
       captured.flows[doc.flowId]?.revision !== doc.revision
     )
       throw new Error('Document revision conflict')
-  const retained = record.retainedArtifacts?.length
-    ? artifacts.retain(captured.directory, root, record.retainedArtifacts)
-    : []
   const updates = updatesFor(
-    { ...record, flowAttachments: retained },
+    record,
     snapshot.documents,
     (flow, id) => captured.flows[flow]?.bindings[id] ?? ''
   )
+  const retained = record.retainedArtifacts?.length
+    ? artifacts.retain(captured.directory, root, record.retainedArtifacts)
+    : []
   try {
+    for (const update of updates.values())
+      for (const value of update.values) value.attachments = retained
     for (const [flow, update] of updates) {
       if (!update.values.length && !update.warnings.length) continue
       store.update(flow, {
@@ -377,6 +395,7 @@ function migrate(root, directory, contracts, projectId) {
       (g) => g.runId === record.id
     )
     const selected = record.cases.filter((c) => selectedIds.has(c.id))
+    if (!selected.length && !warning) continue
     if (
       selected.length &&
       record.source &&
@@ -391,6 +410,16 @@ function migrate(root, directory, contracts, projectId) {
     const filtered = {
       ...record,
       cases: selected,
+      intent: warning
+        ? record.intent
+        : {
+            version: 1,
+            cases: selected.map(({ file, testName, projectName }) => ({
+              file,
+              testName,
+              projectName
+            }))
+          },
       issues: warning?.issues ?? [],
       executionFailureDetails: warning?.executionFailureDetails ?? []
     }

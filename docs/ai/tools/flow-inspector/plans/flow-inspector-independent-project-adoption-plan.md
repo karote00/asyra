@@ -388,12 +388,15 @@ Stage 1 acceptance evidence (2026-10-17):
   and owner handoffs. The workspace renders the architecture without static errors.
 - Permanent `flow-files/__tests__/policy.test.cjs` and `store.test.cjs` cover
   manual/automated kinds, required/optional/conditional and cross-flow dependencies,
-  integration acceptance, source invalidation, explicit blockers, revision conflicts,
+  integration acceptance (including failure precedence over pending tasks), source
+  invalidation, explicit blockers, revision conflicts,
   idempotency, atomic replacement, work-count reuse and current attachment cleanup.
 - `producers.test.cjs` proves offline localization, complete warning replacement
   after source correction, excluded skipped siblings, architecture authority checks,
-  and one-time projection whose evidence and attachments survive removal of old
-  archives. The original archive bytes are unchanged by projection.
+  empty/partial selected-report warnings and recovery, rejected-publication attachment
+  cleanup, and one-time projection whose evidence and attachments survive removal of
+  old archives. Superseded selections do not become missing-result warnings during
+  projection. The original archive bytes are unchanged by projection.
 - `server.test.cjs` and `service.test.cjs` prove shared machine reads, file
   creation/deletion/invalid-write recovery, authorization, stale previews, bounded
   current writes and explicit execution settlement. Reads and preview start no tests.

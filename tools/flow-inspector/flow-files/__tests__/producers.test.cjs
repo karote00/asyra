@@ -273,3 +273,160 @@ test('explicit selection excludes skipped siblings but retains skipped selected 
   delete record.intent
   assert.equal(participatingCases(record).length, 3)
 })
+
+function publicationFixture(t) {
+  const contract = loadContract(root),
+    docs = fromContracts([contract], 'project'),
+    dir = directory(t)
+  fs.writeFileSync(path.join(dir, 'current.flow.json'), JSON.stringify(docs[0]))
+  const cases = contract.cases.slice(0, 2).map((candidate, index) => ({
+    id: 'run:' + index,
+    file: candidate.testFile ?? contract.testFile,
+    projectName: candidate.projectName ?? '',
+    testName: candidate.testName,
+    status: 'passed',
+    failures: [],
+    resolution: 'mapped',
+    locations: [
+      {
+        targetId: contract.targetId,
+        stepId: candidate.stepId,
+        caseId: candidate.id,
+        contractDigest: contract.digest
+      }
+    ]
+  }))
+  return {
+    dir,
+    docs,
+    record: {
+      id: 'run',
+      startedAt: new Date().toISOString(),
+      contracts: [contract],
+      cases,
+      issues: [],
+      intent: {
+        version: 1,
+        cases: cases.map(({ file, testName, projectName }) => ({
+          file,
+          testName,
+          projectName
+        }))
+      }
+    }
+  }
+}
+
+test('offline empty and partial selected reports block old passing evidence until complete recovery', (t) => {
+  for (const count of [0, 1]) {
+    const { dir, record } = publicationFixture(t)
+    publish(record, capture(dir))
+    publish(
+      { ...record, id: 'partial', cases: record.cases.slice(0, count) },
+      capture(dir)
+    )
+    let current = openProject(dir).snapshot()
+    assert.ok(current.documents[0].current.warnings.length > 0)
+    const omitted = record.cases[count].locations[0].stepId
+    assert.notEqual(
+      current.evaluation.flows[0].nodes.find((n) => n.id === omitted).status,
+      'done'
+    )
+    publish({ ...record, id: 'recovered' }, capture(dir))
+    current = openProject(dir).snapshot()
+    assert.deepEqual(current.documents[0].current.warnings, [])
+  }
+})
+
+test('empty unscoped output remains an explicit unresolved warning', (t) => {
+  const { dir, record } = publicationFixture(t)
+  publish({ ...record, cases: [], intent: undefined }, capture(dir))
+  const current = openProject(dir).snapshot()
+  assert.ok(
+    current.documents[0].current.warnings.some(
+      (w) => w.nodeId === 'integration'
+    )
+  )
+})
+
+test('rejected mapped publication does not leave tool-owned attachments', (t) => {
+  const { dir, docs, record } = publicationFixture(t)
+  const bytes = Buffer.from('Rejected evidence'),
+    digest = require('node:crypto')
+      .createHash('sha256')
+      .update(bytes)
+      .digest('hex')
+  fs.writeFileSync(path.join(dir, 'original.txt'), bytes)
+  docs[0].definition.architecture.steps[0].purpose += ' Changed'
+  fs.writeFileSync(path.join(dir, 'current.flow.json'), JSON.stringify(docs[0]))
+  record.retainedArtifacts = [
+    {
+      name: 'Evidence',
+      retainedPath: 'original.txt',
+      digest,
+      size: bytes.length
+    }
+  ]
+  assert.throws(() => publish(record, capture(dir), dir), /architecture/)
+  assert.equal(fs.existsSync(path.join(dir, '.attachments', digest)), false)
+  assert.equal(
+    fs.readFileSync(path.join(dir, 'original.txt'), 'utf8'),
+    'Rejected evidence'
+  )
+})
+
+test('projection does not turn superseded run selections into missing-result warnings', (t) => {
+  const localization = require('../../control-plane/localization.cjs'),
+    { migrate } = require('../producers.cjs'),
+    { randomUUID } = require('node:crypto'),
+    oldRoot = directory(t),
+    contract = loadContract(root),
+    candidates = contract.cases.slice(0, 2),
+    archive = localization.observationDirectory(oldRoot)
+  for (const [index, selected] of [
+    candidates,
+    candidates.slice(0, 1)
+  ].entries()) {
+    const context = {
+      id: randomUUID(),
+      format: 1,
+      startedAt: '2026-10-17T00:00:0' + index + 'Z',
+      head: null,
+      source: null,
+      contracts: [contract],
+      issues: [],
+      command: null,
+      intent: {
+        version: 1,
+        cases: selected.map((c) => ({
+          file: c.testFile ?? contract.testFile,
+          testName: c.testName,
+          projectName: c.projectName ?? ''
+        }))
+      }
+    }
+    const record = localization.localizeReport(root, context, {
+      success: true,
+      testResults: [
+        {
+          name: path.join(root, contract.testFile),
+          assertionResults: selected.map((c) => ({
+            fullName: c.testName,
+            status: 'passed',
+            failureMessages: []
+          }))
+        }
+      ]
+    })
+    record.finishedAt = context.startedAt
+    localization.saveObservation(archive, record)
+  }
+  const projected = migrate(
+    oldRoot,
+    path.join(oldRoot, 'current'),
+    [contract],
+    'project'
+  )
+  assert.equal(projected.documents[0].current.observations.length, 2)
+  assert.deepEqual(projected.documents[0].current.warnings, [])
+})

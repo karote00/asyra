@@ -252,3 +252,18 @@ test('compact context keeps exact repair scope and provenance while folding bulk
   assert.deepEqual(compact.actions[0].argv, ['node', 'check.cjs'])
   assert.equal(full.observations[0].details[0], 'Long original stack')
 })
+
+test('failed integration remains visible while required tasks await acceptance', () => {
+  for (const [kind, status] of [
+    ['manual', 'rejected'],
+    ['automated', 'failed']
+  ]) {
+    const flow = document()
+    flow.definition.criteria = [{ id: 'release', title: 'Release check', kind }]
+    accept([flow], flow, 'integration', 'release', kind, status)
+    const result = evaluateProject(admitProject([flow])).flows[0]
+    assert.equal(result.nodes[0].status, 'awaiting-manual')
+    assert.equal(result.integration.status, 'failed')
+    assert.equal(result.status, 'failed')
+  }
+})
