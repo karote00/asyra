@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, getComputedStyle */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -1140,3 +1140,49 @@ test(
     )
   }
 )
+
+test('node status uses one border through selection, hover and keyboard focus', async (t) => {
+  const fixture = localizationFixture()
+  const { page, server } = await openBoard(t, fixture)
+  await page.goto(server.origin + '/history-shortcut')
+  const card = page.frameLocator('iframe').locator('.step-card').first()
+  await expect(card).toBeVisible()
+  for (const [status, color] of [
+    ['observation-failed', 'rgb(248, 113, 113)'],
+    ['proof-failed', 'rgb(248, 113, 113)'],
+    ['observation-failed proof-failed', 'rgb(248, 113, 113)']
+  ]) {
+    for (const selected of [false, true]) {
+      await card.evaluate(
+        (node, { status, selected }) => {
+          node.className =
+            'step-card ' + status + (selected ? ' is-selected selected' : '')
+        },
+        { status, selected }
+      )
+      await card.hover()
+      await page.keyboard.press('Tab')
+      await card.focus()
+      const style = await card.evaluate((node) => {
+        const style = getComputedStyle(node)
+        return {
+          color: style.borderTopColor,
+          outline: style.outlineStyle,
+          shadow: style.boxShadow
+        }
+      })
+      assert.deepEqual(
+        style,
+        { color, outline: 'none', shadow: 'none' },
+        status
+      )
+    }
+  }
+  await card.evaluate((node) => {
+    node.className = 'step-card is-selected'
+  })
+  assert.equal(
+    await card.evaluate((node) => getComputedStyle(node).borderTopColor),
+    'rgb(89, 183, 255)'
+  )
+})
