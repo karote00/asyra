@@ -1283,6 +1283,37 @@ test('Board separates current evidence problems from historical warnings and lin
   await expect(frame.locator('#test-result-execution-details')).toContainText(
     'old warning <script>'
   )
+  const corruptName = require('node:crypto').randomUUID() + '.json'
+  fs.writeFileSync(
+    path.join(
+      fixture.repository,
+      'tmp/flow-inspector/test-results',
+      corruptName
+    ),
+    'broken'
+  )
+  const storageProblems = frame.getByRole('region', {
+    name: 'Current observation storage problems',
+    exact: true
+  })
+  await expect(storageProblems).toContainText(corruptName, { timeout: 10000 })
+  await expect(
+    frame.locator('#test-result-current-problems')
+  ).not.toContainText(corruptName)
+  await frame.locator('#test-result-history').selectOption(recovered.id)
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'No evidence problems in this observation.'
+  )
+  await expect(storageProblems).toContainText(corruptName)
+  await frame.locator('#test-result-history').selectOption('')
+  await expect(frame.locator('#test-result-current-problems')).toContainText(
+    'No current evidence problems.'
+  )
+  await expect(storageProblems).toContainText(corruptName)
+  await page.screenshot({
+    path: path.join(fixture.directory, 'current-storage-problems.png'),
+    fullPage: true
+  })
   assert.equal(server.service.testResult(failed.id).cases[0].status, 'failed')
   assert.equal(
     server.service.testResult(recovered.id).cases[0].status,

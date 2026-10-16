@@ -96,6 +96,11 @@
       notice.setAttribute('role', 'status')
       const executionDetails = node('div')
       executionDetails.id = 'test-result-execution-details'
+      const storageProblems = node('section')
+      storageProblems.setAttribute(
+        'aria-label',
+        'Current observation storage problems'
+      )
       const currentProblems = node('section')
       currentProblems.id = 'test-result-current-problems'
       const historicalWarnings = node('details')
@@ -103,7 +108,11 @@
       const historySummary = node('summary', 'Historical warnings')
       const historicalProblems = node('div')
       historicalWarnings.append(historySummary, historicalProblems)
-      executionDetails.append(currentProblems, historicalWarnings)
+      executionDetails.append(
+        storageProblems,
+        currentProblems,
+        historicalWarnings
+      )
       const appendProblems = (container, groups) => {
         for (const group of groups) {
           const section = node('section')
@@ -604,10 +613,14 @@
                 group.issues.length || group.executionFailureDetails.length
             )
           : state.warningGroups.current
+        storageProblems.replaceChildren(
+          node('h4', 'Current observation storage problems')
+        )
+        storageProblems.hidden = !state.issues.length
         for (const issue of state.issues)
-          currentProblems.append(node('p', issue))
+          storageProblems.append(node('p', issue))
         appendProblems(currentProblems, groups)
-        if (!groups.length && !state.issues.length)
+        if (!groups.length)
           currentProblems.append(
             node(
               'p',
