@@ -75,6 +75,72 @@ To use the CLI while the board is open, prefix a command with
 and store. Without `--url`, the CLI requires exclusive local store ownership.
 Choose a free port for this tool; do not terminate another application's server.
 
+## Durable Results and Corrected Invocations
+
+Test producers write immutable observations under `tmp/flow-inspector/test-results`.
+The Inspector can stay closed throughout testing. Startup loads these files and
+an open Board polls for changes every 1500 ms; neither action starts tests.
+Source edits alone do not clear failures. Run the relevant test through its
+existing adapter/reporter to publish new evidence. Vitest watch publishes only
+the modules in that cycle's runner specifications, not unrelated cached files.
+
+To declare exact intent before a supported invocation, save a request inside the
+repository and pass its repository-relative path through `FLOW_RESULT_REQUEST`:
+
+```json
+{
+  "version": 1,
+  "manifestPath": "apps/asyra-design/playwright-functional-flow-contracts.json",
+  "caseIds": ["functional.group-interaction.61aff3d7b873"]
+}
+```
+
+For a corrected invocation, add `predecessorId` and a nonempty `reason` to the
+request. Existing selected-case Inspector reruns attach this metadata automatically.
+Successful discovery with failed assertions retires a supported no-tests warning,
+while the actual product failure stays current. Empty, skipped, stale, unfinished,
+unrelated or partially covered results do not prove recovery. Detection requires
+the structured Playwright zero-case report and its supported runner error, not
+message text alone. Unknown warning classes retain existing exact-scope behavior;
+explicit correction does not suppress them.
+
+Older completed zero-case records without intent require an explicit association:
+
+```bash
+node tools/flow-inspector/control-plane/observation-files.cjs associate PREDECESSOR_UUID SUCCESSOR_UUID tmp/correction-request.json
+```
+
+The request declares the admitted case IDs and reason. The command checks original
+record digests, mappings, execution identity, order and complete executed coverage.
+It writes a separate immutable association; it does not rewrite either record.
+Board historical warnings and compact investigation summaries include the
+successor and replacement reason. An unresolved association remains explicit.
+
+Export or import retained results without running a product test:
+
+```bash
+node tools/flow-inspector/control-plane/observation-files.cjs export tmp/results-bundle
+node tools/flow-inspector/control-plane/observation-files.cjs inspect tmp/results-bundle
+node tools/flow-inspector/control-plane/observation-files.cjs import tmp/downloaded-results-bundle
+```
+
+Use a fresh export destination. A bundle includes the original observation files,
+retained attachment bytes and correction associations. Imports check integrity,
+paths, coverage and existing conflicts before publishing; repeating an identical
+import is harmless. Keep the downloaded directory inside the repository.
+
+CI exports complete bundles from the existing Design and collaboration producers,
+including failed runs. Final aggregation downloads them, verifies they contain the
+same raw report as the producer envelope, and projects every retained case using
+the shared reader. Missing selected evidence blocks the aggregate; unselected
+producers remain explicitly not selected. Existing required jobs, fixed-case gate
+checks and tool self-tests retain their authority. Aggregation never reruns product
+tests. Bundles retain the original repository/base/head/integration/run/attempt.
+For CI inspection, set the six corresponding `FLOW_RESULT_*` variables to that
+execution when calling `inspect`; imported CI runs remain historical in the local
+Board and cannot clear local failures. CI artifacts expire after seven days;
+ignored local result storage is not a permanent archive or an automatic sync.
+
 ## Locate Failures from an Existing Test Run
 
 Add the optional reporter alongside the normal reporter to the same Vitest

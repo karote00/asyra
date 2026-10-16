@@ -988,3 +988,28 @@ test('summary bounds original evidence and reports recovery, unresolved and chan
   assert.equal(changed.rerun.previewAvailable, false)
   assert.ok(changed.reference !== 'available')
 })
+
+test('compact summary computes warning context once per request', async (t) => {
+  const f = setup(t)
+  const reader = localization.createObservationReader(
+    localization.observationDirectory(f.root)
+  )
+  const original = reader.warningContext
+  let calls = 0
+  reader.warningContext = (...args) => {
+    calls++
+    return original(...args)
+  }
+  const owner = require('../node-interactions.cjs').createNodeInteractions(
+    f.root,
+    {
+      directory: f.directory,
+      observations: reader,
+      requireIdle: () => undefined,
+      ErrorType: Error
+    }
+  )
+  owner.context(f.selection.runId, f.selection.caseId, true)
+  assert.equal(calls, 1)
+  await owner.close()
+})

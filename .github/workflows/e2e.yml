@@ -159,6 +159,19 @@ jobs:
           RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
         run: bash scripts/run-e2e.sh
 
+      - name: Export complete design observation bundle
+        if: ${{ always() }}
+        run: node tools/flow-inspector/control-plane/observation-files.cjs export tmp/flow-ci/bundle
+
+      - name: Upload complete design observation bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flow-observations-design-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/flow-ci/bundle/
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Retain Design observation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -220,6 +233,19 @@ jobs:
         id: flow-results
         if: ${{ always() }}
         run: node tools/flow-inspector/control-plane/workflow-results.cjs collect collaboration tmp/flow-ci/collaboration.json
+
+      - name: Export complete collaboration observation bundle
+        if: ${{ always() }}
+        run: node tools/flow-inspector/control-plane/observation-files.cjs export tmp/flow-ci/bundle
+
+      - name: Upload complete collaboration observation bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flow-observations-collaboration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/flow-ci/bundle/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Retain collaboration observation evidence
         if: ${{ always() }}

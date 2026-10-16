@@ -24,7 +24,13 @@ export default class LocalizationReporter extends JsonReporter {
             'FLOW_LOCALIZATION_ROOT',
             'FLOW_LOCALIZATION_MANIFESTS',
             'FLOW_PROOF_SOURCE',
-            'FLOW_PROOF_SCENARIO'
+            'FLOW_PROOF_SCENARIO',
+            'FLOW_RESULT_REPOSITORY',
+            'FLOW_RESULT_BASE',
+            'FLOW_RESULT_HEAD',
+            'FLOW_RESULT_INTEGRATION',
+            'FLOW_RESULT_RUN',
+            'FLOW_RESULT_ATTEMPT'
           ]
             .filter((name) => process.env[name] !== undefined)
             .map((name) => [name, process.env[name]])
@@ -34,7 +40,14 @@ export default class LocalizationReporter extends JsonReporter {
     this.context = localization.beginObservation(this.root, this.options)
   }
 
-  onTestRunStart() {
+  onTestRunStart(specifications) {
+    this.executedFiles = specifications
+      ? new Set(
+          specifications.map((spec) =>
+            JSON.stringify([spec.moduleId, spec.project.name ?? ''])
+          )
+        )
+      : null
     if (this.completed) {
       this.context = localization.beginObservation(this.root, this.options)
       this.completed = false
@@ -42,6 +55,12 @@ export default class LocalizationReporter extends JsonReporter {
   }
 
   async onFinished(files = this.ctx.state.getFiles(), errors = [], coverage) {
+    if (this.executedFiles)
+      files = files.filter((file) =>
+        this.executedFiles.has(
+          JSON.stringify([file.filepath, file.projectName ?? ''])
+        )
+      )
     this.projects = files.map((file) => file.projectName ?? '')
     this.errors = errors.map((error) =>
       String(error?.stack ?? error?.message ?? error)

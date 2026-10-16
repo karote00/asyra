@@ -2369,10 +2369,13 @@ The Board separates latest observed tests, current evidence problems, and collap
 historical warnings. A selected run is labeled as a historical observation, never
 as the current working tree. Editing source alone does not establish recovery.
 
-A run warning becomes historical only after a strictly later, completed, issue-free
+Without an explicit correction relation, a run warning becomes historical only
+after a strictly later, completed, issue-free
 invocation with the same recorded cwd, argv, environment and admitted manifest
 identities/digests has nonempty, uniquely mapped, settled cases covering every
-identity in the earlier run. Skipped, stale, incomplete, unrelated, or concurrent
+identity in the earlier run. The persisted-result lifecycle below additionally
+allows validated discovery corrections across changed invocation arguments.
+Skipped, stale, incomplete, unrelated, or concurrent
 results cannot retire warnings. Unknown invocation scope and unreadable records
 remain current evidence problems. Original records and execution details remain
 immutable and available by run id. Latest case recovery retains the existing
@@ -2382,7 +2385,8 @@ exact-identity rules independently of run-warning retirement.
 `node-context <run-id> <case-id> summary` return the same version-1 investigation
 projection. The existing context without `summary` remains the interaction view
 for notes and actions. Summary reads include test identity/status, observed time,
-current or superseded status, original assertion fields, validated node/specification/
+current, superseded or historical status, bounded warning-recovery links and
+replacement reasons, original assertion fields, validated node/specification/
 implementation boundaries, and rerun information. They omit source-file inventories,
 notes, action history and raw reports. Strings, error counts and command size are
 bounded by a shared 16,000-byte content budget, at most three errors and ten
@@ -2401,6 +2405,24 @@ Acceptance covers failure/recovery, filtered/skipped/stale/concurrent results,
 unknown warning scope, corrupt records, unchanged read counts, summary truncation,
 missing references, original-command distrust, API/CLI parity and a real browser
 failure-to-recovery flow. No observation grants accepted conformance.
+
+### Persisted result lifecycle
+
+Tests publish observations without a running Inspector. Startup, refresh and CI
+aggregation only read persisted evidence and never execute product tests. Version-1
+result requests select exact admitted manifest case IDs before execution; optional
+predecessor references bind a correction to immutable evidence. Explicit local
+associations can relate already-completed discovery failures to settled successor
+results. Relations require complete intended coverage, compatible mappings and
+execution context, strictly later execution, matching record digests and a reason.
+Unknown warning classes, partial, skipped, stale and unavailable evidence cannot
+retire discovery warnings. Assertion failure after successful discovery remains a
+current product failure while the preceding discovery warning becomes history.
+No relation rewrites original results. Complete result bundles preserve original
+records and attachment bytes, reject conflicting imports and isolate CI execution
+identities from local current results. Missing artifacts remain explicit. CI
+projection preserves failures beyond the representative case inventory; successful
+job labels cannot override failed or unresolved retained evidence.
 
 ### Design Playwright Observations
 

@@ -265,6 +265,75 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     protectedEvidence: false
   }
 }
+// Additional localization never grants passing authority to the required gate.
+// It consumes the full producer bundle, not the representative case inventory.
+function projectObservations(
+  root,
+  directory,
+  identity,
+  selectedSuites,
+  envelopes
+) {
+  const { readBundle } = require('./observation-files.cjs')
+  const { safePath } = require('./snapshot.cjs')
+  const result = { producers: {}, blockers: [] }
+  for (const [producer, suite] of [
+    ['design', 'functional'],
+    ['collaboration', 'collaboration']
+  ]) {
+    if (!selectedSuites.includes(suite)) {
+      result.producers[producer] = { status: 'not-selected' }
+      continue
+    }
+    try {
+      const matches = envelopes.filter((entry) => entry?.producer === producer)
+      if (
+        matches.length !== 1 ||
+        !isSameRunEvidence(matches[0].identity, identity)
+      )
+        throw new Error('Missing matching producer identity')
+      const expected = matches[0].identity
+      const bundle = path.join(
+        directory,
+        'flow-observations-' +
+          producer +
+          '-' +
+          expected.run +
+          '-' +
+          expected.attempt
+      )
+      safePath(root, bundle)
+      const { state, records } = readBundle(root, bundle, expected)
+      if (
+        !records.some(
+          (record) =>
+            hash(JSON.stringify(record.report)) === matches[0].reportDigest
+        )
+      )
+        throw new Error('Bundle does not contain the collected product report')
+      if (!state.currentCases.length)
+        throw new Error('No observed cases in selected bundle')
+      let status = 'observed'
+      if (state.currentCases.some((item) => item.status === 'failed'))
+        status = 'failed'
+      else if (
+        state.warningGroups.current.length ||
+        state.currentCases.some((item) => item.resolution === 'stale')
+      )
+        status = 'unverified'
+      if (status !== 'observed')
+        result.blockers.push(producer + ': retained observations are ' + status)
+      result.producers[producer] = { status, ...state }
+    } catch (error) {
+      result.producers[producer] = {
+        status: 'unverified',
+        reason: error.message
+      }
+      result.blockers.push(producer + ': ' + error.message)
+    }
+  }
+  return result
+}
 function aggregateScope(evidence, identity, jobs) {
   const blockers = []
   const validIdentity =
@@ -934,9 +1003,25 @@ if (require.main === module) {
     jobs.workspaceValidation = process.env.FLOW_WORKSPACE_VALIDATION_RESULT
     jobs.workspaceResults = workspaceResults
     const result = aggregate(envelopes, runtimeIdentity(), jobs, scope)
+    result.observations = projectObservations(
+      process.cwd(),
+      process.env.FLOW_OBSERVATION_BUNDLES_DIR ?? 'tmp/flow-ci/bundles',
+      runtimeIdentity(),
+      scope?.relationshipMap?.executionPlan?.checks?.e2e?.selected ?? [],
+      envelopes
+    )
+    result.blockers.push(...result.observations.blockers)
+    if (
+      Object.values(result.observations.producers).some(
+        (producer) => producer.status === 'failed'
+      )
+    )
+      result.status = 'failed'
+    if (result.observations.blockers.length && result.status === 'passed')
+      result.status = 'unverified'
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary(result))
     console.log(JSON.stringify(result, null, 2))
     process.exitCode = result.status === 'passed' ? 0 : 1
   } else throw new Error('Expected collect or aggregate')
 }
-module.exports = { collect, aggregate }
+module.exports = { collect, aggregate, projectObservations }
