@@ -33,6 +33,12 @@ identify the existing explicit preview path; reading never runs a test. Check
 The Board separates current evidence problems from collapsed historical warnings.
 A zero failure count does not waive missing or stale evidence.
 
+Persisted test results, offline startup, live refresh and correction-backed
+warning history are complete through merged PR #339 and post-merge acceptance.
+See the [completed lifecycle plan](plans/completed/flow-inspector-persisted-results-and-warning-supersession-plan.md)
+for the tool-switching failure/recovery evidence and its limits. Test producers
+write evidence; Inspector reads it without launching tests on startup or refresh.
+
 Existing development workflows and implemented contracts below remain in force.
 
 ## Role in Plan-Driven Development
