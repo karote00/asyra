@@ -1,5 +1,16 @@
 # Flow Inspector Failure Localization Roadmap
 
+## Completion status - 2026-10-16
+
+The agreed A/B/C scope is complete and merged through PRs #333, #334 and #336.
+The [canonical completion record](completed/flow-inspector-failure-localization-abc-closeout.md)
+closes this plan's activated contribution and preserves acceptance limits.
+This stable file retains the original contracts, dated execution records and
+historical handoffs. Earlier proposed, inactive, pending-CI, next-stage and
+review/merge statements below describe their recorded time; they do not reopen
+work or schedule another stage. Unimplemented historical Phase 3-6 ambitions
+remain outside the completed scope. No implementation is currently activated.
+
 ## Status and Authority
 
 Product direction revised on 2026-10-11 at the user's request. This roadmap

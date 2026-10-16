@@ -263,3 +263,24 @@ issuance, required-check enforcement, protected remote transport, provider
 reconciliation, multi-repository/team/tenant/hosting work and
 checkout-independent dynamic execution remain deferred. This closeout creates
 no Changeset, version, tag, release, publication or deployment.
+
+## Close bounded failure localization and node interactions - 2026-10-16
+
+Context: the user merged the complete Design functional (PR #333), collaboration
+and selected Framework (PR #334), and optional node-interaction (PR #336) stages,
+then requested one final closeout. Final-head GitHub checks passed for executed
+jobs; scope-skipped jobs retain their original status.
+
+Decision: close the agreed core and A/B/C scope in the
+[canonical completion record](../../plans/completed/flow-inspector-failure-localization-abc-closeout.md).
+Remove completed work from the active index and retain original plan paths as
+historical evidence references. This supersedes earlier pending activation,
+next-stage and review/merge statements for these stages without changing old
+execution records or claiming completion of withdrawn Phase 3-6 ambitions.
+
+Consequences: failure-to-node localization and optional selected-case actions
+remain supported under their living contracts. Known expected failures, skips,
+selected coverage and observation-only authority remain explicit. Further work
+requires a new scoped product decision; no mandatory Stage D is queued. This is
+a documentation-only closeout with no runtime, Changeset, version, tag,
+publication or deployment change.

@@ -5,18 +5,20 @@ family.
 
 ## Current Product Direction
 
-The [roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md) and
-[plan index](PLANS.md) were aligned on 2026-10-11 around failure localization:
-existing test results lead humans and AI directly to recorded nodes, relevant
-implementation locations and original failure evidence. Optional selected-case rerun actions and append-only node/run comments were
-activated as Stage C on 2026-10-16; their contract is in
-[Node interactions](CORE_PROOF.md#node-interactions). Expanding task dispatch, agent
-execution, delivery management or team operations is outside the current mainline.
+The agreed A/B/C delivery is complete and merged. Existing test results take
+humans and AI directly to recorded responsibility nodes, implementation locations
+and original failure evidence. Optional selected-case reruns and append-only
+node/run notes are available under [Node interactions](CORE_PROOF.md#node-interactions).
 
-This is a planning direction, not a claim of universal test ingestion or mapping
-coverage. The development workflow and implemented contracts below remain in
-force; they do not make the withdrawn roadmap ambitions prerequisites for
-completing the localization milestone.
+The [completion record](plans/completed/flow-inspector-failure-localization-abc-closeout.md)
+records the exact Design, collaboration and selected Framework coverage,
+validation and explicit execution limits. The [plan index](PLANS.md) has no
+activated follow-up. Universal mapping, root-cause inference, automatic repair
+and expanded task/delivery management are not implied. Building an Asyra product
+does not require adopting Flow Inspector; its tooling remains separate from
+product runtime dependencies.
+
+Existing development workflows and implemented contracts below remain in force.
 
 ## Role in Plan-Driven Development
 
