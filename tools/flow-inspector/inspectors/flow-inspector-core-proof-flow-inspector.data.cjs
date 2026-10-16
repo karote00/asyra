@@ -69,7 +69,8 @@ const data = {
         'Selected node reruns may bind a generated execution configuration to the admitted original configuration and exact retained wrapper digest. Require that explicit binding before accepting its report; changed, missing or unrelated configuration stays stale. Preserve the actual original report and participant observation identity.',
         'Design Playwright ingestion selects the functional, isolated status or collaboration source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures. Clean skips remain unverified without implying a failed invocation; Every collaboration exit settles the owned runner group before observation finalization, including descendants that outlive a successful leader.',
         'Collaboration observations retain actual document/room/actor identities per run, original test identity, project and retry. Missing or mismatched participant evidence cannot establish recovery; joint failures never infer which actor caused them. Fingerprint declared observation input files separately from product ownership. Collaboration reports are bounded at 32 MiB; other Playwright reports retain 4 MiB. A localized envelope exceeding the existing 32 MiB storage limit becomes explicit unavailable evidence, without recovery authority; original producer output stays untouched.',
-        'Retain atomic per-run records and reuse admitted read projections until files change.'
+        'Retain atomic per-run records and reuse admitted read projections until files change.',
+        'Own current versus historical evidence-warning classification. Retire warnings only through a strictly later clean settled invocation with identical recorded scope and admitted mappings covering the earlier identities; unknown scope, skipped, stale and concurrent observations never establish recovery.'
       ],
       bypasses: [
         'Incomplete execution has no completed result or passing authority.'
@@ -106,7 +107,7 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/localization-runtime-fixture.cjs'
       ],
-      specRefs: ['#ordinary-test-failure-localization', '#node-interactions'],
+      specRefs: ['#ordinary-test-failure-localization', '#current-observations-and-investigation-summaries', '#node-interactions'],
       failureOwnerStepId: 'localize-test-results'
     },
     {
@@ -888,6 +889,7 @@ const data = {
         'artifact:scoped-work-review'
       ],
       conditions: [
+        'Serve bounded versioned investigation summaries from retained case evidence, reader-owned currentness and the existing mapping resolver. Preserve explicit truncation and full-evidence links; recorded commands are display-only and validated selected-test commands require preview and confirmation. Missing or stale mappings never invent a node; reads never capture source or execute.',
         'Own optional selected-case rerun preview and confirmation against current source and exact admitted mapping; never execute recorded commands. Retain idempotent bounded actions and append-only attributed node/run comments separately from immutable observations. Reject permission, stale-source and conflicting requests before effects; expose missing references and persistence failures. Read projections never capture source or execute.',
         'Serve retained ordinary test observations through read-only endpoints and CLI without creating tasks, running proofs or granting accepted authority. Admit a single valid observation selector only on registered target-page GET requests; reject unrelated query parameters and keep mutation authorization unchanged.',
         'Bind local service creation, fresh candidate loading and restart to one server-selected product manifest. Reject another product at the same store; isolate implicit stores by manifest identity. CLI local selection forwards that path while remote actions consume the running service selection. Retain runtimeAuthority formats 1 and 2 only from source-owner capture or complete re-admission, never from current contract reconstruction; unknown versions reject. Candidate task sources require deep equality of runtimeSource and runtimeAuthority across snapshot, verdict and private admission. Service task and target runtime tuples carry explicit authority version, digest and contract-scope digest; derived composition consumes the exact scoped tuple, while historical records without authority stay legacy.',
@@ -975,6 +977,7 @@ const data = {
       ],
       outputs: ['artifact:proof-board-view'],
       conditions: [
+        'Project reader-owned current and historical warning groups separately; never flatten historical issues into current status. Link failed cases to the bounded investigation summary.',
         'Display service-owned node interaction context, explicit rerun preview/confirmation, retained outcomes and append-only comments. Forward only selected identities and intent; preserve drafts on refresh, render text literally, and discard late responses after selection changes. Never infer execution eligibility or modify original evidence.',
         'Project original test observations and each retained assertion difference as text in the existing detail panel; do not compute missing values or interpret evidence as HTML. Select only exact architecture-version matches, preserve unresolved failures and history, and clear retired selected details after recovery. Selection performs no command execution.',
         'Project service-owned runtime authority and contract-scope digests for the selected source. The Board does not derive package closure, aliases, task ownership or eligibility.',

@@ -627,6 +627,28 @@ test('HTTP capability and CLI mutations share retained node context without exec
     0
   )
   assert.deepEqual(JSON.parse(messages.pop()).comments, [comment])
+  await main(
+    [
+      '--url',
+      server.origin,
+      'node-context',
+      request.runId,
+      request.caseId,
+      'summary'
+    ],
+    {
+      repositoryRoot: f.root,
+      write: (value) => messages.push(value)
+    }
+  )
+  const summary = JSON.parse(messages.pop())
+  const response = await fetch(
+    server.origin + '/api/node-context/' + request.runId + '/0/summary'
+  )
+  assert.deepEqual(await response.json(), summary)
+  assert.equal(summary.test.status, 'failed')
+  assert.equal(summary.comments, undefined)
+
   fs.writeFileSync(requestPath, JSON.stringify(f.selection))
   await main(['--url', server.origin, 'node-preview', 'tmp/comment.json'], {
     repositoryRoot: f.root,
@@ -861,4 +883,108 @@ test('equivalent preview request field orders confirm the same selected rerun', 
   assert.equal(calls, 1)
   f.service.startNodeRerun(request, LOCAL_ACTOR)
   assert.equal(calls, 1)
+})
+
+test('investigation summary contains one bounded read-only repair entry and preserves unavailable references', async (t) => {
+  let executions = 0
+  const f = setup(t, {
+    nodeInteractionOptions: {
+      execute: async () => {
+        executions++
+        throw new Error('must not execute')
+      }
+    }
+  })
+  const value = f.service.nodeContext(
+    f.selection.runId,
+    f.selection.caseId,
+    true
+  )
+  assert.equal(value.format, 1)
+  assert.equal(value.test.status, 'failed')
+  assert.equal(value.currentness.status, 'current')
+  assert.equal(value.errors[0].message, 'original failure')
+  assert.equal(value.node.stepId, f.record.cases[0].locations[0].stepId)
+  assert.ok(value.node.specPath)
+  assert.ok(value.node.implementationBoundary.length)
+  assert.equal(value.rerun.originalInvocation.argv[0], 'sh')
+  assert.equal(value.rerun.originalInvocationExecutable, false)
+  assert.equal(value.rerun.previewAvailable, true)
+  assert.equal(value.rerun.selectedCommand.runner, 'vitest')
+  for (const key of ['source', 'comments', 'actions', 'originalReport'])
+    assert.equal(Object.hasOwn(value, key), false)
+  assert.equal(executions, 0)
+  fs.unlinkSync(
+    path.join(localization.observationDirectory(f.root), f.record.id + '.json')
+  )
+  const missing = f.service.nodeContext(
+    f.selection.runId,
+    f.selection.caseId,
+    true
+  )
+  assert.equal(missing.node, null)
+  assert.equal(missing.test, null)
+  assert.equal(missing.currentness.status, 'unavailable')
+  assert.equal(missing.rerun.previewAvailable, false)
+})
+
+test('summary bounds original evidence and reports recovery, unresolved and changed mappings without executing', async (t) => {
+  const f = setup(t)
+  const contract = loadContract(f.root)
+  const input = localization.beginObservation(f.root, {
+    manifestPaths: [contract.manifestPath],
+    command: { cwd: '.', argv: ['x'.repeat(15000)] }
+  })
+  input.startedAt = new Date(
+    Date.parse(f.record.startedAt) + 1000
+  ).toISOString()
+  const output = {
+    success: false,
+    testResults: [
+      {
+        name: path.join(f.root, contract.testFile),
+        assertionResults: [
+          {
+            fullName: contract.cases[0].testName,
+            status: 'failed',
+            failureMessages: Array(5).fill('界'.repeat(5000))
+          },
+          {
+            fullName: 'unregistered',
+            status: 'failed',
+            failureMessages: ['unknown test']
+          }
+        ]
+      }
+    ]
+  }
+  const record = localization.completeObservation(f.root, input, output)
+  const result = f.service.nodeContext(record.id, record.cases[0].id, true)
+  assert.equal(result.errors.length, 3)
+  assert.equal(result.errors[0].message.length, 2000)
+  assert.ok(result.node, 'long errors do not displace the investigation entry')
+  assert.ok(Buffer.byteLength(JSON.stringify(result)) < 24000)
+  assert.ok(result.truncatedFields.includes('errors'))
+  assert.ok(result.truncatedFields.includes('rerun.originalInvocation'))
+  assert.equal(result.rerun.originalInvocation, null)
+  assert.equal(
+    f.service.testResult(record.id).cases[0].failures[0].length,
+    5000
+  )
+  const unresolved = f.service.nodeContext(record.id, record.cases[1].id, true)
+  assert.equal(unresolved.errors[0].message, 'unknown test')
+  assert.equal(unresolved.node, null)
+  assert.equal(unresolved.rerun.previewAvailable, false)
+  const old = f.service.nodeContext(f.record.id, f.record.cases[0].id, true)
+  assert.equal(old.currentness.status, 'superseded')
+  assert.equal(old.currentness.latest[0].runId, record.id)
+  const manifest = path.join(f.root, contract.manifestPath)
+  fs.chmodSync(manifest, 0o600)
+  const data = JSON.parse(fs.readFileSync(manifest, 'utf8'))
+  data.title += ' changed'
+  fs.writeFileSync(manifest, JSON.stringify(data))
+  const changed = f.service.nodeContext(record.id, record.cases[0].id, true)
+  assert.equal(changed.node, null)
+  assert.equal(changed.rerun.previewAvailable, false)
+  assert.ok(changed.reference !== 'available')
 })

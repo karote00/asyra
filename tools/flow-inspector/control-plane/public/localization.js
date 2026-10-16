@@ -96,6 +96,36 @@
       notice.setAttribute('role', 'status')
       const executionDetails = node('div')
       executionDetails.id = 'test-result-execution-details'
+      const currentProblems = node('section')
+      currentProblems.id = 'test-result-current-problems'
+      const historicalWarnings = node('details')
+      historicalWarnings.id = 'test-result-historical-warnings'
+      const historySummary = node('summary', 'Historical warnings')
+      const historicalProblems = node('div')
+      historicalWarnings.append(historySummary, historicalProblems)
+      executionDetails.append(currentProblems, historicalWarnings)
+      const appendProblems = (container, groups) => {
+        for (const group of groups) {
+          const section = node('section')
+          const evidence = node('a', 'Observation - ' + group.runId)
+          evidence.href = '/api/test-results/' + group.runId
+          evidence.target = '_blank'
+          evidence.rel = 'noopener noreferrer'
+          section.append(evidence, node('p', group.startedAt))
+          for (const message of group.issues) section.append(node('p', message))
+          if (group.executionFailureDetails.length)
+            appendFailureDetails(section, group.executionFailureDetails)
+          if (group.supersededBy) {
+            const successor = node('a', 'Superseded by - ' + group.supersededBy)
+            successor.href = '/api/test-results/' + group.supersededBy
+            successor.target = '_blank'
+            successor.rel = 'noopener noreferrer'
+            section.append(successor)
+          }
+          container.append(section)
+        }
+      }
+
       const list = node('div')
       list.id = 'test-result-failures'
       const details = node('div')
@@ -539,11 +569,10 @@
           details.replaceChildren()
         }
         const failures = cases.filter((item) => item.status === 'failed')
-        const issues = [
-          ...state.issues,
-          ...(selected?.issues ?? state.runs.flatMap((run) => run.issues))
-        ]
         notice.textContent =
+          (selected
+            ? 'Historical observation - ' + selected.startedAt + '. '
+            : 'Latest observed results - not current working-tree verification. ') +
           failures.length +
           ' failed tests; ' +
           (selected
@@ -551,16 +580,48 @@
             : state.runs.filter((run) => run.phase === 'running').length) +
           ' incomplete runs; ' +
           cases.filter((item) => item.resolution !== 'mapped').length +
-          ' unresolved observations. ' +
-          issues.join('\n')
-        executionDetails.replaceChildren()
-        for (const run of selected ? [selected] : state.runs) {
-          if (!run.executionFailureDetails?.length) continue
-          const section = node('section')
-          section.append(node('h4', 'Retained execution failure - ' + run.id))
-          appendFailureDetails(section, run.executionFailureDetails)
-          executionDetails.append(section)
-        }
+          ' unresolved observations.'
+        currentProblems.replaceChildren(
+          node(
+            'h4',
+            selected
+              ? 'Evidence problems in this historical observation'
+              : 'Current evidence problems'
+          )
+        )
+        historicalProblems.replaceChildren()
+        const groups = selected
+          ? [
+              {
+                runId: selected.id,
+                startedAt: selected.startedAt,
+                issues: selected.issues,
+                executionFailureDetails: selected.executionFailureDetails ?? [],
+                supersededBy: null
+              }
+            ].filter(
+              (group) =>
+                group.issues.length || group.executionFailureDetails.length
+            )
+          : state.warningGroups.current
+        for (const issue of state.issues)
+          currentProblems.append(node('p', issue))
+        appendProblems(currentProblems, groups)
+        if (!groups.length && !state.issues.length)
+          currentProblems.append(
+            node(
+              'p',
+              selected
+                ? 'No evidence problems in this observation.'
+                : 'No current evidence problems.'
+            )
+          )
+        historicalWarnings.hidden =
+          Boolean(selected) || !state.warningGroups.history.length
+        historySummary.textContent =
+          'Historical warnings - ' + state.warningGroups.history.length
+        if (!selected)
+          appendProblems(historicalProblems, state.warningGroups.history)
         list.replaceChildren()
         if (selected) {
           const evidence = node('a', 'Open selected run report and context')
@@ -578,6 +639,18 @@
             signal: lifetime.signal
           })
           row.append(button)
+          const summary = node('a', 'Open investigation summary')
+          summary.href =
+            item.contextUrl ??
+            '/api/node-context/' +
+              item.runId +
+              '/' +
+              item.id.slice(item.runId.length + 1) +
+              '/summary'
+          summary.target = '_blank'
+          summary.rel = 'noopener noreferrer'
+          row.append(summary)
+
           const other = item.locations.find(
             (location) => location.targetId !== target.data.target.id
           )

@@ -18,6 +18,21 @@ and expanded task/delivery management are not implied. Building an Asyra product
 does not require adopting Flow Inspector; its tooling remains separate from
 product runtime dependencies.
 
+For a failed case, use its **Open investigation summary** link or run:
+
+```sh
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 node-context <run-id> <case-id> summary
+```
+
+This read returns original errors, currentness, validated responsibility/specification
+and implementation entries, plus display-only original invocation and the
+manifest-derived selected-test command. `rerun.previewUrl` and `previewRequest`
+identify the existing explicit preview path; reading never runs a test. Check
+`truncatedFields` and follow `evidenceUrl` for full original evidence. See
+[Current observations and investigation summaries](CORE_PROOF.md#current-observations-and-investigation-summaries).
+The Board separates current evidence problems from collapsed historical warnings.
+A zero failure count does not waive missing or stale evidence.
+
 Existing development workflows and implemented contracts below remain in force.
 
 ## Role in Plan-Driven Development
