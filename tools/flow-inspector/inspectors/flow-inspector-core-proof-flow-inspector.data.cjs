@@ -73,7 +73,7 @@ const data = {
         'Design Playwright ingestion selects the functional, isolated status or collaboration source before execution and consumes its pre-execution context and original JSON once. Match only its admitted configuration and fingerprint all exact case files once per capture. Retain primary and formatted errors, retries and project identity; failed retries remain visible. Preserve CI repository/base/head/integration/run/attempt and reject stale source precision. Retain bounded attachment copies under the run UUID; missing output or unavailable artifacts remain explicit. Source-stale passes cannot retire failures. Clean skips remain unverified without implying a failed invocation; Every collaboration exit settles the owned runner group before observation finalization, including descendants that outlive a successful leader.',
         'Collaboration observations retain actual document/room/actor identities per run, original test identity, project and retry. Missing or mismatched participant evidence cannot establish recovery; joint failures never infer which actor caused them. Fingerprint declared observation input files separately from product ownership. Collaboration reports are bounded at 32 MiB; other Playwright reports retain 4 MiB. A localized envelope exceeding the existing 32 MiB storage limit becomes explicit unavailable evidence, without recovery authority; original producer output stays untouched.',
         'Retain atomic per-run records and reuse admitted read projections until files change. Watch reporter cycles publish only actually selected modules, never cached passing files.',
-        'Own current versus historical evidence-warning classification. Preserve exact recorded-scope automatic retirement; additionally admit explicitly linked discovery corrections with complete intended coverage and matching mappings/execution identities. Unknown correction categories, skipped, stale, partial and concurrent observations never establish discovery recovery. Keep originals immutable and surface invalid associations.'
+        'Own current versus historical evidence-warning classification. Preserve exact recorded-scope automatic retirement for other warnings, respecting declared intent. Discovery failures always require explicitly linked corrections with complete intended coverage and matching mappings/execution identities. Unknown correction categories, skipped, stale, partial and concurrent observations never establish discovery recovery. Keep originals immutable and surface invalid associations. Post-hoc corrections cannot narrow successor intent. Verify retained attachment paths, sizes and digests on startup and refresh; reuse admission until file signatures change. Missing or corrupt attachments yield current warnings and stale locations without rewriting originals.'
       ],
       bypasses: [
         'Incomplete execution has no completed result or passing authority.'
@@ -89,7 +89,7 @@ const data = {
         'accepted baseline mutation',
         'arbitrary command dispatch'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['reader lifetime', 'retained artifact path and expected size/digest', 'file mtime/ctime and size'],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/observation-lifecycle.cjs',
         'tools/flow-inspector/control-plane/observation-files.cjs',

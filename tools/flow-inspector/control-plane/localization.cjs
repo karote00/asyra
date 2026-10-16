@@ -465,6 +465,11 @@ function classifyWarnings(records, associations = []) {
       const retired =
         explicit ||
         (successor &&
+          !lifecycle.discoveryFailure(record) &&
+          (!record.intent ||
+            record.intent.cases.every((item) =>
+              successor.identities.has(identity(item))
+            )) &&
           lifecycle.sameExecution(record, successor.record) &&
           record.phase === 'completed' &&
           successor.record.startedAt > record.startedAt &&
@@ -517,6 +522,78 @@ function classifyWarnings(records, associations = []) {
 function createObservationReader(directory, options = {}) {
   const entries = new Map()
   const relations = new Map()
+  const artifacts = new Map()
+  const readArtifact = options.readArtifact ?? ((file) => fs.readFileSync(file))
+  const projectRecord = (entry) =>
+    entry.artifactErrors?.length
+      ? {
+          ...entry.record,
+          issues: [...entry.record.issues, ...entry.artifactErrors],
+          cases: entry.record.cases.map((item) => ({
+            ...item,
+            resolution: 'stale',
+            locations: []
+          }))
+        }
+      : entry.record
+  const refreshArtifacts = () => {
+    const live = new Set()
+    for (const entry of entries.values()) {
+      entry.artifactErrors = []
+      if (!entry.record) continue
+      for (const artifact of entry.record.retainedArtifacts ?? []) {
+        const key = artifact.retainedPath
+        live.add(key)
+        try {
+          const prefix =
+            'tmp/flow-inspector/test-results/' +
+            entry.record.id +
+            '/attachments/'
+          if (
+            !key.startsWith(prefix) ||
+            !/^[0-9]+$/.test(key.slice(prefix.length))
+          )
+            throw new Error('Invalid retained artifact path')
+          const file = safePath(
+            directory,
+            entry.record.id + '/attachments/' + key.slice(prefix.length)
+          )
+          const stat = fs.lstatSync(file)
+          const signature =
+            stat.mtimeMs +
+            ':' +
+            stat.ctimeMs +
+            ':' +
+            stat.size +
+            ':' +
+            artifact.digest +
+            ':' +
+            artifact.size
+          let checked = artifacts.get(key)
+          if (checked?.signature !== signature) {
+            let error = null
+            if (
+              !stat.isFile() ||
+              stat.size !== artifact.size ||
+              stat.size > 64 * 1024 * 1024
+            )
+              error = 'Invalid retained artifact size or type'
+            else if (digest(readArtifact(file)) !== artifact.digest)
+              error = 'Retained artifact digest mismatch'
+            checked = { signature, error }
+            artifacts.set(key, checked)
+          }
+          if (checked.error) throw new Error(checked.error)
+        } catch (error) {
+          entry.artifactErrors.push(
+            'Retained artifact unavailable: ' + key + ': ' + error.message
+          )
+        }
+      }
+    }
+    for (const key of artifacts.keys())
+      if (!live.has(key)) artifacts.delete(key)
+  }
   const readFile = options.readFile ?? ((file) => fs.readFileSync(file, 'utf8'))
   const refresh = () => {
     const relationDirectory = path.join(directory, 'corrections')
@@ -602,6 +679,7 @@ function createObservationReader(directory, options = {}) {
         entries.set(name, { signature, error: name + ': ' + error.message })
       }
     }
+    refreshArtifacts()
   }
   return {
     associations() {
@@ -616,7 +694,7 @@ function createObservationReader(directory, options = {}) {
       refresh()
       const records = [...entries.values()]
         .filter((entry) => entry.record)
-        .map((entry) => entry.record)
+        .map(projectRecord)
         .filter((record) =>
           lifecycle.matchesExecution(record, options.executionIdentity)
         )
@@ -662,7 +740,7 @@ function createObservationReader(directory, options = {}) {
       const entry = entries.get(id + '.json')
       if (!entry?.record)
         throw new Error(entry?.error ?? 'Observation not found')
-      const record = entry.record
+      const record = projectRecord(entry)
       const item = record.cases.find((value) => value.id === caseId)
       if (!item) throw new Error('Observed case unavailable')
       // Project before cloning: source inventories and raw reports are not summary inputs.
@@ -709,7 +787,7 @@ function createObservationReader(directory, options = {}) {
       refresh()
       const records = [...entries.values()]
         .filter((entry) => entry.record)
-        .map((entry) => entry.record)
+        .map(projectRecord)
         .sort(
           (a, b) =>
             a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id)

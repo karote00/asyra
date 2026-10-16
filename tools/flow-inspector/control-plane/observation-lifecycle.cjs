@@ -179,7 +179,10 @@ function canSupersede(
   const observed = new Set(next.cases.map(identity))
   if (
     observed.size !== next.cases.length ||
-    !intent.cases.every((c) => observed.has(identity(c)))
+    !intent.cases.every((c) => observed.has(identity(c))) ||
+    (next.intent &&
+      (!validIntent(next.intent) ||
+        !next.intent.cases.every((c) => observed.has(identity(c)))))
   )
     return false
   if (

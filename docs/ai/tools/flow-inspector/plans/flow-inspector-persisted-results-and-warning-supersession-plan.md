@@ -36,7 +36,7 @@ commit or push is authorized by this planning document alone.
 6. Explicit rerun controls remain optional producers. Viewing, restarting,
    importing, aggregating or refreshing results never launches product tests.
 
-## Current implementation and verified limits
+## Implementation at the selected base and verified limits
 
 - `localization.cjs` writes per-run JSON under `tmp/flow-inspector/test-results`,
   uses atomic writes and rejects overwriting completed observations. The reader
@@ -263,3 +263,12 @@ Board current/history integration and inspected screenshots, naming, lint,
 typecheck and build. Actual export/import retained eight observations and two
 historical warning groups with zero current warnings. No product fault remains
 in the source checkout.
+
+## PR review corrections
+
+The whole-stage review closed two gaps: equal argv can no longer bypass explicit
+discovery correction or declared coverage, and startup/refresh now validate retained
+attachments rather than trusting observation JSON alone. Missing or corrupt
+attachments retain original records, invalidate derived locations and cannot clear
+a previous failure. Formal regressions cover restart, live invalidation, restored
+attachments, unchanged byte-read counts and post-hoc scope narrowing.

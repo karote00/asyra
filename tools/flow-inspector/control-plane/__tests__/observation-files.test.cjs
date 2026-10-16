@@ -388,3 +388,81 @@ test('a retained failure outside the representative inventory blocks CI projecti
   assert.equal(result.producers.design.status, 'failed')
   assert.ok(result.blockers.length)
 })
+test('equal argv cannot bypass explicit discovery recovery or intended coverage', (t) => {
+  const dir = fixture(t),
+    previous = record('failed', 0),
+    next = record('passed', 1000)
+  previous.cases = []
+  previous.finishedAt = new Date(1700000000001).toISOString()
+  previous.issues = ['No Playwright cases recorded']
+  previous.report = {
+    config: {},
+    suites: [],
+    errors: [{ message: 'Error: No tests found.' }],
+    stats: { expected: 0, unexpected: 0, flaky: 0, skipped: 0 }
+  }
+  next.command = previous.command
+  saveObservation(observationDirectory(dir), previous)
+  saveObservation(observationDirectory(dir), next)
+  assert.equal(
+    createObservationReader(observationDirectory(dir)).list().warningGroups
+      .current.length,
+    1
+  )
+})
+test('refresh and restart expose lost attachments without rewriting evidence or rereading unchanged bytes', (t) => {
+  const dir = fixture(t),
+    input = record('passed'),
+    bytes = Buffer.from('retained trace')
+  const retainedPath =
+    'tmp/flow-inspector/test-results/' + input.id + '/attachments/0'
+  const file = path.join(dir, retainedPath)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, bytes)
+  input.retainedArtifacts = [
+    {
+      name: 'trace',
+      originalPath: 'trace.zip',
+      retainedPath,
+      size: bytes.length,
+      digest: require('node:crypto')
+        .createHash('sha256')
+        .update(bytes)
+        .digest('hex')
+    }
+  ]
+  const failure = record('failed', -1000)
+  saveObservation(observationDirectory(dir), failure)
+  saveObservation(observationDirectory(dir), input)
+  let reads = 0
+  const reader = createObservationReader(observationDirectory(dir), {
+    readArtifact(file) {
+      reads++
+      return fs.readFileSync(file)
+    }
+  })
+  assert.equal(reader.list().currentCases[0].resolution, 'mapped')
+  reader.list()
+  assert.equal(reads, 1)
+  fs.writeFileSync(file, 'corrupt trace!')
+  assert.ok(
+    reader.list().currentCases.some((item) => item.resolution === 'stale')
+  )
+  assert.ok(
+    reader
+      .list()
+      .currentCases.some(
+        (item) => item.runId === failure.id && item.status === 'failed'
+      )
+  )
+  assert.ok(reader.list().warningGroups.current.length)
+  assert.deepEqual(reader.get(input.id), input)
+  fs.unlinkSync(file)
+  assert.ok(
+    createObservationReader(observationDirectory(dir))
+      .list()
+      .currentCases.some((item) => item.resolution === 'stale')
+  )
+  fs.writeFileSync(file, bytes)
+  assert.equal(reader.list().currentCases[0].resolution, 'mapped')
+})

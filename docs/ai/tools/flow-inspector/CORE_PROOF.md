@@ -2418,6 +2418,12 @@ execution context, strictly later execution, matching record digests and a reaso
 Unknown warning classes, partial, skipped, stale and unavailable evidence cannot
 retire discovery warnings. Assertion failure after successful discovery remains a
 current product failure while the preceding discovery warning becomes history.
+No-tests discovery failures always require an explicit validated correction;
+identical argv cannot bypass intended coverage. Post-hoc associations cannot
+narrow the successor's own declared intent. Startup and refresh verify retained
+attachment paths, sizes and digests, caching unchanged file admissions. Missing
+or corrupt attachments produce current warnings and stale locations, never
+recovery evidence; original records remain readable without mutation.
 No relation rewrites original results. Complete result bundles preserve original
 records and attachment bytes, reject conflicting imports and isolate CI execution
 identities from local current results. Missing artifacts remain explicit. CI

@@ -138,3 +138,18 @@ test('CI identity is explicit and cannot enter local current evidence', () => {
     false
   )
 })
+test('post-hoc correction cannot narrow the successor declared execution intent', () => {
+  const { previous, next } = pair()
+  const relationIntent = structuredClone(next.intent)
+  next.intent = {
+    version: 1,
+    cases: [
+      ...relationIntent.cases,
+      { ...relationIntent.cases[0], testName: 'unexecuted sibling' }
+    ]
+  }
+  assert.equal(
+    canSupersede(previous, next, next.correction, relationIntent),
+    false
+  )
+})
