@@ -74,6 +74,11 @@ Only complete current observations can replace an older scoped warning, even
 after a declared source revision changes. Unselected skipped siblings in an
 explicit selection are not missing selected work. No-test success is not passing evidence. Current attachments are bounded and
 optional; cleanup may remove only unreferenced tool-owned attachments.
+Raw observation and warning `details` allow empty diagnostic strings and up to
+1 MiB of text per entry, within the existing 4 MiB document budget. Producer
+summaries are concise and explicitly point to full details when shortened;
+full diagnostic messages and structured failure details are retained unchanged.
+Human-authored labels retain their separate short-text constraints.
 
 ## Producer and migration boundary
 

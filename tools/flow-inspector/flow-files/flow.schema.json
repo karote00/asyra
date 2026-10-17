@@ -43,6 +43,11 @@
       "minLength": 1,
       "maxLength": 8192
     },
+    "evidenceDetails": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 1048576 },
+      "maxItems": 10000
+    },
     "nodeRef": {
       "type": "object",
       "properties": {
@@ -243,11 +248,7 @@
           "$ref": "#/$defs/text"
         },
         "details": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          },
-          "maxItems": 10000
+          "$ref": "#/$defs/evidenceDetails"
         },
         "at": {
           "$ref": "#/$defs/text"
@@ -355,6 +356,9 @@
         },
         "summary": {
           "$ref": "#/$defs/text"
+        },
+        "details": {
+          "$ref": "#/$defs/evidenceDetails"
         },
         "criterionIds": {
           "type": "array",

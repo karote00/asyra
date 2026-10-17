@@ -5,6 +5,10 @@ const { digest, nodeBinding } = require('./policy.cjs')
 const { admitProject } = require('./schema.cjs')
 const { openProject } = require('./store.cjs')
 const artifacts = require('./artifacts.cjs')
+const evidenceSummary = (text) =>
+  text.length > 1200
+    ? text.slice(0, 1150) + '\n[Full diagnostic in details]'
+    : text
 const criterionId = (contract, candidate) =>
   'case-' + digest([contract.manifestPath, candidate.id]).slice(0, 24)
 function fromContracts(contracts, projectId) {
@@ -201,7 +205,9 @@ function updatesFor(record, documents, bindingFor) {
       actor: contract.runner,
       executionId: process.env.FLOW_EXECUTION_ID ?? record.id,
       caseId: JSON.stringify([item.file, item.testName, item.projectName]),
-      summary: item.failures[0] ?? item.status,
+      summary: evidenceSummary(
+        item.failures.find((text) => text.trim()) ?? item.status
+      ),
       details: [
         ...(item.failures ?? []),
         ...(item.failureDetails ?? []).map((d) => JSON.stringify(d))
@@ -264,7 +270,7 @@ function updatesFor(record, documents, bindingFor) {
         })
       scopes.get(key).criteria.push(criterionId(contract, candidate))
     }
-    const summary = [
+    const details = [
       ...coverageIssues,
       ...record.issues,
       ...(record.executionFailureDetails ?? []).map((detail) =>
@@ -277,7 +283,7 @@ function updatesFor(record, documents, bindingFor) {
           ...(i.failureDetails ?? []).map((detail) => JSON.stringify(detail))
         ].join('\n')
       )
-    ].join('\n')
+    ]
     if (unknown) {
       for (const doc of documents.filter((d) =>
         record.contracts.some((c) => c.targetId === d.flowId)
@@ -299,7 +305,8 @@ function updatesFor(record, documents, bindingFor) {
           ]).slice(0, 24),
         nodeId: scope.node,
         kind: 'producer',
-        summary,
+        summary: evidenceSummary(details.join('\n')),
+        details,
         criterionIds: [...new Set(scope.criteria)],
         executionId: record.id,
         binding: bindingFor(scope.flow, scope.node)

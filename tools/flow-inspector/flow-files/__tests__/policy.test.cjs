@@ -267,3 +267,16 @@ test('failed integration remains visible while required tasks await acceptance',
     assert.equal(result.status, 'failed')
   }
 })
+
+test('raw evidence admits long and empty details without relaxing human labels or document limits', () => {
+  const flow = document()
+  accept([flow], flow, 'review', 'accepted')
+  const observation = flow.current.observations[0]
+  observation.details = ['x'.repeat(20000), '']
+  assert.doesNotThrow(() => admitProject([flow]))
+  observation.details = ['x'.repeat(1024 * 1024 + 1)]
+  assert.throws(() => admitProject([flow]), /length/)
+  observation.details = []
+  flow.definition.title = 'x'.repeat(8193)
+  assert.throws(() => admitProject([flow]), /length/)
+})

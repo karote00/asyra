@@ -396,7 +396,9 @@ Stage 1 acceptance evidence (2026-10-17):
   empty/partial selected-report warnings and recovery, rejected-publication attachment
   cleanup, and one-time projection whose evidence and attachments survive removal of
   old archives. Superseded selections do not become missing-result warnings during
-  projection. The original archive bytes are unchanged by projection.
+  projection. Long/empty runner diagnostics preserve full evidence with concise
+  summaries and bounded detail fields. The original archive bytes are unchanged
+  by projection.
 - `server.test.cjs` and `service.test.cjs` prove shared machine reads, file
   creation/deletion/invalid-write recovery, authorization, stale previews, bounded
   current writes and explicit execution settlement. Reads and preview start no tests.

@@ -430,3 +430,44 @@ test('projection does not turn superseded run selections into missing-result war
   assert.equal(projected.documents[0].current.observations.length, 2)
   assert.deepEqual(projected.documents[0].current.warnings, [])
 })
+
+test('producer keeps complete long diagnostics behind a concise failure summary', (t) => {
+  for (const prefix of ['', 'Failure '.repeat(2000)]) {
+    const { dir, record } = publicationFixture(t)
+    const detail = {
+      message: 'Trace '.repeat(3000),
+      stack: 'Frame '.repeat(3000)
+    }
+    record.cases = [
+      {
+        ...record.cases[0],
+        status: 'failed',
+        failures: [prefix, 'Assertion failed'],
+        failureDetails: [detail]
+      }
+    ]
+    record.intent.cases = record.intent.cases.slice(0, 1)
+    publish(record, capture(dir))
+    const current = openProject(dir).snapshot()
+    const observed = current.documents[0].current.observations[0]
+    assert.equal(observed.status, 'failed')
+    assert.ok(
+      observed.summary.trim().length > 0 && observed.summary.length <= 1200
+    )
+    assert.deepEqual(observed.details, [
+      prefix,
+      'Assertion failed',
+      JSON.stringify(detail)
+    ])
+  }
+})
+
+test('producer warnings preserve full diagnostics without overflowing their summaries', (t) => {
+  const { dir, record } = publicationFixture(t)
+  record.cases = []
+  record.issues = ['Discovery failure '.repeat(2000)]
+  publish(record, capture(dir))
+  const warning = openProject(dir).snapshot().documents[0].current.warnings[0]
+  assert.ok(warning.summary.length <= 1200)
+  assert.ok(warning.details.includes(record.issues[0]))
+})

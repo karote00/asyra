@@ -109,7 +109,10 @@ foreign projects; Stage 2 distributes portable integrations. Generic JSON writer
 and manual-only documents already use the public format without these runners.
 
 The directory allows at most 1,000 flow files, 4 MiB per file and 32 MiB total.
-Schema limits also bound arrays and text. Current tool-owned attachments are
+Schema limits also bound arrays and text. Observation and warning `details`
+accept raw diagnostic strings up to 1 MiB each (including empty strings); the
+4 MiB document limit still applies. Producers keep summaries short and retain
+complete messages and structured failure diagnostics in these details. Current tool-owned attachments are
 content-addressed in `.attachments/`, up to 64 MiB each and 256 MiB per producer
 publication. Replaced references are removed only when no current observation
 uses them; project-owned files are never removed. Cleanup errors explicitly report

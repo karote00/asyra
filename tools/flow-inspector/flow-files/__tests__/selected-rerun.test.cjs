@@ -25,7 +25,19 @@ test(
       id = criterionId(contract, candidate)
     const preview = service.preview(doc.flowId, candidate.stepId, id)
     const result = await service.rerun({ ...preview, confirm: true })
-    assert.equal(result.code, 0, result.output)
+    assert.equal(
+      result.code,
+      0,
+      result.output +
+        '\n' +
+        JSON.stringify({
+          errors: result.context.errors.map(({ criterionId, summary }) => ({
+            criterionId,
+            summary
+          })),
+          warnings: result.context.warnings.map(({ summary }) => summary)
+        })
+    )
     assert.equal(result.coverageComplete, true, JSON.stringify(result.context))
     const observations = service.snapshot().documents[0].current.observations
     assert.equal(observations.length, 1)
@@ -89,7 +101,19 @@ test(
       ...service.preview(doc.flowId, candidate.stepId, id),
       confirm: true
     })
-    assert.equal(result.code, 0, result.output)
+    assert.equal(
+      result.code,
+      0,
+      result.output +
+        '\n' +
+        JSON.stringify({
+          errors: result.context.errors.map(({ criterionId, summary }) => ({
+            criterionId,
+            summary
+          })),
+          warnings: result.context.warnings.map(({ summary }) => summary)
+        })
+    )
     assert.equal(result.coverageComplete, true, JSON.stringify(result.context))
     const current = service.snapshot().documents[0].current
     assert.equal(current.observations.length, 1)
