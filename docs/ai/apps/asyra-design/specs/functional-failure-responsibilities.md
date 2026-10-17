@@ -332,6 +332,14 @@ Implementation entry points:
 
 Render canonical mesh and gradient material commands through the concrete engine. Preserve ordered colors, stops, alpha and geometry across batching and camera changes. Empty or invalid material inputs do not become unrelated fallback imagery.
 
+For a linear gradient, evaluate the signed projection of each local point onto
+its start-to-end axis, then interpolate the ordered stops and clamp outside the
+stop range. Reversed and outside-shape handles retain this definition. Moving a
+handle changes colors at fixed shape positions while stop colors remain unchanged.
+Browser pixel assertions must use actual pixel-center coordinates and exclude
+editor overlays; a point 10% inside a shape is not its boundary or a gradient stop.
+
+
 Authority: [Render native materials](../../../framework/packages/render-engine-pixi.md).
 
 Implementation entry points:

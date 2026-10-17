@@ -1019,8 +1019,41 @@ if (require.main === module) {
       result.status = 'failed'
     if (result.observations.blockers.length && result.status === 'passed')
       result.status = 'unverified'
+    const { safePath } = require('./snapshot.cjs')
+    const resultPath = safePath(
+      process.cwd(),
+      process.env.FLOW_AGGREGATE_RESULT_FILE ??
+        'tmp/flow-ci/workflow-result.json'
+    )
+    fs.mkdirSync(path.dirname(resultPath), { recursive: true })
+    fs.writeFileSync(resultPath, JSON.stringify(result))
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary(result))
-    console.log(JSON.stringify(result, null, 2))
+    console.log(
+      JSON.stringify({
+        ...result,
+        resultFile: path.relative(process.cwd(), resultPath),
+        observations: {
+          blockers: result.observations.blockers,
+          producers: Object.fromEntries(
+            Object.entries(result.observations.producers).map(
+              ([name, state]) => [
+                name,
+                {
+                  status: state.status,
+                  reason: state.reason,
+                  caseCount: state.currentCases?.length ?? 0,
+                  failedCaseCount:
+                    state.currentCases?.filter(
+                      (item) => item.status === 'failed'
+                    ).length ?? 0,
+                  currentWarningCount: state.warningGroups?.current?.length ?? 0
+                }
+              ]
+            )
+          )
+        }
+      })
+    )
     process.exitCode = result.status === 'passed' ? 0 : 1
   } else throw new Error('Expected collect or aggregate')
 }

@@ -1356,6 +1356,10 @@ test('workflow waits on reusable producers and always collects after failed test
   )
   assert.match(main, /workflow-results\.cjs aggregate/)
   assert.doesNotMatch(main, /workflow-results\.cjs aggregate-scope/)
+  assert.match(
+    main,
+    /name: Upload complete workflow result\s+if: always\(\)\s+uses: actions\/upload-artifact@[^\n]+\s+with:\s+name: workflow-result-[^\n]+\s+path: tmp\/flow-ci\/workflow-result\.json\s+if-no-files-found: error/
+  )
   assert.equal(
     (main.match(/workflow-results\.cjs aggregate(?:\s|$)/g) || []).length,
     1
@@ -1501,10 +1505,13 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
   try {
     const output = path.join(directory, 'output')
     const summary = path.join(directory, 'summary')
+    const resultFile = path.join(directory, 'aggregate.json')
+    const runnerPayload = 'retained-runner-payload-'.repeat(100000)
     const env = {
       ...process.env,
       GITHUB_OUTPUT: output,
       GITHUB_STEP_SUMMARY: summary,
+      FLOW_AGGREGATE_RESULT_FILE: resultFile,
       ...Object.fromEntries(
         Object.entries(identity).map(([k, v]) => [
           'FLOW_RESULT_' + k.toUpperCase(),
@@ -1615,6 +1622,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         },
         {
           projects: [item.projectName ?? ''],
+          runnerDetails: [[runnerPayload]],
           originalReport: report(producer === 'design' ? [0] : [1, 2])
         }
       )
@@ -1672,6 +1680,27 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     })
     assert.equal(complete.status, 0, complete.stdout.slice(0, 2500))
     assert.equal(JSON.parse(complete.stdout).status, 'passed')
+    assert.ok(Buffer.byteLength(complete.stdout) < 16384)
+    assert.ok(!complete.stdout.includes('retained-runner-payload-'))
+    const retained = JSON.parse(fs.readFileSync(resultFile, 'utf8'))
+    assert.equal(retained.status, 'passed')
+    for (const producer of ['design', 'collaboration']) {
+      assert.equal(
+        retained.observations.producers[producer].currentCases[0].runnerDetails,
+        runnerPayload
+      )
+    }
+    assert.equal(
+      JSON.parse(complete.stdout).resultFile,
+      path.relative(root, resultFile)
+    )
+    const invalidOutput = spawnSync(process.execPath, [cli, 'aggregate'], {
+      env: { ...completeRun, FLOW_AGGREGATE_RESULT_FILE: directory },
+      encoding: 'utf8'
+    })
+    assert.notEqual(invalidOutput.status, 0)
+    assert.equal(invalidOutput.stdout, '')
+
     for (const [outcome, expectedStatus] of [
       ['success', 'passed'],
       ['skipped', 'unverified'],
@@ -1750,6 +1779,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     })
     assert.equal(result.status, 1)
     assert.equal(JSON.parse(result.stdout).status, 'failed')
+    assert.equal(
+      JSON.parse(fs.readFileSync(resultFile, 'utf8')).status,
+      'failed'
+    )
     assert.match(
       fs.readFileSync(summary, 'utf8'),
       /design.delete \| unverified/

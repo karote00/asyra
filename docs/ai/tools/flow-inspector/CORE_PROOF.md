@@ -635,6 +635,14 @@ projecting pass, fail or unverified. Dependency failure also blocks the final
 check even when the selected cases passed. Missing output after infrastructure
 failure or cancellation remains unverified. No secret, raw stdout, screenshot,
 trace, or arbitrary report text enters the bounded output.
+The aggregate writes the complete result, including retained observation details,
+to `tmp/flow-ci/workflow-result.json` and uploads it even when the verdict fails.
+`FLOW_AGGREGATE_RESULT_FILE` may select another project-contained output path.
+Stdout contains verdicts, blockers, producer case counts and the result path;
+runner details and full case records remain in the artifact and original bundles.
+Failure to persist the result is a failing aggregate, never a successful receipt.
+The output transport must not depend on the size of retained runner payloads.
+
 
 This is observational CI integration, not a protected issuer. Workflow and
 report bytes remain repository-controlled; digest integrity is not authenticity.

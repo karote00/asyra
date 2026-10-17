@@ -21,6 +21,130 @@ checks before pushing. This does not authorize merging, restarting monitoring or
 another recorded acceptance. Preserve unrelated README/template/source-map changes.
 Historical authorizations below do not apply.
 
+### CI aggregate output correction - 2026-10-18
+
+Owner step: `aggregate-workflow-results`, governed by CORE_PROOF.md
+`Final workflow aggregation` and the core-proof Inspector step/terminal route.
+PR #345 run 39046337314 completed every selected producer but its aggregate was
+cancelled after the output stream stopped inside a multi-megabyte runner detail.
+Replaying the exact downloaded inputs completes computation in 0.295 seconds and
+produces 16,096,913 output bytes. The result is failed because five existing
+expected-failure gradient assertions remain failed under the current contract.
+Do not change that failure authority or label this replay passed.
+
+Inputs/contributors: existing run-bound scope, producer receipts and immutable
+observation bundles. Output: unchanged verdict/blockers and complete retained
+result, with bounded stdout counters and an explicit evidence file. No raw runner
+payload enters stdout. Failure owner remains the aggregate; evidence-write failure
+must fail, not print a false passing result. Preserve the existing timeout and
+all identity, coverage, partial-rerun and assertion checks. No new model calls,
+product execution, fallback classification or monitoring.
+
+Mutation boundary: existing workflow-results owner/tests, main workflow artifact
+upload, CORE_PROOF contract, its Inspector condition/generated catalog and this
+plan. Formal regression: real CLI with a large retained runner payload must finish
+with bounded stdout and exact full evidence, including failed/partial outcomes;
+unwritable output must remain nonzero. Run workflow-results and direct observation
+integration tests, catalog/workflow contracts, lint and naming. Replay the exact CI
+bundle after the fix and distinguish the resolved transport issue from retained
+render failures. Stop before unrelated rendering changes unless separately
+requested. The user has not requested another push in this correction turn.
+
+Self-review: this corrects evidence delivery at its existing owner, not test
+semantics; complete producer evidence and immutable originals remain available.
+The generated catalog is derived only after the condition is synchronized.
+
+### CI gradient assertions - authorized follow-up - 2026-10-18
+
+The user explicitly included the five gradient failures in this correction.
+First close the aggregate owner: 50 workflow tests pass; direct workflow,
+observation, report and catalog integration has 132 passed/44 existing guarded
+skips. Exact CI replay preserves the full failed result while reducing stdout
+from 16,096,913 to 1,929 bytes (0.313 seconds). No expectation/failure weakening.
+
+Next owner segment: existing Design functional `drag-gradient-handles` and its
+canonical gradient/material handoff, with `render-material` inspected as the
+consumer before any renderer mutation. Spec: functional-failure-responsibilities
+`drag-gradient-handles`/`render-material`; handles are unrestricted and stop
+ordering/colors preserved. Inputs are canonical normalized handles/stops, actual
+pointer positions and the current element/view transform. Required outcome is
+correct interpolation at each actual sampled pixel throughout the gesture.
+Endpoint colors are required at their handle positions, not at arbitrary interior
+pixels. Test reports cannot redefine canonical gradient mathematics.
+
+Discovery is bounded to the five existing gradient-fill-render failures, shared
+sampling helpers, gesture and material owners and their direct tests. First
+record exact canonical inputs and screenshot sample coordinates; verify current
+formal oracles against independent linear interpolation before changing runtime.
+If runtime diverges, add the matching source-space regression before a single
+owner correction. No fixture-specific colors, relaxed pixel tolerances, hidden
+expected-failure annotations or Inspector bypass. Preserve reversed/outside
+handles, drag continuity, Undo/Redo, shared fills and non-linear materials.
+Only edit the first incorrect owner after admission; test-only oracle corrections
+must prove canonical handles and actual pixel positions plus browser pixels.
+
+Gates: existing gradient browser suites, analytic sample assertions, retained
+screenshots at actual zoom/device scale, focused lint/types and affected owner
+regressions. Add independent samples that detect inverted stops and stale frames.
+Do not alter test names/case identities needlessly. Stop if another semantic owner
+requires a new correction segment. No 101/model run, remote push or monitoring.
+Self-review: the existing tests sampled y=0.1/0.9 but sometimes expected colors
+for y=0/1, and static brightness checks cannot describe moving handles. Separate
+this oracle defect from actual rendering evidence before implementation.
+
+Gradient diagnosis: unchanged runtime passes all six render scenarios after
+correcting the independent pixel oracle and excluding editor color-stop overlays.
+The old static reversed test expected pure endpoint colors at y=0.1/0.9; actual
+linear interpolation yields intermediate colors (for example red about 51 rather
+than 0). The outside-start test used boundary y=0 expectations at sample y=0.1.
+All three drag tests required fixed shape-edge colors while moving the gradient
+axis, and x=0.25 intersected the moving editor stop swatches. The intermediate
+analytic run passed both static cases and exposed the overlay contamination in
+three drag cases. Side sampling then passed all six without runtime changes.
+The final oracle additionally checks expected handle positions for every one of
+90 moves, unchanged stops, exact CSS pixel centers and a tighter 12-channel-unit
+tolerance. Expected-failure annotations are removed, not replaced with skips.
+The stricter motion oracle initially expected a one-pixel pointer move to mutate
+canonical handles, contrary to the existing three-pixel Feature admission rule.
+Re-reviewed the input/Feature/render handoff: preserve that original click/drag
+threshold in the expected state, using its authoritative App constant; do not
+change production gesture behavior. All 90 sampled positions remain checked.
+Screenshots and original failing reports remain local evidence. Current material
+spec now states the existing signed-axis interpolation rule explicitly.
+
+CI correction closure:
+
+- Final gradient render run: six passed, zero skipped, zero expected failures,
+  zero flaky cases (54.7 seconds). Fifteen adjacent handle, material and vector
+  gradient cases passed in the preceding combined run; only the changed render
+  suite was rerun. That preceding run retains its three motion-oracle failures
+  and is not relabeled passed. Final screenshots for all three drag directions
+  were inspected at 100% zoom, with canonical handles and stop data attached.
+- Workflow owner suite: 50 passed. Direct observation/catalog/workflow integration:
+  132 passed and 44 existing guarded skips. Exact downloaded CI replay retains
+  the original failed aggregate byte-for-byte in parsed content; compact stdout
+  is 1,929 bytes and the complete artifact preserves every runner detail.
+- Design production typecheck, final scoped ESLint, naming (15 tests) and diff
+  whitespace checks passed. Temporary browser service ports 3000/4101/4201 have
+  no listeners. No renderer, gesture, model or timeout behavior was modified.
+- Bounded self-review covered producer identity, failed/partial outcomes,
+  artifact-write failure, always-upload delivery, original gradient case IDs,
+  all 90 positions per gesture, original drag admission, adjacent materials and
+  Undo/Redo. No assertion failure is bypassed by the aggregate correction.
+- Evidence: tmp/pr345-{workflow-final,ci-integration,gradient-verified,
+  design-types,final-lint,naming-final}.log; tmp/pr345-gradient-verified.json;
+  tmp/pr345-ci-artifacts/aggregate-{before,after}.json. Final browser screenshots
+  are retained under apps/asyra-design/test-results/*/gradient-canvas.png.
+- Corrections remain local. PR #345's original cancelled/failed CI remains
+  unchanged until a separately authorized push and new workflow run. No 101,
+  live inference, push, merge or monitoring was performed in this correction.
+
+CI correction delivery authorization - 2026-10-18: the user now explicitly
+requests pushing these verified corrections to existing PR #345. No merge or
+monitoring is authorized. The fetched main is already included in this branch;
+retain the preceding exact-source browser/type/lint evidence and run the bounded
+workflow/catalog and commit-dependent checks before delivery.
+
 ### Delivery integration - 2026-10-17
 
 The user authorized push and PR creation after the renewed review and recorded
