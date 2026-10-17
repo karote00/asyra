@@ -57,6 +57,7 @@
             "createRecordingSink",
             "criteria",
             "definition",
+            "delivery",
             "deniedActionIds",
             "dependencies",
             "description",

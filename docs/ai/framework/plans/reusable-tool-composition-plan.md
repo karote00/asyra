@@ -21,6 +21,19 @@ checks before pushing. This does not authorize merging, restarting monitoring or
 another recorded acceptance. Preserve unrelated README/template/source-map changes.
 Historical authorizations below do not apply.
 
+### Delivery integration - 2026-10-17
+
+The user authorized push and PR creation after the renewed review and recorded
+acceptance. Rebased the accumulated branch onto main
+`748011ca127eabd5832df1f590d6e00b8a9d7651` without conflicts; product inputs are
+unchanged by the rebase. Preserve unrelated local README/template/source-map work.
+The delivery preflight found stale generated Inspector catalog and public API
+index content. Existing contract checks reproduced both failures. Regenerate with
+the existing owners after rebuilding declarations; catalog 8/8 and public docs
+41 pages/19 packages now pass. No hand-edited generated semantics or production
+changes. Run applicable local delivery checks against the resulting committed
+source before publishing; do not restart monitoring or merge this PR.
+
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 
 ### Bounded planning contract and evidence
