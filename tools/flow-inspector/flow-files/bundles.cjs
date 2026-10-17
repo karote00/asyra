@@ -127,6 +127,10 @@ function importCurrent(project, bundle) {
       ),
       Buffer.from(JSON.stringify(doc, null, 2) + '\n')
     )
+  const retained = references(documents)
+  for (const relative of references(old.documents))
+    if (!retained.has(relative))
+      writes.set(dataPath(project.directory, relative), null)
   const backups = new Map()
   for (const file of writes.keys()) {
     if (fs.existsSync(file) && !fs.lstatSync(file).isFile())
@@ -160,10 +164,13 @@ function importCurrent(project, bundle) {
         throw new Error('Concurrent import conflict')
     }
     for (const [file, bytes] of writes) {
-      if (backups.get(file)?.equals(bytes)) continue
-      fs.mkdirSync(path.dirname(file), { recursive: true })
+      if (bytes ? backups.get(file)?.equals(bytes) : !backups.get(file))
+        continue
       written.push(file)
-      fs.writeFileSync(file, bytes)
+      if (bytes) {
+        fs.mkdirSync(path.dirname(file), { recursive: true })
+        fs.writeFileSync(file, bytes)
+      } else fs.unlinkSync(file)
     }
   } catch (error) {
     rollbackComplete = false

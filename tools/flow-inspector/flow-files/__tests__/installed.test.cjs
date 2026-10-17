@@ -388,6 +388,8 @@ test(
       if (producer === 'vitest') {
         const watchArgs = [...native]
         watchArgs[1] = '--watch'
+        const initialRevision = api.openProject(project.directory).snapshot()
+          .documents[0].revision
         const watcher = spawn(process.execPath, watchArgs, {
           cwd: root,
           env,
@@ -416,8 +418,20 @@ test(
         const awaitState = async (revision, state) => {
           const deadline = Date.now() + 15000
           while (Date.now() < deadline) {
-            const current = api.openProject(project.directory).snapshot()
+            let current
+            try {
+              current = api.openProject(project.directory).snapshot()
+            } catch (error) {
+              if (
+                ![
+                  'Another writer owns this project',
+                  'Flow files changed during snapshot'
+                ].includes(error.message)
+              )
+                throw error
+            }
             if (
+              current &&
               current.documents[0].revision > revision &&
               current.evaluation.flows[0].nodes[0].status === state
             )
@@ -428,10 +442,7 @@ test(
           throw new Error('Watch publication timed out: ' + log)
         }
         try {
-          let revision = await awaitState(
-            api.openProject(project.directory).snapshot().documents[0].revision,
-            'done'
-          )
+          let revision = await awaitState(initialRevision, 'done')
           fs.writeFileSync(
             path.join(root, 'flow-example/feature.cjs'),
             'exports.add = (a,b) => a - b\n'

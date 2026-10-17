@@ -19,12 +19,16 @@ class FlowReporter {
         this.options.config ?? relative(this.context.vite.config.configFile),
       cwd: this.options.cwd ?? (relative(this.context.config.root) || '.')
     }
-    this.receipt = capture(this.project, {
-      ...this.scope,
-      ...(specifications.length
-        ? { file: specifications.map((s) => relative(s.moduleId)) }
-        : {})
-    })
+    this.receipt = capture(
+      this.project,
+      {
+        ...this.scope,
+        ...(specifications.length
+          ? { file: specifications.map((s) => relative(s.moduleId)) }
+          : {})
+      },
+      this.scope
+    )
     this.records = []
   }
   onTestCaseResult(test) {
@@ -56,7 +60,9 @@ class FlowReporter {
         .map((e) => e.message)
         .join('\n')
         .slice(0, 1200)
-    publish(this.project, this.receipt, this.records, diagnostic)
+    publish(this.project, this.receipt, this.records, diagnostic, {
+      executedOnly: true
+    })
   }
 }
 module.exports = FlowReporter

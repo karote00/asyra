@@ -97,13 +97,15 @@ revision overwrite and mixed snapshot reads; import rechecks the full prior grap
 under its lock and snapshot admission rejects changes during reads. Human summaries
 strip terminal formatting and omit stacks while full diagnostics remain intact.
 
-The assembled verification iteration keeps the same ten acceptance conditions.
-Its remaining boundary is installed human-action settlement and restart: await
-the rerun response and the persisted note editor, not a matching unsaved draft,
-before stopping the server. The implementation owner remains
-`present-flow-document`; the direct acceptance owner is
-`flow-files/__tests__/installed.test.cjs`. Review confirms this tests persisted
-current state without changing product semantics or adding a second completion
-policy. Resume the installed gate after this oracle correction, then review only
-the stage diff, direct consumers and remaining frozen gates. Already-passing
-unaffected gates are retained.
+The installed action gate waits for the rerun response and persisted note editor
+before restart, rather than treating an unsaved draft as persisted evidence.
+
+PR review additionally covers partial native reporter executions in a shared test
+file, duplicate selector admission before node filtering, repeated-case versus retry identity,
+immutable CLI lockfile
+metadata and cleanup of superseded imported attachments. Partial successful native
+runs leave unexecuted sibling evidence and warnings unchanged. Empty discovery and
+execution errors still produce scoped warnings. Native runs containing only
+unmapped files leave mapped observations unchanged and retain unmapped failures
+at integration under the declared runner scope. Bundle cleanup is part of the
+rollback-protected write set and never deletes unreferenced project-owned files.

@@ -496,21 +496,40 @@ Stage 2 acceptance record - 2026-10-17:
   CI example runs product tests once and evaluates files afterward. Native
   reporters publish that existing execution; selected actions may collect a test
   catalog before executing one case, never execute the suite as discovery.
-- Local gates passed: 55 flow-file cases (including preserved Asyra producer
+- Local gates passed: 61 flow-file cases (including preserved Asyra producer
   contracts), 100 package/viewer/architecture cases, 12 React workspace cases,
   67 CI-scope cases, 17 naming
   and test-placement cases, package typecheck, lint and production build. The
   permanent installed-consumer gate is `yarn workspace @asyra/flow-inspector
-  test:installed`; final execution passed in about 14 seconds using the populated
+  test:installed`; final execution passed in about 17 seconds using the populated
   npm cache. No unrelated product suite was rerun locally.
 - Candidate SHA-256:
-  `5674cade8e0841848ea8668ec9a3a1e9b4427ae26eb9fef4c679128f9ac755ff`.
+  `9a12f979af37a5057b71f569df4cda9d3775e138f87d52dfc69c64fd03f099b3`.
   The 47 installed files under `bin`, `flow-files`, plus README and viewer assets
   matched source bytes; sorted relative-path/NUL/content SHA-256:
-  `76359314d3a80673c6f40065f52a0d3f0b8e31f99c513036fa7552efb6fde1f5`.
+  `442ad093e1237632af7b547d297dd0c648f77675d7a632d77ce32e7cae65bb41`.
   Packed package metadata matched source semantically (Yarn formats its JSON).
   The ignored local evidence lives in `tmp/flow-stage-two/installed/` and is
   reproducible through the permanent gate; it is not a required runtime archive.
+
+PR #344 review corrections:
+
+- Synchronized CLI bin metadata in the lockfile. The original remote CI stopped
+  before tests at immutable installation; hardened immutable installation now
+  passes locally without changing dependency versions.
+- Native partial runs preserve unexecuted sibling evidence and warnings; selected
+  nodes cannot bypass duplicate selector admission. Playwright retries retain
+  failures while distinct repeated cases remain ambiguous. Runs containing only
+  unmapped files preserve mapped evidence and retain unknown failures at integration.
+- Current bundle replacement removes only superseded, previously referenced tool
+  attachments. Cleanup failure restores the prior documents and attachment bytes.
+- The watch acceptance poll now retries only bounded writer-lock/snapshot-change
+  contention and captures its baseline before starting the watcher; other errors
+  still fail immediately.
+- Six additional formal regression cases first reproduced these behavior defects.
+  The final installed-consumer gate and 47-file source comparison passed again;
+  unaffected React, CI-scope, typecheck and build evidence is retained. Remote CI
+  completion must be checked against the review commit, not inferred from local gates.
 
 Known limits are unchanged in purpose and explicit in the package guide: Node 24,
 macOS/Linux, node_modules, Vitest 3.2.x and Playwright 1.62.x; project wildcard

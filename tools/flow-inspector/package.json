@@ -59,7 +59,5 @@
     "bin"
   ],
   "main": "flow-files/api.cjs",
-  "bin": {
-    "flow-inspector": "bin/flow-inspector.cjs"
-  }
+  "bin": "bin/flow-inspector.cjs"
 }

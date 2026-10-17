@@ -131,3 +131,67 @@ test('snapshot rejects a flow replacement during its read instead of caching mix
     fs.readFileSync = original
   }
 })
+
+test('replacing imported evidence removes only superseded tool attachments', (t) => {
+  const source = initialize(directory(t)),
+    target = initialize(directory(t))
+  const bundle = structuredClone(exportCurrent(source))
+  const bytes = Buffer.from('old evidence')
+  const hash = createHash('sha256').update(bytes).digest('hex')
+  bundle.documents[0].revision = 1
+  bundle.documents[0].current.observations = [
+    {
+      nodeId: 'review',
+      criterionId: 'accepted',
+      kind: 'manual',
+      status: 'accepted',
+      binding: nodeBinding(
+        admitProject(bundle.documents),
+        'checkout',
+        'review'
+      ),
+      actor: 'human',
+      summary: 'Reviewed',
+      at: 'now',
+      attachments: [
+        {
+          name: 'Proof',
+          ownership: 'tool',
+          path: '.attachments/' + hash,
+          digest: hash,
+          size: bytes.length
+        }
+      ]
+    }
+  ]
+  bundle.attachments = [
+    { path: '.attachments/' + hash, base64: bytes.toString('base64') }
+  ]
+  importCurrent(target, bundle)
+  const old = path.join(target.directory, '.attachments', hash)
+  const unrelated = path.join(target.directory, '.attachments', 'unrelated.txt')
+  fs.writeFileSync(unrelated, 'Project-owned evidence')
+  assert.equal(fs.existsSync(old), true)
+  bundle.documents[0].revision++
+  bundle.documents[0].current.observations[0].attachments = []
+  bundle.attachments = []
+  const before = exportCurrent(target)
+  const unlink = fs.unlinkSync
+  fs.unlinkSync = function (file, ...args) {
+    if (file === old) throw new Error('Injected cleanup failure')
+    return unlink.call(this, file, ...args)
+  }
+  try {
+    assert.throws(
+      () => importCurrent(target, bundle),
+      /Injected cleanup failure/
+    )
+  } finally {
+    fs.unlinkSync = unlink
+  }
+  assert.deepEqual(exportCurrent(target), before)
+  importCurrent(target, bundle)
+  assert.equal(fs.existsSync(old), false)
+  assert.equal(fs.readFileSync(unrelated, 'utf8'), 'Project-owned evidence')
+  assert.deepEqual(exportCurrent(target), bundle)
+})

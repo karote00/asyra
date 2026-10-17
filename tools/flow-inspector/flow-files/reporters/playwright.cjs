@@ -5,7 +5,7 @@ const { capture, publish } = require('../adapters.cjs')
 class FlowReporter {
   constructor(options = {}) {
     this.options = options
-    this.records = []
+    this.records = new Map()
     this.errors = []
   }
   onBegin(config, suite) {
@@ -17,19 +17,27 @@ class FlowReporter {
       config: this.options.config ?? relative(config.configFile),
       cwd: this.options.cwd ?? '.'
     }
-    this.receipt = capture(this.project, {
-      ...this.scope,
-      ...(suite.allTests().length
-        ? {
-            file: [
-              ...new Set(suite.allTests().map((t) => relative(t.location.file)))
-            ]
-          }
-        : {})
-    })
+    this.receipt = capture(
+      this.project,
+      {
+        ...this.scope,
+        ...(suite.allTests().length
+          ? {
+              file: [
+                ...new Set(
+                  suite.allTests().map((t) => relative(t.location.file))
+                )
+              ]
+            }
+          : {})
+      },
+      this.scope
+    )
   }
   onTestEnd(test, result) {
-    this.records.push({
+    const old = this.records.get(test)
+    if (old?.status === 'failed') return
+    this.records.set(test, {
       selector: {
         ...this.scope,
         file: path
@@ -47,21 +55,16 @@ class FlowReporter {
     this.errors.push(error.message || String(error))
   }
   onEnd(result) {
-    // Retries never turn a failing attempt into passing current evidence.
-    const records = new Map()
-    for (const record of this.records) {
-      const key = JSON.stringify(record.selector),
-        old = records.get(key)
-      if (!old || old.status !== 'failed') records.set(key, record)
-    }
+    // Retry attempts share one TestCase; distinct repeated cases remain ambiguous.
     publish(
       this.project,
       this.receipt,
-      [...records.values()],
+      [...this.records.values()],
       this.errors.join('\n').slice(0, 1200) ||
         (['interrupted', 'timedout'].includes(result.status)
           ? 'Execution ' + result.status
-          : '')
+          : ''),
+      { executedOnly: true }
     )
   }
 }

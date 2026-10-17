@@ -91,7 +91,14 @@ export default {
 ```
 
 The config/cwd values must match the selectors. Vitest watch captures a fresh
-execution before tests run and publishes only its selected files. Inspector itself
+execution before tests run and publishes only completed test identities. Successful
+partial runs leave unexecuted sibling criteria and their warnings unchanged;
+empty discovery and execution errors still retain scoped warnings. Duplicate
+selector mappings are rejected even for an explicitly selected node. Playwright
+retries retain any failed attempt; distinct repeated cases are not collapsed into
+a guessed result. Runs containing only unmapped files leave mapped observations
+unchanged; their failures are retained at integration under the declared runner
+scope. Inspector itself
 watches flow files, never source files. With the Inspector closed, reporters still
 write current results; startup loads them and a running dashboard refreshes them.
 Editing source alone never changes a failed verdict to passing.
@@ -157,7 +164,9 @@ bundle. The destination needs a config and flows directory. It can be empty, or
 contain the same definitions and declared source revisions. Lower revisions,
 same-revision divergence, wrong project identity, corrupt/missing/duplicate
 attachments and unsafe paths fail before adoption. Identical imports are
-idempotent. Tool-owned attachments travel with their digests; project-owned
+idempotent. Superseded tool-owned attachments are removed only when the merged
+current project no longer references them; a failed import restores prior files.
+Tool-owned attachments travel with their digests; project-owned
 attachment references remain external and are never copied or deleted.
 
 A writer lock prevents readers from treating a partially imported project as

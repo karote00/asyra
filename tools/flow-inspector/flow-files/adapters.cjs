@@ -44,8 +44,11 @@ function selection(project, filter = {}) {
     ]) {
       for (const criterion of node.criteria) {
         const selected = selector(project.root, criterion.selector)
+        if (!selected) continue
+        const key = digest(selected)
+        if (identities.has(key)) throw new Error('Ambiguous portable selector')
+        identities.add(key)
         if (
-          !selected ||
           Object.entries(filter).some(([k, v]) =>
             Array.isArray(v)
               ? !v.includes(
@@ -65,9 +68,6 @@ function selection(project, filter = {}) {
           )
         )
           continue
-        const key = digest(selected)
-        if (identities.has(key)) throw new Error('Ambiguous portable selector')
-        identities.add(key)
         const inputs = [
           ...new Set([
             selected.file,
@@ -96,12 +96,18 @@ function selection(project, filter = {}) {
       }
     }
   }
-  if (!cases.length)
-    throw new Error('No portable criteria match the requested scope')
   return { cases, snapshot, store }
 }
-function capture(project, filter = {}) {
-  const { cases } = selection(project, filter)
+function capture(project, filter = {}, executionScope) {
+  let { cases } = selection(project, filter)
+  // Native execution can include files without mapped criteria. Retain its
+  // declared runner scope only to place unmapped failures at integration.
+  if (!cases.length && executionScope) {
+    filter = executionScope
+    cases = selection(project, filter).cases
+  }
+  if (!cases.length)
+    throw new Error('No portable criteria match the requested scope')
   // One fingerprint for the declared execution scope, not one recursive scan per case.
   const inputs = [...new Set(cases.flatMap((c) => c.inputs))].sort()
   return {
@@ -114,7 +120,7 @@ function capture(project, filter = {}) {
     fingerprint: fingerprintPaths(project.root, inputs).digest
   }
 }
-function publish(project, receipt, records, diagnostic = '') {
+function publish(project, receipt, records, diagnostic = '', options = {}) {
   if (
     !receipt ||
     receipt.schemaVersion !== 1 ||
@@ -140,8 +146,20 @@ function publish(project, receipt, records, diagnostic = '') {
     (r) => !known.has(digest(r.selector)) && r.status === 'failed'
   )
   for (const doc of snapshot.documents) {
-    const own = cases.filter((c) => c.flowId === doc.flowId)
-    if (!own.length) continue
+    if (!cases.some((c) => c.flowId === doc.flowId)) continue
+    const own = cases.filter(
+      (c) =>
+        c.flowId === doc.flowId &&
+        (!options.executedOnly ||
+          diagnostic ||
+          !records.length ||
+          records.some(
+            (r) =>
+              digest(r.selector) === c.identity &&
+              ['passed', 'failed'].includes(r.status)
+          ))
+    )
+    if (!own.length && !unknown.length) continue
     const values = [],
       warnings = []
     for (const c of own) {
