@@ -1,0 +1,37 @@
+{
+  "sourceRun": "reusable-tools-1792179056926",
+  "note": "Recorded start-phase projection fields. The old diagnostic record omits toolStatus and authored text; the fixed purpose comes from the simultaneous DOM observation. This fixture replays starts only, not a fabricated complete trace.",
+  "purpose": "我會先確認台北 101 的外觀與尺寸資料，再以固定俯視三分之四視角建立可編輯的建築細節。",
+  "starts": [
+    {
+      "phase": "provider",
+      "activity": {
+        "kind": "system",
+        "callId": "exec-da976d62-905a-4e73-a653-411ba1548af3",
+        "sequence": 2,
+        "phase": "queued"
+      },
+      "tool": "describe_design_apis"
+    },
+    {
+      "phase": "provider",
+      "activity": {
+        "kind": "system",
+        "callId": "exec-da976d62-905a-4e73-a653-411ba1548af3",
+        "sequence": 3,
+        "phase": "admission"
+      },
+      "tool": "describe_design_apis"
+    },
+    {
+      "phase": "provider",
+      "activity": {
+        "kind": "system",
+        "callId": "exec-da976d62-905a-4e73-a653-411ba1548af3",
+        "sequence": 4,
+        "phase": "executing"
+      },
+      "tool": "describe_design_apis"
+    }
+  ]
+}

@@ -508,6 +508,61 @@ export const designEvidenceDefinitions = [
                   minItems: 1,
                   maxItems: 1
                 },
+                bindings: toolResultObject({
+                  images: {
+                    type: 'array',
+                    items: toolResultObject(
+                      {
+                        inspectionId: toolResultString,
+                        elementId: toolResultString,
+                        overview: toolResultBoolean,
+                        detail: toolResultBoolean,
+                        region: inspectionInputSchema.properties.region
+                      },
+                      ['inspectionId', 'elementId', 'overview', 'detail']
+                    )
+                  },
+                  checks: {
+                    type: 'array',
+                    items: toolResultObject(
+                      {
+                        id: toolResultString,
+                        criterionId: toolResultString,
+                        unitId: toolResultString,
+                        status: {
+                          enum: [
+                            'missing',
+                            'pass',
+                            'fail',
+                            'stale',
+                            'unverified'
+                          ]
+                        },
+                        revision: toolResultCount,
+                        inspectionIds: toolResultIds,
+                        scopes: {
+                          type: 'array',
+                          items: toolResultObject(
+                            {
+                              elementId: toolResultString,
+                              view: { enum: ['overview', 'detail'] },
+                              region: inspectionInputSchema.properties.region
+                            },
+                            ['elementId', 'view']
+                          )
+                        }
+                      },
+                      [
+                        'id',
+                        'criterionId',
+                        'status',
+                        'revision',
+                        'inspectionIds',
+                        'scopes'
+                      ]
+                    )
+                  }
+                }),
                 instruction: toolResultString
               }),
               toolResultObject({
@@ -547,7 +602,7 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 5,
+    revision: 6,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
       'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence,inspectionIds}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
@@ -959,6 +1014,18 @@ export const createLocalDesignReview = (
               'Define request-linked criteria before recording judgments. Retain the returned images; defining criteria does not inspect or approve them.'
           }
         }
+      const required =
+        phase === 'structure'
+          ? plan.structureCriteria.map((criterionId) => ({
+              id: visualCheckIdentity({ criterionId }),
+              criterionId
+            }))
+          : requiredChecks()
+      const previous = new Map(
+        results
+          .read({ ids: required.map(({ id }) => id), includePassed: true })
+          .items.map((item) => [item.id, item])
+      )
       return {
         coverage: reviewState().coverage,
         ...(inspectionIds.length
@@ -971,8 +1038,55 @@ export const createLocalDesignReview = (
                   inspectionIds
                 },
                 requiredInputs: ['checks'],
+                bindings: {
+                  images: inspectionIds.flatMap((inspectionId) => {
+                    const image = inspections.get(inspectionId)
+                    return image
+                      ? [
+                          {
+                            inspectionId,
+                            elementId: image.target,
+                            overview: image.overview,
+                            detail: image.detail,
+                            ...(image.region
+                              ? { region: structuredClone(image.region) }
+                              : {})
+                          }
+                        ]
+                      : []
+                  }),
+                  checks: required.map((identity) => {
+                    const prior = previous.get(identity.id)
+                    return {
+                      ...identity,
+                      status: prior?.status ?? 'missing',
+                      revision: prior?.revision ?? 0,
+                      inspectionIds: [...(prior?.scope ?? [])],
+                      scopes: (unitScopes.get(identity.id) ?? []).map((key) => {
+                        // Decode only canonical scope keys authored by this owner.
+                        // They survive image retirement and are not fresh evidence.
+                        const [elementId, scope] = JSON.parse(key) as [
+                          string,
+                          string
+                        ]
+                        const separator = scope.indexOf(':')
+                        const view = scope.slice(0, separator)
+                        const bounds = scope.slice(separator + 1)
+                        if (bounds === 'whole') return { elementId, view }
+                        const [x, y, width, height] = JSON.parse(
+                          bounds
+                        ) as number[]
+                        return {
+                          elementId,
+                          view,
+                          region: { x, y, width, height }
+                        }
+                      })
+                    }
+                  })
+                },
                 instruction:
-                  'After viewing the images, record observed pending checks, including passes and failures, before editing. Supply exact criterion/unit identities and only the images each judgment depends on. Do not resend unrelated passes or invent judgments for unseen parts. Use final=true only to attempt completion from retained results.'
+                  "After viewing the images, record observed pending checks, including passes and failures, before editing. bindings.images describes delivered target-local regions; bindings.checks is retained state, not fresh approval. Submit exact criterion/unit identities and only each judgment's required images. Keep whole-target evidence separate from regional units. Include every selected check image in arguments.inspectionIds. Compare with the retained scopes even if their old images have retired. If redesign changes a unit scope, provide supersedes with its listed revision and your reason; never copy a prior pass as a new judgment. Do not resend unrelated passes or invent judgments for unseen parts. Use final=true only to attempt completion from retained results."
               }
             }
           : {})
@@ -1032,38 +1146,55 @@ export const createLocalDesignReview = (
         selected
       )
       const changed = selectionChanged || update.changedIds.length > 0
-      const affected = selectionChanged
-        ? Object.keys(plan.criteria)
-        : [
-            ...new Set([
-              ...[...previousDecisions, ...references.snapshot()]
-                .filter(
-                  (decision) =>
-                    update.changedIds.includes(decision.referenceId) &&
-                    selected.includes(decision.attachmentIndex)
-                )
-                .flatMap((decision) => decision.criterionIds),
-              ...[...factBindings.values()]
-                .filter((binding) =>
-                  retainedFacts.some(
-                    (fact) =>
-                      fact.id === binding.factId &&
-                      fact.sources.some((source) =>
-                        update.changedIds.includes(source)
-                      )
+      const nextDecisions = references.snapshot()
+      const previousSelected = new Set(
+        previousDecisions
+          .filter((decision) =>
+            plan?.referenceImageIndexes?.includes(decision.attachmentIndex)
+          )
+          .map((decision) => decision.referenceId)
+      )
+      const nextSelected = new Set(
+        nextDecisions
+          .filter((decision) => selected.includes(decision.attachmentIndex))
+          .map((decision) => decision.referenceId)
+      )
+      const changedSelection = new Set(
+        [...previousSelected, ...nextSelected].filter(
+          (id) => previousSelected.has(id) !== nextSelected.has(id)
+        )
+      )
+      const affected = [
+        ...new Set([
+          ...[...previousDecisions, ...nextDecisions]
+            .filter(
+              (decision) =>
+                changedSelection.has(decision.referenceId) ||
+                (update.changedIds.includes(decision.referenceId) &&
+                  (previousSelected.has(decision.referenceId) ||
+                    nextSelected.has(decision.referenceId)))
+            )
+            .flatMap((decision) => decision.criterionIds),
+          ...[...factBindings.values()]
+            .filter((binding) =>
+              retainedFacts.some(
+                (fact) =>
+                  fact.id === binding.factId &&
+                  fact.sources.some((source) =>
+                    update.changedIds.includes(source)
                   )
-                )
-                .map((binding) => binding.criterionId)
-            ])
-          ]
-      if (selectionChanged || affected.length) {
-        plan.referenceImageIndexes = selected
+              )
+            )
+            .map((binding) => binding.criterionId)
+        ])
+      ]
+      plan.referenceImageIndexes = selected
+      if (affected.length || referenceIssues().length) {
         accepted = false
-        if (selectionChanged) acceptedIds = []
         if (affected.some((id) => plan?.structureCriteria.includes(id)))
           structureAccepted = false
         issue =
-          'Reference selection changed; compare the current drawing again.'
+          'Reference applicability changed; compare the affected criteria again.'
       }
       return {
         referenceImageIndexes: [...selected],
@@ -1691,7 +1822,7 @@ export const createLocalDesignReview = (
         }
         if (changedScope && !check.supersedes)
           throw new Error(
-            'Check unit scope changed; provide supersedes with the current result revision and redesign reason.'
+            `Check unit scope changed for ${check.criterionId}/${check.unitId}; provide supersedes with the current result revision ${previous?.revision} and redesign reason. No judgments were recorded.`
           )
         submittedScopes.set(
           key,

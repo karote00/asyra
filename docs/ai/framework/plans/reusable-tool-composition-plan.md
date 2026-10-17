@@ -7971,3 +7971,381 @@ overall bounds and final content; keep ten seconds after normal completion.
 Report first frame, phase timing/AI-tool attribution, actual local pass reuse,
 parallel activity/context ownership, persistence/reload and final reference images.
 No node-count-based improvement claim or production changes during the run.
+
+### Recorded review, query capacity and activity handoff - 2026-10-17
+
+Current bounded task: replay saved run reusable-tools-1792179056926 without a
+model call. Correct incomplete review handoffs, structural-receipt contention
+with query capacity and public activity churn. Analyze reference suitability
+responsibility from the same evidence. Preserve existing unrelated README and
+generated source-map edits. No live 101, push, monitoring, dependency changes,
+Factory/persistence changes, artificial latency promises or increased limits.
+
+Evidence: the eight handles released at 381 seconds were produced by structural
+batch receipts at 200/362 seconds, not by eight live region queries. Immutable
+recovery receipts currently consume the same eight-entry budget as materialized
+queries. Releasing them loses recovery data; evicting pinned data is not a fix.
+Review rejections protect real invariants: mixed whole/local dependencies, changed
+unit scope without explicit predecessor, and an image omitted from the enclosing
+menu. The next-call handoff currently supplies only flat IDs. Public status
+projects admission and nested execution phases as different operations although
+the actual user operation has not changed. All diagnostics must remain intact.
+
+Reviewed execution order and Step Execution Cards:
+
+1. apply - structural receipt/query retention. Inputs: successful canonical
+   structural receipts, request signal, exact snapshot/lease and ordinary queries.
+   Output: compact handles, recoverable immutable receipts and bounded queries.
+   Keep one retained-context owner and the shared byte budget. Count only
+   materialized queries against the query-entry budget; receipts do not allocate
+   query rows and must not consume those slots. Pinned receipts still consume
+   bytes and cannot be silently evicted. Retired/released handles never regain
+   authority; historical receipt read cannot authorize an edit. No bypass for
+   cross-request, cancelled, stale, oversized or genuinely full live queries.
+   Boundary: retained-design-context.ts, existing structural-delivery and query
+   tests; existing apply Inspector contract and execution-flow spec. Prove eight
+   acknowledged group receipts followed by a real context read, receipt recovery,
+   stale edit rejection, release/cancellation and independent entry/byte pressure.
+   Stop on any need to change canonical mutation, Undo or storage ownership.
+
+2. inspect - evidence binding handoff. Inputs: delivered images, declared
+   criterion/unit identities and current result revisions. Output: a compact
+   handoff describing each delivered image's target/region and each declared
+   unit's existing binding/revision, without fabricated judgments or a new scan.
+   Keep exact image/menu and supersession admission. Scope is explicit, never
+   inferred from criterion prose. Recovery explains the available current binding
+   rather than weakening admission or silently replacing inputs. Boundary:
+   local-design-review.ts, local-operation-tools.ts and existing direct/registry
+   integration tests, canonical schemas and current inspect contract/spec. Prove
+   capture-to-handoff-to-judgment, independent pass retention, explicit redesign,
+   foreign/unknown IDs and failure atomicity. Stop if this requires model calls.
+
+3. settle - public activity projection. Inputs: ordered causal call events and
+   authored purpose; diagnostics retain every event. Public operation labels
+   represent active semantic operations, not anonymous nested implementation
+   phases. Admission is not execution: expose context until real operation work
+   begins; executing named children may replace their parent. Internal unnamed
+   children inherit the nearest active named operation for public projection,
+   without copying authored purpose or manufacturing execution. Distinct parallel
+   named operations remain visible; completions, approval, save, cancellation,
+   timeout and errors remain immediate. No timer/debounce or second state machine.
+   Boundary: activity-state.ts, existing presentation/conversation/provider and
+   browser integration tests, settle contract/spec. Replay saved event sequences
+   and prove nested, parallel, late, rejected and terminal handoffs.
+
+Reference audit: final indexes 3/1/6 were model-authored restricted decisions.
+Tools verified identity/dimensions/criteria, not semantic subject occupancy. The
+second image's restricted tower/detail role does not prove useful detail pixels.
+Record the gap and a role-specific subject-region/resolution proposal; do not
+introduce an unrequested classifier, arbitrary universal percentage threshold,
+extra AI reviewer or pretend existing pixel validation certifies suitability.
+
+Self-review: receipt recovery must remain byte-bounded even though query slots
+are independent; no acceptance may be inferred from a returned review guide;
+old result revisions must be shown without automatically superseding them; an
+admitted-but-queued call cannot claim visible drawing; closing an anonymous
+child must not close its parent or siblings. Existing independent pass dependency
+logic, permission/transaction/save ownership and original reference bytes stay
+unchanged. Close each owner with failing-before/passing-after formal regressions,
+existing direct consumer integration, production types, scoped lint/naming and
+current-source Inspector evidence. No live-performance improvement claim.
+
+Apply-owner closure: the real structural-action integration reproduced the exact
+eight-receipt/region-read capacity error before implementation. After separating
+query-slot accounting from shared byte retention, 38 existing/new query and
+structural integration cases pass, including historical recovery, stale consumers,
+pin protection, cancellation and byte-pressure failure. Production typecheck and
+scoped lint pass. Limits and canonical mutation behavior are unchanged. Inspector
+contract admission 2056a44a1ede49574aa285e5e4a37d89ccad9b84b91caac8fc48d2c8d12041cc
+accepted the reviewed owner boundaries. Advance only to the inspect card above.
+
+Inspect-owner closure: canonical output revision 6 adds typed binding guidance
+to the existing capture handoff. It lists delivered image target/region and
+retained criterion/unit status, revision and prior image IDs, without copying
+findings or auto-selecting dependencies. Scope-change errors identify the unit
+and actual predecessor revision. The saved crown sequence reproduces both
+intentional rejections and explicit local recovery while preserving the camera
+pass. Direct and registry capture-to-review tests failed on missing guidance
+before implementation; 281 cases now pass, with scoped lint and server types.
+Two first green-run expectations needed correction: the canonical revision
+bumped from 5 to 6 and declared checks are already unverified revision 1. No
+admission rule was relaxed. Advance to settle using the card above.
+
+Final bounded review found two handoff omissions and closed them before delivery:
+retired image IDs alone do not describe an old unit scope, so guidance now also
+decodes this owner's retained canonical scopes into target/view/region metadata;
+these are diagnostic bindings, never current evidence. The red scope test then
+passed. Actual authored child work must remain visible even without a registered
+tool label; only unnamed system implementation phases project to their parent.
+The full server suite exposed that preservation requirement through the existing
+flow proof, while a provider assertion still expected admission chatter. Preserve
+the authored child case and update only the admission expectation.
+
+The recorded progress diagnostic omits toolStatus and authored text. Therefore
+the new saved-phase fixture honestly replays starts only, using the simultaneous
+DOM purpose; it is not an invented full event trace. Completion, nested and
+parallel call behavior is verified by the existing provider/controller/browser
+integrations and explicit terminal events. No claim of whole-run post-fix churn
+or elapsed-time savings is made without a new live run.
+
+Reference evidence: the second selected image is reference-1.jpg, immutable
+reference:485fb39... in the retained run, 1120 by 665 pixels. Visual inspection
+shows roughly 100 pixels across the tower and a cropped base. The main agent
+marked it restricted for overall/details; the tool did not certify subject
+coverage. Download, MIME, dimensions and immutable identity are acquisition
+checks, not semantic suitability. Small occupancy alone is not a universal
+rejection criterion: a silhouette source can still be useful while fine facade
+detail cannot be recovered by enlarging its crop. Recommended next contract:
+one primary-agent selection supplies intended criterion/role, subject region
+and visible omissions; the existing pixel owner measures effective region
+dimensions and returns them with the retained source. Compare those measurements
+with the declared detail requirement, never a guessed universal occupancy
+percentage. Reuse the original bytes/crop without refetching; reject or restrict
+only the unsupported role, and batch acquisition for missing roles. No extra
+review model or new automatic subject classifier is implemented in this task.
+
+
+Apply-owner final consumer review: refinement currently spreads the parent
+snapshot, including a structural receipt. A filtered target query must count as
+a query and must not impersonate the original mutation receipt. Add a formal
+red/green refinement regression, remove that copied receipt at this same owner,
+and prove query pressure, cached reuse, release recovery and untouched parent
+readback. This stays within the admitted apply boundary and unchanged budgets.
+
+
+The apply refinement regression failed before the correction and now passes
+with all 39 query/structural cases. Re-enter the existing inspect card only to
+close its output-schema boundary: retained scopes are always produced but were
+not listed as required. Reject missing scopes through the same canonical schema,
+prove malformed-output rejection in the existing capture-to-review integration,
+and retain the accepted input grammar and owner boundaries. No new behavior,
+compatibility path or automatic decisions are added.
+
+
+Delivery evidence for this bounded correction (no new live model run):
+
+- Existing full server response harness: 1,256 passed, two existing conditional
+  skips (external protocol executable and opt-in recorded large-document load).
+  Existing full AI suite: 590 passed. Logs:
+  tmp/recorded-handoff-server-final.log and tmp/recorded-handoff-ai-final.log.
+- After final query refinement and required-scope schema corrections, reran the
+  affected owners and consumers: 39 query/structural cases, 320 review/registry/
+  flow-proof cases. Logs: tmp/receipt-refine-green.log and
+  tmp/recorded-handoff-owner-final.log. Earlier red runs remain failed evidence;
+  the focused schema red run also triggered the suite's expected all-tool
+  visitation check because it selected a single test. The complete file passes.
+- Final production, server and flow-proof TypeScript projects pass; scoped lint
+  has zero errors and two existing console warnings. Naming: 15 passed.
+  Logs: tmp/recorded-handoff-types-final2.log,
+  tmp/recorded-handoff-lint-final.log and tmp/recorded-handoff-naming-final.log.
+- Real browser current-activity integration: 360/1280 viewport cases passed on
+  final activity source (24.9 seconds). Active inspection and completed-call
+  screenshots were inspected. Internal anonymous phases preserve semantic work;
+  completion returns to context. Log: tmp/activity-semantic-browser-final.log.
+  Playwright-owned ports 3300/3401/4411 have no remaining listeners.
+- Final Inspector candidate 7de1a9e1-3db7-4114-b810-fc5ac02f3eb4 captures source
+  ac99bf1d0c1234c3c1976243b6d8bdf21fe8c83539bc973387b838267da8ed4c.
+  Contract review 00eec9750b252fb2f107dadcbc375e32c911fa688d603b61d455a1266be49fc7
+  accepted, mapping revision 92. Verify 3cc80608-eb80-43b9-9def-4a449145238a passes
+  all 39 cases. Controlled ignore-canonical-evidence fails exactly four declared
+  inspect cases; omit-structural-handoff fails exactly two declared apply cases.
+  Recovery f170251f-07b6-49c1-b0bf-c2c7bb4849ab passes all 39 on the same source.
+  Logs: tmp/recorded-handoff-{candidate,verify,recovery}-final.log and
+  tmp/recorded-handoff-negative-{evidence,receipt}.log.
+
+Final self-review: original evidence rejection, explicit redesign, independent
+passes, borrowed handles, cancellation, byte pressure and query capacity remain
+covered; no mutation/Undo/save ownership was changed. Actual authored child work
+and parallel operations remain visible. Diagnostics are not hidden. Reference
+suitability remains a primary-agent decision; the role/region pixel proposal is
+analysis only. No time-saving claim follows from deterministic replay. No 101,
+extra model, push or monitoring was started; unrelated README/source-map edits
+were preserved.
+
+
+### Principal operation, byte capacity and explicit reference scope - 2026-10-17
+
+This user-approved review supersedes the previous entry-slot and child-visible
+presentation decisions. Preserve the current worktree and unrelated changes.
+No live 101, model call, push, monitoring, new dependency or persistence redesign.
+Use current code, saved run inputs/outputs, direct consumers and existing suites;
+do not expand into unrelated packages. The source is still HEAD 4e12f308b.
+
+Reviewed owner cards, in order:
+
+1. apply / retained context: remove the unsupported fixed eight-query entry
+   quota and its unused internal option. Retain the existing byte budget, shared
+   receipt owner, exact freshness, request leases and cancellation. Inputs are
+   canonical queries/receipts; output is an admitted reference or recoverable
+   capacity rejection, never partial eviction of pinned data. Test many small
+   queries, mixed receipts, filtered descendants, oversized queries, genuine
+   byte exhaustion, release/cancellation recovery and unchanged work reuse.
+   Files: retained-design-context.ts, its formal tests, structural-delivery and
+   execution-flow-proof tests. No unlimited-memory claim: serialized bytes are
+   the accounting unit, not an exact JavaScript heap measurement.
+
+2. inspect / reference applicability: primary AI supplies exact criterion roles
+   and limitations; pixel comparison requires an explicit referenceRegion and
+   existing target inspection. Tools never infer subject, alignment or purpose.
+   Review direct reference-selection consumers for unnecessary invalidation;
+   changed reference applicability must invalidate only dependent criteria,
+   preserving unrelated passes. Unknown source scope cannot silently approve
+   anything. Files: local-design-review.ts, local-reference-decisions.ts only if
+   necessary, ai-domain-prompt.ts and existing formal reference/review/image
+   checks. Prove invalid decision atomicity, scoped correction, unchanged pass
+   retention, source recovery and explicit-region admission. No automatic
+   subject classifier or arbitrary occupancy threshold.
+
+3. settle / activity: one public status per principal invocation. A child with a
+   live ancestor is not a separate public task even if named or authored; all
+   child events remain in diagnostics. Only independent roots count as concurrent
+   work. Admission is context until principal execution; root completion retires
+   descendants and late events cannot revive them. Same reducer and causal graph,
+   no debounce or new status owner. Files: activity-state.ts, existing provider,
+   panel/presentation, execution proof and browser tests. Prove child start/end,
+   errors/cancel, parallel root completion, retries and purpose separation.
+
+Self-review: memory admission remains before publication, pins cannot be lost;
+reference decisions cannot erase unknown source obligations or tool findings;
+reference aliases/order alone must not create a new semantic dependency;
+child-only messages cannot replace principal purpose, queued roots cannot
+borrow an executing child's phase. Run focused red/green tests per owner,
+existing full AI/server suites once integrated, production typecheck, lint,
+naming, Inspector same-source proof and real browser activity integration.
+
+
+Apply card closed: the new 64-small-query test failed at the old ninth query;
+removing count admission passes it. Forty query/structural cases pass, including
+actual byte pressure, pinned recovery, cancellation and derived-query reuse.
+Enter inspect card: direct consumer review confirms selectReferences invalidates
+all criteria whenever attachment selection changes, ignoring existing explicit
+criterion bindings. Reproduce scoped replacement and identity-alias/order cases
+before adjusting this owner. Preserve pending applicability and fact dependencies.
+
+
+Inspect card: scoped reference replacement and alias preservation reproduced the
+all-criteria invalidation; affected criteria now derive from immutable selected
+reference identities and explicit role bindings, retaining bound-fact dependency
+checks. Pending decisions still prevent final approval. Pixel-check omission is
+already rejected before work; its regression proves retained results and zero-
+pixel cached retry. The first test assumed a failure envelope at the direct
+owner, corrected to its established throwing contract (host wraps failures).
+Enter settle card with principal-only public projection and unchanged diagnostic
+leaves; update superseded child-visible assertions, not lifecycle protections.
+
+
+Principal operation review closed locally:
+
+- Removed the superseded leaf-first public presentation wording from the active
+  spec and Inspector. Principal invocations own the visible task; actual child
+  phases, counts, ordering and failures remain diagnostic. Independent roots
+  remain concurrent. No alternate state machine, debounce or inherited-purpose
+  promotion was added.
+- Full existing AI suite: 591 passed. Full existing server response harness:
+  1,260 passed, two unchanged environment-conditional skips (saved large-document
+  bootstrap and installed native protocol registration without inference).
+  The earlier server run failed two superseded child-visible expectations;
+  those runs remain failed evidence. Updated assertions still check raw child
+  start/end phases, provider transport and cross-request saved-tool reuse.
+- Query/structural tests: 40 passed, including 64 small retained queries, actual
+  byte exhaustion, pin protection, release/cancellation and unchanged reuse.
+  Reference/review/operation/prompt tests: 298 passed, including scoped source
+  replacement, identity aliases, atomic rejection and explicit-region retry.
+- Real browser activity cases: both 360px and 1280px passed; saved screenshots
+  inspected. Automatic library-save children preserve the principal public task;
+  completion restores context without claiming ongoing execution. Temporary
+  browser service ports 3300/3401/4411 have no listeners.
+- Production browser, AI server and flow-proof TypeScript checks passed. Scoped
+  lint has zero errors and two existing test console warnings. Naming: 15 passed;
+  generated catalog: eight passed; diff whitespace check passed.
+- Current-source candidate b7b9ed82-b8d1-47ca-bd3a-e6bfef41b213, source digest
+  5de19550b7219739e71425a6b8e4c926a7a4bc12c8ab754c12c38b116312c811.
+  Accepted contract review
+  a61a5c3cadab54f0a160e8873c7ef047b4cbf20143b45a99b3567af71ab7cc3a.
+  Same-source proof passed all 39 obligations, eight exact negative scenarios
+  and recovery (mapping revision 94). Recovery attempt
+  0c1e27e7-0cb2-48aa-9b0c-caa8c52bdda0.
+- Evidence: tmp/principal-{ai-full,server-final,browser,types-final,
+  server-types-final,lint-final,naming-final,catalog-tests,final-proof}.log;
+  tmp/byte-capacity-{red,green}.log; tmp/reference-scope-{red,verified}.log.
+
+No live 101, model inference, push or monitoring was performed. This closure
+proves deterministic handoffs and recovery, not faster live model completion or
+automatic subject-quality recognition. The primary AI still judges whether a
+reference supplies sufficient subject detail for its explicitly declared role;
+mechanical image validity alone never certifies that judgment.
+
+
+### Capacity and principal recovery re-review - 2026-10-17
+
+Same bounded scope and exclusions as the principal-operation cards above. Review
+current owners, direct consumers and existing tests, not only the last regression
+additions. Preserve unrelated working changes. No new public API or owner.
+
+Apply card: verify mixed request byte pressure, aborted-request reclamation,
+sibling pins, stale query refusal and historical receipt recovery. Exercise the
+existing retained-context and mutation/structural integration suites. Input is a
+request-scoped canonical query/receipt; output is complete retained data or a
+recoverable error before mutation. Add a permanent cross-request recovery case;
+change production only if it exposes a defect. Existing apply Inspector contract
+and implementation boundary remain authoritative.
+
+Inspect card follows: verify pending/rejected reference recovery retains unrelated
+passes and does not reuse invalidated approvals. Use actual image identity and
+review/check owners. Invalid requests remain atomic. Existing inspect contract,
+explicit criteria and canonical dependency receipts are unchanged.
+
+Settle card follows: verify concurrent principals, failed/cancelled child and root
+completion, retry, late events and terminal outcome. Match provider transport's
+actual completed-status failure normalization; child failure is not whole-turn
+failure. Preserve raw outcomes in trace and public principal ownership. Existing
+settle graph/reducer, provider and presentation boundaries apply. Run full current
+AI and server suites, scoped lint/types/naming and final same-source Inspector
+proof. No live 101, model inference, push or monitoring.
+
+Apply re-review: 74 existing retained-query, fill-consumer, structural-delivery
+and runtime-lifetime tests pass, including the new mixed-request pressure case.
+Cancellation releases only its leases; sibling pins and historical receipt
+readback survive, stale mutation targets reject, a fresh request can recover.
+No production defect reproduced in this slice. Advance to the inspect recovery
+card above with the same current contract.
+
+Inspect re-review: 299 existing review/check/operation tests pass. The new
+pending -> rejected -> invalid correction -> valid scoped correction case keeps
+the independent Finish result unchanged and requires a fresh Viewpoint judgment
+before acceptance. No production defect reproduced. Advance to settle: strengthen
+the existing real provider transport plus activity-projection success/failure
+case, rather than substituting a reducer-only happy-path test.
+
+
+Recovery re-review completion:
+
+- No new production defect was reproduced. Added permanent mixed-request capacity
+  recovery and pending/rejected reference correction cases, and strengthened the
+  existing provider transport + activity projection success/failure integration.
+  The latter verifies exact failed/success replies, the surviving research root,
+  one completion per invocation and context-only presentation after all work ends.
+- Direct consumers reviewed: retained fill and basic API mutation admission use
+  the request signal and recheck freshness; transactionRunner finally releases
+  that request's retained entries; structural historical receipt readback does
+  not authorize stale writes. Reference changes use immutable identities and
+  declared criterion dependencies. Provider child errors normalize to completed
+  lifecycle events while the trace retains failure outcomes; they do not settle
+  independent principal work or erase the request stage.
+- Query/fill/structural/runtime integration: 74 passed. Review/check/operation:
+  299 passed. Existing full AI suite: 591 passed; full server suite: 1,261 passed
+  with the same two environmental conditional skips. No live inference.
+- Browser production, AI server and flow-proof TypeScript checks passed; scoped
+  lint has no errors and one pre-existing test console warning. Naming 15 passed;
+  diff whitespace clean. No UI production change, so the previously inspected
+  360px/1280px browser evidence remains applicable without another browser run.
+- Current candidate 8528249e-d2d5-43aa-ae48-04a916ce2af1 passed 39 obligations.
+  Product source digest is unchanged:
+  5de19550b7219739e71425a6b8e4c926a7a4bc12c8ab754c12c38b116312c811.
+  Mapping remains revision 94; the previous exact-source eight negative scenarios
+  and recovery remain applicable. New surrounding integration tests were run
+  explicitly above, not claimed to be included in the 39-case boundary proof.
+- Logs: tmp/recovery-review-{query,inspect,provider,ai-full,server-full,types,
+  lint,naming,candidate}.log. No live 101, push or monitoring. Existing unrelated
+  README/template/source-map changes were preserved. No new compatibility path,
+  quota increase, status owner or reference-image classifier was introduced.

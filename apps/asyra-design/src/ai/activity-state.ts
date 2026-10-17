@@ -132,6 +132,8 @@ interface ActivityPurpose {
 }
 
 interface ActiveCall {
+  readonly executing: boolean
+  readonly named: boolean
   readonly label: string
   readonly operationLabel: string
   readonly purpose?: ActivityPurpose
@@ -228,13 +230,17 @@ const callAncestry = (
 }
 
 const livePurpose = (
-  calls: Readonly<Record<string, ActiveCall>>
+  calls: Readonly<Record<string, ActiveCall>>,
+  selectedIds?: readonly string[]
 ): ActivityPurpose | undefined => {
   const entries = Object.entries(calls)
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
   if (!leaves.length) return
-  const paths = leaves.map(([id]) => callAncestry(id, calls))
+  const paths = (selectedIds ?? leaves.map(([id]) => id)).map((id) =>
+    callAncestry(id, calls)
+  )
+  if (!paths.length) return
   const common = paths[0].find(
     (id) => calls[id].purpose && paths.every((path) => path.includes(id))
   )
@@ -253,27 +259,36 @@ const livePhaseLabel = (
   return leaves.length ? `Running ${leaves.length} operations` : fallback
 }
 
+const publicOperationIds = (
+  calls: Readonly<Record<string, ActiveCall>>,
+  executingOnly = true
+): string[] =>
+  Object.entries(calls)
+    .filter(
+      ([, call]) => !call.parentCallId && (!executingOnly || call.executing)
+    )
+    .map(([id]) => id)
+
 const projectCallEntry = (
   calls: Readonly<Record<string, ActiveCall>>,
   fallback: ActivityEntry,
   stagePurpose?: string
 ): ActivityEntry => {
-  const entries = Object.entries(calls)
-  if (!entries.length)
-    return stagePurpose
-      ? { label: 'Current task', message: stagePurpose }
-      : fallback
-  const parents = new Set(entries.map(([, call]) => call.parentCallId))
-  const leaves = entries.filter(([id]) => !parents.has(id))
-  // Invalid ancestry cannot make one sibling's purpose represent all work.
-  if (!leaves.length) return fallback
+  const visibleIds = publicOperationIds(calls)
+  const visible = visibleIds.map((id) => calls[id])
+  if (!visible.length) {
+    const context =
+      livePurpose(calls, publicOperationIds(calls, false))?.message ??
+      stagePurpose
+    return context ? { label: 'Current task', message: context } : fallback
+  }
   const message =
-    livePurpose(calls)?.message ?? stagePurpose ?? fallback.message
-  const descriptions = new Set(leaves.map(([, call]) => call.operationLabel))
-  let label = `${[...descriptions].join(' - ')} - ${leaves.length} operations`
-  if (leaves.length === 1) label = leaves[0][1].operationLabel
+    livePurpose(calls, visibleIds)?.message ?? stagePurpose ?? fallback.message
+  const descriptions = new Set(visible.map((call) => call.operationLabel))
+  let label = `${[...descriptions].join(' - ')} - ${visible.length} operations`
+  if (visible.length === 1) label = visible[0].operationLabel
   else if (descriptions.size === 1)
-    label = `${leaves[0][1].operationLabel} - ${leaves.length} operations`
+    label = `${visible[0].operationLabel} - ${visible.length} operations`
   return { label, ...(message ? { message } : {}) }
 }
 
@@ -313,7 +328,11 @@ export const reduceAiActivity = (
     status: 'accepted' | 'retained' | 'rejected',
     reason: string
   ) => {
-    const live = livePurpose(next.calls)
+    const publicIds = publicOperationIds(next.calls)
+    const live = livePurpose(
+      next.calls,
+      publicIds.length ? publicIds : publicOperationIds(next.calls, false)
+    )
     const activeCallCount = Object.keys(next.calls).length
     let selected: ActivityPurpose | undefined
     let purposeSource = 'none'
@@ -506,10 +525,19 @@ export const reduceAiActivity = (
             : description
       } else if (
         activity.phase &&
-        !['queued', 'admission'].includes(activity.phase)
+        !['queued', 'admission'].includes(activity.phase) &&
+        !previous?.named
       )
         operationLabel = ownerPhaseLabels[activity.phase]
       calls[activity.callId] = {
+        executing:
+          previous?.executing ||
+          (activity.phase
+            ? !['queued', 'admission', 'provider'].includes(activity.phase)
+            : true),
+        named:
+          previous?.named ||
+          !!(update.tool && Object.hasOwn(activityToolLabels, update.tool)),
         label: activity.phase
           ? ownerPhaseLabels[activity.phase]
           : activityLabel(update),

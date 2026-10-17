@@ -1436,7 +1436,9 @@ settlement retire it. A completed invocation removes only its call-scoped purpos
 The provider must not infer stage completion from an empty set of active calls.
 No additional AI evaluates or authors status.
 
-Display the common genuinely live call purpose before retained stage intent.
+Display the common genuinely live principal invocation purpose before retained
+stage intent. Descendant purposes remain diagnostic and never replace the
+principal public task.
 Show the observed operation separately from authored context. Admission/queue
 churn preserves its operation description; meaningful operation changes update
 immediately. Without a live call, label retained prose as Current task rather than
@@ -1448,9 +1450,11 @@ immediately override normal work presentation.
 
 Call purposes retain authored identity, scope and revision across phase-only
 updates. Resolve inheritance from live ancestry, never copy it into a child as
-new authored text. Concurrent leaves use their common purpose; one sibling cannot
-represent unrelated work. Distinct active operation labels remain visible together
-with their count, rather than being replaced by a generic operation count. Closing a parent closes dependent children, preserves
+new authored text. Independent concurrent principal invocations use their common
+purpose; one sibling cannot represent unrelated work. Distinct principal operation
+labels remain visible together with their count. Child phases and leaf counts
+remain complete in diagnostics without becoming public task labels. Closing a
+parent closes dependent children, preserves
 independent siblings and rejects late events. Omitted parent metadata preserves
 known ancestry. Request objective remains conversation context, not stage evidence.
 Registered operation descriptions remain system activity; preserve their diagnostic
@@ -2139,3 +2143,26 @@ interaction owner, not an App history lock. Overlapping immediate invocations ar
 ignored, never retained. Session finalization failure or runtime closure prevents
 replay. Later pointer updates cannot restore the closed drag. Redo, collaboration,
 compensation and save/reload use their existing canonical owners.
+
+### Retained recovery and review guidance
+
+Structural mutation receipts and materialized queries share the retained-context
+owner and bounded byte storage. There is no fixed query-count quota. Historical receipts remain recoverable while retained, never current edit
+authority. Pinned data cannot be evicted to admit unrelated work.
+
+A review handoff describes delivered image scopes and declared unit identities,
+including existing bindings and revisions. It does not supply or approve visual
+judgments. Exact evidence selection and explicit scope supersession remain the
+primary agent's responsibility, enforced atomically by the review owner.
+
+Public current activity distinguishes admission from real execution. Each live
+principal invocation owns one public activity; nested tools do not replace it,
+even when named or authored. Independent principal invocations retain distinct
+ownership. Diagnostic events are
+not filtered. Lifecycle control and completed-call removal remain immediate.
+
+Reference suitability and intended criterion roles are supplied by the primary
+agent, including limitations. Pixel processing requires caller-specified source
+regions and target evidence; tools do not infer alignment or subject purpose.
+Changing a selected reference invalidates dependent criteria only; unrelated
+passes remain accumulated. Original bytes and decisions remain reusable.

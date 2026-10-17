@@ -1,3 +1,4 @@
+import recordedBindings from './fixtures/recorded-101/review-bindings-20261017.json'
 import { wholeViewJudgments } from './fixtures/review-inputs'
 import recordedScope from './fixtures/recorded-101/scope-handoff-20261017.json'
 import recordedReview from './fixtures/recorded-101/review-handoff.json'
@@ -1900,6 +1901,135 @@ describe('reference applicability and fact evidence', () => {
       { status: 'rejected', author: 'model' }
     ])
   })
+  it('replaces a scoped reference without reopening unrelated accepted criteria', () => {
+    const { review, decision } = setup()
+    review.selectReferences([0], {
+      requirementRevision: 1,
+      referenceDecisions: [
+        decision(0, 'restricted', ['Viewpoint']),
+        decision(1, 'restricted', ['Viewpoint'])
+      ]
+    })
+    const ids = inspect(review)
+    expect(
+      review.record({
+        phase: 'visual',
+        ...wholeViewJudgments(ids, [check('Viewpoint'), check('Finish')])
+      })
+    ).toMatchObject({ accepted: true })
+    const finish = review
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.criterionId === 'Finish')
+    expect(review.selectReferences([1])).toMatchObject({
+      review: {
+        accepted: false,
+        affectedCriterionIds: ['Viewpoint']
+      }
+    })
+    expect(
+      review
+        .readChecks({ includePassed: true })
+        .items.find((item) => item.criterionId === 'Finish')
+    ).toEqual(finish)
+    expect(
+      review.record({
+        phase: 'visual',
+        ...wholeViewJudgments(ids, [check('Viewpoint')])
+      })
+    ).toMatchObject({ accepted: true })
+    const accepted = review.readChecks({ includePassed: true })
+    expect(() =>
+      review.selectReferences([1], {
+        requirementRevision: 1,
+        referenceDecisions: [{ ...decision(1), criterionIds: ['unknown'] }]
+      })
+    ).toThrow()
+    expect(review.readChecks({ includePassed: true })).toEqual(accepted)
+    expect(review.isAccepted()).toBe(true)
+  })
+
+  it('recovers pending and rejected reference replacement without discarding unrelated passes', () => {
+    const { review, decision } = setup()
+    review.selectReferences([0], {
+      requirementRevision: 1,
+      referenceDecisions: [decision(0, 'restricted', ['Viewpoint'])]
+    })
+    const ids = inspect(review)
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(ids, [check('Viewpoint'), check('Finish')])
+    })
+    const finish = review
+      .readChecks({ includePassed: true })
+      .items.find((item) => item.criterionId === 'Finish')
+    const assertFinish = () =>
+      expect(
+        review
+          .readChecks({ includePassed: true })
+          .items.find((item) => item.criterionId === 'Finish')
+      ).toEqual(finish)
+    review.selectReferences([1])
+    expect(review.isAccepted()).toBe(false)
+    assertFinish()
+    review.selectReferences([1], {
+      requirementRevision: 1,
+      referenceDecisions: [decision(1, 'rejected', [])]
+    })
+    expect(review.isAccepted()).toBe(false)
+    assertFinish()
+    const before = review.preparationContext()
+    expect(() =>
+      review.selectReferences([1], {
+        requirementRevision: 1,
+        referenceDecisions: [decision(1, 'restricted', ['unknown'])]
+      })
+    ).toThrow()
+    expect(review.preparationContext()).toEqual(before)
+    const corrected = review.selectReferences([1], {
+      requirementRevision: 1,
+      referenceDecisions: [decision(1, 'restricted', ['Viewpoint'])]
+    })
+    expect(corrected).toMatchObject({
+      review: { accepted: false, affectedCriterionIds: ['Viewpoint'] }
+    })
+    assertFinish()
+    expect(
+      review.record({
+        phase: 'visual',
+        ...wholeViewJudgments(ids, [check('Viewpoint')])
+      })
+    ).toMatchObject({ accepted: true })
+    assertFinish()
+  })
+
+  it('preserves accepted criteria when selection changes only an attachment alias', () => {
+    const { review, images, decision } = setup()
+    const alias = images.addReference({
+      dataUrl: 'data:image/png;base64,YQ==',
+      mediaType: 'image/png',
+      size: 1
+    })
+    review.selectReferences([0], {
+      requirementRevision: 1,
+      referenceDecisions: [decision(0)]
+    })
+    review.record({
+      phase: 'visual',
+      ...wholeViewJudgments(inspect(review), [
+        check('Viewpoint'),
+        check('Finish')
+      ])
+    })
+    const before = review.readChecks({ includePassed: true })
+    expect(
+      review.selectReferences([alias], {
+        requirementRevision: 1,
+        referenceDecisions: [decision(0)]
+      })
+    ).toMatchObject({ review: { accepted: true, affectedCriterionIds: [] } })
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+  })
+
   it('keeps restricted source limitations and original-pixel regions through correction and review', () => {
     const { review, decision } = setup()
     const value = {
@@ -2349,6 +2479,32 @@ it('retains eight regional units under one criterion and repairs only the invali
     .readChecks({ includePassed: true })
     .items.find((item) => item.unitId === 'tier-2')
   if (!current) throw new Error('Expected retained third-tier result')
+  const handoff = review.judgmentHandoff([foreign], 'visual')
+  expect(handoff.next).toMatchObject({
+    bindings: {
+      images: [
+        { inspectionId: foreign, elementId: 'other-tier', region: crop }
+      ],
+      checks: expect.arrayContaining([
+        {
+          id: current.id,
+          criterionId: 'Finish',
+          unitId: 'tier-2',
+          status: current.status,
+          revision: current.revision,
+          inspectionIds: current.scope,
+          scopes: [{ elementId: 'tier-2', view: 'detail', region: crop }]
+        }
+      ])
+    }
+  })
+  expect(() =>
+    review.record({
+      ...repair,
+      inspectionIds: [foreign],
+      checks: [unit(2, foreign)]
+    })
+  ).toThrow(`current result revision ${current.revision}`)
   const unchanged = review
     .readChecks({ includePassed: true })
     .items.filter((item) => item.unitId !== 'tier-2')
@@ -2445,7 +2601,7 @@ describe('declared regional acceptance', () => {
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
     expect(declaration.revision).toBe(4)
-    expect(inspection.revision).toBe(5)
+    expect(inspection.revision).toBe(6)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -3338,4 +3494,95 @@ it('keeps deferred-detail image dependencies when filtering the judgment menu', 
     })
   ).toThrow(/current inspection IDs/)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
+})
+
+it('replays recorded crown rejection and explicit local redesign from the delivered binding guide', () => {
+  const review = createLocalDesignReview()
+  // This replay isolates image binding; reference acquisition and facts are separate owners.
+  review.record({
+    ...recordedBindings.plan,
+    referenceImageIndexes: [],
+    facts: []
+  })
+  const ids = new Map<string, string>()
+  const capture = (index: number) => {
+    const call = recordedBindings.calls[index]
+    const input = call.input as {
+      inspections: { elementId: string; view?: string; region?: unknown }[]
+    }
+    input.inspections.forEach((target, offset) => {
+      const image = review.inspect(
+        target.elementId,
+        true,
+        target.view === 'overview',
+        target.region,
+        target.view === 'detail',
+        {
+          sessionId: 'recorded-bindings',
+          revision: index,
+          receiptId: `${index}:${offset}`
+        }
+      )
+      if (!image) throw new Error('Expected delivered image')
+      ids.set(call.inspectionIds[offset], image.inspectionId)
+    })
+  }
+  const judgment = (index: number) => {
+    const input = structuredClone(recordedBindings.calls[index].input) as {
+      inspectionIds: string[]
+      checks: {
+        criterionId: string
+        unitId?: string
+        inspectionIds: string[]
+        supersedes?: { revision: number; reason: string }
+      }[]
+    }
+    input.inspectionIds = input.inspectionIds.map((id) =>
+      requireTestValue(ids.get(id))
+    )
+    input.checks.forEach((check) => {
+      check.inspectionIds = check.inspectionIds.map((id) =>
+        requireTestValue(ids.get(id))
+      )
+    })
+    return input
+  }
+  capture(0)
+  review.record(judgment(1))
+  capture(2)
+  const before = review.readChecks({ includePassed: true })
+  expect(() => review.record(judgment(3))).toThrow(
+    /mixes whole-target and local/
+  )
+  expect(() => review.record(judgment(4))).toThrow(/current result revision/)
+  expect(review.readChecks({ includePassed: true })).toEqual(before)
+  const handoff = review.judgmentHandoff(
+    recordedBindings.calls[2].inspectionIds.map((id) =>
+      requireTestValue(ids.get(id))
+    ),
+    'visual'
+  )
+  expect(handoff.next).toHaveProperty('bindings.images')
+  const corrected = judgment(5)
+  for (const check of corrected.checks) {
+    if (check.supersedes) {
+      const prior = before.items.find(
+        (item) =>
+          item.criterionId === check.criterionId && item.unitId === check.unitId
+      )
+      check.supersedes.revision = requireTestValue(prior).revision
+    }
+  }
+  review.record(corrected)
+  expect(review.readChecks({ includePassed: true }).items).toContainEqual(
+    expect.objectContaining({
+      criterionId: 'details',
+      unitId: 'crown',
+      status: 'pass'
+    })
+  )
+  const camera = before.items.find((item) => item.criterionId === 'camera')
+  expect(review.readChecks({ includePassed: true }).items).toContainEqual(
+    camera
+  )
 })

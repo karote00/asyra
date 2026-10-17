@@ -57,6 +57,21 @@ const fixture = (maxBytes?: number) => {
   }
 }
 
+const fillByteBudget = <T>(read: (index: number) => T): T[] => {
+  const values: T[] = []
+  for (let index = 0; index < 100; index++) {
+    try {
+      values.push(read(index))
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      expect((error as Error).message).toMatch(/capacity/)
+      expect(values.length).toBeGreaterThan(0)
+      return values
+    }
+  }
+  throw new Error('Expected bounded byte pressure')
+}
+
 describe('retained current document queries', () => {
   it('selects once and serves stable pages and explicit columns without repeated property reads', () => {
     const { store, source, query } = fixture()
@@ -161,9 +176,9 @@ it('returns an opaque reference without materializing retained rows', () => {
 })
 
 it('refuses new retained handoffs under pressure instead of evicting accepted consumers', () => {
-  const { store, source } = fixture()
+  const { store, source } = fixture(4000)
   const controller = new AbortController()
-  const receipts = Array.from({ length: 8 }, (_, index) =>
+  const receipts = fillByteBudget((index) =>
     store.read(
       {
         scope: 'ids',
@@ -195,7 +210,9 @@ it('refuses new retained handoffs under pressure instead of evicting accepted co
   expect(() =>
     store.read({ scope: 'ids', elementIds: ['after'], delivery: 'reference' })
   ).not.toThrow()
-  expect(source.getElementComputedData).toHaveBeenCalledTimes(8)
+  expect(source.getElementComputedData).toHaveBeenCalledTimes(
+    receipts.length + 1
+  )
   store.dispose()
 })
 
@@ -281,9 +298,9 @@ it('checks request identity before releasing an individual lease', () => {
 it.each(['page', 'columns'] as const)(
   'keeps delivered %s snapshots pinned instead of evicting future consumers',
   (delivery) => {
-    const { store, source } = fixture()
+    const { store, source } = fixture(4000)
     const signal = new AbortController().signal
-    const receipts = Array.from({ length: 8 }, (_, index) =>
+    const receipts = fillByteBudget((index) =>
       store.read(
         {
           scope: 'ids',
@@ -303,7 +320,9 @@ it.each(['page', 'columns'] as const)(
         store.get(receipt.snapshotId, receipt.leaseId, signal).orderedIds
       ).toHaveLength(1)
     }
-    expect(source.getElementComputedData).toHaveBeenCalledTimes(8)
+    expect(source.getElementComputedData).toHaveBeenCalledTimes(
+      receipts.length + 1
+    )
     store.read(
       { scope: 'snapshot', snapshotId: receipts[0].snapshotId, release: true },
       signal
@@ -392,7 +411,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
 })
 
 it('serves transient region IDs without reserving capacity or changing borrowed pins', () => {
-  const { store, source } = fixture()
+  const { store, source } = fixture(4000)
   const signal = new AbortController().signal
   const query = {
     scope: 'region' as const,
@@ -400,7 +419,7 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
     result: 'ids' as const,
     allMatches: true
   }
-  const retained = Array.from({ length: 8 }, (_, x) =>
+  const retained = fillByteBudget((x) =>
     store.read(
       { ...query, bounds: { ...query.bounds, x }, delivery: 'reference' },
       signal
@@ -412,7 +431,7 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
   expect(borrowed).not.toHaveProperty('snapshotId')
   expect(borrowed).not.toHaveProperty('leaseId')
   expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads)
-  for (let x = 8; x < 24; x++) {
+  for (let x = 100; x < 116; x++) {
     const result = store.read(
       { ...query, bounds: { ...query.bounds, x }, delivery: 'transient' },
       signal
@@ -455,7 +474,7 @@ it.each([
 })
 
 it('does not publish transient values when cancellation occurs during the canonical read', () => {
-  const { store, source } = fixture()
+  const { store, source } = fixture(4000)
   const controller = new AbortController()
   source.getElementIdsInBounds = vi.fn(() => {
     controller.abort()
@@ -474,4 +493,180 @@ it('does not publish transient values when cancellation occurs during the canoni
     )
   ).toThrow()
   store.dispose()
+})
+
+it('keeps receipt bytes bounded and query pins protected independently of receipt count', () => {
+  const { store } = fixture(4000)
+  const signal = new AbortController().signal
+  const retained: string[] = []
+  expect(() => {
+    for (let i = 0; i < 50; i++) {
+      retained.push(
+        store.retainReceipt(['a'], { payload: 'x'.repeat(100) }, signal)
+          .snapshotId
+      )
+    }
+  }).toThrow(/capacity/)
+  expect(retained.length).toBeGreaterThan(0)
+  for (const snapshotId of retained) {
+    expect(
+      store.read({ scope: 'snapshot', snapshotId, delivery: 'receipt' }, signal)
+    ).toMatchObject({
+      current: true,
+      receipt: { payload: 'x'.repeat(100) }
+    })
+  }
+  store.releaseFor(signal)
+  expect(() =>
+    store.read(
+      { scope: 'ids', elementIds: ['a'], delivery: 'reference' },
+      signal
+    )
+  ).not.toThrow()
+  store.dispose()
+})
+
+it('counts filtered structural targets as queries without copying mutation receipts', () => {
+  const { store, source } = fixture(4000)
+  const signal = new AbortController().signal
+  const parent = store.retainReceipt(
+    ['a', 'b', 'c'],
+    { operation: 'group' },
+    signal
+  )
+  const refine = (index: number) =>
+    store.read(
+      {
+        scope: 'snapshot',
+        snapshotId: parent.snapshotId,
+        filter: { name: { equals: `missing-${index}` } },
+        delivery: 'reference'
+      },
+      signal
+    )
+  try {
+    const results = fillByteBudget(refine)
+    expect(() => refine(results.length)).toThrow(/capacity/)
+    for (const result of results) {
+      expect(store.get(result.snapshotId).orderedIds).toEqual([])
+      expect(() =>
+        store.read(
+          {
+            scope: 'snapshot',
+            snapshotId: result.snapshotId,
+            delivery: 'receipt'
+          },
+          signal
+        )
+      ).toThrow(/receipt unavailable/)
+    }
+    source.getElementMetadata.mockClear()
+    expect(refine(0).snapshotId).toBe(results[0].snapshotId)
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
+    store.release(results[0].snapshotId)
+    expect(() => refine(results.length)).not.toThrow()
+    expect(
+      store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: parent.snapshotId,
+          delivery: 'receipt'
+        },
+        signal
+      )
+    ).toMatchObject({ receipt: { operation: 'group' } })
+    expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
+    expect(source.getElementComputedData).not.toHaveBeenCalled()
+  } finally {
+    store.dispose()
+  }
+})
+
+it('retains many small query handoffs within the byte budget without an entry quota', () => {
+  const { store, source } = fixture()
+  const signal = new AbortController().signal
+  try {
+    const results = Array.from({ length: 64 }, (_, index) =>
+      store.read(
+        {
+          scope: 'ids',
+          elementIds: [`small-${index}`],
+          delivery: 'reference'
+        },
+        signal
+      )
+    )
+    for (const [index, result] of results.entries()) {
+      expect(
+        store.get(result.snapshotId, result.leaseId, signal).orderedIds
+      ).toEqual([`small-${index}`])
+    }
+    const reads = source.getElementMetadata.mock.calls.length
+    expect(
+      store.read(
+        { scope: 'ids', elementIds: ['small-0'], delivery: 'reference' },
+        signal
+      ).snapshotId
+    ).toBe(results[0].snapshotId)
+    expect(source.getElementMetadata).toHaveBeenCalledTimes(reads)
+  } finally {
+    store.dispose()
+  }
+})
+
+it('recovers mixed-request byte pressure without releasing sibling pins or refreshing stale targets', () => {
+  const { store, change } = fixture(4000)
+  const first = new AbortController()
+  const second = new AbortController()
+  const read = (id: string, signal: AbortSignal) =>
+    store.read(
+      { scope: 'ids', elementIds: [id], delivery: 'reference' },
+      signal
+    )
+  try {
+    const sibling = read('sibling', second.signal)
+    const historical = store.retainReceipt(
+      ['a'],
+      { operation: 'group' },
+      second.signal
+    )
+    const crowded = fillByteBudget((index) =>
+      read(`request-${index}`, first.signal)
+    )
+    expect(() => read('retry', second.signal)).toThrow(/capacity/)
+    first.abort()
+    const retry = read('retry', second.signal)
+    expect(
+      store.get(sibling.snapshotId, sibling.leaseId, second.signal).orderedIds
+    ).toEqual(['sibling'])
+    for (const item of crowded)
+      expect(() => store.get(item.snapshotId, item.leaseId)).toThrow(/lease/)
+    store.releaseFor(first.signal)
+    change()
+    expect(() =>
+      store.get(retry.snapshotId, retry.leaseId, second.signal)
+    ).toThrow(/stale/)
+    expect(
+      store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: historical.snapshotId,
+          delivery: 'receipt'
+        },
+        second.signal
+      )
+    ).toMatchObject({
+      current: false,
+      receipt: { operation: 'group' }
+    })
+    store.releaseFor(second.signal)
+    const third = new AbortController()
+    const current = read('retry', third.signal)
+    expect(current.snapshotId).not.toBe(retry.snapshotId)
+    expect(
+      store.get(current.snapshotId, current.leaseId, third.signal).orderedIds
+    ).toEqual(['retry'])
+  } finally {
+    store.dispose()
+  }
 })

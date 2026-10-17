@@ -1880,7 +1880,7 @@ it('execution proof preserves concrete work through progress and settlement', as
     // Assertions must escape the conversation's intentional feature-error boundary.
     expect(featureCompleted).toBe(true)
     expect(checkpoints).toEqual([
-      { label: 'Checking the drawing', message: 'Inspect roof bounds' },
+      { label: 'Refining the design', message: 'Adjusting the roof color' },
       { label: 'Refining the design', message: 'Adjusting the roof color' },
       { label: 'Processing your request' },
       expect.objectContaining({
@@ -4204,4 +4204,122 @@ const wholeViewJudgments = <T>(
 ) => ({
   inspectionIds,
   checks: checks.map((check) => ({ ...check, inspectionIds }))
+})
+
+it('execution proof retains many small query handoffs with structural recovery', async () => {
+  vi.stubGlobal('window', {})
+  const { createRetainedDesignContext } =
+    await import('../../src/common-apis/retained-design-context')
+  let change!: () => void
+  const read = vi.fn(() => ['window'])
+  const store = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => ({
+        available: true,
+        elementIds: [],
+        total: 0,
+        nextOffset: null
+      }),
+      getElementIdsInBounds: read,
+      getElementMetadata: (id) => ({
+        name: id,
+        type: 'rectangle',
+        parentId: 'workspace',
+        lock: false
+      }),
+      getElementComputedData: () => ({ x: 1, y: 2 })
+    },
+    (listener) => {
+      change = listener
+      return vi.fn()
+    }
+  )
+  const controller = new AbortController()
+  try {
+    const handles = Array.from({ length: 8 }, (_, index) => {
+      const handle = store.retainReceipt(
+        ['window'],
+        { operation: index },
+        controller.signal
+      )
+      change()
+      return handle
+    })
+    const result = store.read(
+      {
+        scope: 'region',
+        bounds: { x: 8200, y: 23000, width: 1024, height: 1024 },
+        delivery: 'reference'
+      },
+      controller.signal
+    )
+    expect(result.total).toBe(1)
+    if (!result.snapshotId) throw new Error('Expected retained query identity')
+    expect(read).toHaveBeenCalledOnce()
+    handles.forEach((handle, index) => {
+      expect(
+        store.read(
+          {
+            scope: 'snapshot',
+            snapshotId: handle.snapshotId,
+            delivery: 'receipt'
+          },
+          controller.signal
+        )
+      ).toMatchObject({ current: false, receipt: { operation: index } })
+      expect(() =>
+        store.get(handle.snapshotId, handle.leaseId, controller.signal)
+      ).toThrow(/stale/)
+    })
+    const current = store.retainReceipt(
+      ['window'],
+      { operation: 'current' },
+      controller.signal
+    )
+    const refine = (index: number) =>
+      store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: current.snapshotId,
+          filter: { name: { equals: `other-${index}` } },
+          delivery: 'reference'
+        },
+        controller.signal
+      )
+    for (let index = 0; index < 32; index++) {
+      const subset = refine(index)
+      const subsetId = subset.snapshotId
+      if (!subsetId) throw new Error('Expected refined query identity')
+      expect(() =>
+        store.read(
+          {
+            scope: 'snapshot',
+            snapshotId: subsetId,
+            delivery: 'receipt'
+          },
+          controller.signal
+        )
+      ).toThrow(/receipt unavailable/)
+    }
+    expect(() => refine(32)).not.toThrow()
+    expect(
+      store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: current.snapshotId,
+          delivery: 'receipt'
+        },
+        controller.signal
+      )
+    ).toMatchObject({ receipt: { operation: 'current' } })
+    expect(
+      store.get(result.snapshotId, result.leaseId, controller.signal).orderedIds
+    ).toEqual(['window'])
+  } finally {
+    controller.abort()
+    store.dispose()
+    vi.unstubAllGlobals()
+  }
 })

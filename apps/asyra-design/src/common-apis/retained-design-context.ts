@@ -39,7 +39,7 @@ export interface RetainedDesignContext {
 export const createRetainedDesignContext = (
   source: DesignContextSource,
   observe: (listener: () => void) => () => void,
-  options: { maxBytes?: number; maxEntries?: number } = {}
+  options: { maxBytes?: number } = {}
 ) => {
   let revision = 0
   let disposed = false
@@ -145,10 +145,8 @@ export const createRetainedDesignContext = (
       throw new RetainedQueryError(
         'Retained query capacity exceeded; narrow the requested scope or columns.'
       )
-    while (
-      entries.size &&
-      (bytes + size > maximum || entries.size >= (options.maxEntries ?? 8))
-    ) {
+    // All retained data shares one byte budget; small queries have no count quota.
+    while (entries.size && bytes + size > maximum) {
       const oldest = [...entries].find(
         ([, entry]) => entry.leases.size === 0
       )?.[0]
@@ -200,8 +198,11 @@ export const createRetainedDesignContext = (
       get(input.snapshotId, undefined, signal)
       const selected = new Set(ids)
       snapshot = {
-        ...parent,
         snapshotId: crypto.randomUUID(),
+        revision: parent.revision,
+        workspaceId: parent.workspaceId,
+        coordinateSpace: parent.coordinateSpace,
+        fields: parent.fields,
         orderedIds: ids,
         result: {
           ...parent.result,

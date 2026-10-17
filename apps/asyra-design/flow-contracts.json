@@ -393,6 +393,14 @@
             "apps/asyra-design/server/local-ai-provider.ts",
             "apps/asyra-design/src/ai/activity-state.ts"
           ]
+        },
+        {
+          "id": "apply.receipt-query-budget",
+          "stepId": "apply",
+          "testName": "execution proof retains many small query handoffs with structural recovery",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/retained-design-context.ts"
+          ]
         }
       ],
       "handoffs": [

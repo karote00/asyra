@@ -558,6 +558,7 @@ describe('local subscription AI backend', () => {
         message?: string
         tool: string
         label: string
+        phase?: string
       }[] = []
       let streamController:
         ReadableStreamDefaultController<Uint8Array> | undefined
@@ -597,6 +598,7 @@ describe('local subscription AI backend', () => {
               status: event.status,
               tool: event.tool,
               label: projection.result().current.label,
+              phase: event.activity.phase,
               message: projection.result().current.message
             })
         }
@@ -743,7 +745,8 @@ describe('local subscription AI backend', () => {
               event.parent &&
               event.tool === 'save_tool' &&
               event.status === 'running' &&
-              event.label === 'Saving a reusable operation'
+              event.phase === 'executing' &&
+              event.label === 'Running the selected operation'
           )
         ).toBe(true)
         const started = new Set<string>()
@@ -4430,7 +4433,7 @@ it('retains authored stage context after root tool completion without claiming e
     let label = 'Current task'
     if (entry.status === 'running')
       label = ['queued', 'admission'].includes(entry.phase ?? '')
-        ? 'Preparing operation - Preparing the design'
+        ? 'Current task'
         : 'Preparing the design'
     expect(entry.label).toBe(label)
   }
@@ -4538,7 +4541,14 @@ it.each(['success', 'failure'] as const)(
     await vi.waitFor(() =>
       expect(server.packets.some((packet) => packet.id === 802)).toBe(true)
     )
-    expect(projection.result().current?.message).toBe(next.text)
+    expect(projection.result().current).toEqual({
+      label: 'Researching design context',
+      message: next.text
+    })
+    for (const id of [801, 802])
+      expect(server.packets.find((packet) => packet.id === id)).toMatchObject({
+        result: { success: outcome === 'success' }
+      })
     server.notify('item/completed', {
       item: {
         id: 'overlapping-research',
@@ -4547,7 +4557,10 @@ it.each(['success', 'failure'] as const)(
         action: { type: 'search', query: 'Taipei101' }
       }
     })
-    expect(projection.result().current?.message).toBe(next.text)
+    expect(projection.result().current).toEqual({
+      label: 'Current task',
+      message: next.text
+    })
     call(803)
     await vi.waitFor(() => expect(releases).toHaveLength(3))
     releases[2]()
@@ -4563,6 +4576,17 @@ it.each(['success', 'failure'] as const)(
         )
         .map((event) => event.activity?.callId)
     ).toEqual([])
+    for (const callId of ['cohort-801', 'cohort-802', 'cohort-803'])
+      expect(
+        events.filter(
+          (event) =>
+            event.activity?.callId === callId && event.status === 'completed'
+        )
+      ).toHaveLength(1)
+    expect(projection.result().current).toEqual({
+      label: 'Current task',
+      message: next.text
+    })
     server.finish()
     await result
   }

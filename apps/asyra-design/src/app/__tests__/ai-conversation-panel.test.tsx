@@ -123,7 +123,7 @@ describe('AI Agent conversation panel intent boundary', () => {
             kind: 'work',
             callId: `work-${++sequence}`,
             sequence,
-            phase: 'provider'
+            phase: 'applying'
           },
           message
         })

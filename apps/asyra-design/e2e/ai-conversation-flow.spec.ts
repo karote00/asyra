@@ -1007,8 +1007,43 @@ for (const width of [360, 1280]) {
         {
           tool: 'prepare_design',
           callId: 'prepare-2',
+          phase: 'admission',
+          status: 'running',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
           phase: 'preparing',
           status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'executing',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'applying',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'applying',
+          status: 'completed',
           label: 'Preparing the design',
           expected: '正在加入窗戶光影反射效果'
         },
@@ -1059,7 +1094,7 @@ for (const width of [360, 1280]) {
           parentCallId: 'native-save-parent',
           phase: 'executing',
           status: 'running',
-          label: 'Saving a reusable operation',
+          label: 'Running the selected operation',
           expected: 'Prepare the editable facade panel'
         },
         {

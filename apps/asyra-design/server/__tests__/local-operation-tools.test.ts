@@ -5139,7 +5139,44 @@ describe('capture-to-review handoff', () => {
       inspections: f.targets
     })
     expect(result.accepted).toBe(false)
+    const { designEvidenceDefinitions } = await import('../local-design-review')
+    const { operationInputIssue } = await import('../operation-input-schema')
+    const declaration = designEvidenceDefinitions.find(
+      (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
+    )
+    if (!declaration) throw new Error('Missing review contract')
+    expect(
+      operationInputIssue(result, declaration.outputSchema)
+    ).toBeUndefined()
+    const incomplete = structuredClone(result)
+    delete incomplete.next.bindings.checks[0].scopes
+    expect(
+      operationInputIssue(incomplete, declaration.outputSchema)
+    ).toBeDefined()
     expect(result.actionResults).toHaveLength(2)
+    expect(result.next.bindings).toMatchObject({
+      images: [
+        {
+          inspectionId: result.inspectionIds[0],
+          elementId: 'drawing',
+          overview: true
+        },
+        {
+          inspectionId: result.inspectionIds[1],
+          elementId: 'window',
+          overview: false,
+          region: f.targets[1].region
+        }
+      ],
+      checks: [
+        {
+          criterionId: 'view',
+          status: 'unverified',
+          revision: 1,
+          inspectionIds: []
+        }
+      ]
+    })
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         ...f.review,
@@ -6868,6 +6905,24 @@ describe('deterministic regional image checks', () => {
       }
     }
   }
+
+  it('rejects an unspecified reference crop before pixel work and preserves the existing check on retry', async () => {
+    const f = await setup()
+    const first = await f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, f.request)
+    const before = f.results.read({ includePassed: true })
+    const invalid = { ...f.request } as Partial<typeof f.request>
+    delete invalid.referenceRegion
+    await expect(
+      f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, invalid)
+    ).rejects.toThrow(/referenceRegion/)
+    expect(f.results.read({ includePassed: true })).toEqual(before)
+    const retry = await f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, f.request)
+    expect(retry).toMatchObject({
+      reused: true,
+      resultId: first.resultId,
+      pixelReads: 0
+    })
+  })
 
   it('registers a strict check and reuses current evidence without repeating pixel work', async () => {
     const f = await setup()

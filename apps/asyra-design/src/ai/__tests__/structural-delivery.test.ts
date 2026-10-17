@@ -659,3 +659,49 @@ it('projects real observed fill receipts after preserving complete original muta
     await runtime.dispose()
   }
 })
+
+it('keeps eight structural recovery receipts without exhausting a subsequent region query', async () => {
+  // Recorded 101: seven groups, another group, then a region read; no query yet.
+  const app = fixture(3)
+  try {
+    const receipts: StructuralReceipt[] = []
+    for (let index = 0; index < 8; index++) {
+      receipts.push(await app.produce())
+      app.change()
+    }
+    const read = app.queries.read(
+      {
+        scope: 'region',
+        bounds: { x: 8200, y: 23000, width: 1024, height: 1024 },
+        fields: ['x', 'y'],
+        delivery: 'reference'
+      },
+      app.context.signal
+    )
+    expect(read.total).toBe(3)
+    for (const receipt of receipts) {
+      const recovered = app.queries.read(
+        {
+          scope: 'snapshot',
+          snapshotId: receipt.retained.snapshotId,
+          delivery: 'receipt'
+        },
+        app.context.signal
+      ) as ReceiptRead
+      expect(recovered.receipt.value).toEqual(receipt.value)
+      expect(recovered.current).toBe(false)
+      expect(() =>
+        app.queries.get(
+          receipt.retained.snapshotId,
+          receipt.retained.leaseId,
+          app.context.signal
+        )
+      ).toThrow(/stale/)
+    }
+    expect(app.group).toHaveBeenCalledTimes(8)
+    expect(app.children).not.toHaveBeenCalled()
+  } finally {
+    app.controller.abort()
+    app.queries.dispose()
+  }
+})

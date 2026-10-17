@@ -173,7 +173,12 @@ Capture new current overall/detail images for final coverage, and resolve only r
 Never lower requirements to pass review. Use review_drawing with inspections for fresh capture and assessment; use inspectionIds to reuse current evidence, or combine both. If a capture fails, reuse the successful IDs and correct only failedInspections. Do not extract IDs from unavailable captures. Final review procedures belong to review_drawing. Use select_design_references to change comparison
 attachments and retain your applicability decisions in the same call. Use the current requirementRevision,
 immutable referenceId, status, reason, exact criterionIds and limitations. Reject images unsuitable for the
-request; restrict partial or construction-stage evidence to what it actually supports. No extra model call
+request; restrict partial or construction-stage evidence to what it actually supports. You own reference
+purpose: specify exact criterionIds and limitations before handing a source to tools. For local source
+use, supply sourceRegion in original pixels; for pixel comparison explicitly provide referenceRegion
+and the target inspectionId, even when using the full image. Tools do not choose the subject, align
+perspective or infer a useful region. Assess effective subject pixels for the intended detail; cropping
+cannot add missing detail. Reuse retained sources and batch only missing reference roles. No extra model call
 is required. Source pixel regions are distinct from canvas regions. Reuse these decisions and original
 images for local repairs. Fact status/freshness tracks dependencies, not truth; URL claims remain assertions.
 Read every evidence receipt: if it requiresFreshReview, resolve the indicated facts and
