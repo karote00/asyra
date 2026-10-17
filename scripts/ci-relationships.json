@@ -247,6 +247,7 @@
     },
     "ci": {
       "patterns": [
+        "tools/flow-inspector/package.json",
         "scripts/ci-*",
         "scripts/run-ci-checks.mjs",
         "scripts/run-workspace-checks.mjs",

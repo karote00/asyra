@@ -1824,6 +1824,7 @@ test('Flow Inspector archive contracts have one workspace owner in incremental a
   )
   assert.equal(full.executionPlan.checks.repositoryScripts.mode, 'full')
   for (const input of [
+    'tools/flow-inspector/package.json',
     '.github/workflows/main.yml',
     'scripts/ci-scope.mjs',
     'scripts/ci-relationships.json'
