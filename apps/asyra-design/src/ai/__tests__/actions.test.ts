@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
 import { selectionApis } from '../../common-apis/selection'
+import { createAiConversationController } from '../conversation'
+import { summarizeAiTurn, canRetryAiTurn } from '../presentation'
+import { operationInputIssue } from '../tool-schema'
+import { observeAiAction } from '../runtime-input'
 import {
   AiActionError,
   AiActionNames,
@@ -329,7 +333,9 @@ describe('reported capability boundaries', () => {
 
 it('reports drawing completion separately from durable document acknowledgement', async () => {
   const confirmation = vi.fn(async () => ({
-    status: 'durable',
+    status: 'durable' as const,
+    documentId: 'drawing',
+    documentGeneration: 0,
     sequence: 7,
     durableSequence: 8
   }))
@@ -365,9 +371,70 @@ it('retains completed drawing work when persistence confirmation is unavailable'
     )
   ).resolves.toMatchObject({
     outcome: 'completed',
+    status: 'partial',
     persistence: { status: 'unavailable', message: 'offline' }
   })
 })
+
+it.each(['unavailable', 'local-only', 'durable'] as const)(
+  'carries actual completion storage status through conversation and presentation - %s',
+  async (storage) => {
+    const confirmPersistence = vi.fn(async () => {
+      if (storage === 'unavailable') throw new Error('offline')
+      if (storage === 'local-only') return { status: storage } as const
+      return {
+        status: storage,
+        documentId: 'drawing',
+        documentGeneration: 0,
+        sequence: 7,
+        durableSequence: 7
+      } as const
+    })
+    const definition = requireTestValue(
+      createAiActions(actionApis(), { confirmPersistence }).find(
+        (action) => action.name === AiActionNames.REPORT_OUTCOME
+      )
+    )
+    const action = observeAiAction(definition)
+    const controller = createAiConversationController({
+      getElementType: () => undefined,
+      feature: {
+        cancel: () => false,
+        execute: async () => {
+          const result = await action.execute(
+            { outcome: 'completed', message: 'Drawing saved successfully.' },
+            executionContext()
+          )
+          expect(
+            operationInputIssue(result, definition.outputSchema)
+          ).toBeUndefined()
+          return {
+            status: 'executed',
+            actionResults: [
+              { actionId: 'finish', actionName: action.name, result }
+            ]
+          }
+        }
+      }
+    })
+    try {
+      const turn = await controller.submit('Finish this drawing')
+      const summary = summarizeAiTurn(turn)
+      if (storage === 'unavailable') {
+        expect(turn.outcome).toBe('partial')
+        expect(summary.message).toContain('could not be confirmed')
+        expect(summary.message).not.toContain('saved successfully')
+      } else if (storage === 'local-only') {
+        expect(summary.message).toContain('locally')
+        expect(summary.message).not.toContain('saved successfully')
+      } else expect(summary.message).toBe('Drawing saved successfully.')
+      expect(canRetryAiTurn(turn)).toBe(false)
+      expect(confirmPersistence).toHaveBeenCalledOnce()
+    } finally {
+      controller.dispose()
+    }
+  }
+)
 
 const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) throw new Error('Required test fixture is unavailable')

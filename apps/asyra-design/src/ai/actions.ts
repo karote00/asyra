@@ -1,4 +1,5 @@
 import { SelectionTargetUnavailableError } from '../common-apis/selection'
+import type { DocumentPersistenceReceipt } from '../collaboration/protocol'
 import {
   toolResultBoolean,
   toolResultCount,
@@ -43,7 +44,12 @@ export const AI_SCALE_MAX = 2
 export const AI_TRANSIENT_CREATE_CHUNK_SIZE = 256
 
 export interface CreateAiActionsOptions {
-  readonly confirmPersistence?: (signal: AbortSignal) => Promise<unknown>
+  readonly confirmPersistence?: (
+    signal: AbortSignal
+  ) => Promise<
+    | ({ readonly status: 'durable' } & DocumentPersistenceReceipt)
+    | { readonly status: 'local-only' }
+  >
   readonly waitForPaint?: () => Promise<void>
   readonly yieldToHost?: () => Promise<void>
 }
@@ -1078,15 +1084,34 @@ export const createAiActions = (
   }> = {
     ...actionToolSemantics(
       AiActionNames.REPORT_OUTCOME,
-      toolResultObject({
-        status: { const: 'no-change' },
-        outcome: { enum: ['completed', 'unsupported'] },
-        message: toolResultString
-      })
+      toolResultObject(
+        {
+          status: { enum: ['no-change', 'partial'] },
+          outcome: { enum: ['completed', 'unsupported'] },
+          message: toolResultString,
+          persistence: {
+            anyOf: [
+              toolResultObject({
+                status: { const: 'durable' },
+                documentId: toolResultString,
+                documentGeneration: { type: 'integer', minimum: 0 },
+                sequence: { type: 'integer', minimum: 0 },
+                durableSequence: { type: 'integer', minimum: 0 }
+              }),
+              toolResultObject({ status: { const: 'local-only' } }),
+              toolResultObject({
+                status: { const: 'unavailable' },
+                message: toolResultString
+              })
+            ]
+          }
+        },
+        ['status', 'outcome', 'message']
+      )
     ),
     name: AiActionNames.REPORT_OUTCOME,
     description:
-      'End this request with a specific user-facing result or capability limitation. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
+      'End this request with a specific user-facing drawing result or capability limitation. Completed drawing work confirms the existing durable publication target; it does not export or serialize the document. Read persistence independently: unavailable is a partial settlement, local-only is not durable storage. Never replay drawing work to retry saving. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -1106,7 +1131,15 @@ export const createAiActions = (
         args.message.length > 1000
       )
         throw new AiActionError()
-      let persistence: unknown
+      let persistence:
+        | Awaited<
+            ReturnType<
+              NonNullable<CreateAiActionsOptions['confirmPersistence']>
+            >
+          >
+        | { status: 'unavailable'; message: string }
+        | undefined =
+        args.outcome === 'completed' ? { status: 'local-only' } : undefined
       if (args.outcome === 'completed' && options.confirmPersistence) {
         try {
           context.reportProgress?.({
@@ -1137,7 +1170,7 @@ export const createAiActions = (
       return Object.freeze({
         ...(persistence ? { persistence } : {}),
         action: AiActionNames.REPORT_OUTCOME,
-        status: 'no-change',
+        status: persistence?.status === 'unavailable' ? 'partial' : 'no-change',
         outcome: args.outcome,
         message: args.message.trim()
       })

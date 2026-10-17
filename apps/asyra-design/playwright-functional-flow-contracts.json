@@ -2556,6 +2556,30 @@
           "implementationPaths": [
             "apps/asyra-design/src/ai/actions.ts"
           ]
+        },
+        {
+          "id": "functional.document-export.97250a96e367",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "exports immutable document bytes through the runtime and browser download without replacing durable save or history",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/document-export.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/startup.ts"
+          ]
+        },
+        {
+          "id": "functional.document-export.05d783ef603e",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "exports and reloads a retained large document without delivering its body as a tool result",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/document-export.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/startup.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -3158,51 +3182,6 @@
           "stepId": "invoke-basic-api",
           "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
           "testName": "real registered basic actions api_core_selectByChannel",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/basic-api-actions.ts",
-            "apps/asyra-design/src/ai/basic-api-catalog.ts",
-            "apps/asyra-design/src/ai/basic-api-results.ts",
-            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
-          ]
-        },
-        {
-          "id": "functional.basic-api-actions.67257c2366b3",
-          "stepId": "invoke-basic-api",
-          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
-          "testName": "real registered basic actions api_core_save",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/basic-api-actions.ts",
-            "apps/asyra-design/src/ai/basic-api-catalog.ts",
-            "apps/asyra-design/src/ai/basic-api-results.ts",
-            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
-          ]
-        },
-        {
-          "id": "functional.basic-api-actions.36f640df9799",
-          "stepId": "invoke-basic-api",
-          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
-          "testName": "real registered basic actions api_core_propsSaveData",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/basic-api-actions.ts",
-            "apps/asyra-design/src/ai/basic-api-catalog.ts",
-            "apps/asyra-design/src/ai/basic-api-results.ts",
-            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
-          ]
-        },
-        {
-          "id": "functional.basic-api-actions.2da50da38e9a",
-          "stepId": "invoke-basic-api",
-          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
-          "testName": "real registered basic actions api_core_sceneTreeSaveData",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/basic-api-actions.ts",

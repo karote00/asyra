@@ -562,12 +562,21 @@ it.each([
             : {})
         }
       })
+      const capturedBindings = new Map<string, Record<string, unknown>>()
       const capture = async (elementId: string, regional = true) => {
+        const selection = regional
+          ? {
+              criterionId:
+                Number(elementId.split('-')[1]) >= 16 ? 'Additional' : 'Facade',
+              unitId: elementId
+            }
+          : { criterionId: 'Overall' }
         const reply = await call(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
           inspections: [
             {
               elementId,
+              checks: [selection],
               ...(regional
                 ? { region: { x: 0, y: 0, width: 40, height: 60 } }
                 : {})
@@ -576,23 +585,27 @@ it.each([
         })
         expect(reply).not.toHaveProperty('status', 'partial')
         expect(reply.message).toContain('submit primary-agent findings')
-        return reply.inspectionIds[0] as string
+        const id = reply.inspectionIds[0] as string
+        capturedBindings.set(id, reply.next.arguments.checks[0])
+        return id
       }
-      const submit = (unitId: string, inspectionIds: string[]) =>
-        call(AiDesignToolIds.REVIEW_DRAWING, {
+      const submit = async (unitId: string, inspectionIds: string[]) => {
+        const bound =
+          unitId === 'alignment'
+            ? (
+                await call(AiDesignToolIds.REVIEW_DRAWING, {
+                  phase: 'visual',
+                  bindChecks: [{ criterionId: 'Facade', unitId, inspectionIds }]
+                })
+              ).next.arguments.checks[0]
+            : capturedBindings.get(inspectionIds[0])
+        return call(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
+          final: true,
           inspectionIds,
-          checks: [
-            {
-              criterionId:
-                Number(unitId.split('-')[1]) >= 16 ? 'Additional' : 'Facade',
-              unitId,
-              status: 'pass',
-              evidence: `Observed ${unitId}`,
-              inspectionIds
-            }
-          ]
+          checks: [{ ...bound, status: 'pass', evidence: `Observed ${unitId}` }]
         })
+      }
       const images: string[] = []
       for (const unit of units) {
         const image = await capture(unit)
@@ -606,11 +619,11 @@ it.each([
       const overall = (image: string) =>
         call(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
+          final: true,
           inspectionIds: [image],
           checks: [
             {
-              criterionId: 'Overall',
-              inspectionIds: [image],
+              ...capturedBindings.get(image),
               status: 'pass',
               evidence: 'Whole building agrees'
             }

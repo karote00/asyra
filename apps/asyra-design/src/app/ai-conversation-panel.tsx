@@ -715,17 +715,22 @@ const AiConversationFeed = ({
                   <div
                     role="status"
                     aria-label="Current activity"
+                    data-activity-mode={activity.mode}
                     className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
-                    {activity.current.label ? (
-                      <span>{activity.current.label}</span>
-                    ) : null}
                     {activity.current.message ? (
                       <span
                         className="line-clamp-3"
                         title={activity.current.message}
                       >
                         {activity.current.message}
+                      </span>
+                    ) : null}
+                    {activity.current.label ? (
+                      <span>
+                        {activity.mode === 'context' && activity.current.message
+                          ? 'Task context - no App operation executing'
+                          : activity.current.label}
                       </span>
                     ) : null}
                   </div>

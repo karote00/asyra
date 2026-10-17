@@ -15,6 +15,12 @@ export interface AiToolContractInput {
   partialOutputSchema?: unknown
   /** Usable recovery data on failed/unknown outcomes; never a success fallback. */
   recoveryOutputSchema?: unknown
+  /** Owner-produced external view; internal consumers retain the complete result. */
+  delivery?: {
+    path: string
+    outputSchema: unknown
+    receipt?: { path: string; owner: string }
+  }
   /** Domain-owned mechanical verdict paths; not visual acceptance. */
   verification?: { statusPath: string; progressPath: string }
   effect: 'read' | 'prepare' | 'mutation' | 'external'
@@ -36,6 +42,11 @@ export interface AiToolContract {
   readonly outputSchema: AiJsonValue
   readonly partialOutputSchema?: AiJsonValue
   readonly recoveryOutputSchema?: AiJsonValue
+  readonly delivery?: Readonly<{
+    path: string
+    outputSchema: AiJsonValue
+    receipt?: Readonly<{ path: string; owner: string }>
+  }>
   readonly verification?: Readonly<
     NonNullable<AiToolContractInput['verification']>
   >
@@ -82,6 +93,18 @@ export const createAiToolContract = (
   if (!['read', 'prepare', 'mutation', 'external'].includes(input.effect))
     throw new TypeError('Unknown tool effect')
   if (
+    input.delivery !== undefined &&
+    (!input.delivery ||
+      !['outputSchema,path', 'outputSchema,path,receipt'].includes(
+        Object.keys(input.delivery).sort().join(',')
+      ) ||
+      typeof input.delivery.path !== 'string' ||
+      !/^(?:\/(?:[^~]|~[01])*)+$/.test(input.delivery.path))
+  )
+    throw new TypeError(
+      'Delivery requires an exact JSON Pointer and output schema'
+    )
+  if (
     !Array.isArray(input.resources) ||
     !input.resources.every(nonempty) ||
     new Set(input.resources).size !== input.resources.length
@@ -106,6 +129,17 @@ export const createAiToolContract = (
     throw new TypeError(
       'Verification requires distinct JSON Pointer paths on a read or prepare tool'
     )
+  if (
+    input.delivery?.receipt !== undefined &&
+    (!input.delivery.receipt ||
+      Object.keys(input.delivery.receipt).sort().join(',') !== 'owner,path' ||
+      !nonempty(input.delivery.receipt.owner) ||
+      typeof input.delivery.receipt.path !== 'string' ||
+      !/^(?:\/(?:[^~]|~[01])*)+$/.test(input.delivery.receipt.path))
+  )
+    throw new TypeError(
+      'Delivery receipt requires an exact path and owning adapter'
+    )
   const lifecycle = input.lifecycle
   if (
     !lifecycle ||
@@ -124,6 +158,17 @@ export const createAiToolContract = (
     revision: input.revision,
     inputSchema: detachAiJsonValue(input.inputSchema),
     outputSchema: detachAiJsonValue(input.outputSchema),
+    ...(input.delivery === undefined
+      ? {}
+      : {
+          delivery: Object.freeze({
+            path: input.delivery.path,
+            outputSchema: detachAiJsonValue(input.delivery.outputSchema),
+            ...(input.delivery.receipt
+              ? { receipt: Object.freeze({ ...input.delivery.receipt }) }
+              : {})
+          })
+        }),
     ...(input.partialOutputSchema === undefined
       ? {}
       : { partialOutputSchema: detachAiJsonValue(input.partialOutputSchema) }),

@@ -1,3 +1,8 @@
+import {
+  referenceUseReceiptSchema,
+  referenceUseDependency,
+  type ReferenceUseReceipt
+} from './local-reference-decisions'
 import sharp from 'sharp'
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -28,6 +33,7 @@ export interface ImageCheckInspection {
 interface ImageCheckInput {
   checkId: string
   inspectionId: string
+  referenceUse: ReferenceUseReceipt
   referenceImageIndex: number
   referenceRegion: Region
   channelTolerance: number
@@ -96,7 +102,7 @@ export const imageCheckDefinition = {
   type: 'function',
   name: AiDesignToolIds.CHECK_DRAWING_IMAGE,
   ...toolSemantics(imageCheckResultSchema, 'read', ['request-artifacts']),
-  revision: 1,
+  revision: 2,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
     'Check an explicitly aligned native-pixel reference crop against an existing inspect_drawing region, without AI. Supply the retained inspectionId, reference attachment index/crop and fixed tolerances. Same-size, same-view correspondence is YOUR assertion; this tool cannot align a photo, infer perspective or certify appearance. Captures isolate the target subtree on white, not other canvas occluders. No scaling. Returns compact differences in target-local coordinates and saves a tool check in read_design_checks using resultId. Reuse checkId after a correction with a fresh inspectionId; baseline, target region and tolerances cannot change. Unsupported images stay unverified. Primary-agent visual review remains required.',
@@ -106,6 +112,7 @@ export const imageCheckDefinition = {
     required: [
       'checkId',
       'inspectionId',
+      'referenceUse',
       'referenceImageIndex',
       'referenceRegion',
       'channelTolerance',
@@ -114,6 +121,7 @@ export const imageCheckDefinition = {
     properties: {
       checkId: { type: 'string', minLength: 1, maxLength: 128 },
       inspectionId: { type: 'string', minLength: 1 },
+      referenceUse: referenceUseReceiptSchema,
       referenceImageIndex: { type: 'integer', minimum: 0 },
       referenceRegion: regionSchema,
       channelTolerance: { type: 'integer', minimum: 0, maximum: 255 },
@@ -126,7 +134,11 @@ export const imageCheckDefinition = {
 export const createLocalImageCheck = (options: {
   results: ReturnType<typeof createDesignCheckResults>
   inspection: (id: string) => ImageCheckInspection | undefined
-  reference: (index: number) => { referenceId: string; dataUrl: string }
+  reference: (
+    index: number,
+    use: ReferenceUseReceipt,
+    region: Region
+  ) => { referenceId: string; dataUrl: string }
   validate: (id: string, signal: AbortSignal) => Promise<boolean>
 }) => {
   const decode = async (
@@ -190,7 +202,12 @@ export const createLocalImageCheck = (options: {
           'Inspection evidence is unavailable or stale; capture the affected region again.'
         )
       signal.throwIfAborted()
-      const reference = options.reference(args.referenceImageIndex)
+      const reference = options.reference(
+        args.referenceImageIndex,
+        args.referenceUse,
+        args.referenceRegion
+      )
+      const useKey = referenceUseDependency(args.referenceUse)
       const id = `image:${args.checkId}`
       const configKey = `image-config:${args.checkId}`
       const regionKey = `image-region:${args.checkId}`
@@ -224,6 +241,7 @@ export const createLocalImageCheck = (options: {
         )
       if (
         previous &&
+        previous.dependencies[useKey] === String(args.referenceUse.revision) &&
         previous.status !== 'stale' &&
         previous.status !== 'unverified' &&
         Object.hasOwn(previous.dependencies, `inspection:${args.inspectionId}`)
@@ -328,6 +346,11 @@ export const createLocalImageCheck = (options: {
           'Inspection dependencies changed during comparison; capture only the affected region again.'
         )
       signal.throwIfAborted()
+      options.reference(
+        args.referenceImageIndex,
+        args.referenceUse,
+        args.referenceRegion
+      )
       options.results.record({
         id,
         origin: 'tool',
@@ -335,6 +358,7 @@ export const createLocalImageCheck = (options: {
         evidence: JSON.stringify(result),
         scope: [image.target],
         dependencies: {
+          [useKey]: String(args.referenceUse.revision),
           [configKey]: config,
           ...(regionConfig ? { [regionKey]: regionConfig } : {}),
           [`inspection:${args.inspectionId}`]: args.inspectionId

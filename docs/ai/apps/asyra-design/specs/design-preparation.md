@@ -302,10 +302,14 @@ document diffing or a claim that changed drafts avoid necessary validation.
 
 Plans may name a subset `structureCriteria`. A `structure` review checks that
 subset against current overview evidence and returns `readyForDetail`; it never
-approves completion. Prompt policy requires this checkpoint before dense detail
-for substantial constructed artwork, with viewpoint and layering corrected first.
-When structure criteria were declared, repeated-detail preparation is rejected until a structure assessment passes. Later detail mutations invalidate final approval but do not erase that completed checkpoint; a subsequent failed structure assessment closes the gate again. This checks recorded evidence, not whether a model judgment is objectively correct.
-Refining an existing child preserves the established whole-drawing review target; its mutation still invalidates all earlier inspection evidence. A child update receipt identifies the edited child, not a replacement overview target.
+approves completion. The optional whole-structure checkpoint does not block ready
+parts or repeated-detail preparation. Final completion still requires every
+original criterion. A failed structure judgment reopens its affected obligations,
+while unrelated current visual passes remain retained.
+Refining an existing child preserves the established whole-drawing review target.
+Only evidence whose actual dependencies changed becomes stale; independent passes
+remain current. A child update receipt identifies the edited child, not a
+replacement overview target.
 Full visual review still covers every original criterion and required native
 detail evidence. The server retains the preceding visual assessment within the
 request and reports pass-to-nonpass `regressions` with previous evidence; these
@@ -520,3 +524,9 @@ creates a fresh canonical Fill identity per element. `sharedFills` and
 Neither form accepts canonical IDs as definition keys to imply sharing.
 Preparation receipts report Fill occurrences, template uses, compiled definitions
 and construction/admission/compilation durations. Caches expire per preparation.
+
+Repeated checks of unchanged source and attachment semantics reuse mechanical
+assessment across receipt renewal. Fresh receipts must still pass canonical currency
+validation before any pass or apply. Document session, basis, bounds, parent,
+criteria and reference uses remain semantic dependencies. Receipt UUIDs alone are
+not changed geometry; they cannot erase an unresolved same-source conflict.

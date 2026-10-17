@@ -22,6 +22,65 @@ const definition = (): AiToolContractInput => ({
 })
 
 describe('common tool contracts', () => {
+  it('retains a detached model delivery declaration without replacing internal output', () => {
+    const delivery = {
+      path: '/modelResult',
+      outputSchema: { type: 'object' },
+      receipt: { path: '/retained', owner: 'context' }
+    }
+    const contract = createAiToolContract({
+      ...definition(),
+      delivery
+    } as AiToolContractInput)
+    expect(contract).toMatchObject({
+      outputSchema: { type: 'boolean' },
+      delivery
+    })
+    delivery.receipt.owner = 'changed'
+    expect(contract.delivery?.receipt?.owner).toBe('context')
+    expect(Object.isFrozen(contract.delivery?.receipt)).toBe(true)
+    delivery.outputSchema.type = 'string'
+    expect(contract).toMatchObject({
+      delivery: { outputSchema: { type: 'object' } }
+    })
+    expect(
+      Object.isFrozen((contract as unknown as { delivery: object }).delivery)
+    ).toBe(true)
+  })
+
+  it.each([
+    {
+      path: '/summary',
+      outputSchema: {},
+      receipt: { path: 'wrong', owner: 'context' }
+    },
+    {
+      path: '/summary',
+      outputSchema: {},
+      receipt: { path: '/retained', owner: '' }
+    },
+    {
+      path: '/summary',
+      outputSchema: {},
+      receipt: { path: '/retained', owner: 'context', callback: 'unsafe' }
+    },
+    { path: '', outputSchema: {} },
+    { path: 'summary', outputSchema: {} },
+    { path: '/bad~2pointer', outputSchema: {} },
+    { path: '/summary', outputSchema: undefined },
+    { path: '/summary', outputSchema: {}, callback: 'unsafe' }
+  ])(
+    'rejects invalid model delivery declarations before invocation %j',
+    (delivery) => {
+      expect(() =>
+        createAiToolContract({
+          ...definition(),
+          delivery
+        } as AiToolContractInput)
+      ).toThrow()
+    }
+  )
+
   it('relocates schema references without rewriting user literals or mutating the descriptor', () => {
     const schema = {
       type: 'object',

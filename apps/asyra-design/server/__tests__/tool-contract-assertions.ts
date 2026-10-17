@@ -35,7 +35,7 @@ export const withToolContractAssertions = <
 ): T => {
   for (const definition of owner.definitions)
     if (nativeNames.has(definition.name)) advertised.add(definition.name)
-  const call = owner.call.bind(owner)
+  const call = (owner.callInternal ?? owner.call).bind(owner)
   const checked = new Set<string>()
   owner.call = async (name, input, signal) => {
     const definition = owner.definitions.find((tool) => tool.name === name)
@@ -70,6 +70,7 @@ export const withToolContractAssertions = <
     let ownerFailed = false
     const boundaryOwner: LocalToolOwner = {
       ...owner,
+      callInternal: undefined,
       call: async (...args) => {
         calls++
         try {
@@ -134,7 +135,9 @@ export const withToolContractAssertions = <
       ).toBe(outcome.status)
       if (outcome.status === 'success') exercised.add(name)
     }
-    return original
+    return owner.projectModelResult
+      ? JSON.stringify(owner.projectModelResult(name, input, value))
+      : original
   }
   return owner
 }

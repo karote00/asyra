@@ -52,7 +52,9 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('parentId')
   })
   it('assigns reference purpose and pixel scope to the primary agent', () => {
-    expect(general).toContain('specify exact criterionIds and limitations')
+    expect(general).toContain(
+      'purpose (visual, fact, preparation or pixel-comparison)'
+    )
     expect(general).toContain('explicitly provide referenceRegion')
     expect(general).toContain('Tools do not choose the subject')
     expect(general).toContain('cropping\ncannot add missing detail')

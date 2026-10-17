@@ -32,7 +32,7 @@ export interface RetainedDesignContext {
   orderedIds: readonly string[]
   fields: readonly string[]
   result: ContextResult
-  receipt?: unknown
+  receiptText?: string
 }
 
 /** Request-host lifetime, canonical invalidation. Retains query output, never another document model. */
@@ -319,18 +319,29 @@ export const createRetainedDesignContext = (
         if (
           input.filter !== undefined ||
           input.expectedCount !== undefined ||
-          input.offset !== undefined ||
           input.limit !== undefined
         )
           throw new RetainedQueryError(
-            'Receipt recovery accepts only the snapshot identity and delivery.'
+            'Receipt recovery accepts snapshot identity, delivery and the exact text offset.'
           )
         const entry = entries.get(input.snapshotId)
-        if (!entry || entry.value.receipt === undefined)
+        if (!entry || entry.value.receiptText === undefined)
           throw new RetainedQueryError(
             'Retained structural receipt unavailable; never replay a mutation for readback.'
           )
         const value = entry.value
+        const text = value.receiptText as string
+        const offset = input.offset ?? 0
+        if (
+          !Number.isSafeInteger(offset) ||
+          offset < 0 ||
+          offset >= text.length
+        )
+          throw new RetainedQueryError(
+            'Receipt text offset is outside the immutable result.'
+          )
+        const end = Math.min(text.length, offset + 8192)
+        const paged = input.offset !== undefined || text.length > 8192
         return {
           available: true,
           scope: 'snapshot',
@@ -343,7 +354,17 @@ export const createRetainedDesignContext = (
           current:
             value.revision === revision &&
             value.workspaceId === source.getCurrentWorkspaceId(),
-          receipt: structuredClone(value.receipt)
+          ...(paged
+            ? {
+                receiptPage: {
+                  encoding: 'json-text' as const,
+                  offset,
+                  total: text.length,
+                  nextOffset: end < text.length ? end : null,
+                  text: text.slice(offset, end)
+                }
+              }
+            : { receipt: JSON.parse(text) as Record<string, unknown> })
         }
       }
       if (input.filter !== undefined) return refine(input, signal)
@@ -661,7 +682,7 @@ export const createRetainedDesignContext = (
         coordinateSpace: 'parent-local',
         orderedIds: [...ids],
         fields: [],
-        receipt: structuredClone(receipt),
+        receiptText: JSON.stringify(receipt),
         result: {
           available: true,
           scope: 'ids',

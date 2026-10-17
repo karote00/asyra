@@ -4806,31 +4806,9 @@ it('dispatches capture then deterministic image checking in the same provider tu
       .png()
       .toBuffer()
   ).toString('base64')}`
-  const server = fakeServer({
-    toolCall: true,
-    toolName: 'inspect_drawing',
-    toolArguments: {
-      arguments: {
-        elementId: 'part',
-        region: { x: 0, y: 0, width: 4, height: 4 }
-      }
-    },
-    followupTool: (receipt) => ({
-      name: 'check_drawing_image',
-      args: {
-        checkId: 'surface',
-        inspectionId: (
-          receipt.actionResults as { result: { inspectionId: string } }[]
-        )[0].result.inspectionId,
-        referenceImageIndex: 0,
-        referenceRegion: { x: 0, y: 0, width: 4, height: 4 },
-        channelTolerance: 0,
-        maxDifferentFraction: 0
-      }
-    })
-  })
+  const server = fakeServer({ hold: true, manualToolReplies: true })
   spawn.mockReturnValue(server.child)
-  await requestConfiguredAiActionBatch(
+  const running = requestConfiguredAiActionBatch(
     {
       ...input,
       metadata: {
@@ -4870,23 +4848,180 @@ it('dispatches capture then deterministic image checking in the same provider tu
       })
     }
   )
-  const packet = server.packets.find(
-    (packet) => packet.id === 100 && 'result' in packet
-  )
-  expect(packet).toBeDefined()
-  const reply = packet as unknown as {
-    result: { contentItems: { text: string }[] }
+  await untilTurn(server.packets)
+  let id = 200
+  const call = async (tool: string, args: unknown) => {
+    const current = ++id
+    server.send({
+      id: current,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `reference-${current}`,
+        tool,
+        arguments: args
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === current)).toBe(true)
+    )
+    const packet = server.packets.find(
+      (packet) => packet.id === current
+    ) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    const value = JSON.parse(packet.result.contentItems[0].text)
+    expect(packet.result.success, JSON.stringify(value)).toBe(true)
+    return value
   }
-  const result = JSON.parse(reply.result.contentItems[0].text)
-  expect(result).toMatchObject({
-    checkId: 'surface',
-    resultId: 'image:surface',
-    status: 'pass',
-    appearance: 'unverified',
-    pixelReads: 16
-  })
-  expect(
-    server.packets.filter((packet) => packet.method === 'turn/start')
-  ).toHaveLength(1)
-  expect(spawn).toHaveBeenCalledTimes(1)
+  try {
+    await call('define_design_criteria', {
+      phase: 'plan',
+      method: 'Compare selected region',
+      references: [],
+      criteria: reviewCriteria(['surface']),
+      detailRequired: false
+    })
+    const validated = await call('validate_reference_images', {
+      attachmentIndexes: [0]
+    })
+    const selected = await call('select_design_references', {
+      referenceImageIndexes: [0],
+      requirementRevision: 1,
+      referenceDecisions: [
+        {
+          referenceId: validated.references[0].referenceId,
+          status: 'accepted',
+          reason: 'Explicit aligned fixture',
+          uses: [
+            {
+              id: 'surface',
+              criterionId: 'surface',
+              purpose: 'pixel-comparison',
+              region: 'whole',
+              limitations: []
+            }
+          ]
+        }
+      ]
+    })
+    const captured = await call('inspect_drawing', {
+      arguments: {
+        elementId: 'part',
+        region: { x: 0, y: 0, width: 4, height: 4 }
+      }
+    })
+    const result = await call('check_drawing_image', {
+      checkId: 'surface',
+      inspectionId: captured.actionResults[0].result.inspectionId,
+      referenceImageIndex: 0,
+      referenceUse: selected.referenceDecisions[0].uses[0].receipt,
+      referenceRegion: { x: 0, y: 0, width: 4, height: 4 },
+      channelTolerance: 0,
+      maxDifferentFraction: 0
+    })
+    expect(result).toMatchObject({
+      checkId: 'surface',
+      resultId: 'image:surface',
+      status: 'pass',
+      appearance: 'unverified',
+      pixelReads: 16
+    })
+    expect(
+      server.packets.filter((packet) => packet.method === 'turn/start')
+    ).toHaveLength(1)
+    expect(spawn).toHaveBeenCalledTimes(1)
+  } finally {
+    server.finish()
+    await running
+  }
 })
+
+it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
+  'projects actual %s dispatch through the real provider and reducer',
+  async (effect) => {
+    const child = fakeServer({
+      toolCall: true,
+      toolName: 'execute_design_batch',
+      toolArguments: {
+        message: 'Inspect the prepared crown',
+        operations: [
+          { name: 'select_elements', arguments: { elementIds: [] } },
+          ...(effect === 'mixed'
+            ? [
+                {
+                  name: 'set_element_visibility',
+                  arguments: { elementId: 'mark', visible: false }
+                }
+              ]
+            : [])
+        ]
+      }
+    })
+    spawn.mockReturnValue(child.child)
+    const projection = createAiActivityProjection()
+    const dispatched: unknown[] = []
+    const executeBatch = vi.fn(
+      async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+        dispatched.push(projection.result().current)
+        return {
+          actionResults: batch.actions.map((action) => ({
+            actionId: action.id,
+            actionName: action.name,
+            result: { status: 'complete' }
+          })),
+          context: {}
+        }
+      }
+    )
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'select_elements',
+            description: 'Select',
+            inputSchema: {},
+            ...(effect === 'unknown'
+              ? {}
+              : { effect: effect === 'mixed' ? 'read' : effect })
+          },
+          {
+            name: 'set_element_visibility',
+            description: 'Visibility',
+            inputSchema: {},
+            effect: 'mutation'
+          }
+        ]
+      },
+      {
+        environment,
+        executeBatch,
+        onProgress: (event) => {
+          projection.append({
+            attempt: 1,
+            phase: 'provider',
+            summary: 'Operation',
+            tool: event.tool,
+            toolStatus: event.status,
+            message: event.message,
+            activity: event.activity
+          })
+        }
+      }
+    )
+    const labels = {
+      read: 'Reading data',
+      mutation: 'Updating the canvas',
+      external: 'Running an external operation',
+      mixed: 'Running mixed operations',
+      unknown: 'Running planned operations'
+    }
+    expect(dispatched).toEqual([
+      { label: labels[effect], message: 'Inspect the prepared crown' }
+    ])
+    expect(executeBatch).toHaveBeenCalledOnce()
+    expect(spawn).toHaveBeenCalledOnce()
+  }
+)

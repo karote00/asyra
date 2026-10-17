@@ -1,3 +1,4 @@
+import recordedEvents from '../../../server/__tests__/fixtures/recorded-101/activity-events-20261017.json'
 import recordedStarts from '../../../server/__tests__/fixtures/recorded-101/activity-starts-20261017.json'
 import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
 import { reduceAiActivity } from '../activity-state'
@@ -926,7 +927,7 @@ it('returns to the observed provider phase without reviving the objective after 
     activity: { kind: 'work', callId: 'base', sequence: 1, phase: 'preparing' }
   })
   expect(projection.result().current).toMatchObject({
-    label: 'Preparing and adding the design',
+    label: 'Running the planned task',
     message: 'Base surfaces'
   })
   projection.append({
@@ -944,7 +945,7 @@ it('returns to the observed provider phase without reviving the objective after 
     }
   })
   expect(projection.result().current).toMatchObject({
-    label: 'Preparing and adding the design',
+    label: 'Running the planned task',
     message: 'Base surfaces'
   })
   projection.append({
@@ -1949,7 +1950,7 @@ it('projects recorded anonymous batch phases through their active named owner wi
   expect(projection.result().current.label).toContain('2 operations')
   emit('apply', 'apply_prepared_design', 'applying', 'batch', true)
   expect(projection.result().current.label).toContain(
-    'Preparing and adding the design'
+    'Running the planned task'
   )
   emit('batch', 'app-batch', 'executing', 'root', true)
   emit('root', 'prepare_and_apply_design', 'executing', undefined, true)
@@ -2094,4 +2095,76 @@ it('keeps a principal status through named and authored child work and settlemen
   expect(projection.result().current.message).toBe('Check the roof')
   send('prepare', 'prepare_design', 'principal', 'Late child')
   expect(projection.result().current.message).toBe('Check the roof')
+})
+
+it('replays every retained provider input without labeling generic batches as edits', () => {
+  const projection = createAiActivityProjection()
+  expect(recordedEvents.events).toHaveLength(1063)
+  for (const input of recordedEvents.events) {
+    const update = input as AiRuntimeProgressUpdate
+    projection.append(update)
+    if (update.tool === 'execute_design_batch')
+      expect(projection.result().current.label).not.toContain(
+        'Applying planned edits'
+      )
+  }
+})
+
+it('keeps distinct authored purpose identities in history even when their prose matches', () => {
+  const projection = createAiActivityProjection()
+  for (const [index, callId] of ['first-stage', 'second-stage'].entries())
+    projection.append({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Work',
+      message: 'Check the crown',
+      activity: { kind: 'work', scope: 'request', callId, sequence: index + 1 }
+    })
+  expect(
+    projection
+      .result()
+      .entries.filter((entry) => entry.message === 'Check the crown')
+  ).toHaveLength(2)
+})
+
+it('projects actual descendant dispatch effects without replacing the principal purpose', () => {
+  const projection = createAiActivityProjection()
+  let sequence = 0
+  const append = (
+    callId: string,
+    phase: 'executing' | 'applying',
+    effect?: 'read' | 'mutation' | 'mixed',
+    completed = false
+  ) =>
+    projection.append({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Operation',
+      tool: callId === 'principal' ? 'execute_design_batch' : 'app-batch',
+      toolStatus: completed ? 'completed' : 'running',
+      message: callId === 'principal' ? 'Adjust crown reflections' : undefined,
+      activity: {
+        kind: callId === 'principal' ? 'work' : 'system',
+        callId,
+        parentCallId: callId === 'principal' ? undefined : 'principal',
+        sequence: ++sequence,
+        phase,
+        effect
+      }
+    })
+  append('principal', 'executing')
+  expect(projection.result().current.label).toBe('Running planned operations')
+  append('read-batch', 'executing', 'read')
+  expect(projection.result().current).toEqual({
+    label: 'Reading data',
+    message: 'Adjust crown reflections'
+  })
+  append('write-batch', 'applying', 'mutation')
+  expect(projection.result().current.label).toBe('Running mixed operations')
+  append('write-batch', 'applying', 'mutation', true)
+  expect(projection.result().current.label).toBe('Reading data')
+  append('read-batch', 'executing', 'read', true)
+  expect(projection.result().current.label).toBe('Running planned operations')
+  append('principal', 'executing', undefined, true)
+  expect(projection.result().current.message).toBeUndefined()
 })

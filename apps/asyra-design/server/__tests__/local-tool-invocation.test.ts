@@ -217,7 +217,10 @@ it('preflights every advertised App tool family before its owner executes', asyn
     ].sort()
   )
   for (const owner of owners) {
-    const call = vi.spyOn(owner, 'call')
+    const call = vi.spyOn(
+      owner,
+      'callInternal' in owner ? 'callInternal' : 'call'
+    )
     for (const tool of owner.definitions) {
       expect(() => createAiToolContract(tool), tool.name).not.toThrow()
       const reply = await invokeLocalTool(owner, tool, null, signal())
@@ -637,7 +640,7 @@ it('rejects missing retained identities at each preparation, image and workflow 
   ]
   for (const owner of owners) {
     const call = vi
-      .spyOn(owner, 'call')
+      .spyOn(owner, 'callInternal' in owner ? 'callInternal' : 'call')
       .mockResolvedValue(
         JSON.stringify({ available: true, status: 'complete' })
       )
@@ -691,7 +694,7 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   expect(next.success).toBe(true)
   expect(JSON.parse(next.text).complete).toBe(true)
   const call = vi
-    .spyOn(operations, 'call')
+    .spyOn(operations, 'callInternal')
     .mockResolvedValue(JSON.stringify({ ...page, next: undefined }))
   expect(
     JSON.parse(

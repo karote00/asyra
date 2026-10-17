@@ -1,6 +1,7 @@
 import { designActionOutcome } from '../src/ai/tool-contract'
 import type { AiJsonValue } from '@asyra/ai-agent-runtime'
 import type {
+  AiActionDescription,
   AiActionBatch,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
@@ -16,9 +17,30 @@ const record = (value: unknown): value is Record<string, unknown> =>
 
 /** Ownership bridge only: the browser remains the query, revision and data owner. */
 export const createLocalQueryArtifacts = (options: {
+  actions?: readonly AiActionDescription[]
   ownership: LocalToolOwnership
   release: (snapshotId: string) => Promise<void>
 }) => {
+  const receiptFields = new Map<string, { receipt: string; view: string }>()
+  for (const action of options.actions ?? []) {
+    if (
+      !('delivery' in action) ||
+      action.delivery?.receipt?.owner !== 'design-context'
+    )
+      continue
+    // This adapter owns the declared top-level retained receipt shape.
+    const path = action.delivery.receipt.path
+    if (!/^\/[^/]+$/.test(path))
+      throw new Error('Query receipt must name one top-level field')
+    if (!/^\/[^/]+$/.test(action.delivery.path))
+      throw new Error('Query delivery must name one top-level field')
+    const decode = (value: string) =>
+      value.slice(1).replace(/~1/g, '/').replace(/~0/g, '~')
+    receiptFields.set(action.name, {
+      receipt: decode(path),
+      view: decode(action.delivery.path)
+    })
+  }
   const snapshots = new Map<string, Set<string>>()
   return {
     admit(batch: AiActionBatch) {
@@ -60,11 +82,9 @@ export const createLocalQueryArtifacts = (options: {
       )
       for (const entry of receipt.actionResults) {
         const action = submitted.get(entry.actionId)
-        const structural =
-          action &&
-          ['grouped', 'ungrouped', 'moves', 'removed'].includes(
-            getBasicApiContract(action.name)?.result.kind ?? ''
-          )
+        const fields = action && receiptFields.get(action.name)
+        const receiptField = fields?.receipt
+        const structural = receiptField !== undefined
         if (
           !action ||
           (!structural &&
@@ -78,7 +98,7 @@ export const createLocalQueryArtifacts = (options: {
         )
           continue
         const original = entry.result
-        const result = structural ? original.retained : original
+        const result = receiptField ? original[receiptField] : original
         if (!record(result)) continue
         try {
           if (
@@ -155,13 +175,21 @@ export const createLocalQueryArtifacts = (options: {
             }
           }
         } catch (error) {
-          if (!structural) throw error
-          const { retained: _retained, ...receipt } = original
-          const failedDelivery = {
+          if (!receiptField) throw error
+          const { [receiptField]: _retained, ...receipt } = original
+          const failedDelivery: Record<string, AiJsonValue> = {
             ...(receipt as Record<string, AiJsonValue>),
             delivery: {
               status: 'unavailable',
               message: `${error instanceof Error ? error.message : 'Host publication failed.'} The acknowledged mutation must not be replayed.`
+            }
+          }
+          if (fields && record(failedDelivery[fields.view])) {
+            const { [fields.receipt]: _summaryReference, ...summary } =
+              failedDelivery[fields.view] as Record<string, AiJsonValue>
+            failedDelivery[fields.view] = {
+              ...summary,
+              delivery: failedDelivery.delivery
             }
           }
           deliveryFailures.set(entry.actionId, {

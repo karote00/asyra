@@ -71,6 +71,17 @@ caller before cleanup. Undeclared failure diagnostics export no resources.
 Composition stops successors and preserves typed recovery separately from normal
 output bindings. Recovery is not successful-execution or persistence eligibility.
 
+An optional `delivery: { path, outputSchema }` declares an owner-produced model
+view at an exact JSON Pointer in the complete result. Optional `delivery.receipt`
+identifies its retained full-evidence path and owning host adapter; Runtime does
+not infer or create that resource. The portable declaration is
+immutable and part of the persisted dependency fingerprint. Internal output
+validation, resource transfer and recipe bindings use the complete result; hosts
+may project only at the external model boundary and validate that view against
+`delivery.outputSchema`. This is not a mutation, new model call or retry. Missing
+or invalid delivery preserves execution settlement and becomes a delivery failure;
+it never changes a successful internal value into an undocumented recipe summary.
+
 Registration rejects empty identity/description, invalid revision, non-JSON schemas,
 unknown effects or lifecycle values and invalid resource names. Descriptors are
 recursively detached and frozen, including schemas and arrays. Schema semantics

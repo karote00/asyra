@@ -1,4 +1,5 @@
 import { createPrescribedPositionAction } from './prescribed-position-action'
+import { createDocumentExport } from './document-export'
 import {
   createAiToolContract,
   createAiToolMiddleware,
@@ -109,9 +110,11 @@ export const createAiRuntimeInput = (
   const evidence = createInspectionEvidence()
   const reviewer = createDesignReviewer(undefined, undefined, true)
   const queries = createRetainedDesignContext(core, observeDesignChanges)
+  const documentExports = createDocumentExport()
   const transactionRunner =
     options.transactionRunner ?? createAiTransactionRunner()
   const actionDefinitions = [
+    ...documentExports.actions,
     ...createBasicApiActions(undefined, undefined, queries),
     ...createAiActions(undefined, {
       confirmPersistence: async (signal) => {
@@ -155,7 +158,8 @@ export const createAiRuntimeInput = (
       ...(options.ownedResources ?? []),
       evidence,
       queries,
-      reviewer
+      reviewer,
+      documentExports
     ],
     permissionPolicy: createAiPermissionPolicy(options.permissionRules),
     provider: {

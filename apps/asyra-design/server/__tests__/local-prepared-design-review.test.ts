@@ -330,3 +330,49 @@ it('reuses automatically published compiler checks and explicitly continues a co
     owner.review({ artifactId: initial.artifactId }, signal())
   ).rejects.toThrow(/superseded/)
 })
+
+it('reuses semantic attachment checks across fresh receipts while validating current currency', async () => {
+  const f = setup()
+  let sequence = 0
+  let sessionId = 'document-a'
+  let width = 30
+  f.options.resolveAttachment = async () => ({
+    workspaceId: 'workspace',
+    parentId: 'workspace',
+    basis: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 }
+    ],
+    bounds: { width },
+    evidence: {
+      sessionId,
+      revision: ++sequence,
+      receiptId: `receipt-${sequence}`
+    }
+  })
+  expect(await f.owner.review({ artifactId: 'a' }, signal())).toMatchObject({
+    reused: false,
+    status: 'pass'
+  })
+  expect(await f.owner.review({ artifactId: 'a' }, signal())).toMatchObject({
+    reused: true,
+    status: 'pass'
+  })
+  width++
+  expect(await f.owner.review({ artifactId: 'a' }, signal())).toMatchObject({
+    reused: false,
+    status: 'pass'
+  })
+  sessionId = 'document-b'
+  expect(await f.owner.review({ artifactId: 'a' }, signal())).toMatchObject({
+    reused: false,
+    status: 'pass'
+  })
+  f.invalidate()
+  expect(await f.owner.review({ artifactId: 'a' }, signal())).toMatchObject({
+    status: 'unverified',
+    evidenceCurrent: false
+  })
+  expect(() => f.owner.assertApplicable('a')).toThrow()
+})

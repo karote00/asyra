@@ -43,6 +43,7 @@
         ],
         outputs: ['artifact:admitted-recipe'],
         conditions: [
+          'Optional registered delivery path/schema is immutable and fingerprinted. Internal invocation and recipe bindings retain complete validated values; only the host model boundary projects an owner-produced view, with unchanged execution settlement and no replay.',
           'Distinguish transient request values from request-artifact lease handles. Both forbid captured literals/defaults and require compatible typed bindings; host leases inspect only explicit artifact annotations, including nested handles. Exact dependency fingerprints reject saved recipes with superseded schemas.',
 
           'Prove finite typed bindings and exact eligible dependencies without executing operations.',

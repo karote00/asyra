@@ -345,7 +345,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     )
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('Converting artwork to vectorsSeparating drawing layers')
+    ).toBe('Separating drawing layersConverting artwork to vectors')
     const disclosure = screen.getByLabelText('Work history')
     expect(disclosure.textContent).toMatch(/^Working for /)
     expect(disclosure.textContent).not.toContain('Separating drawing layers')

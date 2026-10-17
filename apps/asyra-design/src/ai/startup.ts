@@ -94,6 +94,9 @@ export const createAiStartup = (
     runtime = createAiAgentRuntime(
       createAiRuntimeInput({
         permissionRules: {
+          [AiActionNames.EXPORT_DOCUMENT]: 'allow',
+          [AiActionNames.DOWNLOAD_DOCUMENT_EXPORT]: 'allow',
+          [AiActionNames.RELEASE_DOCUMENT_EXPORT]: 'allow',
           ...basicApiPermissionRules,
           [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
           [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: 'allow',

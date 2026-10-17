@@ -10,6 +10,11 @@ import {
 } from '../local-tool-leases'
 import { createLocalQueryArtifacts } from '../local-query-artifacts'
 import { AiActionNames } from '../../src/constants/ai-actions'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import {
+  basicApiResultSchema,
+  basicApiDeliverySchema
+} from '../../src/ai/basic-api-results'
 import { toolRequestReference } from '../../src/ai/tool-contract'
 
 const object = (properties: Record<string, unknown>) => ({
@@ -57,7 +62,24 @@ const fixture = () => {
   const release = vi.fn(async (snapshotId: string) => {
     queries.read({ scope: 'snapshot', snapshotId, release: true }, signal)
   })
-  const bridge = createLocalQueryArtifacts({ ownership, release })
+  const bridge = createLocalQueryArtifacts({
+    ownership,
+    release,
+    actions: basicApiContracts.map((contract) => ({
+      ...contract,
+      inputSchema: contract.inputSchema,
+      outputSchema: basicApiResultSchema(contract),
+      ...(basicApiDeliverySchema(contract)
+        ? {
+            delivery: {
+              path: '/modelResult',
+              outputSchema: basicApiDeliverySchema(contract),
+              receipt: { path: '/retained', owner: 'design-context' }
+            }
+          }
+        : {})
+    })) as never
+  })
   const read = () =>
     queries.read(
       { scope: 'selection', fields: ['x'], delivery: 'reference' },
@@ -327,7 +349,7 @@ it('composes a real browser query and fill consumer without exporting rows, then
       {
         id: 'query',
         tool: 'design_operations.read_design_context',
-        revision: 3,
+        revision: 4,
         input: {
           kind: 'object',
           fields: { arguments: literal({ scope: 'selection', fields: ['x'] }) }
@@ -336,7 +358,7 @@ it('composes a real browser query and fill consumer without exporting rows, then
       {
         id: 'map',
         tool: 'design_operations.map_retained_fills',
-        revision: 3,
+        revision: 4,
         input: {
           kind: 'object',
           fields: {
@@ -410,6 +432,73 @@ it('composes a real browser query and fill consumer without exporting rows, then
       delivery: 'reference'
     })
     expect(() => app.queries.get(observed[0].snapshotId)).toThrow(/missing/)
+    const query = JSON.parse(
+      (
+        await host.invoke({
+          name: 'design_operations.read_design_context',
+          input: { arguments: { scope: 'selection', fields: ['x'] } }
+        })
+      ).text
+    ).actionResults[0].result
+    const mapped = JSON.parse(
+      (
+        await host.invoke({
+          name: 'design_operations.execute_design_batch',
+          input: {
+            operations: [
+              {
+                name: AiActionNames.MAP_RETAINED_FILLS,
+                arguments: {
+                  mappings: [
+                    {
+                      snapshotId: query.snapshotId,
+                      leaseId: query.leaseId,
+                      coordinateSpace: 'parent-local',
+                      axis: 'x',
+                      domain: [0, 100],
+                      index: 0,
+                      outside: 'clamp',
+                      stops: [
+                        { at: 0, color: '#000000' },
+                        { at: 1, color: '#ffffff' }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            inspection: 'defer'
+          }
+        })
+      ).text
+    )
+    expect(mapped.toolOutcome, JSON.stringify(mapped)).toMatchObject({
+      status: 'success'
+    })
+    const retained = mapped.actionResults[0].result.retained
+    expect(retained).toBeDefined()
+    const recovered = JSON.parse(
+      (
+        await host.invoke({
+          name: 'design_operations.read_design_context',
+          input: {
+            arguments: {
+              scope: 'snapshot',
+              snapshotId: retained.snapshotId,
+              delivery: 'receipt'
+            }
+          }
+        })
+      ).text
+    )
+    expect(
+      recovered.actionResults?.[0]?.result?.receipt,
+      JSON.stringify(recovered)
+    ).toMatchObject({
+      appliedCount: 1,
+      mutationScope: { elementIds: ['part'] }
+    })
+    expect(update).toHaveBeenCalledTimes(2)
   } finally {
     await host.dispose()
     app.queries.dispose()
@@ -606,7 +695,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
         {
           id: 'group',
           tool: 'design_operations.api_hierarchy_groupElements',
-          revision: 4,
+          revision: 5,
           input: {
             kind: 'object',
             fields: {

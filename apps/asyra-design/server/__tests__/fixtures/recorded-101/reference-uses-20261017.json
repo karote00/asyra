@@ -1,0 +1,53 @@
+{
+  "sourceRun": "reusable-tools-1792226401062",
+  "callIndex": 13,
+  "normalization": "Narrative omitted; original identities, statuses, criteria and absence of regions/uses retained.",
+  "input": {
+    "referenceImageIndexes": [
+      1,
+      3,
+      5
+    ],
+    "requirementRevision": 1,
+    "referenceDecisions": [
+      {
+        "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+        "status": "restricted",
+        "reason": "Recorded primary-agent assertion; prose omitted.",
+        "criterionIds": [
+          "overall",
+          "detail",
+          "view"
+        ],
+        "limitations": [
+          "Recorded source limitation; prose omitted."
+        ]
+      },
+      {
+        "referenceId": "reference:485fb39d6d9073cd01f4582e18f9669fab28da7fdb0a9ca176b7c02a43e1ba79",
+        "status": "restricted",
+        "reason": "Recorded primary-agent assertion; prose omitted.",
+        "criterionIds": [
+          "overall",
+          "detail",
+          "view"
+        ],
+        "limitations": [
+          "Recorded source limitation; prose omitted."
+        ]
+      },
+      {
+        "referenceId": "reference:4e40839b247ad8b55445b313b2474d80591ef7649cc218b9e07b4f0165429b26",
+        "status": "restricted",
+        "reason": "Recorded primary-agent assertion; prose omitted.",
+        "criterionIds": [
+          "detail",
+          "material"
+        ],
+        "limitations": [
+          "Recorded source limitation; prose omitted."
+        ]
+      }
+    ]
+  }
+}

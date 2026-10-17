@@ -454,33 +454,6 @@ const selectByChannelApi = defineBasicApi({
   ]
 })
 
-const saveApi = defineBasicApi({
-  description:
-    'Produce the document save payload; use only when a full document export is needed, not to recover known IDs.',
-  owner: 'core',
-  method: 'save',
-  effect: 'read',
-  parameters: []
-})
-
-const propsSaveDataApi = defineBasicApi({
-  description:
-    'Serialize canonical property data for export or diagnostics; prefer narrow reads for editing.',
-  owner: 'core',
-  method: 'propsSaveData',
-  effect: 'read',
-  parameters: []
-})
-
-const sceneTreeSaveDataApi = defineBasicApi({
-  description:
-    'Serialize canonical hierarchy data for export or diagnostics; do not repeatedly fetch it to recover known IDs.',
-  owner: 'core',
-  method: 'sceneTreeSaveData',
-  effect: 'read',
-  parameters: []
-})
-
 const getCanvasBoundsApi = defineBasicApi({
   description:
     'Read browser canvas bounds for coordinate conversion; may be unavailable before rendering starts.',
@@ -579,9 +552,6 @@ export const basicCoreApiContracts = [
   updatePropertyComponentsApi,
   updateElementDataApi,
   selectByChannelApi,
-  saveApi,
-  propsSaveDataApi,
-  sceneTreeSaveDataApi,
   getCanvasBoundsApi,
   measureElementContentBoundsApi,
   getRegistrationApi,

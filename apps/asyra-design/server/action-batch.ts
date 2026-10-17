@@ -19,7 +19,8 @@ import {
   ACTION_BATCH_ENDPOINT,
   AI_EXECUTION_RECORD_ENDPOINT,
   AI_BATCH_RECEIPT_HEADER,
-  AI_BATCH_EXECUTION_HEADER
+  AI_BATCH_EXECUTION_HEADER,
+  AI_BATCH_MAXIMUM_REQUEST_BYTES
 } from '../src/ai/action-batch-endpoint'
 import type {
   AiActionBatch,
@@ -45,7 +46,6 @@ const sampleImage = hasRegisteredSample
 const sampleImageDigest = sampleImage
   ? createHash('sha256').update(sampleImage).digest('hex')
   : undefined
-const maximumRequestBytes = 16 * 1024 * 1024
 let sampleActionBatchPromise: Promise<AiActionBatch> | undefined
 
 type MiddlewareNext = (error?: unknown) => void
@@ -290,7 +290,7 @@ const readJsonBody = async (
     const bytes =
       typeof chunk === 'string' ? Buffer.from(chunk) : Buffer.from(chunk)
     size += bytes.byteLength
-    if (size > maximumRequestBytes) {
+    if (size > AI_BATCH_MAXIMUM_REQUEST_BYTES) {
       throw new ActionBatchServerError(
         'ACTION_BATCH_INVALID_INPUT',
         'The action-batch request is too large.'

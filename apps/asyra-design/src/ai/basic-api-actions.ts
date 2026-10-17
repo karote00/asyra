@@ -12,7 +12,8 @@ import { basicApiContracts } from './basic-api-catalog'
 import { toolSemantics } from './tool-contract'
 import {
   describeBasicApiResult,
-  basicApiResultSchema
+  basicApiResultSchema,
+  basicApiDeliverySchema
 } from './basic-api-results'
 import { observeInspectionChanges } from '../common-apis/inspection-evidence'
 import type { InspectionDependencyChange } from '../common-apis/inspection-dependencies'
@@ -51,10 +52,10 @@ const owners = (): ApiOwners => ({
 
 const basicApiRevision = (contract: BasicApiContract): number => {
   if (
-    hasElementTargetSchema(contract.inputSchema) ||
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
   )
-    return 4
+    return 5
+  if (hasElementTargetSchema(contract.inputSchema)) return 4
   return ['write', 'delete'].includes(contract.effect) ? 3 : 2
 }
 
@@ -76,6 +77,15 @@ export const createBasicApiActions = (
         : ['document']
     ),
     partialOutputSchema: basicApiResultSchema(contract, true),
+    ...(basicApiDeliverySchema(contract)
+      ? {
+          delivery: {
+            path: '/modelResult',
+            outputSchema: basicApiDeliverySchema(contract),
+            receipt: { path: '/retained', owner: 'design-context' }
+          }
+        }
+      : {}),
     revision: basicApiRevision(contract),
     composition: 'allowed',
     name: contract.name,
@@ -201,6 +211,31 @@ export const createBasicApiActions = (
           !['complete', 'no-change'].includes(result.status)
         )
           return receipt
+        const structural = value as Record<string, unknown>
+        let count = 0
+        if (kind === 'removed' && Array.isArray(structural.removed))
+          count = structural.removed.length
+        else if (Array.isArray(structural.elementIds))
+          count = structural.elementIds.length
+        else if (Array.isArray(structural.moves))
+          count = structural.moves.length
+        const summary = {
+          status: receipt.status,
+          value: {
+            count,
+            ...(typeof structural.groupId === 'string'
+              ? { groupId: structural.groupId }
+              : {}),
+            ...(typeof structural.removed === 'boolean'
+              ? { removed: structural.removed }
+              : {})
+          },
+          mutationScope: {
+            complete,
+            elementCount: elementIds.length,
+            removedElementCount: removedElementIds.length
+          }
+        }
         try {
           if (!atSettlement)
             throw new Error(
@@ -208,7 +243,6 @@ export const createBasicApiActions = (
             )
           if (!queries)
             throw new Error('Retained structural delivery is unavailable.')
-          const structural = value as Record<string, unknown>
           let ids: string[] = []
           if (kind === 'grouped' || kind === 'ungrouped')
             ids = structural.elementIds as string[]
@@ -216,18 +250,14 @@ export const createBasicApiActions = (
             ids = (structural.moves as { elementId: string }[]).map(
               (item) => item.elementId
             )
-          return {
-            ...receipt,
-            retained: queries.retainReceipt(ids, receipt, context.signal)
-          }
+          const retained = queries.retainReceipt(ids, receipt, context.signal)
+          return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
-          return {
-            ...receipt,
-            delivery: {
-              status: 'unavailable',
-              message: `${error instanceof Error ? error.message : 'Structural delivery failed.'} The mutation already settled; do not replay it.`
-            }
+          const delivery = {
+            status: 'unavailable',
+            message: `${error instanceof Error ? error.message : 'Structural delivery failed.'} The mutation already settled; do not replay it.`
           }
+          return { ...receipt, delivery, modelResult: { ...summary, delivery } }
         }
       }
       let settledResult: ReturnType<typeof finish> | undefined

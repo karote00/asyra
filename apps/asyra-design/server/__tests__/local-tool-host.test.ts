@@ -643,3 +643,195 @@ it('waits for cancelled native work and releases its unpublished intermediate', 
   await closing
   expect(releases).toBe(1)
 })
+
+it('delivers a registered model view after canonical validation while recipe successors consume full values', async () => {
+  const seen: string[][] = []
+  let calls = 0
+  const source = {
+    name: 'source',
+    description: 'Produce identities.',
+    revision: 1,
+    inputSchema: object({}),
+    outputSchema: {
+      ...object({
+        ids: { type: 'array', items: { type: 'string' } },
+        modelResult: object({ count: { type: 'integer' } })
+      }),
+      additionalProperties: true
+    },
+    delivery: {
+      path: '/modelResult',
+      outputSchema: object({ count: { type: 'integer' } })
+    },
+    effect: 'read' as const,
+    resources: [],
+    composition: 'allowed' as const,
+    lifecycle: {
+      cancellation: 'cooperative' as const,
+      retry: 'never' as const,
+      output: 'value' as const
+    }
+  }
+  const consume = {
+    ...source,
+    name: 'consume',
+    delivery: undefined,
+    inputSchema: object({ ids: { type: 'array', items: { type: 'string' } } }),
+    outputSchema: {
+      ...object({ count: { type: 'integer' } }),
+      additionalProperties: true
+    }
+  }
+  const host = createLocalToolHost({
+    requestId: 'model-boundary',
+    signal: new AbortController().signal,
+    store: memory(),
+    capacity: 16,
+    receiptCapacity: 8,
+    artifactCapacity: 16,
+    limits: {
+      steps: 8,
+      bindings: 32,
+      bindingDepth: 8,
+      bytes: 12000,
+      issues: 8
+    },
+    createGroups: () => [
+      {
+        name: 'fixture',
+        description: 'Full typed result owner',
+        owner: {
+          definitions: [source, consume],
+          call: async (name, input) => {
+            calls++
+            if (name === 'source')
+              return JSON.stringify({
+                ids: ['a', 'b', 'c'],
+                modelResult: { count: 3 }
+              })
+            const ids = (input as { ids: string[] }).ids
+            seen.push(ids)
+            return JSON.stringify({ count: ids.length })
+          }
+        }
+      }
+    ]
+  })
+  try {
+    const direct = await host.invoke({ name: 'fixture.source', input: {} })
+    expect(JSON.parse(direct.text)).toMatchObject({ count: 3 })
+    expect(JSON.parse(direct.text).ids).toBeUndefined()
+    const proposal = {
+      format: 1,
+      name: 'count-source',
+      revision: 1,
+      description: 'Consume complete identities.',
+      inputSchema: object({}),
+      outputSchema: object({ count: { type: 'integer' } }),
+      steps: [
+        {
+          id: 'source',
+          tool: 'fixture.source',
+          revision: 1,
+          input: literal({})
+        },
+        {
+          id: 'consume',
+          tool: 'fixture.consume',
+          revision: 1,
+          input: {
+            kind: 'object',
+            fields: { ids: { kind: 'step', step: 'source', path: '/ids' } }
+          }
+        }
+      ],
+      output: {
+        kind: 'object',
+        fields: { count: { kind: 'step', step: 'consume', path: '/count' } }
+      }
+    }
+    const admission = await host.invoke({
+      name: 'tool_library.submit_tool',
+      input: { submissionId: 'full-handoff', proposal }
+    })
+    expect(admission.success, admission.text).toBe(true)
+    const invoked = await host.invoke({
+      name: 'tool_library.invoke_tool',
+      input: { name: 'count-source', revision: 1, input: {} }
+    })
+    expect(invoked.success, invoked.text).toBe(true)
+    expect(seen).toEqual([['a', 'b', 'c']])
+    expect(calls).toBe(3)
+  } finally {
+    await host.dispose()
+  }
+})
+
+it('reports failed model delivery without replaying a successful library execution', async () => {
+  let calls = 0
+  const source = {
+    name: 'source',
+    description: 'Produce a settled value.',
+    revision: 1,
+    inputSchema: object({}),
+    outputSchema: { type: 'object' },
+    delivery: {
+      path: '/modelResult',
+      outputSchema: object({ count: { type: 'integer' } })
+    },
+    effect: 'mutation' as const,
+    resources: ['document'],
+    composition: 'allowed' as const,
+    lifecycle: {
+      cancellation: 'cooperative' as const,
+      retry: 'never' as const,
+      output: 'value' as const
+    }
+  }
+  const host = createLocalToolHost({
+    requestId: 'failed-model-delivery',
+    signal: new AbortController().signal,
+    store: memory(),
+    capacity: 16,
+    receiptCapacity: 8,
+    artifactCapacity: 16,
+    limits: {
+      steps: 8,
+      bindings: 32,
+      bindingDepth: 8,
+      bytes: 12000,
+      issues: 8
+    },
+    createGroups: () => [
+      {
+        name: 'fixture',
+        description: 'Settled owner',
+        owner: {
+          definitions: [source],
+          call: async () => {
+            calls++
+            return JSON.stringify({ applied: true })
+          }
+        }
+      }
+    ]
+  })
+  try {
+    const reply = await host.invoke({
+      name: 'tool_library.invoke_tool',
+      input: { name: 'fixture.source', revision: 1, input: {} }
+    })
+    expect(reply.success, reply.text).toBe(false)
+    expect(JSON.parse(reply.text)).toMatchObject({
+      execution: {
+        status: 'success',
+        settlement: 'completed',
+        value: { code: 'TOOL_DELIVERY_INVALID' }
+      },
+      toolOutcome: { status: 'partial', settlement: 'completed' }
+    })
+    expect(calls).toBe(1)
+  } finally {
+    await host.dispose()
+  }
+})

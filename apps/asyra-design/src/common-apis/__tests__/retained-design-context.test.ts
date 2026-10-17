@@ -670,3 +670,60 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     store.dispose()
   }
 })
+
+it('pages immutable receipt text without repeated serialization or live query reads', () => {
+  const { store, source, change } = fixture()
+  const signal = new AbortController().signal
+  const ids = Array.from({ length: 3584 }, (_, index) => `recorded-${index}`)
+  let pageCount = 0
+  const receipt = {
+    status: 'complete',
+    elementIds: ids,
+    note: '漢字'.repeat(40000)
+  }
+  const serialize = vi.fn(() => ({ ...receipt }))
+  const handle = store.retainReceipt(ids, { toJSON: serialize }, signal)
+  expect(serialize).toHaveBeenCalledTimes(1)
+  const chunks: string[] = []
+  let offset: number | null = 0
+  change()
+  do {
+    const page = store.read(
+      {
+        scope: 'snapshot',
+        snapshotId: handle.snapshotId,
+        delivery: 'receipt',
+        offset
+      },
+      signal
+    ) as {
+      current: boolean
+      receiptPage: { text: string; nextOffset: number | null }
+    }
+    pageCount++
+    expect(page.current).toBe(false)
+    expect(
+      new TextEncoder().encode(JSON.stringify(page)).byteLength
+    ).toBeLessThan(66000)
+    chunks.push(page.receiptPage.text)
+    offset = page.receiptPage.nextOffset
+  } while (offset !== null)
+  expect(pageCount).toBeGreaterThan(1)
+  expect(JSON.parse(chunks.join(''))).toEqual(receipt)
+  expect(serialize).toHaveBeenCalledTimes(1)
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
+  expect(() =>
+    store.read(
+      { scope: 'snapshot', snapshotId: handle.snapshotId, delivery: 'receipt' },
+      new AbortController().signal
+    )
+  ).toThrow(/request/)
+  store.releaseFor(signal)
+  expect(() =>
+    store.read(
+      { scope: 'snapshot', snapshotId: handle.snapshotId, delivery: 'receipt' },
+      signal
+    )
+  ).toThrow()
+  store.dispose()
+})

@@ -252,6 +252,8 @@ Implementation entry points:
 
 Route a prepared request through App permission, action and transaction owners. Keep dependent actions in the intended History group and expose actual completion or partial failure. Denied, cancelled, unsupported or failed execution does not report completed drawing.
 
+Explicit exports keep immutable downloadable document bytes outside ordinary tool receipts, survive request completion, and do not add history. Final drawing completion reports durable, local-only and unavailable storage separately.
+
 Authority: [Execute an Agent request](ai-execution-flow.md).
 
 Implementation entry points:

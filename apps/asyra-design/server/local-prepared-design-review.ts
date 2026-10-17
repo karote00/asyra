@@ -1,4 +1,9 @@
 import {
+  referenceUsesSchema,
+  referenceUseDependency,
+  type ReferenceUseReceipt
+} from './local-reference-decisions'
+import {
   createDesignCheckResults,
   designCheckResultsSchema
 } from './design-check-results'
@@ -80,6 +85,7 @@ export const preparedReviewDefinition = {
     'prepare',
     ['request-artifacts']
   ),
+  revision: 2,
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
@@ -89,6 +95,7 @@ export const preparedReviewDefinition = {
     additionalProperties: false,
     required: ['artifactId'],
     properties: {
+      referenceUses: referenceUsesSchema,
       artifactId: { type: 'string', minLength: 1 },
       criterionIds: {
         type: 'array',
@@ -134,7 +141,7 @@ export const createPreparedDesignReview = (options: {
     attachment: PreparedAttachment,
     signal: AbortSignal
   ) => Promise<boolean>
-  context: () => PreparedRecipeContext
+  context: (receipts?: ReferenceUseReceipt[]) => PreparedRecipeContext
   results?: ReturnType<typeof createDesignCheckResults>
 }) => {
   const results = options.results ?? createDesignCheckResults()
@@ -143,6 +150,7 @@ export const createPreparedDesignReview = (options: {
   const artifactReviews = new Map<
     string,
     {
+      referenceUses: ReferenceUseReceipt[]
       recipeIdentity: string
       evidenceIdentity: string
       contextIdentity: string
@@ -162,7 +170,8 @@ export const createPreparedDesignReview = (options: {
     string,
     NonNullable<ReturnType<typeof artifactReviews.get>>
   >()
-  const evidence = () => options.context()
+  const evidence = (receipts: ReferenceUseReceipt[] = []) =>
+    options.context(receipts)
   return {
     read: results.read,
     async refresh(signal: AbortSignal, dependencyKeys?: ReadonlySet<string>) {
@@ -222,7 +231,9 @@ export const createPreparedDesignReview = (options: {
         throw new Error(
           'Prepared recipe changed after review; review its current source.'
         )
-      if (reviewed.contextIdentity !== identity(evidence()))
+      if (
+        reviewed.contextIdentity !== identity(evidence(reviewed.referenceUses))
+      )
         throw new Error(
           'Prepared review evidence changed; review current dependencies.'
         )
@@ -254,12 +265,14 @@ export const createPreparedDesignReview = (options: {
         parentId,
         criterionIds: requestedCriteria,
         previousArtifactId,
+        referenceUses = [],
         keys = []
       } = input as {
         artifactId: string
         parentId?: string
         criterionIds?: string[]
         previousArtifactId?: string
+        referenceUses?: ReferenceUseReceipt[]
         keys?: string[]
       }
       const source = options.resolveRecipe(artifactId)
@@ -290,7 +303,7 @@ export const createPreparedDesignReview = (options: {
       }
       const attachment = await options.resolveAttachment(parentId, signal)
       signal.throwIfAborted()
-      const context = evidence()
+      const context = evidence(referenceUses)
       if (!Object.keys(context.criteria).length)
         throw new Error(
           'Define request-linked criteria before prepared review.'
@@ -302,6 +315,14 @@ export const createPreparedDesignReview = (options: {
       const criterionIds = Object.keys(context.criteria).filter(
         (id) => !requestedCriteria || requestedCriteria.includes(id)
       )
+      if (
+        context.referenceUses?.some(
+          (use) => !criterionIds.includes(use.criterionId)
+        )
+      )
+        throw new Error(
+          'Preparation reference uses must match the requested criterion coverage.'
+        )
       const coverage = {
         keys: [...keys].sort(),
         wholeRecipe: keys.length === 0,
@@ -312,7 +333,17 @@ export const createPreparedDesignReview = (options: {
       }
       const recipeIdentity = identity(source.recipe)
       const contextIdentity = identity(context)
-      const evidenceIdentity = identity({ context, attachment })
+      // Currency receipts are renewed independently of attachment geometry.
+      // The fresh receipt is still checked below and retained for apply admission.
+      const { evidence: attachmentEvidence, ...attachmentContent } = attachment
+      const semanticAttachment = {
+        ...attachmentContent,
+        sessionId: attachmentEvidence.sessionId
+      }
+      const evidenceIdentity = identity({
+        context,
+        attachment: semanticAttachment
+      })
       let previousReview: PreparedRecipePacket['previousReview']
       if (previousArtifactId) {
         const previousSource = options.resolveRecipe(previousArtifactId)
@@ -356,6 +387,7 @@ export const createPreparedDesignReview = (options: {
       const cacheKey = identity({
         packet: {
           ...packet,
+          attachment: semanticAttachment,
           ...(previousReview
             ? { previousReview: { ...previousReview, artifactId: undefined } }
             : {})
@@ -397,7 +429,7 @@ export const createPreparedDesignReview = (options: {
         signal.throwIfAborted()
       }
       const evidenceCurrent =
-        contextIdentity === identity(evidence()) &&
+        contextIdentity === identity(evidence(referenceUses)) &&
         (await options.attachmentCurrent(attachment, signal)) &&
         recipeIdentity === identity(options.resolveRecipe(artifactId).recipe)
       if (evidenceCurrent && !reused)
@@ -416,6 +448,7 @@ export const createPreparedDesignReview = (options: {
           : undefined
       if (unresolvedPriorConflict) conflict = prior.conflict
       const reviewed = {
+        referenceUses: structuredClone(referenceUses),
         recipeIdentity,
         evidenceIdentity,
         contextIdentity,
@@ -442,6 +475,12 @@ export const createPreparedDesignReview = (options: {
           : 'Canonical attachment changed during checking.',
         scope: [artifactId],
         dependencies: {
+          ...Object.fromEntries(
+            referenceUses.map((receipt) => [
+              referenceUseDependency(receipt),
+              String(receipt.revision)
+            ])
+          ),
           [`attachment:${lineage}`]: identity(attachment.evidence),
           [`recipe:${lineage}`]: recipeIdentity
         }

@@ -205,6 +205,13 @@ export const createLocalDesignWorkflow = (
               owner === operations && inspectionTargets
                 ? {
                     ...operations,
+                    callInternal: (name, args, signal) =>
+                      operations.callInternal(
+                        name,
+                        args,
+                        signal,
+                        inspectionTargets
+                      ),
                     call: (name, args, signal) =>
                       operations.call(name, args, signal, inspectionTargets)
                   }

@@ -365,9 +365,6 @@ export const createBasicApiCases = async () => {
     { parentPropertyType: 'fills' },
     has('fill')
   )
-  add('core', 'save', {}, has(rect))
-  add('core', 'propsSaveData', {}, has(paintId))
-  add('core', 'sceneTreeSaveData', {}, has(rect))
   add('core', 'getCanvasBounds', {}, (v) =>
     assert(v.width > 0 && v.height > 0, 'Canvas has no bounds')
   )

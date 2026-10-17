@@ -746,3 +746,342 @@ test('persists grouped structural actions and each history transition for a fres
   }
   await peerContext.close()
 })
+
+test('exports immutable document bytes through the runtime and browser download without replacing durable save or history', async ({
+  page,
+  context
+}, testInfo) => {
+  test.setTimeout(90000)
+  const identity = createTestDocumentIdentity()
+  await page.goto(identity.url)
+  await waitForAppReady(page)
+  await page.evaluate(async () => {
+    const { core, testRuntimeState } =
+      await import('../src/testing/runtime-access')
+    const { transactionApis } = await import('../src/common-apis')
+    transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          {
+            type: 'rect',
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 50,
+            name: 'Exported shape'
+          }
+        ],
+        core.getCurrentWorkspaceId()
+      )
+    )
+    const { createAiStartup } = await import('../src/ai/startup')
+    const { createAiConfirmationBroker } =
+      await import('../src/ai/confirmation')
+    const { createAiHistoryProjection } =
+      await import('../src/common-apis/history')
+    const startup = createAiStartup({
+      createConfirmation: createAiConfirmationBroker,
+      createHistory: createAiHistoryProjection,
+      createProvider: () => ({
+        requestActionBatch: async () => {
+          const action = testRuntimeState.get<{
+            name: string
+            arguments: Record<string, unknown>
+          }>('export-action')
+          if (!action) throw new Error('Missing explicit export action')
+          return {
+            batchId: crypto.randomUUID(),
+            actions: [
+              {
+                id: crypto.randomUUID(),
+                ...action,
+                summary: 'Explicit document export'
+              }
+            ]
+          }
+        }
+      })
+    })
+    const { runtime } = startup
+    testRuntimeState.set('export-startup', startup)
+    testRuntimeState.set('export-runtime', runtime)
+  })
+  const depth = await getUndoHistoryDepth(page)
+  const invoke = (name: string, args: Record<string, unknown> = {}) =>
+    page.evaluate(
+      async ({ name, args }) => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        testRuntimeState.set('export-action', { name, arguments: args })
+        const runtime =
+          testRuntimeState.get<
+            import('@asyra/ai-agent-runtime').AiAgentRuntime
+          >('export-runtime')
+        if (!runtime) throw new Error('Missing export runtime')
+        const result = await runtime.run({
+          intent: 'Export this document',
+          signal: AbortSignal.timeout(15000)
+        })
+        if (result.status !== 'executed')
+          throw new Error(JSON.stringify(result))
+        return result.actionResults[0].result as {
+          artifact: { artifactId: string; bytes: number; sha256: string }
+          released?: boolean
+          delivery?: string
+        }
+      },
+      { name, args }
+    )
+  let primaryFailure: unknown
+  try {
+    const before = await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.save()
+    )
+    const exported = await invoke('export_document')
+    expect(exported.artifact.bytes).toBeGreaterThan(0)
+    expect(JSON.stringify(exported).length).toBeLessThan(2048)
+    const downloadPromise = page.waitForEvent('download')
+    expect(
+      (
+        await invoke('download_document_export', {
+          artifactId: exported.artifact.artifactId
+        })
+      ).delivery
+    ).toBe('download-requested')
+    const download = await downloadPromise
+    const filePath = testInfo.outputPath(download.suggestedFilename())
+    await download.saveAs(filePath)
+    const { readFile } = await import('node:fs/promises')
+    const { createHash } = await import('node:crypto')
+    const bytes = await readFile(filePath)
+    expect(bytes.byteLength).toBe(exported.artifact.bytes)
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(
+      exported.artifact.sha256
+    )
+    expect(JSON.parse(bytes.toString())).toEqual(before)
+    expect(await getUndoHistoryDepth(page)).toBe(depth)
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async () =>
+            (await import('../src/testing/runtime-access'))
+              .getActiveCollaborationHandle()
+              ?.getSessionState().sync
+        )
+      )
+      .toBe('synced')
+    const persisted = await page.evaluate(async () => {
+      const session = (
+        await import('../src/testing/runtime-access')
+      ).getActiveCollaborationHandle()
+      if (!session) throw new Error('Missing document session')
+      return session.confirmPersistence(AbortSignal.timeout(10000))
+    })
+    expect(persisted.durableSequence).toBeGreaterThanOrEqual(persisted.sequence)
+    expect(
+      (await getPersistedDocumentCheckpoint(identity.fileId)).checkpoint
+    ).toEqual(before)
+    const reopened = await context.newPage()
+    try {
+      await reopened.goto(identity.url)
+      await waitForAppReady(reopened)
+      expect(
+        await reopened.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).core.save()
+        )
+      ).toEqual(before)
+    } finally {
+      await reopened.close()
+    }
+    expect(
+      (
+        await invoke('release_document_export', {
+          artifactId: exported.artifact.artifactId
+        })
+      ).released
+    ).toBe(true)
+  } catch (error) {
+    primaryFailure = error
+    throw error
+  } finally {
+    await page
+      .evaluate(async () => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        await testRuntimeState
+          .get<import('@asyra/ai-agent-runtime').AiAgentRuntime>(
+            'export-runtime'
+          )
+          ?.dispose()
+        const startup =
+          testRuntimeState.get<import('../src/ai/startup').AiStartup>(
+            'export-startup'
+          )
+        startup?.history.dispose()
+        startup?.confirmation.dispose()
+        testRuntimeState.delete('export-startup')
+        testRuntimeState.delete('export-runtime')
+        testRuntimeState.delete('export-action')
+      })
+      .catch(async (error: unknown) => {
+        if (!primaryFailure) throw error
+        await testInfo.attach('export-cleanup-failure', {
+          body: String(error),
+          contentType: 'text/plain'
+        })
+      })
+  }
+})
+
+test('exports and reloads a retained large document without delivering its body as a tool result', async ({
+  page,
+  context
+}, testInfo) => {
+  const path = process.env.E2E_EXPORT_DOCUMENT
+  test.skip(
+    !path,
+    'Provide a project-local saved document for deterministic export replay.'
+  )
+  if (!path) return
+  test.setTimeout(180000)
+  const { resolve, relative, isAbsolute } = await import('node:path')
+  const { readFile, appendFile } = await import('node:fs/promises')
+  const { createReadStream } = await import('node:fs')
+  const { createServer } = await import('node:http')
+  const filePath = resolve(path)
+  const within = relative(resolve(process.cwd(), '../..'), filePath)
+  if (isAbsolute(within) || within === '..' || within.startsWith('../'))
+    throw new Error('Export replay must remain inside the project')
+  const downloadedPath = testInfo.outputPath('large-document.json')
+  // Send document bytes through HTTP, never one oversized DevTools protocol frame.
+  const fixtureServer = createServer((request, response) => {
+    const original = request.url === '/source'
+    response.setHeader('Access-Control-Allow-Origin', '*')
+    response.setHeader('Content-Type', 'application/json')
+    if (original && filePath.endsWith('.gz'))
+      response.setHeader('Content-Encoding', 'gzip')
+    createReadStream(original ? filePath : downloadedPath)
+      .on('error', () => response.destroy())
+      .pipe(response)
+  })
+  await new Promise<void>((resolve) =>
+    fixtureServer.listen(0, '127.0.0.1', resolve)
+  )
+  const address = fixtureServer.address()
+  if (!address || typeof address === 'string')
+    throw new Error('Missing export fixture server')
+  const fixtureURL = `http://127.0.0.1:${address.port}`
+  const stagesPath = testInfo.outputPath('export-stages.jsonl')
+  await page.exposeFunction('recordExportReplayStage', (stage: string) =>
+    appendFile(stagesPath, JSON.stringify({ stage, at: Date.now() }) + '\n')
+  )
+  try {
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    const metadata = await page.evaluate(async (url) => {
+      const stage = (name: string) =>
+        (
+          window as unknown as {
+            recordExportReplayStage(name: string): Promise<void>
+          }
+        ).recordExportReplayStage(name)
+      const { core, getActiveCollaborationHandle, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      await getActiveCollaborationHandle()?.disconnect()
+      await stage('source-read')
+      const source = await (await fetch(url + '/source')).json()
+      await stage('source-decoded')
+      core.load(source)
+      await stage('source-loaded')
+      const { createDocumentExport } = await import('../src/ai/document-export')
+      const owner = createDocumentExport()
+      testRuntimeState.set('large-export-owner', owner)
+      const action = owner.actions.find(
+        (entry) => entry.name === 'export_document'
+      )
+      if (!action) throw new Error('Missing export action')
+      const result = (await action.execute(
+        {},
+        { signal: AbortSignal.timeout(120000) }
+      )) as { artifact: { artifactId: string; bytes: number; sha256: string } }
+      await stage('exported')
+      const canonical = new TextEncoder().encode(
+        JSON.stringify(await core.save())
+      )
+      const digest = Array.from(
+        new Uint8Array(await crypto.subtle.digest('SHA-256', canonical))
+      )
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('')
+      return {
+        ...result.artifact,
+        canonicalDigest: digest,
+        receiptBytes: JSON.stringify(result).length
+      }
+    }, fixtureURL)
+    expect(metadata.bytes).toBeGreaterThan(16 * 1024 * 1024)
+    expect(metadata.receiptBytes).toBeLessThan(2048)
+    expect(metadata.sha256).toBe(metadata.canonicalDigest)
+    const downloadPromise = page.waitForEvent('download')
+    await page.evaluate(async (artifactId) => {
+      const { testRuntimeState } = await import('../src/testing/runtime-access')
+      const owner =
+        testRuntimeState.get<
+          ReturnType<
+            typeof import('../src/ai/document-export').createDocumentExport
+          >
+        >('large-export-owner')
+      const download = owner?.actions.find(
+        (entry) => entry.name === 'download_document_export'
+      )
+      if (!download) throw new Error('Missing download action')
+      await download.execute(
+        { artifactId },
+        { signal: new AbortController().signal }
+      )
+    }, metadata.artifactId)
+    await (await downloadPromise).saveAs(downloadedPath)
+    const bytes = await readFile(downloadedPath)
+    const { createHash } = await import('node:crypto')
+    expect(bytes.byteLength).toBe(metadata.bytes)
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(
+      metadata.sha256
+    )
+    await page.evaluate(async () => {
+      const { testRuntimeState } = await import('../src/testing/runtime-access')
+      testRuntimeState.get<{ dispose(): void }>('large-export-owner')?.dispose()
+      testRuntimeState.delete('large-export-owner')
+    })
+    // Closing the source page also releases its large render/document allocation.
+    await page.close()
+    const reopened = await context.newPage()
+    try {
+      await reopened.goto(createTestDocumentIdentity().url)
+      await waitForAppReady(reopened)
+      const reloadedDigest = await reopened.evaluate(async (url) => {
+        const { core, getActiveCollaborationHandle } =
+          await import('../src/testing/runtime-access')
+        await getActiveCollaborationHandle()?.disconnect()
+        core.load(await (await fetch(url + '/download')).json())
+        const json = new TextEncoder().encode(JSON.stringify(await core.save()))
+        return Array.from(
+          new Uint8Array(await crypto.subtle.digest('SHA-256', json))
+        )
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('')
+      }, fixtureURL)
+      expect(reloadedDigest).toBe(metadata.sha256)
+      await testInfo.attach('export-delivery-metrics', {
+        body: JSON.stringify(metadata),
+        contentType: 'application/json'
+      })
+    } finally {
+      await reopened.close()
+    }
+  } finally {
+    fixtureServer.closeAllConnections()
+    await new Promise<void>((resolve, reject) =>
+      fixtureServer.close((error) => (error ? reject(error) : resolve()))
+    )
+  }
+})

@@ -1,19 +1,1063 @@
 # Reusable Tool Composition - Staged Corrections
 
-Status: Stages 1 through 4 were delivered; the latest pushed source is
-`a873aa70f47f0903df5c37d453f7d07991301c5c`. Recorded-run corrections and their
-follow-up review remain local. Prior delivery and validation records below are
-historical evidence, not active execution instructions.
+Status: all five sequential corrections are locally implemented and verified.
+Baseline: `d483471e825133de14098517e73a1c9860a57be8`. Combined review and applicable
+integration gates and the authorized recorded acceptance are complete. Delivery is
+authorized; the source remains unpushed until the applicable delivery checks pass.
 
 ## Current authority and stop boundary
 
-Review and repair the recorded scope/activity handoffs under the latest
-**Scope and activity handoff review - 2026-10-17** card below. Verify local pass
-accumulation, concurrent activity, failure recovery and consistency of current
-spec/prompt/Inspector/consumer contracts. Preserve earlier local corrections.
-Do not run live 101, call models, push, create a PR, merge or resume monitoring.
-Do not start a new implementation stage. The isolated older trace-less browser
-navigation failure remains known and non-blocking, not claimed fixed.
+Execute **Recorded acceptance - five sequential corrections - 2026-10-17**.
+Complete Inspector admission before the first correction goal and production edits.
+Work on one problem and one existing owner segment at a time. Review and pass its
+upstream/downstream integration gates before advancing. Report together after all
+five corrections and their combined review; report genuine blockers when necessary.
+No model calls during deterministic review or mechanical checks. After the renewed
+review and its applicable integration gates pass, the user authorizes one recorded
+full Taipei 101 acceptance with the existing independent 15-minute hard deadline.
+The latest user request authorizes pushing this branch and opening a PR. Integrate
+the current target, review the accumulated branch and pass applicable local delivery
+checks before pushing. This does not authorize merging, restarting monitoring or
+another recorded acceptance. Preserve unrelated README/template/source-map changes.
+Historical authorizations below do not apply.
+
+## Recorded acceptance - five sequential corrections - 2026-10-17
+
+### Bounded planning contract and evidence
+
+Objective: make the recorded operation-to-result flow correct end to end, without
+larger limits, compatibility aliases, exceptional tool-name routing or another AI
+reviewer. Preserve tool-driven mechanical checks, primary-agent visual judgment,
+accumulated independent passes, canonical mutation/history, collaboration and
+actual durable acknowledgement. A model assertion never proves image suitability,
+visual correctness or storage success.
+
+Evidence root: `tmp/ai-recording/runs/reusable-tools-1792226401062/`.
+Use `tool-details.json`, the original `executions/` streams, `run.json`,
+`current-status-analysis.json`, `final-selected-references.json` and the saved
+`document.json.gz`. The actual exported document is 177,684,228 JSON bytes; the
+ordinary action endpoint admits 16 MiB. The browser completed the export before
+the parent tool aborted. The original failed receipt HTTP status/body was not
+retained: do not rewrite that uncertainty as a historically observed HTTP 400.
+The new integration proof must distinguish size rejection, connection loss and
+lost acknowledgement explicitly.
+
+Discovery is frozen to the five recorded failure classes, their existing owners,
+registered descriptors, direct consumers, current spec/Inspector and formal suites.
+Promote the necessary minimal sanitized input/output and event sequences into
+existing permanent recorded fixtures during implementation; do not rely on ignored
+local reports as the only regression oracle. Reuse the saved document for the
+large-data proof. Do not upload videos, diagnostic payloads or local-only harnesses.
+
+Current contract sources are `docs/ai/apps/asyra-design/specs/ai-execution-flow.md`,
+`ai-conversation-experience.md`, `design-preparation.md`, and
+`tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs`.
+Existing flow owners remain request, compose, prepare, apply, inspect, settle and
+observe. Before each future slice, amend the matching current spec and exact
+Inspector route, obtain supported admission, and write its Step Execution Card.
+This prose review is not Inspector admission or passing runtime evidence. Do not
+create a second registry, evidence authority, persistence queue or activity reducer.
+
+### Intended whole flow and dependency order
+
+Primary agent chooses a purpose and explicit source/check scope -> current registry
+admits the exact operation -> canonical owner executes once -> internal complete
+receipt feeds validity, history and dependency consumers -> typed external delivery
+returns bounded useful data -> the same review owner accumulates current judgments
+-> the existing completion owner confirms durable publication -> the existing
+activity reducer projects honest principal-task state throughout.
+
+Execute corrections in this order: (1) save/export settlement, (2) excessive output,
+(3) check-input/evidence handoff, (4) reference scope, (5) status projection.
+The order is intentional: output delivery consumes the settlement distinction;
+reference scope binds to the corrected check identities; status consumes final
+operation semantics. This is execution order, not permission to mix five problems
+in one implementation slice. Each correction may have several sequential existing
+owner slices, but the next problem stays closed until the current one passes.
+
+### Correction 1 - Separate persistence confirmation from document export
+
+**Owner and routes:** compose -> apply -> settle, with observe recording delivery.
+Core owns `Core.save()` serialization; it does not own durable document confirmation.
+Design's existing document session and `report_outcome` completion path own the
+captured publication target and its acknowledgement. Keep these owners unchanged.
+
+**Contract:** ordinary completion requests durable confirmation, not full document
+serialization. The advertised tool contract and discovery must distinguish export
+from persistence in purpose, output and effect. Remove the ambiguous raw-document
+AI route; do not retain an alias that silently changes its meaning. Preserve the
+public Framework serializer and explicit document export capability. Classify the
+other whole-document serialization capabilities by the same declared delivery
+semantics; do not leave a props/hierarchy serialization bypass or remove narrow
+query capabilities. An unavailable persistence confirmation must not be presented
+as durable completion merely because report_outcome returned normally.
+
+For an explicit export, use a browser-owned export artifact and local download
+consumer, built from the existing Core serializer and browser Blob/download
+facilities. Return typed metadata (artifact identity, document identity/revision,
+format, bytes, integrity information and availability), never the document body in
+a tool receipt. Bind the snapshot to the actual document generation using existing
+canonical snapshot/revision facilities; a changed generation cannot be labeled as
+the originally requested export. Do not add a second publication barrier. The export owner retains immutable bytes until download/release or
+its defined owner disposal; request cleanup must not invalidate an export already
+handed to the user. Failed creation publishes no usable artifact. Expired artifacts
+are reported unavailable; a later export is explicitly a new read of current state,
+not a silent reconstruction of the old revision. No model-selected filesystem path,
+base64 document text, universal artifact platform or second editable document store.
+Full-export JSON is not a recipe intermediate; current recipes/discovery must use
+the actual typed output and revision. Existing incompatible saved recipes become
+ineligible with a precise contract reason, not automatic migration or fallback.
+
+**Failure contract:** preserve execution settlement, delivery acknowledgement and
+durability separately. Validate bounded external receipts before POST. A healthy
+channel returns a recoverable delivery rejection with the exact batch/action and
+known settlement; a broken channel remains terminal with unacknowledged settlement
+explicitly unknown at that observer. Retain bounded safe HTTP status/code, byte
+counts, boundary and cancellation cause; do not capture entire error bodies or
+secrets. Never replay a completed mutation because receipt delivery failed. The persistence queue retries its original publication batch; pending durable
+confirmation retains its captured target while its document session is valid;
+reload resolves through the existing document recovery owner, not a stale-session
+receipt. Later edits cannot extend the original acknowledgement target.
+
+**Boundaries and proof:** current `basic-core-api-contracts.ts`, canonical registry
+exposure/results, `actions.ts` completion, `server-action-batch-provider.ts`,
+`action-batch-protocol.ts`, server `action-batch.ts` and existing document/export
+consumers; use profiler metadata only at its existing observation adapter. First
+reproduce the recorded oversized receipt against the real middleware with a
+controlled provider. Then prove real Core export, usable download integrity,
+unchanged endpoint limit, cancel-before/after execution, response loss, storage
+failure/retry, document replacement and save/reload equality. Preserve read-only
+history and confirm normal edits, Undo/Redo and collaboration still persist.
+Run the existing browser-provider/server-action-batch, basic API, runtime-input,
+conversation and document recovery integration suites. A mock serializer alone
+cannot close this correction; a generic abort without its first failure cannot pass.
+
+### Correction 2 - Separate complete owner results from model delivery
+
+**Owner and routes:** apply -> inspect consumes complete execution receipts;
+apply -> compose delivers the registered external view. Runtime validates each
+contract at its own boundary. Projection is after internal validity/dependency
+consumption, and before the transport whose budget it must satisfy.
+
+**Contract:** declare the delivery view at the authoritative tool registration,
+including its schema and lifecycle. Use the same declaration in direct, batch,
+native and composed invocation. Internal consumers still receive exact mutation
+IDs and status/settlement. The model receives counts, useful identifiers, actual
+failures and typed retrieval references where necessary. Do not teach the generic
+serializer field-name guesses, a list of tool-name exceptions or silent truncation.
+A composed successor that needs the original typed value must still receive it or
+an explicitly declared consumable handle, never an undocumented summary substitute.
+
+For large successful mapping results, consume the complete mutation scope before
+projecting the model receipt. Recoverable full evidence uses the existing retained
+receipt owner, exact request ownership and byte accounting. Retrieval must be
+bounded/paged where needed; a full-response option cannot force an oversized inline
+receipt. Partial/failed results preserve exact settlement and access to failure
+details, not success-shaped counts. If retention/publication fails after a write,
+return acknowledged execution plus delivery-unavailable, block missing-handle
+consumers and never replay. Historical receipt access cannot refresh stale edit
+authority. Borrowed and sibling leases survive another consumer's cleanup.
+If an internal dependency consumer is across the browser/host boundary, an opaque
+handle alone is insufficient: it must resolve through the existing admitted receipt
+reader in bounded pages under the same lease before declaring scope complete.
+Do not replace omitted IDs with an empty complete scope. Budget failure preserves
+unknown/unresolved inspection state. The changed transport must also admit its
+bounded failure envelope when the original result cannot be delivered.
+
+**Boundaries and proof:** `tool-contract.ts`, canonical result declarations,
+`basic-api-results.ts`, retained-context/structural delivery and
+`local-operation-tools.ts`; Runtime public contract files only if the existing
+shared declaration requires a delivery field, with its direct consumers updated.
+Replay the recorded 3,584/1,600-ID mapping results: prove exact internal invalidation
+and bounded model output with no full ID list, then retrieve the original evidence
+and verify equality. Cover empty, no-change, partial, failed, wrong-request, stale,
+cancelled, exhausted-budget and lost-publication outcomes. Use retained-fill,
+structural-delivery, local-operation-tools, composition and execution-flow suites;
+assert work/serialized-byte counts as well as values. Re-run correction 1's transport
+cases. Explicit full-schema refresh remains supported; do not infer a provider
+failure from a model-supplied refreshReason or introduce another definition cache.
+
+### Correction 3 - Deliver exact check-to-evidence bindings
+
+**Owner and routes:** inspect capture -> inspect judgment -> inspect-to-compose
+repair feedback; compose owns schema lookup. The primary agent chooses semantic
+criterion/unit and target region. Tools validate and bind that declared scope;
+they do not choose a semantic region, judge the image or approve a result.
+
+**Contract:** capture requests identify the intended check identities and canonical
+scope. The existing review owner returns an exact submission descriptor per check:
+request/check identity, requirement/check revisions, delivered inspection IDs,
+canonical dependencies and available verdict fields. Images and checks must not be
+two unrelated lists requiring the model to invent a join. Primary-agent input fills
+status/evidence after image delivery and references that binding; the owner verifies
+freshness again before recording. Whole-view and regional checks remain separate.
+Do not crop, narrow, combine or silently replace model-authored scope automatically.
+Scope redesign uses explicit supersession of the current revision and reason.
+
+Mixed invalid submissions remain atomic; return precise per-check errors and a
+correction route without erasing prior accepted results. Independent existing
+passes remain accumulated. A valid check can be submitted independently; missing
+or rejected checks stay pending and never satisfy final completion. Repeated same
+submission is idempotent. Relevant local changes invalidate only bound dependencies;
+unrelated changes, viewport pan/zoom and image retirement alone cannot erase valid
+judgments. Stale, foreign, cancelled or superseded binding inputs reject without
+changing stored results; recovery reacquires only affected evidence.
+
+Schema-fragment discovery must expose actual registered root paths per exact tool
+identity and return per-tool resolution/error information for mixed lookups. Preserve
+successful lookups and delivery tracking without silently serving full schemas or
+inventing `/properties` on a `oneOf` root. No heuristic JSON-pointer rewrite. This
+closes the second recorded input rejection at its compose owner before advancing.
+
+**Boundaries and proof:** `local-design-review.ts`, current check/evidence stores,
+`local-operation-tools.ts` lookup, their registered schemas/prompt and consumers.
+Use recorded crown overview-plus-detail input to prove the current gap, then actual
+capture -> primary-verdict submission -> local edit -> stale refusal -> targeted
+recapture -> final completion. Verify atomic failure, no unrelated recheck, retained
+pass revisions, cancellation, out-of-order responses and schema union paths.
+Use design-review-stages, local-operation-tools, execution-flow-proof and real
+browser inspection-evidence integration. No new model request and no unit-only
+closure; consume the corrected delivery views from corrections 1/2.
+
+### Correction 4 - Enforce explicitly declared reference usage
+
+**Owner and routes:** reference selection/import provides immutable source identity;
+inspect owns applicability and check dependencies. Primary AI supplies semantic
+purpose and region. Import/decode success is not source suitability, and mechanical
+pixel tools must never find the subject or choose an alignment implicitly.
+
+**Contract:** a selected source use specifies exact criterion/unit scope, original
+image region (explicit whole image is allowed), supported purpose and restrictions.
+Bind it to the immutable image digest and current requirement/use revision. A broad
+criterion is not permission to use an entrance photograph for every detail unit.
+Only explicit, current uses can support an adopted fact, reference-dependent
+preparation or comparison. Unrelated reference-free drawing need not wait. Unknown
+scope is pending; resolve it before the affected first use, not only at final review.
+
+Crop validity and pixel availability are deterministic checks. Subject identity,
+construction stage, viewpoint and sufficiency remain primary-agent judgments tied
+to the selected use. Report source pixel dimensions and effective region size;
+do not invent an occupancy threshold or equate metadata validity with visual
+quality. Explicit image comparison additionally requires the matching target
+inspection and declared comparison region/alignment; do not infer them from text.
+The plan does not promise deterministic detection of a false semantic assertion.
+
+Changing a source use invalidates its exact dependent facts/checks, including any
+actually shared whole-view judgment, not all criteria. Selection order, aliases,
+unchanged decisions and viewport changes do not invalidate evidence. Rejecting a
+source removes its eligibility; missing replacement leaves dependents unresolved,
+without clearing independent passes. Invalid updates are atomic. Reuse unchanged
+validated bytes/uses without repeated downloads or extra model checking.
+
+**Boundaries and proof:** `local-reference-decisions.ts`, `local-design-review.ts`,
+reference/image tools, check stores and exact input/discovery/prompt contracts.
+Replay final source decisions 1/3/5 without regions and require explicit uses;
+prove entrance-only applicability, legitimate whole-image use, unsupported broader
+use, out-of-bounds/wrong-revision/foreign evidence, source rejection/replacement,
+partial availability and cancellation. Integrate with correction 3's binding and
+local-pass tests and the real image adapter. Pixel metrics cannot be the visual
+quality oracle. Existing reference, image ownership and review suites must pass.
+
+#### Correction 4 execution card - inspect explicit source uses
+
+- Owner: `inspect`; source identities/decoded oriented dimensions remain image-owner inputs.
+- Replace criterion-wide reference decisions with `uses` containing a stable use ID,
+  exact criterion/optional declared unit, purpose (`visual`, `fact`, `preparation`,
+  `pixel-comparison`), explicit whole-image or pixel region and limitations.
+  The reference owner issues request-bound use revisions; consumers explicitly name
+  those receipts. No compatibility acceptance of criterionIds/sourceRegion decisions.
+- Visual bindings retain selected use receipts, source facts bind exact use receipts,
+  prepared checks consume only declared preparation receipts, and pixel comparison
+  requires a matching use and crop. Reference-free checks remain independent.
+- Changes invalidate exact use dependencies; unchanged uses retain revisions even if
+  another use of the same bytes changes. Rejection/removal and asynchronous changes
+  retire affected evidence only. Selection order does not alter eligibility.
+- Allowed files: current inspect boundary, direct schema/prompt consumers and formal
+  reference/review/preparation/image/operation integration suites. Add the reference
+  owner regression file to the same boundary. No image search/subject detection,
+  second evidence store, live AI, 101, push or monitor.
+- Tests: atomic missing/bad scope; exact whole/local permission; independently revised
+  uses; foreign/stale receipts; native binding and retained passes; source facts;
+  prepared admission/reuse; pixel pre/post async currency; existing owner integrations.
+- Self-review before implementation: scope is authored by primary AI, not inferred
+  from an image or criterion name. Mechanical acceptance proves bounds/identity only.
+  Every consumer validates before work and before publication after awaits. Reuse
+  stores exact receipts, not the entire selected-reference context. Missing evidence
+  is recoverable without redownload or replaying document writes.
+
+#### Correction 4 local closure
+
+Implemented explicit request-bound reference uses with independent revisions and
+original-pixel scope. Visual bindings, fact bindings, prepared review/apply admission
+and native-pixel comparison consume the same owner receipts. Unsupported or stale
+uses reject without replay or new image downloads. Selected aliases and explanation/
+ordering changes preserve eligibility. Fact bindings now invalidate exact check
+scopes rather than every unit of a criterion. There is no compatibility interpretation
+of old criterionIds/sourceRegion decisions and no extra model.
+
+Self-review caught and test-first corrected two additional direct handoffs: selected
+aliases initially resolved the first unselected index, and explanation-only changes
+initially advanced all use revisions. Both now retain immutable source/use identity.
+Shared facts retain independent unit support. A reference revoked after pixel work
+cannot publish a pass. Preparation for an unchanged crown use reuses its result
+while an entrance use change rejects the old entry at apply admission. Reference-free
+preparation no longer inherits the entire source-selection context.
+
+Evidence under `tmp/correction-4/`: `integration-verified.log` 497 tests; subsequent
+bounded final owner suite `final.log` 324 tests, plus `recorded-final.log` 10 reference
+owner/integration cases including all three recorded source declarations. Public
+provider integration passed with 177 tests and its one existing opt-in protocol skip
+(`downstream.log`; that run still had a separate new fixture failure, later fixed).
+`flow-final.log` 41 passing public-flow proofs. Actual browser handoff/recovery proof
+passed in 19.7s (`browser.log`); owned services exited. Server/flow TypeScript, focused
+lint (two pre-existing console warnings), naming and diff checks passed. Early red
+and migrated-fixture failures remain failed evidence, not green runs.
+Structural Inspector admission: 41 cases, digest
+`91a2bef34ef00e4fd9c15c63c1aa980cf022b21876bc0bae72f9315ebc0ae88a`.
+This is local/structural evidence, not a committed-source assessment. No 101, live
+model, remote action or monitoring. Correction 5 remains unstarted at this boundary.
+
+### Correction 5 - Stable, honest principal-task presentation
+
+**Owner and routes:** Runtime/provider report all actual lifecycle events; the
+existing Design activity reducer projects them; panel/history consume that projection.
+No second status controller, model status request or hidden execution queue.
+
+**Contract:** render the current authored principal purpose as the primary status.
+Keep operation execution state separate from retained task context, using a stable
+layout and an honest context indicator when no operation is executing. Do not
+replace that purpose with alternating tool labels or claim drawing while preparing,
+reading, exporting or waiting for a real persistence acknowledgement. Observed
+activity derives from actual effect/phase, not `execute_design_batch` alone. Mixed
+operations remain explicitly mixed; do not guess the current action from a label.
+
+All start/end events still update canonical state and diagnostic timing. Deduplicate
+presentation by purpose identity/revision and meaningful semantic state, not an
+arbitrary delay/minimum hold or a misleading retained running label. Context never
+claims execution. A rapid real state change may still be visible; the acceptance
+criterion is semantic continuity and truthfulness, not a fabricated maximum switch
+count. Failure, approval, stopping, saving and terminal outcomes surface immediately.
+Children remain diagnostic. Concurrent independent roots show shared live purpose
+or explicit multiple-work state; completing one cannot erase another or revive
+retired work. Missing purpose uses a truthful operation description, not invented
+specific work. Language behavior is unchanged.
+
+**Boundaries and proof:** `activity-state.ts`, provider activity normalization and
+registered effect metadata, conversation/panel projection and original tests.
+Replay every recorded status event; distinguish DOM transitions from rendered
+frames. Test quick same-purpose roots, actual purpose changes, read/export batches,
+partial failure, save-only retry, concurrent roots with equal/different purposes,
+parent closure, late child events, cancellation, disconnect/reload and new requests.
+Use existing reducer, provider, conversation and 360/1280 browser fixtures. Inspect
+real screenshots/video from deterministic tests for wrapping, terminal visibility
+and context-vs-execution; no new live model run. Re-run the full corrected settlement
+and review flow to prove UI changes do not alter execution or persistence.
+
+### Correction 5 execution card - Principal purpose and observed execution
+
+- Owner: `settle`, consuming normalized provider activity and actual registered
+  browser-action effects; one existing activity reducer owns the projection.
+- Spec: purpose lifetime and principal-task presentation in ai-execution-flow.
+  Input: ordered call/request starts and ends, parent IDs, authored purpose and
+  actual dispatched action effects. Output: stable primary purpose, separate
+  truthful execution/context state, complete diagnostics and bounded history.
+- The provider may report an observed effect only at actual batch dispatch,
+  aggregating canonical registered action effects. Unknown effects remain unknown;
+  mixed effects remain mixed. Wrapper capability metadata cannot prove a write.
+  Child names/purposes remain diagnostic; their actual dispatch state may describe
+  what the principal invocation is doing without replacing its purpose.
+- The panel presents purpose first and secondary operation/context text separately.
+  Context explicitly says no App operation is executing. Lifecycle controls override
+  purpose immediately. History deduplicates authored identity/revision, not prose
+  alone; all starts/ends still reach the reducer. No timer or deferred event filter.
+- Contributors: current provider, Runtime activity transport validator, existing
+  reducer and panel. Forbidden: extra model, second controller, name-to-effect
+  exceptions, discarded diagnostic events, fabricated execution while idle.
+- Boundary: existing settle allowlist; provider.ts and its progress tests,
+  local-ai-provider.ts and tests, activity-state.ts, presentation tests, panel and
+  panel tests, existing conversation E2E and permanent recorded activity fixture.
+- Failure owner: settle. Preserve late-event rejection, independent roots, retry,
+  cancellation, approval, saving and terminal outcome rules; no mutations to
+  persistence, Factory, execution scheduling or review evidence owners.
+- Gates: recorded event replay; provider-to-projection dispatch proof; existing
+  presentation/conversation/panel/provider/transport tests; 360/1280 browser UI;
+  types, lint, naming and structural Inspector admission. Then the five-correction
+  deterministic producer-consumer flow with durable reload and history checks.
+- Stop on a missing upstream effect contract, lost causal identity, unrelated owner
+  regression or required integration failure. No 101, model, push or monitoring.
+- Self-review: transport data is optional because research/provider work has no App
+  batch; absence never implies mutation. No global state or new retained result
+  cache. Presentation fields derive from the same reducer state and event order.
+
+#### Correction 5 local owner verification
+
+The normalized transport carries actual dispatch effect only at the browser batch
+boundary. The existing projection aggregates that work under its principal purpose;
+unknown wrappers no longer claim writes. The panel puts purpose first and explicitly
+labels retained context. History uses authored identity/revision rather than prose.
+Self-review followed the real runtime-input contract enrichment (the generic Runtime
+wire description alone omits effects); the App supplies canonical flat contracts.
+No mutation, scheduling, evidence or persistence code was changed in this slice.
+
+Recorded replay covers all 1,063 complete provider activity inputs. The 13,979 old
+browser projection diagnostics omit input status/message and cannot honestly be
+reconstructed as complete inputs; 83 observed DOM transitions are not frame counts.
+New deterministic cases cover the missing effect metadata. Evidence in correction-5:
+159 browser-side integration tests, 182 provider tests with one existing opt-in
+protocol skip, 389 Runtime tests; original regressions were red. 360/1280 streamed
+browser tests passed (22.7s), with real context/inspection/wrapping screenshots viewed.
+Initial E2E failures were obsolete label-before-purpose assertions, updated throughout
+that same formal case; navigation, history, concurrency and completion oracles remain.
+Final combined gates and closure remain below, not implied by this owner result.
+
+### Combined verification card - Existing public handoff flow
+
+- Route: compose -> prepare -> apply -> inspect -> settle, verification only.
+- Extend the existing real-browser public review handoff case with canonical prepared
+  creation and explicit decoded source-use receipts, compact delivery, durable export
+  and reload. Existing local repair, stale/invalid binding, transport interruption,
+  cancellation and unrelated pass retention assertions remain in the same case.
+- Use the actual image/reference owner, preparation/compiler, registered host,
+  browser runtime/Factory and document session. Script only the primary agent's
+  choices/judgments; no extra model. Exercise Undo/Redo and peer delivery through the
+  existing complete aggregate/history and persistence cases on the same source.
+- Boundary: existing ai-inspection-evidence E2E file and Inspector direct test mapping;
+  no production edits unless a direct correction regression is first reproduced.
+- Gates: combined case, existing aggregate recovery variants and export/history
+  cases, current contract proof, changed package suites, type/lint/naming. Preserve
+  original failure evidence; no retries used as evidence of a root-cause fix.
+- Self-review: validation does not certify image semantics. Source scope and final
+  judgments are authored by the controlled primary-agent fixture. Passing byte and
+  dependency checks never replaces visual judgment or durable acknowledgement.
+
+### Combined review correction card - Preparation receipt identity
+
+The real-browser chain reproduced two identical checks returning reused=false.
+Canonical attachment capture issues a fresh receipt UUID on every read. Preparation
+included that transport receipt in its assessment cache/source identity, although
+geometry, basis, parent, source uses and request criteria were unchanged. This is a
+direct correction-4 reuse handoff, now reopened before further closure.
+
+- Owner: prepare and its existing operation-tool attachment adapter, with their formal tests.
+- The browser receipt also carries variable actionObservation diagnostics. Construct
+  the exact PreparedAttachment domain value at its consumer boundary; transport
+  timing/outcomes are not attachment content and must not enter semantic identity.
+- Semantic reuse includes actual attachment content, document session, recipe,
+  criteria and explicit reference uses; opaque receipt identity/global observation
+  revision are currency evidence, not geometry. Validate the newly captured receipt
+  before publication and retain it for apply admission. Invalid currency never
+  becomes a pass. New session, changed parent/basis/bounds/source invalidates reuse.
+- Preserve known same-source conflicts across equivalent receipt renewal. No new
+  cache/store and no semantic validation bypass; exact dependencies still validate.
+- Test first with fresh receipt UUIDs at each attachment read, then changed geometry,
+  new document session and unavailable currency. Existing preparation suite plus
+  the same real-browser combined case are the closure gates.
+- Stop on changed compiler/admission semantics or an unrelated owner requirement.
+  After this closes, migrate the existing regional-evidence fixture that still
+  sends the superseded unbound review shape; preserve its twelve drift/fault cases.
+
+The combined browser proof then correctly rejected completion because its added
+prepared root had no visual judgment. This is a fixture omission, not a product
+relaxation: declare and inspect that third target through the same public binding
+before final completion. Keep all independent Left/Right and failure oracles.
+The fresh-receipt and diagnostic-metadata regressions now pass (189 focused tests),
+and the browser reached final coverage after confirming reused=true. The next run
+must include the missing prepared-root visual obligation, not bypass coverage.
+The prepared fixture also omitted paint, so it had no visible content for snapshot
+extraction. Supply an explicit source fill for the visual fixture; no render or
+inspection fallback is introduced.
+
+### Combined correction closure and next card - Regional consumer binding
+
+Preparation receipt identity is closed locally: 189 owner/adapter tests, server
+TypeScript and the real public handoff browser case pass (19.7s). The latter proves
+current reference-use receipts through preparation, reuse, mechanical apply, bound
+visual checks, independent local repair, cancellation/transport recovery, compact
+export, durable completion and reload. No product coverage check was weakened.
+
+Next owner: inspect, only the existing regional inspection-evidence integration
+fixture and its existing test mapping. Full App test:ai exposed twelve cases using
+superseded unbound judgments. Migrate capture selections and consume next.arguments
+through the real binding owner; bind multi-image alignment explicitly. Preserve
+all twelve validation drift/fault oracles, atomic store comparisons, exact capture
+and validation work counts. Fault injection stays at judgment validation, after
+binding has completed. No production change or compatibility adapter is authorized
+for this fixture migration. Review the current inspect capture/judgment contract
+before editing; close this file before broader final gates.
+
+The regional consumer migration passes all 26 cases in its existing file, including
+all twelve drift/fault variants. Capture issues the descriptor; same-image judgments
+consume it; cross-region alignment explicitly binds its images. Final validation
+faults still execute at the original boundary and preserve exact prior stores and
+work-count assertions. No production code changed for this migration.
+
+### Final verifier packaging correction
+
+The supported isolated Inspector candidate failed before collecting any case: the
+proof imported the shared review-inputs test actor, outside the verifier's exact
+five-file source closure. Ordinary package tests passed but cannot substitute for
+this evidence. Keep the existing capture contract unchanged. Make the proof's
+controlled primary-agent binding actor self-contained inside its declared testFile;
+other ordinary suites retain their shared fixture. Boundary: execution-flow-proof
+only, plan evidence. No production or Inspector-engine changes. Re-run the isolated
+candidate, review/accept its exact local contract, then baseline, all declared exact
+negative violations and baseline recovery on one frozen source. Missing cases or
+infrastructure errors block closure. The actor calls the actual binding owner and
+never fabricates receipts or alters invalid-input outcomes.
+
+The isolated negative run then exposed a stale mutation selector: the old retained
+field projection was removed by correction 2. Update only that declared scenario
+to bypass current projectToolDelivery at the actual external boundary. The same
+structural/removal obligations remain; add the new registered-model-delivery case
+because it deliberately proves this shared boundary. No test assertion or product
+condition is changed. Require the exact three declared failures with all other
+cases passing, then re-admit and run every negative plus baseline recovery.
+
+### Fixed review and completion gate for every correction
+
+Before edits, read the exact current Inspector owner/route, amend its thin contract
+and product cases within this problem, and complete supported admission. Establish
+the goal for this correction only after the reviewed plan/admission is ready; do
+not recreate the superseded whole-project goal. Add the
+recorded regression before its production fix; show a real failure when asserting
+a reproduced bug. Do not label a preventive case as an observed regression.
+
+Before advancing, self-review the entire problem's diff and direct upstream/downstream
+contracts, not only new tests. Cover actual supported usage, empty/invalid inputs,
+versions and ownership, forbidden/impossible states at ingress, partial/unknown
+settlement, cancellation, duplicate/reordered messages, concurrent consumers,
+release/disposal, failure -> retry/reload, resource bounds, security, work counts,
+and consistency of registry, schemas, spec, prompt, Inspector and visible behavior.
+No compatibility aliases, guessed fallback, repeated source scans or duplicated
+canonical control. Explicitly justify bypasses and unchanged owners.
+
+Run affected existing suites plus real producer-consumer integration, lint, production
+types and naming for changed identifiers. Where writes or completion are involved,
+exercise ordinary edit -> Undo -> Redo, active-session completion, peer edits,
+compensation/resend and durable reload through current owners. Do not redesign
+Factory or persistence because a delivery test fails. Any current-diff regression
+or unresolved required handoff blocks advancement; fix it and repeat affected gates.
+A later finding reopens its owning correction before new work continues.
+
+After all five, run one deterministic whole-flow integration using the saved inputs:
+explicit reference use -> mechanical preparation with zero extra model calls ->
+apply -> compact delivery -> evidence binding -> primary-agent verdict -> local
+repair with unrelated passes retained -> durable completion -> export -> reload.
+Include controlled failure/recovery at each changed boundary and concurrent activity.
+Provider replies are controlled fixtures, not nondeterministic model tests. Run the
+changed packages' existing applicable full test suites and affected browser/history/
+collaboration suites once on the combined source; preserve declared opt-in semantics
+and report skips accurately. Compare measured bytes, canonical work, invalidation
+sets and status semantics; neither object count nor model wall time proves improvement.
+
+### Planning self-review and authorization outcome
+
+This review corrected the following potential gaps before implementation: bulk export needs
+an actual user consumer and lifetime beyond request cleanup; compaction must follow
+internal dependency consumption; partial receipts cannot lose settlement evidence;
+check binding cannot invent the AI's semantic scope; reference restrictions need
+per-use dependencies rather than criterion-wide approval; status stability cannot
+retain a completed execution label. A second producer-consumer pass also required bounded internal receipt resolution
+before declaring complete mutation scope, snapshot-generation binding for exports
+and honest unavailable durability even after normal completion-tool return. Kept
+atomic input rejection, precise source uncertainty, memory backpressure and existing
+history/persistence owners.
+
+Remaining evidence is deliberately implementation work: formal red/green regressions,
+real transport fault attribution, download integrity/lifetime, source-scope integration,
+combined browser behavior and Inspector same-source acceptance. No test/admission
+was run by this documentation-only task. The plan is reviewed for the bounded five
+problems, not a claim that implementation is complete or future defects impossible.
+The subsequent user instruction authorizes sequential implementation, subject to
+the current admission and stop boundary above.
+
+### Correction 1 execution card - delivery settlement
+
+Owner: apply-to-compose and apply-to-settle delivery, observe for failure metadata.
+Spec: AI execution flow / Document export and persistence delivery. Inspector:
+apply complete execution receipt and settle independent durability. Input is one
+actual browser batch receipt after execution; output is its admitted bounded
+receipt or explicit delivery failure with known settlement. No bypass enlarges
+transport limits. Browser execution/provider and secured exchange are allowed;
+model inference, Factory replay, diagnostic-driven writes and automatic retries
+are forbidden. Failure belongs to delivery, never retroactively to mutation.
+Files: existing action-batch protocol/endpoint/provider, batch-exchange and action-
+batch server with direct tests. Regression: a completed oversized receipt must
+reach the host as a recoverable delivery failure, without ending the drawing
+stream or replaying the batch. Existing transport limits and origin/token checks
+stay intact. Gate: actual middleware plus browser provider, cancellation/invalid/
+lost acknowledgement tests, types/lint/naming, then review before export slice.
+
+### Correction 1 execution card - explicit export owner
+
+The transport slice reproduced the failed HTTP exchange before implementation;
+36 original/focused browser-provider and actual middleware tests now pass, with
+server types and focused lint. Evidence: `tmp/correction-1/transport-{red,review}.log`.
+This is not closure of correction 1 or a historical HTTP-status claim.
+
+Owner: apply, explicit export and its browser consumer; compose exposes its exact
+current contract. Existing Framework serializers and publication owners stay intact.
+The browser-owned immutable export is deliberately an output artifact, not a query
+cache or editable document. Use one existing runtime-owned resource with explicit
+export/download/release operations and byte backpressure; user download requests
+are not proof the browser wrote a disk file. It survives request cleanup until
+explicit release/runtime disposal. No foreign request needs raw document bytes.
+Snapshot checks observe canonical publication/file-load changes and active document
+identity before/after async serialization/digest; reject races without publication.
+No parallel export mutation or new document queue. Cancellation leaves previously
+published exports intact; failed/new allocations free only their own output.
+Named files: new `src/ai/document-export.ts` and its formal tests, existing constants,
+basic catalogue, runtime-input/startup, prompt and direct browser consumers/tests.
+Inputs: explicit export, exact local artifact download/release; outputs: immutable
+metadata and honest availability. Budget exhaustion preserves already issued exports.
+Proof: old raw capabilities absent, no aliases, actual downloadable bytes/digest,
+request abort after completion, replacement, overlapping exports, resource cleanup,
+unsupported/expired references, real Core save/load and unchanged history.
+Before advancing: full owner integration, upstream receipt contract and registry
+validation, permission/disposal review, naming/types/lint and preserved persistence.
+
+### Correction 1 execution card - completion presentation
+
+The export slice passes real browser runtime invocation, actual browser download,
+SHA-256 comparison, unchanged history, durable checkpoint equality and fresh-page
+reload (`tmp/correction-1/export-browser.log`). Formal export lifecycle tests also
+cover cancellation, replacement, capacity, unavailable handles and independent
+cleanup/retry. One development-server reload interrupted a preliminary browser
+run; subsequent frozen-source verification passed. Large retained-file export
+proof remains required before correction closure.
+
+Owner: settle, from the existing document confirmation to the typed action result,
+conversation outcome and visible summary. The completion action may acknowledge
+finished drawing work while storage is unavailable; it must return an explicit
+partial settlement and the UI must show an authoritative unconfirmed-save message,
+not only the model-authored completion text. Local-only is explicit and makes no
+remote-storage claim. Unsupported outcomes do not request persistence. The
+Framework serializer, document publication queue, history and mechanical/visual
+acceptance are unchanged. A failed confirmation never replays the drawing; the
+existing persistence/recovery owner remains responsible for recovery.
+Files: `actions.ts`, `runtime-input.ts`, `presentation.ts`, prompt and their formal
+consumer suites; existing lifecycle/provider/persistence suites prove captured
+watermarks, cancellation, failure and publication order. Tests consume the actual
+completion action result through conversation/presentation, including a misleading
+model-authored saved message, local-only mode, success and abort. Recheck the
+current settle Inspector route before edits. No status-machine correction 5 work.
+
+### Correction 1 closure - reviewed local evidence
+
+Structural admission contains 40 cases, digest
+`915f30c408500c777b024acc3cc1fb79498d744510cc52b5f17327ec215d673c`.
+All 40 execution-flow cases pass; removing the delivery-size guard fails the exact
+new transport-to-validity case. This is a structural admission and executable
+case proof, not a committed-source assessment or remote delivery approval.
+
+The complete existing browser AI suite passes 606 tests. The server integration
+selection initially passed 349/350: the formal public-method inventory detected
+the three removed raw serializers had no disposition. Their current Framework
+ownership is now explicit, with no alias or widened runtime allowlist; all 18
+basic-contract cases then pass. Persistence/lifecycle/outbox regression suites
+pass 84 cases; browser/server type checks, focused lint and naming pass.
+The failed earlier run remains failed; the focused correction is recorded in
+`tmp/correction-1/classification-green.log` and `recovery-final.log`.
+
+Real browser runtime export/download, collaboration, nine structural/history
+transitions and durable fresh-page reload pass (2 cases, 59.1 seconds). The saved
+177,684,228-byte document separately exports, downloads with equal SHA-256, and
+reloads with equal canonical content (40.6 seconds). No live model or new drawing
+was used. The initial large-fixture DevTools transfer failed before product proof;
+the formal fixture now streams through a tracked local HTTP server instead of
+sending a huge browser-control message. No product capacity or timeout was raised.
+
+Final review checked permissions, exact tool exposure, actual download consumption,
+request/runtime lifetimes, replacement/cancellation, independent disposal failure,
+capacity backpressure, partial outcome presentation and missing mutation coverage.
+Runtime saved dependencies already fingerprint complete contracts; removed methods
+and changed schemas cannot reload as silently compatible recipes. The existing
+document queue owns retry and captured durability; no second queue or history
+controller was introduced. Evidence is under `tmp/correction-1/`; local-only
+recordings, export payloads and unrelated changes remain excluded from delivery.
+
+### Correction 2 execution card - declared model delivery
+
+Owner: compose contract, then apply-to-compose result delivery (separate slices).
+Input is a registered complete result and its actual settlement. Output is a
+validated owner-authored model view, not a guessed serialization transformation.
+The common contract may declare `delivery: { path, outputSchema, receipt? }`: a JSON Pointer
+to a bounded view produced by the owner. Runtime preserves and fingerprints this
+metadata; it does not execute or infer product projection. Internal validation,
+mutation invalidation and recipe bindings consume the complete typed result first.
+Optional receipt metadata names its exact retained-evidence path and publisher
+adapter without altering the value schema or recipe assignability. The native
+host projects only at the external model boundary after ownership
+transfer. Direct, batch and library invocation share that boundary. Missing or
+invalid declared delivery becomes a delivery failure without replay or changed
+execution settlement. Undeclared results keep their existing current contract.
+
+First implement/prove the immutable portable declaration in Runtime tool-contract
+and its formal tests. Then admit the App owner slice: fill/structural result
+publication through existing retained-context, bounded receipt readback, canonical
+internal dispatch and external projection. No model callback, second registry,
+new mutable document store, inferred field list or larger byte limit. A composed
+consumer keeps the complete successful result. Model `full` never overrides a
+registered bounded view; immutable evidence is read separately in bounded pages.
+
+Required proof: recorded 3584/1600-member results, exact internal changed IDs,
+small external views, recoverable full receipts and one write; retained ownership,
+stale/current distinction, partial/unknown/cancel/publication failure; existing
+structural and recipe handoffs; correction 1 receipt budget regression. No next
+problem before these gates and bounded full consumer review pass. Review confirms
+that summary lifetime follows the already-owned receipt and cannot authorize stale
+edits. A failure to publish the view cannot erase completed mutation evidence.
+
+### Correction 2 execution card - retained mapping and bounded readback
+
+Compose declaration passed 66 existing/new Runtime contract, persistence and recipe
+flow cases after six red regressions. No execution behavior changed in that slice.
+Next owner: apply-to-compose. Fill/structural owners produce full receipts plus a
+registered compact `modelResult`, retain original evidence once, and publish through
+the existing query ownership bridge. Existing inspection consumes full mutation
+scope. External delivery selects the declared view; composition retains canonical
+output. Delivery failures keep real settlement and remove unusable handles.
+
+Readback uses the existing snapshot receipt route, with explicit bounded JSON-text
+pages when the full immutable receipt exceeds the page budget. Page offsets refer
+to the stored serialization, never live document rows; concatenation reconstructs
+the exact receipt without repeating mutations or serializing every prior page.
+Small complete receipts remain complete; large replies advertise encoding, offset,
+next offset and total. Inputs cannot force a larger response. Byte accounting
+includes retained serialized evidence; request/lease checks precede all reads.
+
+Files: retained-fill-action, basic-api-actions/results, retained-design-context,
+context-action, local-query-artifacts, local-operation-tools, local-tool-invocation,
+local-tool-host and library controls, with their existing formal integration tests.
+Failure owner: the existing delivery/retention owner. No changes to canonical fill,
+Factory, collaboration or review validity semantics. Tests: actual action-to-host
+3584/1600 mappings, recipe successor full input, structural parity, exact paged
+readback, byte/call counts, partial/failed publication, cancellation and stale
+references; re-run transport budget plus selected host ownership suites. Stop this
+slice before correction 3 or any live inference/remote operation.
+
+### Correction 2 review iteration - resource and delivery boundaries
+
+Actual browser query -> fill -> batch -> later receipt read reproduced a missing
+retained resource: batch output annotations enumerated structural names rather than
+current registered receipt ownership. Derive success and partial resource paths from
+the same declaration used by publication. A separate library invocation proved that
+missing model delivery incorrectly kept outer success; preserve successful execution
+and mark only delivery partial, with no repeated mutation. Partial batch envelopes
+must project their acknowledged inner results too. No source-scope or history changes.
+
+The receipt readback test now counts actual `toJSON` invocations (one), not page
+iterations mislabeled as serialization work. Original bytes are immutable and pages
+remain recoverable after unrelated canonical changes without restoring edit authority.
+
+Correction 2 downstream review exposed the workflow decorator's fourth-argument
+inspection target set being bypassed by the new internal entry. Preserve that
+existing scope explicitly on the canonical internal call; do not change the formal
+apply/apply/check/check ordering oracle. Raw discovery corruption probes now intercept
+the actual internal entry. Obsolete synthetic structural fixtures must declare the
+current delivery contract rather than expect name-based compaction. The full
+existing operation and workflow suites remain closure gates.
+
+### Correction 2 local closure
+
+Canonical mapping/structural results now feed internal validation, exact inspection,
+recipe successors and resource export before registered model projection. Full mode
+cannot bypass that view. The existing context owner serializes immutable evidence
+once and serves bounded JSON-text pages. Native batches derive exported receipt paths
+from registered ownership; partial output and publication failure cannot leave usable
+false handles. The library reports delivery failure separately from completed execution.
+No mutation is replayed. Shared canonical effects also cover the three export actions;
+this closes a correction 1 compact-descriptor consumer omission found by the existing
+all-tool-family admission suite. Its execution and browser download behavior is unchanged.
+
+Self-review covered direct/native/batch/library/recipe calls, scope preservation,
+partial/unknown/cancelled outcome, capacity/publication failure, caller and sibling
+ownership, stale readback versus edit authority, schema revisions, metadata freezing,
+resource fingerprints, serialization counts and bounded bytes. Existing workflow
+inspection-target aggregation is preserved through the internal invocation decorator.
+Synthetic tests now declare actual delivery instead of relying on removed name guesses;
+negative corruption probes still intercept the actual canonical owner call.
+
+Evidence (`tmp/correction-2/`): Runtime contract/store/recipe 69 passed;
+App AI suite 606 passed; delivery owner/host/library 193 passed;
+invocation/composition/query handoffs 123 passed; focused retention/structural/fill and
+host suites 89 passed before the final bounded failure cases; those added capacity and
+cancellation cases passed in failure-integration alongside export tests (that run's two
+old invocation spy failures were repaired and passed in the 123-case handoff run).
+Current formal flow 41 passed, including complete recorded-size mapping -> internal
+unverified scope -> compact view -> exact paged readback, plus the unchanged transport
+budget proof. Actual browser canonical mutation, registered/canonical structural
+references, Undo/Redo and fresh durable reload: 4 passed (1.0m). Owned ports cleaned.
+Production browser/server and flow-proof TypeScript passed; naming and diff checks
+passed; ESLint has zero errors and two pre-existing console warnings. Initial failed
+runs remain failed evidence, not reclassified. No live inference, 101 or remote action.
+Structural admission digest aa676a3672b0ef5b9fc0419d60754758baad51848f0205713cc11ca5e915b4d8
+covers 41 App cases; this is not a committed-source target assessment.
+
+### Correction 3 admission and execution cards
+
+Scope remains exact review/evidence handoff and exact schema discovery. First owner
+segment: compose. Per-tool schema fragment resolution returns either the requested
+fragments or an explicit unresolved entry containing exact identity/revision, failing
+paths and actual registered root/field paths. A failed entry does not mark that scope
+delivered; successful siblings retain normal reuse/recovery behavior. Invalid request
+shape still rejects before lookup. No pointer rewriting or full-schema fallback.
+Files: local-operation-tools, its existing tests, discovery clauses and the exact
+compose Inspector contract. Replay the saved mixed read_design_context / batch
+lookup of /properties. Preserve category/operation/native selectors and actual
+invocation output checks. Run existing discovery and flow tests, types/lint/naming.
+
+Second owner segment: inspect, only after compose review. Existing capture/review
+owners must bind explicitly requested criterion/unit identities to delivered images
+and exact current revisions/dependencies. Return a fillable submission descriptor;
+primary-agent semantic decisions remain separate. Validate bindings before recording,
+retain atomic mixed rejection and independent passes, and do not infer which crop
+represents a semantic unit. Plan the exact public input migration against current
+callers before edits; no duplicate evidence store or permissive old-schema fallback.
+Recorded crown overview/detail rejection is the formal scope oracle. Its failed
+mixed submission must not erase previously accepted independent judgments. Browser
+receipt validation remains the currency owner, including after async capture.
+
+Both segments require upstream/downstream integration and failure recovery before
+correction 4. No models, live 101, push or monitoring. Actual captured evidence:
+review rejection 2.577ms; mixed schema rejection 0.951ms. These are tool durations,
+not time saved or model inference measurements.
+
+### Correction 3 inspect contract refinement before implementation
+
+The compose segment passed all 176 existing operation-owner tests and server types/lint.
+Its failed fragments never advance delivered coverage; valid siblings remain available.
+
+Inspect execution card: explicit intent is supplied on each review capture as `checks`
+(criterion/unit and optional supersession). Existing-image reuse uses `bindChecks` on
+review_drawing. Both paths produce exact per-check submission descriptors after browser
+currency validation. No automatic matching by names, bounding boxes or ordering.
+A capture without a known plan uses the standalone inspect tool; it cannot approve work.
+Review capture requires declared criteria and exact identities before starting capture.
+
+Submission descriptors include a request-local authenticated binding of phase, check
+identity, intended image IDs, requirement/result revisions and exact evidence stamps.
+The existing review owner owns issuance/validation; no second image or result store.
+The primary agent fills verdict/evidence only. The tool rejects modified, foreign,
+stale and out-of-order bindings atomically before writes, and repeats validation after
+async evidence checks. Exact same verdict replay remains idempotent if its evidence
+is still current. Existing domain result storage and local dependency invalidation
+remain authoritative. The internal domain recording operation is not an externally
+invocable route: all tool submissions use the binding gate.
+
+On partial capture, preserve successful images and failed explicit targets, but do not
+issue a binding for an incomplete declared check. Recovery explicitly binds the complete
+required image set after retry; never silently shrink it. Binding does no image/model
+analysis. Native and composed invocations consume the same versioned public schema.
+Current public capture/verdict callers and formal fixtures migrate together; there is
+no old unbound submission fallback.
+
+Allowlist: local-design-review.ts, local-operation-tools.ts, their existing owner and
+flow-proof tests/fixtures, current prompt/spec/Inspector inspect contract. Tests cover
+recorded crown scope, explicit local capture to binding to verdict, exact replay,
+foreign/tampered/stale revision, mixed atomic rejection, partial capture, cancellation,
+local edit and unaffected retained passes. Existing broad owner/flow suites and real
+browser evidence integration are required before advancing to correction 4. No new
+schema/result store, model, live101, remote or monitoring action. Stop for a failed
+owner boundary or evidence contract, not by weakening freshness or scope checks.
+
+### Correction 3 integration review checkpoint
+
+Reviewed the new protocol against the existing domain recorder, native admission,
+common invoke and browser evidence owner. The domain recorder remains internal; no
+model submission bypasses the binding gate. Authenticating a descriptor uses an
+ephemeral request secret and existing evidence/results; no duplicate binding store
+or persisted compatibility format was added. Public tool revision is 7. Captured
+bindings are marked request-local and cannot become saved recipe literals.
+
+Existing domain/schema fixtures were migrated separately from scripted primary-agent
+integration fixtures. The latter perform the real public bindChecks call; they do not
+inject approvals or fabricate bindings. Previously failed logs remain failed. Three
+fixture migration runs exposed old unbound inputs, removed two-list expectations and
+new explicit evidence-validation call counts. Reviewed each against the contract,
+preserved its semantic assertions, and did not relax production admission.
+
+The latest saved run's crown input (1792226401062, calls 17/18/21) is now a permanent
+fixture with original identities/crops/statuses and English evidence placeholders;
+its prose is not the scope oracle. Invalid mixed binding leaves existing passes
+untouched; corrected local binding and targeted recapture preserve the viewpoint.
+Real browser public-host/evidence integration passed once (19.5s), including transport
+failure, cancellation after validation, viewport changes, canonical local mutation,
+recovery and independent pass retention. Playwright ports 3300/3401/4401 exited.
+This checkpoint is not correction-3 closure: final adversarial race/schema gates and
+bounded review remain before advancing. No fourth-correction work has started.
+
+### Correction 3 local closure - 2026-10-17
+
+Closed exact schema lookup and review evidence handoff on the existing compose/inspect
+owners. Public review revision 7 has mutually exclusive capture, explicit bindChecks,
+and bound-verdict modes in canonical and native schemas. Captures declare exact
+criterion/unit intent; reuse requires explicit binding. No unbound public verdict is
+accepted. Authenticated request-local descriptors carry exact source/check revisions;
+canonical currency is checked before issuance and again before recording. Captures
+with partial/reused images require explicit completion of the intended image set.
+Bindings cannot become persisted recipe literals; no second result/evidence store,
+AI reviewer, changed limits, automatic crop choice or compatibility route exists.
+
+Bounded review covered producer outputs, native/common invoke, preparation workflow,
+request resources, primary-agent fixtures, simultaneous verdicts, independent results,
+partial capture, cancellation, stale/foreign evidence and final settlement. Domain
+recording remains internal to the review owner; the public route uses bound validation
+and bound recording on both sides of async evidence checks. Same verdict replay is
+idempotent; a changed result rejects an older binding without overwriting the new one.
+
+Evidence in tmp/correction-3/: final-owners.log 315 passes (177 operation, 113 review,
+25 schema), composition-integration.log 66 passes, final-flow.log 41 passes including
+actual public binding and foreign-request rejection; final-consumers.log 263 passes
+with one existing protocol-executable opt-in skip. Provider execution is mocked;
+no live model was called. Earlier owner-integration.log also covers invocation and
+prompt contracts. browser-final.log passes the real public host/browser/canonical
+edit/recovery integration (18.7s); its three Playwright ports exited. Server/flow types,
+focused lint (one existing console warning), naming and diff whitespace pass.
+Structural Inspector load digest 52d6e7e7877ab10a841c38c6c3c6a7f2e4d2863bca979b86a4d262d01eadcb08
+with 41 cases. This is local admission/evidence, not a committed-source assessment.
+All failed migration logs remain failed and are not relabeled. No push, live101 or
+monitoring occurred. Correction 4 may now enter its own admission and goal.
+
+## Renewed combined review and conditional live acceptance - 2026-10-17
+
+Review the same five current corrections and their direct callers, consumers,
+existing suites and exact Inspector routes. The fixed review categories above
+remain the completion standard. This segment changes no production contract.
+The accepted mapping revision 96 and local same-source proof remain the starting
+point, not a substitute for source review. Inspect complete/internal versus
+projected/external results, exact binding freshness, reference use revisions,
+preparation semantic reuse, concurrent principal activity, export lifetime and
+durable completion/reload. Preserve acknowledged execution on failure; do not
+replay writes or broaden local invalidation.
+
+Validation: exercise the existing real-browser inspection integration file,
+including existing collaboration/history coverage and the combined public flow.
+Retain the prior full-package and nine-negative Inspector proof where source has
+not changed. Any concrete defect reopens its existing owner card, requires a
+formal failing regression and affected gates before proceeding. Do not advance
+based only on a new test or a successful live drawing.
+
+Only after this review is clear, run the existing local recording harness once
+with the original full prompt and unchanged App model. Verify the independent
+worker deadline and process ownership before submission; terminate at 900 seconds
+without confirmation. Preserve first/changed/final fit, successful final ten-second
+hold, original execution records, references, video and save/reload comparison.
+Separate measured provider-boundary elapsed time from tool execution and never
+claim provider gaps are all model reasoning. No object-count improvement claim.
+No remote operation or monitoring. Report any acceptance failure accurately.
+
+Renewed review result: no additional production defect found in the bounded five
+corrections or their direct handoffs. The entire existing inspection browser file
+completed with 12 passes and 2 original conditional skips (2.3 minutes), including
+the combined public flow and five aggregate recovery variants. Independent deadline
+and real remote recording tests: 4 passed. Evidence: tmp/correction-5/renewed-browser-review.log
+and renewed-deadline.log. Prior complete-package/source proof remains applicable;
+only this plan changed. The conditional single live acceptance may now begin.
+
+### Conditional recorded acceptance outcome
+
+Run `tmp/ai-recording/runs/reusable-tools-1792243244012` completed successfully:
+first visible content 75.972 s, authoritative UI completion 414.636 s; the independent
+900-second deadline disarmed at completion. All 13 streams complete, no extra
+review provider, no browser runtime errors. Durable sequence 577 acknowledged;
+a fresh browser reload matched the canonical saved document hash exactly. The
+recording and two actually selected reference images were retained and inspected.
+Detailed timings, inputs/outputs, reference use receipts and limitations are in
+that run's `analysis.md` and `references.md`.
+
+The later spire correction preserved base/tier visual passes without resubmission;
+coverage reached 6/6, final retained checks had no unresolved item. Preparation
+receipt reuse and full concurrency/failure interleavings remain deterministic-test
+claims, not newly exercised live claims. The run recovered an artifact-budget
+rejection and conflicting target arguments. The former still reports outer unknown
+settlement despite the preparation reason saying no writes; preserve this diagnostic
+limitation for a bounded follow-up, not a hidden compatibility change. Definition
+payloads still dominate measured tool text, and short principal operation/context
+transitions remain observable. The primary model selected the aerial source for
+whole-frame silhouette despite construction equipment; receipt validity does not
+certify image suitability. Do not label these limits as solved by a shorter run.
+
+No production edits occurred during or after acceptance. Temporary owned services
+were stopped, configuration preserved, and no push or monitoring occurred. The
+renewed conditional acceptance is finished; another live test requires direction.
+
+## Five-correction local completion - 2026-10-17
+
+All five current corrections are complete locally, in the authorized sequence.
+No additional model, live 101, remote operation or monitor was started. Runtime
+and App model configuration remain unchanged. Do not infer live model latency or
+new drawing quality from deterministic integration results.
+
+- Save/export: framework serialization is not a model save command. Existing
+  document durability settles independently; immutable browser-owned exports
+  deliver a download handle, preserve acknowledged writes on delivery failure,
+  and survive request cleanup until explicit release/runtime disposal.
+- Delivery: complete canonical results feed internal scope, lifecycle and recipes;
+  only declared external views reach the model. Retained readback uses existing
+  resource budgets and bounded pages; no larger HTTP limit or write replay.
+- Check bindings: explicit capture/check intent produces exact current descriptors;
+  primary judgments consume these bindings. Unrelated passes remain accumulated;
+  drift, malformed acknowledgements, cancellation and transport failure cannot
+  publish approval. Exact schema lookup preserves successful siblings on failure.
+- Reference uses: the primary agent declares criterion/unit, purpose and original
+  source region. Current use receipts reach preparation, visual/fact judgments and
+  pixel checks. Tools validate those declarations and bytes, not subject suitability.
+  Preparation now excludes renewed receipt/profiling metadata from semantic reuse
+  while validating each current receipt before apply.
+- Status: current principal purpose remains primary; actual canonical dispatch
+  effects describe execution underneath it. Retained context is explicitly distinct
+  from running operations. Ordered event/history evidence is retained without
+  promoting descendant wording or treating wrapper execution as a canvas write.
+
+Combined review covered the changed source, registry and public definitions,
+internal/external receipts, artifact ownership/release, sparse judgment accumulation,
+local invalidation, cancellation/late replies, recovery and actual terminal storage.
+The existing browser path exercised public reference -> prepare/reuse -> apply ->
+bound visual judgment -> independent local repair -> export -> durable completion
+-> reload. Five aggregate history/recovery variants additionally exercised peer
+collaboration, Undo/Redo, basis changes, no-progress, cancellation and interruption.
+A separate immutable export/history case also passed. No Factory, collaboration or
+persistence production changes were required by these five corrections.
+
+Final evidence (under tmp/correction-5; original failures are retained):
+
+- Runtime complete suite: 389 passed across 30 files (runtime.log).
+- Design AI: 609 passed across 50 files (all-ai-final.log).
+- Design server: 1,289 passed; two opt-in skips in the default run
+  (all-server-final.log). The saved large checkpoint case was then explicitly
+  enabled and passed: 183,494,794 encoded bytes, exact checkpoint equality
+  (recorded-bootstrap-final.log). Only the unconfigured installed-native protocol
+  registration probe remains skipped; it is not evidence of model inference.
+- Design local: 159 Node tests and 624 Vitest cases passed (all-local-final.log).
+  Framework runtime boundary: 13 passed (runtime-boundary-final.log).
+- Browser: combined public handoff 1 passed (combined-browser-10.log), aggregate
+  recovery/export/history 6 passed (history-recovery-browser.log), and two streamed
+  status layouts passed earlier on unchanged presentation code (browser-final.log).
+  Actual status screenshots were inspected; temporary browser servers have exited.
+- Production server/browser types and flow-proof types passed. Lint: zero errors,
+  five existing console warnings; verifier packaging rechecked separately after
+  its test-only edit. Naming and diff whitespace checks passed.
+- Supported isolated Inspector: candidate 2f4d6a1d-6539-45e8-9a6f-5def87c68921,
+  accepted contract review af4eb4e6762e2f451ea397bf9f36d7272be7505fd08387c0f81573eff05847c9,
+  mapping revision 96. Same-source baseline, all nine exact negative scenarios and
+  baseline recovery passed for 41 obligations (inspector-proof-complete.log).
+  Frozen source ab14e7963904b46371977337a4db7399dfa2059346a5bee43ea5f1203d8d7edd.
+  This is local source proof, not a committed-head delivery/CI assessment.
+
+Initial failures identified obsolete unbound consumer fixtures, attachment receipt
+identity pollution, an incomplete/paint-free browser fixture, an uncaptured verifier
+helper and an obsolete negative mutation site. Each was resolved at its actual
+owner/fixture boundary without weakening coverage, currency, failure or work-count
+oracles. The old preparation document's blanket invalidation/mandatory checkpoint
+wording was synchronized to the current exact-dependency contract. There are no
+known unresolved required handoffs within these five corrections. Keep all changes
+local until a new explicit instruction; do not resume prior automation.
+
+## Historical execution evidence
+
+The records below retain their original dates, authorizations and outcomes. They
+must not override the current authority and stop boundary above.
 
 Historical Stage 2 delivery: exact lease protected remote e0d52ddef; its
 integrated main was 4e925488842807672ab36c86fb69a269bd2249f5. Actual-head candidate

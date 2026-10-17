@@ -28,6 +28,7 @@ import { createLocalQueryArtifacts } from './local-query-artifacts'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
+  projectToolDelivery,
   toolResultCount,
   toolResultObject,
   toolResultString,
@@ -79,23 +80,32 @@ import type {
   AiProviderInput,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
-/** Structural resources are exported equally from successful and partial batches. */
-const structuralActionResults = {
+/** Resource exports derive from the same registered receipt declarations as publication. */
+const actionResultResources = (actions: AiProviderInput['actions']) => ({
   type: 'array',
   items: {
     anyOf: [
-      toolResultObject({
-        actionId: toolResultString,
-        actionName: {
-          enum: basicApiContracts
-            .filter((contract) =>
-              ['grouped', 'ungrouped', 'moves', 'removed'].includes(
-                contract.result.kind
-              )
-            )
-            .map((contract) => contract.name)
-        },
-        result: toolResultObject({ retained: retainedElementSetSchema }, [])
+      ...actions.flatMap((action) => {
+        if (
+          !('delivery' in action) ||
+          action.delivery?.receipt?.owner !== 'design-context'
+        )
+          return []
+        const path = action.delivery.receipt.path
+          .slice(1)
+          .split('/')
+          .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
+        const result = path.reduceRight<unknown>(
+          (schema, field) => toolResultObject({ [field]: schema }, []),
+          retainedElementSetSchema
+        )
+        return [
+          toolResultObject({
+            actionId: toolResultString,
+            actionName: { const: action.name },
+            result
+          })
+        ]
       }),
       toolResultObject({
         actionId: toolResultString,
@@ -104,23 +114,19 @@ const structuralActionResults = {
       })
     ]
   }
-}
-const partialBatchResources = toolResultObject(
-  {
-    executionResult: toolResultObject(
-      { actionResults: structuralActionResults },
-      []
-    )
-  },
-  []
-)
-const batchToolSemantics = (outputSchema: unknown) => {
+})
+const partialResultResources = (results: unknown) =>
+  toolResultObject(
+    { executionResult: toolResultObject({ actionResults: results }, []) },
+    []
+  )
+const batchToolSemantics = (outputSchema: unknown, resources: unknown) => {
   const semantics = toolSemantics(outputSchema, 'mutation', ['document'])
   return {
     ...semantics,
     partialOutputSchema: {
       ...(semantics.partialOutputSchema as Record<string, unknown>),
-      ...partialBatchResources
+      ...partialResultResources(resources)
     }
   }
 }
@@ -185,6 +191,14 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
   )
   return {
     ...action,
+    ...(action.delivery
+      ? {
+          delivery: {
+            path: '/modelResult',
+            outputSchema: envelope(action.delivery.outputSchema)
+          }
+        }
+      : {}),
     ...(action.verification
       ? {
           verification: {
@@ -202,7 +216,7 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
           recoveryOutputSchema: envelope(action.recoveryOutputSchema)
         }),
     partialOutputSchema: {
-      ...partialBatchResources,
+      ...partialResultResources(actionResultResources([action])),
       anyOf: [
         embedAiToolSchema(
           semantics.partialOutputSchema as RuntimeJsonValue,
@@ -338,60 +352,6 @@ const requiresVisualReview = (name: string) => {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-// Canonical snapshots remain with their execution/history owner. Compact delivery
-// projects only declared structural results; unknown or uncertain data is intact.
-const compactStructuralResult = (
-  actionName: string,
-  result: unknown
-): unknown => {
-  const kind = getBasicApiContract(actionName)?.result.kind
-  if (
-    kind &&
-    ['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) &&
-    isRecord(result) &&
-    ['complete', 'no-change'].includes(String(result.status)) &&
-    !result.delivery &&
-    isRecord(result.retained) &&
-    isRecord(result.value)
-  ) {
-    const value = result.value
-    const count =
-      kind === 'removed' && Array.isArray(value.removed)
-        ? value.removed.length
-        : result.retained.total
-    const scope = isRecord(result.mutationScope)
-      ? result.mutationScope
-      : undefined
-    return {
-      ...result,
-      value: {
-        count,
-        ...(typeof value.groupId === 'string'
-          ? { groupId: value.groupId }
-          : {}),
-        ...(typeof value.elementId === 'string'
-          ? { elementId: value.elementId }
-          : {}),
-        ...(typeof value.removed === 'boolean'
-          ? { removed: value.removed }
-          : {})
-      },
-      ...(scope &&
-      Array.isArray(scope.elementIds) &&
-      Array.isArray(scope.removedElementIds)
-        ? {
-            mutationScope: {
-              complete: scope.complete,
-              elementCount: scope.elementIds.length,
-              removedElementCount: scope.removedElementIds.length
-            }
-          }
-        : {})
-    }
-  }
-  return result
-}
 
 // Paths address the registered schema, not an inferred argument shape. A partial
 // answer never becomes an alternate admission schema.
@@ -645,6 +605,7 @@ export const createLocalOperationTools = (
 ) => {
   const queryArtifacts = options.ownership
     ? createLocalQueryArtifacts({
+        actions,
         ownership: options.ownership,
         release: async (snapshotId) => {
           // The browser transaction finally owns cancellation cleanup, including
@@ -714,6 +675,7 @@ export const createLocalOperationTools = (
         action.name as never
       )
   )
+  const batchResultResources = actionResultResources(batchActions)
   const batchActionNames = new Set(batchActions.map((action) => action.name))
   // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
   const admittedApisByName = new Map(registered.map((api) => [api.name, api]))
@@ -968,6 +930,44 @@ export const createLocalOperationTools = (
     const requestedPaths = Array.isArray(args.schemaPaths)
       ? [...new Set(args.schemaPaths as string[])].sort()
       : []
+    if (coverage === 'partial') {
+      const issues = requestedPaths.flatMap((path) => {
+        try {
+          schemaValueAt(inputSchema, path)
+          return []
+        } catch (error) {
+          if (!(error instanceof LocalOperationPreparationError)) throw error
+          return [{ path, message: error.message }]
+        }
+      })
+      if (issues.length)
+        return {
+          ...reference,
+          definition: {
+            revision,
+            state: 'unavailable',
+            coverage: 'none',
+            requestedCoverage: 'partial',
+            availableInResponse: false,
+            nextAction: 'correct-schema-paths',
+            refresh
+          },
+          schemaResolution: {
+            status: 'unavailable',
+            issues,
+            rootPaths: isRecord(inputSchema)
+              ? Object.keys(inputSchema).map(
+                  (key) => '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+                )
+              : [],
+            inputFields: inputFieldPaths(inputSchema),
+            recover: {
+              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              arguments: { names: [identity], view: 'usage' }
+            }
+          }
+        }
+    }
     const deliveryKey = JSON.stringify([identity, coverage, requestedPaths])
     const previousRevision = returnedDefinitions.get(deliveryKey)
     let deliveryReason = 'initial'
@@ -1182,7 +1182,7 @@ export const createLocalOperationTools = (
     ? createPreparedDesignReview({
         results: checkResults,
         resolveRecipe: preparation.resolveRecipe,
-        context: () => designReview.preparationContext(),
+        context: (receipts) => designReview.preparationContext(receipts),
         resolveAttachment: async (parentId, signal) => {
           const result = await readAttachmentEvidence(
             AiActionNames.READ_DESIGN_ATTACHMENT,
@@ -1205,7 +1205,13 @@ export const createLocalOperationTools = (
             )
           )
             throw new Error('Canonical attachment evidence is incomplete.')
-          return result as unknown as PreparedAttachment
+          return {
+            workspaceId: result.workspaceId,
+            parentId: result.parentId,
+            basis: result.basis.map((point) => ({ x: point.x, y: point.y })),
+            ...(result.bounds === undefined ? {} : { bounds: result.bounds }),
+            evidence: stamp
+          } satisfies PreparedAttachment
         },
         attachmentCurrent: async (attachment, signal) =>
           (
@@ -1585,11 +1591,28 @@ export const createLocalOperationTools = (
           results: checkResults,
           inspection: (id) => inspectionImages.get(id),
           validate: (id, signal) => validateEvidence([id], signal, false),
-          reference: (index) => {
+          reference: (index, use, region) => {
             const identity = options.validateReferences?.([index])[0]
             const image = options.referenceImages?.([index])[0]
             if (!identity || !image)
               throw new Error('Reference image is unavailable.')
+            const resolved = designReview.resolveReferenceUse(
+              use,
+              'pixel-comparison'
+            )
+            if (
+              resolved.receipt.referenceId !== identity.referenceId ||
+              (resolved.region !== 'whole' &&
+                (region.x < resolved.region.x ||
+                  region.y < resolved.region.y ||
+                  region.x + region.width >
+                    resolved.region.x + resolved.region.width ||
+                  region.y + region.height >
+                    resolved.region.y + resolved.region.height))
+            )
+              throw new Error(
+                'Pixel comparison is outside the explicitly selected reference use.'
+              )
             return { referenceId: identity.referenceId, dataUrl: image.dataUrl }
           }
         })
@@ -1962,6 +1985,120 @@ export const createLocalOperationTools = (
   }
 
   const owner = {
+    projectModelResult(name: string, args: unknown, value: unknown): unknown {
+      if (!isRecord(value)) return value
+      if (isRecord(value.executionResult))
+        return {
+          ...value,
+          executionResult: owner.projectModelResult(
+            name,
+            args,
+            value.executionResult
+          )
+        }
+      if (!Array.isArray(value.actionResults)) return value
+      const batch = name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
+      const full = isRecord(args) && args.response === 'full'
+      const acknowledged = new Map<string, number>()
+      const entries = value.actionResults
+        .filter((entry) => {
+          if (
+            !batch ||
+            full ||
+            !isRecord(entry) ||
+            typeof entry.actionName !== 'string'
+          )
+            return true
+          const contract = getBasicApiContract(entry.actionName)
+          const item = entry.result
+          if (
+            !contract ||
+            !['write', 'delete'].includes(contract.effect) ||
+            !isRecord(item) ||
+            item.status !== 'complete' ||
+            item.value !== null ||
+            !isRecord(item.toolOutcome) ||
+            item.toolOutcome.status !== 'success' ||
+            item.toolOutcome.settlement !== 'completed' ||
+            Object.keys(item.toolOutcome).some(
+              (key) => !['status', 'settlement'].includes(key)
+            ) ||
+            !isRecord(item.mutationScope) ||
+            item.mutationScope.complete !== true ||
+            !Array.isArray(item.mutationScope.elementIds) ||
+            !Array.isArray(item.mutationScope.removedElementIds) ||
+            Object.keys(item.mutationScope).some(
+              (key) =>
+                !['complete', 'elementIds', 'removedElementIds'].includes(key)
+            ) ||
+            (item.application !== undefined &&
+              item.application !== 'not-reported') ||
+            Object.keys(item).some(
+              (key) =>
+                ![
+                  'status',
+                  'value',
+                  'application',
+                  'mutationScope',
+                  'toolOutcome'
+                ].includes(key)
+            )
+          )
+            return true
+          acknowledged.set(
+            entry.actionName,
+            (acknowledged.get(entry.actionName) ?? 0) + 1
+          )
+          return false
+        })
+        .map((entry) => {
+          if (!isRecord(entry) || typeof entry.actionName !== 'string')
+            return entry
+          const definition = registered.find(
+            (action) => action.name === entry.actionName
+          )
+          return {
+            ...entry,
+            result:
+              definition && 'delivery' in definition && definition.delivery
+                ? projectToolDelivery(definition, entry.result)
+                : entry.result
+          }
+        })
+      const { modelResult: _modelResult, ...source } = value
+      const projected = {
+        ...source,
+        actionResults: entries,
+        ...(acknowledged.size
+          ? {
+              batchSummary: {
+                ...(isRecord(value.batchSummary) ? value.batchSummary : {}),
+                acknowledgedActions: [...acknowledged].map(
+                  ([actionName, count]) => ({
+                    actionName,
+                    count,
+                    application: 'not-reported'
+                  })
+                )
+              }
+            }
+          : {})
+      }
+      return {
+        ...projected,
+        ...(value.toolOutcome
+          ? { toolOutcome: localToolOutcome(projected) }
+          : {})
+      }
+    },
+    callInternal(
+      name: string,
+      args: unknown,
+      signal: AbortSignal,
+      inspectionTargets?: Set<string>
+    ): Promise<string> {
+      return execute(name, args, signal, inspectionTargets, true)
+    },
     finishInspection,
     validateCompletion: async (signal?: AbortSignal): Promise<void> => {
       if (!designReview.isAccepted()) return
@@ -2088,7 +2225,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2177,14 +2314,15 @@ export const createLocalOperationTools = (
               ...batchToolSemantics(
                 toolResultObject(
                   {
-                    actionResults: structuralActionResults,
+                    actionResults: batchResultResources,
                     batchSummary: toolResultObject({
                       actionCount: toolResultCount
                     }),
                     checks: designCheckSummarySchema
                   },
                   ['actionResults', 'batchSummary']
-                )
+                ),
+                batchResultResources
               ),
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
@@ -2445,7 +2583,8 @@ export const createLocalOperationTools = (
       name: string,
       args: unknown,
       signal: AbortSignal,
-      inspectionTargets?: Set<string>
+      inspectionTargets?: Set<string>,
+      internal = false
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Backend operation cancelled')
       if (name === AiDesignToolIds.REPAIR_DESIGN_CHECKS) {
@@ -2938,7 +3077,9 @@ export const createLocalOperationTools = (
                     : {})
                 }
               )
-            const result = designReview.record(reviewArgs)
+            const result = candidate
+              ? designReview.recordBoundReview(reviewArgs)
+              : designReview.record(reviewArgs)
             if (Array.isArray(result.checks))
               result.checks = result.checks.filter(
                 (check) => !isRecord(check) || check.status !== 'pass'
@@ -2951,13 +3092,39 @@ export const createLocalOperationTools = (
           }
         }
         if (!candidate) return JSON.stringify(recordReview())
+        if (
+          [
+            reviewArgs.inspections,
+            reviewArgs.bindChecks,
+            reviewArgs.checks
+          ].filter((value) => value !== undefined).length !== 1
+        )
+          throw new LocalOperationPreparationError(
+            'Choose exactly one review operation: inspections, bindChecks or bound checks.'
+          )
         const targets = reviewArgs.inspections as
           | {
               elementId: string
               view?: 'overview' | 'detail'
               region?: unknown
+              checks: {
+                criterionId: string
+                unitId?: string
+                supersedes?: { revision: number; reason: string }
+              }[]
             }[]
           | undefined
+        const phase = reviewArgs.phase as 'structure' | 'visual'
+        if (targets?.length) designReview.validateCaptureChecks(phase, targets)
+        const selections = new Map<
+          string,
+          {
+            criterionId: string
+            unitId?: string
+            supersedes?: { revision: number; reason: string }
+            inspectionIds: string[]
+          }
+        >()
         const inspectionIds = reviewInspectionIds(reviewArgs)
         if (inspectionIds.length + (targets?.length ?? 0) > 24)
           throw new LocalOperationPreparationError(
@@ -2983,6 +3150,7 @@ export const createLocalOperationTools = (
             message
           })
         }
+        const hasReusedImages = inspectionIds.length > 0
         delete reviewArgs.inspections
         const capturedResults: AiBatchReceipt['actionResults'][number][] = []
         const failedInspections: {
@@ -3028,6 +3196,21 @@ export const createLocalOperationTools = (
             inspectionImages.has(id)
           ) {
             if (!inspectionIds.includes(id)) inspectionIds.push(id)
+            for (const check of target.checks) {
+              const key = JSON.stringify([check.criterionId, check.unitId])
+              const selected = selections.get(key)
+              if (selected) {
+                if (
+                  JSON.stringify(selected.supersedes) !==
+                  JSON.stringify(check.supersedes)
+                )
+                  throw new LocalOperationPreparationError(
+                    'Conflicting supersession declarations for one capture check.'
+                  )
+                if (!selected.inspectionIds.includes(id))
+                  selected.inspectionIds.push(id)
+              } else selections.set(key, { ...check, inspectionIds: [id] })
+            }
           } else {
             failedInspections.push({
               inspection: target,
@@ -3079,6 +3262,7 @@ export const createLocalOperationTools = (
               ...unavailableEvidence(),
               actionResults: capturedResults
             })
+          signal.throwIfAborted()
           return JSON.stringify({
             phase: reviewArgs.phase,
             accepted: false,
@@ -3087,15 +3271,33 @@ export const createLocalOperationTools = (
             actionResults: capturedResults,
             ...designReview.judgmentHandoff(
               inspectionIds,
-              reviewArgs.phase as 'structure' | 'visual'
+              reviewArgs.phase as 'structure' | 'visual',
+              hasReusedImages ? undefined : [...selections.values()]
             ),
             message:
               'Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.'
           })
         }
+        if (Array.isArray(reviewArgs.bindChecks)) {
+          if (!(await validateEvidence(inspectionIds, signal, false)))
+            return JSON.stringify(unavailableEvidence())
+          signal.throwIfAborted()
+          return JSON.stringify({
+            phase,
+            accepted: false,
+            inspectionIds,
+            ...designReview.judgmentHandoff(
+              inspectionIds,
+              phase,
+              reviewArgs.bindChecks as Parameters<
+                typeof designReview.bindReview
+              >[1]
+            )
+          })
+        }
         let candidateReview
         try {
-          candidateReview = designReview.validateReview(reviewArgs)
+          candidateReview = designReview.validateBoundReview(reviewArgs)
         } catch (error) {
           throw new LocalOperationPreparationError(
             error instanceof Error ? error.message : 'Invalid review evidence'
@@ -3227,91 +3429,31 @@ export const createLocalOperationTools = (
         )
       }
       const serializeReceipt = <T extends AiBatchReceipt>(value: T) => {
-        if (!batchMode)
-          return JSON.stringify({
-            ...value,
-            actionResults: value.actionResults.map((entry) => ({
-              ...entry,
-              result: compactStructuralResult(entry.actionName, entry.result)
-            }))
-          })
-        const { context: _context, ...result } = value
         const submittedIds = new Set(batchActions.map((action) => action.id))
-        const followupActionCount = result.actionResults.filter(
+        const followupActionCount = value.actionResults.filter(
           (entry) => !submittedIds.has(entry.actionId)
         ).length
-        const acknowledged = new Map<string, number>()
-        const projectedResults =
-          args.response === 'full'
-            ? result.actionResults
-            : result.actionResults.map((entry) => ({
-                ...entry,
-                result: compactStructuralResult(entry.actionName, entry.result)
-              }))
-        const actionResults = projectedResults.filter((entry) => {
-          if (args.response === 'full') return true
-          const contract = getBasicApiContract(entry.actionName)
-          const item = entry.result
-          if (
-            !contract ||
-            !['write', 'delete'].includes(contract.effect) ||
-            !isRecord(item) ||
-            item.status !== 'complete' ||
-            item.value !== null ||
-            !isRecord(item.toolOutcome) ||
-            item.toolOutcome.status !== 'success' ||
-            item.toolOutcome.settlement !== 'completed' ||
-            Object.keys(item.toolOutcome).some(
-              (key) => !['status', 'settlement'].includes(key)
-            ) ||
-            !isRecord(item.mutationScope) ||
-            item.mutationScope.complete !== true ||
-            !Array.isArray(item.mutationScope.elementIds) ||
-            !Array.isArray(item.mutationScope.removedElementIds) ||
-            Object.keys(item.mutationScope).some(
-              (key) =>
-                !['complete', 'elementIds', 'removedElementIds'].includes(key)
-            ) ||
-            (item.application !== undefined &&
-              item.application !== 'not-reported') ||
-            Object.keys(item).some(
-              (key) =>
-                ![
-                  'status',
-                  'value',
-                  'application',
-                  'mutationScope',
-                  'toolOutcome'
-                ].includes(key)
-            )
-          )
-            return true
-          acknowledged.set(
-            entry.actionName,
-            (acknowledged.get(entry.actionName) ?? 0) + 1
-          )
-          return false
-        })
-        return JSON.stringify({
-          ...result,
-          actionResults,
-          batchSummary: {
-            operationCount: (args.operations as unknown[]).length,
-            actionCount: batchActions.length,
-            ...(followupActionCount ? { followupActionCount } : {}),
-            ...(acknowledged.size
-              ? {
-                  acknowledgedActions: [...acknowledged].map(
-                    ([actionName, count]) => ({
-                      actionName,
-                      count,
-                      application: 'not-reported'
-                    })
-                  )
-                }
-              : {})
-          }
-        })
+        const { context: _context, ...rest } = value
+        const output = batchMode
+          ? {
+              ...rest,
+              batchSummary: {
+                operationCount: (args.operations as unknown[]).length,
+                actionCount: batchActions.length,
+                ...(followupActionCount ? { followupActionCount } : {})
+              }
+            }
+          : value
+        const projected = owner.projectModelResult(name, args, output)
+        if (!internal) return JSON.stringify(projected)
+        if (
+          !batchMode &&
+          definition &&
+          'delivery' in definition &&
+          definition.delivery
+        )
+          return JSON.stringify({ ...output, modelResult: projected })
+        return JSON.stringify(output)
       }
       const operationArguments = isRecord(args.arguments) ? args.arguments : {}
       if (name === AiActionNames.INSPECT_DRAWING) {
@@ -3677,6 +3819,7 @@ export const createLocalOperationTools = (
       return deliverReceipt(receipt)
     }
   }
+  const execute = owner.call.bind(owner)
   return owner
 }
 

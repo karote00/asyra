@@ -1,4 +1,3 @@
-import { wholeViewJudgments } from './fixtures/review-inputs'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
 import { invokeLocalTool } from '../local-tool-invocation'
@@ -838,19 +837,19 @@ it('applies and reviews ready batches while later requirements and geometry rema
     (entry: { actionName: string }) =>
       entry.actionName === AiActionNames.INSPECT_DRAWING
   ).result.inspectionId
+  const bound = await call('review_drawing', {
+    phase: 'visual',
+    bindChecks: [{ criterionId: 'first', inspectionIds: [inspection] }]
+  })
   expect(
     await call('review_drawing', {
-      phase: 'visual',
-      final: false,
-      ...wholeViewJudgments(
-        [inspection],
-        [
-          {
-            criterionId: 'first',
-            status: 'pass',
-            evidence: 'The retained first part is visible.'
-          }
-        ]
+      ...bound.next.arguments,
+      checks: bound.next.arguments.checks.map(
+        (check: Record<string, unknown>) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'The retained first part is visible.'
+        })
       )
     })
   ).toMatchObject({ accepted: false, final: false })

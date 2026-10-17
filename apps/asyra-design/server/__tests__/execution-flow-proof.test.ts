@@ -42,7 +42,63 @@ import type {
 import type { PreparedDesign } from '../../src/ai/prepared-design'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalDesignTools } from '../local-design-tools'
-import { createLocalOperationTools } from '../local-operation-tools'
+import { createLocalOperationTools as createOperationOwner } from '../local-operation-tools'
+import type { LocalToolOwner } from '../local-tool-invocation'
+// This declared proof file must remain self-contained in the isolated verifier.
+/** Primary-agent fixture: explicitly request a binding before submitting authored verdicts.
+ * No capture intent or verdict is inferred. Invalid/unavailable binding results are
+ * returned directly, preserving the owner's recovery path and original assertions.
+ */
+const withReviewBindingActor = <T extends LocalToolOwner>(owner: T): T => {
+  const call = owner.call.bind(owner)
+  owner.call = async (name, input, signal) => {
+    if (
+      name !== AiDesignToolIds.REVIEW_DRAWING ||
+      !input ||
+      typeof input !== 'object' ||
+      Array.isArray(input)
+    )
+      return call(name, input, signal)
+    const value = input as Record<string, unknown>
+    if (
+      value.inspections ||
+      !Array.isArray(value.checks) ||
+      !value.checks.length ||
+      value.checks.some(
+        (check) => !check || typeof check !== 'object' || check.binding
+      )
+    )
+      return call(name, input, signal)
+    const bindingText = await call(
+      name,
+      {
+        phase: value.phase,
+        bindChecks: value.checks.map(
+          ({ status: _status, evidence: _evidence, ...selection }) => selection
+        )
+      },
+      signal
+    )
+    const binding = JSON.parse(bindingText)
+    if (!binding.next?.arguments?.checks) return bindingText
+    return call(
+      name,
+      {
+        ...value,
+        checks: value.checks.map((check, index) => ({
+          ...check,
+          binding: binding.next.arguments.checks[index].binding
+        }))
+      },
+      signal
+    )
+  }
+  return owner
+}
+
+const createLocalOperationTools = (
+  ...args: Parameters<typeof createOperationOwner>
+) => withReviewBindingActor(createOperationOwner(...args))
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import type { AiConversationFeature } from '../../src/ai/conversation'
@@ -1194,7 +1250,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
       ]
     }).actions[0].arguments
   ).toMatchObject({ outcome: 'unsupported' })
-  expect(execute).toHaveBeenCalledTimes(5)
+  expect(execute).toHaveBeenCalledTimes(7)
 })
 
 it('execution proof retains partial progress when a successor makes no change', async () => {
@@ -1469,6 +1525,15 @@ it('execution proof hands a region identity set into one compact plural removal'
                 }
               : {
                   status: 'complete',
+                  modelResult: {
+                    status: 'complete',
+                    value: { count: ids.length },
+                    retained: {
+                      snapshotId: 'removal-receipt',
+                      leaseId: 'removal-lease',
+                      total: 0
+                    }
+                  },
                   retained: {
                     snapshotId: 'removal-receipt',
                     leaseId: 'removal-lease',
@@ -1488,7 +1553,15 @@ it('execution proof hands a region identity set into one compact plural removal'
     })
   )
   const tools = createLocalOperationTools(
-    JSON.parse(JSON.stringify([read, removal])),
+    JSON.parse(
+      JSON.stringify([
+        read,
+        {
+          ...removal,
+          delivery: { path: '/modelResult', outputSchema: { type: 'object' } }
+        }
+      ])
+    ),
     { modelActions: (value) => value, resolveBatch: (value) => value },
     execute
   )
@@ -1716,7 +1789,7 @@ it('execution proof routes separate evidence tools without canvas mutations', as
   })
   expect(selection).toMatchObject({
     referenceImageIndexes: [],
-    changed: true,
+    changed: false,
     review: { accepted: false, next: { tool: 'review_drawing' } }
   })
   expect(selection).not.toHaveProperty('facts')
@@ -1733,9 +1806,8 @@ it('execution proof routes separate evidence tools without canvas mutations', as
       {
         referenceId: 'reference:proof-0',
         status: 'rejected',
-        criterionIds: [],
-        reason: 'Construction image does not establish finished appearance',
-        limitations: []
+        uses: [],
+        reason: 'Construction image does not establish finished appearance'
       }
     ]
   })
@@ -1955,20 +2027,18 @@ it('execution proof composes capture and assessment without dropping unavailable
   const signal = new AbortController().signal
   const call = async (name: string, args: unknown) =>
     JSON.parse(await tools.call(name, args, signal))
-  const beforeCriteria = await call('review_drawing', {
-    phase: 'visual',
-    inspections: [{ elementId: 'drawing' }]
+  await expect(
+    call('review_drawing', {
+      phase: 'visual',
+      inspections: [{ elementId: 'drawing', checks: [{ criterionId: 'view' }] }]
+    })
+  ).rejects.toThrow(/criteria/)
+  expect(captures).toEqual([])
+  // Standalone inspection is still available before declaring semantic checks.
+  await call(AiActionNames.INSPECT_DRAWING, {
+    arguments: { elementId: 'drawing' }
   })
-  expect(beforeCriteria.next.tool).toBe('define_design_criteria')
-  expect(beforeCriteria.next.requiredInputs).toEqual([
-    'method',
-    'references',
-    'criteria',
-    'detailRequired'
-  ])
-  expect(beforeCriteria.inspectionIds).toHaveLength(1)
-  await call(beforeCriteria.next.tool, {
-    ...beforeCriteria.next.arguments,
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     method: 'Compare the requested drawing',
     references: [],
     criteria: reviewCriteria(['view']),
@@ -1983,11 +2053,15 @@ it('execution proof composes capture and assessment without dropping unavailable
   ]
   const detail = {
     elementId: 'detail',
+    checks: [{ criterionId: 'view' }],
     region: { x: 0, y: 0, width: 100, height: 100 }
   }
   const failed = await call('review_drawing', {
     phase: 'visual',
-    inspections: [{ elementId: 'drawing' }, detail]
+    inspections: [
+      { elementId: 'drawing', checks: [{ criterionId: 'view' }] },
+      detail
+    ]
   })
   expect(failed).toMatchObject({
     accepted: false,
@@ -1999,7 +2073,7 @@ it('execution proof composes capture and assessment without dropping unavailable
   )
   expect(failed.next).toMatchObject({
     tool: 'review_drawing',
-    requiredInputs: ['checks'],
+    requiredInputs: ['bindChecks'],
     arguments: {
       phase: 'visual',
       final: false,
@@ -2012,7 +2086,7 @@ it('execution proof composes capture and assessment without dropping unavailable
   const reviewed = await call('review_drawing', {
     phase: 'visual',
 
-    ...wholeViewJudgments(failed.inspectionIds, checks),
+    inspectionIds: failed.inspectionIds,
     inspections: [detail]
   })
   expect(reviewed.accepted).toBe(false)
@@ -2030,6 +2104,23 @@ it('execution proof composes capture and assessment without dropping unavailable
       ...wholeViewJudgments(reviewed.inspectionIds, checks)
     })
   ).toMatchObject({ accepted: true })
+  const binding = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    bindChecks: [{ criterionId: 'view', inspectionIds: reviewed.inspectionIds }]
+  })
+  const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    includePassed: true
+  })
+  const tampered = structuredClone(binding.next.arguments)
+  tampered.checks[0].binding.requestId = 'another-request'
+  tampered.checks[0].status = 'fail'
+  tampered.checks[0].evidence = 'Foreign verdict'
+  await expect(call(AiDesignToolIds.REVIEW_DRAWING, tampered)).rejects.toThrow(
+    /binding/
+  )
+  expect(
+    await call(AiDesignToolIds.READ_DESIGN_CHECKS, { includePassed: true })
+  ).toEqual(retained)
   expect(captures).toEqual(['drawing', 'drawing', 'detail', 'detail'])
   expect(spawn.mock.calls.length).toBe(providerCallsBefore)
 })
@@ -2887,7 +2978,7 @@ it('execution proof consumes canonical mutation scope without read pollution or 
 
 it('execution proof delivers compact structural output without repeating canonical writes', async () => {
   const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
-  const { basicApiResultSchema } =
+  const { basicApiResultSchema, basicApiDeliverySchema } =
     await import('../../src/ai/basic-api-results')
   const { toolSemantics } = await import('../../src/ai/tool-contract')
   const ids = Array.from({ length: 300 }, (_, index) => `child-${index}`)
@@ -2903,6 +2994,20 @@ it('execution proof delivers compact structural output without repeating canonic
   }
   const group = vi.fn(() => ({
     ...full,
+    modelResult: {
+      status: 'complete',
+      value: { count: ids.length, groupId: 'group' },
+      mutationScope: {
+        complete: true,
+        elementCount: 0,
+        removedElementCount: 0
+      },
+      retained: {
+        snapshotId: 'browser-structural-snapshot',
+        leaseId: 'browser-structural-lease',
+        total: ids.length
+      }
+    },
     retained: {
       snapshotId: 'browser-structural-snapshot',
       leaseId: 'browser-structural-lease',
@@ -2915,6 +3020,10 @@ it('execution proof delivers compact structural output without repeating canonic
         ...toolSemantics(basicApiResultSchema(contract), 'mutation', [
           'document'
         ]),
+        delivery: {
+          path: '/modelResult',
+          outputSchema: basicApiDeliverySchema(contract)
+        },
         name: contract.name,
         description: contract.description,
         inputSchema: contract.inputSchema
@@ -2962,6 +3071,11 @@ it('execution proof retains deterministic regional image checks without model ev
   const references = createLocalImageTools({
     metadata: { imageAttachments: [{ dataUrl }] }
   })
+  await references.call(
+    'validate_reference_images',
+    { attachmentIndexes: [0] },
+    new AbortController().signal
+  )
   const results = createDesignCheckResults()
   let current = true
   const tools = createLocalOperationTools(
@@ -3000,6 +3114,40 @@ it('execution proof retains deterministic regional image checks without model ev
   )
   const call = async (name: string, args: unknown) =>
     JSON.parse(await tools.call(name, args, new AbortController().signal))
+  await call('define_design_criteria', {
+    phase: 'plan',
+    method: 'Compare explicit source',
+    references: [],
+    detailRequired: false,
+    criteria: {
+      surface: {
+        requirement: 'Exact surface',
+        description: 'Compare crop',
+        verification: 'visual',
+        requiredUnits: []
+      }
+    }
+  })
+  const selected = await call('select_design_references', {
+    referenceImageIndexes: [0],
+    requirementRevision: 1,
+    referenceDecisions: [
+      {
+        referenceId: references.validateReferences([0])[0].referenceId,
+        status: 'accepted',
+        reason: 'Explicit aligned source',
+        uses: [
+          {
+            id: 'surface',
+            criterionId: 'surface',
+            purpose: 'pixel-comparison',
+            region: 'whole',
+            limitations: []
+          }
+        ]
+      }
+    ]
+  })
   const before = spawn.mock.calls.length
   const captured = await call(AiActionNames.INSPECT_DRAWING, {
     arguments: {
@@ -3008,6 +3156,7 @@ it('execution proof retains deterministic regional image checks without model ev
     }
   })
   const input = {
+    referenceUse: selected.referenceDecisions[0].uses[0].receipt,
     checkId: 'local-color',
     inspectionId: captured.actionResults[0].result.inspectionId,
     referenceImageIndex: 0,
@@ -3026,7 +3175,9 @@ it('execution proof retains deterministic regional image checks without model ev
   })
   current = false
   const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
-  expect(retained.items).toEqual([
+  expect(
+    retained.items.filter((item: { origin: string }) => item.origin === 'tool')
+  ).toEqual([
     expect.objectContaining({
       id: 'image:local-color',
       status: 'stale',
@@ -4319,6 +4470,230 @@ it('execution proof retains many small query handoffs with structural recovery',
     ).toEqual(['window'])
   } finally {
     controller.abort()
+    store.dispose()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('execution proof preserves completed writes and unresolved coverage after bounded receipt delivery rejection', async () => {
+  const { createServer } = await import('node:http')
+  const { createActionBatchMiddleware } = await import('../action-batch')
+  const { createServerActionBatchProvider } =
+    await import('../../src/ai/server-action-batch-provider')
+  const { requireBatchSuccess } = await import('../batch-exchange')
+  let delivered: Record<string, unknown> | undefined
+  let final: AiActionBatch | undefined
+  let postedBytes = 0
+  const executed = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result: {
+        status: 'complete',
+        mutationScope: {
+          complete: true,
+          elementIds: ['group'],
+          removedElementIds: []
+        },
+        body: 'x'.repeat(17 * 1024 * 1024)
+      }
+    })),
+    context: {}
+  }))
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (_input, options) => {
+      if (!options.executeBatch) throw new Error('Missing browser dispatch')
+      const dispatch = options.executeBatch
+      const owner = createLocalOperationTools(
+        [AiActionNames.ORGANIZE_DESIGN, AiActionNames.INSPECT_DRAWING].map(
+          (name) => ({ name, description: name, inputSchema: {} })
+        ),
+        { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+        async (batch) => requireBatchSuccess(batch, await dispatch(batch), 1)
+      )
+      delivered = JSON.parse(
+        await owner.call(
+          AiActionNames.ORGANIZE_DESIGN,
+          { arguments: { operation: 'group', elementIds: ['a', 'b'] } },
+          options.signal ?? AbortSignal.abort()
+        )
+      )
+      final = owner.settleOutcome({
+        batchId: 'final',
+        actions: [
+          {
+            id: 'complete',
+            name: AiActionNames.REPORT_OUTCOME,
+            summary: 'Report completion',
+            arguments: { outcome: 'completed', message: 'Done' }
+          }
+        ]
+      })
+      return final
+    }
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => response.end())
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  if (!address || typeof address === 'string')
+    throw new Error('Missing loopback address')
+  const origin = `http://127.0.0.1:${address.port}`
+  const provider = createServerActionBatchProvider({
+    fetch: (async (url: RequestInfo | URL, init: RequestInit = {}) => {
+      if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
+        postedBytes = Buffer.byteLength(String(init.body))
+      return fetch(origin + String(url), {
+        ...init,
+        headers: { ...init.headers, origin }
+      })
+    }) as never
+  })
+  try {
+    await provider.requestActionBatch(
+      { intent: 'Group two objects', context: {}, actions: [], attempt: 1 },
+      { signal: AbortSignal.timeout(10000), executeBatch: executed }
+    )
+    expect(executed).toHaveBeenCalledOnce()
+    expect(postedBytes).toBeLessThan(4096)
+    expect(delivered).toMatchObject({
+      available: false,
+      code: 'ACTION_BATCH_RECEIPT_TOO_LARGE',
+      stage: 'delivery',
+      settlement: 'completed',
+      executionResult: { checks: { counts: { unverified: 1 } } }
+    })
+    expect((final?.actions[0].arguments as { outcome?: string })?.outcome).toBe(
+      'unsupported'
+    )
+  } finally {
+    provider.dispose()
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})
+
+it('execution proof consumes complete mapping scope before bounded delivery and exact retained readback', async () => {
+  vi.stubGlobal('window', {})
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { createRetainedDesignContext } =
+    await import('../../src/common-apis/retained-design-context')
+  const { createRetainedFillAction } =
+    await import('../../src/ai/retained-fill-action')
+  const ids = Array.from({ length: 3584 }, (_, index) => `window-${index}`)
+  const store = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => ids,
+      getElementChildren: () => {
+        throw new Error('Unexpected hierarchy scan')
+      },
+      getElementIdsInBounds: () => ids,
+      getElementMetadata: () => ({ type: 'vector', lock: false }),
+      getElementComputedData: () => ({ x: 50 })
+    },
+    () => () => undefined
+  )
+  const signal = new AbortController().signal
+  const update = vi.fn()
+  const action = createRetainedFillAction(store, {
+    metadata: () => ({ lock: false }),
+    targets: (members) =>
+      members.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
+    owners: () => ids,
+    update
+  })
+  const owner = createLocalOperationTools(
+    [createAiToolContract(action)],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    async (batch) => ({
+      context: null,
+      actionResults: await Promise.all(
+        batch.actions.map(async (call) => ({
+          actionId: call.id,
+          actionName: call.name,
+          result: JSON.parse(
+            JSON.stringify(
+              await action.execute(call.arguments as never, {
+                signal,
+                runMutation: async (write) => write()
+              })
+            )
+          )
+        }))
+      )
+    })
+  )
+  try {
+    const input = {
+      arguments: {
+        mappings: [
+          {
+            query: { scope: 'ids', elementIds: ids },
+            coordinateSpace: 'parent-local',
+            axis: 'x',
+            domain: [0, 100],
+            index: 0,
+            outside: 'clamp',
+            stops: [
+              { at: 0, color: '#000000' },
+              { at: 1, color: '#ffffff' }
+            ]
+          }
+        ]
+      },
+      inspection: 'defer'
+    }
+    const internal = JSON.parse(
+      await owner.callInternal(action.name, input, signal)
+    )
+    expect(internal.actionResults[0].result.mutationScope.elementIds).toEqual(
+      ids
+    )
+    expect(internal.checks.counts.unverified).toBe(ids.length)
+    const external = owner.projectModelResult(
+      action.name,
+      input,
+      internal
+    ) as typeof internal
+    expect(external.actionResults[0].result.mutationScope).toBeUndefined()
+    expect(Buffer.byteLength(JSON.stringify(external))).toBeLessThan(2500)
+    const retained = external.actionResults[0].result.retained
+    const parts: string[] = []
+    let offset: number | null = 0
+    do {
+      const read = store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: retained.snapshotId,
+          delivery: 'receipt',
+          offset
+        },
+        signal
+      )
+      expect('receiptPage' in read).toBe(true)
+      if (!('receiptPage' in read) || !read.receiptPage)
+        throw new Error('Missing receipt page')
+      expect(Buffer.byteLength(JSON.stringify(read))).toBeLessThan(66000)
+      parts.push(read.receiptPage.text)
+      offset = read.receiptPage.nextOffset
+    } while (offset !== null)
+    expect(JSON.parse(parts.join('')).mutationScope.elementIds).toEqual(ids)
+    expect(update).toHaveBeenCalledOnce()
+    store.releaseFor(signal)
+    expect(() =>
+      store.read(
+        {
+          scope: 'snapshot',
+          snapshotId: retained.snapshotId,
+          delivery: 'receipt'
+        },
+        signal
+      )
+    ).toThrow()
+    expect(update).toHaveBeenCalledOnce()
+  } finally {
     store.dispose()
     vi.unstubAllGlobals()
   }

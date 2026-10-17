@@ -400,7 +400,20 @@ it('preserves admission of every advertised evidence tool through native convers
           {
             criterionId: 'shape',
             status: 'pass',
-            evidence: 'Matches reference.'
+            evidence: 'Matches reference.',
+            binding: {
+              requestId: 'schema-only',
+              requirementRevision: 1,
+              checkRevision: 1,
+              signature: 'schema-only',
+              dependencies: [
+                {
+                  inspectionId: 'inspection',
+                  elementId: 'drawing',
+                  scope: 'overview:whole'
+                }
+              ]
+            }
           }
         ]
       )
@@ -440,18 +453,55 @@ it('preserves composed capture inputs and strict target validation through nativ
       criterionId: 'shape',
       status: 'pass',
       evidence: 'Current shape',
-      inspectionIds: ['overview']
+      inspectionIds: ['overview'],
+      binding: {
+        requestId: 'schema-only',
+        requirementRevision: 1,
+        checkRevision: 1,
+        signature: 'schema-only',
+        dependencies: [
+          {
+            inspectionId: 'overview',
+            elementId: 'drawing',
+            scope: 'overview:whole'
+          }
+        ]
+      }
     }
   ]
   const targets = [
-    { elementId: 'drawing' },
-    { elementId: 'detail', region: { x: -10, y: 5, width: 100, height: 100 } }
+    { elementId: 'drawing', checks: [{ criterionId: 'shape' }] },
+    {
+      elementId: 'detail',
+      checks: [{ criterionId: 'shape' }],
+      region: { x: -10, y: 5, width: 100, height: 100 }
+    }
   ]
   for (const phase of ['structure', 'visual']) {
     for (const [input, valid] of [
       [{ inspections: targets }, true],
       [{ inspectionIds: ['overview'], inspections: [targets[1]] }, true],
-      [{ inspectionIds: ['overview'] }, true],
+      [{ inspectionIds: ['overview'], checks }, true],
+      [
+        { bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }] },
+        true
+      ],
+      [{ inspections: targets, checks, inspectionIds: ['overview'] }, false],
+      [
+        {
+          bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }],
+          checks,
+          inspectionIds: ['overview']
+        },
+        false
+      ],
+      [
+        {
+          inspectionIds: ['overview'],
+          checks: checks.map(({ binding: _binding, ...check }) => check)
+        },
+        false
+      ],
       [{}, false],
       [{ inspections: [] }, false],
       [{ inspections: [{ elementId: '' }] }, false],
@@ -471,7 +521,7 @@ it('preserves composed capture inputs and strict target validation through nativ
     ] as const) {
       for (const schema of [tool.inputSchema, native])
         expect(
-          operationInputIssue({ phase, checks, ...input }, schema) === undefined
+          operationInputIssue({ phase, ...input }, schema) === undefined
         ).toBe(valid)
     }
   }

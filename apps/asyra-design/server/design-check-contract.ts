@@ -2,11 +2,10 @@ import type { createReferenceDecisions } from './local-reference-decisions'
 
 export interface DesignCheckContext {
   criteria: Record<string, { requirement: string }>
-  referenceImageIndexes?: number[]
   requirementRevision?: number
-  referenceDecisions?: ReturnType<
-    ReturnType<typeof createReferenceDecisions>['snapshot']
-  >
+  referenceUses?: ReturnType<
+    ReturnType<typeof createReferenceDecisions>['resolve']
+  >[]
 }
 export interface DesignCheckAssessment {
   suggestions?: string[]

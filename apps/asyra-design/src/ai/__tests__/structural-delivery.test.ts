@@ -37,6 +37,24 @@ interface ReceiptRead {
   current: boolean
 }
 
+const recoverReceipt = async (
+  read: (offset?: number) => Promise<unknown> | unknown
+): Promise<ReceiptRead> => {
+  let offset: number | undefined
+  const chunks: string[] = []
+  for (;;) {
+    const result = (await read(offset)) as ReceiptRead & {
+      receiptPage?: { text: string; nextOffset: number | null }
+    }
+    if (result.receipt) return result
+    if (!result.receiptPage) throw new Error('Missing bounded receipt page')
+    chunks.push(result.receiptPage.text)
+    if (result.receiptPage.nextOffset === null)
+      return { current: result.current, receipt: JSON.parse(chunks.join('')) }
+    offset = result.receiptPage.nextOffset
+  }
+}
+
 const fixture = (count = 1000, maxBytes?: number) => {
   const controller = new AbortController()
   const signal = controller.signal
@@ -176,14 +194,17 @@ it('hands ordered structural output to a plural edit without querying children o
     expect(app.children).not.toHaveBeenCalled()
     expect(app.metadata).not.toHaveBeenCalled()
     const reader = createDocumentContextAction(app.queries.read)
-    const full = (await reader.execute(
-      {
-        scope: 'snapshot',
-        snapshotId: result.retained.snapshotId,
-        delivery: 'receipt'
-      },
-      app.context
-    )) as ReceiptRead
+    const full = await recoverReceipt((offset) =>
+      reader.execute(
+        {
+          scope: 'snapshot',
+          snapshotId: result.retained.snapshotId,
+          delivery: 'receipt',
+          offset
+        },
+        app.context
+      )
+    )
     expect(full.receipt.value).toEqual(result.value)
     expect(full.current).toBe(true)
   } finally {
@@ -209,13 +230,16 @@ it('rejects references made stale while the consumer waits for mutation admissio
     ).rejects.toThrow(/stale/)
     expect(app.edit).not.toHaveBeenCalled()
     expect(app.group).toHaveBeenCalledOnce()
-    const full = app.queries.read(
-      {
-        scope: 'snapshot',
-        snapshotId: result.retained.snapshotId,
-        delivery: 'receipt'
-      },
-      app.context.signal
+    const full = await recoverReceipt((offset) =>
+      app.queries.read(
+        {
+          scope: 'snapshot',
+          snapshotId: result.retained.snapshotId,
+          delivery: 'receipt',
+          offset
+        },
+        app.context.signal
+      )
     )
     expect(full.current).toBe(false)
     expect(full.receipt.value.elementIds).toEqual(app.ids)
@@ -290,27 +314,30 @@ it('keeps model structural replies bounded while full receipts remain readable w
     const result = JSON.parse(text).actionResults[0].result
     expect(result.value.elementIds).toBeUndefined()
     expect(result.retained.total).toBe(4000)
-    const read = JSON.parse(
-      await tools.call(
-        'read_design_context',
-        {
-          arguments: {
-            scope: 'snapshot',
-            snapshotId: result.retained.snapshotId,
-            delivery: 'receipt'
-          }
-        },
-        app.context.signal
-      )
+    const read = await recoverReceipt(
+      async (offset) =>
+        JSON.parse(
+          await tools.call(
+            'read_design_context',
+            {
+              arguments: {
+                scope: 'snapshot',
+                snapshotId: result.retained.snapshotId,
+                delivery: 'receipt',
+                ...(offset === undefined ? {} : { offset })
+              }
+            },
+            app.context.signal
+          )
+        ).actionResults[0].result
     )
-    expect(read.actionResults[0].result.receipt.value.elementIds).toEqual(
-      app.ids
-    )
+    expect(read.receipt.value.elementIds).toEqual(app.ids)
     expect(app.group).toHaveBeenCalledOnce()
-    expect(calls).toEqual([
-      'api_hierarchy_groupElements',
-      'read_design_context'
-    ])
+    expect(calls[0]).toBe('api_hierarchy_groupElements')
+    expect(calls.slice(1).length).toBeGreaterThan(1)
+    expect(calls.slice(1).every((name) => name === 'read_design_context')).toBe(
+      true
+    )
   } finally {
     app.queries.dispose()
   }

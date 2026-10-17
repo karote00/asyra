@@ -1,4 +1,7 @@
 export const AiActionNames = Object.freeze({
+  EXPORT_DOCUMENT: 'export_document',
+  DOWNLOAD_DOCUMENT_EXPORT: 'download_document_export',
+  RELEASE_DOCUMENT_EXPORT: 'release_document_export',
   APPLY_PREPARED_DESIGN: 'apply_prepared_design',
   REVIEW_DESIGN: 'review_design',
   APPLY_PRESCRIBED_POSITIONS: 'apply_prescribed_positions',

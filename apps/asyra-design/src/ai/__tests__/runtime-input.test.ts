@@ -66,6 +66,27 @@ it('exposes the existing vector read, anchor and handle APIs without a dedicated
   expect(names).toContain('api_element_updateVectorAnchorPointHandlePosition')
 })
 
+it('exposes document export instead of raw serializers that can overflow tool delivery', async () => {
+  const input = createAiRuntimeInput({
+    permissionRules: {},
+    provider: {
+      requestActionBatch: async () => ({ batchId: 'empty', actions: [] })
+    }
+  })
+  try {
+    const names = input.actionDefinitions.map((action) => action.name)
+    expect(names).toContain('export_document')
+    expect(names).toContain('download_document_export')
+    expect(names).toContain('release_document_export')
+    expect(names).not.toContain('api_core_save')
+    expect(names).not.toContain('api_core_propsSaveData')
+    expect(names).not.toContain('api_core_sceneTreeSaveData')
+    expect(names).toContain('api_core_getElementData')
+  } finally {
+    for (const owner of input.ownedResources ?? []) await owner.dispose()
+  }
+})
+
 it('owns one shared inspection lifetime and disposes canonical subscriptions with the runtime', async () => {
   const { default: core } = await import('../../contexts')
   const { inspectionApis } = await import('../../common-apis/inspection')

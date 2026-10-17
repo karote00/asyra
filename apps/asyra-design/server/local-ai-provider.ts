@@ -1,3 +1,4 @@
+import type { ExecutionActivity } from '@asyra/ai-agent-runtime'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 import { createAiInvoker } from '@asyra/ai-agent-runtime'
@@ -328,6 +329,19 @@ const runLocalAiProvider = async (
   let host: ReturnType<typeof createLocalToolHost> | undefined
   const notificationCounts = new Map<string, number>()
   let libraryUnavailable = false
+  // Immutable request inventory; observed effects are published only at dispatch.
+  const actionEffects = new Map(
+    input.actions.map((action) => {
+      const effect = 'effect' in action ? action.effect : undefined
+      return [
+        action.name,
+        typeof effect === 'string' &&
+        ['read', 'prepare', 'mutation', 'external'].includes(effect)
+          ? (effect as ExecutionActivity['effect'])
+          : undefined
+      ] as const
+    })
+  )
   const buildGroups = (ownership?: LocalToolOwnership) => {
     const imageTools = createLocalImageTools(input, undefined, ownership)
     const references = createLocalReferenceTools(
@@ -359,17 +373,22 @@ const runLocalAiProvider = async (
             batch,
             async (batch) => {
               const parentCallId = callContext.getStore()?.id
+              const effects = new Set(
+                batch.actions.map((action) => actionEffects.get(action.name))
+              )
+              let effect: ExecutionActivity['effect']
+              if (effects.size && !effects.has(undefined))
+                effect = effects.size === 1 ? [...effects][0] : 'mixed'
               const activity = {
+                effect,
                 kind: 'system' as const,
                 callId: batch.batchId,
                 parentCallId,
                 sequence: 0,
-                phase: batch.actions.some(
-                  (action) =>
-                    action.name === AiActionNames.APPLY_PREPARED_DESIGN
-                )
-                  ? ('applying' as const)
-                  : ('executing' as const)
+                phase:
+                  effect === 'mutation'
+                    ? ('applying' as const)
+                    : ('executing' as const)
               }
               reportProgress({ tool: 'app-batch', status: 'running', activity })
               try {

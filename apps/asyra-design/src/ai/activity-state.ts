@@ -1,4 +1,7 @@
-import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
+import type {
+  ExecutionActivity,
+  AiRuntimeProgressUpdate
+} from '@asyra/ai-agent-runtime'
 import type { AiConversationOutcome } from './conversation'
 import { AiDesignToolIds } from '../constants/ai-design'
 import {
@@ -13,9 +16,8 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiDesignToolIds.DESCRIBE_DESIGN_APIS]: 'Finding available operations',
     [AiDesignToolIds.READ_DESIGN_CHECKS]: 'Reading unresolved checks',
     [AiDesignToolIds.CHECK_DRAWING_IMAGE]: 'Comparing image regions',
-    [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]:
-      'Preparing and adding the design',
-    [AiDesignToolIds.EXECUTE_DESIGN_BATCH]: 'Applying planned edits',
+    [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]: 'Running the planned task',
+    [AiDesignToolIds.EXECUTE_DESIGN_BATCH]: 'Running planned operations',
     [AiDesignToolIds.RETAIN_DESIGN_TARGETS]: 'Retaining edit targets',
     [AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS]: 'Releasing retained data',
     [AiDesignToolIds.SUBMIT_TOOL]: 'Validating a reusable operation',
@@ -132,6 +134,7 @@ interface ActivityPurpose {
 }
 
 interface ActiveCall {
+  readonly effect?: ExecutionActivity['effect']
   readonly executing: boolean
   readonly named: boolean
   readonly label: string
@@ -269,6 +272,31 @@ const publicOperationIds = (
     )
     .map(([id]) => id)
 
+const dispatchLabels = {
+  read: 'Reading data',
+  prepare: 'Preparing data',
+  mutation: 'Updating the canvas',
+  external: 'Running an external operation',
+  mixed: 'Running mixed operations'
+} as const
+
+/** Aggregate live dispatched work without promoting descendant names or purposes. */
+const principalOperationLabel = (
+  id: string,
+  calls: Readonly<Record<string, ActiveCall>>
+) => {
+  const descendants = Object.entries(calls).filter(([child]) =>
+    callAncestry(child, calls).includes(id)
+  )
+  const parents = new Set(descendants.map(([, call]) => call.parentCallId))
+  const leaves = descendants.filter(([child]) => !parents.has(child))
+  const effects = new Set(leaves.map(([, call]) => call.effect))
+  if (!effects.size || effects.has(undefined)) return calls[id].operationLabel
+  const effect = [...effects][0]
+  if (!effect) return calls[id].operationLabel
+  return effects.size > 1 ? dispatchLabels.mixed : dispatchLabels[effect]
+}
+
 const projectCallEntry = (
   calls: Readonly<Record<string, ActiveCall>>,
   fallback: ActivityEntry,
@@ -284,11 +312,14 @@ const projectCallEntry = (
   }
   const message =
     livePurpose(calls, visibleIds)?.message ?? stagePurpose ?? fallback.message
-  const descriptions = new Set(visible.map((call) => call.operationLabel))
+  const descriptions = new Set(
+    visibleIds.map((id) => principalOperationLabel(id, calls))
+  )
   let label = `${[...descriptions].join(' - ')} - ${visible.length} operations`
-  if (visible.length === 1) label = visible[0].operationLabel
+  if (visible.length === 1)
+    label = principalOperationLabel(visibleIds[0], calls)
   else if (descriptions.size === 1)
-    label = `${visible[0].operationLabel} - ${visible.length} operations`
+    label = `${[...descriptions][0]} - ${visible.length} operations`
   return { label, ...(message ? { message } : {}) }
 }
 
@@ -530,6 +561,7 @@ export const reduceAiActivity = (
       )
         operationLabel = ownerPhaseLabels[activity.phase]
       calls[activity.callId] = {
+        effect: activity.effect ?? previous?.effect,
         executing:
           previous?.executing ||
           (activity.phase
@@ -622,20 +654,61 @@ export const reduceAiActivity = (
   )
 }
 
+const activityMode = (
+  state: ActivityState
+): 'control' | 'operation' | 'context' => {
+  if (state.lifecycle !== 'running') return 'control'
+  return publicOperationIds(state.calls).length ? 'operation' : 'context'
+}
+
 /** Turn-owned state; appending one event does not replay previous progress. */
 export const createAiActivityProjection = (
   snapshot: AiActivityProjectionState = {}
 ) => {
   let state = initialActivityState(snapshot.purpose)
-  const history: { entry: ActivityEntry; lifecycle: ActivityLifecycle }[] = []
+  const history: {
+    entry: ActivityEntry
+    lifecycle: ActivityLifecycle
+    purposeKey?: string
+  }[] = []
+  const purposeKey = (value: ActivityState) => {
+    if (value.lifecycle !== 'running') return
+    const ids = publicOperationIds(value.calls)
+    const purpose =
+      livePurpose(
+        value.calls,
+        ids.length ? ids : publicOperationIds(value.calls, false)
+      ) ?? value.requestPurpose
+    return purpose
+      ? JSON.stringify([
+          value.attempt,
+          purpose.scope,
+          purpose.id,
+          purpose.revision
+        ])
+      : undefined
+  }
+  const sameSubject = (
+    previous: (typeof history)[number] | undefined,
+    entry: ActivityEntry,
+    key: string | undefined
+  ) =>
+    key || previous?.purposeKey
+      ? key === previous?.purposeKey
+      : sameActivitySubject(previous?.entry, entry)
   const append = (update: AiRuntimeProgressUpdate) => {
     const result = reduceAiActivity(state, { type: 'progress', update })
     state = result.state
+    const key = purposeKey(state)
     if (
-      result.decision.status === 'accepted' &&
-      !sameActivitySubject(history.at(-1)?.entry, state.entry)
+      result.decision.status !== 'rejected' &&
+      !sameSubject(history.at(-1), state.entry, key)
     )
-      history.push({ entry: state.entry, lifecycle: state.lifecycle })
+      history.push({
+        entry: state.entry,
+        lifecycle: state.lifecycle,
+        purposeKey: key
+      })
     return result.decision
   }
   const result = (overrides: AiActivityProjectionState = {}) => {
@@ -652,6 +725,7 @@ export const createAiActivityProjection = (
     let entries: ActivityEntry[] | undefined
     return {
       current,
+      mode: activityMode(projected),
       get entries() {
         if (!entries) {
           entries = history
@@ -666,7 +740,7 @@ export const createAiActivityProjection = (
             projected.lifecycle !== 'awaiting-answer' &&
             !sameActivity(entries.at(-1), current)
           ) {
-            if (sameActivitySubject(entries.at(-1), current))
+            if (sameSubject(history.at(-1), current, purposeKey(projected)))
               entries[entries.length - 1] = current
             else entries.push(current)
           }

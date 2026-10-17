@@ -24,11 +24,13 @@ import {
   localToolFailureReply,
   localToolErrorMessage,
   localToolResultSchema,
+  localToolOutcome,
   type LocalToolOwner,
   type LocalToolDefinition
 } from './local-tool-invocation'
 import { operationInputIssue } from './operation-input-schema'
 import type { LocalToolOwnership } from './local-tool-leases'
+import { projectToolDelivery } from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
 export interface LocalToolGroup {
@@ -139,7 +141,10 @@ export const createLocalToolHost = (options: {
         name,
         composition: source.composition ?? 'control-plane',
         execute: async (input, execution) => {
-          const reply = await invoke({ name, input, signal: execution.signal })
+          const reply = await invoke(
+            { name, input, signal: execution.signal },
+            true
+          )
           if (!reply.success)
             throw new Error(
               'Use host invocation to retain the full failure receipt'
@@ -179,7 +184,8 @@ export const createLocalToolHost = (options: {
       actor: context.getStore()?.actor,
       purpose: context.getStore()?.purpose,
       purposeSource: context.getStore()?.purposeSource
-    })
+    }),
+    (name, input, value) => project(name, input, value)
   )
   const controlGroup = {
     name: 'tool_library',
@@ -286,13 +292,38 @@ export const createLocalToolHost = (options: {
     void task.finally(() => active.delete(task)).catch(() => undefined)
     return task
   }
-  function invoke(call: AiInvocation): Promise<Reply> {
-    return track(() =>
-      native.invoke({
+  function project(name: string, input: unknown, value: unknown): unknown {
+    const binding = bindings.get(name)
+    if (!binding) return value
+    return binding.owner.projectModelResult
+      ? binding.owner.projectModelResult(binding.definition.name, input, value)
+      : projectToolDelivery(binding.definition, value)
+  }
+  function invoke(call: AiInvocation, internal = false): Promise<Reply> {
+    return track(async () => {
+      const reply = await native.invoke({
         ...call,
         signal: call.signal ?? options.signal
       })
-    )
+      if (internal) return reply
+      const original = JSON.parse(reply.text)
+      // Input/execution rejection has no successful owner view to project.
+      if (!reply.success && !original.actionResults && !original.execution)
+        return reply
+      const value = project(call.name, call.input, original)
+      if (value === original) return reply
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        return { ...reply, text: JSON.stringify(value) }
+      const projected = value as Record<string, unknown>
+      const outcome =
+        projected.toolOutcome && typeof projected.toolOutcome === 'object'
+          ? (projected.toolOutcome as { status: string })
+          : localToolOutcome(projected)
+      return {
+        success: reply.success && outcome.status === 'success',
+        text: JSON.stringify(projected)
+      }
+    })
   }
   return {
     groups,

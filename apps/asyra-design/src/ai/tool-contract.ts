@@ -1,4 +1,5 @@
 import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
   AiJsonValue,
@@ -174,6 +175,15 @@ const actionEffects: Record<
     effect: 'prepare',
     resources: ['request']
   },
+  [AiActionNames.EXPORT_DOCUMENT]: { effect: 'read', resources: ['document'] },
+  [AiActionNames.DOWNLOAD_DOCUMENT_EXPORT]: {
+    effect: 'external',
+    resources: ['document-export']
+  },
+  [AiActionNames.RELEASE_DOCUMENT_EXPORT]: {
+    effect: 'prepare',
+    resources: ['document-export']
+  },
   [AiActionNames.REPORT_OUTCOME]: { effect: 'prepare', resources: ['request'] },
   [AiActionNames.ARRANGE_DESIGN]: {
     effect: 'mutation',
@@ -226,4 +236,41 @@ export const actionToolSemantics = (name: string, outputSchema: unknown) => {
   const metadata = actionEffects[name]
   if (!metadata) throw new Error(`No declared action effects: ${name}`)
   return toolSemantics(outputSchema, metadata.effect, metadata.resources)
+}
+
+/** External delivery consumes an owner-authored view after complete internal handoff. */
+export const projectToolDelivery = (
+  contract: Pick<AiToolContractInput, 'delivery'>,
+  value: unknown
+): unknown => {
+  if (!contract.delivery) return value
+  let view: unknown = value
+  for (const token of contract.delivery.path.slice(1).split('/')) {
+    const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
+    view =
+      view && typeof view === 'object' && Object.hasOwn(view, key)
+        ? (view as Record<string, unknown>)[key]
+        : undefined
+  }
+  const issue =
+    view === undefined
+      ? 'Declared delivery view is unavailable.'
+      : operationInputIssue(view, contract.delivery.outputSchema)
+  const original =
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  const outcome = designActionOutcome(original.toolOutcome ?? original)
+  if (issue)
+    return {
+      available: false,
+      recoverable: true,
+      code: 'TOOL_DELIVERY_INVALID',
+      message: `${issue} Execution must not be replayed.`,
+      settlement: outcome.settlement,
+      toolOutcome: { status: 'partial', settlement: outcome.settlement }
+    }
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return view
+  return {
+    ...(view as Record<string, unknown>),
+    ...(original.toolOutcome ? { toolOutcome: original.toolOutcome } : {})
+  }
 }

@@ -32,6 +32,15 @@ export const localToolResultSchema = (reply: {
 /** All owners share the same invocation and failure policy. */
 export interface LocalToolOwner {
   call(name: string, args: unknown, signal: AbortSignal): Promise<string>
+  /** Internal recipes and validation consume canonical complete values. */
+  callInternal?(
+    name: string,
+    args: unknown,
+    signal: AbortSignal
+  ): Promise<string>
+  /** Pure external view after validity and ownership handoff. Never executes. */
+  projectModelResult?(name: string, args: unknown, value: unknown): unknown
+
   /** Control wrappers project the pinned selected contract for reference ownership. */
   invocationSchemas?(
     name: string,
@@ -252,7 +261,11 @@ export const invokeLocalTool = async (
     }
     stage = 'execution'
     reportPhase()
-    const text = await owner.call(definition.name, args, signal)
+    const text = await (owner.callInternal ?? owner.call)(
+      definition.name,
+      args,
+      signal
+    )
     signal.throwIfAborted()
     stage = 'decoding'
     reportPhase()

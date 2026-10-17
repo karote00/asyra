@@ -244,6 +244,13 @@ Multiple bindings currently require plural elementIds; other scalar arguments su
 as a hierarchy anchor use their ordinary explicit registered input. Target paths
 cannot invent a new registered slot or broaden the supported binding grammar.
 
+Prepared-check reuse depends on actual parent/workspace identity, basis, bounds,
+document session, recipe, declared criteria and explicit source uses. Fresh capture
+receipt IDs, global observation revisions and transport profiling are not semantic
+content. The operation adapter projects the canonical attachment domain value;
+each renewed receipt is still validated and retained for apply admission. Changed
+content/session or failed currency cannot inherit a pass.
+
 Preparation rejection reports the invalid source location. Duplicate semantic
 keys identify both conflicting locations. An explicit request-local draft repair
 may submit only replacement fields; the same preparation validation and budgets
@@ -278,11 +285,11 @@ does not prove visual acceptance.
 
 Registered return contracts preserve actual owner values. Ordered creation
 receipts distinguish successful IDs, failed entries, partial outcomes and empty
-input. Structural receipts identify changes; reads are observations only. Compact
-transport of successful declared moves/removed receipts keeps ordered identities
-and counts without canonical snapshots or old hierarchy locations. Explicit
-full response retains the original owner receipt. Unknown and unsuccessful
-results retain their diagnostic data; compacting never alters history evidence. Void
+input. Structural receipts identify changes; reads are observations only. Declared compact
+views preserve counts and typed retained evidence without copying original snapshots
+into model output. Internal results remain complete even for partial execution;
+registered model delivery applies at the final external boundary. Diagnostic details
+remain recoverable, and compacting never alters history evidence. Void
 acknowledgements and ambiguous false/null results must not certify a document
 change or a valid unchanged target. Failed receipts propagate to conversation
 settlement; mixed successful writes and failure are partial. Compact replies may
@@ -297,6 +304,20 @@ count only after successful canonical replacement; the basic selection/toggle
 routes use the same existence contract. Explicit clearing and generic Core/vector
 selection channels retain their own contracts. A corrected call and its Undo/Redo
 must remain usable after rejection.
+
+Exact schema-fragment lookup resolves each requested tool independently. An unresolved
+path returns that registered identity/revision, failed paths and real root/field paths;
+it neither rewrites the pointer nor consumes definition-delivery state. Successful
+siblings retain ordinary response/reuse tracking. Request-shape errors still reject
+before lookup. This is a discovery result, not permission to execute partial schemas.
+
+Registered owner-produced delivery views separate complete internal results from
+model output. Exact registered paths and schemas govern projection; no field-name
+heuristics or tool-name exception list may discard execution data. Internal
+mutation checks, resource transfer and recipe bindings consume complete typed
+values before model projection. Explicit full response cannot bypass a declared
+bounded view. Immutable historical receipts remain available through bounded
+readback; missing delivery cannot authorize a dependent operation or replay.
 
 Structural direct delivery retains group/ungroup child identities and acknowledged
 move identities in the existing request-owned context store. The immutable full
@@ -313,7 +334,12 @@ historical evidence and explicitly reports whether its targets are current. It
 cannot refresh stale target authority. Normal page/reference reads still require
 current data. Capacity/cancellation/publication failure after acknowledged writes
 preserves the receipt with an unavailable delivery diagnostic; successors cannot
-consume a missing handle. Unknown and failed owner results are not compacted.
+consume a missing handle. Failed execution without a declared view retains its original
+bounded failure envelope. Partial execution with retained evidence uses its declared
+view without losing settlement; projection failure is explicitly partial delivery.
+Large immutable receipts use bounded `receiptPage` JSON text, UTF-16 code-unit offsets,
+`total` text length and `nextOffset`; concatenating text reconstructs exact JSON.
+Serialization occurs once at retention, never once per page or from live rows.
 
 Preparation consumes validated parameters or existing immutable handles and
 returns prepared handles, concise findings and semantic target references.
@@ -371,6 +397,48 @@ Unknown or missing access is exclusive. The provider consumes this declaration;
 it does not maintain a list of parallel tool names. Internal access metadata is
 not exposed as a native tool schema field. A request owns one barrier queue and
 disposes it on Stop or settlement; no cross-request scheduling state is retained.
+
+## Document export and persistence delivery
+
+`Core.save()` produces a portable snapshot; it is not durable confirmation.
+Ordinary completion uses the existing captured document-publication target and
+reports durable, local-only or unavailable accurately. Later edits do not extend
+the target; disconnect, replacement, cancellation or storage failure cannot claim
+success. Retry never repeats already-applied edits.
+
+Explicit document export delivers a browser-owned immutable downloadable artifact
+and bounded metadata, not full document JSON in a tool receipt. Keep Framework
+serialization available locally; remove ambiguous raw serialization routes from
+AI discovery and recipes instead of preserving aliases. Artifact identity binds
+actual document generation/revision and integrity. Request cleanup cannot retire
+an export already handed to its user-facing download consumer; its owner releases
+it on explicit release or disposal. Expired or failed exports are unavailable,
+never silently regenerated as the old revision. `export_document` returns metadata;
+`download_document_export` requests a browser download of those exact retained bytes;
+`release_document_export` frees them explicitly. A download request is not proof of
+a completed disk write. The export owner's separate 256 MiB retained-byte budget
+admits the recorded 177,684,228-byte document while bounding ownership; this does
+not raise the 16 MiB receipt limit. Exhaustion rejects new exports without evicting
+issued exports. The metadata revision is a browser observation revision, not a
+backend durable watermark. Snapshot identity and canonical change observation
+reject in-flight document replacement or edits before artifact publication.
+
+Unavailable completion confirmation returns partial status while preserving the
+completed drawing. The conversation shows an authoritative unconfirmed-save
+message instead of model-authored claims of successful saving. Local-only mode
+also has an explicit local-only summary. Neither path offers drawing replay as a
+storage retry. The document persistence queue retries its original publication
+batch; pending confirmation keeps its captured watermark. A new confirmation after
+session recovery is a new read, not reuse of a stale disconnected receipt.
+
+Action execution, receipt delivery and document durability are distinct outcomes.
+A result exceeding the ordinary receipt budget is replaced by an explicit bounded
+delivery failure before transmission. Preserve known execution settlement and
+batch/action identity; missing output cannot authorize a successor. A healthy
+exchange accepts the failure and allows ordinary model recovery. Broken transport
+remains terminal with its original cause and acknowledgement uncertainty. No
+failed delivery replays mutations or implies rollback. Retain bounded status/code,
+byte count and failure boundary, not unbounded HTTP bodies or secrets.
 
 ## Evidence and completion
 
@@ -449,8 +517,8 @@ silently change verified dimensions.
 
 Identical fact, binding and reference submissions preserve accepted evidence.
 An unrelated new unbound fact does not invalidate the reviewed result. Changes
-to a bound fact or its binding identify affected criterion IDs; reference changes
-invalidate comparison; canonical drawing changes retain their separate generation
+to a bound fact or its binding identify exact affected criterion/unit checks; reference-use changes
+invalidate only their dependent checks; canonical drawing changes retain their separate generation
 checks. Unknown impacts and invalid source dependencies remain conservative.
 Fact receipts report acceptance/fresh-review state and current registered recovery
 instructions instead of leaving callers to infer what to do from a success flag.
@@ -470,7 +538,7 @@ assertion, not automatic truth certification or approval of rendered output.
 
 Use `record_design_facts` to record or retrieve these facts,
 or include them in the initial plan at first adoption. Bind reused facts to
-planned criteria and known canonical element IDs with factBindings. The review owner attaches bound fact IDs to
+exact planned criteria/units and known canonical element IDs with factBindings; image-backed bindings carry explicit fact-purpose referenceUses. The review owner attaches bound fact IDs to
 criterion checks without requiring callers to repeat the relationship; existing canonical inspection coverage
 validates the bound targets before a visual assessment. A binding is review
 metadata, never proof of geometry or a second model of the document.
@@ -1135,14 +1203,14 @@ Mechanical image admission retains original bytes and content identity. It does
 not establish suitability. `select_design_references` retains batched model
 assessments keyed by immutable reference identity and requirement revision.
 Pending and rejected references remain available for investigation but cannot
-enter accepted comparison. Restricted references carry criterion scope,
-limitations and optional original-image pixel regions; canvas inspection regions
+enter accepted comparison. Restricted references carry explicit criterion/unit uses, purpose,
+limitations and required original-image whole/region declarations; canvas inspection regions
 remain a separate coordinate space. The tool checks structure and identity, not
 visual truth, and never decides applicability from filenames or site rules.
 
 Facts are source-attributed assertions. Dependency freshness is separate from
 evidence assessment. Every cited image needs current applicable evidence for the
-bound criterion; one eligible citation cannot bless another ineligible source.
+bound criterion/unit and purpose; one eligible citation cannot bless another ineligible source.
 URL citations remain assertions. Selection and decision changes invalidate only
 affected evidence/review, while unchanged submissions preserve current review.
 Current source limitations travel into local corrections and primary-agent final
@@ -2164,5 +2232,41 @@ not filtered. Lifecycle control and completed-call removal remain immediate.
 Reference suitability and intended criterion roles are supplied by the primary
 agent, including limitations. Pixel processing requires caller-specified source
 regions and target evidence; tools do not infer alignment or subject purpose.
-Changing a selected reference invalidates dependent criteria only; unrelated
+Changing a selected reference use invalidates its exact dependent checks only; unrelated
 passes remain accumulated. Original bytes and decisions remain reusable.
+
+### Explicit visual judgment bindings
+
+review_drawing capture inputs declare criterion/unit checks on each target. Existing
+images are bound explicitly with bindChecks. The review owner returns per-check
+request-authenticated descriptors with requirement/result revisions and canonical
+image dependencies. The primary agent supplies status/evidence after seeing images;
+submission never infers or changes the declared scope. Tool submissions require
+current bindings and browser currency validation, with atomic mixed rejection and
+unchanged independent passes. Exact current replay is idempotent. Failed capture
+retains successful images but cannot issue a binding for an incomplete check.
+
+### Explicit reference uses
+
+Selected image suitability is a primary-agent assertion. Every accepted/restricted
+source declares uses with stable IDs, exact criterion/unit, purpose, original-pixel
+region (explicit whole is valid), and limitations. The request owner issues immutable
+identity/revision receipts. A criterion-wide decision is not regional permission.
+Visual judgment, fact adoption, preparation and pixel comparison consume explicit
+current receipts for their matching purpose. Reference-free work needs none.
+Only changed use dependencies become stale; selection order and unchanged uses do
+not invalidate independent passes. Missing, foreign or stale uses reject atomically.
+Pixel comparison also needs an explicitly corresponding target crop and alignment;
+source decode/bounds success never establishes semantic suitability. Asynchronous
+consumers revalidate before publication, preserving actual completed effects.
+
+### Principal-task presentation
+
+The current authored principal purpose is primary; operation state is secondary.
+When no App operation executes, retained prose is explicitly task context. Child
+names never replace the principal purpose. Actual dispatch effects come from the
+registered actions, not a wrapper tool name or declared capability alone. Unknown
+and mixed effects cannot be presented as drawing. Every ordered start/end remains
+observable. History distinguishes authored identities/revisions even when their
+text matches. Approval, failure, saving, stopping and terminal outcomes override
+work immediately. No time-based display hold or extra model call is permitted.

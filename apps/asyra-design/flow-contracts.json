@@ -401,6 +401,26 @@
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/retained-design-context.ts"
           ]
+        },
+        {
+          "id": "apply.bounded-receipt-delivery",
+          "stepId": "apply",
+          "testName": "execution proof preserves completed writes and unresolved coverage after bounded receipt delivery rejection",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/batch-exchange.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "apply.registered-model-delivery",
+          "stepId": "apply",
+          "testName": "execution proof consumes complete mapping scope before bounded delivery and exact retained readback",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/retained-fill-action.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -438,14 +458,18 @@
           "decision": "required",
           "caseIds": [
             "request.continuity",
-            "apply.region-removal"
+            "apply.region-removal",
+            "apply.bounded-receipt-delivery",
+            "apply.registered-model-delivery"
           ]
         },
         {
           "routeId": "apply-to-inspect",
           "decision": "required",
           "caseIds": [
-            "inspect.current-evidence"
+            "inspect.current-evidence",
+            "apply.bounded-receipt-delivery",
+            "apply.registered-model-delivery"
           ]
         },
         {
@@ -544,15 +568,16 @@
     },
     {
       "id": "omit-structural-handoff",
-      "title": "Bypass structural receipt projection",
+      "title": "Bypass declared model delivery",
       "expectedFailedCaseIds": [
         "apply.region-removal",
-        "apply.structural-delivery"
+        "apply.structural-delivery",
+        "apply.registered-model-delivery"
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
-        "from": "isRecord(result.retained) &&",
-        "to": "false &&"
+        "from": "? projectToolDelivery(definition, entry.result)",
+        "to": "? entry.result"
       }
     },
     {
@@ -601,6 +626,18 @@
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
         "from": "executionMode: 'immediate'",
         "to": "executionMode: 'queued'"
+      }
+    },
+    {
+      "id": "unbounded-receipt-delivery",
+      "title": "Bypass bounded receipt delivery",
+      "expectedFailedCaseIds": [
+        "apply.bounded-receipt-delivery"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+        "from": "if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body",
+        "to": "if (bytes >= 0) return body"
       }
     }
   ]

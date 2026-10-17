@@ -71,7 +71,12 @@ export const createLocalToolLibraryTools = (
   context: () => Pick<
     AiInvocation,
     'parentCallId' | 'actor' | 'purpose' | 'purposeSource'
-  > = () => ({})
+  > = () => ({}),
+  project: (name: string, input: unknown, value: unknown) => unknown = (
+    _name,
+    _input,
+    value
+  ) => value
 ) => {
   // Keep canonical local references rooted at the native tool schema after nesting.
   const { $defs, ...proposal } = aiRecipeInputSchema as Record<
@@ -155,6 +160,27 @@ export const createLocalToolLibraryTools = (
   ]
   return {
     definitions,
+    projectModelResult(name: string, input: unknown, value: unknown) {
+      if (
+        name !== AiDesignToolIds.INVOKE_TOOL ||
+        !record(input) ||
+        typeof input.name !== 'string' ||
+        !record(value) ||
+        !record(value.execution) ||
+        !Object.hasOwn(value.execution, 'value')
+      )
+        return value
+      const projected = project(input.name, input.input, value.execution.value)
+      return {
+        ...value,
+        execution: { ...value.execution, value: projected },
+        ...(record(projected) &&
+        record(projected.toolOutcome) &&
+        projected.toolOutcome.status !== 'success'
+          ? { toolOutcome: projected.toolOutcome }
+          : {})
+      }
+    },
     invocationSchemas(name: string, input: unknown) {
       if (
         name !== AiDesignToolIds.INVOKE_TOOL ||

@@ -915,3 +915,17 @@ it('keeps authored action activity identities distinct across batches reusing ac
     await runtime.dispose()
   }
 })
+
+it('admits only declared actual dispatch effects on activity transport', () => {
+  const activity = {
+    kind: 'system',
+    callId: 'batch',
+    sequence: 1,
+    phase: 'executing'
+  }
+  for (const effect of ['read', 'prepare', 'mutation', 'external', 'mixed'])
+    expect(isExecutionActivity({ ...activity, effect })).toBe(true)
+  expect(isExecutionActivity({ ...activity, effect: 'draw-anything' })).toBe(
+    false
+  )
+})

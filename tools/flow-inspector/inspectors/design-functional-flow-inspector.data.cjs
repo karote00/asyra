@@ -713,7 +713,8 @@ const data = {
       ],
       outputs: ['artifact:execute-agent-request-outcome'],
       conditions: [
-        'Keep dependent actions in the intended History group and expose actual completion or partial failure.'
+        'Keep dependent actions in the intended History group and expose actual completion or partial failure.',
+        'Explicit document export retains immutable downloadable bytes outside model receipts. Export does not confirm persistence or add history; completion reports durable, local-only and unavailable independently.'
       ],
       bypasses: [
         'Denied, cancelled, unsupported or failed execution does not report completed drawing.'
@@ -728,6 +729,8 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'apps/asyra-design/src/ai/document-export.ts',
+        'apps/asyra-design/src/ai/runtime-input.ts',
         'apps/asyra-design/src/features/ai-agent/index.ts',
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/transaction.ts',

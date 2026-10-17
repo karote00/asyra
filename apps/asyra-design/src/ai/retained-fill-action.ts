@@ -13,6 +13,7 @@ import {
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
 import core from '../contexts'
+import { retainedElementSetSchema } from './basic-api-contracts'
 import { documentContextSchema } from './context-action'
 import type { DesignContextQuery } from '../common-apis/design-context'
 import { fillApis, type FillPatch } from '../common-apis/fills'
@@ -34,6 +35,20 @@ const finite = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 const colorChannels = (color: string) =>
   [1, 3, 5].map((start) => parseInt(color.slice(start, start + 2), 16))
+
+const mappingModelSchema = toolResultObject(
+  {
+    status: toolResultStatus,
+    appliedCount: toolResultCount,
+    coordinateSpace: { const: 'parent-local' },
+    retained: retainedElementSetSchema,
+    delivery: toolResultObject({
+      status: { const: 'unavailable' },
+      message: { type: 'string' }
+    })
+  },
+  ['status', 'appliedCount', 'coordinateSpace']
+)
 
 /** Explicit finite interpolation only. Artistic choices remain in the caller's mapping. */
 export const createRetainedFillAction = (
@@ -57,10 +72,29 @@ export const createRetainedFillAction = (
       mutationScope: toolMutationScope,
       appliedCount: toolResultCount,
       snapshots: toolResultIds,
+      retained: retainedElementSetSchema,
+      modelResult: mappingModelSchema,
       coordinateSpace: { const: 'parent-local' }
     })
   ),
-  revision: 3,
+  partialOutputSchema: toolResultObject({
+    status: toolResultStatus,
+    mutationScope: toolMutationScope,
+    appliedCount: toolResultCount,
+    snapshots: toolResultIds,
+    coordinateSpace: { const: 'parent-local' },
+    modelResult: mappingModelSchema,
+    delivery: toolResultObject({
+      status: { const: 'unavailable' },
+      message: { type: 'string' }
+    })
+  }),
+  revision: 4,
+  delivery: {
+    path: '/modelResult',
+    outputSchema: mappingModelSchema,
+    receipt: { path: '/retained', owner: 'design-context' }
+  },
   composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
@@ -311,7 +345,7 @@ export const createRetainedFillAction = (
         })
         apis.update(updates)
         const affected = new Set(apis.owners([...sharedValues.keys()]))
-        return {
+        const receipt = {
           mutationScope: {
             complete: ids.every((id) => affected.has(id)),
             elementIds: [...affected],
@@ -323,6 +357,21 @@ export const createRetainedFillAction = (
             mapping.snapshotId ? [mapping.snapshotId] : []
           ),
           coordinateSpace: 'parent-local'
+        }
+        const summary = {
+          status: receipt.status,
+          appliedCount: receipt.appliedCount,
+          coordinateSpace: receipt.coordinateSpace
+        }
+        try {
+          const retained = queries.retainReceipt(ids, receipt, context.signal)
+          return { ...receipt, retained, modelResult: { ...summary, retained } }
+        } catch (error) {
+          const delivery = {
+            status: 'unavailable',
+            message: `${error instanceof Error ? error.message : 'Receipt retention failed.'} The write already settled; do not replay it.`
+          }
+          return { ...receipt, delivery, modelResult: { ...summary, delivery } }
         }
       })
     } catch (error) {

@@ -219,22 +219,9 @@ export const basicApiResultSchema = (
   }
   const required = Object.keys(fields)
   if (['grouped', 'ungrouped', 'moves', 'removed'].includes(kind)) {
-    const compactValue: Record<string, unknown> = {
-      count: { type: 'integer', minimum: 0 }
-    }
-    if (kind === 'grouped' || kind === 'ungrouped')
-      compactValue.groupId = toolDocumentReference
-    fields.value = { anyOf: [valueSchema, toolResultObject(compactValue)] }
-    fields.mutationScope = {
-      anyOf: [
-        toolMutationScope,
-        toolResultObject({
-          complete: { type: 'boolean' },
-          elementCount: { type: 'integer', minimum: 0 },
-          removedElementCount: { type: 'integer', minimum: 0 }
-        })
-      ]
-    }
+    fields.value = valueSchema
+    fields.mutationScope = toolMutationScope
+    fields.modelResult = basicApiDeliverySchema(contract)
     fields.retained = retainedElementSetSchema
     if (!partial) required.push('retained')
     if (partial) fields.value = true
@@ -244,4 +231,36 @@ export const basicApiResultSchema = (
     })
   }
   return toolResultObject(fields, required)
+}
+
+/** A model view never substitutes for a complete typed owner result. */
+export const basicApiDeliverySchema = (contract: BasicApiContract) => {
+  if (
+    !['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
+  )
+    return undefined
+  return toolResultObject(
+    {
+      status: toolResultStatus,
+      value: toolResultObject(
+        {
+          count: { type: 'integer', minimum: 0 },
+          groupId: toolDocumentReference,
+          removed: { type: 'boolean' }
+        },
+        ['count']
+      ),
+      mutationScope: toolResultObject({
+        complete: { type: 'boolean' },
+        elementCount: { type: 'integer', minimum: 0 },
+        removedElementCount: { type: 'integer', minimum: 0 }
+      }),
+      retained: retainedElementSetSchema,
+      delivery: toolResultObject({
+        status: { const: 'unavailable' },
+        message: { type: 'string' }
+      })
+    },
+    ['status', 'value', 'mutationScope']
+  )
 }

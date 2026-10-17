@@ -249,6 +249,22 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     typeof reported.result.message === 'string' &&
     reported.result.message.length <= 1000
   ) {
+    if (
+      reported.result.outcome === 'completed' &&
+      isPlainObject(reported.result.persistence)
+    ) {
+      const status = reported.result.persistence.status
+      if (status === 'unavailable' || status === 'local-only') {
+        return Object.freeze({
+          durationLabel: formatElapsedTime(turn.durationMs),
+          message:
+            status === 'unavailable'
+              ? 'Drawing work is complete, but saving could not be confirmed. Changes have been kept. Resolve document storage before closing; do not repeat the drawing.'
+              : 'Drawing work is complete locally. Durable document storage is not connected.',
+          outcome: turn.outcome
+        })
+      }
+    }
     let disposition = ''
     if (reported.result.outcome === 'unsupported') {
       disposition =

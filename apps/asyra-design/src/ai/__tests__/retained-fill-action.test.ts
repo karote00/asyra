@@ -67,7 +67,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(3)
+  expect(action.revision).toBe(4)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
@@ -441,3 +441,185 @@ it('exports the canonical shared-property owners for post-write mechanical check
   expect(owners).toHaveBeenCalledExactlyOnceWith(['fill-a', 'fill-b', 'fill-c'])
   expect(update).toHaveBeenCalledTimes(1)
 })
+
+// Recorded mapping receipts contained 3,584 and 1,600 affected identities.
+it.each([3584, 1600])(
+  'retains %i mapped identities internally and publishes a bounded model view',
+  async (count) => {
+    const ids = Array.from(
+      { length: count },
+      (_, index) => `recorded-window-${index}`
+    )
+    const queries = createRetainedDesignContext(
+      {
+        getCurrentWorkspaceId: () => 'workspace',
+        getSelectedElementIds: () => [],
+        getElementChildren: () => {
+          throw new Error('No subtree scan')
+        },
+        getElementIdsInBounds: () => ids,
+        getElementMetadata: () => ({ type: 'vector', lock: false }),
+        getElementComputedData: () => ({ x: 50 })
+      },
+      () => () => undefined
+    )
+    const signal = new AbortController().signal
+    const update = vi.fn()
+    const action = createAction(queries, {
+      metadata: () => ({ lock: false }),
+      targets,
+      update,
+      owners: () => ids
+    })
+    try {
+      const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
+      const result = (await action.execute(
+        {
+          mappings: [
+            {
+              ...mapping,
+              query: {
+                scope: 'region',
+                bounds: { x: 0, y: 0, width: 100, height: 100 }
+              }
+            }
+          ]
+        },
+        { signal, runMutation: async (write) => write() }
+      )) as {
+        mutationScope: { elementIds: string[] }
+        retained: { snapshotId: string }
+        modelResult: Record<string, unknown>
+      }
+      expect(update).toHaveBeenCalledTimes(1)
+      expect(result.mutationScope.elementIds).toEqual(ids)
+      expect(action.delivery?.path).toBe('/modelResult')
+      expect(result.modelResult).toMatchObject({
+        status: 'complete',
+        appliedCount: count,
+        retained: { total: count }
+      })
+      expect(JSON.stringify(result.modelResult).length).toBeLessThan(1000)
+      expect(result.modelResult.mutationScope).toBeUndefined()
+      const tools = createLocalOperationTools(
+        [action],
+        { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+        async (batch) => ({
+          context: {},
+          actionResults: [
+            {
+              actionId: batch.actions[0].id,
+              actionName: action.name,
+              result: result as never
+            }
+          ]
+        })
+      )
+      const reply = JSON.parse(
+        await tools.call(
+          action.name,
+          {
+            arguments: {
+              mappings: [
+                {
+                  ...mapping,
+                  query: {
+                    scope: 'region',
+                    bounds: { x: 0, y: 0, width: 100, height: 100 }
+                  }
+                }
+              ]
+            },
+            inspection: 'defer'
+          },
+          signal
+        )
+      )
+      expect(reply.actionResults[0].result.mutationScope).toBeUndefined()
+      expect(reply.actionResults[0].result.appliedCount).toBe(count)
+      expect(reply.checks.counts.unverified).toBe(count)
+      expect(JSON.stringify(reply).length).toBeLessThan(2500)
+
+      const chunks: string[] = []
+      let offset: number | null = 0
+      do {
+        const page = queries.read(
+          {
+            scope: 'snapshot',
+            snapshotId: result.retained.snapshotId,
+            delivery: 'receipt',
+            offset
+          },
+          signal
+        ) as {
+          receipt?: unknown
+          receiptPage: {
+            encoding: string
+            text: string
+            nextOffset: number | null
+          }
+        }
+        expect(JSON.stringify(page).length).toBeLessThan(66000)
+        if (page.receipt) {
+          chunks.push(JSON.stringify(page.receipt))
+          break
+        }
+        expect(page.receiptPage.encoding).toBe('json-text')
+        chunks.push(page.receiptPage.text)
+        offset = page.receiptPage.nextOffset
+      } while (offset !== null)
+      expect(JSON.parse(chunks.join('')).mutationScope.elementIds).toEqual(ids)
+      expect(update).toHaveBeenCalledTimes(1)
+    } finally {
+      queries.dispose()
+    }
+  }
+)
+
+it.each(['capacity', 'cancel'] as const)(
+  'preserves completed mapping when receipt retention fails from %s',
+  async (failure) => {
+    const controller = new AbortController()
+    const retainReceipt = vi.fn(() => {
+      if (failure === 'cancel') controller.signal.throwIfAborted()
+      throw new Error('Retained query capacity reserved by pending consumers')
+    })
+    const get = vi.fn(() => snapshot)
+    const update = vi.fn(() => {
+      if (failure === 'cancel') controller.abort()
+    })
+    const action = createRetainedFillAction({ get, retainReceipt } as never, {
+      targets,
+      metadata: () => ({ lock: false }),
+      update
+    })
+    const result = await action.execute(input, {
+      signal: controller.signal,
+      runMutation: async (write, settled) => {
+        const value = write()
+        settled?.(value)
+        return value
+      }
+    })
+    expect(result).toMatchObject({
+      status: 'complete',
+      appliedCount: 3,
+      mutationScope: { complete: true, elementIds: ['a', 'b', 'c'] },
+      delivery: { status: 'unavailable' },
+      modelResult: { delivery: { status: 'unavailable' } }
+    })
+    expect(result).not.toHaveProperty('retained')
+    const { projectToolDelivery, designActionOutcome } =
+      await import('../tool-contract')
+    const external = projectToolDelivery(action, result)
+    expect(external).not.toHaveProperty('retained')
+    expect(external).not.toHaveProperty('mutationScope')
+    expect(designActionOutcome(external)).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    expect(update).toHaveBeenCalledOnce()
+    expect(get).toHaveBeenCalledOnce()
+    expect(retainReceipt).toHaveBeenCalledOnce()
+  }
+)

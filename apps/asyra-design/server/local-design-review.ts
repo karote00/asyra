@@ -14,6 +14,10 @@ import { inspectionInputSchema } from '../src/ai/inspection-schema'
 import {
   createReferenceDecisions,
   referenceDecisionProperties,
+  referenceUsesSchema,
+  referenceUseDependency,
+  type ReferenceUseReceipt,
+  type ReferencePurpose,
   type ReferenceIdentity
 } from './local-reference-decisions'
 import { isDeepStrictEqual } from 'node:util'
@@ -22,8 +26,11 @@ import {
   designFactsSchema,
   designCalculationsSchema
 } from './local-design-facts'
-import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
-import { randomUUID } from 'node:crypto'
+import {
+  inspectionEvidenceSchema,
+  type InspectionEvidenceStamp
+} from '../src/ai/inspection-evidence'
+import { createHmac, randomUUID } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -42,13 +49,24 @@ export const reviewInspectionIds = (
     (Array.isArray(value.deferredChecks) && value.deferredChecks.length)
   )
     return strings(value.inspectionIds) ? [...value.inspectionIds] : []
+  const selected = Array.isArray(value.bindChecks)
+    ? value.bindChecks
+    : value.checks
   return [
     ...new Set(
-      (Array.isArray(value.checks) ? value.checks : []).flatMap((check) =>
+      (Array.isArray(selected) ? selected : []).flatMap((check) =>
         record(check) && strings(check.inspectionIds) ? check.inspectionIds : []
       )
     )
   ]
+}
+
+interface ReviewSelection {
+  referenceUses?: ReferenceUseReceipt[]
+  criterionId: string
+  unitId?: string
+  inspectionIds: string[]
+  supersedes?: { revision: number; reason: string }
 }
 
 interface DesignCriterion {
@@ -59,6 +77,8 @@ interface DesignCriterion {
 }
 
 interface FactBinding {
+  unitId?: string
+  referenceUses?: ReferenceUseReceipt[]
   factId: string
   criterionId: string
   elementIds: string[]
@@ -72,16 +92,78 @@ const visualCheckIdentity = (check: {
   check.unitId === undefined
     ? `visual:${check.criterionId}`
     : `visual-unit:${JSON.stringify([check.criterionId, check.unitId])}`
+const checkIdentityProperties = {
+  referenceUses: referenceUsesSchema,
+  criterionId: { type: 'string', minLength: 1 },
+  unitId: { type: 'string', minLength: 1, maxLength: 256 },
+  supersedes: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['revision', 'reason'],
+    properties: {
+      revision: { type: 'integer', minimum: 1 },
+      reason: { type: 'string', minLength: 1, maxLength: 1000 }
+    }
+  }
+}
+const reviewSelectionSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['criterionId', 'inspectionIds'],
+  properties: {
+    ...checkIdentityProperties,
+    inspectionIds: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 24,
+      uniqueItems: true,
+      items: { type: 'string', minLength: 1 }
+    }
+  }
+}
+const reviewBindingSchema = {
+  'x-runtime-value': 'request',
+  ...toolResultObject({
+    requestId: toolResultString,
+    requirementRevision: toolResultCount,
+    checkRevision: toolResultCount,
+    signature: toolResultString,
+    dependencies: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 24,
+      items: toolResultObject(
+        {
+          inspectionId: toolResultString,
+          elementId: toolResultString,
+          scope: toolResultString,
+          source: inspectionEvidenceSchema
+        },
+        ['inspectionId', 'elementId', 'scope']
+      )
+    }
+  })
+}
+const reviewSubmissionSchema = {
+  ...reviewSelectionSchema,
+  required: [...reviewSelectionSchema.required, 'binding'],
+  properties: {
+    ...reviewSelectionSchema.properties,
+    binding: reviewBindingSchema
+  }
+}
 const factBindingsSchema = {
   type: 'array',
   maxItems: 24,
   description:
-    'Link applied source facts to planned criterion IDs and known canonical IDs (prefer their containing group). Update a binding when replacing its targets. Source facts remain unchanged.',
+    'Link applied source facts to exact criterion/unit and canonical IDs. Image-backed facts require explicit current fact-purpose referenceUses. Source facts remain unchanged.',
   items: {
     type: 'object',
     additionalProperties: false,
     required: ['factId', 'criterionId', 'elementIds'],
     properties: {
+      unitId: { type: 'string', minLength: 1 },
+      referenceUses: referenceUsesSchema,
       factId: {
         type: 'string',
         minLength: 1,
@@ -208,7 +290,24 @@ const designReviewProperties = {
     type: 'array',
     minItems: 1,
     maxItems: 24,
-    items: inspectionInputSchema
+    items: {
+      ...inspectionInputSchema,
+      required: [...inspectionInputSchema.required, 'checks'],
+      properties: {
+        ...inspectionInputSchema.properties,
+        checks: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 24,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['criterionId'],
+            properties: checkIdentityProperties
+          }
+        }
+      }
+    }
   },
   checks: {
     type: 'array',
@@ -217,8 +316,16 @@ const designReviewProperties = {
     items: {
       type: 'object',
       additionalProperties: false,
-      required: ['criterionId', 'status', 'evidence', 'inspectionIds'],
+      required: [
+        'criterionId',
+        'status',
+        'evidence',
+        'inspectionIds',
+        'binding'
+      ],
       properties: {
+        binding: reviewBindingSchema,
+        referenceUses: referenceUsesSchema,
         criterionId: {
           type: 'string',
           description: 'The stable ID of the planned criterion being checked.'
@@ -315,15 +422,31 @@ const reviewStructureSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['phase'],
-  anyOf: [
-    { required: ['inspectionIds', 'checks'] },
-    { required: ['inspections'] }
+  oneOf: [
+    {
+      required: ['inspectionIds', 'checks'],
+      properties: { inspections: false, bindChecks: false }
+    },
+    {
+      required: ['inspections'],
+      properties: { checks: false, bindChecks: false }
+    },
+    {
+      required: ['bindChecks'],
+      properties: { checks: false, inspections: false }
+    }
   ],
   properties: {
     phase: { type: 'string', const: 'structure' },
     inspectionIds: designReviewProperties.inspectionIds,
     inspections: designReviewProperties.inspections,
     checks: designReviewProperties.checks,
+    bindChecks: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 24,
+      items: reviewSelectionSchema
+    },
     deferredDetails: designReviewProperties.deferredDetails
   }
 }
@@ -331,15 +454,31 @@ export const reviewVisualSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['phase'],
-  anyOf: [
-    { required: ['inspectionIds', 'checks'] },
-    { required: ['inspections'] }
+  oneOf: [
+    {
+      required: ['inspectionIds', 'checks'],
+      properties: { inspections: false, bindChecks: false }
+    },
+    {
+      required: ['inspections'],
+      properties: { checks: false, bindChecks: false }
+    },
+    {
+      required: ['bindChecks'],
+      properties: { checks: false, inspections: false }
+    }
   ],
   properties: {
     phase: { type: 'string', const: 'visual' },
     inspectionIds: designReviewProperties.inspectionIds,
     inspections: designReviewProperties.inspections,
     checks: designReviewProperties.checks,
+    bindChecks: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 24,
+      items: reviewSelectionSchema
+    },
     deferredDetails: designReviewProperties.deferredDetails,
     deferredChecks: designReviewProperties.deferredChecks,
     final: designReviewProperties.final
@@ -441,9 +580,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
+    revision: 2,
     name: AiDesignToolIds.RECORD_DESIGN_FACTS,
     description:
-      'Record or retrieve verified source facts and their criterion/element bindings. A source fact requires id, statement, scope, sources, verification and dependencies:[{key,version}]. Preserve unchanged facts. Use dependencyChanges only for actual changed sources or contrary evidence, never to fix an arithmetic transcription. Use sourceCorrections:[{factId,sources,verification,reason}] to correct only a citation without changing its statement or dependency versions. Use retained referenceId or an existing attachment:N for image sources; source URLs remain attributed assertions. Use record_design_calculations for derived numbers. Bind with factId, criterionId and known elementIds. Omit all fields to retrieve existing facts. A changed source returns the pending review scope; recording facts is not approval. Examples use placeholder identities; substitute real evidence and known IDs.\n' +
+      'Record or retrieve verified source facts and their criterion/element bindings. A source fact requires id, statement, scope, sources, verification and dependencies:[{key,version}]. Preserve unchanged facts. Use dependencyChanges only for actual changed sources or contrary evidence, never to fix an arithmetic transcription. Use sourceCorrections:[{factId,sources,verification,reason}] to correct only a citation without changing its statement or dependency versions. Use retained referenceId or an existing attachment:N for image sources; source URLs remain attributed assertions. Use record_design_calculations for derived numbers. Bind with factId, exact criterionId/unitId, known elementIds and explicit fact-purpose referenceUses for cited images. Omit all fields to retrieve existing facts. A changed source returns the pending review scope; recording facts is not approval. Examples use placeholder identities; substitute real evidence and known IDs.\n' +
       factUsage,
     inputSchema: sourceEvidenceSchema
   },
@@ -469,9 +609,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
+    revision: 2,
     name: AiDesignToolIds.SELECT_DESIGN_REFERENCES,
     description:
-      'Select imported reference attachment indexes for primary-agent visual comparison. Identical selection preserves approval; changed selection requires a new comparison. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and assess their immutable referenceId against exact criterionIds. Rejected and undecided images are retained but excluded from comparison.',
+      'Select imported reference attachment indexes for primary-agent visual comparison. Identical selection preserves approval; changed uses reopen only their dependent checks. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and declare exact uses with id, criterionId/unitId, purpose, original-pixel region (or whole) and limitations. Use returned receipts explicitly in downstream referenceUses; omitted receipts mean reference-free work. Rejected and undecided images are retained but excluded from comparison.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -498,71 +639,18 @@ export const designEvidenceDefinitions = [
                   {
                     phase: { enum: ['structure', 'visual'] },
                     final: { const: false },
-                    inspectionIds: { ...toolResultIds, minItems: 1 }
+                    inspectionIds: { ...toolResultIds, minItems: 1 },
+                    checks: { type: 'array', items: reviewSubmissionSchema }
                   },
                   ['phase', 'inspectionIds']
                 ),
                 requiredInputs: {
                   type: 'array',
-                  items: { const: 'checks' },
-                  minItems: 1,
-                  maxItems: 1
-                },
-                bindings: toolResultObject({
-                  images: {
-                    type: 'array',
-                    items: toolResultObject(
-                      {
-                        inspectionId: toolResultString,
-                        elementId: toolResultString,
-                        overview: toolResultBoolean,
-                        detail: toolResultBoolean,
-                        region: inspectionInputSchema.properties.region
-                      },
-                      ['inspectionId', 'elementId', 'overview', 'detail']
-                    )
+                  items: {
+                    enum: ['bindChecks', 'checks[].status', 'checks[].evidence']
                   },
-                  checks: {
-                    type: 'array',
-                    items: toolResultObject(
-                      {
-                        id: toolResultString,
-                        criterionId: toolResultString,
-                        unitId: toolResultString,
-                        status: {
-                          enum: [
-                            'missing',
-                            'pass',
-                            'fail',
-                            'stale',
-                            'unverified'
-                          ]
-                        },
-                        revision: toolResultCount,
-                        inspectionIds: toolResultIds,
-                        scopes: {
-                          type: 'array',
-                          items: toolResultObject(
-                            {
-                              elementId: toolResultString,
-                              view: { enum: ['overview', 'detail'] },
-                              region: inspectionInputSchema.properties.region
-                            },
-                            ['elementId', 'view']
-                          )
-                        }
-                      },
-                      [
-                        'id',
-                        'criterionId',
-                        'status',
-                        'revision',
-                        'inspectionIds',
-                        'scopes'
-                      ]
-                    )
-                  }
-                }),
+                  minItems: 1
+                },
                 instruction: toolResultString
               }),
               toolResultObject({
@@ -602,10 +690,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 6,
+    revision: 8,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?}] to receive actual images; no checks are needed and judgments in a capture call are not recorded. After viewing those images, use next.arguments and record observed passes and failures before editing; supply checks [{criterionId,status,evidence,inspectionIds}] with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -661,6 +749,7 @@ export const createLocalDesignReview = (
   const recordFacts = (value: Record<string, unknown>, criteria: string[]) => {
     const nextBindings = new Map(factBindings)
     const affectedCriteria = new Set<string>()
+    const affectedScopes = new Set<string>()
     let changedKnownFact = false
     let unknownImpact = false
     const additions = value.factBindings ?? []
@@ -677,20 +766,51 @@ export const createLocalDesignReview = (
         !item.elementIds.length ||
         new Set(item.elementIds).size !== item.elementIds.length ||
         Object.keys(item).some(
-          (key) => !['factId', 'criterionId', 'elementIds'].includes(key)
+          (key) =>
+            ![
+              'factId',
+              'criterionId',
+              'unitId',
+              'elementIds',
+              'referenceUses'
+            ].includes(key)
         )
       )
         throw new Error(
           'Fact bindings require a planned criterion and unique canonical element IDs.'
         )
-      const key = JSON.stringify([item.factId, item.criterionId])
+      const declarations = (
+        record(value.criteria) ? value.criteria : plan?.criteria
+      ) as Record<string, DesignCriterion> | undefined
+      const units = declarations?.[item.criterionId]?.requiredUnits ?? []
+      if (
+        (item.unitId !== undefined &&
+          (!text(item.unitId) || !units.includes(item.unitId))) ||
+        (units.length && item.unitId === undefined)
+      )
+        throw new Error(
+          'Fact binding requires an exact declared criterion/unit.'
+        )
+      const key = JSON.stringify([item.factId, item.criterionId, item.unitId])
       if (keys.has(key)) throw new Error('Duplicate fact binding.')
       keys.add(key)
-      if (!isDeepStrictEqual(factBindings.get(key), item))
+      if (!isDeepStrictEqual(factBindings.get(key), item)) {
         affectedCriteria.add(item.criterionId)
+        affectedScopes.add(
+          `check-scope:${visualCheckIdentity(item as unknown as FactBinding)}`
+        )
+      }
       nextBindings.set(key, {
         factId: item.factId,
         criterionId: item.criterionId,
+        ...(item.unitId === undefined ? {} : { unitId: String(item.unitId) }),
+        ...(item.referenceUses === undefined
+          ? {}
+          : {
+              referenceUses: structuredClone(
+                item.referenceUses as ReferenceUseReceipt[]
+              )
+            }),
         elementIds: [...item.elementIds]
       })
     }
@@ -713,11 +833,15 @@ export const createLocalDesignReview = (
             ![...nextBindings.values()].some((binding) => binding.factId === id)
         )
         for (const binding of nextBindings.values()) {
-          if (changed.has(binding.factId))
+          if (changed.has(binding.factId)) {
             affectedCriteria.add(binding.criterionId)
+            affectedScopes.add(`check-scope:${visualCheckIdentity(binding)}`)
+          }
         }
         const ids = new Set(retained.map((fact) => fact.id))
         for (const binding of nextBindings.values()) {
+          for (const receipt of binding.referenceUses ?? [])
+            resolveSelectedUse(receipt, 'fact', binding)
           if (
             !ids.has(binding.factId) ||
             !criteria.includes(binding.criterionId)
@@ -734,11 +858,14 @@ export const createLocalDesignReview = (
         ...result,
         factBindings: structuredClone([...factBindings.values()])
       },
+      affectedDependencies: [...affectedScopes],
       affectedCriterionIds: [...affectedCriteria],
       changedKnownFact,
       unknownImpact
     }
   }
+  const bindingRequestId = randomUUID()
+  const bindingSecret = randomUUID()
   let revision = 0
   let plan:
     | {
@@ -777,6 +904,86 @@ export const createLocalDesignReview = (
       region?: Record<string, unknown>
     }
   >()
+  const bindingSignature = (
+    phase: string,
+    check: Record<string, unknown>,
+    binding: Record<string, unknown>
+  ) =>
+    createHmac('sha256', bindingSecret)
+      .update(
+        JSON.stringify({
+          phase,
+          criterionId: check.criterionId,
+          unitId: check.unitId,
+          inspectionIds: check.inspectionIds,
+          supersedes: check.supersedes,
+          referenceUses: check.referenceUses,
+          requestId: binding.requestId,
+          requirementRevision: binding.requirementRevision,
+          checkRevision: binding.checkRevision,
+          dependencies: bindingDependencies(check.inspectionIds as string[])
+        })
+      )
+      .digest('hex')
+  const bindingDependencies = (ids: string[]) =>
+    ids.map((inspectionId) => {
+      const image = inspections.get(inspectionId)
+      if (!image)
+        throw new Error(
+          `Review binding evidence ${inspectionId} is unavailable.`
+        )
+      return {
+        inspectionId,
+        elementId: image.target,
+        scope: image.scope,
+        ...(image.source ? { source: structuredClone(image.source) } : {})
+      }
+    })
+  const validateBindings = (value: unknown) => {
+    if (!record(value) || !Array.isArray(value.checks) || !value.checks.length)
+      throw new Error('Review submission requires exact check bindings.')
+    for (const check of value.checks) {
+      if (
+        !record(check) ||
+        !record(check.binding) ||
+        !strings(check.inspectionIds)
+      )
+        throw new Error(
+          'Review submission requires a current binding for every check.'
+        )
+      const binding = check.binding
+      resolveCheckUses(check as unknown as ReviewSelection)
+      if (
+        binding.requestId !== bindingRequestId ||
+        binding.requirementRevision !== references.revision() ||
+        binding.signature !==
+          bindingSignature(String(value.phase), check, binding) ||
+        !isDeepStrictEqual(
+          binding.dependencies,
+          bindingDependencies(check.inspectionIds)
+        )
+      )
+        throw new Error(
+          'Review binding is foreign, modified or stale; bind current evidence again.'
+        )
+      const previous = results.read({
+        ids: [
+          visualCheckIdentity(check as { criterionId: string; unitId?: string })
+        ],
+        includePassed: true
+      }).items[0]
+      const replay =
+        previous &&
+        previous.status === check.status &&
+        previous.evidence === check.evidence &&
+        isDeepStrictEqual(previous.scope, check.inspectionIds) &&
+        isDeepStrictEqual(previous.supersedes, check.supersedes)
+      if (binding.checkRevision !== (previous?.revision ?? 0) && !replay)
+        throw new Error(
+          `Review binding for ${String(check.criterionId)} is stale; rebind only this check.`
+        )
+    }
+  }
   const mechanicalIssue = () => {
     const pending = results.read().items.find((item) => item.origin === 'tool')
     return pending
@@ -876,22 +1083,53 @@ export const createLocalDesignReview = (
         )
     ])
   ]
+  const resolveSelectedUse = (
+    receipt: ReferenceUseReceipt,
+    purpose: ReferencePurpose,
+    scope?: { criterionId: string; unitId?: string }
+  ) => {
+    const entry = references
+      .snapshot()
+      .find(
+        (item) =>
+          item.referenceId === receipt.referenceId &&
+          plan?.referenceImageIndexes?.includes(item.attachmentIndex)
+      )
+    if (!entry)
+      throw new Error('Reference use is not selected for this request.')
+    return references.resolve(receipt, purpose, scope)
+  }
+  const resolveCheckUses = (check: ReviewSelection) =>
+    (check.referenceUses ?? []).map((receipt) =>
+      resolveSelectedUse(receipt, 'visual', check)
+    )
+  const unsupportedFactSources = (sources: string[], binding: FactBinding) =>
+    sources.filter((source) => {
+      if (!source.startsWith('reference:')) return false
+      try {
+        return !(binding.referenceUses ?? []).some(
+          (receipt) =>
+            resolveSelectedUse(receipt, 'fact', binding).receipt.referenceId ===
+            source
+        )
+      } catch {
+        return true
+      }
+    })
   const factSnapshots = () =>
     facts.snapshot().map((fact) => {
-      const criterionIds = [
-        ...new Set(
-          [...factBindings.values()]
-            .filter((binding) => binding.factId === fact.id)
-            .map((binding) => binding.criterionId)
-        )
-      ]
+      const bindings = [...factBindings.values()].filter(
+        (binding) => binding.factId === fact.id
+      )
       const imageSources = fact.sources.filter((source) =>
         source.startsWith('reference:')
       )
       const inapplicable = imageSources.filter(
         (source) =>
-          !criterionIds.length ||
-          criterionIds.some((id) => !references.applicable(source, id))
+          !bindings.length ||
+          bindings.some(
+            (binding) => unsupportedFactSources([source], binding).length > 0
+          )
       )
       let assessmentStatus: 'unverified' | 'model-assessed' | 'asserted' =
         'asserted'
@@ -941,9 +1179,12 @@ export const createLocalDesignReview = (
         : [])
     ]
   }
-  const reviewHandoff = (affectedCriterionIds: string[]) => {
+  const reviewHandoff = (
+    affectedCriterionIds: string[],
+    dependencies = affectedCriterionIds.map((id) => `criterion:${id}`)
+  ) => {
     results.invalidate(
-      affectedCriterionIds.map((id) => `criterion:${id}`),
+      dependencies,
       'Source or reference dependencies changed.'
     )
     const invalidatedFactIds = facts
@@ -1001,8 +1242,99 @@ export const createLocalDesignReview = (
 
   return {
     readChecks: results.read,
+    resolveReferenceUse: resolveSelectedUse,
+    validateCaptureChecks(
+      phase: 'structure' | 'visual',
+      targets: { checks: Omit<ReviewSelection, 'inspectionIds'>[] }[]
+    ) {
+      if (!plan)
+        throw new Error('Define criteria before requesting review captures.')
+      const allowed = new Set(
+        (phase === 'structure'
+          ? plan.structureCriteria.map((criterionId) => ({ criterionId }))
+          : requiredChecks()
+        ).map(visualCheckIdentity)
+      )
+      const intended = new Map<string, unknown>()
+      for (const target of targets) {
+        if (!Array.isArray(target.checks) || !target.checks.length)
+          throw new Error(
+            'Each review capture requires explicit check identities.'
+          )
+        for (const check of target.checks) {
+          if (!allowed.has(visualCheckIdentity(check)))
+            throw new Error(
+              'Review capture requires an exact declared criterion/unit identity.'
+            )
+          resolveCheckUses({ ...check, inspectionIds: [] })
+          const key = visualCheckIdentity(check)
+          if (intended.has(key) && !isDeepStrictEqual(intended.get(key), check))
+            throw new Error(
+              'Conflicting source uses or supersession for one capture check.'
+            )
+          intended.set(key, structuredClone(check))
+        }
+      }
+    },
+    bindReview(phase: 'structure' | 'visual', selections: ReviewSelection[]) {
+      const inspectionIds = [
+        ...new Set(selections.flatMap((check) => check.inspectionIds))
+      ]
+      // Use the existing domain preflight; binding never records a judgment.
+      this.record(
+        {
+          phase,
+          ...(phase === 'visual' ? { final: false } : {}),
+          inspectionIds,
+          checks: selections.map((check) => ({
+            ...check,
+            status: 'unverified',
+            evidence: 'Pending primary-agent judgment.'
+          }))
+        },
+        { validateOnly: true }
+      )
+      const checks = selections.map((check) => {
+        resolveCheckUses(check)
+        const previous = results.read({
+          ids: [visualCheckIdentity(check)],
+          includePassed: true
+        }).items[0]
+        const binding = {
+          requestId: bindingRequestId,
+          requirementRevision: references.revision(),
+          checkRevision: previous?.revision ?? 0,
+          dependencies: bindingDependencies(check.inspectionIds)
+        }
+        return {
+          ...structuredClone(check),
+          binding: {
+            ...binding,
+            signature: bindingSignature(phase, { ...check }, binding)
+          }
+        }
+      })
+      return {
+        phase,
+        ...(phase === 'visual' ? { final: false } : {}),
+        inspectionIds,
+        checks
+      }
+    },
+    validateBoundReview(value: unknown) {
+      validateBindings(value)
+      return this.validateReview(value)
+    },
+    recordBoundReview(value: unknown) {
+      validateBindings(value)
+      return this.record(value)
+    },
     coverage: () => reviewState().coverage,
-    judgmentHandoff(inspectionIds: string[], phase: 'structure' | 'visual') {
+    judgmentHandoff(
+      inspectionIds: string[],
+      phase: 'structure' | 'visual',
+      selections?: ReviewSelection[]
+    ) {
       if (!plan)
         return {
           coverage: reviewState().coverage,
@@ -1011,82 +1343,28 @@ export const createLocalDesignReview = (
             arguments: { phase: 'plan' },
             requiredInputs: reviewPlanRequiredInputs,
             instruction:
-              'Define request-linked criteria before recording judgments. Retain the returned images; defining criteria does not inspect or approve them.'
+              'Define request-linked criteria before binding image evidence.'
           }
         }
-      const required =
-        phase === 'structure'
-          ? plan.structureCriteria.map((criterionId) => ({
-              id: visualCheckIdentity({ criterionId }),
-              criterionId
-            }))
-          : requiredChecks()
-      const previous = new Map(
-        results
-          .read({ ids: required.map(({ id }) => id), includePassed: true })
-          .items.map((item) => [item.id, item])
-      )
       return {
         coverage: reviewState().coverage,
         ...(inspectionIds.length
           ? {
               next: {
                 tool: AiDesignToolIds.REVIEW_DRAWING,
-                arguments: {
-                  phase,
-                  ...(phase === 'visual' ? { final: false } : {}),
-                  inspectionIds
-                },
-                requiredInputs: ['checks'],
-                bindings: {
-                  images: inspectionIds.flatMap((inspectionId) => {
-                    const image = inspections.get(inspectionId)
-                    return image
-                      ? [
-                          {
-                            inspectionId,
-                            elementId: image.target,
-                            overview: image.overview,
-                            detail: image.detail,
-                            ...(image.region
-                              ? { region: structuredClone(image.region) }
-                              : {})
-                          }
-                        ]
-                      : []
-                  }),
-                  checks: required.map((identity) => {
-                    const prior = previous.get(identity.id)
-                    return {
-                      ...identity,
-                      status: prior?.status ?? 'missing',
-                      revision: prior?.revision ?? 0,
-                      inspectionIds: [...(prior?.scope ?? [])],
-                      scopes: (unitScopes.get(identity.id) ?? []).map((key) => {
-                        // Decode only canonical scope keys authored by this owner.
-                        // They survive image retirement and are not fresh evidence.
-                        const [elementId, scope] = JSON.parse(key) as [
-                          string,
-                          string
-                        ]
-                        const separator = scope.indexOf(':')
-                        const view = scope.slice(0, separator)
-                        const bounds = scope.slice(separator + 1)
-                        if (bounds === 'whole') return { elementId, view }
-                        const [x, y, width, height] = JSON.parse(
-                          bounds
-                        ) as number[]
-                        return {
-                          elementId,
-                          view,
-                          region: { x, y, width, height }
-                        }
-                      })
-                    }
-                  })
-                },
-                instruction:
-                  "After viewing the images, record observed pending checks, including passes and failures, before editing. bindings.images describes delivered target-local regions; bindings.checks is retained state, not fresh approval. Submit exact criterion/unit identities and only each judgment's required images. Keep whole-target evidence separate from regional units. Include every selected check image in arguments.inspectionIds. Compare with the retained scopes even if their old images have retired. If redesign changes a unit scope, provide supersedes with its listed revision and your reason; never copy a prior pass as a new judgment. Do not resend unrelated passes or invent judgments for unseen parts. Use final=true only to attempt completion from retained results."
+                arguments: selections
+                  ? this.bindReview(phase, selections)
+                  : {
+                      phase,
+                      ...(phase === 'visual' ? { final: false } : {}),
+                      inspectionIds
+                    },
+                requiredInputs: selections
+                  ? ['checks[].status', 'checks[].evidence']
+                  : ['bindChecks'],
+                instruction: selections
+                  ? 'Inspect the delivered images, fill status/evidence in each bound check, and submit next.arguments without capture targets. Preserve bindings exactly. Submit only observed checks; keep unrelated passes. Use final=true only to attempt completion from retained current results.'
+                  : 'No complete check binding was issued. Explicitly supply bindChecks with criterionId, optional unitId/supersedes and every required delivered inspectionId for each check. Binding does not judge or record anything. Retry failed captures before binding an incomplete scope.'
               }
             }
           : {})
@@ -1099,31 +1377,24 @@ export const createLocalDesignReview = (
     },
     reviewEvidenceIds: () =>
       reviewState().inspectionIds.filter((id) => inspections.has(id)),
-    preparationContext() {
+    preparationContext(receipts: ReferenceUseReceipt[] = []) {
       if (!plan)
         throw new Error(
           'Define request-linked criteria before prepared review.'
         )
-      const criteria = plan.criteria
-      const ids = Object.keys(criteria)
-      const decisions = references.snapshot()
+      const uses = receipts.map((receipt) =>
+        resolveSelectedUse(receipt, 'preparation')
+      )
       return {
         criteria: Object.fromEntries(
-          ids.map((id) => [id, { requirement: criteria[id].requirement }])
+          Object.entries(plan.criteria).map(([id, item]) => [
+            id,
+            { requirement: item.requirement }
+          ])
         ),
         requirementRevision: references.revision(),
-        referenceDecisions: decisions,
-        referenceImageIndexes: (plan.referenceImageIndexes ?? []).filter(
-          (index) =>
-            decisions.some(
-              (decision) =>
-                decision.attachmentIndex === index &&
-                ids.some((id) =>
-                  references.applicable(decision.referenceId, id)
-                )
-            )
-        ),
-        sourceAssertions: facts.snapshot()
+        referenceUses: uses,
+        sourceAssertions: []
       }
     },
     selectReferences(
@@ -1140,54 +1411,49 @@ export const createLocalDesignReview = (
         (ids) => options.validateReferences?.(selected, ids) ?? [],
         decisions
       )
-      const retainedFacts = facts.snapshot()
-      const selectionChanged = !isDeepStrictEqual(
-        plan.referenceImageIndexes,
-        selected
-      )
-      const changed = selectionChanged || update.changedIds.length > 0
       const nextDecisions = references.snapshot()
       const previousSelected = new Set(
         previousDecisions
-          .filter((decision) =>
-            plan?.referenceImageIndexes?.includes(decision.attachmentIndex)
+          .filter((item) =>
+            plan?.referenceImageIndexes?.includes(item.attachmentIndex)
           )
-          .map((decision) => decision.referenceId)
+          .map((item) => item.referenceId)
       )
       const nextSelected = new Set(
         nextDecisions
-          .filter((decision) => selected.includes(decision.attachmentIndex))
-          .map((decision) => decision.referenceId)
+          .filter((item) => selected.includes(item.attachmentIndex))
+          .map((item) => item.referenceId)
       )
       const changedSelection = new Set(
         [...previousSelected, ...nextSelected].filter(
           (id) => previousSelected.has(id) !== nextSelected.has(id)
         )
       )
-      const affected = [
+      const dependencies = [
         ...new Set([
+          ...update.changedDependencies,
           ...[...previousDecisions, ...nextDecisions]
-            .filter(
-              (decision) =>
-                changedSelection.has(decision.referenceId) ||
-                (update.changedIds.includes(decision.referenceId) &&
-                  (previousSelected.has(decision.referenceId) ||
-                    nextSelected.has(decision.referenceId)))
+            .filter((item) => changedSelection.has(item.referenceId))
+            .flatMap((item) =>
+              item.uses.map((use) => referenceUseDependency(use.receipt))
             )
-            .flatMap((decision) => decision.criterionIds),
-          ...[...factBindings.values()]
-            .filter((binding) =>
-              retainedFacts.some(
-                (fact) =>
-                  fact.id === binding.factId &&
-                  fact.sources.some((source) =>
-                    update.changedIds.includes(source)
-                  )
-              )
-            )
-            .map((binding) => binding.criterionId)
         ])
       ]
+      const affected = [
+        ...new Set(
+          results
+            .read({ includePassed: true })
+            .items.filter((item) =>
+              dependencies.some((key) => Object.hasOwn(item.dependencies, key))
+            )
+            .flatMap((item) => (item.criterionId ? [item.criterionId] : []))
+        )
+      ]
+      const changed =
+        !isDeepStrictEqual(
+          [...(plan.referenceImageIndexes ?? [])].sort((a, b) => a - b),
+          [...selected].sort((a, b) => a - b)
+        ) || update.changedIds.length > 0
       plan.referenceImageIndexes = selected
       if (affected.length || referenceIssues().length) {
         accepted = false
@@ -1201,7 +1467,7 @@ export const createLocalDesignReview = (
         changed,
         requirementRevision: references.revision(),
         referenceDecisions: references.snapshot(),
-        review: reviewHandoff(changed ? affected : [])
+        review: reviewHandoff(affected, dependencies)
       }
     },
     recordCalculations: facts.recordCalculations,
@@ -1431,7 +1697,12 @@ export const createLocalDesignReview = (
           ...update.result,
           facts: factSnapshots(),
           ...(update.changedKnownFact || update.affectedCriterionIds.length
-            ? { review: reviewHandoff(update.affectedCriterionIds) }
+            ? {
+                review: reviewHandoff(
+                  update.affectedCriterionIds,
+                  update.affectedDependencies
+                )
+              }
             : {})
         }
       }
@@ -1695,7 +1966,11 @@ export const createLocalDesignReview = (
         factIds: [
           ...new Set(
             [...factBindings.values()]
-              .filter((binding) => binding.criterionId === check.criterionId)
+              .filter(
+                (binding) =>
+                  binding.criterionId === check.criterionId &&
+                  binding.unitId === check.unitId
+              )
               .map((binding) => binding.factId)
           )
         ]
@@ -1714,6 +1989,27 @@ export const createLocalDesignReview = (
         throw new Error(
           'Each planned criterion needs one pass, fail or unverified status and concrete evidence from the declared verification source.'
         )
+      for (const check of checks) {
+        resolveCheckUses(check)
+        if (
+          check.status === 'pass' &&
+          [...factBindings.values()].some(
+            (binding) =>
+              binding.criterionId === check.criterionId &&
+              binding.unitId === check.unitId &&
+              facts
+                .snapshot()
+                .some(
+                  (fact) =>
+                    fact.id === binding.factId &&
+                    unsupportedFactSources(fact.sources, binding).length > 0
+                )
+          )
+        )
+          throw new Error(
+            'Current explicit fact-purpose reference uses are required before passing this check.'
+          )
+      }
       const submittedScopes = new Map<string, readonly string[]>()
       for (const check of value.checks) {
         const requiredUnits = plan.criteria[check.criterionId]?.requiredUnits
@@ -1966,6 +2262,7 @@ export const createLocalDesignReview = (
           evidence: check.evidence,
           scope: [...check.inspectionIds],
           dependencies: {
+            [`check-scope:${visualCheckIdentity(check)}`]: 'current',
             ...(check.unitId === undefined &&
             plan.criteria[check.criterionId].verification === 'visual'
               ? { [wholeViewCoverageDependency]: 'required' }
@@ -1974,6 +2271,21 @@ export const createLocalDesignReview = (
               check.inspectionIds.map((id: string) => [
                 `inspection:${id}`,
                 String(inspections.get(id)?.source?.revision ?? revision)
+              ])
+            ),
+            ...Object.fromEntries(
+              [
+                ...(check.referenceUses ?? []),
+                ...[...factBindings.values()]
+                  .filter(
+                    (item) =>
+                      item.criterionId === check.criterionId &&
+                      item.unitId === check.unitId
+                  )
+                  .flatMap((item) => item.referenceUses ?? [])
+              ].map((receipt: ReferenceUseReceipt) => [
+                referenceUseDependency(receipt),
+                String(receipt.revision)
               ])
             ),
             [`criterion:${check.criterionId}`]: String(references.revision())

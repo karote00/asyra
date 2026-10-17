@@ -1195,8 +1195,14 @@ for (const width of [360, 1280]) {
         )
         const workMessage = event.expected ?? event.message
         await expect(status.locator(':scope > span')).toHaveText([
-          ...(event.label ? [event.label] : []),
-          ...(workMessage ? [workMessage] : [])
+          ...(workMessage ? [workMessage] : []),
+          ...(event.label
+            ? [
+                event.label === 'Current task' && workMessage
+                  ? 'Task context - no App operation executing'
+                  : event.label
+              ]
+            : [])
         ])
         if (event.callId === 'automatic-save' && event.status === 'running') {
           await page.getByTestId('ai-agent-panel').screenshot({
@@ -1301,8 +1307,10 @@ for (const width of [360, 1280]) {
             }) + '\n'
           )
           await expect(status.locator(':scope > span')).toHaveText([
-            toolStatus === 'running' ? label : 'Current task',
-            '正在隱藏右下角的標記。'
+            '正在隱藏右下角的標記。',
+            toolStatus === 'running'
+              ? label
+              : 'Task context - no App operation executing'
           ])
           await expect(current).toHaveText('正在隱藏右下角的標記。')
           if (tool === 'inspect_drawing' && toolStatus === 'running')
@@ -1340,36 +1348,36 @@ for (const width of [360, 1280]) {
       parallel('parallel-review', 'review_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
-        'Checking the requested details - Preparing the design - 2 operations',
-        '正在隱藏右下角的標記。'
+        '正在隱藏右下角的標記。',
+        'Checking the requested details - Preparing the design - 2 operations'
       ])
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
       await expect(status.locator(':scope > span')).toHaveText([
-        'Checking the requested details',
-        'Inspect the crown'
+        'Inspect the crown',
+        'Checking the requested details'
       ])
       parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
       await expect(status.locator(':scope > span')).toHaveText([
-        'Current task',
-        '正在隱藏右下角的標記。'
+        '正在隱藏右下角的標記。',
+        'Task context - no App operation executing'
       ])
       parallel('parallel-edit', 'prepare_design', 'Late completed sibling')
       await expect(status.locator(':scope > span')).toHaveText([
-        'Current task',
-        '正在隱藏右下角的標記。'
+        '正在隱藏右下角的標記。',
+        'Task context - no App operation executing'
       ])
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
-        'Current task',
-        longDescription
+        longDescription,
+        'Task context - no App operation executing'
       ])
       expect(
         await status.evaluate(
           (element) => element.scrollWidth <= element.clientWidth
         )
       ).toBe(true)
-      const purpose = status.locator(':scope > span').last()
+      const purpose = status.locator(':scope > span').first()
       const dimensions = await purpose.evaluate((element) => ({
         height: element.getBoundingClientRect().height,
         lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight)

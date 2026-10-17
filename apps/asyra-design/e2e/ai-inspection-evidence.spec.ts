@@ -1100,7 +1100,19 @@ test('scoped inspection preserves other tiers and regions through canonical edit
 // Only the external model and an explicit transport failure are substituted.
 test('public review handoffs retain independent evidence and recover before runtime completion', async ({
   page
-}) => {
+}, testInfo) => {
+  test.setTimeout(90000)
+  const { default: sharp } = await import('sharp')
+  const { createLocalImageTools } = await import('../server/local-image-tools')
+  const { createLocalDesignTools } =
+    await import('../server/local-design-tools')
+  const { createDesignPreparationSession } =
+    await import('../server/design-preparation')
+  const source = await sharp({
+    create: { width: 24, height: 24, channels: 3, background: '#7799aa' }
+  })
+    .png()
+    .toBuffer()
   const { createLocalOperationTools } =
     await import('../server/local-operation-tools')
   const { createLocalToolHost } = await import('../server/local-tool-host')
@@ -1131,7 +1143,12 @@ test('public review handoffs retain independent evidence and recover before runt
   const [left, right] = ids
   expect(left).toEqual(expect.any(String))
   expect(right).toEqual(expect.any(String))
-  const before = await getCoreDocumentDigest(page)
+  let before = await getCoreDocumentDigest(page)
+  let exportedDocument: unknown
+  let exportMetadata: { bytes: number; sha256: string } | undefined
+  const downloadPromise = page.waitForEvent('download', { timeout: 90000 })
+  void downloadPromise.catch(() => undefined)
+  const attachmentReceipts: unknown[] = []
   let providerCalls = 0
   let bridgeFailure: unknown
   const dispatched: string[] = []
@@ -1174,11 +1191,30 @@ test('public review handoffs retain independent evidence and recover before runt
           }
         },
         createGroups: (ownership) => {
+          const images = createLocalImageTools(
+            {
+              metadata: {
+                imageAttachments: [
+                  {
+                    dataUrl: `data:image/png;base64,${source.toString('base64')}`
+                  }
+                ]
+              }
+            },
+            undefined,
+            ownership
+          )
+          const designs = createLocalDesignTools(
+            input.actions,
+            createDesignPreparationSession(undefined, undefined, ownership)
+          )
           operations = createLocalOperationTools(
             input.actions,
             {
-              modelActions: (actions) => actions,
-              resolveBatch: (batch) => batch,
+              modelActions: designs.modelActions,
+              resolveBatch: designs.resolveBatch,
+              resolveRecipe: designs.resolveRecipe,
+              resolveTargets: designs.resolveTargets,
               checkResults: checks
             },
             async (batch) => {
@@ -1210,6 +1246,9 @@ test('public review handoffs retain independent evidence and recover before runt
                 JSON.stringify(batch)
               )
               const receipt = JSON.parse(serializedReceipt) as Receipt
+              for (const entry of receipt.actionResults)
+                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT)
+                  attachmentReceipts.push(entry.result)
               if (
                 cancelAfterValidation &&
                 batch.actions.some(
@@ -1224,12 +1263,17 @@ test('public review handoffs retain independent evidence and recover before runt
             },
             {
               ownership,
+              resolveSources: images.resolveSources,
+              referenceImages: images.referenceImages,
+              validateReferences: images.validateReferences,
               requestSignal: controller.signal,
               getNativeTools: () => host.definitions(),
               getNativeToolsRevision: () => host.revision
             }
           )
           return [
+            { name: 'images', description: 'Images', owner: images },
+            { name: 'design', description: 'Prepared design', owner: designs },
             {
               name: 'design_operations',
               description: 'Design operations',
@@ -1245,7 +1289,7 @@ test('public review handoffs retain independent evidence and recover before runt
         signal?: AbortSignal
       ) => {
         const reply = await host.invoke({
-          name: `design_operations.${name}`,
+          name: name.includes('.') ? name : `design_operations.${name}`,
           input,
           signal,
           callId: `call-${++callId}`
@@ -1260,37 +1304,63 @@ test('public review handoffs retain independent evidence and recover before runt
           (entry: { result: { inspectionId?: string } }) =>
             entry.result.inspectionId
         )?.result
-        expect(
-          image,
-          JSON.stringify({ code: receipt.code, message: receipt.message })
-        ).toMatchObject({
+        if (!image) throw new Error(JSON.stringify({ elementId, receipt }))
+        expect(image).toMatchObject({
           inspectionId: expect.any(String),
           available: true
         })
         expect(image.image.dataUrl).toMatch(/^data:image\/png;base64,/)
         return image.inspectionId as string
       }
+      let visualUse: unknown
       const judgment = (
         criterionId: string,
         inspectionId: string,
         status = 'pass'
       ) => ({
         criterionId,
+        ...(criterionId === 'Left' && visualUse
+          ? { referenceUses: [visualUse] }
+          : {}),
         inspectionIds: [inspectionId],
         status,
         evidence: `${criterionId} ${status} from the delivered target image`
       })
-      const review = (
+      const bindReview = async (
         phase: string,
         judgments: ReturnType<typeof judgment>[]
-      ) =>
-        invoke(AiDesignToolIds.REVIEW_DRAWING, {
+      ) => {
+        const bound = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
           phase,
-          inspectionIds: [
-            ...new Set(judgments.flatMap((check) => check.inspectionIds))
-          ],
-          checks: judgments
+          bindChecks: judgments.map(
+            ({ status: _status, evidence: _evidence, ...selection }) =>
+              selection
+          )
         })
+        if (!bound.next?.arguments?.checks) return { unavailable: bound }
+        return {
+          input: {
+            ...bound.next.arguments,
+            ...(phase === 'visual' ? { final: true } : {}),
+            checks: bound.next.arguments.checks.map(
+              (check: Record<string, unknown>, index: number) => ({
+                ...check,
+                status: judgments[index].status,
+                evidence: judgments[index].evidence
+              })
+            )
+          }
+        }
+      }
+      const review = async (
+        phase: string,
+        judgments: ReturnType<typeof judgment>[]
+      ) => {
+        const bound = await bindReview(phase, judgments)
+        return bound.input
+          ? invoke(AiDesignToolIds.REVIEW_DRAWING, bound.input)
+          : bound.unavailable
+      }
       const read = async () =>
         (
           await invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
@@ -1337,6 +1407,12 @@ test('public review handoffs retain independent evidence and recover before runt
                 verification: 'visual',
                 requiredUnits: []
               },
+              Prepared: {
+                requirement: 'Verify the prepared source panel',
+                description: 'Inspect the newly applied editable panel',
+                verification: 'visual',
+                requiredUnits: []
+              },
               Right: {
                 requirement: 'Verify the right part',
                 description: 'Check the right rectangle',
@@ -1348,6 +1424,107 @@ test('public review handoffs retain independent evidence and recover before runt
             detailRequired: false
           })
         ).toMatchObject({ recorded: true })
+        const validated = await invoke('images.validate_reference_images', {
+          attachmentIndexes: [0]
+        })
+        expect(JSON.stringify(validated)).toContain('reference:')
+        const selected = await invoke(
+          AiDesignToolIds.SELECT_DESIGN_REFERENCES,
+          {
+            referenceImageIndexes: [0],
+            requirementRevision: 1,
+            referenceDecisions: [
+              {
+                referenceId: validated.references[0].referenceId,
+                status: 'accepted',
+                reason:
+                  'Controlled primary-agent choice for the left surface only',
+                uses: ['preparation', 'visual'].map((purpose) => ({
+                  id: purpose,
+                  criterionId: 'Left',
+                  purpose,
+                  region: 'whole',
+                  limitations: []
+                }))
+              }
+            ]
+          }
+        )
+        const uses = selected.referenceDecisions[0].uses
+        visualUse = uses.find(
+          (use: { purpose: string }) => use.purpose === 'visual'
+        ).receipt
+        const prepared = await invoke('design.prepare_design', {
+          draft: {
+            type: 'frame',
+            name: 'Prepared source panel',
+            width: 40,
+            height: 40,
+            children: [
+              {
+                type: 'rect',
+                key: 'surface',
+                name: 'Surface',
+                width: 30,
+                height: 30,
+                fill: '#223344'
+              }
+            ]
+          }
+        })
+        expect(prepared, JSON.stringify(prepared)).toMatchObject({
+          available: true
+        })
+        const preparation = {
+          artifactId: prepared.artifactId,
+          criterionIds: ['Left'],
+          referenceUses: [
+            uses.find(
+              (use: { purpose: string }) => use.purpose === 'preparation'
+            ).receipt
+          ]
+        }
+        const firstPreparation = await invoke(
+          AiDesignToolIds.REVIEW_PREPARED_DESIGN,
+          preparation
+        )
+        expect(firstPreparation).toMatchObject({
+          status: 'pass',
+          appearance: 'unverified',
+          reused: false
+        })
+        const repeatedPreparation = await invoke(
+          AiDesignToolIds.REVIEW_PREPARED_DESIGN,
+          preparation
+        )
+        expect(
+          repeatedPreparation,
+          JSON.stringify({
+            firstPreparation,
+            repeatedPreparation,
+            attachmentReceipts
+          })
+        ).toMatchObject({ status: 'pass', reused: true })
+        const applied = await invoke(AiActionNames.APPLY_PREPARED_DESIGN, {
+          arguments: { artifactId: prepared.artifactId },
+          inspection: 'defer'
+        })
+        expect(applied).toMatchObject({
+          toolOutcome: { status: 'success' },
+          inspectionDeferred: true,
+          measurementDeferred: false
+        })
+        expect(JSON.stringify(applied).length).toBeLessThan(8192)
+        before = await getCoreDocumentDigest(page)
+        const appliedRoot = applied.actionResults.find(
+          (entry: { result: { compositionId?: string } }) =>
+            entry.result.compositionId
+        )?.result.compositionId
+        expect(appliedRoot).toEqual(expect.any(String))
+        const preparedImage = await capture(appliedRoot)
+        expect(
+          await review('visual', [judgment('Prepared', preparedImage)])
+        ).toMatchObject({ accepted: false })
         let a = await capture(left)
         const b = await capture(right)
         const beforeJudgments = checks.read({ includePassed: true })
@@ -1380,7 +1557,8 @@ test('public review handoffs retain independent evidence and recover before runt
         expect(JSON.stringify(partial)).toContain(
           'Right fail from the delivered target image'
         )
-        expect(await review('visual', [judgment('Right', b)])).toMatchObject({
+        const completedReview = await review('visual', [judgment('Right', b)])
+        expect(completedReview, JSON.stringify(completedReview)).toMatchObject({
           accepted: true
         })
         expect(await settled()).toEqual(completed)
@@ -1435,15 +1613,14 @@ test('public review handoffs retain independent evidence and recover before runt
         expect(dispatched).toHaveLength(count)
         expect(checks.read({ includePassed: true })).toEqual(retained)
         const lateCancel = new AbortController()
+        const lateSubmission = await bindReview('visual', [
+          judgment('Left', a, 'fail')
+        ])
         cancelAfterValidation = lateCancel
         await expect(
           invoke(
             AiDesignToolIds.REVIEW_DRAWING,
-            {
-              phase: 'visual',
-              inspectionIds: [a],
-              checks: [judgment('Left', a, 'fail')]
-            },
+            lateSubmission.input,
             lateCancel.signal
           )
         ).rejects.toThrow()
@@ -1451,7 +1628,11 @@ test('public review handoffs retain independent evidence and recover before runt
         const unavailable = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
           inspections: [
-            { elementId: 'missing-review-target', view: 'overview' }
+            {
+              elementId: 'missing-review-target',
+              view: 'overview',
+              checks: [{ criterionId: 'Left' }]
+            }
           ]
         })
         expect(unavailable).toMatchObject({
@@ -1513,11 +1694,11 @@ test('public review handoffs retain independent evidence and recover before runt
         })
         const retiredLeft = a
         a = await capture(left)
+        const recovery = await bindReview('visual', [judgment('Left', a)])
         expect(
           await invoke(AiDesignToolIds.REVIEW_DRAWING, {
-            phase: 'visual',
-            inspectionIds: [retiredLeft, a, b],
-            checks: [judgment('Left', a)]
+            ...recovery.input,
+            inspectionIds: [retiredLeft, a, b]
           }),
           'An available-list entry not cited by any judgment cannot reject local recovery'
         ).toMatchObject({ accepted: true })
@@ -1538,6 +1719,20 @@ test('public review handoffs retain independent evidence and recover before runt
             (name) => name === 'api_core_updateElementProperties'
           )
         ).toHaveLength(2)
+        exportedDocument = await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).core.save()
+        )
+        const exported = await invoke(AiActionNames.EXPORT_DOCUMENT, {
+          arguments: {}
+        })
+        const artifact = exported.actionResults[0].result.artifact
+        exportMetadata = artifact
+        expect(JSON.stringify(exported).length).toBeLessThan(4096)
+        expect(
+          await invoke(AiActionNames.DOWNLOAD_DOCUMENT_EXPORT, {
+            arguments: { artifactId: artifact.artifactId }
+          })
+        ).toMatchObject({ toolOutcome: { status: 'success' } })
         return await settled()
       } catch (error) {
         bridgeFailure = error
@@ -1607,6 +1802,21 @@ test('public review handoffs retain independent evidence and recover before runt
     persistence: { status: 'durable' }
   })
   expect(providerCalls).toBe(1)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  const downloaded = await downloadPromise
+  const path = testInfo.outputPath('handoff-export.json')
+  await downloaded.saveAs(path)
+  const { readFile } = await import('node:fs/promises')
+  const { createHash } = await import('node:crypto')
+  const bytes = await readFile(path)
+  expect(JSON.parse(bytes.toString())).toEqual(exportedDocument)
+  expect(bytes.byteLength).toBe(exportMetadata?.bytes)
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe(
+    exportMetadata?.sha256
+  )
+  await page.reload()
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
 })
 
