@@ -81,6 +81,19 @@ obsolete real-model observation entries; map the three current export actions an
 five immediate-history browser cases to their existing declared owners. The
 shortcut declaration consumes captured intent, matching the current product spec.
 
+#### Delivery complete action-usage inventory
+
+The first functional browser case rejected the incomplete semantic usage table:
+all three registered document-export actions were absent. Extend only the existing
+browser fixture with actual export, download and release calls through the same
+Runtime/transaction owner. Assert immutable metadata and source hash, unavailable
+handle rejection, idempotent release, unchanged document/selection/history and
+ordinary resource disposal. The existing dedicated export browser test continues
+to prove downloaded bytes and durable reload. Preserve the exact registry-to-case
+inventory assertion and every existing invalid-input/cancellation/domain oracle.
+Run the whole action-usage suite and its lint before resuming functional/render
+delivery gates; no product changes or repeated collaboration suite are required.
+
 
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 

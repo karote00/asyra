@@ -95,7 +95,98 @@ export const runActionUsageCase = async (
       name === 'apply_prescribed_positions'
         ? await invoke('review_design', { elementId: root })
         : undefined
+    const exportSource = JSON.stringify(await core.save())
+    const exportHistoryDepth = core.getUndoHistoryDepth()
+    const retainedExport =
+      name === 'download_document_export' || name === 'release_document_export'
+        ? (await invoke('export_document', {})).artifact
+        : undefined
+    const assertExportUnchanged = async () => {
+      equal(JSON.stringify(await core.save()), exportSource)
+      equal(core.getUndoHistoryDepth(), exportHistoryDepth)
+    }
     const cases: Record<string, Usage> = {
+      export_document: {
+        input: {},
+        check: async (r) => {
+          equal(r.status, 'no-change')
+          equal(r.artifact.available, true)
+          equal(r.artifact.workspaceId, core.getCurrentWorkspaceId())
+          equal(
+            r.artifact.documentId,
+            getActiveCollaborationHandle()?.identity.documentId
+          )
+          const bytes = new TextEncoder().encode(exportSource)
+          equal(r.artifact.bytes, bytes.byteLength)
+          const digest = Array.from(
+            new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
+          )
+            .map((byte) => byte.toString(16).padStart(2, '0'))
+            .join('')
+          equal(r.artifact.sha256, digest)
+          assert(
+            !('document' in r) && !('data' in r.artifact),
+            'Export returned document bytes'
+          )
+          await assertExportUnchanged()
+          equal(
+            (
+              await invoke('release_document_export', {
+                artifactId: r.artifact.artifactId
+              })
+            ).released,
+            true
+          )
+        }
+      },
+      download_document_export: {
+        input: { artifactId: retainedExport?.artifactId },
+        check: async (r) => {
+          equal(r.status, 'no-change')
+          equal(r.delivery, 'download-requested')
+          equal(r.artifact, retainedExport)
+          await assertExportUnchanged()
+          equal(
+            (
+              await invoke('release_document_export', {
+                artifactId: retainedExport.artifactId
+              })
+            ).released,
+            true
+          )
+        }
+      },
+      release_document_export: {
+        input: { artifactId: retainedExport?.artifactId },
+        check: async (r) => {
+          equal(r.status, 'no-change')
+          equal(r.released, true)
+          equal(
+            (
+              await invoke('release_document_export', {
+                artifactId: retainedExport.artifactId
+              })
+            ).released,
+            false
+          )
+          let unavailable = false
+          try {
+            await invoke('download_document_export', {
+              artifactId: retainedExport.artifactId
+            })
+          } catch (error) {
+            let cause: unknown = error
+            while (cause instanceof Error) {
+              unavailable ||= cause.message.includes(
+                'The document export is unavailable'
+              )
+              cause = cause.cause
+            }
+          }
+          assert(unavailable, 'Released export remained downloadable')
+          await assertExportUnchanged()
+        }
+      },
       apply_prescribed_positions: {
         input: {
           evidence: [mechanical?.evidence],
@@ -382,6 +473,11 @@ export const runActionUsageCase = async (
       string,
       { input: Result; check?: (r: Result) => void }
     > = {
+      download_document_export: { input: { artifactId: missing } },
+      release_document_export: {
+        input: { artifactId: missing },
+        check: (r) => equal(r.released, false)
+      },
       apply_prescribed_positions: {
         input: {
           evidence: [mechanical?.evidence],
@@ -532,6 +628,7 @@ export const runActionUsageCase = async (
           `${name} failed with a programming error instead of a domain rejection`
         )
         const expectedRejections: Record<string, RegExp> = {
+          download_document_export: /The document export is unavailable/,
           apply_prescribed_positions: /Prescribed parent changed/,
           apply_prepared_design: /A design object already exists/,
           review_design: /Inspection dependency no longer exists/,
