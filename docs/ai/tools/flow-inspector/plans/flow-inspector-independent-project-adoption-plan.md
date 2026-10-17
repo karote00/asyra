@@ -1,6 +1,6 @@
 # Flow-Based Work Management and Independent Project Adoption
 
-Status: Stage 1 implemented and locally accepted; Stage 2 not started; publication paused.
+Status: Stages 1 and 2 implemented and locally accepted; publication paused.
 Updated: 2026-10-17 (Asia/Taipei).
 Stage 1 base: `1cd4b38a6e3e09a320cb2fa70ba3e8c25e63a724` (merged planning PR #341).
 Owner: Flow Inspector tool maintainer.
@@ -425,6 +425,12 @@ were performed in Stage 1.
 
 ### Stage 2 - Independent installation, CI and release readiness
 
+Implementation contract: [Independent Project Runtime](../PROJECT_RUNTIME.md).
+Base: `e00bdbdc6690cafdcb3d6a4cbea0dfe329a54b67` (merged PR #342).
+The architecture flow extends the existing owners with project admission, current
+bundle transfer and installed distribution. All ten acceptance conditions below
+remain mandatory; publication is excluded.
+
 One complete stage: installed executable, consumer config/catalog/storage,
 distribution of Stage 1 adapters/import APIs, external CI, package assets and
 clean-consumer proof.
@@ -466,9 +472,63 @@ Acceptance:
     exit codes and matching structured results. An optional nonblocking manual
     gate never changes the task/feature verdict to complete.
 
+Stage 2 acceptance record - 2026-10-17:
+
+- The real npm-installed candidate passed manual-only, mixed, custom, Vitest and
+  Playwright scenarios without source links or ancestor runner fallback. The
+  consumer has no Git repository, includes a real nested npm workspace, named
+  projects, duplicate/suffix titles, regex characters, shell-like literal titles
+  and paths containing spaces. Missing runner resolution fails explicitly.
+- A real addition implementation fault was published offline through unchanged
+  tests and selectors. The installed dashboard loaded failure, compact context
+  identified the implementation, and actual preview/confirmation reran the
+  selected case after repair. Source edits alone retained failure. Native Vitest
+  watch published failure and recovery without Inspector; open UI refreshed and
+  restart retained current success and a human note. Screenshots were inspected.
+- Empty discovery was followed by complete matching recovery, not record deletion.
+  Formal producer cases cover partial/duplicate/stale results, cancellation,
+  assertion preservation and raw diagnostic retention. Import cases cover
+  corrupt/missing/duplicate attachments, wrong identity, source/revision conflicts,
+  symlinks and concurrent writers. Occupied-port and stale-preview cases fail
+  without replacing another process or running a stale command.
+- Installed manual CI covered all four structured outcomes. A process/server
+  execution guard proved validate/CI/export perform no executions. The external
+  CI example runs product tests once and evaluates files afterward. Native
+  reporters publish that existing execution; selected actions may collect a test
+  catalog before executing one case, never execute the suite as discovery.
+- Local gates passed: 55 flow-file cases (including preserved Asyra producer
+  contracts), 100 package/viewer/architecture cases, 12 React workspace cases,
+  67 CI-scope cases, 17 naming
+  and test-placement cases, package typecheck, lint and production build. The
+  permanent installed-consumer gate is `yarn workspace @asyra/flow-inspector
+  test:installed`; final execution passed in about 14 seconds using the populated
+  npm cache. No unrelated product suite was rerun locally.
+- Candidate SHA-256:
+  `5674cade8e0841848ea8668ec9a3a1e9b4427ae26eb9fef4c679128f9ac755ff`.
+  The 47 installed files under `bin`, `flow-files`, plus README and viewer assets
+  matched source bytes; sorted relative-path/NUL/content SHA-256:
+  `76359314d3a80673c6f40065f52a0d3f0b8e31f99c513036fa7552efb6fde1f5`.
+  Packed package metadata matched source semantically (Yarn formats its JSON).
+  The ignored local evidence lives in `tmp/flow-stage-two/installed/` and is
+  reproducible through the permanent gate; it is not a required runtime archive.
+
+Known limits are unchanged in purpose and explicit in the package guide: Node 24,
+macOS/Linux, node_modules, Vitest 3.2.x and Playwright 1.62.x; project wildcard
+names cannot be represented by exact CLI selection and are rejected. Other test
+systems use the public current-result API. Local actor labels and bundle imports
+are trusted project input, not authenticated team approval. Direct external file
+writers own atomic publication; an interrupted bundle import keeps its lock for
+operator inspection. Old Asyra-only source tools retain their explicit repository
+requirements. No hosted team service, registry publication, runtime upgrade or
+additional third-party dependency was introduced.
+
+The next stage is a separately authorized publication and fresh registry-install
+verification after this PR is reviewed. No Stage 2 implementation slice remains
+pending and no extra feature phase is implied.
+
 Run focused formal gates at complete owner slices and assembled-stage checkpoints;
-do not repeatedly rerun unaffected expensive suites. No tests run for this planning
-edit. Additional dependencies need approval before introduction. Exact schemas,
+do not repeatedly rerun unaffected expensive suites. The original planning-only
+edit ran no tests; the implementation evidence above is the Stage 2 acceptance. Additional dependencies need approval before introduction. Exact schemas,
 runner versions and completion transitions must be reviewed before implementation;
 do not fill missing contracts with fallback behavior.
 

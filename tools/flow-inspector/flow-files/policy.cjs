@@ -266,4 +266,78 @@ function evaluateProject(project) {
   })
   return { projectId: project.documents[0].projectId, flows }
 }
-module.exports = { digest, nodeBinding, criterionBinding, evaluateProject }
+// Classify only the required dependency closure. A manual exemption never masks
+// missing automated evidence, explicit blockers, warnings or rejected decisions.
+function gateSummary(snapshot, manualPolicy = 'required') {
+  if (!['required', 'nonblocking'].includes(manualPolicy))
+    throw new Error('Unknown manual policy')
+  const evaluated = new Map(),
+    definitions = new Map()
+  for (const flow of snapshot.evaluation.flows) {
+    for (const node of [...flow.nodes, flow.integration])
+      evaluated.set(flow.id + '/' + node.id, node)
+  }
+  for (const doc of snapshot.documents)
+    for (const node of doc.definition.nodes)
+      definitions.set(doc.flowId + '/' + node.id, { doc, node })
+  let pending = false,
+    unsatisfied = false
+  const visited = new Set()
+  function visit(flowId, nodeId, integration = false) {
+    const key = flowId + '/' + nodeId
+    const result = evaluated.get(key)
+    const entry = definitions.get(key)
+    if (!result) throw new Error('Missing evaluated node')
+    if (result.status === 'excluded') {
+      if (!integration) unsatisfied = true
+      return
+    }
+    if (visited.has(key)) return
+    visited.add(key)
+    const doc = snapshot.documents.find((d) => d.flowId === flowId)
+    if (
+      result.context.warnings.length ||
+      entry?.node.applicable === null ||
+      doc.current.progress.some(
+        (p) => p.nodeId === nodeId && p.status === 'blocked'
+      )
+    )
+      unsatisfied = true
+    for (const criterion of result.criteria) {
+      if (criterion.satisfied) continue
+      if (
+        criterion.kind === 'manual' &&
+        ['missing', 'reopened'].includes(criterion.status)
+      )
+        pending = true
+      else unsatisfied = true
+    }
+    for (const dependency of entry?.node.dependsOn ?? [])
+      visit(dependency.flowId, dependency.nodeId)
+  }
+  for (const doc of snapshot.documents) {
+    visit(doc.flowId, 'integration')
+    for (const node of doc.definition.nodes.filter((n) => n.required))
+      visit(doc.flowId, node.id, true)
+  }
+  let status = pending ? 'awaiting-manual' : 'satisfied'
+  let exitCode = pending && manualPolicy === 'required' ? 3 : 0
+  if (unsatisfied) {
+    status = 'unsatisfied'
+    exitCode = 1
+  }
+  return {
+    projectId: snapshot.evaluation.projectId,
+    status,
+    manualPolicy,
+    exitCode,
+    flows: snapshot.evaluation.flows.map(({ id, status }) => ({ id, status }))
+  }
+}
+module.exports = {
+  digest,
+  nodeBinding,
+  criterionBinding,
+  evaluateProject,
+  gateSummary
+}

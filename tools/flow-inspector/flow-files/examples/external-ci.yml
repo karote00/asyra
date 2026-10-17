@@ -1,0 +1,28 @@
+name: Project contracts
+on: [push, pull_request]
+jobs:
+  current-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Configure the installed reporter in the project's existing runner config.
+      # Omit this step for manual-only projects; evaluation needs no runner.
+      - name: Execute product tests once
+        run: npm test
+      - name: Evaluate current contracts without executing tests
+        if: always()
+        run: npx --no-install flow-inspector ci
+      - name: Export current evidence
+        if: always()
+        run: npx --no-install flow-inspector export --output flow-current.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flow-current
+          path: flow-current.json
+          if-no-files-found: error

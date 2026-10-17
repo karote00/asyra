@@ -1,7 +1,8 @@
 # Author a flow document
 
-This is the implemented source-level Stage 1 API. Independent installed-package
-commands and external CI distribution are Stage 2 work; npm publication is paused.
+This public contract is shared by the installed CLI, Node API and dashboard.
+See the [package guide](../README.md) for installation, templates, native reporters
+and headless CI. npm publication requires separate approval.
 
 A project owner, developer or instructed Agent writes `*.flow.json` files using
 [flow.schema.json](flow.schema.json). One directory is one project. Use stable
@@ -15,12 +16,12 @@ Start with [manual.flow.json](examples/manual.flow.json) or
 [feature.flow.json](examples/feature.flow.json) adds dependent delivery work and
 whole-feature manual acceptance; it is covered by the formal policy tests. Keep authored files in your project,
 not in the installed tool directory. Do not copy current acceptance from another
-project. Validate and inspect the source API from the repository:
+project. Initialize a config with the installed CLI, then validate and inspect:
 
 ```sh
-node tools/flow-inspector/flow-files/cli.cjs validate path/to/flows
-node tools/flow-inspector/flow-files/cli.cjs context path/to/flows checkout review
-FLOW_PROOF_URL=http://127.0.0.1:4318 node tools/flow-inspector/flow-files/cli.cjs serve path/to/flows
+npx flow-inspector validate
+npx flow-inspector context checkout review
+npx flow-inspector serve
 ```
 
 The human dashboard shows task status, criterion progress and applicable actions
@@ -32,8 +33,8 @@ specification and implementation references and configured rerun scope in one ca
 ## Write current evidence
 
 Custom tools may write a valid JSON document themselves, or call
-`openProject(directory).update(flowId, request)` from `store.cjs`. The command
-`cli.cjs update <directory> <flow-id> <request.json>` uses the same boundary.
+`openProject(directory).update(flowId, request)` from `require('@asyra/flow-inspector')`. The command
+`flow-inspector update <flow-id> <request.json>` uses the same boundary.
 Start from the current `revision` and the selected criterion `binding` returned
 by context. Manual criteria also bind to same-node automated observations.
 
@@ -105,7 +106,7 @@ removal. This local lock is coordination, not a history store or team service.
 
 Stage 1 reuses the repository's Vitest 3.2.7 and Playwright 1.62.1 owners for Asyra
 mapping and exact selected execution. It does not auto-discover contracts in
-foreign projects; Stage 2 distributes portable integrations. Generic JSON writers
+foreign projects; use the installed portable reporters for those projects. Generic JSON writers
 and manual-only documents already use the public format without these runners.
 
 The directory allows at most 1,000 flow files, 4 MiB per file and 32 MiB total.

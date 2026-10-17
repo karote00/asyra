@@ -26,8 +26,11 @@ function openProject(
   } = {}
 ) {
   const root = fs.realpathSync(directory)
-  let previous = null
+  let previous = null,
+    ownsLock = false
   function snapshot() {
+    if (!ownsLock && fs.existsSync(path.join(root, '.writer-lock')))
+      throw new Error('Another writer owns this project')
     const names = fs
       .readdirSync(root)
       .filter((n) => n.endsWith('.flow.json'))
@@ -51,6 +54,18 @@ function openProject(
         throw new Error(name + ': ' + error.message)
       }
     })
+    if (!ownsLock && fs.existsSync(path.join(root, '.writer-lock')))
+      throw new Error('Another writer owns this project')
+    const after = fs
+      .readdirSync(root)
+      .filter((n) => n.endsWith('.flow.json'))
+      .sort()
+      .map((name) => {
+        const stat = fs.lstatSync(path.join(root, name))
+        return [name, stat.ino, stat.mtimeMs, stat.ctimeMs, stat.size]
+      })
+    if (JSON.stringify(after) !== signature)
+      throw new Error('Flow files changed during snapshot')
     onWork('admit')
     const project = admitProject(documents)
     onWork('evaluate')
@@ -69,6 +84,7 @@ function openProject(
     const lock = path.join(root, '.writer-lock')
     try {
       fs.mkdirSync(lock)
+      ownsLock = true
     } catch (error) {
       if (error.code === 'EEXIST')
         throw new Error('Another writer owns this project')
@@ -216,6 +232,7 @@ function openProject(
       }
       return freeze(doc)
     } finally {
+      ownsLock = false
       fs.rmdirSync(lock)
     }
   }

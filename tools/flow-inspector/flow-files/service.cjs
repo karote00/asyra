@@ -7,12 +7,21 @@ const { openProject } = require('./store.cjs')
 const { digest } = require('./policy.cjs')
 const { fingerprintPaths } = require('../control-plane/localization.cjs')
 const { runProcess } = require('../control-plane/runner.cjs')
-function createFlowService(root, directory, { execute = runProcess } = {}) {
+function createFlowService(
+  root,
+  directory,
+  { execute = runProcess, projectId } = {}
+) {
   const projectRoot = fs.realpathSync(root),
     store = openProject(directory)
   let active = null,
     closed = false
-  const snapshot = () => store.snapshot()
+  const snapshot = () => {
+    const value = store.snapshot()
+    if (projectId && value.evaluation.projectId !== projectId)
+      throw new Error('Wrong project identity')
+    return value
+  }
   const context = (flowId, nodeId) => {
     const flow = snapshot().evaluation.flows.find((f) => f.id === flowId)
     const node =
@@ -158,6 +167,7 @@ function createFlowService(root, directory, { execute = runProcess } = {}) {
     rerun,
     update: (flowId, request) => {
       if (closed) throw new Error('Service is closed')
+      snapshot()
       return store.update(flowId, request)
     },
     cancel: async () => {
