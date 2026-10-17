@@ -15,6 +15,7 @@ function runProcess({
   signal,
   timeoutMs = 30000,
   maxOutputBytes = 262144,
+  inheritProcessGroup = false,
   onSpawn
 }) {
   if (signal?.aborted)
@@ -37,13 +38,13 @@ function runProcess({
     const child = spawn(executable, args, {
       cwd,
       env,
-      detached: true,
+      detached: !inheritProcessGroup,
       stdio: ['ignore', 'pipe', 'pipe']
     })
     const kill = (signalName) => {
       if (!child.pid) return
       try {
-        process.kill(-child.pid, signalName)
+        process.kill(inheritProcessGroup ? child.pid : -child.pid, signalName)
       } catch (error) {
         if (error.code !== 'ESRCH') spawnError = error.message
       }

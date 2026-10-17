@@ -1,5 +1,11 @@
 # Flow Inspector Contract
 
+The current-file task workflow is defined by [Flow Document Contract](FLOW_DOCUMENT.md)
+and its public schema. The contracts below remain authoritative for the existing
+static/proof tooling. They do not require history, proof admission or a test
+runner for an ordinary public flow document. The one-time transition and current
+producer mode are documented in the [authoring guide](../../../../tools/flow-inspector/flow-files/README.md).
+
 ## Document Scope
 
 This document specifies Flow Inspector's static architecture representation and

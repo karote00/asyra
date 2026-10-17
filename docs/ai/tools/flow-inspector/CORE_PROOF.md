@@ -1,5 +1,11 @@
 # Flow Inspector Core Proof
 
+The current-file task workflow is defined by [Flow Document Contract](FLOW_DOCUMENT.md)
+and its public schema. The contracts below remain authoritative for the existing
+static/proof tooling. They do not require history, proof admission or a test
+runner for an ordinary public flow document. The one-time transition and current
+producer mode are documented in the [authoring guide](../../../../tools/flow-inspector/flow-files/README.md).
+
 ## Scope
 
 Phase 3 is implemented on 2026-09-07, extending its completed first checkpoint.

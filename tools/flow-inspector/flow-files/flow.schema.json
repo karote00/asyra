@@ -1,0 +1,854 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:flow-document:1",
+  "title": "Flow document",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "projectId": {
+      "$ref": "#/$defs/id"
+    },
+    "flowId": {
+      "$ref": "#/$defs/id"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "definition": {
+      "$ref": "#/$defs/definition"
+    },
+    "current": {
+      "$ref": "#/$defs/current"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "flowId",
+    "revision",
+    "definition",
+    "current"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "evidenceDetails": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 1048576 },
+      "maxItems": 10000
+    },
+    "nodeRef": {
+      "type": "object",
+      "properties": {
+        "flowId": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": ["flowId", "nodeId"],
+      "additionalProperties": false
+    },
+    "criterion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": ["automated", "manual"]
+        },
+        "selector": {
+          "type": "object",
+          "properties": {
+            "producer": {
+              "$ref": "#/$defs/text"
+            },
+            "identity": {
+              "$ref": "#/$defs/text"
+            }
+          },
+          "required": ["producer", "identity"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["id", "title", "kind"],
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": ["command", "external"]
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "maxItems": 10000
+        },
+        "cwd": {
+          "$ref": "#/$defs/text"
+        },
+        "instructions": {
+          "$ref": "#/$defs/text"
+        },
+        "criterionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "maxItems": 10000
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": ["id", "label", "kind", "criterionIds"],
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "objective": {
+          "$ref": "#/$defs/text"
+        },
+        "owner": {
+          "$ref": "#/$defs/text"
+        },
+        "assignee": {
+          "$ref": "#/$defs/text"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "applicable": {
+          "type": ["boolean", "null"]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nodeRef"
+          },
+          "maxItems": 10000
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/criterion"
+          },
+          "maxItems": 10000
+        },
+        "specRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "implementationRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "objective",
+        "owner",
+        "required",
+        "applicable",
+        "dependsOn",
+        "criteria",
+        "specRefs",
+        "implementationRefs",
+        "actions"
+      ],
+      "additionalProperties": false
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "criterionId": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["automated", "manual"]
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "incomplete",
+            "accepted",
+            "rejected",
+            "reopened"
+          ]
+        },
+        "binding": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "actor": {
+          "$ref": "#/$defs/text"
+        },
+        "executionId": {
+          "$ref": "#/$defs/text"
+        },
+        "caseId": {
+          "$ref": "#/$defs/text"
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "details": {
+          "$ref": "#/$defs/evidenceDetails"
+        },
+        "at": {
+          "$ref": "#/$defs/text"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "path": {
+                "$ref": "#/$defs/text"
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ownership": {
+                "enum": ["tool", "project"]
+              }
+            },
+            "required": ["name", "path", "ownership"],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "nodeId",
+        "criterionId",
+        "kind",
+        "status",
+        "binding",
+        "actor",
+        "summary",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "note": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "actor": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "required": ["id", "nodeId", "actor", "text"],
+      "additionalProperties": false
+    },
+    "progress": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "enum": ["not-started", "in-progress", "blocked"]
+        },
+        "reason": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "required": ["nodeId", "status"],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "revision": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "required": ["nodeId", "revision"],
+      "additionalProperties": false
+    },
+    "warning": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["discovery", "producer", "unmapped"]
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "details": {
+          "$ref": "#/$defs/evidenceDetails"
+        },
+        "criterionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "maxItems": 10000
+        },
+        "executionId": {
+          "$ref": "#/$defs/text"
+        },
+        "binding": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "id",
+        "nodeId",
+        "kind",
+        "summary",
+        "criterionIds",
+        "executionId",
+        "binding"
+      ],
+      "additionalProperties": false
+    },
+    "definition": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "purpose": {
+          "$ref": "#/$defs/text"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "maxItems": 10000
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/criterion"
+          },
+          "maxItems": 10000
+        },
+        "architecture": {
+          "$ref": "#/$defs/architecture"
+        }
+      },
+      "required": ["title", "purpose", "nodes", "criteria"],
+      "additionalProperties": false
+    },
+    "current": {
+      "type": "object",
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observation"
+          },
+          "maxItems": 10000
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/note"
+          },
+          "maxItems": 10000
+        },
+        "progress": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/progress"
+          },
+          "maxItems": 10000
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "maxItems": 10000
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": ["observations", "notes", "progress", "sources", "warnings"],
+      "additionalProperties": false
+    },
+    "architectureStep": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "laneId": {
+          "$ref": "#/$defs/text"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "ownerPackage": {
+          "$ref": "#/$defs/text"
+        },
+        "purpose": {
+          "$ref": "#/$defs/text"
+        },
+        "failureOwnerStepId": {
+          "$ref": "#/$defs/text"
+        },
+        "order": {
+          "type": "number"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "bypasses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "allowedContributors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "forbiddenContributors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "cacheDimensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "implementationBoundary": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "specRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "maxItems": 10000
+        },
+        "cacheEvidence": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "laneId",
+        "title",
+        "ownerPackage",
+        "purpose",
+        "failureOwnerStepId",
+        "order",
+        "inputs",
+        "outputs",
+        "conditions",
+        "bypasses",
+        "allowedContributors",
+        "forbiddenContributors",
+        "cacheDimensions",
+        "implementationBoundary",
+        "specRefs"
+      ],
+      "additionalProperties": false
+    },
+    "architecture": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "flow-inspector"
+            },
+            "version": {
+              "const": 2
+            }
+          },
+          "required": ["id", "version"],
+          "additionalProperties": false
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/text"
+            },
+            "kind": {
+              "$ref": "#/$defs/text"
+            },
+            "title": {
+              "$ref": "#/$defs/text"
+            },
+            "subtitle": {
+              "$ref": "#/$defs/text"
+            }
+          },
+          "required": ["id", "kind", "title", "subtitle"],
+          "additionalProperties": false
+        },
+        "authority": {
+          "type": "object",
+          "properties": {
+            "specPath": {
+              "$ref": "#/$defs/text"
+            },
+            "inspectorPath": {
+              "$ref": "#/$defs/text"
+            },
+            "semanticOwner": {
+              "$ref": "#/$defs/text"
+            },
+            "inspectorOwner": {
+              "$ref": "#/$defs/text"
+            }
+          },
+          "required": [
+            "specPath",
+            "inspectorPath",
+            "semanticOwner",
+            "inspectorOwner"
+          ],
+          "additionalProperties": false
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "kind": {
+                "$ref": "#/$defs/text"
+              },
+              "label": {
+                "$ref": "#/$defs/text"
+              },
+              "href": {
+                "$ref": "#/$defs/text"
+              }
+            },
+            "required": ["id", "kind", "label", "href"],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        },
+        "lanes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "title": {
+                "$ref": "#/$defs/text"
+              },
+              "order": {
+                "type": "number"
+              }
+            },
+            "required": ["id", "title", "order"],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/architectureStep"
+          },
+          "maxItems": 10000
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "from": {
+                "$ref": "#/$defs/text"
+              },
+              "to": {
+                "$ref": "#/$defs/text"
+              },
+              "kind": {
+                "$ref": "#/$defs/text"
+              },
+              "predicate": {
+                "$ref": "#/$defs/text"
+              },
+              "producedArtifacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              }
+            },
+            "required": [
+              "id",
+              "from",
+              "kind",
+              "predicate",
+              "producedArtifacts"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "ownerStepId": {
+                "$ref": "#/$defs/text"
+              },
+              "channel": {
+                "$ref": "#/$defs/text"
+              },
+              "consumerStepIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              },
+              "title": {
+                "$ref": "#/$defs/text"
+              },
+              "description": {
+                "$ref": "#/$defs/text"
+              },
+              "terminal": {
+                "type": "boolean"
+              }
+            },
+            "required": ["id", "ownerStepId", "channel", "consumerStepIds"],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "statement": {
+                "$ref": "#/$defs/text"
+              },
+              "stepIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              },
+              "artifactIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              },
+              "specRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              }
+            },
+            "required": [
+              "id",
+              "statement",
+              "stepIds",
+              "artifactIds",
+              "specRefs"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        },
+        "acceptanceContracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/text"
+              },
+              "title": {
+                "$ref": "#/$defs/text"
+              },
+              "stepIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              },
+              "assertions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              },
+              "specRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "maxItems": 10000
+              }
+            },
+            "required": ["id", "title", "stepIds", "assertions", "specRefs"],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "schema",
+        "target",
+        "authority",
+        "links",
+        "lanes",
+        "steps",
+        "routes",
+        "artifacts",
+        "invariants",
+        "acceptanceContracts"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

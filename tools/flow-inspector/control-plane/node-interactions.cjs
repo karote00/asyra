@@ -17,6 +17,57 @@ const registeredManifests = new Set([
   )
 ])
 
+function selectedPlaywrightConfig(root, contract, command) {
+  const appRoot = path.resolve(root, command.cwd)
+  return [
+    'import config from ' + JSON.stringify(safePath(root, contract.configFile)),
+    "import path from 'node:path'",
+    'const base = ' + JSON.stringify(appRoot),
+    "export default { ...config, testDir: path.resolve(base, config.testDir || '.'), outputDir: path.join(base, 'test-results'), webServer: (Array.isArray(config.webServer) ? config.webServer : config.webServer ? [config.webServer] : []).map(server => ({ ...server, cwd: base, reuseExistingServer: false })) }"
+  ].join('\n')
+}
+
+function selectedCommand(root, { item, contract }) {
+  const isPlaywright = contract.runner === 'playwright'
+  const cwd = isPlaywright ? path.dirname(contract.configFile) : '.'
+  const relative = (input) =>
+    path.relative(path.resolve(root, cwd), safePath(root, input))
+  const args = isPlaywright
+    ? [
+        'test',
+        escapePattern(relative(item.file)),
+        '--config',
+        relative(contract.configFile),
+        '--project',
+        item.projectName,
+        '--grep',
+        '^' +
+          escapePattern(
+            item.projectName +
+              ' ' +
+              path.relative('apps/asyra-design/e2e', item.file) +
+              ' ' +
+              item.testName
+          ) +
+          '$',
+        '--workers=1',
+        '--reporter=line,json'
+      ]
+    : [
+        'run',
+        safePath(root, item.file),
+        '--config',
+        contract.configFile,
+        '--testNamePattern',
+        '^' + escapePattern(item.testName) + '$',
+        '--no-file-parallelism',
+        '--reporter=json'
+      ]
+  if (!isPlaywright && item.projectName)
+    args.push('--project', item.projectName)
+  return { runner: isPlaywright ? 'playwright' : 'vitest', cwd, args }
+}
+
 function createNodeInteractions(
   root,
   { directory, observations, requireIdle, ErrorType, execute = runProcess }
@@ -130,46 +181,8 @@ function createNodeInteractions(
       fail(409, 'Exact test mapping is unavailable')
     return { ...selection, contract }
   }
-  const commandFor = ({ item, contract }) => {
-    const isPlaywright = contract.runner === 'playwright'
-    const cwd = isPlaywright ? path.dirname(contract.configFile) : '.'
-    const relative = (input) =>
-      path.relative(path.resolve(root, cwd), safePath(root, input))
-    const args = isPlaywright
-      ? [
-          'test',
-          escapePattern(relative(item.file)),
-          '--config',
-          relative(contract.configFile),
-          '--project',
-          item.projectName,
-          '--grep',
-          '^' +
-            escapePattern(
-              item.projectName +
-                ' ' +
-                path.relative('apps/asyra-design/e2e', item.file) +
-                ' ' +
-                item.testName
-            ) +
-            '$',
-          '--workers=1',
-          '--reporter=line,json'
-        ]
-      : [
-          'run',
-          safePath(root, item.file),
-          '--config',
-          contract.configFile,
-          '--testNamePattern',
-          '^' + escapePattern(item.testName) + '$',
-          '--no-file-parallelism',
-          '--reporter=json'
-        ]
-    if (!isPlaywright && item.projectName)
-      args.push('--project', item.projectName)
-    return { runner: isPlaywright ? 'playwright' : 'vitest', cwd, args }
-  }
+  const commandFor = (selection) => selectedCommand(root, selection)
+
   const preview = (request) => {
     object(request, ['runId', 'caseId'])
     if (closed) fail(409, 'Service is closing')
@@ -516,16 +529,9 @@ function createNodeInteractions(
         let executionConfig
         if (isPlaywright) {
           const configPath = path.join(output, 'selected.config.ts')
-          const appRoot = path.resolve(root, command.cwd)
           fs.writeFileSync(
             configPath,
-            [
-              'import config from ' +
-                JSON.stringify(safePath(root, contract.configFile)),
-              "import path from 'node:path'",
-              'const base = ' + JSON.stringify(appRoot),
-              "export default { ...config, testDir: path.resolve(base, config.testDir || '.'), outputDir: path.join(base, 'test-results'), webServer: (Array.isArray(config.webServer) ? config.webServer : config.webServer ? [config.webServer] : []).map(server => ({ ...server, cwd: base, reuseExistingServer: false })) }"
-            ].join('\n')
+            selectedPlaywrightConfig(root, contract, command)
           )
           executionConfig = {
             path: path.relative(root, configPath),
@@ -712,4 +718,8 @@ function createNodeInteractions(
     }
   }
 }
-module.exports = { createNodeInteractions }
+module.exports = {
+  createNodeInteractions,
+  selectedCommand,
+  selectedPlaywrightConfig
+}

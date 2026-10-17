@@ -906,7 +906,7 @@ summary:focus-visible {
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;')
 
-  const specLink = links.find((link) => link.kind === 'authority')
+  let specLink = links.find((link) => link.kind === 'authority')
 
   const formatItem = (value) => {
     if (value && typeof value === 'object' && value.href && value.label) {
@@ -1808,8 +1808,44 @@ summary:focus-visible {
     renderFlow()
     renderDetail()
     runLayoutChecks()
+    window.dispatchEvent(new window.Event('flow-inspector:render'))
   }
 
+  globalThis.FLOW_INSPECTOR_VIEW = {
+    select(id) {
+      if (!stepById.has(id)) return
+      selectedId = id
+      render()
+    },
+    update(next) {
+      Object.assign(target, next.target)
+      Object.assign(authority, next.authority)
+      for (const [name, collection] of Object.entries(requiredCollections)) {
+        collection.splice(0, collection.length, ...next[name])
+      }
+      specLink = links.find((link) => link.kind === 'authority')
+      laneById.clear()
+      lanes.forEach((lane) => laneById.set(lane.id, lane))
+      stepById.clear()
+      steps.forEach((step) => stepById.set(step.id, step))
+      artifactById.clear()
+      artifacts.forEach((artifact) => artifactById.set(artifact.id, artifact))
+      stepsByLane.clear()
+      lanes.forEach((lane) =>
+        stepsByLane.set(
+          lane.id,
+          steps
+            .filter((step) => step.laneId === lane.id)
+            .sort((a, b) => a.order - b.order)
+        )
+      )
+      if (!stepById.has(selectedId)) selectedId = steps[0]?.id ?? null
+      if (selectedLaneId !== 'All' && !laneById.has(selectedLaneId))
+        selectedLaneId = 'All'
+      runStaticChecks()
+      render()
+    }
+  }
   runStaticChecks()
   const viewport = ensureFlowViewport()
   enableViewportZoom(viewport)

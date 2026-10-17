@@ -615,3 +615,20 @@ test(
     assert.equal(spawned.mock.callCount(), 0)
   }
 )
+
+test('a nested current action can inherit its outer owned process group', async (t) => {
+  const runnerPath = path.resolve(__dirname, '../runner.cjs')
+  const source = `const {runProcess}=require(${JSON.stringify(runnerPath)}); runProcess({executable:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:process.cwd(),env:{},inheritProcessGroup:true,onSpawn(pid){process.stdout.write(String(pid));setTimeout(()=>process.exit(0),100)}})`
+  const result = await execute(source)
+  const pid = Number(result.output)
+  assert.ok(Number.isInteger(pid) && pid > 1)
+  t.after(() => {
+    try {
+      process.kill(pid, 'SIGKILL')
+    } catch (error) {
+      if (error.code !== 'ESRCH') throw error
+    }
+  })
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' })
+})
