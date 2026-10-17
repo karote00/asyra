@@ -34,6 +34,16 @@ the existing owners after rebuilding declarations; catalog 8/8 and public docs
 changes. Run applicable local delivery checks against the resulting committed
 source before publishing; do not restart monitoring or merge this PR.
 
+The shared delivery gate also detected stale direct consumers: the root Undo
+example, generated template README/environment, and the release test's exact
+TypeScript command. The three previously preserved documentation edits match
+these task-owned contracts exactly; their content is retained and included.
+Only the canonical environment example and current three-config type assertion
+were synchronized, followed by public source-map generation. Existing formal
+regressions now pass 45/45, and focused lint is clean. No runtime change or full
+release-template regeneration. Continue the remaining delivery checks while
+retaining exact-source evidence for unchanged prerequisites.
+
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 
 ### Bounded planning contract and evidence
