@@ -316,7 +316,10 @@ test(
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      f.contract.negativeCaseIds.slice().sort()
+      f.contract.definition.scenarios
+        .find((scenario) => scenario.id === 'inverse-regression')
+        .expectedFailedCaseIds.slice()
+        .sort()
     )
     correction = true
     const passed = await f.owner.wait(f.owner.resume(id, 'task', 'human'))

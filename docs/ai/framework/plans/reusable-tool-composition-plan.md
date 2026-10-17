@@ -62,6 +62,26 @@ headings, unlike the rendered-link oracle. Preserve heading hyphens in that test
 the current `Tool-first correction contract` heading remains unchanged.
 
 
+#### Delivery Inspector observation fixtures
+
+The complete control-plane gate reproduced stale observation consumers after the
+current Factory/shortcut and tool contracts changed. Restrict this correction to
+the existing test fixtures, shortcut/functional observation manifests, shortcut
+Inspector declaration and generated catalog.
+Use the selected negative scenario's exact declared failures, not the union of all
+negative obligations. Keep independent transaction-boundary obligations exercised
+by their own scenarios. Inject reversed captured history intent at its current
+owner; preserve valid-direction failures and successful invalid-intent guards.
+Synchronize observation inventories with the current declared cases and verify
+failure localization, retained attempts and recovery. Do not change product code,
+weaken assertions or infer expected failures from the observed failed run. The
+existing 17 failures are the red evidence. Run affected formal control-plane tests,
+shared checks and the remaining browser delivery gates before push. Remove nine
+obsolete real-model observation entries; map the three current export actions and
+five immediate-history browser cases to their existing declared owners. The
+shortcut declaration consumes captured intent, matching the current product spec.
+
+
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 
 ### Bounded planning contract and evidence

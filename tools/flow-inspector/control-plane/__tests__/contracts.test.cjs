@@ -513,7 +513,7 @@ test('Design execution admission locates all existing cases within their seven o
     undefined,
     'apps/asyra-design/flow-contracts.json'
   )
-  assert.equal(contract.cases.length, 34)
+  assert.equal(contract.cases.length, 41)
   assert.deepEqual(
     [...new Set(contract.cases.map((item) => item.stepId))].sort(),
     ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
@@ -648,7 +648,7 @@ test('Reusable composition source config runs all unchanged cases without proof 
   )
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
-  assert.equal(report.numPassedTests, 9)
+  assert.equal(report.numPassedTests, 11)
   assert.equal(report.numFailedTests, 0)
 })
 
@@ -986,7 +986,7 @@ test('the complete functional discovery has one exact responsibility per case, i
     assert.equal(new Set(expected).size, expected.length)
     assert.deepEqual(observed.sort(), expected.sort())
   }
-  collect('functional', 'playwright.config.ts', 449)
+  collect('functional', 'playwright.config.ts', 447)
   collect('status', 'playwright.status-toast.config.ts', 1)
 })
 

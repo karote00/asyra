@@ -261,7 +261,13 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        server.service.contract().negativeCaseIds.slice().sort()
+        server.service
+          .contract()
+          .definition.scenarios.find(
+            (scenario) => scenario.id === 'inverse-regression'
+          )
+          .expectedFailedCaseIds.slice()
+          .sort()
       )
       assert.equal(
         await main(['--url', server.origin, 'ci-trial'], {

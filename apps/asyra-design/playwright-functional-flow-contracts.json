@@ -870,6 +870,66 @@
             "apps/asyra-design/src/common-apis/history.ts",
             "apps/asyra-design/src/common-apis/transaction.ts"
           ]
+        },
+        {
+          "id": "functional.ai-conversation-flow.ab9c20643fbc",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+          "testName": "history admission ignores repeated shortcuts during undo - failure=false",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-flow.64d1d0178e2b",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+          "testName": "history admission ignores repeated shortcuts during undo - failure=true",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-flow.8ecbb3017807",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+          "testName": "history admission ignores repeated shortcuts during redo - failure=false",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-flow.95cb58a08322",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+          "testName": "history admission ignores repeated shortcuts during redo - failure=true",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
+        {
+          "id": "functional.undo-redo.91dc470e0095",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/undo-redo.spec.ts",
+          "testName": "Undo/Redo Actions Undo interrupts the active drag and preserves Redo through durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -2579,6 +2639,39 @@
             "apps/asyra-design/src/ai/document-export.ts",
             "apps/asyra-design/src/ai/runtime-input.ts",
             "apps/asyra-design/src/ai/startup.ts"
+          ]
+        },
+        {
+          "id": "functional.action-usage.b048af8b663e",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
+          "testName": "registered action usage - export_document",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/actions.ts",
+            "apps/asyra-design/src/ai/document-export.ts"
+          ]
+        },
+        {
+          "id": "functional.action-usage.3c1d13a24305",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
+          "testName": "registered action usage - download_document_export",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/actions.ts",
+            "apps/asyra-design/src/ai/document-export.ts"
+          ]
+        },
+        {
+          "id": "functional.action-usage.68c3c70d3fef",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
+          "testName": "registered action usage - release_document_export",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/actions.ts",
+            "apps/asyra-design/src/ai/document-export.ts"
           ]
         }
       ],
@@ -4828,21 +4921,6 @@
           ]
         },
         {
-          "id": "functional.local-ai-provider.98fd96e3f714",
-          "stepId": "invoke-basic-api",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription discovers APIs to reflect and center an existing vector",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/basic-api-actions.ts",
-            "apps/asyra-design/src/ai/basic-api-catalog.ts",
-            "apps/asyra-design/src/ai/basic-api-results.ts",
-            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
-            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
-          ]
-        },
-        {
           "id": "functional.local-ai-provider.ae9edfd22588",
           "stepId": "invoke-basic-api",
           "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
@@ -4945,20 +5023,6 @@
           "stepId": "apply-prepared-design",
           "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
           "testName": "structured patterned preparation renders editable geometry with one Undo",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.design-construction.7eeb27c23817",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
-          "testName": "local subscription constructs and reviews an editable layout from a brief",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-design.ts",
@@ -5165,94 +5229,10 @@
           ]
         },
         {
-          "id": "functional.local-ai-provider.e60448f2237c",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription creates an editable text drawing through the real Agent panel",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.70143c8b6f8e",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription creates an editable image drawing through the real Agent panel",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.bdb5ea388cd3",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription continues a text-only drawing after a detail choice",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.8ade2a7b04c1",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription traces the reference logo at 240px without its separate mark",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.f13f30010fbe",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription uses acknowledged drawing IDs for a dependent edit in one undo",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
           "id": "functional.local-ai-provider.b5ffee45e938",
           "stepId": "apply-prepared-design",
           "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
           "testName": "backend-selected circles become native Ovals through the ordinary Agent action",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.746371e1ff0a",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription receives fresh images during repeated refinement",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-design.ts",
@@ -5295,20 +5275,6 @@
           "stepId": "apply-prepared-design",
           "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
           "testName": "backend contour refinement renders the measured straight edge with one Undo",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts",
-            "apps/asyra-design/src/ai/prepared-design-admission.ts",
-            "apps/asyra-design/src/ai/design-actions.ts",
-            "apps/asyra-design/src/ai/design-edit-action.ts",
-            "apps/asyra-design/server/design-preparation.ts"
-          ]
-        },
-        {
-          "id": "functional.local-ai-provider.df6ddb37b6ef",
-          "stepId": "apply-prepared-design",
-          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
-          "testName": "local subscription reproduces a named logo through reference tools without an attachment",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-design.ts",
