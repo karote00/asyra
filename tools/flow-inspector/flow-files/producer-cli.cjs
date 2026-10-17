@@ -29,9 +29,10 @@ async function runSelected(
     contract,
     item: { file: testFile, testName: candidate.testName, projectName }
   })
-  const parent = path.join(root, 'tmp/flow-inspector/current-command')
+  // Chrome creates Unix sockets below TMPDIR; keep this owned path shallow.
+  const parent = path.join(root, 'tmp')
   fs.mkdirSync(parent, { recursive: true })
-  const temporary = fs.mkdtempSync(path.join(parent, 'selected-'))
+  const temporary = fs.mkdtempSync(path.join(parent, 'flow-'))
   const report = path.join(temporary, 'report.json'),
     config = path.join(temporary, 'selected.config.ts'),
     runtimeRequire = createRequire(path.join(root, 'package.json'))

@@ -31,10 +31,13 @@ test(
       result.output +
         '\n' +
         JSON.stringify({
-          errors: result.context.errors.map(({ criterionId, summary }) => ({
-            criterionId,
-            summary
-          })),
+          errors: result.context.errors.map(
+            ({ criterionId, summary, details }) => ({
+              criterionId,
+              summary,
+              diagnosticTail: details.join('\n').slice(-6000)
+            })
+          ),
           warnings: result.context.warnings.map(({ summary }) => summary)
         })
     )
@@ -107,10 +110,13 @@ test(
       result.output +
         '\n' +
         JSON.stringify({
-          errors: result.context.errors.map(({ criterionId, summary }) => ({
-            criterionId,
-            summary
-          })),
+          errors: result.context.errors.map(
+            ({ criterionId, summary, details }) => ({
+              criterionId,
+              summary,
+              diagnosticTail: details.join('\n').slice(-6000)
+            })
+          ),
           warnings: result.context.warnings.map(({ summary }) => summary)
         })
     )
