@@ -23,7 +23,7 @@ test('complete public documentation passes structural, link, and API gates', asy
   assert.equal(summary.packageGuideCount, 19)
   assert.equal(summary.conceptPageCount, 7)
   assert.equal(summary.implementationGuideCount, 11)
-  assert.equal(summary.typescriptSnippetCount, 11)
+  assert.equal(summary.typescriptSnippetCount, 12)
   assert.ok(summary.localLinkCount > 100)
   assert.ok(summary.apiReferenceCount > 50)
   assert.equal(summary.unownedMarkdownCount, 0)

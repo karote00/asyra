@@ -377,7 +377,7 @@ describe('explicit native oval preparation', () => {
     const original = prepareLocalVectorArtifact(artifact, args)
     const result = prepareLocalVectorArtifact(artifact, {
       ...args,
-      ovalPathIds: ['path-1']
+      componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
     })
     const descriptors = result.slices.flatMap((slice) => slice.descriptors)
     expect(descriptors[0]).toMatchObject({
@@ -411,21 +411,24 @@ describe('explicit native oval preparation', () => {
     expect(original.slices[0].descriptors[0].type).toBe('vector')
   })
   it('rejects invalid or compound selections before producing descriptors', () => {
-    for (const ovalPathIds of [
-      ['missing'],
-      ['path-1', 'path-1'],
-      [1],
+    for (const componentMappings of [
+      [{ pathId: 'missing', componentType: 'oval' }],
+      [
+        { pathId: 'path-1', componentType: 'oval' },
+        { pathId: 'path-1', componentType: 'oval' }
+      ],
+      [{ pathId: 1, componentType: 'oval' }],
       null,
       'path-1'
     ]) {
       expect(() =>
-        prepareLocalVectorArtifact(artifact, { ...args, ovalPathIds })
+        prepareLocalVectorArtifact(artifact, { ...args, componentMappings })
       ).toThrow()
     }
     expect(() =>
       prepareLocalVectorArtifact(artifact, {
         ...args,
-        ovalPathIds: ['path-1'],
+        componentMappings: [{ pathId: 'path-1', componentType: 'oval' }],
         excludePathIds: ['path-1']
       })
     ).toThrow()
@@ -434,7 +437,7 @@ describe('explicit native oval preparation', () => {
       prepareLocalVectorArtifact(compound, {
         ...args,
         imageArtifactId: compound.imageArtifactId,
-        ovalPathIds: ['path-1']
+        componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
       })
     ).toThrow()
   })

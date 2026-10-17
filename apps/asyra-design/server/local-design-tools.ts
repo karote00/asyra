@@ -2,7 +2,7 @@ import {
   toolResultBoolean,
   toolResultIds,
   toolResultObject,
-  toolResultString,
+  toolRequestReference,
   toolSemantics
 } from '../src/ai/tool-contract'
 import { inspectDesignBudget } from './design-budget'
@@ -223,7 +223,7 @@ const preparationSchema = {
       description:
         'Repair a rejected draft retained in this request. Replace only existing fields using JSON Pointer paths relative to the draft; send no old values. Revalidation is mandatory. If the draft reference has expired, resend the complete source.',
       properties: {
-        draftId: { type: 'string', minLength: 1, maxLength: 160 },
+        draftId: { ...toolRequestReference, maxLength: 160 },
         replacements: {
           type: 'array',
           minItems: 1,
@@ -254,7 +254,7 @@ const referenceSchema = {
   additionalProperties: false,
   required: ['artifactId'],
   properties: {
-    artifactId: { type: 'string', minLength: 1 },
+    artifactId: toolRequestReference,
     parentId: {
       type: 'string',
       minLength: 1,
@@ -286,6 +286,13 @@ export const createLocalDesignTools = (
   actions: AiProviderInput['actions'],
   session = createDesignPreparationSession()
 ) => {
+  const preparedOutputSchema = toolResultObject({
+    available: { const: true },
+    artifactId: toolRequestReference,
+    applicable: toolResultBoolean,
+    elementCount: { type: 'integer', minimum: 1 },
+    findings: { type: 'array' }
+  })
   const enabled = actions.some(
     (a) => a.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
@@ -347,6 +354,7 @@ export const createLocalDesignTools = (
         }
   }
   return {
+    checkResults: session.checkResults,
     resolveRecipe: session.recipe,
     rejectInput: (name: string, args: unknown) => {
       if (
@@ -426,17 +434,18 @@ export const createLocalDesignTools = (
           {
             type: 'function',
             ...toolSemantics(
-              toolResultObject({
-                available: { const: true },
-                artifactId: toolResultString,
-                applicable: toolResultBoolean,
-                elementCount: { type: 'integer', minimum: 1 },
-                findings: { type: 'array' }
-              }),
+              preparedOutputSchema,
               'prepare',
               ['request-artifacts'],
               'request-artifact'
             ),
+            composition: 'allowed' as const,
+            recoveryOutputSchema: {
+              anyOf: [
+                preparedOutputSchema,
+                toolResultObject({ available: { const: false } })
+              ]
+            },
             name: AiDesignToolIds.PREPARE_DESIGN,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
@@ -455,8 +464,8 @@ export const createLocalDesignTools = (
                   type: 'array',
                   minItems: 1,
                   items: toolResultObject({
-                    artifactId: toolResultString,
-                    targetSetId: toolResultString,
+                    artifactId: toolRequestReference,
+                    targetSetId: toolRequestReference,
                     count: { type: 'integer', minimum: 1 }
                   })
                 }
@@ -465,6 +474,7 @@ export const createLocalDesignTools = (
               ['request-artifacts'],
               'request-artifact'
             ),
+            composition: 'allowed' as const,
             name: AiDesignToolIds.RETAIN_DESIGN_TARGETS,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
@@ -484,8 +494,7 @@ export const createLocalDesignTools = (
                     required: ['artifactId'],
                     properties: {
                       artifactId: {
-                        type: 'string',
-                        minLength: 1,
+                        ...toolRequestReference,
                         maxLength: 160
                       },
                       keys: {
@@ -510,6 +519,7 @@ export const createLocalDesignTools = (
               'prepare',
               ['request-artifacts']
             ),
+            composition: 'control-plane' as const,
             name: AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS,
             executionAccess: LocalToolAccess.EXCLUSIVE,
             description:
@@ -524,7 +534,7 @@ export const createLocalDesignTools = (
                   minItems: 1,
                   maxItems: 128,
                   uniqueItems: true,
-                  items: { type: 'string', minLength: 1, maxLength: 160 }
+                  items: { ...toolRequestReference, maxLength: 160 }
                 }
               }
             }

@@ -510,52 +510,63 @@ describe('SceneTree owner-issued mutation prepared mutations', () => {
     ).toThrow(/one-shot|already applied/i)
   })
 
-  it('prepares exact canonical raw evidence without applying a prefix', () => {
-    const sourcePreparation = sceneTree.prepareElementDataMutation([
-      {
-        elementId: 'raw-mutation-first',
-        values: { name: 'Remote First', visible: false }
-      },
-      {
-        elementId: 'raw-mutation-second',
-        values: { lock: true }
-      }
-    ])
+  it.each([undefined, { undoable: true }])(
+    'prepares exact canonical raw evidence with options %j without applying a prefix',
+    (options) => {
+      const sourcePreparation = sceneTree.prepareElementDataMutation([
+        {
+          elementId: 'raw-mutation-first',
+          values: { name: 'Remote First', visible: false }
+        },
+        {
+          elementId: 'raw-mutation-second',
+          values: { lock: true }
+        }
+      ])
 
-    const exactPreparation = sceneTree.prepareCanonicalElementDataMutation(
-      sourcePreparation.evidence
-    )
+      const exactPreparation = sceneTree.prepareCanonicalElementDataMutation(
+        sourcePreparation.evidence.map((change) => ({
+          ...change,
+          ...(options ? { options } : {})
+        }))
+      )
 
-    expect(exactPreparation).not.toBe(sourcePreparation)
-    expect(exactPreparation.evidence).toEqual(sourcePreparation.evidence)
-    expect(exactPreparation.orderedElementIds).toEqual([
-      'raw-mutation-first',
-      'raw-mutation-second'
-    ])
-    expect(first.get('name')).toBe('First')
-    expect(first.get('visible')).toBe(true)
-    expect(second.get('lock')).toBe(false)
+      expect(exactPreparation).not.toBe(sourcePreparation)
+      expect(exactPreparation.evidence).toEqual(sourcePreparation.evidence)
+      expect(exactPreparation.orderedElementIds).toEqual([
+        'raw-mutation-first',
+        'raw-mutation-second'
+      ])
+      expect(first.get('name')).toBe('First')
+      expect(first.get('visible')).toBe(true)
+      expect(second.get('lock')).toBe(false)
 
-    const staleEvidence = sourcePreparation.evidence.map((change, index) =>
-      index === 1
-        ? {
+      const staleEvidence = sourcePreparation.evidence.map((change, index) =>
+        index === 1
+          ? {
+              ...change,
+              changes: change.changes.map((field) => ({
+                ...field,
+                before: field.key === 'lock' ? true : field.before
+              }))
+            }
+          : change
+      )
+
+      expect(() =>
+        sceneTree.prepareCanonicalElementDataMutation(
+          staleEvidence.map((change) => ({
             ...change,
-            changes: change.changes.map((field) => ({
-              ...field,
-              before: field.key === 'lock' ? true : field.before
-            }))
-          }
-        : change
-    )
-
-    expect(() =>
-      sceneTree.prepareCanonicalElementDataMutation(staleEvidence)
-    ).toThrow(/stale canonical element data/i)
-    expect(first.get('name')).toBe('First')
-    expect(first.get('visible')).toBe(true)
-    expect(second.get('lock')).toBe(false)
-    expect(sceneTree.changes).toEqual([])
-  })
+            ...(options ? { options } : {})
+          }))
+        )
+      ).toThrow(/stale canonical element data/i)
+      expect(first.get('name')).toBe('First')
+      expect(first.get('visible')).toBe(true)
+      expect(second.get('lock')).toBe(false)
+      expect(sceneTree.changes).toEqual([])
+    }
+  )
 
   it('rejects later-invalid, counterfeit, cross-owner, and stale prepared mutations before mutation', () => {
     expect(() =>

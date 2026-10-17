@@ -107,6 +107,15 @@ supply package names or an architecture design you can establish yourself.
    | Generated Starter Item extension              | [Starter onboarding](references/apps/starter-app/docs/ONBOARDING.md)                                                                    |
    | Complete Design product extension             | [Design starter](references/docs/public/start/create-design-app.md)                                                                     |
 
+   For session or gesture work, use the Feature guide's cancellation-policy
+   section before choosing interruption behavior. Inspect the installed exports
+   for `SessionCancelPolicies` and its derived policy/outcome types in
+   `@asyra/utils`; Apps import this pure contract directly. Choose `COMMIT_CURRENT`,
+   `ROLLBACK`, or `FEATURE_DEFINED` from the product requirement. Feature System
+   owns execution; Core exposes runtime helpers, not these policy definitions.
+   Reuse the existing session finalizer and Factory history controls; do not add
+   an App queue or busy-state mirror. A Skill update does not install newer APIs.
+
 4. Assign each concern to Framework mechanics, optional Preset defaults,
    App domain or backend policy. Reuse the existing owner and supported public
    API. For document-changing intent in an Asyra Core composition, follow the

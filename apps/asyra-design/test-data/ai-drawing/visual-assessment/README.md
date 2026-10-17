@@ -9,11 +9,12 @@ control intentionally requests this folded-panel, abstract appearance. Both use
 identical pixels. This checks that review follows user intent rather than a fixed
 angle/realism rule. It does not establish a general accuracy rate or compare model
 speed. Source reference selection and original-byte transport have separate unit
-coverage. Run this pair once before the next full drawing, retaining failures.
+coverage. No calibration run is required by the current drawing workflow.
 
-Run the formal `local-visual-assessment-live.test.ts` with `.env` loaded and
-`VISUAL_ASSESSMENT_LIVE=true` in that local file. Model and executable come from
-the same App settings; it starts no App server and cannot mutate a canvas.
+The independent visual-assessment executable route and its live test have been
+removed. These images are immutable historical evidence, not an instruction to
+launch another model or proof of the current tool-first workflow. Current drawing
+judgments belong to the primary agent; mechanical checks belong to tools.
 
 `disconnected-facades.png` preserves `inspection-0.png` from request
 `371cb16f-e499-4a17-9e6b-bc346e0bc6c6`, 2026-10-04. Its criterion deliberately

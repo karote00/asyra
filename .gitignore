@@ -32,6 +32,9 @@ dist
 *storybook.log
 .vercel
 
+# Local persistent App data
+.app-data/
+
 # Private environment files
 .env
 .env.*

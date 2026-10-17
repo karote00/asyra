@@ -1,3 +1,4 @@
+import { wholeViewJudgments } from './fixtures/review-inputs'
 import { expect, it } from 'vitest'
 import {
   designEvidenceSchema,
@@ -260,7 +261,7 @@ it('preserves real review and action schema admission after native conversion', 
     ),
     { phase: 'facts' },
     { phase: 'visual', checks: [] },
-    { phase: 'structure', inspectionIds: ['image'], checks: [] }
+    { phase: 'structure', ...wholeViewJudgments(['image'], []) }
   ]
   expect(operationInputIssue(reviewPlanExample, converted)).toBeUndefined()
   for (const input of candidates)
@@ -393,10 +394,29 @@ it('preserves admission of every advertised evidence tool through native convers
     select_design_references: { referenceImageIndexes: [0] },
     review_drawing: {
       phase: 'visual',
-      inspectionIds: ['inspection'],
-      checks: [
-        { criterionId: 'shape', status: 'pass', evidence: 'Matches reference.' }
-      ]
+      ...wholeViewJudgments(
+        ['inspection'],
+        [
+          {
+            criterionId: 'shape',
+            status: 'pass',
+            evidence: 'Matches reference.',
+            binding: {
+              requestId: 'schema-only',
+              requirementRevision: 1,
+              checkRevision: 1,
+              signature: 'schema-only',
+              dependencies: [
+                {
+                  inspectionId: 'inspection',
+                  elementId: 'drawing',
+                  scope: 'overview:whole'
+                }
+              ]
+            }
+          }
+        ]
+      )
     }
   }
   expect(Object.keys(examples).sort()).toEqual(
@@ -429,17 +449,59 @@ it('preserves composed capture inputs and strict target validation through nativ
   if (!tool) throw new Error('Missing review tool')
   const native = nativeToolInputSchema(tool.inputSchema)
   const checks = [
-    { criterionId: 'shape', status: 'pass', evidence: 'Current shape' }
+    {
+      criterionId: 'shape',
+      status: 'pass',
+      evidence: 'Current shape',
+      inspectionIds: ['overview'],
+      binding: {
+        requestId: 'schema-only',
+        requirementRevision: 1,
+        checkRevision: 1,
+        signature: 'schema-only',
+        dependencies: [
+          {
+            inspectionId: 'overview',
+            elementId: 'drawing',
+            scope: 'overview:whole'
+          }
+        ]
+      }
+    }
   ]
   const targets = [
-    { elementId: 'drawing' },
-    { elementId: 'detail', region: { x: -10, y: 5, width: 100, height: 100 } }
+    { elementId: 'drawing', checks: [{ criterionId: 'shape' }] },
+    {
+      elementId: 'detail',
+      checks: [{ criterionId: 'shape' }],
+      region: { x: -10, y: 5, width: 100, height: 100 }
+    }
   ]
   for (const phase of ['structure', 'visual']) {
     for (const [input, valid] of [
       [{ inspections: targets }, true],
       [{ inspectionIds: ['overview'], inspections: [targets[1]] }, true],
-      [{ inspectionIds: ['overview'] }, true],
+      [{ inspectionIds: ['overview'], checks }, true],
+      [
+        { bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }] },
+        true
+      ],
+      [{ inspections: targets, checks, inspectionIds: ['overview'] }, false],
+      [
+        {
+          bindChecks: [{ criterionId: 'shape', inspectionIds: ['overview'] }],
+          checks,
+          inspectionIds: ['overview']
+        },
+        false
+      ],
+      [
+        {
+          inspectionIds: ['overview'],
+          checks: checks.map(({ binding: _binding, ...check }) => check)
+        },
+        false
+      ],
       [{}, false],
       [{ inspections: [] }, false],
       [{ inspections: [{ elementId: '' }] }, false],
@@ -459,8 +521,25 @@ it('preserves composed capture inputs and strict target validation through nativ
     ] as const) {
       for (const schema of [tool.inputSchema, native])
         expect(
-          operationInputIssue({ phase, checks, ...input }, schema) === undefined
+          operationInputIssue({ phase, ...input }, schema) === undefined
         ).toBe(valid)
     }
   }
+})
+
+it('validates positional receipt schemas without retyping the diagnostic tail', () => {
+  const schema = {
+    type: 'array',
+    minItems: 1,
+    prefixItems: [{ type: 'number' }],
+    items: { type: 'string' }
+  }
+  expect(operationInputIssue([1, 'ok'], schema)).toBeUndefined()
+  expect(operationInputIssue(['bad', 'ok'], schema)).toContain('[0]')
+  expect(operationInputIssue([1, 2], schema)).toContain('[1]')
+  expect(operationInputIssue([], schema)).toContain('too few')
+  expect(operationInputIssue([1], { ...schema, items: false })).toBeUndefined()
+  expect(
+    operationInputIssue([1, 'extra'], { ...schema, items: false })
+  ).toBeDefined()
 })

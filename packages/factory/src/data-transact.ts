@@ -447,6 +447,7 @@ class DataTransact {
   private readonly pendingImmediatePublicationRecords: JournalSharedRecordRef[] =
     []
   private readonly pendingImmediatePublicationWorkItemKeys = new Set<string>()
+  private nextImmediateDeliveryJournalIndex = 0
   private immediatePublicationToken = 0
   private scheduledImmediatePublicationToken: number | null = null
   private publicationSequence = 0
@@ -629,8 +630,15 @@ class DataTransact {
         this.historySourceBatches(this.deliveredHistoryRecords(member))
       )
       const memberSlices = new Map<string, string[]>()
+      let atomicSliceId: string | undefined
       batches.forEach((batch) => {
-        const sliceId = `${memberIndex}:${batch.sliceId}`
+        const sourceSliceId = `${memberIndex}:${batch.sliceId}`
+        const isAtomicMemberBatch =
+          !member.progressiveDeliverySequence &&
+          batch.sharedDelivery === 'transaction-end'
+        if (isAtomicMemberBatch) atomicSliceId ??= sourceSliceId
+        else atomicSliceId = undefined
+        const sliceId = atomicSliceId ?? sourceSliceId
         sourceSliceIds.set(batch.batchId, sliceId)
         const ids = memberSlices.get(sliceId) ?? []
         ids.push(...batch.deliveries.map(({ deliveryId }) => deliveryId))
@@ -707,6 +715,7 @@ class DataTransact {
 
     this.activeOrigin = origin ?? 'action'
     this.journal = []
+    this.nextImmediateDeliveryJournalIndex = 0
     this.replaceLatestHistoryStages.clear()
     this.preparedActionHistoryEntries = null
     this.pendingImmediatePublicationEntries.length = 0
@@ -927,19 +936,34 @@ class DataTransact {
           'Nested undo or redo cannot accept a new action mutation'
         )
       }
-      const immediateEntries =
-        this.applyingReplayEvent && this.retainingHistoryReplaySharedEvidence
-          ? []
-          : recordedEntries.filter(
-              (entry) =>
-                entry.shared && entry.options.sharedDelivery === 'immediate'
-            )
-      this.deliverSharedEntries(
-        immediateEntries,
-        immediateEntries.length > 0
-          ? `${this.currentArtifactId}:owner-batch:${journalStart}`
-          : undefined
-      )
+      let lastImmediateEntry: TransactionJournalEntry | undefined
+      for (const entry of recordedEntries) {
+        if (entry.shared && entry.options.sharedDelivery === 'immediate') {
+          lastImmediateEntry = entry
+        }
+      }
+      const immediateEntries: TransactionJournalEntry[] = []
+      if (
+        lastImmediateEntry &&
+        !(this.applyingReplayEvent && this.retainingHistoryReplaySharedEvidence)
+      ) {
+        // Immediate delivery is an ordered journal frontier, not a priority lane.
+        // Earlier deferred writes may be prerequisites of this completed mutation.
+        for (
+          let index = this.nextImmediateDeliveryJournalIndex;
+          index <= lastImmediateEntry.index;
+          index += 1
+        ) {
+          const entry = this.journal[index]
+          if (!entry?.shared) continue
+          if (entry.shared.records.some((record) => !record.delivered)) {
+            entry.options.sharedDelivery = 'immediate'
+            immediateEntries.push(entry)
+          }
+        }
+        this.nextImmediateDeliveryJournalIndex = lastImmediateEntry.index + 1
+      }
+      this.deliverSharedEntries(immediateEntries)
       this.queueImmediatePublicationEntries(
         immediateEntries.filter((entry) =>
           entry.shared?.records.some((record) => record.delivered)
@@ -1767,7 +1791,9 @@ class DataTransact {
     entry,
     record
   }: JournalSharedRecordRef): string | undefined {
-    if (entry.options.sharedDelivery === 'immediate') return
+    if (entry.options.sharedDelivery === 'immediate') {
+      return `${this.currentArtifactId}:immediate:${this.immediatePublicationToken}`
+    }
     if (this.activeDeliverySequence?.mode === 'atomic') {
       return this.activeDeliverySequence.slices[0]?.sliceId
     }
@@ -1797,8 +1823,7 @@ class DataTransact {
 
   private prepareSharedDeliveryBatches(
     entries: readonly TransactionJournalEntry[],
-    orderedRecords?: readonly JournalSharedRecordRef[],
-    deliverySliceIdOverride?: string
+    orderedRecords?: readonly JournalSharedRecordRef[]
   ): SharedDeliveryBatch[] {
     const records = orderedRecords ?? this.sharedRecordRefs(entries)
     const preparedBatches: SharedDeliveryBatch[] = []
@@ -1807,7 +1832,6 @@ class DataTransact {
     records.forEach((recordRef) => {
       const sliceId =
         recordRef.record.batch?.sliceId ??
-        deliverySliceIdOverride ??
         this.deliverySliceIdForRecord(recordRef)
       if (!sliceId) return
       if (
@@ -1952,14 +1976,11 @@ class DataTransact {
   }
 
   private deliverSharedEntries(
-    entries: readonly TransactionJournalEntry[],
-    deliverySliceIdOverride?: string
+    entries: readonly TransactionJournalEntry[]
   ): void {
-    this.prepareSharedDeliveryBatches(
-      entries,
-      undefined,
-      deliverySliceIdOverride
-    ).forEach((batch) => this.deliverPreparedSharedBatch(batch))
+    this.prepareSharedDeliveryBatches(entries).forEach((batch) =>
+      this.deliverPreparedSharedBatch(batch)
+    )
   }
 
   private prepareTransactionEndDeliveryIndex(): readonly SharedDeliveryBatch[] {
@@ -3097,28 +3118,30 @@ class DataTransact {
         }
         if (result.applied) {
           retainRestoration(result.restorationEvents)
-          if (isRetainedHistoryReplay) {
-            appliedSteps.forEach(({ shared }) => {
-              if (shared && !('suppress' in shared)) {
-                this.markHistoryReplaySharedReady(shared)
-              }
-            })
-            let settlement = this.flushNextReadyHistoryReplaySlice()
-            while (settlement !== 'none') {
-              hasPendingSlicePublication = true
-              settlement.workItemKeys.forEach((workItemKey) =>
-                pendingSliceWorkItemKeys.add(workItemKey)
-              )
-              if (
-                settlement.explicitBoundary ||
-                pendingSliceWorkItemKeys.size >= maxItemsPerSlice
-              ) {
-                hasPendingSlicePublication = false
-                pendingSliceWorkItemKeys.clear()
-                yield
-              }
-              settlement = this.flushNextReadyHistoryReplaySlice()
+        }
+        // Successful replay settles retained shared evidence even when the local
+        // owner already has the requested value. Only actual mutation needs rollback.
+        if (isRetainedHistoryReplay) {
+          appliedSteps.forEach(({ shared }) => {
+            if (shared && !('suppress' in shared)) {
+              this.markHistoryReplaySharedReady(shared)
             }
+          })
+          let settlement = this.flushNextReadyHistoryReplaySlice()
+          while (settlement !== 'none') {
+            hasPendingSlicePublication = true
+            settlement.workItemKeys.forEach((workItemKey) =>
+              pendingSliceWorkItemKeys.add(workItemKey)
+            )
+            if (
+              settlement.explicitBoundary ||
+              pendingSliceWorkItemKeys.size >= maxItemsPerSlice
+            ) {
+              hasPendingSlicePublication = false
+              pendingSliceWorkItemKeys.clear()
+              yield
+            }
+            settlement = this.flushNextReadyHistoryReplaySlice()
           }
         }
       } catch (error) {
@@ -3949,6 +3972,7 @@ class DataTransact {
         this.unacknowledgedSharedPublications.length = 0
         this.publicationAcknowledgements.clear()
         this.journal = []
+        this.nextImmediateDeliveryJournalIndex = 0
         this.replaceLatestHistoryStages.clear()
         this.preparedActionHistoryEntries = null
         this.rollbackOnly = false
@@ -4689,6 +4713,7 @@ class DataTransact {
       updateUndoRedoStatus(UNDO.NONE)
       if (!hasOuterBoundary) {
         this.journal = []
+        this.nextImmediateDeliveryJournalIndex = 0
         this.inUndo = false
       }
     }
@@ -4760,6 +4785,7 @@ class DataTransact {
       updateUndoRedoStatus(UNDO.NONE)
       if (!hasOuterBoundary) {
         this.journal = []
+        this.nextImmediateDeliveryJournalIndex = 0
         this.inRedo = false
       }
     }
@@ -4812,6 +4838,7 @@ class DataTransact {
     this.transactionSettlementDepth = 0
     this.publicationSequence = 0
     this.journal = []
+    this.nextImmediateDeliveryJournalIndex = 0
     this.undoStack = []
     this.redoStack = []
     this.isTransacting = 0

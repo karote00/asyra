@@ -1,3 +1,4 @@
+import { SessionCancelPolicies } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import {
   endTransaction,
@@ -52,10 +53,17 @@ describe('feature transaction lifecycle', () => {
     const manager = new SessionManager()
     const onEnd = vi.fn()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'move', 10, true, 'rollback', {
-      onStart: () => ({ started: true }),
-      onEnd
-    })
+    manager.registerSession(
+      'drag',
+      'move',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ started: true }),
+        onEnd
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     await manager.cancelActiveSessions({
@@ -91,7 +99,7 @@ describe('feature transaction lifecycle', () => {
       'commit',
       10,
       true,
-      'commit-current',
+      SessionCancelPolicies.COMMIT_CURRENT,
       {
         onStart: () => ({ started: true }),
         onEnd: commitEnd,
@@ -103,10 +111,10 @@ describe('feature transaction lifecycle', () => {
       'defined',
       10,
       true,
-      'feature-defined',
+      SessionCancelPolicies.FEATURE_DEFINED,
       {
         onStart: () => ({ started: true }),
-        onCancel: () => 'commit-current'
+        onCancel: () => SessionCancelPolicies.COMMIT_CURRENT
       }
     )
 
@@ -134,14 +142,28 @@ describe('feature transaction lifecycle', () => {
   it('lets any rollback participant win during cancellation', async () => {
     const manager = new SessionManager()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'commit', 20, false, 'commit-current', {
-      onStart: () => ({ participant: 'commit' }),
-      onCancel: vi.fn()
-    })
-    manager.registerSession('drag', 'rollback', 10, false, 'rollback', {
-      onStart: () => ({ participant: 'rollback' }),
-      onCancel: vi.fn()
-    })
+    manager.registerSession(
+      'drag',
+      'commit',
+      20,
+      false,
+      SessionCancelPolicies.COMMIT_CURRENT,
+      {
+        onStart: () => ({ participant: 'commit' }),
+        onCancel: vi.fn()
+      }
+    )
+    manager.registerSession(
+      'drag',
+      'rollback',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'rollback' }),
+        onCancel: vi.fn()
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     await manager.cancelActiveSessions({ ...snapshot, detail: {} })
@@ -157,16 +179,30 @@ describe('feature transaction lifecycle', () => {
     const cleanupSecond = vi.fn()
     const { events, subscription } = captureEndEvents()
     ;(manager as unknown as { handlerTimeoutMs: number }).handlerTimeoutMs = 5
-    manager.registerSession('drag', 'slow', 20, false, 'rollback', {
-      onStart: () => ({ participant: 'slow' }),
-      onUpdate: () => new Promise<void>(() => undefined),
-      onCancel: cleanupFirst
-    })
-    manager.registerSession('drag', 'other', 10, false, 'rollback', {
-      onStart: () => ({ participant: 'other' }),
-      onUpdate: vi.fn(),
-      onCancel: cleanupSecond
-    })
+    manager.registerSession(
+      'drag',
+      'slow',
+      20,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'slow' }),
+        onUpdate: () => new Promise<void>(() => undefined),
+        onCancel: cleanupFirst
+      }
+    )
+    manager.registerSession(
+      'drag',
+      'other',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'other' }),
+        onUpdate: vi.fn(),
+        onCancel: cleanupSecond
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
 
@@ -185,17 +221,24 @@ describe('feature transaction lifecycle', () => {
     const manager = new SessionManager()
     const lateMutation = vi.fn()
     ;(manager as unknown as { handlerTimeoutMs: number }).handlerTimeoutMs = 5
-    manager.registerSession('drag', 'slow-end', 10, true, 'rollback', {
-      onStart: () => ({ started: true }),
-      onEnd: async (handlerSnapshot) => {
-        const signal = (handlerSnapshot as SystemContextSnapshotWithDetail)
-          .detail?.signal as AbortSignal
-        await new Promise((resolve) => setTimeout(resolve, 15))
-        if (!signal.aborted) {
-          lateMutation()
+    manager.registerSession(
+      'drag',
+      'slow-end',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ started: true }),
+        onEnd: async (handlerSnapshot) => {
+          const signal = (handlerSnapshot as SystemContextSnapshotWithDetail)
+            .detail?.signal as AbortSignal
+          await new Promise((resolve) => setTimeout(resolve, 15))
+          if (!signal.aborted) {
+            lateMutation()
+          }
         }
       }
-    })
+    )
 
     await manager.handleStart('drag', snapshot)
     await expect(manager.handleEnd('drag', snapshot)).rejects.toBeInstanceOf(
@@ -211,14 +254,28 @@ describe('feature transaction lifecycle', () => {
     const lowerStart = vi.fn(() => ({ participant: 'lower' }))
     const failure = new Error('start failed')
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'failing', 20, false, 'rollback', {
-      onStart: () => {
-        throw failure
+    manager.registerSession(
+      'drag',
+      'failing',
+      20,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => {
+          throw failure
+        }
       }
-    })
-    manager.registerSession('drag', 'lower', 10, false, 'rollback', {
-      onStart: lowerStart
-    })
+    )
+    manager.registerSession(
+      'drag',
+      'lower',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: lowerStart
+      }
+    )
 
     await expect(manager.handleStart('drag', snapshot)).rejects.toBe(failure)
 
@@ -237,16 +294,30 @@ describe('feature transaction lifecycle', () => {
     const earlierCancel = vi.fn()
     const failure = new Error('later start failed')
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'earlier', 20, false, 'commit-current', {
-      onStart: () => ({ participant: 'earlier' }),
-      onEnd: earlierEnd,
-      onCancel: earlierCancel
-    })
-    manager.registerSession('drag', 'failing', 10, false, 'commit-current', {
-      onStart: () => {
-        throw failure
+    manager.registerSession(
+      'drag',
+      'earlier',
+      20,
+      false,
+      SessionCancelPolicies.COMMIT_CURRENT,
+      {
+        onStart: () => ({ participant: 'earlier' }),
+        onEnd: earlierEnd,
+        onCancel: earlierCancel
       }
-    })
+    )
+    manager.registerSession(
+      'drag',
+      'failing',
+      10,
+      false,
+      SessionCancelPolicies.COMMIT_CURRENT,
+      {
+        onStart: () => {
+          throw failure
+        }
+      }
+    )
 
     await expect(manager.handleStart('drag', snapshot)).rejects.toBe(failure)
 
@@ -265,16 +336,30 @@ describe('feature transaction lifecycle', () => {
     const failure = new Error('end failed')
     const laterEnd = vi.fn()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'failing', 20, false, 'rollback', {
-      onStart: () => ({ participant: 'failing' }),
-      onEnd: () => {
-        throw failure
+    manager.registerSession(
+      'drag',
+      'failing',
+      20,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'failing' }),
+        onEnd: () => {
+          throw failure
+        }
       }
-    })
-    manager.registerSession('drag', 'later', 10, false, 'rollback', {
-      onStart: () => ({ participant: 'later' }),
-      onEnd: laterEnd
-    })
+    )
+    manager.registerSession(
+      'drag',
+      'later',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'later' }),
+        onEnd: laterEnd
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     await expect(manager.handleEnd('drag', snapshot)).rejects.toBe(failure)
@@ -294,7 +379,7 @@ describe('feature transaction lifecycle', () => {
       'undefined-update',
       10,
       true,
-      'commit-current',
+      SessionCancelPolicies.COMMIT_CURRENT,
       {
         onStart: () => ({ started: true }),
         onUpdate: () => {
@@ -329,16 +414,30 @@ describe('feature transaction lifecycle', () => {
     const manager = new SessionManager()
     const laterEnd = vi.fn()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'undefined-end', 20, false, 'rollback', {
-      onStart: () => ({ participant: 'undefined-end' }),
-      onEnd: () => {
-        throw undefined
+    manager.registerSession(
+      'drag',
+      'undefined-end',
+      20,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'undefined-end' }),
+        onEnd: () => {
+          throw undefined
+        }
       }
-    })
-    manager.registerSession('drag', 'later', 10, false, 'rollback', {
-      onStart: () => ({ participant: 'later' }),
-      onEnd: laterEnd
-    })
+    )
+    manager.registerSession(
+      'drag',
+      'later',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'later' }),
+        onEnd: laterEnd
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     let rejected = false
@@ -365,16 +464,30 @@ describe('feature transaction lifecycle', () => {
     const manager = new SessionManager()
     const laterCleanup = vi.fn()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'undefined-cancel', 20, false, 'rollback', {
-      onStart: () => ({ participant: 'undefined-cancel' }),
-      onCancel: () => {
-        throw undefined
+    manager.registerSession(
+      'drag',
+      'undefined-cancel',
+      20,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'undefined-cancel' }),
+        onCancel: () => {
+          throw undefined
+        }
       }
-    })
-    manager.registerSession('drag', 'later', 10, false, 'rollback', {
-      onStart: () => ({ participant: 'later' }),
-      onCancel: laterCleanup
-    })
+    )
+    manager.registerSession(
+      'drag',
+      'later',
+      10,
+      false,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ participant: 'later' }),
+        onCancel: laterCleanup
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     let rejected = false
@@ -400,10 +513,17 @@ describe('feature transaction lifecycle', () => {
   it('commits a normally completed session', async () => {
     const manager = new SessionManager()
     const { events, subscription } = captureEndEvents()
-    manager.registerSession('drag', 'normal', 10, true, 'rollback', {
-      onStart: () => ({ started: true }),
-      onEnd: vi.fn()
-    })
+    manager.registerSession(
+      'drag',
+      'normal',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ started: true }),
+        onEnd: vi.fn()
+      }
+    )
 
     await manager.handleStart('drag', snapshot)
     await manager.handleEnd('drag', snapshot)
@@ -458,12 +578,19 @@ describe('feature transaction lifecycle', () => {
     const cancelledStates: unknown[] = []
     const { events, subscription } = captureEndEvents()
     let startCount = 0
-    manager.registerSession('drag', 'replaceable', 10, true, 'rollback', {
-      onStart: () => ({ start: ++startCount }),
-      onCancel: (_snapshot, state) => {
-        cancelledStates.push(state)
+    manager.registerSession(
+      'drag',
+      'replaceable',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ start: ++startCount }),
+        onCancel: (_snapshot, state) => {
+          cancelledStates.push(state)
+        }
       }
-    })
+    )
 
     let stateAfterSecondStart:
       { cancelledStates: unknown[]; outcomes: string[] } | undefined
@@ -497,16 +624,23 @@ describe('feature transaction lifecycle', () => {
     const firstCleanup = vi.fn()
     const secondCleanup = vi.fn()
     const { events, subscription } = captureEndEvents()
-    firstManager.registerSession('first-drag', 'first', 10, true, 'rollback', {
-      onStart: () => ({ manager: 'first' }),
-      onCancel: firstCleanup
-    })
+    firstManager.registerSession(
+      'first-drag',
+      'first',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({ manager: 'first' }),
+        onCancel: firstCleanup
+      }
+    )
     secondManager.registerSession(
       'second-drag',
       'second',
       10,
       true,
-      'rollback',
+      SessionCancelPolicies.ROLLBACK,
       {
         onStart: () => ({ manager: 'second' }),
         onCancel: secondCleanup

@@ -24,6 +24,124 @@ test('preserves a failing process exit instead of accepting its wrapper', async 
   assert.equal(result.code, 7)
   assert.equal(result.reason, null)
 })
+for (const exitCode of [0, 7]) {
+  test(`post-exit EPERM for an empty group preserves exit ${exitCode}`, async (t) => {
+    const kill = process.kill.bind(process)
+    let pid
+    let denied = 0
+    t.mock.method(process, 'kill', (target, signal) => {
+      if (target === -pid && signal === 'SIGKILL') {
+        denied++
+        throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+      }
+      return kill(target, signal)
+    })
+    const result = await execute(`process.exit(${exitCode})`, {
+      onSpawn: (value) => {
+        pid = value
+      }
+    })
+    assert.equal(denied, 1)
+    assert.equal(result.reason, null)
+    assert.equal(result.code, exitCode)
+  })
+}
+
+test('post-exit denial waits for an exiting group to disappear within cleanup grace', async (t) => {
+  const childProcess = require('node:child_process')
+  const kill = process.kill.bind(process)
+  let pid
+  let observations = 0
+  t.mock.method(childProcess, 'execFileSync', () => {
+    observations++
+    return observations === 1 ? `${pid + 1} ${pid} ?E\n` : '1 1 S\n'
+  })
+  t.mock.method(process, 'kill', (target, signal) => {
+    if (target === -pid && signal === 'SIGKILL')
+      throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    return kill(target, signal)
+  })
+  const result = await execute('process.exit(7)', {
+    onSpawn: (value) => {
+      pid = value
+    }
+  })
+  assert.equal(result.reason, null)
+  assert.equal(result.code, 7)
+  assert.equal(observations, 2)
+})
+
+test('denied cleanup of a surviving owned group is non-passing', async (t) => {
+  const kill = process.kill.bind(process)
+  let pid
+  t.mock.method(process, 'kill', (target, signal) => {
+    if (target === -pid && signal === 'SIGKILL')
+      throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    return kill(target, signal)
+  })
+  t.after(() => {
+    if (pid) {
+      try {
+        kill(-pid, 'SIGKILL')
+      } catch (error) {
+        assert.equal(error.code, 'ESRCH')
+      }
+    }
+  })
+  const result = await execute(
+    "require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {stdio: 'ignore'}).unref()",
+    {
+      onSpawn: (value) => {
+        pid = value
+      }
+    }
+  )
+  assert.equal(result.code, 0)
+  assert.equal(result.reason, 'cleanup-error')
+  assert.match(result.error, /EPERM/)
+})
+
+test('unavailable group observation cannot excuse a cleanup denial', async (t) => {
+  const childProcess = require('node:child_process')
+  const kill = process.kill.bind(process)
+  let pid
+  t.mock.method(childProcess, 'execFileSync', () => {
+    throw new Error('Process table unavailable')
+  })
+  t.mock.method(process, 'kill', (target, signal) => {
+    if (target === -pid && signal === 'SIGKILL')
+      throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    return kill(target, signal)
+  })
+  const result = await execute('process.exit(0)', {
+    onSpawn: (value) => {
+      pid = value
+    }
+  })
+  assert.equal(result.reason, 'cleanup-error')
+})
+
+for (const observation of ['', 'unreadable row']) {
+  test(`malformed process observation stays non-passing: ${JSON.stringify(observation)}`, async (t) => {
+    const childProcess = require('node:child_process')
+    const kill = process.kill.bind(process)
+    let pid
+    t.mock.method(childProcess, 'execFileSync', () => observation)
+    t.mock.method(process, 'kill', (target, signal) => {
+      if (target === -pid && signal === 'SIGKILL')
+        throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+      return kill(target, signal)
+    })
+    const result = await execute('process.exit(0)', {
+      onSpawn: (value) => {
+        pid = value
+      }
+    })
+    assert.equal(result.reason, 'cleanup-error')
+    assert.match(result.error, /malformed/)
+  })
+}
+
 test('a deadline settles an uncooperative process', async () => {
   const result = await execute(
     "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)",

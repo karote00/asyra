@@ -1,6 +1,8 @@
 import {
   toolResultCount,
+  toolMutationScope,
   toolResultIds,
+  toolRequestReference,
   toolResultObject,
   toolResultStatus,
   actionToolSemantics
@@ -11,6 +13,7 @@ import {
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
 import core from '../contexts'
+import { retainedElementSetSchema } from './basic-api-contracts'
 import { documentContextSchema } from './context-action'
 import type { DesignContextQuery } from '../common-apis/design-context'
 import { fillApis, type FillPatch } from '../common-apis/fills'
@@ -33,16 +36,32 @@ const finite = (value: unknown): value is number =>
 const colorChannels = (color: string) =>
   [1, 3, 5].map((start) => parseInt(color.slice(start, start + 2), 16))
 
+const mappingModelSchema = toolResultObject(
+  {
+    status: toolResultStatus,
+    appliedCount: toolResultCount,
+    coordinateSpace: { const: 'parent-local' },
+    retained: retainedElementSetSchema,
+    delivery: toolResultObject({
+      status: { const: 'unavailable' },
+      message: { type: 'string' }
+    })
+  },
+  ['status', 'appliedCount', 'coordinateSpace']
+)
+
 /** Explicit finite interpolation only. Artistic choices remain in the caller's mapping. */
 export const createRetainedFillAction = (
   queries: ReturnType<typeof createRetainedDesignContext>,
   apis: {
     metadata: (id: string) => { lock?: boolean; parentId?: string } | undefined
     targets: typeof fillApis.getFillTargetsAtIndex
+    owners: (propertyIds: string[]) => string[]
     update: typeof fillApis.updateFillFieldsBatch
   } = {
     metadata: (id: string) => core.getElementMetadata(id),
     targets: fillApis.getFillTargetsAtIndex,
+    owners: (ids) => core.getPropertyOwnerElementIds(ids),
     update: fillApis.updateFillFieldsBatch
   }
 ): AiActionDefinition<{ mappings: FillMapping[] }> => ({
@@ -50,14 +69,36 @@ export const createRetainedFillAction = (
     AiActionNames.MAP_RETAINED_FILLS,
     toolResultObject({
       status: toolResultStatus,
+      mutationScope: toolMutationScope,
       appliedCount: toolResultCount,
       snapshots: toolResultIds,
+      retained: retainedElementSetSchema,
+      modelResult: mappingModelSchema,
       coordinateSpace: { const: 'parent-local' }
     })
   ),
+  partialOutputSchema: toolResultObject({
+    status: toolResultStatus,
+    mutationScope: toolMutationScope,
+    appliedCount: toolResultCount,
+    snapshots: toolResultIds,
+    coordinateSpace: { const: 'parent-local' },
+    modelResult: mappingModelSchema,
+    delivery: toolResultObject({
+      status: { const: 'unavailable' },
+      message: { type: 'string' }
+    })
+  }),
+  revision: 4,
+  delivery: {
+    path: '/modelResult',
+    outputSchema: mappingModelSchema,
+    receipt: { path: '/retained', owner: 'design-context' }
+  },
+  composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
-    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; consumption releases the lease. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
+    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -91,8 +132,8 @@ export const createRetainedFillAction = (
                 filter: documentContextSchema.properties.filter
               }
             },
-            leaseId: { type: 'string', minLength: 1, maxLength: 160 },
-            snapshotId: { type: 'string', minLength: 1, maxLength: 160 },
+            leaseId: toolRequestReference,
+            snapshotId: toolRequestReference,
             coordinateSpace: { type: 'string', enum: ['parent-local'] },
             axis: { type: 'string', enum: ['x', 'y'] },
             domain: {
@@ -216,11 +257,11 @@ export const createRetainedFillAction = (
             )
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId
+            if (leaseId) consumedLeases.add(leaseId)
           }
-          if (leaseId) consumedLeases.add(leaseId)
           if (!snapshotId)
             throw new Error('Mapping has no retained snapshot identity')
-          const snapshot = queries.get(snapshotId, leaseId)
+          const snapshot = queries.get(snapshotId, leaseId, context.signal)
           if (
             snapshot.coordinateSpace !== mapping.coordinateSpace ||
             !snapshot.fields.includes(mapping.axis) ||
@@ -281,8 +322,8 @@ export const createRetainedFillAction = (
             unique.add(element.id)
             ids.push(element.id)
           }
-          if (leaseId) {
-            queries.releaseLease(leaseId)
+          if (leaseId && consumedLeases.has(leaseId)) {
+            queries.releaseLease(leaseId, context.signal)
             consumedLeases.delete(leaseId)
           }
         }
@@ -303,13 +344,34 @@ export const createRetainedFillAction = (
           return { ...target, patch }
         })
         apis.update(updates)
-        return {
+        const affected = new Set(apis.owners([...sharedValues.keys()]))
+        const receipt = {
+          mutationScope: {
+            complete: ids.every((id) => affected.has(id)),
+            elementIds: [...affected],
+            removedElementIds: []
+          },
           status: 'complete',
           appliedCount: ids.length,
           snapshots: mappings.flatMap((mapping) =>
             mapping.snapshotId ? [mapping.snapshotId] : []
           ),
           coordinateSpace: 'parent-local'
+        }
+        const summary = {
+          status: receipt.status,
+          appliedCount: receipt.appliedCount,
+          coordinateSpace: receipt.coordinateSpace
+        }
+        try {
+          const retained = queries.retainReceipt(ids, receipt, context.signal)
+          return { ...receipt, retained, modelResult: { ...summary, retained } }
+        } catch (error) {
+          const delivery = {
+            status: 'unavailable',
+            message: `${error instanceof Error ? error.message : 'Receipt retention failed.'} The write already settled; do not replay it.`
+          }
+          return { ...receipt, delivery, modelResult: { ...summary, delivery } }
         }
       })
     } catch (error) {
@@ -318,7 +380,8 @@ export const createRetainedFillAction = (
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )
     } finally {
-      for (const leaseId of consumedLeases) queries.releaseLease(leaseId)
+      for (const leaseId of consumedLeases)
+        queries.releaseLease(leaseId, context.signal)
     }
   }
 })

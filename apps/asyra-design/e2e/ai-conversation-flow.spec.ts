@@ -8,11 +8,14 @@ import {
   createRectangle,
   getActiveTool,
   getCoreDocumentDigest,
+  getPersistedDocumentDigest,
   getUndoHistoryDepth,
   undo,
   redo,
   waitForAppReady
 } from './test-utils'
+
+test.use({ trace: 'retain-on-failure' })
 
 for (const count of [16, 320, 1280]) {
   test(`profiles canonical prepared vector application with ${count} items`, async ({
@@ -139,6 +142,15 @@ for (const count of [16, 320, 1280]) {
         .reduce((total, counter) => total + counter.value, 0)
     expect(totalCounter('computed-mirror-seed')).toBe(count + 1)
     expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
+    // Complete flat identities are still delivered; prior rows are not decoded
+    // again for each prepared member publication.
+    expect(totalCounter('ui-context-membership-prepare')).toBe(1)
+    expect(totalCounter('ui-context-membership-row-read')).toBeLessThan(
+      count * 2 + 8
+    )
+    expect(
+      totalCounter('ui-context-flattened-identity-output')
+    ).toBeGreaterThanOrEqual(count + 1)
     const names = new Set(result.snapshot.phases.map((phase) => phase.name))
     expect(names.has('scene-tree:element-batch:materialize')).toBe(true)
     expect(names.has('scene-tree:element-batch:commit-scene')).toBe(true)
@@ -383,6 +395,9 @@ test('text answers keep the original reference only on its message and typing ne
     .first()
     .locator('details')
   await firstActivity.locator('summary').click()
+  await expect(firstActivity.getByRole('list')).toContainText(
+    'Reviewing the drawing'
+  )
   const priorActivity = await firstActivity
     .getByRole('listitem')
     .allTextContents()
@@ -526,7 +541,18 @@ for (const width of [360, 1280]) {
     expect(await getActiveTool(page)).toBe('select')
     await page.getByLabel('Message Agent').fill('')
     await expect(message.getByLabel('Your message')).toContainText(intent)
-    await expect(message.getByLabel('Agent response')).not.toContainText(intent)
+    await expect(message.getByLabel('Current activity')).toHaveText(
+      'Planning the drawing'
+    )
+    await expect(message.getByLabel('Current activity')).not.toContainText(
+      intent
+    )
+    await expect(message.getByLabel('Current activity')).not.toContainText(
+      'Draw a blue reference shape'
+    )
+    await expect(
+      message.getByLabel('Agent response').locator(':scope > p')
+    ).toHaveCount(0)
     const bounds = await message.getByLabel('Your message').boundingBox()
     const panelBounds = await page.getByTestId('ai-agent-panel').boundingBox()
     if (!bounds || !panelBounds)
@@ -546,7 +572,12 @@ for (const width of [360, 1280]) {
       'datetime',
       /.+/
     )
-    await expect(message).toContainText('timed out')
+    await expect(message.getByLabel('Current activity')).toHaveCount(0)
+    const explanation = message
+      .getByLabel('Agent response')
+      .locator(':scope > p')
+    await expect(explanation).toContainText('timed out')
+    await expect(explanation).not.toContainText(intent)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
     await page
@@ -934,94 +965,198 @@ for (const width of [360, 1280]) {
       const events = [
         {
           tool: 'research_design_context',
+          callId: 'research-1',
+          phase: 'executing',
           status: 'running',
-          label: 'Researching design context'
+          label: 'Researching design context',
+          expected: ''
         },
         {
           tool: 'research_design_context',
+          callId: 'research-1',
+          phase: 'executing',
           status: 'completed',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'search_reference_images',
-          status: 'running',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'search_reference_images',
-          status: 'completed',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'import_reference_image',
-          status: 'running',
-          label: 'Researching design context'
-        },
-        {
-          tool: 'vtracer',
-          status: 'running',
-          label: 'Converting artwork to vectors'
-        },
-        {
-          tool: 'vtracer',
-          status: 'completed',
-          label: 'Converting artwork to vectors'
-        },
-        {
-          tool: 'analyze_vector',
-          status: 'completed',
-          label: 'Converting artwork to vectors'
+          label: 'Processing your request',
+          expected: ''
         },
         {
           tool: 'prepare_design',
+          callId: 'prepare-1',
+          phase: 'preparing',
           status: 'running',
-          label: 'Drawing and refining'
+          label: 'Preparing the design',
+          expected: ''
         },
         {
           tool: 'prepare_design',
+          callId: 'prepare-1',
+          phase: 'preparing',
           status: 'completed',
-          label: 'Drawing and refining'
+          label: 'Processing your request',
+          expected: ''
         },
         {
-          tool: 'inspect_drawing',
+          tool: 'provider',
+          callId: 'stage-1',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Drawing and refining'
-        },
-        {
-          tool: 'update_design_element',
-          status: 'running',
-          label: 'Drawing and refining'
-        },
-        {
-          tool: 'update_design_element',
-          status: 'running',
-          label: 'Drawing and refining',
+          label: 'Current task',
           message: '正在加入窗戶光影反射效果'
         },
         {
-          tool: 'update_design_element',
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'admission',
           status: 'running',
-          label: 'Drawing and refining',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'preparing',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'executing',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'applying',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'app-batch',
+          callId: 'internal-batch',
+          parentCallId: 'prepare-2',
+          phase: 'applying',
+          status: 'completed',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
+          status: 'running',
+          label: 'Preparing the design',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
+          status: 'completed',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'apply_prepared_design',
+          callId: 'base-status',
+          phase: 'applying',
+          status: 'running',
+          label: 'Adding the design',
+          message: 'Applying window reflections',
+          expected: 'Applying window reflections'
+        },
+        {
+          tool: 'apply_prepared_design',
+          callId: 'base-status',
+          phase: 'applying',
+          status: 'completed',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'invoke_tool',
+          callId: 'native-save-parent',
+          phase: 'executing',
+          status: 'running',
+          label: 'Running the selected operation',
+          message: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'save_tool',
+          callId: 'automatic-save',
+          parentCallId: 'native-save-parent',
+          phase: 'executing',
+          status: 'running',
+          label: 'Running the selected operation',
+          expected: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'save_tool',
+          callId: 'automatic-save',
+          parentCallId: 'native-save-parent',
+          phase: 'executing',
+          status: 'completed',
+          label: 'Running the selected operation',
+          expected: 'Prepare the editable facade panel'
+        },
+        {
+          tool: 'invoke_tool',
+          callId: 'native-save-parent',
+          phase: 'executing',
+          status: 'completed',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'provider',
+          callId: 'provider-gap',
+          scope: 'request',
+          phase: 'provider',
+          status: 'running',
+          label: 'Current task',
+          expected: '正在加入窗戶光影反射效果'
+        },
+        {
+          tool: 'provider',
+          callId: 'stage-2',
+          scope: 'request',
+          phase: 'provider',
+          status: 'running',
+          label: 'Current task',
           message: '正在調整屋頂顏色'
         },
         {
-          tool: 'execute_design_batch',
+          tool: 'provider',
+          callId: 'stage-3',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Planning the drawing',
+          label: 'Current task',
           message: '正在刪除被覆蓋物件'
         },
         {
-          tool: 'update_design_element',
+          tool: 'prepare_design',
+          callId: 'prepare-2',
+          phase: 'applying',
           status: 'completed',
-          label: 'Drawing and refining',
+          label: 'Current task',
           message: '正在加入窗戶光影反射效果',
-          expected: '正在刪除被覆蓋物件',
-          expectedLabel: 'Planning the drawing'
+          expected: '正在刪除被覆蓋物件'
         },
         {
-          tool: 'set_element_visibility',
+          tool: 'provider',
+          callId: 'stage-4',
+          scope: 'request',
+          phase: 'provider',
           status: 'running',
-          label: 'Adjusting element visibility',
+          label: 'Current task',
           message: '正在隱藏右下角的標記。'
         }
       ]
@@ -1050,19 +1185,39 @@ for (const width of [360, 1280]) {
             message: event.message,
             activity: {
               kind: event.message ? 'work' : 'system',
-              callId: event.tool,
+              callId: event.callId,
+              parentCallId: event.parentCallId,
+              phase: event.phase,
+              scope: event.scope,
               sequence: ++activitySequence
             }
           }) + '\n'
         )
         const workMessage = event.expected ?? event.message
         await expect(status.locator(':scope > span')).toHaveText([
-          event.expectedLabel ?? event.label,
-          ...(workMessage ? [workMessage] : [])
+          ...(workMessage ? [workMessage] : []),
+          ...(event.label
+            ? [
+                event.label === 'Current task' && workMessage
+                  ? 'Task context - no App operation executing'
+                  : event.label
+              ]
+            : [])
         ])
+        if (event.callId === 'automatic-save' && event.status === 'running') {
+          await page.getByTestId('ai-agent-panel').screenshot({
+            path: testInfo.outputPath('automatic-library-save.png')
+          })
+        }
+        if (event.callId === 'provider-gap') {
+          await expect(status).not.toContainText('Updating the canvas')
+          await page.getByTestId('ai-agent-panel').screenshot({
+            path: testInfo.outputPath('completed-call-purpose.png')
+          })
+        }
         await expect(current).toHaveCount(1)
         await expect(current).toHaveText(
-          event.expected ?? event.message ?? event.label
+          (event.expected ?? event.message) || event.label
         )
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
@@ -1079,16 +1234,12 @@ for (const width of [360, 1280]) {
           page.getByText('Running a tool', { exact: true })
         ).toHaveCount(0)
       }
-      await expect(
-        page
-          .getByLabel('Operational progress')
-          .getByText('Researching design context', { exact: true })
-      ).toHaveCount(1)
-      await expect(
-        page
-          .getByLabel('Operational progress')
-          .getByText('Drawing and refining', { exact: true })
-      ).toHaveCount(3)
+      await expect(page.getByLabel('Operational progress')).toContainText(
+        '正在調整屋頂顏色'
+      )
+      await expect(page.getByLabel('Operational progress')).toContainText(
+        '正在刪除被覆蓋物件'
+      )
       const rowGaps = await page
         .getByLabel('Operational progress')
         .locator('li')
@@ -1123,47 +1274,118 @@ for (const width of [360, 1280]) {
             activity: {
               kind: 'work',
               callId: 'work',
+              scope: 'request',
+              phase: 'provider',
               sequence: ++activitySequence
             }
           }) + '\n'
         )
         await expect(current).toContainText(message)
       }
-      for (const tool of [
-        'read_design_context',
-        'inspect_drawing',
-        'describe_design_apis'
+      const stableRows = await page
+        .getByLabel('Operational progress')
+        .locator('li')
+        .count()
+      for (const [tool, label] of [
+        ['read_design_context', 'Reading the design'],
+        ['inspect_drawing', 'Reviewing the drawing'],
+        ['describe_design_apis', 'Finding available operations']
       ]) {
+        for (const toolStatus of ['running', 'completed']) {
+          response.write(
+            JSON.stringify({
+              type: 'activity',
+              tool,
+              status: toolStatus,
+              message: 'Checking the requested details',
+              activity: {
+                kind: 'system',
+                callId: tool,
+                phase: 'inspecting',
+                sequence: ++activitySequence
+              }
+            }) + '\n'
+          )
+          await expect(status.locator(':scope > span')).toHaveText([
+            '正在隱藏右下角的標記。',
+            toolStatus === 'running'
+              ? label
+              : 'Task context - no App operation executing'
+          ])
+          await expect(current).toHaveText('正在隱藏右下角的標記。')
+          if (tool === 'inspect_drawing' && toolStatus === 'running')
+            await page.getByTestId('ai-agent-panel').screenshot({
+              path: testInfo.outputPath('active-inspection-purpose.png')
+            })
+        }
+      }
+      await expect(
+        page.getByLabel('Operational progress').locator('li')
+      ).toHaveCount(stableRows)
+      // Real stream/controller/panel: unrelated siblings must not borrow one
+      // another's purpose or leave an execution label after both settle.
+      const parallel = (
+        callId: string,
+        tool: string,
+        message: string,
+        completed = false
+      ) => {
         response.write(
           JSON.stringify({
             type: 'activity',
             tool,
-            status: 'running',
-            message: 'Checking the requested details',
+            status: completed ? 'completed' : 'running',
+            message,
             activity: {
-              kind: 'system',
-              callId: tool,
+              kind: 'work',
+              callId,
+              phase: 'executing',
               sequence: ++activitySequence
             }
           }) + '\n'
         )
-        await expect(status.locator(':scope > span')).toHaveText([
-          'Adjusting element visibility',
-          '正在隱藏右下角的標記。'
-        ])
-        await expect(current).toHaveText('正在隱藏右下角的標記。')
       }
-      const longDescription = `Adjusting reflections on ${'window-'.repeat(28)}panes`
+      parallel('parallel-review', 'review_drawing', 'Inspect the crown')
+      parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
+      await expect(status.locator(':scope > span')).toHaveText([
+        '正在隱藏右下角的標記。',
+        'Checking the requested details - Preparing the design - 2 operations'
+      ])
+      parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Inspect the crown',
+        'Checking the requested details'
+      ])
+      parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
+      await expect(status.locator(':scope > span')).toHaveText([
+        '正在隱藏右下角的標記。',
+        'Task context - no App operation executing'
+      ])
+      parallel('parallel-edit', 'prepare_design', 'Late completed sibling')
+      await expect(status.locator(':scope > span')).toHaveText([
+        '正在隱藏右下角的標記。',
+        'Task context - no App operation executing'
+      ])
+      const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)
       await expect(status.locator(':scope > span')).toHaveText([
-        'Converting artwork to vectors',
-        longDescription
+        longDescription,
+        'Task context - no App operation executing'
       ])
       expect(
         await status.evaluate(
           (element) => element.scrollWidth <= element.clientWidth
         )
       ).toBe(true)
+      const purpose = status.locator(':scope > span').first()
+      const dimensions = await purpose.evaluate((element) => ({
+        height: element.getBoundingClientRect().height,
+        lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight)
+      }))
+      expect(dimensions.height).toBeLessThanOrEqual(
+        dimensions.lineHeight * 3 + 1
+      )
+      await expect(purpose).toHaveAttribute('title', longDescription)
       await page.getByTestId('ai-agent-panel').screenshot({
         path: testInfo.outputPath('wrapped-current-activity.png')
       })
@@ -1220,6 +1442,55 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByLabel('Operational progress').locator('li')
       ).toHaveCount(rowsBeforeLoop)
+      // The provider closes its finite root cohort before later inspection.
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'public-progress',
+          status: 'completed',
+          activity: {
+            kind: 'system',
+            callId: 'work',
+            scope: 'request',
+            phase: 'provider',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'inspect_drawing',
+          status: 'running',
+          activity: {
+            kind: 'system',
+            callId: 'fresh-inspection',
+            phase: 'inspecting',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
+      await expect(status.locator(':scope > span')).toHaveText([
+        'Reviewing the drawing'
+      ])
+      await expect(current).toHaveText('Reviewing the drawing')
+      await expect(status).not.toContainText('Continue at the bottom')
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('settled-purpose-next-inspection.png')
+      })
+      response.write(
+        JSON.stringify({
+          type: 'activity',
+          tool: 'inspect_drawing',
+          status: 'completed',
+          activity: {
+            kind: 'system',
+            callId: 'fresh-inspection',
+            phase: 'inspecting',
+            sequence: ++activitySequence
+          }
+        }) + '\n'
+      )
       response.end(
         JSON.stringify({
           type: 'result',
@@ -1319,6 +1590,30 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })
       ).toHaveCount(0)
+      await page.setViewportSize({ width, height: 400 })
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await expect
+        .poll(() =>
+          feed.evaluate(
+            (element) => element.scrollHeight > element.clientHeight
+          )
+        )
+        .toBe(true)
+      await expect
+        .poll(() =>
+          feed.evaluate(
+            (element) =>
+              element.scrollHeight - element.scrollTop - element.clientHeight
+          )
+        )
+        .toBeLessThanOrEqual(1)
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toHaveCount(0)
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('activity-reopened-latest.png')
+      })
     } finally {
       response?.end()
       server.closeAllConnections()
@@ -1367,9 +1662,12 @@ for (const width of [360, 1280]) {
     const create = header.getByRole('button', { name: 'New conversation' })
     const close = header.getByRole('button', { name: 'Close Agent panel' })
     await expect(header.locator('select')).toHaveCount(0)
-    await expect(header).toHaveText('')
+    await expect(
+      header.getByRole('button', { name: 'Saved tools', exact: true })
+    ).toBeVisible()
     const positions = []
     for (const button of [toggle, create, close]) {
+      await expect(button).toHaveText('')
       const bounds = await button.boundingBox()
       if (!bounds) throw new Error('Missing navigation icon')
       expect(bounds.width).toBe(24)
@@ -1591,6 +1889,8 @@ for (const width of [360, 1280]) {
   test(`native Frame revisions keep independent Undo history and explain a rejected revision at ${width}px`, async ({
     page
   }, testInfo) => {
+    // Nine independent durable checkpoints each retain the real 3-second flush.
+    test.setTimeout(90_000)
     const initial = prepareDesign(
       {
         type: 'frame',
@@ -1647,62 +1947,241 @@ for (const width of [360, 1280]) {
         json: { batchId: `revision-${requests}`, actions: [action] }
       })
     })
-    await page.goto(createTestDocumentIdentity().url)
+    const documentIdentity = createTestDocumentIdentity()
+    await page.goto(documentIdentity.url)
     await waitForAppReady(page)
+    await page.evaluate(async () => {
+      const { startDocumentPublicationCapture } =
+        await import('../src/testing/runtime-access')
+      startDocumentPublicationCapture('frame-revisions')
+    })
     await page.setViewportSize({ width, height: 800 })
+    const assertDurable = async (
+      expected: Awaited<ReturnType<typeof getCoreDocumentDigest>>,
+      stage: string
+    ) => {
+      const publications = await page.evaluate(async () => {
+        const { readTestCapture, readDocumentPublicationDecodeFailures } =
+          await import('../src/testing/runtime-access')
+        return {
+          publications: readTestCapture('frame-revisions'),
+          decodeFailures:
+            readDocumentPublicationDecodeFailures('frame-revisions')
+        }
+      })
+      const evidencePath = testInfo.outputPath(`frame-${stage}.json`)
+      await writeFile(evidencePath, JSON.stringify(publications))
+      await testInfo.attach(`frame-${stage}`, {
+        path: evidencePath,
+        contentType: 'application/json'
+      })
+      expect(
+        publications.decodeFailures,
+        `${stage} must publish complete canonical slices`
+      ).toEqual([])
+      await expect
+        .poll(() => getPersistedDocumentDigest(documentIdentity.fileId), {
+          message: `${stage} must reach the durable document`,
+          timeout: 10000
+        })
+        .toEqual(expected)
+    }
+    await page.evaluate(async () => {
+      const { core, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const { historyApis } = await import('../src/testing/runtime-access')
+      const { subscribeToUndo, subscribeToRedo } =
+        await import('../src/testing/runtime-access')
+      const events: unknown[] = []
+      const append = (kind: string, detail?: unknown) =>
+        events.push({
+          kind,
+          detail,
+          at: performance.now(),
+          undoDepth: core.deps.factory.transact.undoStack.length,
+          redoDepth: core.deps.factory.transact.redoStack.length
+        })
+      testRuntimeState.set('frame-history-events', events)
+      const keydown = (event: KeyboardEvent) =>
+        append('keydown', {
+          code: event.code,
+          meta: event.metaKey,
+          ctrl: event.ctrlKey,
+          shift: event.shiftKey,
+          repeat: event.repeat,
+          target: (event.target as Element | null)?.tagName
+        })
+      document.addEventListener('keydown', keydown, true)
+      const subscriptions = [
+        subscribeToUndo(() => append('undo-replay-completed')),
+        subscribeToRedo(() => append('redo-replay-completed'))
+      ]
+      const original = historyApis.undo
+      historyApis.undo = async (options) => {
+        append('undo-enter')
+        const gated = testRuntimeState.get<boolean>('frame-history-arm')
+        testRuntimeState.set('frame-history-arm', false)
+        let waited = false
+        try {
+          await original(
+            gated
+              ? {
+                  ...options,
+                  maxItemsPerSlice: 1,
+                  yieldToHost: async () => {
+                    if (!waited) {
+                      waited = true
+                      append('undo-yield-held')
+                      await new Promise<void>((resolve) =>
+                        testRuntimeState.set('frame-history-release', resolve)
+                      )
+                    }
+                    await options?.yieldToHost?.()
+                  }
+                }
+              : options
+          )
+          append('undo-return')
+        } catch (error) {
+          append('undo-rejected', String(error))
+          throw error
+        }
+      }
+      testRuntimeState.set('frame-history-dispose', () => {
+        testRuntimeState.get<() => void>('frame-history-release')?.()
+        historyApis.undo = original
+        document.removeEventListener('keydown', keydown, true)
+        subscriptions.forEach((subscription) => subscription.unsubscribe())
+      })
+    })
     const snapshots = [await getCoreDocumentDigest(page)]
     const depth = await getUndoHistoryDepth(page)
-    await page.getByRole('button', { name: 'Open Agent' }).click()
-    for (let i = 1; i <= 3; i++) {
-      await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
+    try {
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      for (let i = 1; i <= 3; i++) {
+        await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
+        await page.getByRole('button', { name: 'Send', exact: true }).click()
+        await expect(
+          page.getByTestId('ai-agent-message').last()
+        ).toHaveAttribute('data-outcome', 'success')
+        await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
+        expect(await getUndoHistoryDepth(page)).toBe(depth + i)
+        snapshots.push(await getCoreDocumentDigest(page))
+        await assertDurable(snapshots[i], `edit-${i}`)
+      }
+      await page
+        .getByLabel('Message Agent')
+        .fill('Revise a target that has gone away')
       await page.getByRole('button', { name: 'Send', exact: true }).click()
-      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
-        'data-outcome',
-        'success'
-      )
+      const failed = page.getByTestId('ai-agent-message').last()
+      await expect(failed).toHaveAttribute('data-outcome', 'failed')
       await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
-      expect(await getUndoHistoryDepth(page)).toBe(depth + i)
-      snapshots.push(await getCoreDocumentDigest(page))
+      await expect(failed).toContainText(
+        'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
+      )
+      const explanation = failed.getByText(
+        /The original drawing is missing or is not an editable composition/
+      )
+      await expect(explanation).toBeInViewport()
+      await failed.getByLabel('Work history').click()
+      await expect(
+        failed.getByRole('list', { name: 'Operational progress' })
+      ).not.toContainText('Finished')
+      await expect(failed.getByText('Result', { exact: true })).toHaveCount(0)
+      await expect(
+        page.getByRole('status', { name: 'Current activity' })
+      ).toHaveCount(0)
+      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
+      expect(await getUndoHistoryDepth(page)).toBe(depth + 3)
+      await page.getByRole('button', { name: 'Jump to latest' }).click()
+      await expect(explanation).toBeInViewport({ ratio: 1 })
+      await page
+        .getByTestId('ai-agent-panel')
+        .screenshot({ path: testInfo.outputPath('revision-failure.png') })
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      for (let i = 2; i >= 0; i--) {
+        if (width === 360 && i === 0) {
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.set('frame-history-arm', true)
+          )
+        }
+        await undo(page)
+        if (width === 360 && i === 0) {
+          const events = await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<{ kind: string }[]>('frame-history-events')
+          )
+          expect(
+            events?.filter((event) => event.kind === 'undo-yield-held')
+          ).toHaveLength(1)
+          // A keyboard helper's delay does not acknowledge a completed transaction.
+          expect(
+            events?.filter((event) => event.kind === 'undo-replay-completed')
+          ).toHaveLength(2)
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<() => void>('frame-history-release')?.()
+          )
+        }
+        await expect
+          .poll(() => getCoreDocumentDigest(page), {
+            message: `Undo ${i} must settle to the exact preceding document`
+          })
+          .toEqual(snapshots[i])
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
+        await assertDurable(snapshots[i], `undo-${i}`)
+      }
+      for (let i = 1; i <= 3; i++) {
+        await redo(page)
+        await expect
+          .poll(() => getCoreDocumentDigest(page), {
+            message: `Redo ${i} must settle to the exact subsequent document`
+          })
+          .toEqual(snapshots[i])
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + i)
+        await assertDurable(snapshots[i], `redo-${i}`)
+      }
+      expect(requests).toBe(4)
+    } finally {
+      try {
+        const evidence = await page.evaluate(async () => {
+          const runtime = await import('../src/testing/runtime-access')
+          try {
+            return {
+              events: runtime.testRuntimeState.get('frame-history-events'),
+              publications: runtime.readTestCapture('frame-revisions'),
+              decodeFailures:
+                runtime.readDocumentPublicationDecodeFailures('frame-revisions')
+            }
+          } finally {
+            runtime.testRuntimeState.get<() => void>(
+              'frame-history-dispose'
+            )?.()
+          }
+        })
+        const evidencePath = testInfo.outputPath('frame-history-lifecycle.json')
+        await writeFile(evidencePath, JSON.stringify(evidence))
+        await testInfo.attach('frame-history-lifecycle', {
+          path: evidencePath,
+          contentType: 'application/json'
+        })
+      } catch (error) {
+        // Diagnostic collection must preserve the original assertion or navigation failure.
+        testInfo.annotations.push({
+          type: 'history-capture-unavailable',
+          description: String(error)
+        })
+      }
     }
-    await page
-      .getByLabel('Message Agent')
-      .fill('Revise a target that has gone away')
-    await page.getByRole('button', { name: 'Send', exact: true }).click()
-    const failed = page.getByTestId('ai-agent-message').last()
-    await expect(failed).toHaveAttribute('data-outcome', 'failed')
-    await expect(page.getByLabel('AI action confirmation')).toHaveCount(0)
-    await expect(failed).toContainText(
-      'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
-    )
-    const explanation = failed.getByText(
-      /The original drawing is missing or is not an editable composition/
-    )
-    await expect(explanation).toBeInViewport()
-    await failed.getByLabel('Work history').click()
-    await expect(
-      failed.getByRole('list', { name: 'Operational progress' })
-    ).not.toContainText('Finished')
-    await expect(failed.getByText('Result', { exact: true })).toHaveCount(0)
-    await expect(
-      page.getByRole('status', { name: 'Current activity' })
-    ).toHaveCount(0)
+    // Restore the canvas-ready viewport used at initial bootstrap.
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.reload()
+    await waitForAppReady(page)
     expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
-    expect(await getUndoHistoryDepth(page)).toBe(depth + 3)
-    await page.getByRole('button', { name: 'Jump to latest' }).click()
-    await expect(explanation).toBeInViewport({ ratio: 1 })
-    await page
-      .getByTestId('ai-agent-panel')
-      .screenshot({ path: testInfo.outputPath('revision-failure.png') })
-    await page.getByRole('button', { name: 'Close Agent panel' }).click()
-    for (let i = 2; i >= 0; i--) {
-      await undo(page)
-      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
-    }
-    for (let i = 1; i <= 3; i++) {
-      await redo(page)
-      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
-    }
-    expect(requests).toBe(4)
   })
 }
 
@@ -1826,3 +2305,177 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+for (const direction of ['undo', 'redo'] as const) {
+  for (const fail of [false, true]) {
+    test(`history admission ignores repeated shortcuts during ${direction} - failure=${fail}`, async ({
+      page
+    }, testInfo) => {
+      const documentIdentity = createTestDocumentIdentity()
+      await page.goto(documentIdentity.url)
+      await waitForAppReady(page)
+      const empty = await getCoreDocumentDigest(page)
+      const initialDepth = await getUndoHistoryDepth(page)
+      await createRectangle(page)
+      const drawn = await getCoreDocumentDigest(page)
+      await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth + 1)
+      if (direction === 'redo') {
+        await undo(page)
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(initialDepth)
+        expect(await getCoreDocumentDigest(page)).toEqual(empty)
+      }
+      await page.evaluate(
+        async ({ direction, fail }) => {
+          const { core, historyApis, testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          const original = { ...historyApis }
+          const calls: string[] = [],
+            inputs: string[] = []
+          let first = true
+          const listener = () => {
+            inputs.push('history')
+          }
+          core.deps.inputSystem.on('input.shortcut.undoredo', listener)
+          for (const name of ['undo', 'redo'] as const) {
+            historyApis[name] = async (options) => {
+              calls.push(name)
+              const gated = name === direction && first
+              if (gated) first = false
+              let held = false
+              try {
+                await original[name](
+                  gated
+                    ? {
+                        ...options,
+                        maxItemsPerSlice: 1,
+                        yieldToHost: async () => {
+                          if (!held) {
+                            held = true
+                            testRuntimeState.set(
+                              'history-admission-busy',
+                              core.deps.factory.isInUndoRedo()
+                            )
+                            await new Promise<void>((resolve) =>
+                              testRuntimeState.set(
+                                'history-admission-release',
+                                resolve
+                              )
+                            )
+                            if (fail)
+                              throw new Error(
+                                'Controlled history slice failure'
+                              )
+                          }
+                          await options?.yieldToHost?.()
+                        }
+                      }
+                    : options
+                )
+              } catch (error) {
+                testRuntimeState.set('history-admission-error', String(error))
+                throw error
+              }
+            }
+          }
+          testRuntimeState.set('history-admission-calls', calls)
+          testRuntimeState.set('history-admission-inputs', inputs)
+          testRuntimeState.set('history-admission-dispose', () => {
+            testRuntimeState.get<() => void>('history-admission-release')?.()
+            Object.assign(historyApis, original)
+            core.deps.inputSystem.off('input.shortcut.undoredo', listener)
+          })
+        },
+        { direction, fail }
+      )
+      try {
+        await (direction === 'undo' ? undo(page) : redo(page))
+        await expect
+          .poll(() =>
+            page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('history-admission-busy')
+            )
+          )
+          .toBe(true)
+        // Both same/opposite commands are ignored, rather than deferred until idle.
+        await undo(page)
+        await redo(page)
+        await undo(page)
+        await page.keyboard.press('v')
+        expect(
+          await page.evaluate(async () => {
+            const { testRuntimeState } =
+              await import('../src/testing/runtime-access')
+            return {
+              calls: testRuntimeState.get('history-admission-calls'),
+              inputs: testRuntimeState.get('history-admission-inputs')
+            }
+          })
+        ).toEqual({ calls: [direction], inputs: ['history'] })
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get<
+            () => void
+          >('history-admission-release')?.()
+        )
+        await expect
+          .poll(() =>
+            page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).core.deps.factory.isInUndoRedo()
+            )
+          )
+          .toBe(false)
+        const expected = (direction === 'undo') !== fail ? empty : drawn
+        const expectedDepth =
+          expected === empty ? initialDepth : initialDepth + 1
+        await expect.poll(() => getUndoHistoryDepth(page)).toBe(expectedDepth)
+        expect(await getCoreDocumentDigest(page)).toEqual(expected)
+        if (fail) {
+          expect(
+            await page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('history-admission-error')
+            )
+          ).toContain('Controlled history slice failure')
+        }
+        // A new command after either success or compensation must work normally.
+        const next = expected === empty ? 'redo' : 'undo'
+        await (next === 'undo' ? undo(page) : redo(page))
+        const final = next === 'undo' ? empty : drawn
+        await expect
+          .poll(() => getUndoHistoryDepth(page))
+          .toBe(next === 'undo' ? initialDepth : initialDepth + 1)
+        expect(await getCoreDocumentDigest(page)).toEqual(final)
+        expect(
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get('history-admission-calls')
+          )
+        ).toEqual([direction, next])
+        await expect
+          .poll(() => getPersistedDocumentDigest(documentIdentity.fileId))
+          .toEqual(final)
+        await page.reload()
+        await waitForAppReady(page)
+        expect(await getCoreDocumentDigest(page)).toEqual(final)
+      } finally {
+        try {
+          await page.evaluate(async () =>
+            (
+              await import('../src/testing/runtime-access')
+            ).testRuntimeState.get<() => void>('history-admission-dispose')?.()
+          )
+        } catch (error) {
+          testInfo.annotations.push({
+            type: 'history-cleanup',
+            description: String(error)
+          })
+        }
+      }
+    })
+  }
+}

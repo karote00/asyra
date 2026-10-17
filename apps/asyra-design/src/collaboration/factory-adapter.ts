@@ -1,3 +1,4 @@
+import { prepareDocumentPublication } from './document-publication'
 import type { CollaborationPublicationSource } from '@asyra/collaboration'
 import type {
   SharedPublication,
@@ -21,89 +22,106 @@ export interface SharedPublicationSource {
   ): () => void
 }
 
+export const prepareCollaborationPublication = (
+  publication: SharedPublication
+): SharedPublication | undefined => {
+  let publicationIsDocumentOnly = true
+  const slices = publication.slices.flatMap((slice) => {
+    const batches = slice.batches.filter(({ channel }) =>
+      documentChannels.has(channel)
+    )
+    if (batches.length !== slice.batches.length) {
+      publicationIsDocumentOnly = false
+    }
+    if (batches.length === 0) return []
+    if (batches.length === slice.batches.length) return [slice]
+
+    const retainedIds = new Set(
+      batches.flatMap(({ deliveries }) =>
+        deliveries.flatMap(({ deliveryId, orderedIds }) => [
+          deliveryId,
+          ...orderedIds
+        ])
+      )
+    )
+    return [
+      Object.freeze({
+        sliceId: slice.sliceId,
+        orderedIds: Object.freeze(
+          slice.orderedIds.filter((orderedId) => retainedIds.has(orderedId))
+        ),
+        batches: Object.freeze(batches)
+      } satisfies SharedPublicationSlice)
+    ]
+  })
+  const deliveries = slices.flatMap(({ batches }) =>
+    batches.flatMap(({ deliveries: batchDeliveries }) => batchDeliveries)
+  )
+  if (deliveries.length === 0) return
+  const firstSlice = slices[0]
+  if (!firstSlice) return
+  const requiresAtomicCollapse =
+    publication.mode === 'atomic' && slices.length > 1
+  const transportSlices: readonly SharedPublicationSlice[] =
+    requiresAtomicCollapse
+      ? Object.freeze([
+          Object.freeze({
+            sliceId: firstSlice.sliceId,
+            orderedIds: Object.freeze(
+              slices.flatMap(({ orderedIds }) => orderedIds)
+            ),
+            batches: Object.freeze(slices.flatMap(({ batches }) => batches))
+          })
+        ])
+      : Object.freeze(slices)
+  if (
+    deliveries.some(
+      ({ eventName }) =>
+        eventName === EventTypes.UPDATE_COMPUTED_DATA ||
+        eventName === EventTypes.UPDATE_COMPUTED_DATA_PATCH
+    )
+  ) {
+    throw new Error(
+      '[collaboration] local-only computed projection cannot enter a shared publication'
+    )
+  }
+  const performanceProfile = getActiveAiDrawingPerformanceProfile()
+  if (performanceProfile) {
+    try {
+      recordAiDrawingPerformancePublication(performanceProfile, {
+        deliveryCount: deliveries.length,
+        publicationId: publication.publicationId
+      })
+    } catch {
+      // Detached profiling cannot alter the canonical transport route.
+    }
+  }
+  return prepareDocumentPublication(
+    publicationIsDocumentOnly && !requiresAtomicCollapse
+      ? publication
+      : Object.freeze({
+          ...publication,
+          slices: transportSlices
+        })
+  )
+}
+
 export const createDocumentCollaborationPublicationSource = (
-  source: SharedPublicationSource
+  source: SharedPublicationSource,
+  onPreparationFailure: (source: SharedPublication, error: Error) => void
 ): CollaborationPublicationSource => ({
   subscribe: (subscriber) =>
-    source.subscribeToSharedPublication((publication: SharedPublication) => {
-      let publicationIsDocumentOnly = true
-      const slices = publication.slices.flatMap((slice) => {
-        const batches = slice.batches.filter(({ channel }) =>
-          documentChannels.has(channel)
+    source.subscribeToSharedPublication((publication) => {
+      let prepared: SharedPublication | undefined
+      try {
+        prepared = prepareCollaborationPublication(publication)
+      } catch (error) {
+        onPreparationFailure(
+          publication,
+          error instanceof Error ? error : new Error(String(error))
         )
-        if (batches.length !== slice.batches.length) {
-          publicationIsDocumentOnly = false
-        }
-        if (batches.length === 0) return []
-        if (batches.length === slice.batches.length) return [slice]
-
-        const retainedIds = new Set(
-          batches.flatMap(({ deliveries }) =>
-            deliveries.flatMap(({ deliveryId, orderedIds }) => [
-              deliveryId,
-              ...orderedIds
-            ])
-          )
-        )
-        return [
-          Object.freeze({
-            sliceId: slice.sliceId,
-            orderedIds: Object.freeze(
-              slice.orderedIds.filter((orderedId) => retainedIds.has(orderedId))
-            ),
-            batches: Object.freeze(batches)
-          } satisfies SharedPublicationSlice)
-        ]
-      })
-      const deliveries = slices.flatMap(({ batches }) =>
-        batches.flatMap(({ deliveries: batchDeliveries }) => batchDeliveries)
-      )
-      if (deliveries.length === 0) return
-      const firstSlice = slices[0]
-      if (!firstSlice) return
-      const requiresAtomicCollapse =
-        publication.mode === 'atomic' && slices.length > 1
-      const transportSlices: readonly SharedPublicationSlice[] =
-        requiresAtomicCollapse
-          ? Object.freeze([
-              Object.freeze({
-                sliceId: firstSlice.sliceId,
-                orderedIds: Object.freeze(
-                  slices.flatMap(({ orderedIds }) => orderedIds)
-                ),
-                batches: Object.freeze(slices.flatMap(({ batches }) => batches))
-              })
-            ])
-          : Object.freeze(slices)
-      if (
-        deliveries.some(
-          ({ eventName }) =>
-            eventName === EventTypes.UPDATE_COMPUTED_DATA ||
-            eventName === EventTypes.UPDATE_COMPUTED_DATA_PATCH
-        )
-      ) {
-        throw new Error(
-          '[collaboration] local-only computed projection cannot enter a shared publication'
-        )
+        return
       }
-      const performanceProfile = getActiveAiDrawingPerformanceProfile()
-      if (performanceProfile) {
-        try {
-          recordAiDrawingPerformancePublication(performanceProfile, {
-            deliveryCount: deliveries.length,
-            publicationId: publication.publicationId
-          })
-        } catch {
-          // Detached profiling cannot alter the canonical transport route.
-        }
-      }
-      subscriber(
-        publicationIsDocumentOnly && !requiresAtomicCollapse
-          ? publication
-          : Object.freeze({
-              ...publication,
-              slices: transportSlices
-            })
-      )
+      if (prepared) subscriber(prepared)
     })
 })

@@ -354,7 +354,13 @@ test(
           .filter((c) => c.status === 'failed')
           .map((c) => c.id)
           .sort(),
-        service.contract().negativeCaseIds.slice().sort()
+        service
+          .contract()
+          .definition.scenarios.find(
+            (scenario) => scenario.id === 'inverse-regression'
+          )
+          .expectedFailedCaseIds.slice()
+          .sort()
       )
       assert.equal(negative.evidence.flows[0].status, 'passed')
       assert.deepEqual(negative.evidence.issues, [])

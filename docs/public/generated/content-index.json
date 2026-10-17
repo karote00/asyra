@@ -834,7 +834,7 @@
       "wordCount": 491
     },
     {
-      "contentSha256": "263eb0024b7aee84649e33fd583e80c2628ba7ce3f7aa4e0670ff22dcd74f9ee",
+      "contentSha256": "91bcc101100bc3ea991fb247e7e0bf5c0a5a08f56fa76294c5fb3bfa14eb9284",
       "description": "Map start, update, end, and cancellation to exactly one intended undo commit.",
       "headings": [
         {
@@ -852,6 +852,10 @@
         {
           "depth": 2,
           "title": "Public APIs"
+        },
+        {
+          "depth": 2,
+          "title": "Choose the cancellation policy"
         },
         {
           "depth": 2,
@@ -895,7 +899,7 @@
       "path": "build/feature-session.md",
       "section": "Extend",
       "title": "Build a transaction-safe Feature session",
-      "wordCount": 494
+      "wordCount": 726
     },
     {
       "contentSha256": "8610eaa7d7e318f47327e2514ab0f9db021f539fe4ba220b5c5fa0baa394cf28",
@@ -1287,7 +1291,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "2deb8f63cb1238c91406bd2f4416a8a03fb3e35aa6fdfb9dcd5e4539096ce829",
+      "contentSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1313,6 +1317,10 @@
         {
           "depth": 2,
           "title": "Lifecycle, inputs, outputs, and failure"
+        },
+        {
+          "depth": 3,
+          "title": "Diagnostic storage and retry ownership"
         },
         {
           "depth": 2,
@@ -1343,7 +1351,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 464
+      "wordCount": 689
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",

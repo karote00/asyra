@@ -25,6 +25,24 @@ const coreRenderLifecycleDisposition = {
 export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
+    owner: 'core',
+    methods: ['save', 'propsSaveData', 'sceneTreeSaveData'],
+    reason:
+      'Framework serialization remains available to the document export owner. Model requests use explicit export artifacts and download delivery; completion confirms the existing document session durability without returning serialized document bodies.'
+  },
+  {
+    owner: 'core',
+    methods: ['isInUndoRedo'],
+    reason:
+      'App input admission synchronously observes the existing Factory replay flags before dispatch. Model calls use the public history actions; an asynchronous status query cannot reserve or control history execution.'
+  },
+  {
+    owner: 'core',
+    methods: ['getPropertyOwnerElementIds'],
+    reason:
+      'Host inspection observes canonical property publications and resolves affected live or retired owners. This inverse ownership index supports mutation evidence, not an independent model operation.'
+  },
+  {
     owner: 'element',
     methods: ['deleteElement'],
     replacement: 'api_element_deleteElements',

@@ -1,3 +1,4 @@
+import { SessionCancelPolicies } from '@asyra/utils'
 import type { MoveHierarchyResult } from '@asyra/utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -93,7 +94,7 @@ describe('Layer hierarchy move feature session', () => {
     expect(layerHierarchyMoveFeatureDefinition).toMatchObject({
       priority: 110,
       exclusive: true,
-      cancelPolicy: 'commit-current',
+      cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
       session: layerHierarchyMoveSession
     })
   })

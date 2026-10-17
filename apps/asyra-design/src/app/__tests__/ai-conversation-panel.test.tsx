@@ -1,7 +1,6 @@
 vi.mock('../../providers/element-selection', () => ({
   useElementSelection: () => new Set<string>()
 }))
-import * as presentation from '../../ai/presentation'
 import {
   act,
   cleanup,
@@ -25,6 +24,15 @@ import {
 } from '../../constants'
 import { documentInteractionLock } from '../../ai/document-interaction-lock'
 
+const openHistory = (element: HTMLElement) => {
+  const details = element.closest('details')
+  if (!details) throw new Error('Missing work disclosure')
+  act(() => {
+    Object.defineProperty(details, 'open', { get: () => true })
+    fireEvent(details, new Event('toggle'))
+  })
+}
+
 const createPanelHarness = () => {
   const pending = createDeferred<Record<string, unknown>>()
   const feature = {
@@ -44,7 +52,10 @@ const createPanelHarness = () => {
   })
   return {
     confirmation,
-    conversation,
+    conversation: {
+      ...conversation,
+      getActivity: vi.fn(conversation.getActivity)
+    },
     feature,
     pending
   }
@@ -77,12 +88,30 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     const request = harness.feature.execute.mock
       .calls[0][0] as AiConversationFeatureRequest
+    openHistory(screen.getByLabelText('Work history'))
     let sequence = 0
     for (const message of [
       '正在加入窗戶光影反射效果',
       '正在刪除被覆蓋物件',
       '正在調整屋頂顏色'
     ]) {
+      if (sequence) {
+        const completedId = `work-${sequence}`
+        await act(async () => {
+          request.progressObserver({
+            attempt: 1,
+            phase: 'provider',
+            summary: 'Tool completed',
+            toolStatus: 'completed',
+            activity: {
+              kind: 'system',
+              callId: completedId,
+              sequence: ++sequence,
+              phase: 'provider'
+            }
+          })
+        })
+      }
       await act(async () =>
         request.progressObserver({
           phase: 'provider',
@@ -94,14 +123,16 @@ describe('AI Agent conversation panel intent boundary', () => {
             kind: 'work',
             callId: `work-${++sequence}`,
             sequence,
-            phase: 'provider'
+            phase: 'applying'
           },
           message
         })
       )
-      expect(
-        screen.getByRole('status', { name: 'Current activity' }).textContent
-      ).toBe(`AI processing${message}`)
+      const current = within(
+        screen.getByRole('status', { name: 'Current activity' })
+      )
+      expect(current.getByText('Refining the design')).toBeTruthy()
+      expect(current.getByText(message).textContent).toBe(message)
       expect(
         within(screen.getByLabelText('Operational progress'))
           .getByText(message)
@@ -123,6 +154,58 @@ describe('AI Agent conversation panel intent boundary', () => {
         .getByText('正在調整屋頂顏色')
         .hasAttribute('aria-current')
     ).toBe(false)
+  })
+
+  it('retires completed call work without presenting the original objective as current work', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      void harness.conversation.submit('Refine the tower')
+    })
+    const request = harness.feature.execute.mock
+      .calls[0][0] as AiConversationFeatureRequest
+    await act(async () => {
+      request.progressObserver({
+        attempt: 1,
+        phase: 'provider',
+        summary: 'Tool running',
+        message: 'Adjust the roof',
+        toolStatus: 'running',
+        activity: {
+          kind: 'work',
+          callId: 'roof',
+          sequence: 1,
+          phase: 'applying'
+        }
+      })
+      request.progressObserver({
+        attempt: 1,
+        phase: 'provider',
+        summary: 'Tool complete',
+        toolStatus: 'completed',
+        activity: {
+          kind: 'system',
+          callId: 'roof',
+          sequence: 2,
+          phase: 'applying'
+        }
+      })
+    })
+    expect(
+      screen.getByRole('status', { name: 'Current activity' }).textContent
+    ).toBe('Processing your request')
+    await act(async () => {
+      harness.pending.resolve({ status: 'success' })
+    })
+    expect(
+      screen.queryByRole('status', { name: 'Current activity' })
+    ).toBeNull()
   })
 
   it('does not show a redundant canvas or selection context caption', () => {
@@ -246,7 +329,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         message: 'Separating drawing layers'
       }
     ]
-    vi.spyOn(presentation, 'projectAiActivity').mockReturnValue({
+    harness.conversation.getActivity.mockReturnValue({
       entries,
       current: entries[1]
     })
@@ -262,7 +345,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     )
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('Converting artwork to vectorsSeparating drawing layers')
+    ).toBe('Separating drawing layersConverting artwork to vectors')
     const disclosure = screen.getByLabelText('Work history')
     expect(disclosure.textContent).toMatch(/^Working for /)
     expect(disclosure.textContent).not.toContain('Separating drawing layers')
@@ -274,12 +357,64 @@ describe('AI Agent conversation panel intent boundary', () => {
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     const list = screen.getByLabelText('Operational progress')
+    expect(list.children).toHaveLength(0)
+    openHistory(list)
     expect([...list.children].map((row) => row.textContent)).toEqual([
       'Reviewing the results',
       'Converting artwork to vectors',
       'Separating drawing layers'
     ])
     expect(new Set([...list.children].map((row) => row.className)).size).toBe(1)
+  })
+
+  it('opens an existing overflowing conversation at the latest message', async () => {
+    const harness = createPanelHarness()
+    harness.pending.resolve({ status: 'executed', actionResults: [] })
+    await harness.conversation.submit('Existing drawing')
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(1200)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(500)
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    expect(body.scrollTop).toBe(1200)
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull()
+  })
+
+  it('measures expanded history only after its rows are mounted', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    const list = screen.getByLabelText('Operational progress')
+    const details = screen.getByLabelText('Work history').closest('details')
+    if (!details) throw new Error('Missing history')
+    Object.defineProperties(body, {
+      scrollHeight: { get: () => (list.children.length ? 1200 : 200) },
+      clientHeight: { get: () => 500 }
+    })
+    body.scrollTop = 0
+    fireEvent.scroll(body)
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull()
+    Object.defineProperty(details, 'open', { get: () => true })
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() => expect(list.children.length).toBeGreaterThan(0))
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
   })
 
   it('rechecks whether latest is visible after Activity changes the scroll extent', async () => {
@@ -414,7 +549,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     act(() => {
       void harness.conversation.submit('Draw')
     })
-    const project = vi.spyOn(presentation, 'projectAiActivity')
+    const project = harness.conversation.getActivity.mockClear()
     for (const value of ['N', 'Ne', 'Next']) {
       fireEvent.change(screen.getByLabelText('Message Agent'), {
         target: { value }
@@ -604,6 +739,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       name: 'Operational progress',
       hidden: true
     })
+    openHistory(originalActivity)
     expect(originalActivity.textContent).toContain('Reviewing the drawing')
     expect(originalActivity.textContent).not.toContain('Finished')
     const question = within(first).getByText('Which scale?')
@@ -613,7 +749,6 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toBeTruthy()
     expect(screen.queryByLabelText('Completed at')).toBeNull()
 
-    fireEvent.click(within(first).getByLabelText('Work history'))
     const originalRows = [...originalActivity.children]
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: { value: 'One cm per pixel' }
@@ -1049,6 +1184,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')
     expect(screen.getByText('draw a cat face', { selector: 'p' })).toBeTruthy()
+    openHistory(screen.getByLabelText('Work history'))
     expect(screen.getByText('Reviewing the drawing')).toBeTruthy()
     expect(screen.getByText('Reshaping the tail')).toBeTruthy()
     expect(screen.queryByText('Applying changes')).toBeNull()

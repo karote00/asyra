@@ -122,6 +122,37 @@ export const createAPIs = (
     return freezeOrderedElementIds(sceneResult.orderedElementIds)
   }
 
+  const applyCanonicalInsertion = (
+    change: Extract<CanonicalChange, { kind: 'element-creation' }>,
+    options?: EVENT_OPTIONS
+  ): readonly string[] => {
+    const { entries, properties } = change
+    const preparedSceneInsertion = sceneTree.prepareCanonicalElementInsertion({
+      entries
+    })
+    const preparedProperties =
+      preparedSceneInsertion.ownerRelations.length > 0 || properties.length > 0
+        ? props.preparePropertyMutationBatch({
+            operations: [
+              {
+                kind: 'create-exact-property-graph',
+                ownerRelations: preparedSceneInsertion.ownerRelations,
+                components: properties
+              }
+            ],
+            options
+          })
+        : undefined
+    if (preparedProperties) {
+      props.applyPreparedPropertyMutationBatch(preparedProperties)
+    }
+    const sceneResult = sceneTree.applyPreparedElementMutation(
+      preparedSceneInsertion,
+      options
+    )
+    return freezeOrderedElementIds(sceneResult.orderedElementIds)
+  }
+
   const applyPreparedSubtreeRemoval = (
     preparedSceneRemoval: PreparedSubtreeRemoval,
     options?: EVENT_OPTIONS
@@ -214,37 +245,18 @@ export const createAPIs = (
       const parent = requireContainerParent(parentId)
       const parentChildren = parent.get('children')
       const insertionIndex = index === undefined ? parentChildren.length : index
-      const preparedSceneInsertion = sceneTree.prepareCanonicalElementInsertion(
+      return applyCanonicalInsertion(
         {
+          kind: 'element-creation',
           entries: elements.map((data, offset) => ({
             data,
             parentId,
             index: insertionIndex + offset
-          }))
-        }
-      )
-      const preparedProperties =
-        preparedSceneInsertion.ownerRelations.length > 0 ||
-        properties.length > 0
-          ? props.preparePropertyMutationBatch({
-              operations: [
-                {
-                  kind: 'create-exact-property-graph',
-                  ownerRelations: preparedSceneInsertion.ownerRelations,
-                  components: properties
-                }
-              ],
-              options
-            })
-          : undefined
-      if (preparedProperties) {
-        props.applyPreparedPropertyMutationBatch(preparedProperties)
-      }
-      const sceneResult = sceneTree.applyPreparedElementMutation(
-        preparedSceneInsertion,
+          })),
+          properties
+        },
         options
       )
-      return freezeOrderedElementIds(sceneResult.orderedElementIds)
     },
     updateLocalComputedData: (updates) =>
       sceneTree.updateLocalComputedData(updates),
@@ -418,17 +430,11 @@ export const createAPIs = (
           break
         }
         case 'element-creation': {
-          const elementIds =
-            sceneTreeAPIs.createElementsInParentFromCanonicalData(
-              change.elements,
-              change.properties,
-              change.parentId,
-              change.index
-            )
+          const elementIds = applyCanonicalInsertion(change)
           requireOrderedIds(
             'element-creation owner',
             elementIds,
-            change.elements.map(({ id: elementId }) => elementId)
+            change.entries.map(({ data }) => data.id)
           )
           break
         }

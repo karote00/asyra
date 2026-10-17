@@ -26,8 +26,10 @@
 
 - backend and socket-server production code import only Node/third-party
   infrastructure and App-owned protocol modules
-- no backend source or backend bundle may import an `@asyra/*` package,
-  including type-only imports
+- independently composable public capabilities are limited to
+  `@asyra/ai-agent-runtime`, its `/node` entry and `@asyra/preset/group-bounds`,
+  matching the executable backend import guard; other `@asyra/*` imports,
+  including Core runtime and type-only imports, remain prohibited
 - framework publication/event conversion belongs to the frontend adapter, and
   remote apply returns through a Core facade
 

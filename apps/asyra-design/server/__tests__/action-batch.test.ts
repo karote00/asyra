@@ -463,6 +463,128 @@ it('delivers a real browser failure through HTTP before closing the execution st
   }
 })
 
+it.each(['completed', 'partial', 'unknown'] as const)(
+  'delivers oversized %s output as a recoverable receipt without replay or stream cancellation',
+  async (settlement) => {
+    const { createServerActionBatchProvider } =
+      await import('../../src/ai/server-action-batch-provider')
+    const { requireBatchSuccess, BrowserBatchExecutionError } =
+      await import('../batch-exchange')
+    const prepared = {
+      batchId: 'large-result',
+      actions: [
+        {
+          id: 'export',
+          name: 'api_core_save',
+          arguments: {},
+          summary: 'Export'
+        }
+      ]
+    }
+    let failure: unknown
+    let postedBytes = 0
+    const executeBatch = vi.fn(async () => ({
+      ...(settlement === 'completed'
+        ? {}
+        : {
+            failure: {
+              code: 'OWNER_FAILED',
+              message: 'An operation failed.',
+              stage: 'execution',
+              actionId: 'export',
+              actionName: 'api_core_save',
+              actionExecutionMs: 1,
+              contextFresh: false,
+              settlement
+            }
+          }),
+      actionResults: [
+        {
+          actionId: 'export',
+          actionName: 'api_core_save',
+          result: {
+            status: 'no-change',
+            value: { content: 'x'.repeat(17 * 1024 * 1024) }
+          }
+        }
+      ],
+      context: {}
+    }))
+    const middleware = createActionBatchMiddleware({
+      requestModelActionBatch: async (_input, options) => {
+        if (!options.executeBatch)
+          throw new Error('Missing execution transport')
+        const receipt = await options.executeBatch(prepared)
+        try {
+          requireBatchSuccess(prepared, receipt, 1)
+        } catch (error) {
+          failure = error
+        }
+        return { batchId: 'recovered', actions: [] }
+      }
+    })
+    const server = createServer((request, response) => {
+      void middleware(request, response, () => response.end())
+    })
+    let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+    try {
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve)
+      )
+      const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+      provider = createServerActionBatchProvider({
+        fetch: (async (url, init) => {
+          if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
+            postedBytes = Buffer.byteLength(String(init.body))
+          return fetch(origin + String(url), {
+            ...init,
+            headers: { ...init.headers, origin }
+          })
+        }) as never
+      })
+      const controller = new AbortController()
+      await expect(
+        provider.requestActionBatch(
+          { intent: 'Export', context: {}, actions: [], attempt: 1 },
+          { signal: controller.signal, executeBatch }
+        )
+      ).resolves.toMatchObject({ batchId: 'recovered' })
+      expect(executeBatch).toHaveBeenCalledOnce()
+      expect(controller.signal.aborted).toBe(false)
+      expect(postedBytes).toBeLessThan(4096)
+      expect(failure).toBeInstanceOf(BrowserBatchExecutionError)
+      expect(failure).toMatchObject({
+        receipt: {
+          failure: {
+            code: 'ACTION_BATCH_RECEIPT_TOO_LARGE',
+            stage: 'delivery',
+            settlement,
+            contextFresh: false,
+            observedResult: {
+              bytes: expect.any(Number),
+              limit: 16 * 1024 * 1024
+            }
+          }
+        }
+      })
+      if (settlement !== 'completed')
+        expect(failure).toMatchObject({
+          receipt: {
+            failure: {
+              observedResult: {
+                originalFailure: { code: 'OWNER_FAILED', settlement }
+              }
+            }
+          }
+        })
+    } finally {
+      provider?.dispose()
+      server.closeAllConnections()
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
+  }
+)
+
 it('preserves activity provenance and order through the HTTP progress handoff', async () => {
   const { createServerActionBatchProvider } =
     await import('../../src/ai/server-action-batch-provider')

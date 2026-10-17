@@ -40,6 +40,11 @@
       ],
       conditions: [
         'The same handshake is mandatory for one Actor and multiple Actors.',
+        'Closed or timed-out callers cancel their checkpoint read and release admission. Shared initialization cancels only after its last waiter leaves, removes the abandoned entry immediately and cannot publish over a successor; a surviving waiter retains the original read. Persistence writes are not cancelled by read ownership.',
+        'Queued bootstrap admission revalidates that the peer is open before work and after asynchronous checkpoint loading; a closed peer cannot reserve an Actor or block its replacement session.',
+        'The room remains authoritative while any queued or executing admission owns it, even after its last peer leaves or pending persistence becomes durable. Idle retirement waits for peers, admissions and undurable publications to finish; success and failure release admission ownership. Explicit Reset retains its separate generation replacement semantics.',
+        'The client retains a bounded stall deadline for each finite observed bootstrap stage: socket open, first control receipt, checkpoint preparation, validated bootstrap and main-thread handoff. Only ordered one-time current-generation progress advances the deadline; duplicate, stale, reordered and diagnostic events cannot keep a stalled session alive.',
+        'Successful admission emits one exact checkpoint preparation control before the full READY encoding. The worker validates it, rejects duplicate/post-ready milestones, and never derives editable or durable state from progress.',
         'A present backend checkpoint and its durable sequence are read before the pending-tail cutoff is fixed.',
         'The backend-owned document generation is returned with the checkpoint and advances only after a successful destructive Reset.',
         'The pending tail contains every sequence after durableSequence through headSequence exactly once and in order.',
@@ -66,8 +71,11 @@
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/collaboration-server.ts',
+        'apps/asyra-design/server/document-persistence-client.ts',
         'apps/asyra-design/src/collaboration/protocol.ts',
         'apps/asyra-design/src/collaboration/websocket-provider.ts',
+        'apps/asyra-design/src/collaboration/collaboration-transport-worker.ts',
+        'apps/asyra-design/e2e/recorded-document-reload.spec.ts',
         'apps/asyra-design/src/collaboration/lifecycle.ts',
         'apps/asyra-design/src/render-app',
         'apps/asyra-design/src/init/__tests__',
@@ -235,7 +243,7 @@
         'A nonmatching crdt-7076-sample HTTP action-batch request fails before Runtime and canonical publication.',
         'A selection-only or other non-document transaction produces no document publication.',
         'Rollback before publication discards pending transaction-end delivery.',
-        'A semantic no-op produces no publication.'
+        'An ordinary semantic no-op creates no new mutation publication. A successful retained History no-op still settles its original shared-delivery obligation; the document filter removes non-document channels.'
       ],
       allowedContributors: [
         '@asyra/factory transaction journal and shared settlement',
@@ -1452,8 +1460,7 @@
         id: 'implementation-plan',
         kind: 'plan',
         label: 'Trusted publication and CRDT 7,076 realignment plan',
-        href:
-          '../../../docs/ai/apps/asyra-design/plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md'
+        href: '../../../docs/ai/apps/asyra-design/plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md'
       },
       {
         id: 'factory-collaboration-inspector',

@@ -7,6 +7,7 @@ import {
 import factory, { Factory, LocalSharedDataChannel } from '@asyra/factory'
 import { defineFeature, SessionManager } from '@asyra/feature-system'
 import systemContext from '@asyra/system-context'
+import { SessionCancelPolicies } from '@asyra/utils'
 import { getAtlasCase } from './case-definitions.mjs'
 
 let runSequence = 0
@@ -79,13 +80,13 @@ const createContinuousPointerCase = () => {
           'atlas:value-feature',
           100,
           true,
-          'rollback',
+          SessionCancelPolicies.ROLLBACK,
           {
             onStart: () => ({ initialValue: state.value }),
             onUpdate: (snapshot) =>
               updateValue(factory, eventName, state, snapshot.detail.nextValue),
             onEnd: () => undefined,
-            onCancel: () => 'rollback'
+            onCancel: () => SessionCancelPolicies.ROLLBACK
           }
         )
         return { registered: true, canonicalValue: state.value }
@@ -234,7 +235,7 @@ const createRollbackCase = () => {
           'atlas:validation-feature',
           100,
           true,
-          'rollback',
+          SessionCancelPolicies.ROLLBACK,
           {
             onStart: () => ({ initialValue: state.value }),
             onUpdate: (snapshot) => {
@@ -244,7 +245,7 @@ const createRollbackCase = () => {
               }
               updateValue(factory, eventName, state, nextValue)
             },
-            onCancel: () => 'rollback'
+            onCancel: () => SessionCancelPolicies.ROLLBACK
           }
         )
         return { registered: true, canonicalValue: state.value }

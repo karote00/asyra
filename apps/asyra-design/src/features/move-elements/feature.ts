@@ -6,6 +6,7 @@ import {
   measureBrowserDragPhase
 } from '@asyra/utils'
 import { defineFeature } from '@asyra/core'
+import { SessionCancelPolicies } from '@asyra/utils'
 import {
   elementApis,
   selectionApis,
@@ -353,7 +354,7 @@ export const moveElementsFeature = defineFeature<
 >(FeatureNames.MOVE_ELEMENTS, InputSystemEvents.INPUT_DRAG, {
   priority: 8,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   api,
   session: moveElementsSession
 })

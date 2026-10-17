@@ -123,14 +123,14 @@ test(
     assert.equal(filtered.result.code, 0)
     assert.deepEqual(
       filtered.record.cases.map((item) => item.status),
-      ['passed', 'skipped']
+      ['passed', 'skipped', 'skipped', 'skipped']
     )
     const unresolved = fixture.reader
       .list()
       .currentCases.filter((item) => item.status === 'failed')
     assert.equal(unresolved.length, 1)
     assert.equal(unresolved[0].runId, failed.record.id)
-    assert.match(unresolved[0].testName, /awaits Redo/)
+    assert.match(unresolved[0].testName, /awaits the issued Redo/)
     await fixture.run('app')
     assert.equal(
       fixture.reader
@@ -263,11 +263,11 @@ test(
     t.after(() => fixture.restore())
     const baseline = await fixture.run('history')
     assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.equal(baseline.record.cases.length, 14)
+    assert.equal(baseline.record.cases.length, 17)
     assert.equal(
       baseline.record.cases.filter((item) => item.resolution === 'mapped')
         .length,
-      14
+      17
     )
     fixture.mutate('app')
     const appFault = await fixture.run('app')
@@ -281,7 +281,7 @@ test(
         (item) => item.status === 'failed'
       )
       const mapped = failures.filter((item) => item.resolution === 'mapped')
-      assert.equal(mapped.length, scenario === 'replay-order' ? 8 : 9)
+      assert.equal(mapped.length, scenario === 'replay-order' ? 8 : 12)
       assert.ok(failures.every((item) => item.resolution === 'mapped'))
       for (const item of mapped) {
         assert.equal(item.locations[0].targetId, 'history-replay')
@@ -354,7 +354,7 @@ test(
     t.after(() => fixture.restore())
     const baseline = await fixture.run('execution')
     assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.equal(baseline.record.cases.length, 23)
+    assert.equal(baseline.record.cases.length, 41)
     assert.ok(
       baseline.record.cases.every((item) => item.resolution === 'mapped'),
       JSON.stringify(baseline.record.issues)
@@ -372,7 +372,6 @@ test(
       'misclassify-combined-tool',
       'ignore-canonical-evidence'
     ]
-    const steps = ['compose', 'apply', 'inspect']
     for (const [index, scenario] of scenarios.entries()) {
       fixture.mutateExecution(scenario)
       const fault = await fixture.run('execution')
@@ -381,8 +380,16 @@ test(
         (item) => item.status === 'failed'
       )
       assert.deepEqual(
-        failed.map((item) => item.locations[0].stepId).sort(),
-        steps.slice(0, index + 1).sort()
+        failed.map((item) => item.locations[0].caseId).sort(),
+        scenarios
+          .slice(0, index + 1)
+          .flatMap(
+            (id) =>
+              require('../../../../apps/asyra-design/flow-contracts.json').scenarios.find(
+                (entry) => entry.id === id
+              ).expectedFailedCaseIds
+          )
+          .sort()
       )
       for (const item of failed) {
         assert.equal(item.resolution, 'mapped')
@@ -438,7 +445,7 @@ test(
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
         .length,
-      23
+      41
     )
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }
@@ -539,7 +546,7 @@ test(
     t.after(() => fixture.restore())
     const baseline = await fixture.run('recipe')
     assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.equal(baseline.record.cases.length, 4)
+    assert.equal(baseline.record.cases.length, 11)
     assert.deepEqual(baseline.record.issues, [])
     assert.ok(
       baseline.record.cases.every((item) => item.resolution === 'mapped')
@@ -560,8 +567,11 @@ test(
         (item) => item.status === 'failed'
       )
       assert.deepEqual(
-        failed.map((item) => item.locations[0]?.stepId),
-        [steps[index]]
+        failed.map((item) => item.locations[0]?.caseId).sort(),
+        require('../../../../packages/ai-agent-runtime/flow-contracts.json')
+          .scenarios.find((entry) => entry.id === scenario)
+          .expectedFailedCaseIds.slice()
+          .sort()
       )
       const location = failed[0].locations[0]
       assert.equal(location.targetId, 'reusable-tool-composition')
@@ -582,9 +592,18 @@ test(
     assert.deepEqual(
       combined.record.cases
         .filter((item) => item.status === 'failed')
-        .map((item) => item.locations[0].stepId)
+        .map((item) => item.locations[0].caseId)
         .sort(),
-      [...steps].sort()
+      [
+        ...new Set(
+          scenarios.flatMap(
+            (id) =>
+              require('../../../../packages/ai-agent-runtime/flow-contracts.json').scenarios.find(
+                (entry) => entry.id === id
+              ).expectedFailedCaseIds
+          )
+        )
+      ].sort()
     )
     const output = []
     assert.equal(
@@ -629,7 +648,7 @@ test(
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
         .length,
-      4
+      11
     )
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }

@@ -40,10 +40,11 @@ const data = {
       ownerPackage: '@asyra/asyra-design',
       purpose:
         'Choose Undo or Redo from the shortcut and await the App history API.',
-      inputs: ['shortcut keyShift state', 'App history API completion'],
+      inputs: ['Captured detail.historyDirection intent', 'App history API completion'],
       outputs: ['artifact:history-shortcut-outcome'],
       conditions: [
-        'Without Shift invoke Undo; with Shift invoke Redo.',
+        'Consume captured undo or redo intent; later modifier state cannot reverse it.',
+        'Missing or invalid captured intent invokes neither direction.',
         'Keep exclusive execution pending until the requested replay settles.'
       ],
       bypasses: [

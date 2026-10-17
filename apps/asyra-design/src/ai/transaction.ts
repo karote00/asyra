@@ -75,7 +75,7 @@ export const createAiTransactionRunner = (
       let group: HistoryGroupHandle | undefined
       let accepting = true
       let settlementUnknown = false
-      const runMutation: AiMutationExecutor = (mutate) =>
+      const runMutation: AiMutationExecutor = (mutate, settled) =>
         atIdleBoundary(
           apis,
           () => {
@@ -85,7 +85,9 @@ export const createAiTransactionRunner = (
               if (status.status === 'rollback-failed') settlementUnknown = true
             })
             try {
-              return apis.updateHistoryGroup(group, mutate)
+              const value = apis.updateHistoryGroup(group, mutate)
+              settled?.(value)
+              return value
             } finally {
               stop()
             }

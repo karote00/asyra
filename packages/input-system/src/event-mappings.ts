@@ -40,5 +40,6 @@ export interface InputEventCombo {
   keys: KeyboardKey[]
   modifiers?: ModifierKey[]
   detail?: DetailType
-  callback?: (raw: RawInputEvent) => void
+  /** Return false to ignore this input before dispatch; policy belongs to the caller. */
+  callback?: ((raw: RawInputEvent) => void) | ((raw: RawInputEvent) => boolean)
 }

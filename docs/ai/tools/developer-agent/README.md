@@ -70,7 +70,7 @@ API usage alone is insufficient. Record actual loaded Skill location and bundle
 version. The packaging relocation test proves relative resource resolution, not
 that the host or model always uses the correct path.
 
-Current candidate: 0.1.12, with public display name **Asyra Skill** and unified
+Current candidate: 0.1.13, with public display name **Asyra Skill** and unified
 installation identity `asyra-skill`. See the [capability guidance plan](capability-guidance-plan.md)
 and [support evidence](support-evidence.md). Previous native loading trials are
 versioned historical observations, not acceptance of this candidate. A plugin

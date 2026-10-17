@@ -183,3 +183,21 @@ describe('Design invocation history groups', () => {
     expect(apis.isTransactionBoundaryIdle()).toBe(true)
   })
 })
+
+it('observes mutation settlement after canonical publication and before queued unrelated work', async () => {
+  const { runner, apis, write } = setup()
+  const events: string[] = []
+  apis.subscribeToCommitCapture(() => events.push('published'))
+  await runner.run('settlement', async (mutate) => {
+    if (!mutate) throw new Error('Missing mutation executor')
+    await mutate(
+      () => {
+        write('ai', 1)
+        queueMicrotask(() => events.push('other'))
+        return 'receipt'
+      },
+      (value) => events.push(value)
+    )
+  })
+  expect(events).toEqual(['published', 'receipt', 'other'])
+})

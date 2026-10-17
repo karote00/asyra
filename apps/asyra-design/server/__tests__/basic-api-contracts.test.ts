@@ -504,3 +504,197 @@ it('keeps the host render-ready event out of model-readable operations', () => {
     )
   ).toBe(true)
 })
+
+it('requires fresh document identities in recipes but keeps field names and new values literal', async () => {
+  const { admitAiRecipe, createAiToolContract } =
+    await import('@asyra/ai-agent-runtime')
+  const { basicApiResultSchema } =
+    await import('../../src/ai/basic-api-results')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const reference = {
+    type: 'string',
+    minLength: 1,
+    'x-runtime-value': 'document'
+  }
+  const object = (properties: Record<string, unknown>) => ({
+    type: 'object',
+    properties,
+    required: Object.keys(properties),
+    additionalProperties: false
+  })
+  const cases = [
+    {
+      name: 'api_core_getElementComputedData',
+      inputSchema: reference,
+      fields: {
+        elementId: { kind: 'input', path: '' },
+        fields: { kind: 'literal', value: ['x', 'width'] }
+      }
+    },
+    {
+      name: 'api_fill_getFillById',
+      inputSchema: object({ element: reference, fill: reference }),
+      fields: {
+        elementId: { kind: 'input', path: '/element' },
+        fillId: { kind: 'input', path: '/fill' }
+      }
+    },
+    {
+      name: 'api_selection_selectVectorSegment',
+      inputSchema: object({ element: reference, segment: reference }),
+      fields: {
+        segment: {
+          kind: 'object',
+          fields: {
+            elementId: { kind: 'input', path: '/element' },
+            segmentId: { kind: 'input', path: '/segment' }
+          }
+        }
+      }
+    }
+  ]
+  // The exact registered method determines inputs; no runtime field-name inference.
+  for (const test of cases) {
+    const source = basicApiContracts.find(
+      (contract) => contract.name === test.name
+    )
+    expect(source, test.name).toBeDefined()
+    if (!source) throw new Error('Missing contract')
+    const dependency = createAiToolContract({
+      name: source.name,
+      description: source.description,
+      inputSchema: source.inputSchema,
+      composition: 'allowed',
+      ...toolSemantics(basicApiResultSchema(source), 'read', ['document'])
+    })
+    const submit = (fields: unknown) =>
+      admitAiRecipe(
+        {
+          format: 1,
+          name: 'fresh-values',
+          revision: 1,
+          description: 'Use current identities.',
+          inputSchema: test.inputSchema,
+          outputSchema: { type: 'null' },
+          steps: [
+            {
+              id: 'read',
+              tool: dependency.name,
+              revision: dependency.revision,
+              input: { kind: 'object', fields }
+            }
+          ],
+          output: { kind: 'literal', value: null }
+        },
+        {
+          resolve: () => dependency,
+          validate: operationInputIssue,
+          limits: {
+            bytes: 16000,
+            steps: 8,
+            bindings: 64,
+            bindingDepth: 16,
+            issues: 8
+          }
+        }
+      )
+    const fresh = submit(test.fields)
+    const captured = JSON.parse(JSON.stringify(test.fields))
+    const replace = (node: Record<string, unknown>) => {
+      if (node.kind === 'input') {
+        node.kind = 'literal'
+        delete node.path
+        node.value = 'previous-document-id'
+      }
+      if (node.fields)
+        Object.values(
+          node.fields as Record<string, Record<string, unknown>>
+        ).forEach(replace)
+    }
+    Object.values(captured as Record<string, Record<string, unknown>>).forEach(
+      replace
+    )
+    expect(submit(captured).ok, test.name).toBe(false)
+    expect(fresh.ok, JSON.stringify(fresh)).toBe(true)
+  }
+})
+
+it('hands canonical created identities to a later selection without capturing document state', async () => {
+  const { admitAiRecipe, createAiToolContract } =
+    await import('@asyra/ai-agent-runtime')
+  const { basicApiResultSchema } =
+    await import('../../src/ai/basic-api-results')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const creation = basicApiContracts.find(
+    (item) => item.name === 'api_element_createElements'
+  )
+  const selection = basicApiContracts.find(
+    (item) => item.name === 'api_selection_selectElements'
+  )
+  if (!creation || !selection)
+    throw new Error('Missing public creation or selection')
+  const contracts = [creation, selection].map((source) =>
+    createAiToolContract({
+      name: source.name,
+      description: source.description,
+      inputSchema: source.inputSchema,
+      composition: 'allowed',
+      ...toolSemantics(basicApiResultSchema(source), 'mutation', ['document'])
+    })
+  )
+  const property = creation.parameters[0]
+  const proposal = {
+    format: 1,
+    name: 'create-and-select',
+    revision: 1,
+    description: 'Use the actual creation receipt.',
+    inputSchema: { type: 'null' },
+    outputSchema: { type: 'null' },
+    steps: [
+      {
+        id: 'create',
+        tool: contracts[0].name,
+        revision: contracts[0].revision,
+        input: {
+          kind: 'object',
+          fields: { [property]: { kind: 'literal', value: [] } }
+        }
+      },
+      {
+        id: 'select',
+        tool: contracts[1].name,
+        revision: contracts[1].revision,
+        input: {
+          kind: 'object',
+          fields: {
+            elementIds: {
+              kind: 'step',
+              step: 'create',
+              path: '/appliedElementIds'
+            }
+          }
+        }
+      }
+    ],
+    output: { kind: 'literal', value: null }
+  }
+  const result = admitAiRecipe(proposal, {
+    resolve: (name) => contracts.find((contract) => contract.name === name),
+    validate: operationInputIssue,
+    limits: {
+      bytes: 16000,
+      steps: 8,
+      bindings: 64,
+      bindingDepth: 16,
+      issues: 8
+    }
+  })
+  expect(result.ok, JSON.stringify(result)).toBe(true)
+  expect(
+    (
+      basicApiResultSchema(creation).properties.appliedElementIds as {
+        items: Record<string, unknown>
+      }
+    ).items['x-runtime-value']
+  ).toBe('document')
+})

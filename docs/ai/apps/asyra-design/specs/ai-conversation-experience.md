@@ -31,7 +31,8 @@ Execution activity uses each action’s explicitly authored `{kind: "work", text
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the current status below the disclosure and its history.
-Consecutive entries with identical visible labels and messages appear once.
+History deduplicates the same authored identity/revision, not equal prose from
+separate tasks. Principal purpose appears first; operation state is secondary.
 Research/search/import and drawing/refinement loops share generic entries only
 when no concrete description is supplied. An explicitly authored work message or execution
 summary takes precedence and describes the current action and target, for example
@@ -41,12 +42,13 @@ add a reporting tool, model request or private-reasoning feed. A description is
 intent, not evidence of successful mutation.
 
 Work purpose and observed execution phase are distinct. Public model commentary describes the parent purpose; do not echo the full
-request as a status seed. Registered operation intent provides a call-scoped
-purpose when no authored detail exists, with distinct recorded provenance; explicit tool messages describe a
-call-scoped purpose in their authored language. Queueing, preparation, App
-execution and inspection come from actual owner events. Completion removes that
-call's active phase and purpose; the latest still-active sibling or ancestor is
-shown, ultimately returning to the request purpose with an AI-processing label.
+request as a status seed. Registered descriptions are system operation metadata,
+not authored purpose. Explicit tool messages describe call-scoped purpose in their
+authored language. Completion removes that call's phase and purpose. A surviving
+principal invocation or shared stage purpose remains; children do not replace it.
+Retained prose without an executing App root is labeled task context, not running
+work. Actual dispatched action effects determine read, preparation, mutation,
+external or mixed execution; wrapper names cannot prove canvas mutation.
 Public commentary cannot prove that geometry is being computed or applied.
 Internal resolution/permission events do not erase active purpose. Duplicate
 phase/purpose pairs are suppressed, but completion is a real transition.

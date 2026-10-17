@@ -1,0 +1,119 @@
+{
+  "sourceRun": "reusable-tools-1792226401062",
+  "sourceCallIndexes": [
+    17,
+    18,
+    21
+  ],
+  "captures": [
+    {
+      "elementId": "design-c6ff7666-7f22-4099-a2e8-1c5bb7dfd386-0",
+      "view": "overview"
+    },
+    {
+      "elementId": "design-c6ff7666-7f22-4099-a2e8-1c5bb7dfd386-0",
+      "view": "detail",
+      "region": {
+        "x": 8500,
+        "y": 27000,
+        "width": 1024,
+        "height": 1024
+      }
+    },
+    {
+      "elementId": "design-c6ff7666-7f22-4099-a2e8-1c5bb7dfd386-0",
+      "view": "detail",
+      "region": {
+        "x": 8500,
+        "y": 9700,
+        "width": 1024,
+        "height": 1024
+      }
+    },
+    {
+      "elementId": "design-cce3452d-3f16-4293-a179-f7fb37386bad-0",
+      "view": "overview"
+    }
+  ],
+  "rejected": {
+    "phase": "visual",
+    "final": false,
+    "inspectionIds": [
+      "9be07908-cf60-43d9-84c3-b3e199dc4e15",
+      "ada6df64-6458-4ce8-958f-d224a3f82c5e",
+      "ba2030b7-2d00-45cc-a15c-0df16205c500",
+      "bb1b4177-ee0e-4a13-a4f8-ec789d80ec1e"
+    ],
+    "checks": [
+      {
+        "criterionId": "view",
+        "status": "pass",
+        "evidence": "Recorded primary-agent pass for view",
+        "inspectionIds": [
+          "9be07908-cf60-43d9-84c3-b3e199dc4e15"
+        ]
+      },
+      {
+        "criterionId": "material",
+        "status": "fail",
+        "evidence": "Recorded primary-agent fail for material",
+        "inspectionIds": [
+          "9be07908-cf60-43d9-84c3-b3e199dc4e15",
+          "ada6df64-6458-4ce8-958f-d224a3f82c5e",
+          "ba2030b7-2d00-45cc-a15c-0df16205c500",
+          "bb1b4177-ee0e-4a13-a4f8-ec789d80ec1e"
+        ]
+      },
+      {
+        "criterionId": "detail",
+        "unitId": "crown",
+        "status": "pass",
+        "evidence": "Recorded primary-agent pass for detail",
+        "inspectionIds": [
+          "9be07908-cf60-43d9-84c3-b3e199dc4e15",
+          "ba2030b7-2d00-45cc-a15c-0df16205c500"
+        ]
+      }
+    ]
+  },
+  "corrected": {
+    "phase": "visual",
+    "final": false,
+    "inspectionIds": [
+      "9be07908-cf60-43d9-84c3-b3e199dc4e15",
+      "ada6df64-6458-4ce8-958f-d224a3f82c5e",
+      "ba2030b7-2d00-45cc-a15c-0df16205c500",
+      "bb1b4177-ee0e-4a13-a4f8-ec789d80ec1e"
+    ],
+    "checks": [
+      {
+        "criterionId": "view",
+        "status": "pass",
+        "evidence": "Recorded primary-agent pass for view",
+        "inspectionIds": [
+          "9be07908-cf60-43d9-84c3-b3e199dc4e15"
+        ]
+      },
+      {
+        "criterionId": "material",
+        "status": "fail",
+        "evidence": "Recorded primary-agent fail for material",
+        "inspectionIds": [
+          "9be07908-cf60-43d9-84c3-b3e199dc4e15",
+          "ada6df64-6458-4ce8-958f-d224a3f82c5e",
+          "ba2030b7-2d00-45cc-a15c-0df16205c500",
+          "bb1b4177-ee0e-4a13-a4f8-ec789d80ec1e"
+        ]
+      },
+      {
+        "criterionId": "detail",
+        "unitId": "crown",
+        "status": "pass",
+        "evidence": "Recorded primary-agent pass for detail",
+        "inspectionIds": [
+          "ba2030b7-2d00-45cc-a15c-0df16205c500"
+        ]
+      }
+    ]
+  }
+}

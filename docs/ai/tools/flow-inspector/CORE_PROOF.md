@@ -200,9 +200,16 @@ boundary against code running with the user's OS authority.
 The service admits one run at a time. Every run has a bounded deadline and output
 size. Cancellation and shutdown terminate the owned process group and await
 settlement before another run starts. Timeouts, signals, spawn failures, and
-missing reports are non-passing results. Child environments omit ambient secrets;
+missing reports are non-passing results. A denied process-group cleanup signal is
+not a spawn failure. EPERM is treated as an already-settled group only when a
+bounded independent process-table observation proves that the owned group has no
+members. A transient exiting member must actually disappear within the existing
+250 ms cleanup grace; its state alone is not settlement.
+A surviving group or unavailable/malformed observation remains a non-passing
+cleanup error; cancellation and timeout retain their original reasons. The actual
+child exit code is never replaced with success. Child environments omit ambient secrets;
 the runner leader terminates its group if its service owner abruptly dies.
-trusted tests still execute with the user's OS authority. Source-writing agents,
+Trusted tests still execute with the user's OS authority. Source-writing agents,
 network containment, token budgets, tickets, and PR mutation are unsupported.
 
 New format-2 attempt records bind their request, mapping revision, contract,

@@ -11,6 +11,7 @@ import {
 import type { PropertyComponentInstanceDataTypes } from '@asyra/utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Core } from '../core.js'
+import * as coreExports from '../index.js'
 import type { CorePresetInstallAPIs } from '../index.js'
 
 const FEATURE_NAME = 'core-facade-feature'
@@ -47,6 +48,10 @@ const createCoreForTest = () => {
 }
 
 describe('Core registration facade', () => {
+  it('leaves the pure session policy contract at the Utils entry', () => {
+    expect(coreExports).not.toHaveProperty('SessionCancelPolicies')
+  })
+
   beforeEach(() => {
     unregisterFeatureDirect(FEATURE_NAME)
     propertyComponentRegistry.clear()

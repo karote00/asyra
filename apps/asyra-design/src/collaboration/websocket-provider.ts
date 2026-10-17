@@ -16,6 +16,7 @@ import {
 } from '@asyra/utils'
 import {
   CollaborationMessageTypes,
+  collaborationBootstrapPhases,
   type CollaborationRequestInput,
   type CollaborationRequestMessage,
   type DocumentPersistenceReceipt,
@@ -137,6 +138,7 @@ export class CollaborationWebSocketProvider implements Provider {
   private readonly connectionTimeoutMs: number
   private readonly transportWorkerFactory: () => CollaborationTransportWorkerLike
   private status: ProviderStatus = 'idle'
+  private bootstrapPhaseIndex = 0
   private connectionGeneration = 0
   private requestSequence = 0
   private transportWorker: CollaborationTransportWorkerLike | null = null
@@ -253,6 +255,7 @@ export class CollaborationWebSocketProvider implements Provider {
     if (this.connectPromise) return this.connectPromise
 
     const generation = ++this.connectionGeneration
+    this.bootstrapPhaseIndex = 0
     this.suppressedAppFailureGeneration = null
     this.documentSessionBootstrap = null
     this.documentBootstrapCompleted = false
@@ -715,6 +718,18 @@ export class CollaborationWebSocketProvider implements Provider {
       return
     }
 
+    if (response.type === 'bootstrap-progress') {
+      if (
+        this.pendingConnection?.generation === response.generation &&
+        this.bootstrapPhaseIndex < collaborationBootstrapPhases.length &&
+        response.phase ===
+          collaborationBootstrapPhases[this.bootstrapPhaseIndex]
+      ) {
+        this.bootstrapPhaseIndex += 1
+        this.startConnectionTimeout(response.generation)
+      }
+      return
+    }
     if (response.type === 'timing') {
       recordWorkerTiming(response.phase, response.durationMs)
       return

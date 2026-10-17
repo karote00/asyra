@@ -107,7 +107,11 @@ change.
   publication handoff;
 - an optional app-owned permission/domain-order/conflict decision that may
   reject or transform a publication before routing its accepted result;
-- classification into one ordered `CanonicalChange[]` per source slice; and
+- classification into one ordered `CanonicalChange[]` per source slice. Each
+  move delivery retains its simultaneous move set; heterogeneous Scene batches
+  retain consecutive operation-family order; consecutive deliveries remain
+  separate ordered operations even when the transport groups them into one batch
+  or they occur next to creation/removal; and
 - exactly one progressive remote Factory transaction with one
   `core.applyCanonicalChanges(...)` request per source slice.
 
@@ -352,5 +356,38 @@ yarn workspace @asyra/asyra-design build:collaboration-server
 yarn workspace @asyra/asyra-design test:e2e:collaboration
 ```
 
-Current framework product contract:
+Framework ownership baseline (the current App wire contract is defined below):
 `docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md`.
+
+## Explicit canonical document publications
+
+The publishing App adapter translates completed Factory evidence into explicit canonical document operations once, before outbox retention. The generic publication envelope and binary framing are reused; the App-owned document payload carries complete typed changes, not internal Props/Scene batches. Peer application and durable materialization consume the same strict canonical contract without reconstructing operations from channel adjacency. Source publication and semantic slice order, Undo/Redo and publication-level compensation identity remain authoritative; transport batch fragmentation cannot change the operation.
+
+Malformed or unsupported payloads fail before apply. Canonical application failures do not advance a durable checkpoint. Exact retries retain identity and do not reapply writes. Unknown/raw publication formats fail explicitly without deleting pending evidence or saved checkpoints. HTTP request/semantic/conflict/storage failures remain distinguishable; only actual durable sequence or identity conflicts are 409.
+
+
+The document delivery is `document/applyCanonicalChanges` with payload `{ version: 1, changes: CanonicalChange[] }`. Its enclosing publication retains source identity and semantic slice ordering. Binary envelope validation and decoding share the same compensation rule: document compensation has one publication target and no synthetic delivery target. Finite coordinates, including signed zero, retain their existing binary behavior.
+
+The durable record stores each publication sequence and a SHA-256 digest of ordered canonical changes plus semantic source metadata. Request IDs, binary frame layout, and transport batch/delivery IDs are excluded. Repackaging identical operations remains an exact retry; changed content under an existing publication ID is rejected. A missing digest is not evidence of equality. Failed requests do not update checkpoint data, the sequence ledger, or the digest ledger. A later successful exact retry records them together.
+
+
+A persistence acknowledgement confirms exactly the submitted batch's ending sequence, including a retry received after newer publications are durable. Reading the checkpoint reports the latest document watermark. These two scopes must not be interchanged: the ordered persistence queue validates the acknowledgement against its in-flight batch.
+
+
+### Source preparation failure ownership
+
+The publishing adapter reports document preparation failures to the document session explicitly; Factory observer isolation must not hide them. Retain the original immutable source and error in the existing file-scoped outbox as a non-sendable conflict. It is failure evidence, never a fallback document payload. Pending delivery drains only the ordered prefix before the first conflict. Subsequent actions, Undo/Redo and compensation remain retained behind that failure; they do not implicitly resolve or bypass it. Reload restores the conflict and order, and persistence confirmation rejects before requesting a provider receipt. IndexedDB failures remain explicit for the session lifetime and cannot be cleared by reconnect or later successful writes. Explicit file Reset keeps its existing generation/clear semantics. Local-only publications still produce no document entry, and the Framework transaction result remains independent of observer failures.
+
+
+### Recovery completion
+
+A failed publication blocks dependent delivery but must not strand user work. The file-scoped outbox preserves a durable prefix: later writes cannot outlive a missing predecessor. A failed initial read blocks storage mutation until existing evidence can be loaded. Explicit retry first persists retained evidence, then reuses canonical source preparation and ordinary source admission, preserving identities and order. Storage failure is cleared only after retained writes succeed.
+
+While blocked, the document session owns an immutable recovery document from Core's canonical snapshot. Failure-path capture and local recovery load do not create a second editable canonical owner and never overwrite the server checkpoint. Reopening a blocked document displays its retained local work and isolates inbound collaboration until an explicit retry. A retry reopens the authoritative session and replays through ordinary canonical admission; repeated failure keeps the recovery document and remaining records. Existing peers and durable server data are not reset. The UI exposes Retry saving and Download recovery file. Export waits for queued retention. If optional recovery-document capture fails, source evidence and explicit preparation retry remain available; export reports the missing document. Unpersisted recovery evidence warns before unload. A permanently invalid source remains blocked with its cause and an export path; it is never declared saved. Normal successful publications capture no recovery document.
+
+The completion case includes real edits, Undo/Redo, failure, reload, successful retry after the cause is corrected, durable confirmation and another reload. Reset remains destructive and is not a recovery action. When explicitly requested from isolation, it opens a short-lived authoritative session, completes its required bootstrap handshake and waits for the server Reset barrier before clearing recovery. A failed Reset retains the active recovery handle and evidence.
+
+
+Recovery lifetime boundaries are part of this contract. Failure to delete an already accepted outbox record enters actionable recovery and retains the exact source for idempotent retry. Live rejection captures the current draft without reloading Core or clearing history, even after an earlier replay; restoring a replay failure is a distinct operation. An asynchronous reconnect or activation must recheck recovery and disposal before replacing the document or publishing its active handle. Explicit retry rechecks the active transaction after retention, and the UI rechecks unsaved work immediately before reopening. Generation binding remembers the authoritative target before storage work: failed retirement remains blocked and retry completes it before any source is released. Retired-generation recovery documents cannot replace the current-generation checkpoint.
+
+The Core-facing session owns preparation from the moment it starts, including before the prepared handle exists. Disposal settles that preparation and retires its controller; a delayed result cannot supply a load source or reactivate the disposed session. Already returned checkpoint load sources also expire at disposal. Preparation/activation failure only clears global handles owned by the failing controller, never a successor session.

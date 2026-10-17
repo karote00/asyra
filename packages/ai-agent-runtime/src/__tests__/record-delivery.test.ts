@@ -35,18 +35,43 @@ const harness = () => {
 
 const memoryOutbox = () => {
   const entries = new Map<string, ExecutionRecord[]>()
+  const gaps = new Map<
+    string,
+    | {
+        requestId: string
+        fromSequence: number
+        throughSequence: number
+        stage: 'capture' | 'storage' | 'mixed'
+      }
+    | undefined
+  >()
   return {
-    append: async (value: ExecutionRecord) => {
-      const records = entries.get(value.requestId) ?? []
-      records[value.sequence] = structuredClone(value)
-      entries.set(value.requestId, records)
+    reserve: async (requestId: string) => {
+      if (!gaps.has(requestId)) gaps.set(requestId, undefined)
+    },
+    recordGap: async (gap: {
+      requestId: string
+      fromSequence: number
+      throughSequence: number
+      stage: 'capture' | 'storage' | 'mixed'
+    }) => {
+      gaps.set(gap.requestId, gap)
+    },
+    gap: async (requestId: string) => gaps.get(requestId),
+    append: async (values: readonly ExecutionRecord[]) => {
+      for (const value of values) {
+        const records = entries.get(value.requestId) ?? []
+        records[value.sequence] = structuredClone(value)
+        entries.set(value.requestId, records)
+      }
     },
     read: async (requestId: string, from: number, limit: number) =>
       structuredClone((entries.get(requestId) ?? []).slice(from, from + limit)),
     remove: async (requestId: string) => {
       entries.delete(requestId)
+      gaps.delete(requestId)
     },
-    requests: async () => [...entries.keys()]
+    requests: async () => [...new Set([...entries.keys(), ...gaps.keys()])]
   }
 }
 
@@ -355,4 +380,252 @@ it('does not recover a producer admitted while persisted requests are being enum
   await recovering
   expect(sent).toEqual([0])
   await host.dispose()
+})
+
+it('retains a durable storage gap and refuses completion after restarting delivery', async () => {
+  const outbox = memoryOutbox()
+  const append = outbox.append
+  outbox.append = async (value) => {
+    if (value.some((record) => record.sequence === 1))
+      throw new Error('quota exceeded')
+    await append(value)
+  }
+  const send = vi.fn(async () => ({
+    requestId: 'request-a',
+    acknowledgedSequence: 2,
+    complete: true
+  }))
+  const sink = createRecordDeliverySink({ outbox, send })
+  sink.write(record(0, 'ai_request_started'))
+  sink.write(record(1))
+  sink.write(record(2, 'ai_request_usage'))
+  expect(await sink.flush()).toMatchObject({ status: 'failed' })
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 0,
+    throughSequence: 2,
+    stage: 'storage'
+  })
+  const onIssue = vi.fn()
+  expect(await recoverRecordDelivery({ outbox, send, onIssue })).toEqual({
+    complete: false
+  })
+  expect(onIssue).toHaveBeenCalledWith(
+    expect.objectContaining({
+      fromSequence: 0,
+      throughSequence: 2,
+      reason: expect.stringContaining('gap')
+    })
+  )
+  expect(send).not.toHaveBeenCalled()
+})
+
+it('reserves control capacity for a first-record capture refusal', async () => {
+  const outbox = memoryOutbox()
+  const sink = createRecordDeliverySink({
+    outbox,
+    maxPendingBytes: 1,
+    send: async () => {
+      throw new Error('No send')
+    }
+  })
+  expect(() => sink.write(record(0, 'ai_request_started'))).toThrow('capacity')
+  expect(await sink.flush()).toMatchObject({ status: 'failed' })
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 0,
+    throughSequence: 0,
+    stage: 'capture'
+  })
+  expect(await outbox.requests()).toEqual(['request-a'])
+})
+
+it('coalesces a burst of refused captures into bounded control work', async () => {
+  const outbox = memoryOutbox()
+  outbox.reserve = vi.fn(outbox.reserve)
+  outbox.recordGap = vi.fn(outbox.recordGap)
+  const sink = createRecordDeliverySink({
+    outbox,
+    maxPendingBytes: 1,
+    send: async () => {
+      throw new Error('No send')
+    }
+  })
+  for (let sequence = 0; sequence < 100; sequence++)
+    expect(() => sink.write(record(sequence))).toThrow('capacity')
+  await sink.flush()
+  expect(outbox.reserve).toHaveBeenCalledOnce()
+  expect(outbox.recordGap).toHaveBeenCalledOnce()
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 0,
+    throughSequence: 99
+  })
+})
+
+it.each(['reserve', 'recordGap'] as const)(
+  'reports failure of %s without claiming lossless recovery',
+  async (method) => {
+    const outbox = memoryOutbox()
+    outbox[method] = async () => {
+      throw new Error('Quota exceeded')
+    }
+    const onIssue = vi.fn()
+    const sink = createRecordDeliverySink({
+      outbox,
+      onIssue,
+      maxPendingBytes: 1,
+      send: async () => {
+        throw new Error('No send')
+      }
+    })
+    expect(() => sink.write(record(0))).toThrow('capacity')
+    expect(await sink.flush()).toMatchObject({ status: 'failed' })
+    expect(onIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stage: 'storage',
+        reason: expect.stringContaining('Gap metadata could not be persisted')
+      })
+    )
+  }
+)
+
+it('persists bursts in bounded atomic batches without increasing capture capacity', async () => {
+  const outbox = memoryOutbox()
+  const append = vi.fn(outbox.append)
+  outbox.append = append
+  const target = harness()
+  const sink = createRecordDeliverySink({
+    outbox,
+    send: (records) => target.collector.accept(records)
+  })
+  for (let i = 0; i < 1024; i++) {
+    let event = 'ai_request_trace'
+    if (i === 0) event = 'ai_request_started'
+    if (i === 1023) event = 'ai_request_usage'
+    sink.write(record(i, event))
+  }
+  expect(await sink.flush()).toMatchObject({ status: 'saved' })
+  expect(append.mock.calls.length).toBeLessThanOrEqual(32)
+  expect(target.records.map((item) => item.sequence)).toEqual(
+    Array.from({ length: 1024 }, (_, i) => i)
+  )
+})
+
+it('delivers a durable prefix while the next storage batch is still pending', async () => {
+  const outbox = memoryOutbox()
+  const append = outbox.append
+  let release!: () => void
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let batches = 0
+  outbox.append = async (records) => {
+    if (++batches === 2) await blocked
+    await append(records)
+  }
+  const target = harness()
+  const sent: number[] = []
+  const sink = createRecordDeliverySink({
+    outbox,
+    send: async (records) => {
+      sent.push(...records.map((item) => item.sequence))
+      return target.collector.accept(records)
+    }
+  })
+  for (let i = 0; i < 64; i++) {
+    let event = 'ai_request_trace'
+    if (i === 0) event = 'ai_request_started'
+    if (i === 63) event = 'ai_request_usage'
+    sink.write({ ...record(i, event), detail: 'x'.repeat(8080) })
+  }
+  try {
+    await vi.waitFor(() =>
+      expect(sent).toEqual(Array.from({ length: 32 }, (_, i) => i))
+    )
+  } finally {
+    release()
+  }
+  expect(await sink.flush()).toMatchObject({ status: 'saved' })
+  expect(sent).toEqual(Array.from({ length: 64 }, (_, i) => i))
+})
+
+it('persists sustained bursts by bytes without overflowing the unchanged capture budget', async () => {
+  vi.useFakeTimers()
+  const outbox = memoryOutbox()
+  const append = outbox.append
+  const batches: number[] = []
+  outbox.append = async (records) => {
+    batches.push(Buffer.byteLength(JSON.stringify(records)))
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    await append(records)
+  }
+  const target = harness()
+  const onIssue = vi.fn()
+  const sink = createRecordDeliverySink({
+    outbox,
+    onIssue,
+    send: (rows) => target.collector.accept(rows)
+  })
+  let rejected = 0
+  try {
+    for (let burst = 0; burst < 48; burst++) {
+      for (let item = 0; item < 128; item++) {
+        const sequence = burst * 128 + item
+        try {
+          sink.write({
+            ...record(
+              sequence,
+              sequence ? 'ai_request_trace' : 'ai_request_started'
+            ),
+            detail: 'x'.repeat(900)
+          })
+        } catch {
+          rejected++
+        }
+      }
+      await vi.advanceTimersByTimeAsync(10)
+    }
+    sink.write(record(6144, 'ai_request_usage'))
+    const flushed = sink.flush()
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await flushed).toMatchObject({ status: 'saved' })
+    expect(rejected).toBe(0)
+    expect(onIssue).not.toHaveBeenCalled()
+    expect(batches.length).toBeLessThanOrEqual(52)
+    expect(Math.max(...batches)).toBeLessThanOrEqual(256 * 1024)
+    expect(target.records).toHaveLength(6145)
+  } finally {
+    await target.collector.dispose()
+    vi.useRealTimers()
+  }
+})
+
+it('keeps later persistence batches contiguous after a capture gap', async () => {
+  const outbox = memoryOutbox()
+  const append = outbox.append
+  const batches: number[][] = []
+  outbox.append = async (records) => {
+    const sequences = records.map((item) => item.sequence)
+    expect(sequences).toEqual(sequences.map((_, index) => sequences[0] + index))
+    batches.push(sequences)
+    await append(records)
+  }
+  const sink = createRecordDeliverySink({
+    outbox,
+    maxPendingBytes: 500,
+    send: async () => {
+      throw new Error('Offline')
+    }
+  })
+  sink.write(record(0, 'ai_request_started'))
+  sink.write(record(1))
+  expect(() => sink.write({ ...record(2), detail: 'x'.repeat(1000) })).toThrow(
+    'capacity'
+  )
+  sink.write(record(3))
+  expect(await sink.flush()).toMatchObject({ status: 'failed' })
+  expect(batches).toEqual([[0, 1], [3]])
+  expect(await outbox.gap('request-a')).toMatchObject({
+    fromSequence: 2,
+    throughSequence: 2,
+    stage: 'capture'
+  })
 })

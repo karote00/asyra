@@ -176,10 +176,9 @@ parameters: `preserve-vectors` with a reason, or `separate-background` with a re
 and the native background parameters. The server executes that choice and returns
 plan evidence for review. Missing plans return to the model for correction before
 conversion. This prevents silent whole-image tracing, without having the backend
-choose shapes. The optional live App regression is `local subscription traces the reference logo`
-in `e2e/local-ai-provider.spec.ts`, enabled with `E2E_LOCAL_AI=true`. It uses the
-configured local subscription and checks the native-base result for an ordinary
-user request without specifying the primitive or separation parameters.
+choose shapes. Formal tests verify representation plans and tool results with deterministic
+inputs and scripted provider events. Actual model-generated choices are evaluated
+only in separately requested manual sessions, never as formal test assertions.
 
 ### Local contour quality tools
 

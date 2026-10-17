@@ -47,6 +47,9 @@ const collaborationHandle = {
   },
   disconnect: async () => undefined,
   reconnect: async () => undefined,
+  prepareRecovery: async () => undefined,
+  getRecoveryDocument: () => undefined,
+  hasUnpersistedChanges: () => false,
   whenIdle: async () => undefined,
   observePublicationOutcomes: () => () => undefined,
   dispose: async () => undefined

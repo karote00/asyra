@@ -1,5 +1,7 @@
 import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
+import { readFile, writeFile } from 'node:fs/promises'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
+import type { RawInputEvent } from '@asyra/utils'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
 import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
 import {
@@ -15,6 +17,41 @@ import {
   redo,
   undo
 } from './test-utils'
+
+const captureNavigationEvidence = async (page: Page) => {
+  const events: { at: number; kind: string; data: unknown }[] = []
+  const record = (kind: string, data: unknown) => {
+    events.push({ at: Date.now(), kind, data })
+  }
+  const session = await page.context().newCDPSession(page)
+  await session.send('Page.enable')
+  await session.send('Network.enable')
+  session.on('Page.frameRequestedNavigation', (event) =>
+    record('requested', event)
+  )
+  session.on('Network.requestWillBeSent', (event) => {
+    if (event.type === 'Document') {
+      record('document', { url: event.request.url, initiator: event.initiator })
+    }
+  })
+  page.on('framenavigated', (frame) => {
+    if (frame === page.mainFrame()) record('committed', { url: frame.url() })
+  })
+  page.on('websocket', (socket) => {
+    socket.on('framereceived', ({ payload }) => {
+      if (typeof payload !== 'string') return
+      try {
+        const message = JSON.parse(payload)
+        if (['full-reload', 'update', 'error'].includes(message.type)) {
+          record('development-server', message)
+        }
+      } catch {
+        // Binary/document collaboration frames are not development-server messages.
+      }
+    })
+  })
+  return events
+}
 
 const collaborationUrl = (fileId: string) =>
   `/?fileId=${encodeURIComponent(fileId)}`
@@ -348,9 +385,9 @@ test('does not replay a prior-generation removal after document Reset', async ({
   )
 })
 
-test('keeps the room live when a retained source publication cannot apply during recovery', async ({
+test('isolates a blocked local draft while an independent peer continues saving', async ({
   page,
-  context
+  browser
 }, testInfo) => {
   const fileId = `rejected-source-recovery-${Date.now()}-${testInfo.workerIndex}`
   const startupErrors: string[] = []
@@ -365,7 +402,6 @@ test('keeps the room live when a retained source publication cannot apply during
 
   await page.reload()
   await waitForAppReady(page)
-  await waitForCollaboration(page)
   await expect
     .poll(() =>
       page.evaluate(async () =>
@@ -375,10 +411,11 @@ test('keeps the room live when a retained source publication cannot apply during
       )
     )
     .toMatchObject({
-      connection: 'connected',
+      connection: 'disconnected',
+      recoveryAvailable: true,
       sync: 'conflicted',
       pendingCount: 1,
-      disconnectedEpoch: 0,
+      disconnectedEpoch: 1,
       notification: {
         message:
           'One or more offline changes need review and remain retained locally.',
@@ -394,16 +431,65 @@ test('keeps the room live when a retained source publication cannot apply during
     ])
   )
 
-  const peer = await context.newPage()
+  const peerContext = await browser.newContext({
+    baseURL: requireAppUrl(testInfo)
+  })
+  const peer = await peerContext.newPage()
   try {
     await peer.goto(collaborationUrl(fileId))
     await waitForAppReady(peer)
     await waitForCollaboration(peer)
+    expect(
+      await peer.evaluate(async () =>
+        (await import('../src/testing/runtime-access'))
+          .getActiveCollaborationHandle()
+          ?.getSessionState()
+      )
+    ).toMatchObject({ sync: 'synced', pendingCount: 0 })
     await createRectangle(peer, 0.45, 0.45)
     await expect.poll(() => getElementCount(peer)).toBe(1)
+    await expect.poll(() => getElementCount(page)).toBe(0)
+    await createRectangle(page, 0.7, 0.7)
     await expect.poll(() => getElementCount(page)).toBe(1)
+    await undo(page)
+    await expect.poll(() => getElementCount(page)).toBe(0)
+    await redo(page)
+    await expect.poll(() => getElementCount(page)).toBe(1)
+    const blocked = await page.evaluate(async () => {
+      const runtime = await import('../src/testing/runtime-access')
+      const handle = runtime.getActiveCollaborationHandle()
+      if (!handle) throw new Error('Missing document session')
+      await handle.whenIdle()
+      let failure = ''
+      try {
+        await handle.confirmPersistence(AbortSignal.timeout(10000))
+      } catch (error) {
+        failure = error instanceof Error ? error.message : String(error)
+      }
+      return { state: handle.getSessionState(), failure }
+    })
+    expect(blocked.state.sync).toBe('conflicted')
+    expect(blocked.state.pendingCount).toBeGreaterThan(1)
+    expect(blocked.failure).toContain('pending, conflicted or unavailable')
+    expect(await getElementCount(peer)).toBe(1)
+    await page.reload()
+    await waitForAppReady(page)
+    await expect
+      .poll(() =>
+        page.evaluate(async () =>
+          (await import('../src/testing/runtime-access'))
+            .getActiveCollaborationHandle()
+            ?.getSessionState()
+        )
+      )
+      .toMatchObject({
+        sync: 'conflicted',
+        pendingCount: blocked.state.pendingCount
+      })
+    expect(await getElementCount(page)).toBe(1)
+    expect(await getElementCount(peer)).toBe(1)
   } finally {
-    await peer.close()
+    await peerContext.close()
   }
 })
 
@@ -977,6 +1063,8 @@ const classifyFactoryPublicationsInApp = (page: Page) =>
   page.evaluate(async () => {
     const operationsModule =
       await import('/src/collaboration/publication-processor.ts')
+    const { prepareDocumentPublication } =
+      await import('/src/collaboration/document-publication.ts')
     const { testRuntimeState } = await import('../src/testing/runtime-access')
     const canonicalRequests: string[][] = []
     const processor = operationsModule.createPublicationProcessor({
@@ -990,7 +1078,7 @@ const classifyFactoryPublicationsInApp = (page: Page) =>
     for (const publication of testRuntimeState.get<
       Parameters<typeof processor>[0][]
     >('factory-publications') ?? []) {
-      await processor(publication)
+      await processor(prepareDocumentPublication(publication))
     }
     return canonicalRequests
   })
@@ -1228,6 +1316,47 @@ test('16-item AI response converges through the ordinary two-actor publication p
       waitForCollaboration(actorA),
       waitForCollaboration(actorB)
     ])
+    await actorA.evaluate(async () => {
+      const { core, historyApis, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const events: unknown[] = []
+      const capture = (phase: string, detail?: unknown) =>
+        events.push({
+          phase,
+          detail,
+          at: performance.now(),
+          busy: core.isInUndoRedo(),
+          undoDepth: core.getUndoHistoryDepth()
+        })
+      const keydown = (event: KeyboardEvent) => {
+        if (event.code === 'KeyZ') capture('keydown', { shift: event.shiftKey })
+      }
+      const admitted = (raw: RawInputEvent) => {
+        capture('admitted', { modifiers: raw.modifiers, detail: raw.detail })
+      }
+      const original = { ...historyApis }
+      for (const name of ['undo', 'redo'] as const) {
+        historyApis[name] = async (options) => {
+          capture(`${name}-entry`)
+          try {
+            const result = await original[name](options)
+            capture(`${name}-return`)
+            return result
+          } catch (error) {
+            capture(`${name}-failure`, String(error))
+            throw error
+          }
+        }
+      }
+      document.addEventListener('keydown', keydown, true)
+      core.deps.inputSystem.on('input.shortcut.undoredo', admitted)
+      testRuntimeState.set('collaboration-history-input', events)
+      testRuntimeState.set('collaboration-history-dispose', () => {
+        document.removeEventListener('keydown', keydown, true)
+        core.deps.inputSystem.off('input.shortcut.undoredo', admitted)
+        Object.assign(historyApis, original)
+      })
+    })
     checkpoint = 'actors-ready'
     await Promise.all([
       capturePublicationOutcomes(actorA),
@@ -1472,6 +1601,25 @@ test('16-item AI response converges through the ordinary two-actor publication p
       checkpoint = 'actor-b-reload-snapshot-complete'
     })
   } finally {
+    try {
+      const evidence = await actorA.evaluate(async () => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        testRuntimeState.get<() => void>('collaboration-history-dispose')?.()
+        return testRuntimeState.get('collaboration-history-input')
+      })
+      const evidencePath = testInfo.outputPath('history-input.json')
+      await writeFile(evidencePath, JSON.stringify(evidence))
+      await testInfo.attach('history-input.json', {
+        path: evidencePath,
+        contentType: 'application/json'
+      })
+    } catch (error) {
+      testInfo.annotations.push({
+        type: 'history-input-capture',
+        description: String(error)
+      })
+    }
     await testInfo.attach('16-item-last-checkpoint.txt', {
       body: Buffer.from(checkpoint),
       contentType: 'text/plain'
@@ -1489,6 +1637,8 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
   const actorBContext = await browser.newContext()
   const actorA = await actorAContext.newPage()
   const actorB = await actorBContext.newPage()
+  const actorANavigation = await captureNavigationEvidence(actorA)
+  const actorBNavigation = await captureNavigationEvidence(actorB)
   const actorAPageErrors: string[] = []
   const actorBPageErrors: string[] = []
   actorA.on('pageerror', (error) =>
@@ -1721,7 +1871,28 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
       body: Buffer.from(JSON.stringify(timings, null, 2)),
       contentType: 'application/json'
     })
+    expect(
+      actorANavigation.filter(({ kind }) => kind === 'committed')
+    ).toHaveLength(1)
+    expect(
+      actorBNavigation.filter(({ kind }) => kind === 'committed')
+    ).toHaveLength(1)
   } finally {
+    const evidencePath = testInfo.outputPath(
+      '320-item-navigation-evidence.json'
+    )
+    await writeFile(
+      evidencePath,
+      JSON.stringify(
+        { actorA: actorANavigation, actorB: actorBNavigation },
+        null,
+        2
+      )
+    )
+    await testInfo.attach('320-item-navigation-evidence.json', {
+      path: evidencePath,
+      contentType: 'application/json'
+    })
     await Promise.all([actorAContext.close(), actorBContext.close()])
   }
 })
@@ -3158,6 +3329,500 @@ test('partial Fill updates preserve computed and UI fields on both peers through
     await expect.poll(() => read(peer)).toEqual(final)
   } finally {
     await senderContext.close()
+    await peerContext.close()
+  }
+})
+
+test('rolls back a visible publication through peer compensation and durable reload', async ({
+  page,
+  context
+}, testInfo) => {
+  const fileId = `published-compensation-${Date.now()}-${testInfo.workerIndex}`
+  await page.goto(collaborationUrl(fileId))
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  const peer = await context.newPage()
+  await peer.goto(collaborationUrl(fileId))
+  await waitForAppReady(peer)
+  await waitForCollaboration(peer)
+  const before = await page.evaluate(async () => {
+    const runtime = await import('../src/testing/runtime-access')
+    runtime.startDocumentPublicationCapture('compensation-proof')
+    return runtime.core.save()
+  })
+  try {
+    await page.evaluate(async () => {
+      const { core } = await import('../src/testing/runtime-access')
+      const { transactionApis } = await import('../src/common-apis')
+      transactionApis.startTransaction()
+      transactionApis.configureSharedDeliverySequence({
+        mode: 'atomic',
+        slices: [],
+        batchPublications: false
+      })
+      core.createElementsInParent(
+        [{ type: 'rect', x: 20, y: 30, width: 50, height: 60 }],
+        core.getCurrentWorkspaceId(),
+        undefined,
+        { sharedDelivery: 'immediate', undoable: true }
+      )
+    })
+    await testInfo.attach('staged-publication', {
+      body: JSON.stringify(
+        await page.evaluate(async () => {
+          const runtime = await import('../src/testing/runtime-access')
+          return {
+            document: runtime.core.save(),
+            publications: runtime.readTestCapture('compensation-proof'),
+            state: runtime.getActiveCollaborationHandle()?.getSessionState()
+          }
+        })
+      ),
+      contentType: 'application/json'
+    })
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+    await page.evaluate(async () => {
+      const { transactionApis } = await import('../src/common-apis')
+      transactionApis.rollbackTransaction({
+        kind: 'explicit',
+        message: 'Reject the staged operation'
+      })
+    })
+    await expect
+      .poll(() =>
+        page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).core.save()
+        )
+      )
+      .toEqual(before)
+    await expect
+      .poll(() =>
+        peer.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).core.save()
+        )
+      )
+      .toEqual(before)
+    const result = await page.evaluate(async () => {
+      const runtime = await import('../src/testing/runtime-access')
+      const handle = runtime.getActiveCollaborationHandle()
+      if (!handle) throw new Error('Missing document session')
+      const receipt = await handle.confirmPersistence(
+        AbortSignal.timeout(10000)
+      )
+      return {
+        receipt,
+        failures:
+          runtime.readDocumentPublicationDecodeFailures('compensation-proof'),
+        publications: runtime.readTestCapture('compensation-proof')
+      }
+    })
+    expect(result.failures).toEqual([])
+    expect(result.publications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ origin: 'action' }),
+        expect.objectContaining({
+          origin: 'rollback-compensation',
+          compensatesPublicationId: expect.any(String)
+        })
+      ])
+    )
+    expect(result.receipt.durableSequence).toBeGreaterThanOrEqual(
+      result.receipt.sequence
+    )
+    expect((await getPersistedDocumentCheckpoint(fileId)).checkpoint).toEqual(
+      before
+    )
+    await peer.reload()
+    await waitForAppReady(peer)
+    await waitForCollaboration(peer)
+    expect(
+      await peer.evaluate(async () =>
+        (await import('../src/testing/runtime-access')).core.save()
+      )
+    ).toEqual(before)
+    await createRectangle(page, 0.45, 0.45)
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+  } finally {
+    await peer.close()
+  }
+})
+
+test('recovers real edits and Undo Redo after preparation failure, reload and retry without overwriting a peer', async ({
+  page,
+  browser
+}, testInfo) => {
+  const fileId = `complete-recovery-${Date.now()}`
+  // Fault injection stays in the test's served module, never in product routing.
+  await page.route(
+    '**/src/collaboration/factory-adapter.ts*',
+    async (route) => {
+      const response = await route.fetch()
+      const source = await response.text()
+      const marker = 'let publicationIsDocumentOnly = true;'
+      expect(source).toContain(marker)
+      await route.fulfill({
+        response,
+        body: source.replace(
+          marker,
+          `if (globalThis.__rejectDocumentPreparation) throw new Error('Injected preparation failure'); ${marker}`
+        )
+      })
+    }
+  )
+  await page.addInitScript(() => {
+    Object.assign(globalThis, { __rejectDocumentPreparation: true })
+  })
+  const peerContext = await browser.newContext({
+    baseURL: requireAppUrl(testInfo)
+  })
+  const peer = await peerContext.newPage()
+  try {
+    await page.goto(collaborationUrl(fileId))
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await peer.goto(collaborationUrl(fileId))
+    await waitForAppReady(peer)
+    await waitForCollaboration(peer)
+    await createRectangle(page, 0.4, 0.4)
+    const recovery = page.getByRole('region', { name: 'Document recovery' })
+    await expect(recovery).toBeVisible()
+    await createRectangle(page, 0.7, 0.65)
+    await expect.poll(() => getElementCount(page)).toBe(2)
+    await undo(page)
+    await expect.poll(() => getElementCount(page)).toBe(1)
+    await redo(page)
+    await expect.poll(() => getElementCount(page)).toBe(2)
+    await page.evaluate(async () => {
+      const { core } = await import('../src/testing/runtime-access')
+      const { transactionApis } = await import('../src/common-apis')
+      transactionApis.startTransaction()
+      transactionApis.configureSharedDeliverySequence({
+        mode: 'atomic',
+        slices: [],
+        batchPublications: false
+      })
+      core.createElementsInParent(
+        [{ type: 'rect', x: 20, y: 30, width: 50, height: 60 }],
+        core.getCurrentWorkspaceId(),
+        undefined,
+        { sharedDelivery: 'immediate', undoable: true }
+      )
+    })
+    await expect.poll(() => getElementCount(page)).toBe(3)
+    await page.evaluate(async () => {
+      ;(await import('../src/common-apis')).transactionApis.rollbackTransaction(
+        {
+          kind: 'explicit',
+          message: 'Reject the staged recovery operation'
+        }
+      )
+    })
+    await expect.poll(() => getElementCount(page)).toBe(2)
+    const localIds = await getLayerIds(page)
+    await page.evaluate(async () => {
+      await (
+        await import('../src/testing/runtime-access')
+      )
+        .getActiveCollaborationHandle()
+        ?.whenIdle()
+    })
+    await page.reload()
+    await waitForAppReady(page)
+    await expect(recovery).toBeVisible()
+    expect(await getLayerIds(page)).toEqual(localIds)
+    await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await expect(recovery.getByRole('alert')).toHaveText(
+      'Injected preparation failure'
+    )
+    expect(await getElementCount(page)).toBe(2)
+    await page.screenshot({ path: testInfo.outputPath('recovery-blocked.png') })
+    const downloadPromise = page.waitForEvent('download')
+    await recovery
+      .getByRole('button', { name: 'Download recovery file' })
+      .click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('document-recovery.json')
+    await download.saveAs(testInfo.outputPath('recovered-document.json'))
+    const exported = JSON.parse(
+      await readFile(testInfo.outputPath('recovered-document.json'), 'utf8')
+    )
+    expect(Object.keys(exported.sceneTree.elements)).toEqual(
+      expect.arrayContaining(localIds)
+    )
+    const diagnostics = await page.evaluate(
+      async (document) =>
+        (await import('../src/testing/runtime-access')).core.preflightLoad(
+          document
+        ),
+      exported
+    )
+    expect(diagnostics).toEqual([])
+    await createRectangle(peer, 0.2, 0.3)
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+    const peerIds = await getLayerIds(peer)
+    expect(await getElementCount(page)).toBe(2)
+    await page.evaluate(() => {
+      Object.assign(globalThis, { __rejectDocumentPreparation: false })
+    })
+    // The next page may prepare normally too.
+    await page.unroute('**/src/collaboration/factory-adapter.ts*')
+    await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await expect.poll(() => getElementCount(page)).toBe(3)
+    await expect.poll(() => getElementCount(peer)).toBe(3)
+    const expectedIds = [...localIds, ...peerIds].sort()
+    expect((await getLayerIds(page)).sort()).toEqual(expectedIds)
+    await createRectangle(page, 0.5, 0.3)
+    await expect.poll(() => getElementCount(peer)).toBe(4)
+    const savedIds = (await getLayerIds(page)).sort()
+    await page.evaluate(async () => {
+      const handle = (
+        await import('../src/testing/runtime-access')
+      ).getActiveCollaborationHandle()
+      if (!handle) throw new Error('Missing session')
+      await handle.whenIdle()
+      await handle.confirmPersistence(AbortSignal.timeout(10000))
+      if (handle.getSessionState().sync !== 'synced')
+        throw new Error('Recovery did not settle')
+    })
+    await page.screenshot({ path: testInfo.outputPath('recovered.png') })
+    await page.reload()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    expect((await getLayerIds(page)).sort()).toEqual(savedIds)
+    await expect(recovery).toHaveCount(0)
+  } finally {
+    await peerContext.close()
+  }
+})
+
+test('recovers a failed IndexedDB prefix with subsequent real edits and durable reload', async ({
+  page
+}) => {
+  const fileId = `storage-prefix-recovery-${Date.now()}`
+  await page.goto(collaborationUrl(fileId))
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put
+    Object.assign(globalThis, { __rejectPublicationPut: true })
+    IDBObjectStore.prototype.put = function (...args) {
+      if (
+        this.transaction.db.name === 'collaboration-publications' &&
+        Reflect.get(globalThis, '__rejectPublicationPut')
+      )
+        throw new DOMException(
+          'Injected outbox quota failure',
+          'QuotaExceededError'
+        )
+      return put.apply(this, args)
+    }
+  })
+  await createRectangle(page, 0.4, 0.4)
+  const recovery = page.getByRole('region', { name: 'Document recovery' })
+  await expect(recovery).toBeVisible()
+  await createRectangle(page, 0.7, 0.65)
+  await expect.poll(() => getElementCount(page)).toBe(2)
+  await undo(page)
+  await expect.poll(() => getElementCount(page)).toBe(1)
+  await redo(page)
+  await expect.poll(() => getElementCount(page)).toBe(2)
+  const ids = (await getLayerIds(page)).sort()
+  await recovery.getByRole('button', { name: 'Retry saving' }).click()
+  await expect(recovery.getByRole('alert')).toHaveText(
+    'Retained publications could not be persisted'
+  )
+  await page.evaluate(async () => {
+    const handle = (
+      await import('../src/testing/runtime-access')
+    ).getActiveCollaborationHandle()
+    if (!handle?.hasUnpersistedChanges())
+      throw new Error('Missing unsaved recovery warning')
+    Object.assign(globalThis, { __rejectPublicationPut: false })
+    await handle.prepareRecovery()
+    if (handle.hasUnpersistedChanges())
+      throw new Error('Prefix was not durably retained')
+  })
+  // Reopen only after disk recovery, never pretend failed writes survived closing the tab.
+  await page.reload()
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  await expect.poll(async () => (await getLayerIds(page)).sort()).toEqual(ids)
+  await page.evaluate(async () => {
+    const handle = (
+      await import('../src/testing/runtime-access')
+    ).getActiveCollaborationHandle()
+    if (!handle) throw new Error('Missing recovered session')
+    await handle.confirmPersistence(AbortSignal.timeout(10000))
+  })
+  await page.reload()
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  expect((await getLayerIds(page)).sort()).toEqual(ids)
+  await expect(recovery).toHaveCount(0)
+})
+
+test('explicit Reset completes its server barrier from a reopened isolated recovery draft', async ({
+  page
+}) => {
+  const fileId = `isolated-reset-${Date.now()}`
+  await page.route(
+    '**/src/collaboration/factory-adapter.ts*',
+    async (route) => {
+      const response = await route.fetch()
+      const source = await response.text()
+      const marker = 'let publicationIsDocumentOnly = true;'
+      expect(source).toContain(marker)
+      await route.fulfill({
+        response,
+        body: source.replace(
+          marker,
+          `throw new Error('Injected preparation failure'); ${marker}`
+        )
+      })
+    }
+  )
+  await page.goto(collaborationUrl(fileId))
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  await createRectangle(page, 0.4, 0.4)
+  const recovery = page.getByRole('region', { name: 'Document recovery' })
+  await expect(recovery).toBeVisible()
+  await page.reload()
+  await waitForAppReady(page)
+  await expect(recovery).toBeVisible()
+  expect(await getElementCount(page)).toBe(1)
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByRole('button', { name: 'Reset document' }).click()
+  ])
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  await expect(recovery).toHaveCount(0)
+  expect(await getElementCount(page)).toBe(0)
+  const checkpoint = (await getPersistedDocumentCheckpoint(fileId)).checkpoint
+  expect(
+    Object.values(checkpoint.sceneTree.elements).filter(
+      (element) => element.type !== 'workspace'
+    )
+  ).toEqual([])
+})
+
+test('recovers accepted-source cleanup failure and preserves live rejection history after replay', async ({
+  page,
+  browser
+}, testInfo) => {
+  const fileId = `accepted-cleanup-recovery-${Date.now()}`
+  await page.route(
+    '**/src/collaboration/websocket-provider.ts*',
+    async (route) => {
+      const response = await route.fetch()
+      const source = await response.text()
+      const entry = /async sendPublicationWithAcceptance\([^)]*\) \{/
+      expect(source).toMatch(entry)
+      await route.fulfill({
+        response,
+        body: source.replace(
+          entry,
+          (match) => `${match}
+        if (globalThis.__rejectLivePublication) throw new ProviderFailure('acknowledgement-failed', 'Injected live rejection');`
+        )
+      })
+    }
+  )
+  const peerContext = await browser.newContext({
+    baseURL: requireAppUrl(testInfo)
+  })
+  const peer = await peerContext.newPage()
+  try {
+    await page.goto(collaborationUrl(fileId))
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await peer.goto(collaborationUrl(fileId))
+    await waitForAppReady(peer)
+    await waitForCollaboration(peer)
+    await page.evaluate(() => {
+      const remove = IDBObjectStore.prototype.delete
+      Object.assign(globalThis, { __rejectPublicationDelete: true })
+      IDBObjectStore.prototype.delete = function (...args) {
+        if (
+          this.transaction.db.name === 'collaboration-publications' &&
+          Reflect.get(globalThis, '__rejectPublicationDelete')
+        )
+          throw new DOMException(
+            'Injected accepted-source cleanup failure',
+            'UnknownError'
+          )
+        return remove.apply(this, args)
+      }
+    })
+    await createRectangle(page, 0.3, 0.35)
+    const recovery = page.getByRole('region', { name: 'Document recovery' })
+    await expect(recovery).toBeVisible()
+    await expect.poll(() => getElementCount(peer)).toBe(1)
+    await createRectangle(page, 0.65, 0.6)
+    await undo(page)
+    await expect.poll(() => getElementCount(page)).toBe(1)
+    await redo(page)
+    await expect.poll(() => getElementCount(page)).toBe(2)
+    const originalIds = (await getLayerIds(page)).sort()
+    expect(await getElementCount(peer)).toBe(1)
+    await page.evaluate(() => {
+      Object.assign(globalThis, { __rejectPublicationDelete: false })
+    })
+    await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await expect
+      .poll(async () => (await getLayerIds(page)).sort())
+      .toEqual(originalIds)
+    await expect
+      .poll(async () => (await getLayerIds(peer)).sort())
+      .toEqual(originalIds)
+    await page.evaluate(() => {
+      Object.assign(globalThis, { __rejectLivePublication: true })
+    })
+    await createRectangle(page, 0.5, 0.3)
+    await expect(recovery).toBeVisible()
+    await expect.poll(() => getElementCount(page)).toBe(3)
+    await undo(page)
+    await expect.poll(() => getElementCount(page)).toBe(2)
+    await redo(page)
+    await expect.poll(() => getElementCount(page)).toBe(3)
+    const recoveredIds = (await getLayerIds(page)).sort()
+    await page.evaluate(() => {
+      Object.assign(globalThis, { __rejectLivePublication: false })
+    })
+    await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    await expect
+      .poll(async () => (await getLayerIds(peer)).sort())
+      .toEqual(recoveredIds)
+    await createRectangle(page, 0.7, 0.3)
+    await expect.poll(() => getElementCount(peer)).toBe(4)
+    const savedIds = (await getLayerIds(page)).sort()
+    await page.evaluate(async () => {
+      const handle = (
+        await import('../src/testing/runtime-access')
+      ).getActiveCollaborationHandle()
+      if (!handle) throw new Error('Missing recovered session')
+      await handle.whenIdle()
+      await handle.confirmPersistence(AbortSignal.timeout(10000))
+      if (handle.getSessionState().sync !== 'synced')
+        throw new Error('Recovery did not settle')
+    })
+    const checkpoint = (await getPersistedDocumentCheckpoint(fileId)).checkpoint
+    expect(Object.keys(checkpoint.sceneTree.elements)).toEqual(
+      expect.arrayContaining(savedIds)
+    )
+    await page.reload()
+    await waitForAppReady(page)
+    await waitForCollaboration(page)
+    expect((await getLayerIds(page)).sort()).toEqual(savedIds)
+    await expect(recovery).toHaveCount(0)
+  } finally {
     await peerContext.close()
   }
 })

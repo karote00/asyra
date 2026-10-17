@@ -905,6 +905,7 @@ const sceneTreeChangeUpdatesProjectedHierarchy = (
       return true
     case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA:
       return isProjectedHierarchyKey((change as UpdateElementChange).key)
+    case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA:
     case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH:
       return (change as UpdateElementBatchChange).changes.some(({ key }) =>
         isProjectedHierarchyKey(key)
@@ -918,8 +919,16 @@ const sceneTreeChangeUpdatesProjectedHierarchy = (
   }
 }
 
+interface ProjectedHierarchyPreparation {
+  map: ProjectedElementDataMap
+  flattenedIds: readonly string[]
+  parents: Map<string, string | undefined>
+  children: Map<string, string[]>
+}
+
 const projectUIContextSceneTreeBatch = (
-  changes: readonly SceneTreeChange[]
+  changes: readonly SceneTreeChange[],
+  lifetime: UIContextSyncLifetime
 ): void => {
   if (changes.length === 0) {
     return
@@ -933,13 +942,23 @@ const projectUIContextSceneTreeBatch = (
       uiContext.get<ProjectedElementDataMap>('elementDataMap') ?? {}
     const currentFlattenedIds =
       uiContext.get<string[]>('flattenedElementIds') ?? []
+    const retained = lifetime.hierarchy
+    const reusable =
+      retained?.map === current && retained.flattenedIds === currentFlattenedIds
+        ? retained
+        : undefined
+    // Re-entrant publication or failure must never consume an in-progress index.
+    lifetime.hierarchy = undefined
     const mutation = createProjectedElementDataMapMutation(
       current,
       currentFlattenedIds
     )
     const next = mutation.value
     let mapChanged = false
-    const childrenByParent = new Map<string, string[]>()
+    const childrenByParent = reusable?.children ?? new Map<string, string[]>()
+    const parentIds = reusable?.parents ?? new Map<string, string | undefined>()
+    const missingIds = new Set<string>()
+    let membershipRowReads = 0
     const dirtyParentIds = new Set<string>()
     const changedElementIds = new Set<string>()
 
@@ -948,9 +967,17 @@ const projectUIContextSceneTreeBatch = (
       return next
     }
 
-    if (updatesHierarchy) {
+    if (updatesHierarchy && !reusable) {
+      emitDiagnosticCounter('ui-context-membership-prepare')
       currentFlattenedIds.forEach((elementId) => {
-        const parentId = getProjectedParentId(current[elementId])
+        membershipRowReads++
+        const row = current[elementId]
+        if (!row) {
+          missingIds.add(elementId)
+          return
+        }
+        const parentId = getProjectedParentId(row)
+        parentIds.set(elementId, parentId)
         if (!parentId) return
         const children = childrenByParent.get(parentId) ?? []
         children.push(elementId)
@@ -1358,7 +1385,31 @@ const projectUIContextSceneTreeBatch = (
     })
 
     let nextFlattenedIds = currentFlattenedIds
+    let completeHierarchy = Boolean(reusable)
     if (updatesHierarchy) {
+      completeHierarchy = true
+      changedElementIds.forEach((elementId) => {
+        membershipRowReads++
+        const row = next[elementId]
+        if (row) {
+          parentIds.set(elementId, getProjectedParentId(row))
+        } else {
+          parentIds.delete(elementId)
+          missingIds.add(elementId)
+        }
+      })
+      const hasProjectedRow = (elementId: string): boolean => {
+        if (parentIds.has(elementId)) return true
+        if (missingIds.has(elementId)) return false
+        membershipRowReads++
+        const row = next[elementId]
+        if (!row) {
+          missingIds.add(elementId)
+          return false
+        }
+        parentIds.set(elementId, getProjectedParentId(row))
+        return true
+      }
       const currentFlattenedIdSet = new Set(currentFlattenedIds)
       const orderedCandidates = [
         ...currentFlattenedIds,
@@ -1369,32 +1420,51 @@ const projectUIContextSceneTreeBatch = (
       const rootParentIds: string[] = []
       const rootParentIdSet = new Set<string>()
       orderedCandidates.forEach((elementId) => {
-        const parentId = getProjectedParentId(next[elementId])
-        if (parentId && !next[parentId] && !rootParentIdSet.has(parentId)) {
+        if (!hasProjectedRow(elementId)) return
+        const parentId = parentIds.get(elementId)
+        if (
+          parentId &&
+          !rootParentIdSet.has(parentId) &&
+          !hasProjectedRow(parentId)
+        ) {
           rootParentIdSet.add(parentId)
           rootParentIds.push(parentId)
         }
       })
       const flattenedElementIds: string[] = []
       const visited = new Set<string>()
-      const collectProjectedChildren = (elementId: string): void => {
-        if (visited.has(elementId) || !next[elementId]) return
+      const collectProjectedChildren = (
+        elementId: string,
+        parentId: string
+      ): void => {
+        if (visited.has(elementId) || !hasProjectedRow(elementId)) {
+          completeHierarchy = false
+          return
+        }
+        if (parentIds.get(elementId) !== parentId) completeHierarchy = false
         visited.add(elementId)
         flattenedElementIds.push(elementId)
-        ;(childrenByParent.get(elementId) ?? []).forEach(
-          collectProjectedChildren
+        ;(childrenByParent.get(elementId) ?? []).forEach((childId) =>
+          collectProjectedChildren(childId, elementId)
         )
       }
       rootParentIds.forEach((parentId) => {
-        ;(childrenByParent.get(parentId) ?? []).forEach(
-          collectProjectedChildren
+        ;(childrenByParent.get(parentId) ?? []).forEach((childId) =>
+          collectProjectedChildren(childId, parentId)
         )
       })
+      if (visited.size !== parentIds.size) completeHierarchy = false
 
       emitDiagnosticCounter('ui-context-sync-flattened-ids')
+      emitDiagnosticCounter(
+        'ui-context-flattened-identity-output',
+        flattenedElementIds.length
+      )
       nextFlattenedIds = flattenedElementIds
     }
 
+    emitDiagnosticCounter('ui-context-membership-row-read', membershipRowReads)
+    let projected = current
     if (mapChanged) {
       emitDiagnosticCounter(
         'ui-context-sync-element-data-map-entry',
@@ -1402,7 +1472,7 @@ const projectUIContextSceneTreeBatch = (
       )
       const subject =
         uiContext.getSubject<ProjectedElementDataMap>('elementDataMap')
-      const projected = mutation.commit(nextFlattenedIds)
+      projected = mutation.commit(nextFlattenedIds)
       if (subject) {
         subject.next(projected)
       } else {
@@ -1412,6 +1482,22 @@ const projectUIContextSceneTreeBatch = (
 
     if (updatesHierarchy) {
       uiContext.set('flattenedElementIds', nextFlattenedIds)
+    }
+    const publishedFlattenedIds = uiContext.get<string[]>('flattenedElementIds')
+    if (
+      completeHierarchy &&
+      !lifetime.disposed &&
+      uiContext.get('elementDataMap') === projected &&
+      // The registry preserves the old array when the new order is value-equal.
+      (publishedFlattenedIds === nextFlattenedIds ||
+        publishedFlattenedIds === currentFlattenedIds)
+    ) {
+      lifetime.hierarchy = {
+        map: projected,
+        flattenedIds: publishedFlattenedIds,
+        parents: parentIds,
+        children: childrenByParent
+      }
     }
   })
 }
@@ -1433,6 +1519,7 @@ const createPendingUIContextSync = (): PendingUIContextSync => ({
 interface UIContextSyncLifetime {
   disposed: boolean
   pending: PendingUIContextSync
+  hierarchy?: ProjectedHierarchyPreparation
 }
 
 const createUIContextSyncLifetime = (): UIContextSyncLifetime => ({
@@ -1466,7 +1553,7 @@ const flushPendingUIContextSync = (
   measureBrowserDragPhase('ui-context:flush', () => {
     emitDiagnosticCounter('ui-context-transaction-flush')
 
-    projectUIContextSceneTreeBatch(pending.sceneTreeChanges)
+    projectUIContextSceneTreeBatch(pending.sceneTreeChanges, lifetime)
 
     if (
       pending.removedElementIds.size > 0 &&
@@ -1672,6 +1759,7 @@ export const registerDefaultDataChannelObservers = (
       }
     }
     uiContextSyncLifetime.disposed = true
+    uiContextSyncLifetime.hierarchy = undefined
     resetPendingUIContextSync(uiContextSyncLifetime)
 
     if (failures.length > 0) {

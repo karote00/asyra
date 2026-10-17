@@ -1,4 +1,5 @@
 import { detachAiJsonValue } from './json-value.js'
+import type { AiRecipe, AiRecipeStep } from './recipe-types.js'
 import type { AiJsonValue } from './types.js'
 
 const object = (properties: Record<string, AiJsonValue>) => ({
@@ -23,6 +24,7 @@ const contractSchema = {
 const bindingVariants = {
   literal: object({ kind: { const: 'literal' }, value: {} }),
   input: object({ kind: { const: 'input' }, path: pointer }),
+  state: object({ kind: { const: 'state' }, path: pointer }),
   step: object({ kind: { const: 'step' }, step: text, path: pointer }),
   object: object({
     kind: { const: 'object' },
@@ -34,6 +36,15 @@ const bindingVariants = {
   })
 }
 const step = object({ id: text, tool: text, revision, input: binding })
+const iteration = object({
+  id: text,
+  stateSchema: contractSchema,
+  state: binding,
+  check: step,
+  repairs: { type: 'array', minItems: 1, items: step },
+  next: binding,
+  maxIterations: revision
+})
 const proposal = object({
   format: { const: 1 },
   name: text,
@@ -48,6 +59,7 @@ const proposal = object({
 /** Canonical transport shape; semantic admission is required after schema validation. */
 export const aiRecipeInputSchema = detachAiJsonValue({
   ...proposal,
+  properties: { ...proposal.properties, iteration },
   $defs: { binding: { oneOf: Object.values(bindingVariants) } }
 })
 
@@ -55,6 +67,7 @@ export const aiRecipeInputSchema = detachAiJsonValue({
 export const recipeFormatKeys = Object.freeze({
   proposal: Object.freeze(proposal.required),
   step: Object.freeze(step.required),
+  iteration: Object.freeze(iteration.required),
   bindings: Object.freeze(
     Object.fromEntries(
       Object.entries(bindingVariants).map(([name, value]) => [
@@ -64,3 +77,24 @@ export const recipeFormatKeys = Object.freeze({
     )
   )
 })
+
+/** One ordered dependency inventory for registration and per-invocation pinning. */
+export const recipeExecutionSteps = (
+  recipe: AiRecipe
+): readonly {
+  step: AiRecipeStep
+  weight: number
+}[] => {
+  const steps = recipe.steps.map((step) => ({ step, weight: 1 }))
+  const iteration = recipe.iteration
+  if (iteration) {
+    steps.push({ step: iteration.check, weight: iteration.maxIterations + 1 })
+    steps.push(
+      ...iteration.repairs.map((step) => ({
+        step,
+        weight: iteration.maxIterations
+      }))
+    )
+  }
+  return steps
+}

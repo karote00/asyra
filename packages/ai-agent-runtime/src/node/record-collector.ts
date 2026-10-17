@@ -5,6 +5,8 @@ import type {
 } from '../profiler/records.js'
 import type { ExecutionRecordAcknowledgement } from '../profiler/record-outbox.js'
 
+export const recordDigestWindowSize = 2048
+
 /** Public diagnostic code; arbitrary storage errors are not exposed to HTTP clients. */
 export class ExecutionRecordCollectionError extends Error {
   constructor(
@@ -22,11 +24,17 @@ export const createRecordCollector = (options: {
   restore?: (requestId: string) => Promise<
     | {
         sink: ExecutionRecordSink
+        nextSequence: number
         hashes: string[]
         terminal: boolean
       }
     | undefined
   >
+  readPersistedHashes?: (
+    requestId: string,
+    fromSequence: number,
+    count: number
+  ) => Promise<readonly string[]>
   maxRequests?: number
   maxRecords?: number
   retentionMs?: number
@@ -36,6 +44,7 @@ export const createRecordCollector = (options: {
     string,
     {
       sink: ExecutionRecordSink
+      nextSequence: number
       hashes: string[]
       terminal: boolean
       saved: boolean
@@ -93,6 +102,7 @@ export const createRecordCollector = (options: {
         )
       state = {
         sink: restored?.sink ?? options.createSink(),
+        nextSequence: restored?.nextSequence ?? 0,
         hashes: restored?.hashes ?? [],
         terminal: restored?.terminal ?? false,
         saved: false,
@@ -101,7 +111,37 @@ export const createRecordCollector = (options: {
       requests.set(id, state)
     }
     // Validate the whole chunk before writing its first new event.
-    let next = state.hashes.length
+    const recentFrom = state.nextSequence - state.hashes.length
+    const oldHashes = new Map<number, string>()
+    const older = records.filter(
+      (record) =>
+        record &&
+        Number.isSafeInteger(record.sequence) &&
+        record.sequence >= 0 &&
+        record.sequence < recentFrom
+    )
+    if (older.length && options.readPersistedHashes) {
+      const sequences = [
+        ...new Set(older.map((record) => record.sequence))
+      ].sort((a, b) => a - b)
+      while (sequences.length) {
+        const from = sequences.shift()
+        if (from === undefined) break
+        let count = 1
+        while (sequences[0] === from + count) {
+          sequences.shift()
+          count++
+        }
+        const hashes = await options.readPersistedHashes(id, from, count)
+        if (hashes.length !== count)
+          throw new ExecutionRecordCollectionError(
+            'AI_RECORD_STORAGE_FAILED',
+            'Persisted retry evidence unavailable'
+          )
+        hashes.forEach((hash, index) => oldHashes.set(from + index, hash))
+      }
+    }
+    let next = state.nextSequence
     let terminal = state.terminal
     const prepared = records.map((record) => {
       if (
@@ -123,8 +163,12 @@ export const createRecordCollector = (options: {
           'Record capacity exceeded'
         )
       const hash = createHash('sha256').update(text).digest('hex')
-      if (record.sequence < state.hashes.length) {
-        if (state.hashes[record.sequence] !== hash)
+      if (record.sequence < state.nextSequence) {
+        if (
+          (record.sequence < recentFrom
+            ? oldHashes.get(record.sequence)
+            : state.hashes[record.sequence - recentFrom]) !== hash
+        )
           throw new ExecutionRecordCollectionError(
             'AI_RECORD_CONFLICTING_RETRY',
             'Conflicting record retry'
@@ -141,7 +185,11 @@ export const createRecordCollector = (options: {
           'AI_RECORD_MISSING_SEQUENCE',
           'Missing or repeated sequence'
         )
-      if (next > (options.maxRecords ?? 50_000))
+      if (
+        next >
+        (options.maxRecords ??
+          (options.readPersistedHashes ? Number.MAX_SAFE_INTEGER : 50_000))
+      )
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_CAPACITY_EXCEEDED',
           'Record capacity exceeded'
@@ -153,6 +201,12 @@ export const createRecordCollector = (options: {
       if (item.duplicate) continue
       state.sink.write(item.record)
       state.hashes.push(item.hash)
+      state.nextSequence++
+      if (
+        options.readPersistedHashes &&
+        state.hashes.length > recordDigestWindowSize
+      )
+        state.hashes.shift()
     }
     state.terminal = terminal
     state.touched = now()

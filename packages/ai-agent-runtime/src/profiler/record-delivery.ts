@@ -1,8 +1,10 @@
 import type { ExecutionRecord, ExecutionRecordSink } from './records.js'
 import {
   deliverRecordOutbox,
+  recordStorageBatchBytes,
   recordDeliveryReason,
   reportRecordDeliveryIssue,
+  type ExecutionRecordGap,
   type ExecutionRecordDeliveryOptions
 } from './record-outbox.js'
 
@@ -25,12 +27,65 @@ export const createRecordDeliverySink = (
   let storage = Promise.resolve()
   let delivery = Promise.resolve()
   let scheduled = false
+  let persistedVersion = 0
+  const pending: { record: ExecutionRecord; size: number }[] = []
+  let persisting = false
+  let reservation: Promise<void> | undefined
+  const reserve = (id: string) => (reservation ??= options.outbox.reserve(id))
+  let lost: ExecutionRecordGap | undefined
+  let savingGap = false
+  const drainStorage = async () => {
+    for (;;) {
+      const current = storage
+      await current
+      if (current === storage) return
+    }
+  }
+  const retainGap = (record: ExecutionRecord, stage: 'capture' | 'storage') => {
+    if (requestId && record.requestId !== requestId) return
+    requestId ??= record.requestId
+    lost = {
+      requestId,
+      fromSequence: Math.min(
+        lost?.fromSequence ?? record.sequence,
+        record.sequence
+      ),
+      throughSequence: Math.max(
+        lost?.throughSequence ?? record.sequence,
+        record.sequence
+      ),
+      stage: lost && lost.stage !== stage ? 'mixed' : stage
+    }
+    if (savingGap) return
+    savingGap = true
+    storage = storage.then(async () => {
+      try {
+        for (;;) {
+          const gap = lost
+          if (!gap) return
+          await reserve(gap.requestId)
+          await options.outbox.recordGap(gap)
+          if (gap === lost) return
+        }
+      } catch (error) {
+        reportRecordDeliveryIssue(options, {
+          requestId,
+          stage: 'storage',
+          reason: `Gap metadata could not be persisted: ${recordDeliveryReason(error)}`,
+          fromSequence: lost?.fromSequence,
+          throughSequence: lost?.throughSequence
+        })
+      } finally {
+        savingGap = false
+      }
+    })
+  }
   const schedule = () => {
     if (scheduled || suspended || complete) return
     scheduled = true
     delivery = delivery.then(async () => {
+      const version = persistedVersion
       try {
-        await storage
         if (!requestId || captureFailed) return
         const receipt = await deliverRecordOutbox(
           options,
@@ -42,11 +97,12 @@ export const createRecordDeliverySink = (
         suspended = receipt.interrupted
       } finally {
         scheduled = false
+        if (version !== persistedVersion && !captureFailed) schedule()
       }
     })
   }
   const resume = async () => {
-    await storage
+    await drainStorage()
     await delivery
     if (!complete && !captureFailed && requestId) {
       suspended = false
@@ -70,6 +126,7 @@ export const createRecordDeliverySink = (
         (requestId && requestId !== record.requestId)
       ) {
         captureFailed = true
+        retainGap(record, 'capture')
         reportRecordDeliveryIssue(options, {
           requestId,
           stage: 'capture',
@@ -82,22 +139,50 @@ export const createRecordDeliverySink = (
       terminal = record.event === 'ai_request_usage'
       bytes += size
       const snapshot = JSON.parse(serialized) as ExecutionRecord
+      pending.push({ record: snapshot, size })
+      if (persisting) return
+      persisting = true
       storage = storage.then(async () => {
         try {
-          await options.outbox.append(snapshot)
-        } catch (error) {
-          captureFailed = true
-          reportRecordDeliveryIssue(options, {
-            requestId,
-            stage: 'storage',
-            reason: recordDeliveryReason(error),
-            fromSequence: snapshot.sequence
-          })
+          while (pending.length) {
+            let count = 1
+            let batchBytes = pending[0].size + 2
+            while (count < pending.length) {
+              const next = pending[count]
+              if (
+                next.record.sequence !==
+                  pending[count - 1].record.sequence + 1 ||
+                batchBytes + next.size + 1 > recordStorageBatchBytes
+              )
+                break
+              batchBytes += next.size + 1
+              count++
+            }
+            const batch = pending.splice(0, count)
+            try {
+              await reserve(snapshot.requestId)
+              await options.outbox.append(batch.map((item) => item.record))
+              persistedVersion++
+              schedule()
+            } catch (error) {
+              captureFailed = true
+              retainGap(batch[0].record, 'storage')
+              retainGap(batch[batch.length - 1].record, 'storage')
+              reportRecordDeliveryIssue(options, {
+                requestId,
+                stage: 'storage',
+                reason: recordDeliveryReason(error),
+                fromSequence: batch[0].record.sequence,
+                throughSequence: batch[batch.length - 1].record.sequence
+              })
+            } finally {
+              for (const item of batch) bytes -= item.size
+            }
+          }
         } finally {
-          bytes -= size
+          persisting = false
         }
       })
-      void storage.then(schedule)
     },
     async flush() {
       closed = true

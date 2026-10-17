@@ -27,6 +27,9 @@ Normalize raw keyboard/mouse/pointer input into framework input events.
   event's matching and normalized payload. Trackpad pinch can supply `ctrlKey`
   without a keyboard event. These flags never mutate held-key state or survive
   into later events. Consumers retain ownership of 2D/3D pan and zoom policy.
+- A combination callback may return `false` to suppress dispatch synchronously,
+  before downstream queues or sessions receive the event. Void callbacks proceed
+  normally. Admission policy remains App-owned; InputSystem stores no busy state.
 - Event contracts must stay stable and typed.
 - Pointer input can be temporarily blocked when render interaction capture is active.
 - App-owned surfaces decide whether a native `contextmenu` event is handled and

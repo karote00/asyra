@@ -452,6 +452,54 @@ it.each(['stop', 'lost-ack'])(
   }
 )
 
+it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
+  'records safe receipt rejection metadata without reading bodies or replaying - %s',
+  async (code) => {
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    let posts = 0
+    const provider = createServerActionBatchProvider({
+      fetch: (async (_url, init) => {
+        if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
+          posts++
+          return new Response('private error body', {
+            status: 413,
+            headers: { 'x-ai-error-code': code }
+          })
+        }
+        return new Response(
+          JSON.stringify({
+            type: 'batch',
+            receiptToken: '12345678-1234-1234-1234-123456789abc',
+            batch
+          }) + '\n',
+          { headers: { 'content-type': 'application/x-ndjson' } }
+        )
+      }) as never
+    })
+    try {
+      const failure = await provider
+        .requestActionBatch(input, {
+          signal: new AbortController().signal,
+          executeBatch
+        })
+        .catch((error: unknown) => error)
+      expect(failure).toMatchObject({
+        code: 'AI_PROVIDER_HTTP_STATUS',
+        status: 413,
+        retryable: false
+      })
+      expect(String(failure)).toContain('receipt')
+      expect(String(failure)).not.toContain('private')
+      if (code === 'ACTION_BATCH_INVALID_RECEIPT')
+        expect(String(failure)).toContain(code)
+      expect(executeBatch).toHaveBeenCalledOnce()
+      expect(posts).toBe(1)
+    } finally {
+      provider.dispose()
+    }
+  }
+)
+
 it.each(['activity', 'receipt', 'handoff'])(
   'does not dispatch buffered batches after Stop during %s',
   async (phase) => {

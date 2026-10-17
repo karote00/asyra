@@ -252,6 +252,8 @@ Implementation entry points:
 
 Route a prepared request through App permission, action and transaction owners. Keep dependent actions in the intended History group and expose actual completion or partial failure. Denied, cancelled, unsupported or failed execution does not report completed drawing.
 
+Explicit exports keep immutable downloadable document bytes outside ordinary tool receipts, survive request completion, and do not add history. Final drawing completion reports durable, local-only and unavailable storage separately.
+
 Authority: [Execute an Agent request](ai-execution-flow.md).
 
 Implementation entry points:
@@ -419,3 +421,18 @@ Implementation entry points:
 - `apps/asyra-design/src/contents/layer-hierarchy.ts`
 - `apps/asyra-design/src/contents/Element.tsx`
 - `apps/asyra-design/src/contents/GroupDisclosure.tsx`
+
+## project-ui-membership
+
+Project canonical scene membership into ordered UI rows. The Preset subscription
+owns the derived parent/children index for one observer lifetime and the exact
+published map and flat identities. Reuse unchanged rows across local mutations,
+Undo and Redo; cold, replaced or invalidated sources rebuild before reuse. Preserve
+canonical ordering and saved document content. Rendering and diagnostics do not
+provide canonical membership or repair product state.
+
+Authority: [Preset data-channel projection](../../../framework/packages/preset.md).
+
+Implementation entry point:
+
+- `packages/preset/src/subscriptions/data-channel.ts`

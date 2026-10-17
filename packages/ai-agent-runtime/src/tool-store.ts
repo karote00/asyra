@@ -35,6 +35,7 @@ interface StoredRecipe {
   readonly body: {
     readonly steps: AdmittedAiRecipe['recipe']['steps']
     readonly output: AdmittedAiRecipe['recipe']['output']
+    readonly iteration?: AdmittedAiRecipe['recipe']['iteration']
   }
   readonly dependencies: readonly {
     readonly name: string
@@ -77,6 +78,13 @@ const fingerprintValue = async (value: unknown) => {
 const same = (left: unknown, right: unknown) =>
   recipeContentKey(detachAiJsonValue(left)) ===
   recipeContentKey(detachAiJsonValue(right))
+const recipeBody = (
+  recipe: AdmittedAiRecipe['recipe']
+): StoredRecipe['body'] => ({
+  steps: recipe.steps,
+  output: recipe.output,
+  ...(recipe.iteration === undefined ? {} : { iteration: recipe.iteration })
+})
 const readStored = (entry: AiToolStoreEntry): StoredRecipe => {
   const value = detachAiJsonValue(entry.record)
   if (
@@ -87,7 +95,10 @@ const readStored = (entry: AiToolStoreEntry): StoredRecipe => {
       'availability,body,contract,dependencies,evidence,format' ||
     !recipeRecord(value.contract) ||
     !recipeRecord(value.body) ||
-    Object.keys(value.body).sort().join(',') !== 'output,steps' ||
+    Object.keys(value.body).sort().join(',') !==
+      (Object.prototype.hasOwnProperty.call(value.body, 'iteration')
+        ? 'iteration,output,steps'
+        : 'output,steps') ||
     !Array.isArray(value.body.steps) ||
     !Array.isArray(value.dependencies) ||
     !['candidate', 'eligible', 'suspended', 'retired'].includes(
@@ -130,6 +141,138 @@ const readStored = (entry: AiToolStoreEntry): StoredRecipe => {
   return value as unknown as StoredRecipe
 }
 
+export interface AiStoredToolSummary {
+  readonly name: string
+  readonly revision: number
+  readonly description: string
+  readonly availability: AiActionAvailability
+  readonly version: string
+}
+
+const confirmStoredEntry = async (
+  store: AiToolStore,
+  entry: AiToolStoreEntry
+): Promise<AiToolStoreEntry> => {
+  const current = await store.read(entry.key)
+  if (
+    !current ||
+    current.key !== entry.key ||
+    current.version !== entry.version ||
+    !same(current.record, entry.record)
+  )
+    throw new Error('Saved revision changed; refresh before publishing')
+  return current
+}
+
+const commitStored = async (
+  store: AiToolStore,
+  key: string,
+  record: StoredRecipe,
+  prior?: AiToolStoreEntry
+): Promise<AiToolStoreEntry> => {
+  const bytes = detachAiJsonValue(record)
+  if (prior && same(prior.record, bytes))
+    return confirmStoredEntry(store, prior)
+  const ack = await store.write({
+    key,
+    expectedVersion: prior?.version,
+    record: bytes
+  })
+  if (ack.key !== key || !ack.version?.trim() || !same(ack.record, bytes))
+    throw new Error('Store did not acknowledge the exact saved record')
+  return ack
+}
+
+const storedToolSummary = (entry: AiToolStoreEntry): AiStoredToolSummary => {
+  const record = readStored(entry)
+  return {
+    name: record.contract.name,
+    revision: record.contract.revision,
+    description: record.contract.description,
+    availability: record.availability,
+    version: entry.version
+  }
+}
+
+/** State-only host management; listing never admits, registers or executes tools. */
+export const createAiToolStoreManagement = (options: {
+  readonly store: AiToolStore
+  readonly capacity: number
+}) => {
+  if (!Number.isSafeInteger(options.capacity) || options.capacity < 1)
+    throw new TypeError('Management requires a finite capacity')
+  return {
+    async read(
+      name: string,
+      revision: number
+    ): Promise<AiStoredToolSummary | undefined> {
+      const entry = await options.store.read(keyFor(name, revision))
+      return entry ? storedToolSummary(entry) : undefined
+    },
+    async list(): Promise<{
+      entries: AiStoredToolSummary[]
+      unavailable: { key: string; reason: string }[]
+      truncated: boolean
+    }> {
+      const listed = await options.store.list(options.capacity + 1)
+      const entries: AiStoredToolSummary[] = []
+      const unavailable: { key: string; reason: string }[] = []
+      for (const entry of listed.slice(0, options.capacity)) {
+        try {
+          entries.push(storedToolSummary(entry))
+        } catch (error) {
+          unavailable.push({ key: entry.key, reason: message(error) })
+        }
+      }
+      return {
+        entries,
+        unavailable,
+        truncated: listed.length > options.capacity
+      }
+    },
+    async setState(input: {
+      name: string
+      revision: number
+      expectedVersion: string
+      availability: 'suspended' | 'retired'
+    }): Promise<AiToolSaveResult> {
+      try {
+        if (
+          !input.expectedVersion?.trim() ||
+          !['suspended', 'retired'].includes(input.availability)
+        )
+          throw new Error(
+            'An observed version and suspend or retire state are required'
+          )
+        const key = keyFor(input.name, input.revision)
+        const prior = await options.store.read(key)
+        if (!prior) throw new Error('Saved revision is unavailable')
+        if (prior.version !== input.expectedVersion)
+          throw new Error('Saved revision changed; refresh before updating')
+        const record = readStored(prior)
+        if (
+          record.availability === 'retired' &&
+          input.availability !== 'retired'
+        )
+          throw new Error('Retired revisions cannot be revived')
+        const ack = await commitStored(
+          options.store,
+          key,
+          { ...record, availability: input.availability },
+          prior
+        )
+        return {
+          status: 'saved',
+          availability: input.availability,
+          version: ack.version
+        }
+      } catch (error) {
+        return { status: 'unsaved', issue: message(error) }
+      }
+    }
+  }
+}
+
 /** Generic persistence coordinates host IO only; it never calls a product tool. */
 export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
   if (!Number.isSafeInteger(options.capacity) || options.capacity < 1)
@@ -145,22 +288,12 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
       if (queues.get(key) === current) queues.delete(key)
     }
   }
-  const commit = async (
+  const commit = (
     key: string,
     record: StoredRecipe,
     prior?: AiToolStoreEntry
-  ): Promise<AiToolStoreEntry> => {
-    const bytes = detachAiJsonValue(record)
-    if (prior && same(prior.record, bytes)) return prior
-    const ack = await options.store.write({
-      key,
-      expectedVersion: prior?.version,
-      record: bytes
-    })
-    if (ack.key !== key || !ack.version?.trim() || !same(ack.record, bytes))
-      throw new Error('Store did not acknowledge the exact saved record')
-    return ack
-  }
+  ) => commitStored(options.store, key, record, prior)
+  const management = createAiToolStoreManagement(options)
   const dependenciesCurrent = async (
     record: StoredRecipe
   ): Promise<boolean> => {
@@ -173,6 +306,22 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           dependency.fingerprint
       )
         return false
+      if (
+        options.registry.registration(dependency.name, {
+          revision: dependency.revision
+        })?.kind === 'composition'
+      ) {
+        const entry = await options.store.read(
+          keyFor(dependency.name, dependency.revision)
+        )
+        if (!entry) return false
+        const saved = readStored(entry)
+        if (
+          saved.availability !== 'eligible' ||
+          !same(saved.contract, createAiToolContract(current))
+        )
+          return false
+      }
     }
     return true
   }
@@ -183,16 +332,15 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
   ) => {
     const { name, description, revision, inputSchema, outputSchema } =
       record.contract
+    const submissionId = `${entry.key}:${entry.version}:${await fingerprintValue(record)}`
+    await confirmStoredEntry(options.store, entry)
     const current = options.registry.get(name, { requestId, revision })
     if (current) {
       const recipe = options.library.recipe(name, revision)
       if (
         !recipe ||
         !same(recipe.contract, record.contract) ||
-        !same(
-          { steps: recipe.recipe.steps, output: recipe.recipe.output },
-          record.body
-        )
+        !same(recipeBody(recipe.recipe), record.body)
       )
         throw new Error(
           'Current registry entry conflicts with saved definition'
@@ -203,7 +351,7 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
     return options.library.submit(
       {
         requestId,
-        submissionId: `${entry.key}:${entry.version}:${await fingerprintValue(record)}`,
+        submissionId,
         expectedRevision: latest?.revision,
         proposal: {
           format: 1,
@@ -218,121 +366,148 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
       { contract: record.contract, dependencies: record.dependencies }
     )
   }
-  return {
-    async save(input: {
-      name: string
-      revision: number
-      requestId: string
-      receipt?: AiRecipeExecutionResult
-    }): Promise<AiToolSaveResult> {
-      return serial(keyFor(input.name, input.revision), async () => {
-        try {
-          const registered = options.registry.registration(input.name, {
+  const save = async (input: {
+    name: string
+    revision: number
+    requestId: string
+    receipt?: AiRecipeExecutionResult
+  }): Promise<AiToolSaveResult> => {
+    return serial(keyFor(input.name, input.revision), async () => {
+      try {
+        const registered = options.registry.registration(input.name, {
+          requestId: input.requestId,
+          revision: input.revision
+        })
+        const admitted = options.library.recipe(input.name, input.revision)
+        if (!registered || registered.kind !== 'composition' || !admitted)
+          throw new Error('Current admitted candidate is unavailable')
+        let evidence: StoredRecipe['evidence'] = null
+        const proof = input.receipt
+          ? getRecipeExecutionEvidence(input.receipt)
+          : undefined
+        if (input.receipt) {
+          if (
+            !proof ||
+            proof.recipe !== admitted ||
+            proof.requestId !== input.requestId ||
+            input.receipt.status !== 'success' ||
+            input.receipt.settlement !== 'completed' ||
+            input.receipt.issues.length
+          )
+            throw new Error(
+              'A complete genuine receipt for this exact recipe and request is required'
+            )
+          const checked = await options.check(admitted, input.receipt)
+          if (!checked.ok) throw new Error(checked.issue)
+          if (!checked.scope.trim() || checked.scope.length > 2000)
+            throw new Error(
+              'Applicability evidence needs a bounded nonempty scope'
+            )
+          evidence = { callId: proof.callId, scope: checked.scope }
+        }
+        const dependencies = await Promise.all(
+          admitted.dependencies.map(async (contract) => ({
+            name: contract.name,
+            revision: contract.revision,
+            fingerprint: await fingerprintValue(contract)
+          }))
+        )
+        const record: StoredRecipe = {
+          format: 1,
+          contract: admitted.contract,
+          body: recipeBody(admitted.recipe),
+          dependencies,
+          availability: evidence ? 'eligible' : 'candidate',
+          evidence
+        }
+        const key = keyFor(input.name, input.revision)
+        const prior = await options.store.read(key)
+        if (prior) {
+          const stored = readStored(prior)
+          if (
+            !same(stored.contract, record.contract) ||
+            !same(stored.body, record.body) ||
+            !same(stored.dependencies, record.dependencies)
+          )
+            throw new Error(
+              'An immutable saved revision conflicts with this definition'
+            )
+          if (
+            stored.availability === 'retired' ||
+            stored.availability === 'suspended'
+          )
+            throw new Error(
+              'Unavailable saved revisions cannot be republished by save'
+            )
+        }
+        if (proof) {
+          const savedChildren = new Set<string>()
+          for (const child of proof.children) {
+            const childProof = getRecipeExecutionEvidence(child)
+            if (!childProof)
+              throw new Error('Nested execution proof is unavailable')
+            const { name, revision } = childProof.recipe.contract
+            const childKey = keyFor(name, revision)
+            if (savedChildren.has(childKey)) continue
+            const saved = await save({
+              name,
+              revision,
+              requestId: input.requestId,
+              receipt: child
+            })
+            if (saved.status !== 'saved' || saved.availability !== 'eligible')
+              throw new Error(
+                saved.status === 'unsaved'
+                  ? saved.issue
+                  : 'Child recipe is not eligible'
+              )
+            savedChildren.add(childKey)
+          }
+        }
+        if (evidence && !(await dependenciesCurrent(record)))
+          throw new Error(
+            'A dependency is changed, private or not durably eligible'
+          )
+        if (prior && readStored(prior).availability === 'eligible') {
+          if (!(await dependenciesCurrent(readStored(prior))))
+            throw new Error('A saved dependency is no longer eligible')
+          const ack = await commit(key, readStored(prior), prior)
+          options.registry.setAvailability(
+            input.name,
+            input.revision,
+            'eligible'
+          )
+          return {
+            status: 'saved',
+            availability: 'eligible',
+            version: ack.version
+          }
+        }
+        const ack = await commit(key, record, prior)
+        if (
+          record.availability === 'eligible' &&
+          options.registry.registration(input.name, {
             requestId: input.requestId,
             revision: input.revision
           })
-          const admitted = options.library.recipe(input.name, input.revision)
-          if (!registered || registered.kind !== 'composition' || !admitted)
-            throw new Error('Current admitted candidate is unavailable')
-          let evidence: StoredRecipe['evidence'] = null
-          if (input.receipt) {
-            const proof = getRecipeExecutionEvidence(input.receipt)
-            if (
-              !proof ||
-              proof.recipe !== admitted ||
-              proof.requestId !== input.requestId ||
-              input.receipt.status !== 'success' ||
-              input.receipt.settlement !== 'completed' ||
-              input.receipt.issues.length
-            )
-              throw new Error(
-                'A complete genuine receipt for this exact recipe and request is required'
-              )
-            const checked = await options.check(admitted, input.receipt)
-            if (!checked.ok) throw new Error(checked.issue)
-            if (!checked.scope.trim() || checked.scope.length > 2000)
-              throw new Error(
-                'Applicability evidence needs a bounded nonempty scope'
-              )
-            evidence = { callId: proof.callId, scope: checked.scope }
-          }
-          const dependencies = await Promise.all(
-            admitted.dependencies.map(async (contract) => ({
-              name: contract.name,
-              revision: contract.revision,
-              fingerprint: await fingerprintValue(contract)
-            }))
+        )
+          options.registry.setAvailability(
+            input.name,
+            input.revision,
+            'eligible'
           )
-          const record: StoredRecipe = {
-            format: 1,
-            contract: admitted.contract,
-            body: {
-              steps: admitted.recipe.steps,
-              output: admitted.recipe.output
-            },
-            dependencies,
-            availability: evidence ? 'eligible' : 'candidate',
-            evidence
-          }
-          if (evidence && !(await dependenciesCurrent(record)))
-            throw new Error(
-              'A dependency is changed, private or not durably eligible'
-            )
-          const key = keyFor(input.name, input.revision)
-          const prior = await options.store.read(key)
-          if (prior) {
-            const stored = readStored(prior)
-            if (
-              !same(stored.contract, record.contract) ||
-              !same(stored.body, record.body) ||
-              !same(stored.dependencies, record.dependencies)
-            )
-              throw new Error(
-                'An immutable saved revision conflicts with this definition'
-              )
-            if (
-              stored.availability === 'retired' ||
-              stored.availability === 'suspended'
-            )
-              throw new Error(
-                'Unavailable saved revisions cannot be republished by save'
-              )
-            if (stored.availability === 'eligible') {
-              options.registry.setAvailability(
-                input.name,
-                input.revision,
-                'eligible'
-              )
-              return {
-                status: 'saved',
-                availability: 'eligible',
-                version: prior.version
-              }
-            }
-          }
-          const ack = await commit(key, record, prior)
-          if (
-            record.availability === 'eligible' &&
-            options.registry.registration(input.name, {
-              requestId: input.requestId,
-              revision: input.revision
-            })
-          )
-            options.registry.setAvailability(
-              input.name,
-              input.revision,
-              'eligible'
-            )
-          return {
-            status: 'saved',
-            availability: record.availability,
-            version: ack.version
-          }
-        } catch (error) {
-          return { status: 'unsaved', issue: message(error) }
+        return {
+          status: 'saved',
+          availability: record.availability,
+          version: ack.version
         }
-      })
-    },
+      } catch (error) {
+        return { status: 'unsaved', issue: message(error) }
+      }
+    })
+  }
+  return {
+    save,
     async resume(input: { name: string; revision: number; requestId: string }) {
       return serial(keyFor(input.name, input.revision), async () => {
         try {
@@ -365,14 +540,17 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           const key = keyFor(name, revision)
           const prior = await options.store.read(key)
           if (!prior) throw new Error('Saved revision is unavailable')
-          const record = readStored(prior)
-          if (record.availability === 'retired' && availability !== 'retired')
-            throw new Error('Retired revisions cannot be revived')
-          const ack = await commit(key, { ...record, availability }, prior)
+          const result = await management.setState({
+            name,
+            revision,
+            availability,
+            expectedVersion: prior.version
+          })
+          if (result.status !== 'saved') return result
           const localState = options.registry.availability(name, revision)
           if (localState !== undefined && localState !== availability)
             options.registry.setAvailability(name, revision, availability)
-          return { status: 'saved', availability, version: ack.version }
+          return result
         } catch (error) {
           return { status: 'unsaved', issue: message(error) }
         }
@@ -448,15 +626,6 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           const { entry, record } = item
           await serial(entry.key, async () => {
             try {
-              const fresh = await options.store.read(entry.key)
-              if (
-                !fresh ||
-                fresh.version !== entry.version ||
-                !same(fresh.record, entry.record)
-              )
-                throw new Error(
-                  'Saved revision changed during reload; reload the current version'
-                )
               if (!(await dependenciesCurrent(record))) {
                 remaining.push(item)
                 return

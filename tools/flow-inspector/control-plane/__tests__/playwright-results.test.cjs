@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict')
 const path = require('node:path')
 const test = require('node:test')
+const { setImmediate } = require('node:timers')
 const { loadContract } = require('../contracts.cjs')
 const { localizeReport } = require('../localization.cjs')
 const { normalizeReport } = require('../playwright-results.cjs')
@@ -817,6 +818,17 @@ test(
 // product cases and their assertions remain unchanged throughout all three runs.
 const functionalOwnerProofs = [
   [
+    'project-ui-membership',
+    'functional.large-document-navigation.c877f564233e',
+    'packages/preset/src/subscriptions/data-channel.ts',
+    {
+      from: 'const retained = lifetime.hierarchy',
+      to: 'const retained = undefined',
+      transpile: true
+    },
+    { isolateWorkspaces: true, largeDocument: true }
+  ],
+  [
     'start-editor',
     'functional.app.a38c2cc25dac',
     'toolbar/reset-stored-document.ts',
@@ -1313,4 +1325,45 @@ test('current flow publication retains Playwright attachments without an observa
       .some((o) => o.status === 'failed'),
     true
   )
+})
+
+test('fixture settlement awaits all owned services and reports denied cleanup', async () => {
+  const { settleFixtureProcesses } = require('./playwright-results-fixture.cjs')
+  const aborted = []
+  let release
+  const pending = new Promise((resolve) => {
+    release = resolve
+  })
+  let settled = false
+  const work = settleFixtureProcesses([
+    {
+      controller: { abort: () => aborted.push('vite') },
+      promise: Promise.resolve({ reason: 'cancelled', error: 'kill EPERM' })
+    },
+    { controller: { abort: () => aborted.push('backend') }, promise: pending }
+  ]).finally(() => {
+    settled = true
+  })
+  const rejected = assert.rejects(work, /kill EPERM/)
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(aborted, ['vite', 'backend'])
+  assert.equal(settled, false)
+  release({ reason: 'cancelled' })
+  await rejected
+})
+
+test('fixture settlement preserves successful service cancellation', async () => {
+  const { settleFixtureProcesses } = require('./playwright-results-fixture.cjs')
+  let aborted = false
+  await settleFixtureProcesses([
+    {
+      controller: {
+        abort: () => {
+          aborted = true
+        }
+      },
+      promise: Promise.resolve({ reason: 'cancelled' })
+    }
+  ])
+  assert.equal(aborted, true)
 })

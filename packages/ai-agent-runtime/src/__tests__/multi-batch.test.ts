@@ -575,3 +575,107 @@ it('preserves a rejected output and known settlement in the recoverable batch re
     await runtime.dispose()
   }
 })
+
+it.each(
+  [false, true].flatMap((recording) =>
+    ['success', 'mutation-failure', 'settlement-failure', 'cancelled'].map(
+      (mode) => ({ mode, recording })
+    )
+  )
+)(
+  'forwards host settlement exactly once: $mode with recording=$recording',
+  async ({ mode, recording }) => {
+    const events: string[] = []
+    const controller = new AbortController()
+    const value = { identity: 'published' }
+    const settled = vi.fn((received) => {
+      expect(received).toBe(value)
+      expect(events).toEqual(['write', 'published'])
+      events.push('settled')
+      if (mode === 'settlement-failure') throw new Error('Settlement failed')
+    })
+    const runtime = createAiAgentRuntime({
+      ...(recording
+        ? {
+            createRecordingSink: () => ({
+              write: vi.fn(),
+              flush: async () => ({ status: 'saved' as const, path: 'memory' })
+            })
+          }
+        : {}),
+      provider: { requestActionBatch: async () => batch('only') },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          revision: 1,
+          inputSchema: {},
+          outputSchema: true,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
+          execute: async (_args, context) =>
+            runAiMutation(
+              context,
+              () => {
+                events.push('write')
+                if (mode === 'mutation-failure')
+                  throw new Error('Mutation failed')
+                return value
+              },
+              settled
+            )
+        }
+      ],
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: {
+        run: async (_label, execute) =>
+          execute(async (write, callback) => {
+            if (mode === 'cancelled') controller.abort()
+            controller.signal.throwIfAborted()
+            const result = write()
+            events.push('published')
+            callback?.(result)
+            events.push('yield')
+            return result
+          })
+      }
+    })
+    try {
+      const result = await runtime.run({
+        intent: 'Edit',
+        signal: controller.signal
+      })
+      const expectedStatus = {
+        success: 'executed',
+        cancelled: 'cancelled',
+        'mutation-failure': 'failed',
+        'settlement-failure': 'failed'
+      }
+      expect(result.status).toBe(
+        expectedStatus[mode as keyof typeof expectedStatus]
+      )
+      expect(settled).toHaveBeenCalledTimes(
+        ['success', 'settlement-failure'].includes(mode) ? 1 : 0
+      )
+      expect(events.filter((event) => event === 'write')).toHaveLength(
+        mode === 'cancelled' ? 0 : 1
+      )
+      const expectedEvents: Record<string, string[]> = {
+        cancelled: [],
+        'mutation-failure': ['write'],
+        'settlement-failure': ['write', 'published', 'settled'],
+        success: ['write', 'published', 'settled', 'yield']
+      }
+      expect(events).toEqual(expectedEvents[mode])
+    } finally {
+      await runtime.dispose()
+    }
+  }
+)

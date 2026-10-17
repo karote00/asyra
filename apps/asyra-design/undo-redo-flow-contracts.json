@@ -33,7 +33,7 @@
         {
           "id": "shortcut.redo",
           "stepId": "select-history-replay",
-          "testName": "Undo/Redo feature cooperative replay awaits Redo when Shift selects the forward replay",
+          "testName": "Undo/Redo feature cooperative replay awaits the issued Redo intent even when the live modifier changed",
           "implementationPaths": [
             "apps/asyra-design/src/features/undo-redo/index.ts"
           ]
@@ -55,8 +55,8 @@
       "expectedFailedCaseIds": ["shortcut.undo", "shortcut.redo"],
       "mutation": {
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
-        "from": "if (snapshot.keyShift)",
-        "to": "if (!snapshot.keyShift)"
+        "from": "if (direction === 'redo')",
+        "to": "if (direction === 'undo')"
       }
     }
   ]

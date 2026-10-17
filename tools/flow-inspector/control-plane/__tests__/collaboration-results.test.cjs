@@ -13,7 +13,7 @@ const architecture = require('../../inspectors/design-collaboration-flow-inspect
 
 test('collaboration admission requires bounded participant counts and exact observation inputs', () => {
   const admitted = admitContract(manifest, architecture)
-  assert.equal(admitted.cases.length, 17)
+  assert.equal(admitted.cases.length, 22)
   for (const count of [0, -1, 1.5, '2', null]) {
     const changed = structuredClone(manifest)
     changed.flows[0].cases[0].minimumParticipants = count
@@ -76,7 +76,7 @@ test('the collaboration configuration inventory has exactly one declared case pe
     actual.sort(),
     contract.cases.map((c) => [c.testFile, c.testName, c.projectName]).sort()
   )
-  assert.equal(actual.length, 17)
+  assert.equal(actual.length, 22)
   for (const item of contract.cases)
     for (const entry of item.implementationPaths)
       assert.ok(fs.existsSync(path.join(root, entry)))
@@ -335,94 +335,114 @@ test(
   }
 )
 
-test(
-  'complete original collaboration command records all 17 cases without another diagnostic execution',
+for (const proof of [
   {
-    skip: process.env.FLOW_COLLABORATION_FULL_PROOF !== 'true',
-    timeout: 1900000
+    name: 'complete original collaboration command records all 22 cases without another diagnostic execution',
+    grep: null,
+    total: 22,
+    passed: 19,
+    skipped: 3
   },
-  async (t) => {
-    const net = require('node:net')
-    const { runProcess } = require('../runner.cjs')
-    const {
-      createObservationReader,
-      observationDirectory
-    } = require('../localization.cjs')
-    const port = async () => {
-      const server = net.createServer()
-      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
-      const value = server.address().port
-      await new Promise((resolve) => server.close(resolve))
-      return value
-    }
-    const [appPort, backendPort, collaborationPort] = await Promise.all([
-      port(),
-      port(),
-      port()
-    ])
-    fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
-    const directory = fs.mkdtempSync(
-      path.join(root, 'tmp/flow-inspector/collaboration-full-')
-    )
-    const report = path.join(directory, 'original.json')
-    t.diagnostic('Complete original collaboration evidence: ' + directory)
-    const result = await runProcess({
-      executable: '/bin/bash',
-      args: ['scripts/run-collaboration-e2e.sh', '--workers=1'],
-      cwd: root,
-      env: {
-        ...process.env,
-        TMPDIR: directory,
-        FLOW_CI_REPORT: report,
-        E2E_OWN_SERVERS: '1',
-        APP_URL: 'http://127.0.0.1:' + appPort,
-        COLLABORATION_WS_HOST: '127.0.0.1',
-        COLLABORATION_WS_PORT: String(collaborationPort),
-        E2E_DOCUMENT_BACKEND_URL: 'http://127.0.0.1:' + backendPort,
-        RUN_HIGH_DETAIL_AI_CRDT: '0',
-        RUN_HIGH_DETAIL_UNDO_REPRO: '0',
-        RUN_AI_CRDT_VIDEO: '0'
-      },
-      signal: t.signal,
-      timeoutMs: 1800000,
-      maxOutputBytes: 2 * 1024 * 1024,
-      onSpawn: (pid) =>
-        fs.writeFileSync(
-          path.join(directory, 'process.json'),
-          JSON.stringify({ pid, appPort, backendPort, collaborationPort })
-        )
-    })
-    fs.writeFileSync(path.join(directory, 'run.log'), result.output)
-    fs.writeFileSync(
-      path.join(directory, 'result.json'),
-      JSON.stringify(result)
-    )
-    assert.equal(result.reason, null, result.output.slice(-5000))
-    assert.equal(result.code, 0, result.output.slice(-5000))
-    const id = JSON.parse(fs.readFileSync(report + '.context.json')).id
-    const record = createObservationReader(observationDirectory(root)).get(id)
-    assert.equal(record.cases.length, 17)
-    assert.ok(
-      record.cases.every((item) => item.resolution === 'mapped'),
-      JSON.stringify(record.issues)
-    )
-    assert.equal(
-      record.cases.filter((item) => item.status === 'passed').length,
-      14,
-      JSON.stringify(record.issues)
-    )
-    assert.equal(
-      record.cases.filter((item) => item.status === 'skipped').length,
-      3
-    )
-    assert.ok(
-      !record.issues.some((issue) =>
-        /participant|stale|configuration/.test(issue)
-      ),
-      JSON.stringify(record.issues)
-    )
+  {
+    name: 'recreated recovery session retains actual participants through retry and reload',
+    grep: 'recovers real edits and Undo Redo after preparation failure',
+    total: 1,
+    passed: 1,
+    skipped: 0
   }
-)
+])
+  test(
+    proof.name,
+    {
+      skip: process.env.FLOW_COLLABORATION_FULL_PROOF !== 'true',
+      timeout: 1900000
+    },
+    async (t) => {
+      const net = require('node:net')
+      const { runProcess } = require('../runner.cjs')
+      const {
+        createObservationReader,
+        observationDirectory
+      } = require('../localization.cjs')
+      const port = async () => {
+        const server = net.createServer()
+        await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+        const value = server.address().port
+        await new Promise((resolve) => server.close(resolve))
+        return value
+      }
+      const [appPort, backendPort, collaborationPort] = await Promise.all([
+        port(),
+        port(),
+        port()
+      ])
+      fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+      const directory = fs.mkdtempSync(
+        path.join(root, 'tmp/flow-inspector/collaboration-full-')
+      )
+      const report = path.join(directory, 'original.json')
+      t.diagnostic('Complete original collaboration evidence: ' + directory)
+      const result = await runProcess({
+        executable: '/bin/bash',
+        args: [
+          'scripts/run-collaboration-e2e.sh',
+          '--workers=1',
+          ...(proof.grep ? ['--grep', proof.grep] : [])
+        ],
+        cwd: root,
+        env: {
+          ...process.env,
+          TMPDIR: directory,
+          FLOW_CI_REPORT: report,
+          E2E_OWN_SERVERS: '1',
+          APP_URL: 'http://127.0.0.1:' + appPort,
+          COLLABORATION_WS_HOST: '127.0.0.1',
+          COLLABORATION_WS_PORT: String(collaborationPort),
+          E2E_DOCUMENT_BACKEND_URL: 'http://127.0.0.1:' + backendPort,
+          RUN_HIGH_DETAIL_AI_CRDT: '0',
+          RUN_HIGH_DETAIL_UNDO_REPRO: '0',
+          RUN_AI_CRDT_VIDEO: '0'
+        },
+        signal: t.signal,
+        timeoutMs: 1800000,
+        maxOutputBytes: 2 * 1024 * 1024,
+        onSpawn: (pid) =>
+          fs.writeFileSync(
+            path.join(directory, 'process.json'),
+            JSON.stringify({ pid, appPort, backendPort, collaborationPort })
+          )
+      })
+      fs.writeFileSync(path.join(directory, 'run.log'), result.output)
+      fs.writeFileSync(
+        path.join(directory, 'result.json'),
+        JSON.stringify(result)
+      )
+      assert.equal(result.reason, null, result.output.slice(-5000))
+      assert.equal(result.code, 0, result.output.slice(-5000))
+      const id = JSON.parse(fs.readFileSync(report + '.context.json')).id
+      const record = createObservationReader(observationDirectory(root)).get(id)
+      assert.equal(record.cases.length, proof.total)
+      assert.ok(
+        record.cases.every((item) => item.resolution === 'mapped'),
+        JSON.stringify(record.issues)
+      )
+      assert.equal(
+        record.cases.filter((item) => item.status === 'passed').length,
+        proof.passed,
+        JSON.stringify(record.issues)
+      )
+      assert.equal(
+        record.cases.filter((item) => item.status === 'skipped').length,
+        proof.skipped
+      )
+      assert.ok(
+        !record.issues.some((issue) =>
+          /participant|stale|configuration/.test(issue)
+        ),
+        JSON.stringify(record.issues)
+      )
+    }
+  )
 
 const collaborationOwnerRoutes = [
   [

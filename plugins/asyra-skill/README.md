@@ -59,7 +59,7 @@ No maintainer worktree is required. Use a reviewed release ref when available;
 assuming the newest GitHub Release and `main` are identical. A source checkout
 contains the complete Skill at `plugins/asyra-skill/skills/asyra-skill`.
 
-For testing unpublished 0.1.12, use the local candidate checkout in the routes
+For testing unpublished 0.1.13, use the local candidate checkout in the routes
 below. Do not describe that private local path as a public installation source.
 
 ## Install and update with a Skill installer

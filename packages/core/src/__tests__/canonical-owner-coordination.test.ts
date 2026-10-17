@@ -776,16 +776,16 @@ describe('Core canonical owner coordination', () => {
       },
       {
         kind: 'element-creation',
-        elements: [canonicalElement],
+        entries: [
+          { data: canonicalElement, parentId: 'workspace-1', index: 0 }
+        ],
         properties: [
           {
             id: 'canonical-property',
             type: PROPERTY_TYPE,
             value: 91
           }
-        ],
-        parentId: 'workspace-1',
-        index: 0
+        ]
       },
       {
         kind: 'element-removal',

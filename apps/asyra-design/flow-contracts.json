@@ -6,7 +6,9 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": ["compose.registered-tools"],
+  "negativeCaseIds": [
+    "compose.registered-tools"
+  ],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -15,6 +17,13 @@
     "artifact:inspection-evidence"
   ],
   "workspaceSources": [
+    {
+      "name": "@asyra/core",
+      "inputs": [
+        "src/**"
+      ],
+      "entry": "src/index.ts"
+    },
     {
       "name": "@asyra/asyra-design",
       "inputs": [
@@ -27,7 +36,9 @@
     },
     {
       "name": "@asyra/design-system",
-      "inputs": ["src/**"],
+      "inputs": [
+        "src/**"
+      ],
       "entry": "src/index.tsx"
     }
   ],
@@ -35,7 +46,7 @@
     {
       "id": "execution-owner-baseline",
       "title": "Execution owner boundaries",
-      "goal": "Verify baseline capability, continuity, preparation, execution, review, settlement and diagnostics owners; these boundary cases do not replace the full live drawing integration gate.",
+      "goal": "Verify baseline capability, continuity, preparation, execution, review, settlement and diagnostics owners; these boundary cases do not replace the real browser integration gates.",
       "stepIds": [
         "request",
         "compose",
@@ -93,7 +104,9 @@
           "id": "request.continuity",
           "stepId": "request",
           "testName": "execution proof validates continuity references before a successor request",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "prepare.lifetime",
@@ -104,12 +117,48 @@
           ]
         },
         {
+          "id": "compose.resource-export",
+          "stepId": "compose",
+          "testName": "execution proof exports compound resources before cleanup",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-leases.ts"
+          ]
+        },
+        {
           "id": "apply.composition",
           "stepId": "apply",
           "testName": "execution proof composes preparation and canonical dispatch without repeated work",
           "implementationPaths": [
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-tool-scheduler.ts"
+          ]
+        },
+        {
+          "id": "inspect.regional-units",
+          "stepId": "inspect",
+          "testName": "execution proof retains regional units without requiring global coverage for local review",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/design-check-results.ts"
+          ]
+        },
+        {
+          "id": "inspect.scoped-dependencies",
+          "stepId": "inspect",
+          "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
+        },
+        {
+          "id": "inspect.deferred-measurement",
+          "stepId": "inspect",
+          "testName": "execution proof checks all acknowledged parts before returning deferred capture without another model",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
         {
@@ -125,7 +174,9 @@
           "id": "settle.partial",
           "stepId": "settle",
           "testName": "execution proof retains partial progress when a successor makes no change",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "observe.accounting",
@@ -148,7 +199,9 @@
           "id": "observe.shared-invocation",
           "stepId": "observe",
           "testName": "execution proof composes a non-drawing host through shared invocation and local projection",
-          "implementationPaths": ["packages/ai-agent-runtime/src/invocation.ts"]
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/invocation.ts"
+          ]
         },
         {
           "id": "apply.region-removal",
@@ -234,63 +287,235 @@
             "packages/ai-agent-runtime/src/profiler/record-delivery.ts",
             "packages/ai-agent-runtime/src/node/record-collector.ts"
           ]
+        },
+        {
+          "id": "apply.canonical-inspection-scope",
+          "stepId": "apply",
+          "testName": "execution proof consumes canonical mutation scope without read pollution or no-change invalidation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "apply.structural-delivery",
+          "stepId": "apply",
+          "testName": "execution proof delivers compact structural output without repeating canonical writes",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "inspect.regional-pixels",
+          "stepId": "inspect",
+          "testName": "execution proof retains deterministic regional image checks without model evaluation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-image-check.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "inspect.current-contract",
+          "stepId": "inspect",
+          "testName": "execution proof uses only current conversion and primary judgment contracts",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
+        },
+        {
+          "id": "inspect.mechanical-selection",
+          "stepId": "inspect",
+          "testName": "execution proof preserves exact mechanical selection and canonical retirement",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-check-results.ts"
+          ]
+        },
+        {
+          "id": "inspect.aggregate-contract",
+          "stepId": "inspect",
+          "testName": "execution proof exposes aggregate verification and guarded repair at the existing operation owner",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "inspect.mechanical-native-handoff",
+          "stepId": "inspect",
+          "testName": "execution proof preserves a rejected mechanical repair as not-started across native ownership",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-mechanical-checks.ts"
+          ]
+        },
+        {
+          "id": "compose.tool-first-handoff",
+          "stepId": "compose",
+          "testName": "execution proof connects tool-first guidance to native selection and Runtime decision recovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-library-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.durable-reuse",
+          "stepId": "compose",
+          "testName": "execution proof saves nested tool evidence and reopens without product replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-library.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-store.ts"
+          ]
+        },
+        {
+          "id": "apply.history-intent",
+          "stepId": "apply",
+          "testName": "execution proof preserves issued history direction across the App feature handoff",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "packages/core/src/core.ts",
+            "packages/input-system/src/input-system.ts",
+            "packages/input-system/src/event-mappings.ts",
+            "packages/feature-system/src/core/feature.ts",
+            "packages/feature-system/src/core/session-manager.ts",
+            "packages/feature-system/src/core/interaction-queue.ts",
+            "packages/feature-system/src/core/execution-registry.ts",
+            "packages/feature-system/src/types/execution.ts",
+            "packages/feature-system/src/types/feature.ts"
+          ]
+        },
+        {
+          "id": "settle.recorded-purpose",
+          "stepId": "settle",
+          "testName": "execution proof retains recorded authored purpose after provider tool settlement",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/src/ai/activity-state.ts"
+          ]
+        },
+        {
+          "id": "apply.receipt-query-budget",
+          "stepId": "apply",
+          "testName": "execution proof retains many small query handoffs with structural recovery",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/retained-design-context.ts"
+          ]
+        },
+        {
+          "id": "apply.bounded-receipt-delivery",
+          "stepId": "apply",
+          "testName": "execution proof preserves completed writes and unresolved coverage after bounded receipt delivery rejection",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/batch-exchange.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "apply.registered-model-delivery",
+          "stepId": "apply",
+          "testName": "execution proof consumes complete mapping scope before bounded delivery and exact retained readback",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/retained-fill-action.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         }
       ],
       "handoffs": [
         {
           "routeId": "request-to-compose",
           "decision": "required",
-          "caseIds": ["compose.registered-tools"]
+          "caseIds": [
+            "compose.registered-tools"
+          ]
         },
         {
           "routeId": "compose-to-prepare",
           "decision": "required",
-          "caseIds": ["prepare.lifetime"]
+          "caseIds": [
+            "prepare.lifetime",
+            "compose.resource-export"
+          ]
         },
         {
           "routeId": "compose-to-apply",
           "decision": "required",
-          "caseIds": ["apply.composition"]
+          "caseIds": [
+            "apply.composition"
+          ]
         },
         {
           "routeId": "prepare-to-apply",
           "decision": "required",
-          "caseIds": ["apply.composition"]
+          "caseIds": [
+            "apply.composition"
+          ]
         },
         {
           "routeId": "apply-to-compose",
           "decision": "required",
-          "caseIds": ["request.continuity", "apply.region-removal"]
+          "caseIds": [
+            "request.continuity",
+            "apply.region-removal",
+            "apply.bounded-receipt-delivery",
+            "apply.registered-model-delivery"
+          ]
         },
         {
           "routeId": "apply-to-inspect",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "apply.bounded-receipt-delivery",
+            "apply.registered-model-delivery"
+          ]
         },
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": ["settle.partial"]
+          "caseIds": [
+            "settle.partial",
+            "apply.history-intent"
+          ]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract"
+          ]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract"
+          ]
         },
         {
           "routeId": "prepare-to-inspect",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
+        },
+        {
+          "routeId": "prepared-review-to-apply",
+          "decision": "required",
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         },
         {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         }
       ]
     }
@@ -305,7 +530,9 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": ["compose.registered-tools"],
+      "expectedFailedCaseIds": [
+        "compose.registered-tools"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -315,7 +542,9 @@
     {
       "id": "misclassify-combined-tool",
       "title": "Run a canvas workflow as independent preparation",
-      "expectedFailedCaseIds": ["apply.composition"],
+      "expectedFailedCaseIds": [
+        "apply.composition"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
         "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
@@ -325,11 +554,90 @@
     {
       "id": "ignore-canonical-evidence",
       "title": "Ignore a stale App inspection verdict",
-      "expectedFailedCaseIds": ["inspect.current-evidence"],
+      "expectedFailedCaseIds": [
+        "inspect.current-evidence",
+        "inspect.scoped-dependencies",
+        "inspect.regional-units",
+        "inspect.regional-pixels"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
-        "from": "entry.result.current === true",
-        "to": "true"
+        "from": "if (isRecord(result) && result.current === false)\n            invalidIds.push(...group.ids)",
+        "to": "if (false)\n            invalidIds.push(...group.ids)"
+      }
+    },
+    {
+      "id": "omit-structural-handoff",
+      "title": "Bypass declared model delivery",
+      "expectedFailedCaseIds": [
+        "apply.region-removal",
+        "apply.structural-delivery",
+        "apply.registered-model-delivery"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/server/local-operation-tools.ts",
+        "from": "? projectToolDelivery(definition, entry.result)",
+        "to": "? entry.result"
+      }
+    },
+    {
+      "id": "read-late-history-modifier",
+      "title": "Read live modifier instead of issued history intent",
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/features/undo-redo/index.ts",
+        "from": "const direction = snapshot.detail?.historyDirection",
+        "to": "const direction = snapshot.keyShift ? 'redo' : 'undo'"
+      }
+    },
+    {
+      "id": "accept-history-during-replay",
+      "title": "Accept history input while Factory is replaying",
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/config/key-combinations.ts",
+        "from": "if (core.isInUndoRedo()) return false",
+        "to": "if (false) return false"
+      }
+    },
+    {
+      "id": "dispatch-rejected-history",
+      "title": "Dispatch rejected input into downstream consumers",
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
+      "mutation": {
+        "file": "packages/input-system/src/input-system.ts",
+        "from": "if (combo.callback?.(raw) === false) continue",
+        "to": "combo.callback?.(raw)"
+      }
+    },
+    {
+      "id": "queue-immediate-history",
+      "title": "Queue an accepted history command",
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/features/undo-redo/index.ts",
+        "from": "executionMode: 'immediate'",
+        "to": "executionMode: 'queued'"
+      }
+    },
+    {
+      "id": "unbounded-receipt-delivery",
+      "title": "Bypass bounded receipt delivery",
+      "expectedFailedCaseIds": [
+        "apply.bounded-receipt-delivery"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+        "from": "if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body",
+        "to": "if (bytes >= 0) return body"
       }
     }
   ]

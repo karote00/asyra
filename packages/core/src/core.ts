@@ -650,6 +650,28 @@ class Core implements CoreAPIs {
     })
   }
 
+  /** Resolve affected elements through canonical nested/shared property indexes. */
+  getPropertyOwnerElementIds(
+    propertyIds: readonly string[],
+    options?: { includeRetired?: boolean }
+  ): string[] {
+    const elementIds = new Set<string>()
+    const componentIds = new Set(propertyIds)
+    const activeIds = options?.includeRetired
+      ? [...componentIds].filter((id) => this.deps.props.getPropertyById(id))
+      : [...componentIds]
+    for (const id of this.deps.props.resolvePropertyAncestorIds(activeIds))
+      componentIds.add(id)
+    for (const propertyId of componentIds) {
+      for (const relation of this.deps.sceneTree.getElementPropertyRelations(
+        propertyId
+      )) {
+        elementIds.add(relation.ownerElementId)
+      }
+    }
+    return [...elementIds]
+  }
+
   projectLocalComputedDataForElements(elementIds: readonly string[]): void {
     const propertyIds = new Set<string>()
     elementIds.forEach((elementId) => {
@@ -807,6 +829,10 @@ class Core implements CoreAPIs {
         if (this.lifetime.isUsable()) subscriber()
       })
     )
+  }
+
+  isInUndoRedo(): boolean {
+    return this.deps.factory.isInUndoRedo()
   }
 
   getUndoHistoryDepth(): number {

@@ -1,6 +1,8 @@
-import type { CanonicalElementRemoval } from '@asyra/scene-tree'
 import type {
-  ElementRawData,
+  CanonicalElementRemoval,
+  CanonicalElementInsertionRequest
+} from '@asyra/scene-tree'
+import type {
   HierarchyMove,
   PropertyComponentRawData,
   PropsRestoreSnapshot,
@@ -40,10 +42,8 @@ export type CanonicalChange =
     }>
   | Readonly<{
       kind: 'element-creation'
-      elements: readonly ElementRawData[]
+      entries: CanonicalElementInsertionRequest['entries']
       properties: readonly PropertyComponentRawData[]
-      parentId: string
-      index: number
     }>
   | Readonly<{
       kind: 'element-removal'

@@ -31,7 +31,10 @@ it('delegates every contract in parameter order without copying inputs or inject
     )
     if (!action) throw new Error('Missing action')
     const args = Object.fromEntries(
-      contract.parameters.map((p) => [p, { input: p }])
+      contract.parameters.map((p) => [
+        p,
+        p === 'elementIds' ? ['first', 'second'] : { input: p }
+      ])
     )
     await action.execute(args, {
       signal: new AbortController().signal,
@@ -197,7 +200,7 @@ it.each([
   }
 ])(
   'keeps confirmed visibility identities and ordered $status outcomes',
-  async ({ ids, values, status, reviewIds }) => {
+  async ({ ids, values, status }) => {
     const method = vi.fn(() => values)
     const action = createBasicApiActions(() => ({
       core: {},
@@ -217,8 +220,7 @@ it.each([
     )
     expect(result).toMatchObject({
       status,
-      value: values,
-      reviewElementIds: reviewIds
+      value: values
     })
     expect(method).toHaveBeenCalledExactlyOnceWith(ids, false)
   }
@@ -264,7 +266,111 @@ it('advertises unique Fill row mutation targets without changing sharing identit
     expect(
       basicApiContracts.find((api) => api.method === method)?.inputSchema
     ).toMatchObject({
-      properties: { elementIds: { uniqueItems: true } }
+      properties: {
+        elementIds: {
+          anyOf: expect.arrayContaining([
+            { type: 'array', items: expect.any(Object), uniqueItems: true }
+          ])
+        }
+      }
     })
   }
+})
+
+it('captures only admitted execution through settlement and releases the scope observer', async () => {
+  let changed: ((change?: { elementIds: string[] }) => void) | undefined
+  const stop = vi.fn(() => {
+    changed = undefined
+  })
+  const read = vi.fn((id: string) => (id === 'removed' ? 'removed' : 'live'))
+  const method = vi.fn(() => {
+    changed?.({ elementIds: ['inside'] })
+  })
+  const action = createBasicApiActions(
+    () => ({
+      core: { updateElementProperties: method },
+      element: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {},
+      fill: {},
+      stroke: {}
+    }),
+    {
+      observe: (listener) => {
+        changed = listener
+        return stop
+      },
+      resolve: read
+    }
+  ).find((action) => action.name === 'api_core_updateElementProperties')
+  if (!action) throw new Error('Missing action')
+  const result = await action.execute(
+    { updates: [] },
+    {
+      signal: new AbortController().signal,
+      runMutation: async (work) => {
+        changed?.({ elementIds: ['unrelated-wait'] })
+        const value = work()
+        changed?.({ elementIds: ['after-commit', 'removed', 'inside'] })
+        return value
+      }
+    }
+  )
+  expect(result).toMatchObject({
+    mutationScope: {
+      complete: true,
+      elementIds: ['inside', 'after-commit'],
+      removedElementIds: ['removed']
+    }
+  })
+  expect(read.mock.calls.flat()).toEqual(['inside', 'after-commit', 'removed'])
+  expect(stop).toHaveBeenCalledTimes(1)
+  method.mockImplementationOnce(() => {
+    throw new Error('mutation failed')
+  })
+  await expect(
+    action.execute({ updates: [] }, { signal: new AbortController().signal })
+  ).rejects.toThrow('mutation failed')
+  expect(stop).toHaveBeenCalledTimes(2)
+})
+
+it('does not certify unknown publication or unavailable scope resolution as empty success', async () => {
+  let changed: ((change?: { elementIds: string[] }) => void) | undefined
+  const method = vi.fn(() => {
+    changed?.()
+  })
+  const action = createBasicApiActions(
+    () => ({
+      core: { updateElementProperties: method },
+      element: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {},
+      fill: {},
+      stroke: {}
+    }),
+    {
+      observe: (listener) => {
+        changed = listener
+        return () => {
+          changed = undefined
+        }
+      },
+      resolve: () => {
+        throw new Error('unavailable metadata')
+      }
+    }
+  ).find((action) => action.name === 'api_core_updateElementProperties')
+  if (!action) throw new Error('Missing action')
+  const context = { signal: new AbortController().signal }
+  expect(await action.execute({ updates: [] }, context)).toMatchObject({
+    mutationScope: { complete: false }
+  })
+  method.mockImplementationOnce(() => {
+    changed?.({ elementIds: ['unknown'] })
+  })
+  expect(await action.execute({ updates: [] }, context)).toMatchObject({
+    mutationScope: { complete: false }
+  })
 })

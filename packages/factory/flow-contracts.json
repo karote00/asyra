@@ -4,7 +4,9 @@
     "cancel.outcome",
     "cancel.delivery",
     "history-group.ordered-replay",
-    "history-group.snapshot"
+    "history-group.snapshot",
+    "history-group.atomic-boundary",
+    "history-group.immediate-boundary"
   ],
   "targetId": "transaction-atomicity",
   "architecturePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs",
@@ -160,6 +162,16 @@
           "id": "history-group.delivery",
           "stepId": "settle-local-shared-projection",
           "testName": "Factory flow proof history group member delivery"
+        },
+        {
+          "id": "history-group.atomic-boundary",
+          "stepId": "finalize-transaction-state",
+          "testName": "Factory flow proof history group atomic member boundaries"
+        },
+        {
+          "id": "history-group.immediate-boundary",
+          "stepId": "settle-local-shared-projection",
+          "testName": "Factory flow proof history group synchronous immediate boundaries"
         }
       ],
       "handoffs": [
@@ -241,7 +253,11 @@
     {
       "id": "forbidden-commit",
       "title": "Forbidden commit demo",
-      "expectedFailedCaseIds": ["cancel.outcome", "cancel.delivery"],
+      "expectedFailedCaseIds": [
+        "cancel.outcome",
+        "cancel.delivery",
+        "history-group.immediate-boundary"
+      ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
         "from": "if (options.outcome === 'rollback') {",
@@ -251,11 +267,34 @@
     {
       "id": "omitted-compensation",
       "title": "Omitted compensation demo",
-      "expectedFailedCaseIds": ["cancel.delivery"],
+      "expectedFailedCaseIds": [
+        "cancel.delivery",
+        "history-group.immediate-boundary"
+      ],
       "mutation": {
         "file": "packages/factory/src/data-transact.ts",
         "from": "...this.rollbackJournal(),\n      ...this.compensateImmediateSharedChanges()",
         "to": "...this.rollbackJournal()"
+      }
+    },
+    {
+      "id": "split-atomic-member",
+      "title": "Split atomic member into channel boundaries",
+      "expectedFailedCaseIds": ["history-group.atomic-boundary"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "const sliceId = atomicSliceId ?? sourceSliceId",
+        "to": "const sliceId = sourceSliceId"
+      }
+    },
+    {
+      "id": "split-synchronous-immediate",
+      "title": "Split synchronous owner handoffs into independent slices",
+      "expectedFailedCaseIds": ["history-group.immediate-boundary"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "return `${this.currentArtifactId}:immediate:${this.immediatePublicationToken}`",
+        "to": "return undefined"
       }
     }
   ]

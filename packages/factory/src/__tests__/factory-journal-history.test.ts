@@ -124,6 +124,165 @@ const createOwnerKeyedReplaceLatestBatch = (
 }
 
 describe('Factory journal-backed action history', () => {
+  const verifyNoopHistoryDelivery = async (
+    mode: 'synchronous' | 'progressive'
+  ) => {
+    const factory = new Factory()
+    const publications: SharedPublication[] = []
+    factory.subscribeToSharedPublication((publication) =>
+      publications.push(publication)
+    )
+    factory.registerSharedDataChannel(
+      SharedDataChannelNames.SCENE_TREE,
+      new LocalSharedDataChannel()
+    )
+    const publicationDeliveries = (publication: SharedPublication) =>
+      publication.slices.flatMap(({ batches }) =>
+        batches.flatMap(({ deliveries }) => deliveries)
+      )
+    factory.registerSharedDataChannel(
+      SharedDataChannelNames.SELECTION,
+      new LocalSharedDataChannel()
+    )
+    const values = new Map([
+      ['document', 1],
+      ['selection', 0]
+    ])
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event) => {
+        const { id, after } = (
+          event as AllEvent & {
+            payload: { id: string; after: number }
+          }
+        ).payload
+        if (values.get(id) === after) return false
+        values.set(id, after)
+        return true
+      }
+    )
+    factory.startTransaction()
+    factory.updateTransaction(
+      createUpdateEvent('document', {
+        shared: SharedDataChannelNames.SCENE_TREE,
+        sharedDelivery: 'immediate'
+      })
+    )
+    factory.updateTransaction({
+      ...createUpdateEvent('selection'),
+      options: {
+        shared: SharedDataChannelNames.SELECTION,
+        sharedDelivery: 'immediate'
+      }
+    })
+    await Promise.resolve()
+    factory.endTransaction()
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+    publications.length = 0
+    const replay = async (direction: 'undo' | 'redo') => {
+      if (mode === 'synchronous') factory[direction]()
+      else {
+        factory.startTransaction()
+        const owner = factory.getTransactionOwner()
+        if (direction === 'undo')
+          await owner.undoProgressively(async () => undefined)
+        else await owner.redoProgressively(async () => undefined)
+        factory.endTransaction()
+      }
+      await Promise.resolve()
+    }
+    await replay('undo')
+    expect(values.get('document')).toBe(0)
+    expect(
+      publications.flatMap(publicationDeliveries).map(({ payload }) => payload)
+    ).toEqual([
+      expect.objectContaining({ id: 'selection', after: 0 }),
+      expect.objectContaining({ id: 'document', after: 0 })
+    ])
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    publications.length = 0
+    // A later non-history selection change can make Redo's selection a no-op too.
+    values.set('selection', 1)
+    await replay('redo')
+    expect(values.get('document')).toBe(1)
+    expect(
+      publications.flatMap(publicationDeliveries).map(({ payload }) => payload)
+    ).toEqual([
+      expect.objectContaining({ id: 'document', after: 1 }),
+      expect.objectContaining({ id: 'selection', after: 1 })
+    ])
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+  }
+
+  it('settles retained publication evidence after a successful no-op owner during synchronous history', () =>
+    verifyNoopHistoryDelivery('synchronous'))
+
+  it('settles retained publication evidence after a successful no-op owner during progressive history', () =>
+    verifyNoopHistoryDelivery('progressive'))
+
+  it('restores only changed owners after a no-op sibling and failed shared replay, then retries', async () => {
+    const factory = new Factory()
+    factory.registerSharedDataChannel(
+      SharedDataChannelNames.SCENE_TREE,
+      new LocalSharedDataChannel()
+    )
+    const publications: SharedPublication[] = []
+    factory.subscribeToSharedPublication((publication) =>
+      publications.push(publication)
+    )
+    const values = new Map([
+      ['first', 1],
+      ['second', 1],
+      ['unchanged', 0]
+    ])
+    const applied: string[] = []
+    let fail = true
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event, mode) => {
+        const { id, after } = (
+          event as AllEvent & { payload: { id: string; after: number } }
+        ).payload
+        if (fail && mode === 'undo' && id === 'first')
+          throw new Error('Owner refused replay')
+        if (values.get(id) === after) return false
+        values.set(id, after)
+        applied.push(`${mode}:${id}:${after}`)
+        return true
+      }
+    )
+    factory.startTransaction()
+    for (const id of ['first', 'second', 'unchanged'])
+      factory.updateTransaction(
+        createUpdateEvent(id, {
+          shared: SharedDataChannelNames.SCENE_TREE,
+          sharedDelivery: 'immediate'
+        })
+      )
+    await Promise.resolve()
+    factory.endTransaction()
+    publications.length = 0
+    expect(() => factory.undo()).toThrow('Transaction rollback failed')
+    expect([...values]).toEqual([
+      ['first', 1],
+      ['second', 1],
+      ['unchanged', 0]
+    ])
+    expect(applied).toEqual(['undo:second:0', 'rollback:second:1'])
+    expect(publications).toEqual([])
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+    fail = false
+    factory.undo()
+    expect([...values]).toEqual([
+      ['first', 0],
+      ['second', 0],
+      ['unchanged', 0]
+    ])
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    expect(publications).toHaveLength(1)
+    expect(publications[0]?.origin).toBe('undo')
+  })
+
   it('records one owner batch as one Undo action and replays the whole action', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []

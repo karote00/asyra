@@ -19,15 +19,11 @@ export const createDesignDraftRepairStore = () => {
       if (source === undefined) return
       const bytes = Buffer.byteLength(source, 'utf8')
       if (bytes > limits.retainedDraftBytes) return
-      while (
+      if (
         drafts.size >= limits.retainedDrafts ||
         retainedBytes + bytes > limits.retainedDraftBytes
-      ) {
-        const oldest = drafts.keys().next().value
-        if (oldest === undefined)
-          throw new Error('Retained draft byte accounting is inconsistent')
-        remove(oldest)
-      }
+      )
+        return
       const id = randomUUID()
       drafts.set(id, { source, bytes })
       retainedBytes += bytes

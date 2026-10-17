@@ -398,10 +398,10 @@ function localizationFixture() {
     },
     mutate(kind) {
       const file = kind === 'app' ? appFile : factoryFile
-      const from = kind === 'app' ? 'if (snapshot.keyShift)' : 'return value'
+      const from = kind === 'app' ? "if (direction === 'redo')" : 'return value'
       const to =
         kind === 'app'
-          ? 'if (!snapshot.keyShift)'
+          ? "if (direction === 'undo')"
           : "return typeof value === 'number' ? value + 1 : value"
       const text = originals.get(file)
       assert.ok(text.includes(from))

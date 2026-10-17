@@ -199,3 +199,78 @@ it('releases an explicitly removed composition without deleting a primitive', ()
     })
   ).toMatchObject({ ok: false })
 })
+
+it('counts nested repair dependencies before publishing a bounded candidate', () => {
+  const host = setup()
+  expect(
+    host.library.submit({
+      requestId: 'author',
+      submissionId: 'nested',
+      proposal: proposal()
+    }).ok
+  ).toBe(true)
+  const primitive = host.registry.get('set')
+  if (!primitive) throw new Error('Missing scalar primitive')
+  host.registry.register({
+    ...primitive,
+    name: 'verify',
+    effect: 'read',
+    verification: { statusPath: '/status', progressPath: '/progress' },
+    outputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['status', 'progress'],
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['pass', 'repairable', 'decision-required']
+        },
+        progress: { type: 'string', minLength: 1 }
+      }
+    }
+  })
+  const input = {
+    ...proposal(),
+    name: 'bounded',
+    iteration: {
+      id: 'verified',
+      stateSchema: scalar,
+      state: { kind: 'step', step: 'apply', path: '' },
+      check: {
+        id: 'check',
+        tool: 'verify',
+        revision: 1,
+        input: { kind: 'state', path: '' }
+      },
+      repairs: [
+        {
+          id: 'repair',
+          tool: 'reusable',
+          revision: 1,
+          input: { kind: 'state', path: '' }
+        }
+      ],
+      next: { kind: 'step', step: 'repair', path: '' },
+      maxIterations: 3
+    },
+    output: { kind: 'step', step: 'verified', path: '/state' }
+  }
+  // Surface count is eight; actual expansion is eleven including nested leaves.
+  expect(
+    host.library.submit({
+      requestId: 'author',
+      submissionId: 'over',
+      proposal: input
+    }).ok
+  ).toBe(false)
+  expect(host.registry.get('bounded', { requestId: 'author' })).toBeUndefined()
+  input.iteration.maxIterations = 2
+  expect(
+    host.library.submit({
+      requestId: 'author',
+      submissionId: 'within',
+      proposal: input
+    }).ok
+  ).toBe(true)
+  expect(host.execute).not.toHaveBeenCalled()
+})

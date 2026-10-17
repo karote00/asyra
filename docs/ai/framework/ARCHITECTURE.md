@@ -356,13 +356,16 @@ Authority:
 - Atomicity: rollbackable journal entries reverse in last-in-first-out order on
   explicit rollback cancellation, handler failure, timeout, or validation
   failure. User-driven interruption defaults to commit-current and finalizes
-  one undoable action before the next queued interaction. Journal snapshots
+  one undoable action before the next interaction. Immediate history input
+  uses this same finalizer before replay, without entering the ordinary queue. Journal snapshots
   preserve declared `DataTypes`, and nested replay restoration records only
   confirmed semantic mutations, not successful no-ops.
 - Consistency: synchronous validators registered on the owning Factory run in
   registration order before a non-empty commit.
-- Isolation: Feature operations are serialized by the interaction queue;
-  preview state may remain visible before the outer transaction closes.
+- Isolation: the Feature interaction runtime serializes transaction execution.
+  Immediate history commands settle the running handler/session before replay;
+  queued ordinary operations cannot interleave with that settlement or replay.
+  Preview state may remain visible before the outer transaction closes.
 - Durability: `committed` means accepted runtime state, while `persisted` means
   the configured provider acknowledged storage.
 - These guarantees are local application semantics. They do not lock external

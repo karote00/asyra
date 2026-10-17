@@ -1,3 +1,11 @@
+export const collaborationBootstrapPhases = [
+  'socket-open',
+  'bootstrap-received',
+  'checkpoint-ready',
+  'bootstrap-decoded'
+] as const
+
+import { DocumentPublicationContract } from './app-protocol-types'
 import type {
   ProviderAwarenessDisconnect,
   ProviderAwarenessMessage,
@@ -30,6 +38,7 @@ export const CollaborationMessageTypes = {
   SOURCE_PUBLICATION_SETTLEMENT: 'source-publication-settlement',
   SOURCE_FRAME_ADMITTED: 'source-frame-admitted',
   SOURCE_PUBLICATION_PROPOSED: 'source-publication-proposed',
+  BOOTSTRAP_CHECKPOINT_READY: 'bootstrap-checkpoint-ready',
   READY: 'ready',
   RESPONSE: 'response',
   PUBLICATION: 'publication',
@@ -136,6 +145,10 @@ export interface CollaborationFailurePayload {
   readonly message: string
 }
 
+export interface BootstrapCheckpointReadyMessage {
+  readonly type: typeof CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY
+}
+
 export interface ReadyMessage {
   readonly type: typeof CollaborationMessageTypes.READY
   readonly bootstrap: DocumentSessionBootstrap
@@ -228,6 +241,7 @@ export interface ConnectionErrorMessage extends ProviderFailureMessage {
 }
 
 export type CollaborationServerMessage =
+  | BootstrapCheckpointReadyMessage
   | ReadyMessage
   | SuccessfulResponseMessage
   | FailedResponseMessage
@@ -365,6 +379,17 @@ const isSharedPublicationBatch = (
   return value.deliveries.every(isSharedPublicationDelivery)
 }
 
+const hasValidCompensationCorrelation = (
+  channel: string,
+  origin: SharedPublication['origin'],
+  delivery: SharedPublicationDelivery
+): boolean => {
+  const hasDeliveryTarget = Object.hasOwn(delivery, 'compensatesDeliveryId')
+  return channel === DocumentPublicationContract.channel
+    ? !hasDeliveryTarget
+    : (origin === 'rollback-compensation') === hasDeliveryTarget
+}
+
 export const isSharedPublication = (
   value: unknown
 ): value is SharedPublication => {
@@ -432,11 +457,11 @@ export const isSharedPublication = (
       for (const delivery of batch.deliveries) {
         if (
           deliveryIds.has(delivery.deliveryId) ||
-          isCompensation !==
-            Object.prototype.hasOwnProperty.call(
-              delivery,
-              'compensatesDeliveryId'
-            )
+          !hasValidCompensationCorrelation(
+            batch.channel,
+            value.origin as SharedPublication['origin'],
+            delivery
+          )
         ) {
           return false
         }
@@ -476,8 +501,9 @@ interface JsonTransportAnalysis {
 
 const MAX_RECURSIVE_JSON_TRANSPORT_DEPTH = 256
 
-const analyzeJsonTransportValue = (
-  value: unknown
+const analyzeFiniteTransportValue = (
+  value: unknown,
+  rejectNegativeZero = true
 ): JsonTransportAnalysis | null => {
   const ancestors = new Set<object>()
   const frames: JsonTransportTraversalFrame[] = [
@@ -501,7 +527,11 @@ const analyzeJsonTransportValue = (
       continue
     }
     if (typeof child === 'number') {
-      if (!Number.isFinite(child) || Object.is(child, -0)) return null
+      if (
+        !Number.isFinite(child) ||
+        (rejectNegativeZero && Object.is(child, -0))
+      )
+        return null
       continue
     }
     if (typeof child !== 'object' || ancestors.has(child)) return null
@@ -557,7 +587,10 @@ const analyzeJsonTransportValue = (
 }
 
 export const isJsonTransportValue = (value: unknown): boolean =>
-  analyzeJsonTransportValue(value) !== null
+  analyzeFiniteTransportValue(value) !== null
+
+export const isFiniteTransportValue = (value: unknown): boolean =>
+  analyzeFiniteTransportValue(value, false) !== null
 
 const PUBLICATION_FRAME_MAGIC = new Uint8Array([
   0x41, 0x53, 0x59, 0x52, 0x41, 0x50
@@ -1234,11 +1267,11 @@ const isPublicationWireUnit = (
   hasExactOwnKeys(value, ['batch', 'delivery']) &&
   isPublicationWireBatchMetadata(value.batch) &&
   isSharedPublicationDelivery(value.delivery) &&
-  (metadata.origin === 'rollback-compensation') ===
-    Object.prototype.hasOwnProperty.call(
-      value.delivery,
-      'compensatesDeliveryId'
-    )
+  hasValidCompensationCorrelation(
+    value.batch.channel,
+    metadata.origin,
+    value.delivery
+  )
 
 interface MutablePublicationBatch {
   readonly metadata: PublicationWireBatchMetadata
@@ -1471,11 +1504,12 @@ const decodePublicationWirePayload = (
     } else {
       if (
         !isSharedPublicationDelivery(decodedUnit) ||
-        (metadata.origin === 'rollback-compensation') !==
-          Object.prototype.hasOwnProperty.call(
-            decodedUnit,
-            'compensatesDeliveryId'
-          )
+        !indexedBatches[index] ||
+        !hasValidCompensationCorrelation(
+          indexedBatches[index].channel,
+          metadata.origin,
+          decodedUnit
+        )
       ) {
         throw new TypeError('[collaboration] invalid publication wire unit')
       }
@@ -1681,6 +1715,7 @@ const collaborationControlMessageTypes = new Set<string>([
   CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT,
   CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
   CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED,
+  CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY,
   CollaborationMessageTypes.READY,
   CollaborationMessageTypes.RESPONSE,
   CollaborationMessageTypes.AWARENESS,
@@ -1690,7 +1725,7 @@ const collaborationControlMessageTypes = new Set<string>([
 ])
 
 export const encodeCollaborationControlMessage = (value: unknown): string => {
-  if (!analyzeJsonTransportValue(value)) {
+  if (!analyzeFiniteTransportValue(value)) {
     throw new TypeError(
       '[collaboration] control message contains a value that JSON cannot preserve'
     )
@@ -1735,7 +1770,7 @@ export const encodeCollaborationMessage = (
   ) {
     return encodeCollaborationControlMessage(value)
   }
-  const analysis = analyzeJsonTransportValue(value)
+  const analysis = analyzeFiniteTransportValue(value)
   if (!analysis) {
     throw new TypeError(
       '[collaboration] message contains a value that JSON cannot preserve'
@@ -1958,6 +1993,8 @@ export const parseCollaborationServerMessage = (
     return
   }
   switch (value.type) {
+    case CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY:
+      return hasExactOwnKeys(value, ['type']) ? { type: value.type } : undefined
     case CollaborationMessageTypes.READY: {
       const bootstrap = parseDocumentSessionBootstrap(value.bootstrap)
       return bootstrap ? { type: value.type, bootstrap } : undefined

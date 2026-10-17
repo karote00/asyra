@@ -1,9 +1,11 @@
 import {
   toolResultBoolean,
+  toolDocumentReference,
   toolResultObject,
   toolResultString,
   actionToolSemantics
 } from './tool-contract'
+import { inspectionEvidenceSchema } from './inspection-evidence'
 import { inspectionInputSchema } from './inspection-schema'
 import type {
   createInspectionEvidence,
@@ -44,7 +46,9 @@ export const createAiInspectionAction = (
         ? inspect(args.elementId, args.region)
         : inspect(args.elementId)
     }
-    const result = evidence ? await evidence.capture(capture) : await capture()
+    const result = evidence
+      ? await evidence.capture(capture, args)
+      : await capture()
     signal.throwIfAborted()
     return result
   }
@@ -53,16 +57,20 @@ export const createAiInspectionAction = (
 export const createInspectionValidationAction = (
   evidence: ReturnType<typeof createInspectionEvidence>
 ): AiActionDefinition<{
-  evidence: { sessionId: string; revision: number }
+  evidence: { sessionId: string; revision: number; receiptId?: string }
   scope?: InspectionScopeQuery
 }> => ({
   ...actionToolSemantics(
     AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
-    toolResultObject({ current: toolResultBoolean })
+    toolResultObject({
+      current: toolResultBoolean,
+      validatedAt: inspectionEvidenceSchema
+    })
   ),
+  revision: 3,
   name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
   description:
-    'Check whether an App-issued inspection stamp still matches the canonical document. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Stamp-only checks take constant work. Missing, retired or changed evidence is not current.',
+    'Check whether an App-issued stamp still has current canonical dependencies. Scoped visual receipts may survive unrelated document edits; unscoped stamps require the original document revision. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Unchanged stamp checks take constant work; pending regions recheck spatial membership. Missing, retired or changed evidence is not current.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -86,19 +94,50 @@ export const createInspectionValidationAction = (
           }
         }
       },
-      evidence: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['sessionId', 'revision'],
-        properties: {
-          sessionId: { type: 'string', minLength: 1 },
-          revision: { type: 'integer', minimum: 0 }
-        }
-      }
+      evidence: inspectionEvidenceSchema
     }
   },
   execute: async (args, { signal }) => {
     signal.throwIfAborted()
     return evidence.validate(args.evidence, args.scope)
+  }
+})
+
+export const createDesignAttachmentAction = (
+  evidence: ReturnType<typeof createInspectionEvidence>
+): AiActionDefinition<{ parentId?: string }> => ({
+  ...actionToolSemantics(
+    AiActionNames.READ_DESIGN_ATTACHMENT,
+    toolResultObject({
+      available: { const: true },
+      workspaceId: toolDocumentReference,
+      parentId: toolDocumentReference,
+      evidence: inspectionEvidenceSchema,
+      basis: {
+        type: 'array',
+        minItems: 3,
+        maxItems: 3,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y'],
+          properties: { x: { type: 'number' }, y: { type: 'number' } }
+        }
+      }
+    })
+  ),
+  name: AiActionNames.READ_DESIGN_ATTACHMENT,
+  description:
+    'Read the actual editable attachment parent, its local bounds and local-to-workspace basis under a canonical scene stamp. Omit parentId for the current workspace. Reads only the ancestor chain, never all children. Use for attachment-dependent preparation; this is geometry evidence, not visual approval.',
+  inputSchema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: { parentId: toolDocumentReference }
+  },
+  execute: async ({ parentId }, { signal }) => {
+    signal.throwIfAborted()
+    const result = await evidence.attachment(parentId)
+    signal.throwIfAborted()
+    return result
   }
 })

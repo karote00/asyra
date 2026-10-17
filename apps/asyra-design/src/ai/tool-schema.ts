@@ -5,7 +5,8 @@ const record = (v: unknown): v is Record<string, unknown> =>
 
 export const operationInputIssue = (
   value: unknown,
-  schema: unknown
+  schema: unknown,
+  referenceRoot: unknown = schema
 ): string | undefined => {
   const visit = (
     v: unknown,
@@ -19,11 +20,15 @@ export const operationInputIssue = (
     if (typeof s.$ref === 'string') {
       if (!s.$ref.startsWith('#/'))
         return [`${path}: unsupported schema reference`]
-      let resolved: unknown = schema
-      for (const key of s.$ref.slice(2).split('/'))
-        resolved = record(resolved)
-          ? resolved[key.replace(/~1/g, '/').replace(/~0/g, '~')]
-          : undefined
+      let resolved: unknown = referenceRoot
+      for (const part of s.$ref.slice(2).split('/')) {
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+        resolved =
+          (record(resolved) || Array.isArray(resolved)) &&
+          Object.hasOwn(resolved, key)
+            ? (resolved as Record<string, unknown>)[key]
+            : undefined
+      }
       if (resolved === undefined) return [`${path}: unknown schema reference`]
       const issue = visit(v, resolved, path, depth + 1)
       if (issue) return issue
@@ -151,7 +156,11 @@ export const operationInputIssue = (
         return [`${path}: too many items`]
       const errors: string[] = []
       for (let i = 0; i < v.length; i++) {
-        const issue = visit(v[i], s.items, `${path}[${i}]`, depth + 1)
+        const itemSchema =
+          Array.isArray(s.prefixItems) && i < s.prefixItems.length
+            ? s.prefixItems[i]
+            : s.items
+        const issue = visit(v[i], itemSchema, `${path}[${i}]`, depth + 1)
         if (issue) errors.push(...issue)
         if (errors.length >= 12)
           return [

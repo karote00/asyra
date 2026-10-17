@@ -1,3 +1,4 @@
+import { SessionCancelPolicies } from '@asyra/utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RawInputEvent, SystemContextSnapshot } from '@asyra/utils'
 import type { InputSystemLike } from '../src/types/core-packages'
@@ -119,7 +120,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     runtime.defineFeature('drag', 'input.drag', {
       priority: 10,
       exclusive: true,
-      cancelPolicy: 'commit-current',
+      cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
       session: { onStart: () => ({}), onCancel, onEnd }
     })
     await runtime.getSessionManager().handleStart('input.drag', snapshot())
@@ -136,10 +137,17 @@ describe.sequential('complete Feature runtime disposal', () => {
     const release = deferred()
     const manager = runtime.getSessionManager()
     ;(manager as unknown as { handlerTimeoutMs: number }).handlerTimeoutMs = 5
-    manager.registerSession('slow', 'slow', 10, true, 'rollback', {
-      onStart: () => ({}),
-      onUpdate: () => release.promise
-    })
+    manager.registerSession(
+      'slow',
+      'slow',
+      10,
+      true,
+      SessionCancelPolicies.ROLLBACK,
+      {
+        onStart: () => ({}),
+        onUpdate: () => release.promise
+      }
+    )
     await manager.handleStart('slow', snapshot())
     await expect(
       manager.handleUpdate('slow', snapshot())
